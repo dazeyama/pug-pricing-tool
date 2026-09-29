@@ -41,6 +41,9 @@ function SetMark({ c }) {
 /** One suggestion: thumbnail, with the game badge and "SET #num" beneath. */
 export function Thumb({ c, highlighted, selected, onPick }) {
   const { thumb } = useCardImages(c);
+  // An image that fails to load shows the card back, never a broken-image icon.
+  const [failed, setFailed] = useState(null);
+  const showImage = thumb && failed !== thumb;
   return (
     <button
       type="button"
@@ -49,8 +52,8 @@ export function Thumb({ c, highlighted, selected, onPick }) {
       onClick={() => onPick(c)}
     >
       <span className="thumb-img">
-        {thumb ? (
-          <img src={thumb} alt={c.name} loading="lazy" />
+        {showImage ? (
+          <img src={thumb} alt={c.name} loading="lazy" onError={() => setFailed(thumb)} />
         ) : (
           <span className="thumb-back">{c.name}</span>
         )}

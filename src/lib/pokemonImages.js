@@ -4,11 +4,14 @@
 //
 // English, in order:
 //   1. pokemontcg.io's image CDN (images.pokemontcg.io/<set>/<number>.png),
-//      with its set IDs matched to TCGdex's by ID or name. A missing card
-//      there still answers with a card-back picture (status 404), so each
-//      address is checked with a HEAD request first (the CDN allows CORS).
+//      with its set IDs matched to TCGdex's by ID, name or SET_ALIASES. A
+//      missing card there still answers with a card-back picture (status
+//      404), so each address is checked with a HEAD request first (the CDN
+//      allows CORS). Sets numbered differently (the Classic Collections) are
+//      then searched by card name through its API.
 //   2. TCGplayer's product image, by the TCGplayer ID that TCGdex's full card
-//      carries (variants_detailed → thirdParty.tcgplayer).
+//      carries (variants_detailed → thirdParty.tcgplayer), loaded first to
+//      reject its 403s and its landscape "Image Coming Soon" banner.
 // Japanese: none yet. TCGdex has no TCGplayer IDs for Japanese cards; JustTCG
 // (Phase 5) returns one per card, which can point at TCGplayer's image then.
 import { createTransport } from './transport.js';
@@ -23,6 +26,11 @@ const ptcg = createTransport({ spacingMs: 200, tries: 6 });
 
 const setKey = (name) => String(name ?? '').toLowerCase()
   .replace(/&/g, 'and').normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
+
+// TCGdex set → pokemontcg.io set, where neither the ID nor the name matches.
+const SET_ALIASES = {
+  '30th-c': 'me55c',        // "30th Classic Collection" / "30th Celebration: Classic Collection"
+};
 
 let setsPromise = null;
 /** pokemontcg.io's sets, by ID and by folded name. localStorage, 7 days. */
@@ -51,6 +59,40 @@ function imageExists(url) {
     } catch {
       return false;
     }
+  });
+}
+
+const looksLikeCard = memoryCache(DAY);
+/**
+ * Load an image to check it's a card: TCGplayer refuses products it has no
+ * picture of (403), or answers with a landscape "Image Coming Soon" banner.
+ * A card is always taller than wide. (Its CDN doesn't allow CORS, so the
+ * image itself is loaded, not a HEAD request.)
+ */
+function isCardImage(url) {
+  return looksLikeCard.get(url, () => new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img.naturalHeight > img.naturalWidth);
+    img.onerror = () => resolve(false);
+    img.src = url;
+  }));
+}
+
+const byNameCache = memoryCache(DAY);
+/**
+ * A card in a pokemontcg.io set by name, for sets it numbers differently
+ * from TCGdex (the Classic Collections keep their original numbers: Pikachu
+ * is #014 in TCGdex, #58 there). Only a single, unambiguous match counts.
+ */
+function ptcgCardByName(setId, name) {
+  return byNameCache.get(`${setId}:${name}`, async () => {
+    const q = `set.id:${setId} name:"${String(name).replace(/"/g, '')}"`;
+    const data = await ptcg.getJson(
+      `${PTCG_API}/cards?q=${encodeURIComponent(q)}&select=number,name,images&pageSize=5`);
+    // name:"Pikachu" also matches "Pikachu & Zekrom-GX": keep exact names only.
+    const want = setKey(name);
+    const cards = (data?.data ?? []).filter((card) => setKey(card.name) === want);
+    return cards.length === 1 && cards[0].images?.small ? cards[0] : null;
   });
 }
 
@@ -89,11 +131,18 @@ export function fallbackImages(c) {
 
     try {
       const sets = await loadPtcgSets();
-      const setId = sets.ids.has(c.setId) ? c.setId : sets.byName.get(setKey(c.setName));
+      const setId = SET_ALIASES[c.setId]
+        ?? (sets.ids.has(c.setId) ? c.setId : sets.byName.get(setKey(c.setName)));
       if (setId) {
+        // By number first: one HEAD request, no API call.
         const base = `${PTCG_IMAGES}/${setId}/${ptcgNumber(c.number)}`;
         if (await imageExists(`${base}.png`)) {
           return { thumb: `${base}.png`, image: `${base}_hires.png`, source: 'pokemontcg.io' };
+        }
+        // Then by name, for sets numbered differently.
+        const card = await ptcgCardByName(setId, c.name);
+        if (card) {
+          return { thumb: card.images.small, image: card.images.large ?? card.images.small, source: 'pokemontcg.io' };
         }
       }
     } catch {
@@ -102,8 +151,9 @@ export function fallbackImages(c) {
 
     try {
       const id = tcgplayerId(await dex.fetchCard(c.lang, c.tcgdexId));
-      if (id) {
-        return { thumb: `${TCGPLAYER_IMAGES}/${id}_200w.jpg`, image: `${TCGPLAYER_IMAGES}/${id}_in_1000x1000.jpg`, source: 'TCGplayer' };
+      const thumb = id && `${TCGPLAYER_IMAGES}/${id}_200w.jpg`;
+      if (thumb && await isCardImage(thumb)) {
+        return { thumb, image: `${TCGPLAYER_IMAGES}/${id}_in_1000x1000.jpg`, source: 'TCGplayer' };
       }
     } catch {
       // No full card: the card back it is.
