@@ -141,7 +141,7 @@ export default function SelectedCard({ candidate: c, typedName, pokemon, finish,
         </div>
         {/* The finish, named under the card: always one line, always there so
             the card never moves when it appears. */}
-        <div className="finish-line">
+        <div className="finish-line" style={{ '--tag-len': finishTag ? finishTag.length + 2 : 1 }}>
           {finishTag && <span className="finish-tag">✦ {finishTag}</span>}
         </div>
       </div>

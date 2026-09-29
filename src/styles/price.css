@@ -133,23 +133,24 @@
         It only shrinks when the window is too short for it. ---- */
 .card-box { position: relative; align-self: flex-start; }
 /* --card-h: the card's height, leaving room for the label above (26px) and
-   the finish line below (28px). */
-.area-card { --card-h: min(calc(100cqh - 54px), 468px); }
+   the finish line below (32px). */
+.area-card { --card-h: min(calc(100cqh - 58px), 468px); }
 .card-box .card-wrap { height: var(--card-h); width: auto; }
 
-/* The finish named under the card, centred on it: one line whatever happens,
-   the font shrinking with the card (21 is about the widest label's length
-   in ems, "✦ REVERSE HOLO · MASTER BALL"). */
+/* The finish named under the card, centred on it: one line whatever happens.
+   The font is sized from the label's own length (--tag-len, characters): as
+   large as fits the card's width at about .8em a character, up to 20px, so
+   "✦ FOIL" is big and "✦ REVERSE HOLO · MASTER BALL" still fits. */
 .finish-line {
   flex: none;
   display: flex;
   justify-content: center;
   width: calc(var(--card-h) * .7176);
-  height: 22px;
+  height: 26px;
   margin-top: 6px;
   align-items: center;
   white-space: nowrap;
-  font-size: min(.78rem, calc(var(--card-h) * .7176 / 21));
+  font-size: min(20px, calc(var(--card-h) * .7176 / (var(--tag-len) * .8)));
   text-transform: uppercase;
 }
 
