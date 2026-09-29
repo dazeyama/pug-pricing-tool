@@ -74,10 +74,13 @@ export default function SelectedCard({ candidate: c, typedName, pokemon, finish,
   const link = magic ? magic.scryfall_uri : pokemon.page;
   const tcgplayer = tcgplayerLink(c, magic, pokemon, typedName, finish);
   const name = flippable ? magic.card_faces[face].name : c.name;
-  // Foil sheen: Magic foil or etched, Pokémon holo; reverse holo gets the inverted mask.
+  // Foil sheen (spec 8.4): the whole card for Magic foil or etched; for
+  // Pokémon, the art window for holo and everything but it for reverse holo.
+  // Cards from before 2003 have a smaller art window.
+  const era = (pokemon.info?.releaseDate ?? c.releasedAt ?? '9999') < '2003' ? ' vintage' : '';
   const shine = magic
     ? (finish === 'foil' || finish === 'etched' ? 'foil' : null)
-    : pokemonFinish === 'holo' ? 'foil' : pokemonFinish === 'reverse' ? 'reverse' : null;
+    : pokemonFinish === 'holo' ? `holo${era}` : pokemonFinish === 'reverse' ? `reverse${era}` : null;
   const finishTag = magic
     ? { foil: 'FOIL', etched: 'ETCHED FOIL' }[finish]
     : { holo: 'HOLO', reverse: 'REVERSE HOLO' }[pokemonFinish];

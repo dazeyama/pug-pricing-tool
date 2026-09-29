@@ -146,11 +146,15 @@
 .card-img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: contain; }
 .card-img.pending { opacity: 0; }
 
-/* Foil sheen over the selected card (Magic foil/etched, Pokémon holo), like
-   Moxfield's: a drifting rainbow blended into the card, brighter and dimmer
-   in diagonal bands. Reverse holo inverts the band mask. The second mask
-   layer fades it out above the bottom (artist/copyright) strip, which
-   Scryfall's rules keep clear of overlays. */
+/* Foil sheen over the selected card (spec 8.4), like Moxfield's: a drifting
+   rainbow blended into the card, brighter and dimmer in diagonal bands, over
+   an area that depends on the finish (--shine-area):
+     foil     Magic foil/etched: the whole card, fading out above the bottom
+              (artist/copyright) strip, which Scryfall's rules keep clear.
+     holo     Pokémon holo: the art window only, like a real holo.
+     reverse  Pokémon reverse holo: everything except the art window.
+   Art windows measured on TCGdex images (2026-09-29): modern cards 7.5–92.5%
+   across, 8.5–53.5% down; vintage (before 2003) 11–89% across, 11.5–50% down. */
 .card-wrap { isolation: isolate; }
 .card-shine {
   position: absolute;
@@ -163,22 +167,24 @@
       transparent 54%, rgba(255, 255, 255, .7) 64%, transparent 76%),
     linear-gradient(115deg, #ff2d95, #ffd84d, #3dffb4, #38b6ff, #a45bff, #ff2d95);
   background-size: 220% 220%, 300% 300%;
-  /* color-dodge lights the card up in rainbow colours: unmistakably foil
-     (owner: "I really need to know when it's on"). */
   mix-blend-mode: color-dodge;
   opacity: .31;                                   /* halved from .62 (owner, 2026-09-29) */
   animation: foil-drift 9s ease-in-out infinite alternate;   /* half speed */
-  -webkit-mask-image: var(--shine-bands), linear-gradient(to bottom, #000 86%, transparent 93%);
+  --shine-bands: linear-gradient(135deg, rgba(0, 0, 0, .55) 0%, #000 28%, rgba(0, 0, 0, .55) 52%, #000 76%, rgba(0, 0, 0, .55) 100%);
+  -webkit-mask-image: var(--shine-bands), var(--shine-area);
+  -webkit-mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
   -webkit-mask-composite: source-in;
-  mask-image: var(--shine-bands), linear-gradient(to bottom, #000 86%, transparent 93%);
+  mask-image: var(--shine-bands), var(--shine-area);
+  mask-size: 100% 100%;
+  mask-repeat: no-repeat;
   mask-composite: intersect;
 }
-.card-shine.foil {
-  --shine-bands: linear-gradient(135deg, rgba(0, 0, 0, .55) 0%, #000 28%, rgba(0, 0, 0, .55) 52%, #000 76%, rgba(0, 0, 0, .55) 100%);
-}
-.card-shine.reverse {
-  --shine-bands: linear-gradient(135deg, #000 0%, rgba(0, 0, 0, .55) 28%, #000 52%, rgba(0, 0, 0, .55) 76%, #000 100%);
-}
+.card-shine.foil { --shine-area: linear-gradient(to bottom, #000 86%, transparent 93%); }
+.card-shine.holo { --shine-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Crect x='7.5' y='8.5' width='85.0' height='45.0'/%3E%3C/svg%3E"); }
+.card-shine.holo.vintage { --shine-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Crect x='11' y='11.5' width='78' height='38.5'/%3E%3C/svg%3E"); }
+.card-shine.reverse { --shine-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M0 0H100V100H0Z M7.5 8.5H92.5V53.5H7.5Z'/%3E%3C/svg%3E"); }
+.card-shine.reverse.vintage { --shine-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M0 0H100V100H0Z M11 11.5H89V50H11Z'/%3E%3C/svg%3E"); }
 @keyframes foil-drift {
   from { background-position: 0% 0%, 0% 50%; }
   to { background-position: 100% 100%, 100% 50%; }
