@@ -1,4 +1,4 @@
-import { formatMoney, percentOf } from '../../lib/money.js';
+import { formatMoney, payout } from '../../lib/money.js';
 
 /**
  * The price panel beside the card info (owner, 2026-09-29): the selected
@@ -18,12 +18,15 @@ export default function QuotePanel({ candidate, loading, condition, price, sourc
 
   const tag = source === 'manual' ? '✎ manual' : source === 'fallback' ? 'fallback' : null;
   const chip = (label, pct) => {
-    const amount = price != null ? percentOf(price, pct) : null;
+    const amount = price != null ? payout(price, pct) : null;
+    const raw = price != null ? (price * pct) / 100 : null;
+    let title = `${label}: ${pct}%`;
+    if (amount != null) {
+      title += ` of ${formatMoney(price)}`;
+      if (Math.abs(raw - amount) >= 0.005) title += `, rounded down from ${formatMoney(raw)}`;
+    }
     return (
-      <span
-        className={`quote-chip ${label.toLowerCase()}`}
-        title={amount != null ? `${label}: ${pct}% of ${formatMoney(price)}` : `${label}: ${pct}%`}
-      >
+      <span className={`quote-chip ${label.toLowerCase()}`} title={title}>
         <span className="quote-chip-label">{label}</span>
         <b>{loading ? '…' : formatMoney(amount)}</b>
       </span>

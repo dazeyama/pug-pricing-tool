@@ -12,28 +12,29 @@ export function formatMoney(amount) {
 }
 
 /**
- * Store rounding for market and fallback prices (owner, 2026-09-29), always
- * down: under $1 to the cent; $1–$10 to the quarter; $10–$100 to the dollar;
- * $100–$1,000 to the $5; $1,000 and up to the $10. Done in whole cents so
- * float error can't push a price across a step. Manual prices aren't rounded.
+ * Store rounding for market and fallback prices, and the Cash / Credit they
+ * pay (owner, 2026-09-29), always down: under $1 to the cent; $1–$10 to the
+ * quarter; $10–$100 to the dollar; $100–$1,000 to the $5; $1,000 and up to
+ * the $10. Done in whole cents, trimmed to 6 places first so float error
+ * (0.29 × 100 = 28.999…) can't knock a price down a cent. Manual prices
+ * aren't rounded.
  * @returns {number|null}
  */
 export function roundDownPrice(price) {
   if (price == null || Number.isNaN(Number(price))) return null;
-  const cents = Math.round(Number(price) * 100);
+  const cents = Math.floor(Number((Number(price) * 100).toFixed(6)));
   const step = cents >= 100_000 ? 1000 : cents >= 10_000 ? 500 : cents >= 1000 ? 100 : cents >= 100 ? 25 : 1;
   return (Math.floor(cents / step) * step) / 100;
 }
 
 /**
- * amount × pct%, to the cent, half-up (spec 7.8): Cash and Credit. Worked in
- * whole cents, trimmed to 6 places first so float error can't tip a half.
+ * What the store pays for one card in Cash or Credit: price × pct%, rounded
+ * down by the same steps as prices (owner, 2026-09-29).
  * @returns {number|null}
  */
-export function percentOf(amount, pct) {
-  if (amount == null || pct == null || Number.isNaN(Number(amount)) || Number.isNaN(Number(pct))) return null;
-  const cents = Math.round(Number(amount) * 100);
-  return Math.round(Number(((cents * Number(pct)) / 100).toFixed(6))) / 100;
+export function payout(price, pct) {
+  if (price == null || pct == null || Number.isNaN(Number(price)) || Number.isNaN(Number(pct))) return null;
+  return roundDownPrice((Number(price) * Number(pct)) / 100);
 }
 
 /** "12.5" / "$12.50" / "12" → 12.5; null for anything that isn't a price ≥ 0 with ≤ 2 decimals. */

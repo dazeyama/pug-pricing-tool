@@ -658,7 +658,7 @@ The Price screen fills the viewport below the header with **no page scroll**. It
 │  SELECTED CARD                                                                 │ 1 Adarkar Wastes │
 │ ┌──────────────┐  ┌─ CARD INFO ───────────┐  ┌─ PRICE ───────────────────┐    │   (DMU) 243 *F*  │
 │ │              │  │ Lightning Bolt        │  │ NM  $2.10                 │    │ …                │
-│ │              │  │ Double Masters (2X2)  │  │[Credit $1.39] [Cash $0.69]│    │ ── Pokémon (3) ──│
+│ │              │  │ Double Masters (2X2)  │  │[Credit $1.25] [Cash $0.69]│    │ ── Pokémon (3) ──│
 │ │  336 × 468   │  │ #161 / 331 · Uncommon │  └───────────────────────────┘    │ 1 Charizard ex   │
 │ │ (Scryfall's  │  └───────────────────────┘          … show all (23)          │   (OBF) 125 *H*  │
 │ │  card-page   │  [t1] [t2] [t3] [t4] [t5]     ┌─ FINISH ─────────────┐       │ …                │
@@ -816,7 +816,7 @@ A row of five large buttons directly under the selected card (Section 8.1):
 
 **Purchase price** of the next line = manual price if set, else the price shown on the selected condition (JustTCG's, or the fallback's).
 
-**Price panel** (owner's decision, 2026-09-29): beside the card info, the same height as it. It shows the purchase price for the selected condition in large green type, labeled with the condition (and "fallback" or "✎ manual" when it is one). Under it, two smaller chips: **Credit** and **Cash**, the purchase price × the Master Buy Percentages, rounded half-up to the cent (`percentOf` in `src/lib/money.js`; a chip's tooltip shows the percentage). It's **display only**: nothing is saved, since it can always be worked out again. It follows condition, finish, Use Fallback and manual price changes as they happen, shows "—" when there's no price, and a dashed "Price appears here" box with no card. Phase 6: use the buy's custom rates (Section 8.9.1) where set. ADD CARD is disabled when none exists.
+**Price panel** (owner's decision, 2026-09-29): beside the card info, the same height as it. It shows the purchase price for the selected condition in large green type, labeled with the condition (and "fallback" or "✎ manual" when it is one). Under it, two smaller chips: **Credit** and **Cash**, the purchase price × the Master Buy Percentages, **rounded down by the same steps as prices** (owner's decision, 2026-09-29: under $1 to the cent, $1–$10 to the quarter, $10–$100 to the dollar, $100–$1,000 to the $5, $1,000 and up to the $10; `payout` in `src/lib/money.js`). A chip's tooltip shows the percentage and the unrounded amount. It's **display only**: nothing is saved, since it can always be worked out again. It follows condition, finish, Use Fallback and manual price changes as they happen, shows "—" when there's no price, and a dashed "Price appears here" box with no card. Phase 6: use the buy's custom rates (Section 8.9.1) where set. ADD CARD is disabled when none exists.
 
 ### 8.8 Quantity, ADD CARD, CLEAR
 
@@ -1775,7 +1775,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 80 | Manual price and condition (2026-09-29) | Picking a different condition clears the manual price |
 | 81 | NM warning (2026-09-29) | ⚠️ on the NM label when JustTCG's NM and the fallback NM differ by 25%+ and at least $1 |
 | 82 | Price table foot (2026-09-29) | Use Fallback and ✎ Manual price centered under the buttons; the "Prices via JustTCG" caption on its own line below |
-| 83 | Price panel (2026-09-29) | Beside the card info: the selected condition's price in green, with Credit and Cash chips under it. Display only, never saved (Section 8.7) |
+| 83 | Price panel (2026-09-29) | Beside the card info: the selected condition's price in green, with Credit and Cash chips under it, rounded down by the price steps. Display only, never saved (Section 8.7) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |
@@ -1792,4 +1792,5 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 2. **Supabase plan for prod**: Free (weekly manual backups, pauses after 7 idle days) vs. Pro ($25/month: daily backups, no pausing).
 3. **Japanese Pokémon**: coverage confirmed good in the Phase 3 spike (Section 5.2 findings). Still open: how names should display, and the missing USD fallback price for Japanese cards (Phase 5).
 4. **JustTCG plan**: watch the usage meter during the first weeks and move to Professional if the daily limit binds.
+5. **Totals rounding** (before Phase 6): the price panel's Cash/Credit round down by the price steps (decision 83). Should the buy totals' Cash/Credit do the same, or stay half-up to the cent as Section 7.8 says?
 5. ~~**Store time zone**~~: confirmed Pacific time, `America/Los_Angeles` (`STORE_TZ`), 2026-09-29.
