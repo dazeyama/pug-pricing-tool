@@ -369,6 +369,17 @@ Japanese cards have no backup yet. JustTCG (Phase 5) returns a TCGplayer ID per 
 - Writes the latest `_metadata` (plan, daily/monthly used, remaining and limits) to `api_usage` after every JustTCG call.
 - Handles 429 with exponential backoff and jitter (1s doubling to 30s, honoring `Retry-After`). If the daily or monthly quota is exhausted, it returns a clear error code the UI shows as "Daily price limit reached — enter prices manually until <reset time>". The daily reset is 00:00 UTC, shown converted to store time (e.g. 5:00 PM in summer, 4:00 PM in winter).
 
+**As built (Phase 5, 2026-09-29), from JustTCG's documentation and `swagger.json` v1.1.0:**
+- **Games:** `magic-the-gathering` and `pokemon`. There is **no separate `pokemon-japan` game** any more: Japanese prices are `pokemon` variants with `language: "Japanese"` (a `language` filter narrows the variants). Japanese searches send `language=Japanese`.
+- **Batch:** `POST /v1/cards` takes **100 items on Starter and Pro** (200 on Enterprise, 20 on Free); the function batches at 100.
+- **Conditions:** "Near Mint", "Lightly Played", "Moderately Played", "Heavily Played", "Damaged" → NM / LP / MP / HP / DMG.
+- **Printings:** "Normal" and "Foil" (Magic); TCGplayer's names for Pokémon ("Normal", "Holofoil", "1st Edition", …). They're matched loosely (contains *reverse*, *holo*, *1st edition*) in `src/lib/prices.js` in case a name differs.
+- **Usage metadata** (`_metadata` on every response): `apiPlan`, `apiRequestLimit`, `apiRequestsUsed`, `apiRequestsRemaining`, `apiDailyLimit`, `apiDailyRequestsUsed`, `apiDailyRequestsRemaining`, `apiRateLimit`. Only the fields present are written to `api_usage`.
+- **Errors** are `{ error, code }`: `RATE_LIMIT_EXCEEDED` (per minute; retried with backoff), `DAILY_LIMIT_EXCEEDED` (resets 00:00 UTC) and `REQUEST_LIMIT_EXCEEDED` (monthly) → the function answers 429 with that code and `resetAt`, and the app shows the limit banner.
+- **Lookups per selected card, in one request:** Magic by `scryfallId`, plus the etched product by `tcgplayer_etched_id`; English Pokémon by each version's TCGplayer ID from TCGdex (stamped versions are their own products); otherwise a name + number search that accepts only a single match (English must also match the set name). JustTCG card IDs are stored as their `uuid`.
+- **Settings → Test** calls `GET /v1/games` (one request) to show the plan and remaining requests. **Status** never calls JustTCG, so opening Settings costs nothing.
+- Both functions are deployed with `--no-verify-jwt` and check the caller's session themselves (`_shared/supabase.ts`); a signed-out call gets 401 (checked 2026-09-29).
+
 **Request budget:** a price call is made **only after a printing has stayed selected for 400ms**, so cycling through suggestions with the arrow keys doesn't spend quota. With the shared 6-hour cache, one call covers every condition and finish of a printing across all store computers.
 
 **Licensing:** commercial use requires a paid JustTCG plan (Starter qualifies). Don't expose raw JustTCG data to third parties. Settings may show "Prices via JustTCG"; attribution is appreciated but not required.

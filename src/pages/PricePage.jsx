@@ -4,12 +4,15 @@ import SelectedCard from './price/SelectedCard.jsx';
 import Suggestions, { ROW } from './price/Suggestions.jsx';
 import ShowAllModal from './price/ShowAllModal.jsx';
 import FinishPanel from './price/FinishPanel.jsx';
+import PriceTable from './price/PriceTable.jsx';
+import { usePrices } from './price/usePrices.js';
 import { useCardSearch } from './price/useCardSearch.js';
 import { usePokemonDetail, useMagicSiblings } from './price/usePrintingDetail.js';
 import { warmUp, magicCandidate } from '../lib/cardSearch.js';
 import {
   defaultMagicFinish, magicFinishes, pokemonVersions, defaultPokemonVersion, POKEMON_FINISHES,
 } from '../lib/printings.js';
+import { CONDITIONS, conditionPrices, fallbackPrice, resultFor } from '../lib/prices.js';
 import { readLocal, writeLocal } from '../lib/local.js';
 
 const BACKGROUND = { '--stage-bg': `url(${import.meta.env.BASE_URL}background.webp)` };
@@ -60,6 +63,26 @@ export default function PricePage() {
       setPrinting({ key: null, finish: null, version: null });
     }
   }, [selected?.key]);
+
+  // Condition and manual price (spec 8.7): NM and none for every new card.
+  const [pricing, setPricing] = useState({ key: null, condition: 'NM', manual: null });
+  const [manualOpen, setManualOpen] = useState(false);
+  const pricingOwn = pricing.key === selected?.key;
+  const condition = pricingOwn ? pricing.condition : 'NM';
+  const manual = pricingOwn ? pricing.manual : null;
+  const setCondition = (code) => setPricing({ key: selected?.key, condition: code, manual });
+  const setManual = (value) => setPricing({ key: selected?.key, condition, manual: value });
+  useEffect(() => setManualOpen(false), [selected?.key]);
+
+  const prices = usePrices(selected, { pokemon, versions, typedName: search.parsed?.name });
+  const result = resultFor(selected, prices.results, { finish, version, versions });
+  const market = conditionPrices(result?.card, {
+    game: selected?.game,
+    lang: selected?.lang,
+    finish: magic ? finish : version?.finish,
+    firstEdition: version?.firstEdition,
+  });
+  const fallback = fallbackPrice(selected, { finish, version });
 
   const visible = search.candidates.slice(0, ROW);
   const hasShowAll = search.candidates.length > ROW;
@@ -144,6 +167,12 @@ export default function PricePage() {
     } else if (e.altKey && e.key.toLowerCase() === 'f') {
       e.preventDefault();
       cycleFinish();
+    } else if (e.altKey && /^[1-5]$/.test(e.key) && selected) {
+      e.preventDefault();
+      setCondition(CONDITIONS[Number(e.key) - 1]);
+    } else if (e.altKey && e.key.toLowerCase() === 'm' && selected) {
+      e.preventDefault();
+      setManualOpen(true);
     }
   }
 
@@ -206,13 +235,26 @@ export default function PricePage() {
             />
           </div>
           <div className="area-prices">
-            <div className="stage-slot">NM · LP · MP · HP · DMG prices · Phase 5</div>
+            <PriceTable
+              candidate={selected}
+              prices={prices}
+              market={market}
+              fallback={fallback}
+              fetchedAt={result?.fetchedAt ?? null}
+              condition={condition}
+              onCondition={setCondition}
+              manual={manual}
+              onManual={setManual}
+              manualOpen={manualOpen}
+              setManualOpen={setManualOpen}
+              onDone={focusSearch}
+            />
           </div>
           <div className="area-actions">
             <div className="stage-slot">Qty · CLEAR · ADD CARD · Phase 6</div>
           </div>
         </div>
-        <p className="hint-strip">↓↑ pick · Esc clear · Alt+F foil</p>
+        <p className="hint-strip">↓↑ pick · Esc clear · Alt+1–5 condition · Alt+F foil · Alt+M manual price</p>
       </div>
 
       <aside className="buy-list">

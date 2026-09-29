@@ -6,6 +6,7 @@ import { ConnectionProvider } from './state/connection.jsx';
 import { StaffProvider } from './state/staff.jsx';
 import { SettingsProvider } from './state/settings.jsx';
 import { InventoryProvider } from './state/inventory.jsx';
+import { PriceLimitProvider } from './state/priceLimit.jsx';
 import { ToastProvider } from './components/Toast.jsx';
 import Header from './components/Header.jsx';
 import Banners from './components/Banners.jsx';
@@ -54,18 +55,20 @@ function AuthGate() {
       <StaffProvider>
         <SettingsProvider>
           <InventoryProvider>
-            <Routes>
-              <Route element={<Layout />}>
-                <Route path="/price" element={<PricePage />} />
-                <Route path="/collections" element={<CollectionsPage />} />
-                <Route path="/collections/:id" element={<CollectionPage />} />
-                <Route path="/calendar" element={<CalendarPage />} />
-                <Route path="/calendar/:game/:date" element={<DayPage />} />
-                <Route path="/settings" element={<SettingsPage />} />
-                <Route path="/changelog" element={<ChangelogPage />} />
-                <Route path="*" element={<Navigate to="/price" replace />} />
-              </Route>
-            </Routes>
+            <PriceLimitProvider>
+              <Routes>
+                <Route element={<Layout />}>
+                  <Route path="/price" element={<PricePage />} />
+                  <Route path="/collections" element={<CollectionsPage />} />
+                  <Route path="/collections/:id" element={<CollectionPage />} />
+                  <Route path="/calendar" element={<CalendarPage />} />
+                  <Route path="/calendar/:game/:date" element={<DayPage />} />
+                  <Route path="/settings" element={<SettingsPage />} />
+                  <Route path="/changelog" element={<ChangelogPage />} />
+                  <Route path="*" element={<Navigate to="/price" replace />} />
+                </Route>
+              </Routes>
+            </PriceLimitProvider>
           </InventoryProvider>
         </SettingsProvider>
       </StaffProvider>

@@ -19,6 +19,22 @@ export function formatDateTime(when) {
   return `${formatDate(when)} · ${formatTime(when)}`;
 }
 
+/** "just now", "3 minutes ago", "2 hours ago", "3 days ago". */
+export function timeAgo(when, now = Date.now()) {
+  const minutes = Math.floor((now - new Date(when).getTime()) / 60_000);
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+  const days = Math.floor(hours / 24);
+  return `${days} day${days === 1 ? '' : 's'} ago`;
+}
+
+/** The next 00:00 UTC (when JustTCG's daily allowance resets), as a Date. */
+export function nextUtcMidnight(now = new Date()) {
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
+}
+
 /** "20260817-154210", for file names. */
 export function fileStamp(when) {
   return formatInTimeZone(when, STORE_TZ, 'yyyyMMdd-HHmmss');

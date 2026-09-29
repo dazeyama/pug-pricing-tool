@@ -1,13 +1,14 @@
 import MasterInventoryPanel from './settings/MasterInventoryPanel.jsx';
 import PercentagesPanel from './settings/PercentagesPanel.jsx';
+import ApiKeysPanel from './settings/ApiKeysPanel.jsx';
+import UsagePanel from './settings/UsagePanel.jsx';
 import ThisComputerPanel from './settings/ThisComputerPanel.jsx';
 import { formatDate } from '../lib/time.js';
 
 /* global __APP_VERSION__, __BUILD_DATE__ */
 
-// Settings (spec 11), top to bottom, each section in a panel. API keys and
-// the JustTCG meter arrive in Phase 5, backups in Phase 10. Staff users are
-// managed in the header dropdown, not here.
+// Settings (spec 11), top to bottom, each section in a panel. Backups arrive
+// in Phase 10. Staff users are managed in the header dropdown, not here.
 export default function SettingsPage() {
   return (
     <>
@@ -16,6 +17,8 @@ export default function SettingsPage() {
       </div>
       <div className="settings-stack">
         <MasterInventoryPanel />
+        <ApiKeysPanel />
+        <UsagePanel />
         <PercentagesPanel />
         <ThisComputerPanel />
         <footer className="settings-footer">

@@ -154,6 +154,17 @@ const STAMP_NAMES = {
 };
 const FOIL_NAMES = { pokeball: 'Poké Ball pattern', masterball: 'Master Ball pattern', cosmos: 'Cosmos foil' };
 
+/** The first TCGplayer market price in a TCGdex pricing block ({ holofoil: { marketPrice } …}). */
+function marketPriceIn(tcgplayer) {
+  for (const v of Object.values(tcgplayer ?? {})) {
+    if (v && typeof v === 'object' && typeof v.marketPrice === 'number') return v.marketPrice;
+  }
+  return null;
+}
+
+// TCGdex's card-level TCGplayer pricing keys, by finish (older data).
+const PRICING_KEYS = { normal: ['normal', 'unlimited'], holo: ['holofoil', 'unlimited-holofoil'], reverse: ['reverse-holofoil'] };
+
 function titleCase(s) {
   return String(s).replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
@@ -163,8 +174,10 @@ function titleCase(s) {
  * size only), each with a stable id, its finish and a plain-words label:
  * subtype (Shadowless…), foil pattern (Poké Ball…), stamps (1st Edition…).
  * Older data without variants_detailed falls back to the plain `variants`.
+ * Each also carries its TCGplayer product ID (JustTCG lookup) and TCGplayer
+ * market price (the fallback NM price, spec 8.7).
  * @returns {{ id: string, finish: string, label: string, firstEdition: boolean,
- *   treatments: string[] }[]}
+ *   treatments: string[], tcgplayerId: string|null, marketPrice: number|null }[]}
  */
 export function pokemonVersions(card) {
   const detailed = (card?.variants_detailed ?? []).filter((v) => (v.size ?? 'standard') === 'standard'
@@ -187,17 +200,23 @@ export function pokemonVersions(card) {
         label: parts.join(' · ') || (v.subtype === 'unlimited' ? 'Unlimited' : 'Standard'),
         firstEdition: stamps.includes('1st-edition'),
         treatments,
+        tcgplayerId: v.thirdParty?.tcgplayer != null ? String(v.thirdParty.tcgplayer) : null,
+        marketPrice: marketPriceIn(v.pricing?.tcgplayer),
       };
     });
   }
   const v = card?.variants ?? {};
+  const pricing = card?.pricing?.tcgplayer ?? {};
   const out = [];
   for (const finish of POKEMON_FINISHES) {
     if (!v[finish]) continue;
-    out.push({ id: `${finish}|||`, finish, label: 'Standard', firstEdition: false, treatments: [] });
-    if (v.firstEdition) {
-      out.push({ id: `${finish}|||1st-edition`, finish, label: '1st Edition', firstEdition: true, treatments: [] });
-    }
+    const key = PRICING_KEYS[finish].find((k) => pricing[k]);
+    const base = {
+      finish, treatments: [], tcgplayerId: key && pricing[key].productId ? String(pricing[key].productId) : null,
+      marketPrice: key ? pricing[key].marketPrice ?? null : null,
+    };
+    out.push({ ...base, id: `${finish}|||`, label: 'Standard', firstEdition: false });
+    if (v.firstEdition) out.push({ ...base, id: `${finish}|||1st-edition`, label: '1st Edition', firstEdition: true, marketPrice: null });
   }
   return out;
 }

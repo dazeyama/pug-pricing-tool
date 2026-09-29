@@ -53,6 +53,35 @@
 .inv-previous .inv-name { overflow-wrap: anywhere; }
 .inv-previous .inv-action { text-align: right; width: 1%; white-space: nowrap; }
 
+/* API keys (spec 11.2) */
+.key-row { padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel-2); }
+.key-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+.key-note { margin: 0; }
+.key-status { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.key-mask {
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  font-family: ui-monospace, "Cascadia Code", monospace;
+}
+.key-actions { display: flex; gap: 6px; margin-left: auto; }
+.key-edit { display: flex; align-items: center; gap: 6px; }
+.key-edit input { max-width: 360px; margin: 0; }
+.key-test { margin: 8px 0 0; font-size: 13px; }
+.key-test.ok { color: var(--good); }
+.key-test.err { color: var(--bad); }
+
+/* JustTCG usage (spec 11.3): green, amber from 80%, red from 95%. */
+.meters { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.meter-top { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 13px; }
+.meter-num { font-weight: 600; font-variant-numeric: tabular-nums; }
+.meter-bar { height: 10px; overflow: hidden; border: 1px solid var(--border); border-radius: 999px; background: var(--bg); }
+.meter-bar i { display: block; height: 100%; border-radius: 999px; background: var(--good); }
+.meter-bar i.amber { background: var(--warn); }
+.meter-bar i.red { background: var(--bad); }
+.usage-foot { margin: 12px 0 0; }
+
 /* Master Buy Percentages */
 .pct-row { display: flex; gap: 28px; }
 .pct-field { width: 160px; }

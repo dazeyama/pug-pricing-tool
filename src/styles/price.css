@@ -502,6 +502,67 @@
 .versions legend { padding: 0; margin-bottom: 4px; font-size: 12px; color: var(--muted); }
 .area-prices .stage-slot, .area-actions .stage-slot { height: 96px; }
 
+/* ---- Condition / price table under the card (spec 8.7) ---- */
+.price-table { display: flex; flex-direction: column; gap: 6px; }
+.price-buttons { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+.price-btn {
+  height: 58px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(24, 28, 46, .92);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+.price-btn:hover:not(:disabled) { border-color: var(--accent); }
+.price-btn.on { background: var(--accent-2); border-color: var(--accent); }
+.price-btn:disabled { cursor: default; opacity: .7; }
+.pc-cond { font-size: 12px; font-weight: 800; letter-spacing: .06em; }
+.pc-price {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.pc-price.muted { color: var(--muted); }
+.pc-price.manual b { font-weight: 800; }
+.pc-price.manual s { font-size: 10.5px; font-weight: 500; color: var(--muted); }
+.price-btn.on .pc-price.manual s, .price-btn.on .pc-price.muted { color: rgba(255, 255, 255, .7); }
+.fb-tag { font-size: 9px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--warn); }
+.pc-price.shimmer {
+  width: 70%;
+  height: 12px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #232842 25%, #343c60 50%, #232842 75%) 0 0 / 250% 100%;
+  animation: shimmer 1.2s linear infinite;
+}
+.price-foot { display: flex; align-items: center; gap: 8px; min-height: 26px; }
+.manual-btn.on { border-color: var(--warn); color: var(--warn); }
+.manual-edit { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; }
+.manual-edit input { width: 86px; margin: 0; padding: 4px 8px; font-size: 14px; }
+.price-caption {
+  flex: 1;
+  min-width: 0;
+  text-align: right;
+  font-size: 11.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.price-caption .muted { color: var(--muted); }
+.price-caption .warn { color: var(--warn); }
+.price-caption a { color: var(--accent); }
+.link-btn { background: none; border: none; padding: 0; color: var(--accent); font: inherit; text-decoration: underline; cursor: pointer; }
+
 /* ---- Suggestions: 2 rows of 5 under the card info ---- */
 .suggest-head {
   flex: none;
