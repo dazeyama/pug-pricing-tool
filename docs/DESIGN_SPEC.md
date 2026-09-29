@@ -54,7 +54,7 @@ PUG buys trading cards from customers over the counter, and sometimes buys whole
 - **Offline use.** The app requires a connection (Section 7.9).
 - **Undo or rewind from the changelog.** The changelog is view-only (Section 12).
 - **Individual staff accounts.** One shared store password protects the app. "Users" are color-coded staff profiles that are picked, not logged into (Section 7.3).
-- **Sealed product, graded slabs, oversized cards.** Singles only. Magic tokens, emblems and art cards are allowed because they come back in Scryfall results naturally.
+- **Sealed product, graded slabs, oversized cards.** Singles only. **Magic tokens, emblems and art cards are excluded** (owner's decision, 2026-09-29): Scryfall's default search leaves these "extras" out, and the main search keeps it that way (no `include_extras`).
 
 ---
 
@@ -1723,6 +1723,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 71 | Custom rates (2026-09-29) | On the pricing screens the Cash/Credit percentages are clickable and open a subpanel for a custom rate for that one buy, saved with the buy (Section 8.9.1). Entered as a percent; pricing screens only, not day pages; custom rates on collections are logged as Actions entries |
 | 72 | Store time zone (2026-09-29) | Confirmed: Pacific time, `America/Los_Angeles` |
 | 73 | Price screen layout (2026-09-29) | Owner's sketch replaces the single stack: card left at Scryfall's 336×468 with prices under it; card info beside it with 10 suggestions (2×5) below; finish & details beside the suggestions with Qty/CLEAR/ADD CARD under them. Scryfall's image sizes are the reference for card images (Section 8.1) |
+| 74 | Tokens and emblems (2026-09-29) | Not searchable: Magic tokens, emblems and art cards stay out of search results (Section 1.4) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |
