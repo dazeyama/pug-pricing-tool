@@ -15,12 +15,12 @@ function priceStyle(text) {
  * buttons, NM to DMG. Each shows its entry from the price ladder (lib/prices
  * priceLadder): JustTCG's price, or a fallback tagged "fallback", rounded
  * down; "—" when there's neither. ⚠️ on NM when JustTCG and the fallback
- * disagree (nmWarning). Under them: Use Fallback (every price from
+ * disagree or look wrong (warnings, lib/prices priceWarnings). Under them: Use Fallback (every price from
  * Scryfall/TCGdex and the fallback percentages instead of JustTCG) and ✎ Manual price (overrides the purchase price),
  * then the caption.
  */
 export default function PriceTable({
-  candidate, prices, ladder, pct, market, fallback, nmWarning, fallbackOn, onUseFallback,
+  candidate, prices, ladder, pct, market, fallback, warnings, fallbackOn, onUseFallback,
   fetchedAt, condition, onCondition, manual, onManual, manualOpen, setManualOpen, onDone,
 }) {
   const [text, setText] = useState('');
@@ -64,8 +64,8 @@ export default function PriceTable({
       if (fallbackOn) about += ' (Use Fallback is on)';
     }
     if (manual != null && code === condition) about = `manual ${formatMoney(manual)} (market: ${about})`;
-    const warn = code === 'NM' && nmWarning
-      ? ` · ⚠️ JustTCG's ${formatMoney(nmWarning.justtcg)} and ${nmWarning.from}'s ${formatMoney(nmWarning.fallback)} are ${nmWarning.pct}% apart: check before buying`
+    const warn = code === 'NM' && warnings.length
+      ? ` · ${warnings.map((w) => `⚠️ ${w}`).join(' · ')}. Check before buying`
       : '';
     return `${code} · ${about}${warn} · ${key}`;
   };
@@ -146,7 +146,7 @@ export default function PriceTable({
             }}
           >
             <span className="pc-cond">
-              {code === 'NM' && nmWarning && <span className="pc-warn" aria-label="Price warning">⚠️</span>}
+              {code === 'NM' && warnings.length > 0 && <span className="pc-warn" aria-label="Price warning">⚠️</span>}
               {code}
             </span>
             {cell(code)}

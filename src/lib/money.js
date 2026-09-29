@@ -3,12 +3,21 @@
 // price steps, and totals from the sum, not each line (Phase 6 adds totals).
 const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 const usdWhole = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+const eur = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR' });
+const eurWhole = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
 
 /** $1,234.56, $12 (never $12.00), or '—' for no amount. */
 export function formatMoney(amount) {
   if (amount == null || Number.isNaN(Number(amount))) return '—';
   const n = Number(amount);
   return Math.round(n * 100) % 100 === 0 ? usdWhole.format(n) : usd.format(n);
+}
+
+/** €2,478.82, €7 (Cardmarket prices, shown only in warnings). */
+export function formatEur(amount) {
+  if (amount == null || Number.isNaN(Number(amount))) return '—';
+  const n = Number(amount);
+  return Math.round(n * 100) % 100 === 0 ? eurWhole.format(n) : eur.format(n);
 }
 
 /**

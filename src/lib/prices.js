@@ -14,7 +14,7 @@
 // - Etched Magic foils are their own TCGplayer product (Scryfall's
 //   tcgplayer_etched_id), priced through that product.
 import { callFunction } from './functions.js';
-import { roundDownPrice } from './money.js';
+import { formatEur, formatMoney, roundDownPrice } from './money.js';
 
 export const CONDITIONS = ['NM', 'LP', 'MP', 'HP', 'DMG'];
 const CONDITION_CODES = {
@@ -198,23 +198,74 @@ export function priceLadder(market, fallback, pct, game) {
 }
 
 /**
- * JustTCG's NM and the fallback's NM (Scryfall/TCGdex × the NM percentage)
- * disagree enough to warn about (owner, 2026-09-29): 25% or more of
- * JustTCG's price, and at least $1 apart so cheap cards stay quiet.
- * @returns {{ justtcg: number, fallback: number, from: string, pct: number } | null}
+ * Reasons to doubt JustTCG's prices for this printing, each a sentence for
+ * the ⚠️ on the NM label (spec 8.7; owner, 2026-09-29). All from data already
+ * loaded, so they cost no requests:
+ *  - TCGplayer's market price (Scryfall/TCGdex × the NM percentage) is 25%+
+ *    and $1+ away from JustTCG's NM;
+ *  - a worse condition costs more than twice the best one (MP $10,000 over
+ *    NM $359.95);
+ *  - a 1st Edition's NM is below its Unlimited version's (Pokémon);
+ *  - Cardmarket's European price, in dollars, is at least double or half
+ *    JustTCG's NM, and $5+ away (markets differ, so only big gaps count).
+ * @param {object} p
+ * @param {Record<string, number|null>} p.market  JustTCG prices by condition
+ * @param {{ price: number, source: string }|null} p.fallback  Scryfall/TCGdex market price
+ * @param {Record<string, number>} p.pct  Master Fallback Percentages
+ * @param {number|null} p.unlimitedNM  JustTCG NM of the Unlimited version, on a 1st Edition
+ * @param {number|null} p.cardmarket  Cardmarket price in euros
+ * @param {number|null} p.eurUsd  dollars per euro
+ * @returns {string[]}
  */
-export function nmMismatch(market, fallback, pct) {
-  const justtcg = market?.NM;
-  if (justtcg == null || !fallback || pct?.NM == null) return null;
-  const other = (fallback.price * Number(pct.NM)) / 100;
-  const diff = Math.abs(other - justtcg);
-  if (diff < 1 || diff < justtcg * 0.25) return null;
-  return {
-    justtcg,
-    fallback: other,
-    from: fallback.source === 'scryfall_fallback' ? 'Scryfall' : 'TCGdex',
-    pct: Math.round((diff / justtcg) * 100),
-  };
+export function priceWarnings({ market, fallback, pct, unlimitedNM, cardmarket, eurUsd }) {
+  const out = [];
+  const nm = market?.NM ?? null;
+  if (nm != null && fallback && pct?.NM != null) {
+    const other = (fallback.price * Number(pct.NM)) / 100;
+    const diff = Math.abs(other - nm);
+    if (diff >= 1 && diff >= nm * 0.25) {
+      const from = fallback.source === 'scryfall_fallback' ? 'Scryfall' : 'TCGdex';
+      out.push(`JustTCG's NM ${formatMoney(nm)} and ${from}'s ${formatMoney(other)} are ${Math.round((diff / nm) * 100)}% apart`);
+    }
+  }
+  const best = CONDITIONS.find((c) => market?.[c] != null);
+  if (best) {
+    const top = market[best];
+    const over = CONDITIONS.filter((c) => c !== best && market[c] != null && market[c] > top * 2);
+    if (over.length) {
+      const list = over.map((c) => `${c} at ${formatMoney(market[c])}`).join(' and ');
+      out.push(`JustTCG prices ${list}, over twice its ${best} of ${formatMoney(top)}`);
+    }
+  }
+  if (nm != null && unlimitedNM != null && nm < unlimitedNM) {
+    out.push(`This 1st Edition's JustTCG NM ${formatMoney(nm)} is below the Unlimited version's ${formatMoney(unlimitedNM)}`);
+  }
+  if (nm != null && cardmarket != null && eurUsd != null) {
+    const usd = cardmarket * eurUsd;
+    const ratio = Math.max(usd, nm) / Math.min(usd, nm);
+    if (ratio >= 2 && Math.abs(usd - nm) >= 5) {
+      out.push(`Cardmarket (Europe) averages ${formatEur(cardmarket)} ≈ ${formatMoney(Math.round(usd))}, `
+        + `${ratio.toFixed(1)}× ${usd > nm ? 'more' : 'less'} than JustTCG's NM ${formatMoney(nm)}`);
+    }
+  }
+  return out;
+}
+
+/**
+ * Cardmarket's price in euros for the chosen finish, for the Cardmarket
+ * warning: Scryfall's eur / eur_foil / eur_etched for Magic, TCGdex's
+ * Cardmarket price for the Pokémon version.
+ * @returns {number|null}
+ */
+export function cardmarketPrice(c, { finish, version }) {
+  if (!c) return null;
+  if (c.game === 'mtg') {
+    const p = c.scryfall.prices ?? {};
+    const raw = { nonfoil: p.eur, foil: p.eur_foil, etched: p.eur_etched }[finish];
+    const price = raw != null ? Number(raw) : null;
+    return price != null && !Number.isNaN(price) && price > 0 ? price : null;
+  }
+  return version?.cardmarketPrice ?? null;
 }
 
 /**

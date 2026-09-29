@@ -171,6 +171,18 @@ function marketPriceIn(tcgplayer) {
   return null;
 }
 
+/**
+ * Cardmarket's price in euros from a TCGdex cardmarket block: the 30-day
+ * average (steadier than one sale), else the trend, else the average. The
+ * "-holo" figures are the reverse holo's.
+ */
+function cardmarketIn(cardmarket, finish) {
+  if (!cardmarket) return null;
+  const keys = finish === 'reverse' ? ['avg30-holo', 'trend-holo', 'avg-holo'] : ['avg30', 'trend', 'avg'];
+  for (const k of keys) if (typeof cardmarket[k] === 'number' && cardmarket[k] > 0) return cardmarket[k];
+  return null;
+}
+
 // TCGdex's card-level TCGplayer pricing keys, by finish (older data).
 const PRICING_KEYS = { normal: ['normal', 'unlimited'], holo: ['holofoil', 'unlimited-holofoil'], reverse: ['reverse-holofoil'] };
 
@@ -185,10 +197,12 @@ function titleCase(s) {
  * and other stamps. The plain version reads "Unlimited" when the card also
  * has a 1st Edition (the collectors' word), else "Standard".
  * Older data without variants_detailed falls back to the plain `variants`.
- * Each also carries its TCGplayer product ID (JustTCG lookup) and TCGplayer
- * market price (the fallback NM price, spec 8.7).
+ * Each also carries its TCGplayer product ID (JustTCG lookup), TCGplayer
+ * market price (the fallback NM price, spec 8.7) and Cardmarket price in
+ * euros (a warning check only).
  * @returns {{ id: string, finish: string, label: string, firstEdition: boolean,
- *   treatments: string[], tcgplayerId: string|null, marketPrice: number|null }[]}
+ *   treatments: string[], tcgplayerId: string|null, marketPrice: number|null,
+ *   cardmarketPrice: number|null }[]}
  */
 export function pokemonVersions(card) {
   const detailed = (card?.variants_detailed ?? []).filter((v) => (v.size ?? 'standard') === 'standard'
@@ -221,6 +235,7 @@ export function pokemonVersions(card) {
         treatments,
         tcgplayerId: v.thirdParty?.tcgplayer != null ? String(v.thirdParty.tcgplayer) : null,
         marketPrice: marketPriceIn(v.pricing?.tcgplayer),
+        cardmarketPrice: cardmarketIn(v.pricing?.cardmarket, v.type),
       };
     });
   }
@@ -233,9 +248,12 @@ export function pokemonVersions(card) {
     const base = {
       finish, treatments: [], tcgplayerId: key && pricing[key].productId ? String(pricing[key].productId) : null,
       marketPrice: key ? pricing[key].marketPrice ?? null : null,
+      cardmarketPrice: cardmarketIn(card?.pricing?.cardmarket, finish),
     };
     out.push({ ...base, id: `${finish}|||`, label: v.firstEdition ? 'Unlimited' : 'Standard', firstEdition: false });
-    if (v.firstEdition) out.push({ ...base, id: `${finish}|||1st-edition`, label: '1st Edition', firstEdition: true, marketPrice: null });
+    if (v.firstEdition) {
+      out.push({ ...base, id: `${finish}|||1st-edition`, label: '1st Edition', firstEdition: true, marketPrice: null, cardmarketPrice: null });
+    }
   }
   return out;
 }

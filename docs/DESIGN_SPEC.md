@@ -384,6 +384,14 @@ Japanese cards have no backup yet. JustTCG (Phase 5) returns a TCGplayer ID per 
 
 **Licensing:** commercial use requires a paid JustTCG plan (Starter qualifies). Don't expose raw JustTCG data to third parties. Settings may show "Prices via JustTCG"; attribution is appreciated but not required.
 
+### 5.4 Price cross-checks (Cardmarket, exchange rate)
+
+Only for the ⚠️ price warnings (Section 8.7), never for a price that's used (owner's decision, 2026-09-29):
+
+- **TCGplayer's own API** isn't an option: it has been closed to new developers for years, and JustTCG's prices come from TCGplayer's marketplace anyway. TCGplayer market prices we do have come free with the card data: Scryfall `prices.usd` (Magic) and TCGdex `pricing.tcgplayer` (Pokémon; none for Base Set's 1st Edition and Shadowless). Reading TCGplayer's website isn't allowed by its terms.
+- **Cardmarket** (Europe's main marketplace), in euros: Scryfall `prices.eur` / `eur_foil` / `eur_etched` (Magic), and TCGdex `pricing.cardmarket` per version (Pokémon, including Japanese): the 30-day average `avg30`, else `trend`, else `avg`; the `-holo` figures for reverse holo. TCGdex gives Base Set's 1st Edition and Shadowless the same Cardmarket product, so they share a figure.
+- **Euro → dollar rate:** the European Central Bank's daily rate from **Frankfurter** (`GET https://api.frankfurter.dev/v1/latest?base=EUR&symbols=USD`; free, no key, allows browsers, cached a day). One request per page load (`src/lib/useEurUsd.js`); if it fails, the Cardmarket check is skipped.
+
 ---
 
 ## 6. Data model (Supabase Postgres)
@@ -807,7 +815,11 @@ A row of five large buttons directly under the selected card (Section 8.1):
   - With no fallback price either (e.g. Japanese Pokémon without a JustTCG price), cells show "—".
 - **Prices never rise as the condition drops** (owner's decision, 2026-09-29). Reading NM → DMG, a JustTCG price higher than the condition above it (e.g. MP more than LP) is **thrown out** and replaced by a fallback, worked out the same way (JustTCG's NM, else Scryfall/TCGdex, × the percentage). A fallback that would **show the same as or more than** the condition above it (compared rounded, as shown) is set **10% (Magic) or 15% (Pokémon) below that condition's price** instead (owner's decision, 2026-09-29), so two conditions never show the same fallback price: e.g. Isshin, Two Heavens as One (FCA 54), LP $7.78 → MP $7 and HP $4 → DMG $3.50. Between $1 and about $2.50, where prices round to the quarter, that can still show the same price ($1.20 and $1.08 both show $1); there the fallback is **a full quarter below** the condition's shown price instead ($1 → $0.75; owner's decision, 2026-09-29). These cells carry the "fallback" tag, and the tooltip names the thrown-out price and any step down (`priceLadder` in `src/lib/prices.js`). Throwing out JustTCG prices compares unrounded prices.
 - **Rounding** (owner's decision, 2026-09-29): every market and fallback price is **rounded down** before it's shown or used as the purchase price: under $1 to the cent; $1–$10 to the nearest quarter; $10–$100 to the dollar; $100–$1,000 to the $5; $1,000 and up to the $10 (`roundDownPrice` in `src/lib/money.js`). The tooltip shows the unrounded price. Manual prices aren't rounded. A line's `market_price` keeps the unrounded JustTCG price (Phase 6). A condition with "—" can still be selected, but then ADD CARD needs a manual price.
-- **⚠️ on NM** (owner's decision, 2026-09-29): when JustTCG's NM and the fallback NM (Scryfall/TCGdex × the NM percentage) differ by **25% or more of JustTCG's price and at least $1**, the NM label shows ⚠️ and its tooltip gives both prices: a warning that the price may be wrong (`nmMismatch` in `src/lib/prices.js`).
+- **⚠️ on NM** (owner's decisions, 2026-09-29): the NM label shows ⚠️ when JustTCG's prices for the printing look wrong, and its tooltip lists every reason, ending "Check before buying" (`priceWarnings` in `src/lib/prices.js`). All four checks use data already loaded, so they cost no requests:
+  1. **TCGplayer market price:** JustTCG's NM and the fallback NM (Scryfall/TCGdex × the NM percentage) differ by **25% or more of JustTCG's price and at least $1**.
+  2. **Out of order:** a worse condition costs **more than twice** the best condition JustTCG prices (Base Set Charizard 1st Edition: MP $10,000 and DMG $4,200 against NM $359.95).
+  3. **1st Edition below Unlimited** (Pokémon): a 1st Edition's JustTCG NM is lower than its plain Unlimited version's, whose prices came in the same request (the same Charizard: $359.95 against $944.53).
+  4. **Cardmarket:** Cardmarket's price (Section 5.4), in dollars at the day's rate, is **at least twice or half** JustTCG's NM and **$5 or more** apart. The markets differ, so only big gaps count (the same Charizard: €2,478.82 ≈ $2,815, 7.8× JustTCG's NM).
 - **Use Fallback** (owner's decision, 2026-09-29): a button to the left of ✎ Manual price. Its tooltip shows the fallback NM price (e.g. "Use Scryfall's $11 for NM, and the fallback percentages for the other conditions, instead of JustTCG's prices"). Pressing it **throws out every JustTCG price** (owner's decision, 2026-09-29): NM becomes the Scryfall/TCGdex fallback and the other conditions that price × their Master Fallback Percentages, as if JustTCG had no prices for the card. All five cells carry the "fallback" tag. Pressing again goes back. It resets for every new card, and is disabled when there's no fallback price or JustTCG has no prices anyway. With it on, every condition's `price_source` is the fallback's (Phase 6).
 - Use Fallback and ✎ Manual price sit **centered** under the buttons, with the caption on its own line below them: "Prices via JustTCG · updated 2h ago" (from the cached `fetched_at`).
 
@@ -1453,6 +1465,7 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 - [ ] Manual price: the ✎ price shows bold with the market price struck through beneath it. Picking another condition clears it.
 - [ ] Use Fallback: hovering shows the fallback NM price; pressing it replaces all five prices with fallbacks (NM = the fallback, the rest by the fallback percentages, all tagged "fallback"); pressing again goes back.
 - [ ] A card whose Scryfall/TCGdex price is far from JustTCG's NM shows ⚠️ on the NM label.
+- [ ] Base Set Charizard, HOLO, 1st Edition: ⚠️ on NM, and the tooltip gives three reasons (MP/DMG over twice NM, below the Unlimited version, Cardmarket 7.8× more). Unlimited Charizard and Isshin (FCA 54) show no ⚠️.
 - [ ] Price panel (beside the card info): the selected condition's price in green, Credit and Cash under it; it follows condition, foil, Use Fallback and manual price.
 - [ ] Arrow quickly through 10 suggestions: the usage meter rises by about 1, not 10.
 - [ ] MTG | PKM: switch PKM off and search `Charizard`: only Magic cards show (or "No cards match … PKM is off"), and EN | JP greys out. The last game on can't be switched off. Leave the Price tab and come back: both are on again.
@@ -1786,6 +1799,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 85 | Game filter (2026-09-29) | MTG \| PKM toggle left of EN \| JP: both on by default, at least one on; held for the buy, reset to both when a buy is confirmed/cancelled or the Price tab is left (Section 8.2) |
 | 86 | Fallback step-down (2026-09-29) | A fallback that would show the same as or more than the condition above it is set 10% (Magic) / 15% (Pokémon) below that condition's price, not equal to it; a full quarter below where 10%/15% would still round to the same price (Section 8.7) |
 | 87 | Pokémon version names (2026-09-29) | "1st Edition" leads a version's label and drops the implied "Shadowless" (Base Set's 1st Edition run is all shadowless); the plain version of a card with a 1st Edition reads "Unlimited" (Section 8.6) |
+| 88 | More price warnings (2026-09-29) | ⚠️ on NM also when a worse condition costs over twice the best, a 1st Edition's NM is below its Unlimited's, or Cardmarket's price (euros at the ECB rate via Frankfurter) is 2× or ½ JustTCG's NM and $5+ apart. TCGplayer's own API isn't available (Sections 5.4, 8.7) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

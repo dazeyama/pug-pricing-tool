@@ -12,9 +12,12 @@ import { warmUp, magicCandidate } from '../lib/cardSearch.js';
 import {
   defaultMagicFinish, magicFinishes, pokemonVersions, defaultPokemonVersion, POKEMON_FINISHES,
 } from '../lib/printings.js';
-import { CONDITIONS, conditionPrices, fallbackPrice, nmMismatch, priceLadder, resultFor } from '../lib/prices.js';
+import {
+  CONDITIONS, cardmarketPrice, conditionPrices, fallbackPrice, priceLadder, priceWarnings, resultFor,
+} from '../lib/prices.js';
 import { useSettings } from '../state/settings.jsx';
 import QuotePanel from './price/QuotePanel.jsx';
+import { useEurUsd } from '../lib/useEurUsd.js';
 import { readLocal, writeLocal } from '../lib/local.js';
 
 const BACKGROUND = { '--stage-bg': `url(${import.meta.env.BASE_URL}background.webp)` };
@@ -106,7 +109,20 @@ export default function PricePage() {
   const fallbackOn = useFallback && canUseFallback;
   // The five prices shown and used (JustTCG, fallbacks, never rising, rounded down).
   const ladder = priceLadder(fallbackOn ? {} : market, fallback, fallbackPct, selected?.game);
-  const nmWarning = nmMismatch(market, fallback, fallbackPct);
+  // ⚠️ on NM (spec 8.7): reasons to doubt JustTCG's prices. A 1st Edition is
+  // checked against its Unlimited version, whose prices came in the same request.
+  const eurUsd = useEurUsd();
+  const unlimited = !magic && version?.firstEdition
+    ? versions.find((v) => v.finish === version.finish && !v.firstEdition && !v.treatments.length)
+    : null;
+  const unlimitedNM = unlimited
+    ? conditionPrices(resultFor(selected, prices.results, { finish, version: unlimited, versions })?.card, {
+      game: 'pokemon', lang: selected.lang, finish: unlimited.finish, firstEdition: false,
+    }).NM
+    : null;
+  const warnings = priceWarnings({
+    market, fallback, pct: fallbackPct, unlimitedNM, cardmarket: cardmarketPrice(selected, { finish, version }), eurUsd,
+  });
 
   const visible = search.candidates.slice(0, ROW);
   const hasShowAll = search.candidates.length > ROW;
@@ -280,7 +296,7 @@ export default function PricePage() {
               pct={fallbackPct}
               market={market}
               fallback={fallback}
-              nmWarning={nmWarning}
+              warnings={warnings}
               fallbackOn={fallbackOn}
               onUseFallback={setUseFallback}
               fetchedAt={result?.fetchedAt ?? null}
