@@ -144,15 +144,16 @@ const CAP_STEP = { mtg: 10, pokemon: 15 };
  * the condition drops: a JustTCG price above the better condition's is
  * thrown out and replaced by a fallback; and a fallback that would show the
  * same as or more than the better condition is set 10% (Magic) or 15%
- * (Pokémon) below it instead. Then every price is rounded down by the
- * store's steps.
+ * (Pokémon) below it instead, or a quarter below where that would still
+ * round to the same price. Then every price is rounded down by the store's
+ * steps.
  * @param {Record<string, number|null>} market  JustTCG prices by condition (conditionPrices)
  * @param {{ price: number, source: string }|null} fallback  the Scryfall/TCGdex market price
  * @param {Record<string, number>} pct  Master Fallback Percentages for the game
  * @param {'mtg'|'pokemon'} game
  * @returns {Record<string, { price: number|null, raw: number|null, source: 'justtcg'|'fallback'|null,
  *   base: { price: number, from: string }|null, thrownOut: number|null,
- *   cap: { code: string, pct: number, from: number, was: number }|null }>}
+ *   cap: { code: string, pct: number, from: number, was: number, quarter: boolean }|null }>}
  */
 export function priceLadder(market, fallback, pct, game) {
   const out = {};
@@ -174,8 +175,15 @@ export function priceLadder(market, fallback, pct, game) {
       // Compared as shown (rounded), so two conditions never show one price.
       if (value != null && prev != null && roundDownPrice(value) >= roundDownPrice(prev)) {
         const step = CAP_STEP[game] ?? CAP_STEP.mtg;
-        entry.cap = { code: prevCode, pct: step, from: prev, was: value };
+        entry.cap = { code: prevCode, pct: step, from: prev, was: value, quarter: false };
         value = (prev * (100 - step)) / 100;
+        // $1–$2.50 rounds to the quarter, so 10% (or 15%) down can still show
+        // the same price ($1.20 and $1.08 both show $1): drop a full quarter
+        // below the shown price instead (owner, 2026-09-29).
+        if (roundDownPrice(value) >= roundDownPrice(prev)) {
+          value = Math.max(0, Math.round(roundDownPrice(prev) * 100) - 25) / 100;
+          entry.cap.quarter = true;
+        }
       }
       Object.assign(entry, { raw: value, source: value != null ? 'fallback' : null, base });
     }

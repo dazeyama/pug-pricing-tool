@@ -53,7 +53,10 @@ export default function PriceTable({
     if (e.source === 'justtcg') about = `JustTCG ${formatMoney(e.price)}${rounded}`;
     else if (e.source === 'fallback') {
       about = e.cap
-        ? `fallback ${formatMoney(e.price)}: ${e.cap.pct}% below ${e.cap.code}'s ${formatMoney(e.cap.from)}`
+        ? `fallback ${formatMoney(e.price)}: `
+          + (e.cap.quarter
+            ? `a quarter below ${e.cap.code}'s ${formatMoney(ladder[e.cap.code].price)} (${e.cap.pct}% below would show the same price)`
+            : `${e.cap.pct}% below ${e.cap.code}'s ${formatMoney(e.cap.from)}`)
           + ` (${e.base.from}'s ${formatMoney(e.base.price)} × ${pct[code]}% = ${formatMoney(e.cap.was)} wasn't below ${e.cap.code})`
         : `fallback ${formatMoney(e.price)}: ${e.base.from}'s ${formatMoney(e.base.price)} × ${pct[code]}%`;
       about += rounded;
