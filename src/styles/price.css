@@ -186,8 +186,11 @@
 .card-shine.reverse { --shine-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M0 0H100V100H0Z M7.5 8.5H92.5V53.5H7.5Z'/%3E%3C/svg%3E"); }
 .card-shine.reverse.vintage { --shine-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M0 0H100V100H0Z M11 11.5H89V50H11Z'/%3E%3C/svg%3E"); }
 /* Pokémon: stronger than Magic's sheen (owner, 2026-09-29), since holo only
-   covers part of the card. Full-art cards shine across the whole card. */
-.card-shine.holo, .card-shine.reverse, .card-shine.pokemon-full { opacity: .42; }
+   covers part of the card. Full-art cards shine across the whole card.
+   hard-light, not color-dodge: Pokémon cards are mostly light (yellow and
+   silver frames, bright art), and dodging light colours bleaches the
+   rainbow to white. hard-light keeps its colours and still lifts the glints. */
+.card-shine.holo, .card-shine.reverse, .card-shine.pokemon-full { opacity: .45; mix-blend-mode: hard-light; }
 .card-shine.pokemon-full { --shine-area: linear-gradient(#000, #000); }
 
 /* Holo: god rays out of the art box. The mask is the bands over (art window,
