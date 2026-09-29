@@ -5,6 +5,7 @@ import GameBadge from '../../components/GameBadge.jsx';
 import * as scry from '../../lib/scryfall.js';
 import { useCardImages } from './useCardImages.js';
 import { POKEMON_CARD_BACK, tcgplayerId } from '../../lib/pokemonImages.js';
+import { useEnglishPokemonName } from '../../lib/pokemonNames.js';
 
 // Pokémon rarities whose art covers the whole card (TCGdex's names, English
 // and Japanese). Their holo shines across the whole card.
@@ -21,10 +22,11 @@ const TCGPLAYER = 'https://www.tcgplayer.com';
 /**
  * The card on TCGplayer: its product page when the TCGplayer ID is known
  * (Scryfall for Magic, TCGdex for English Pokémon), otherwise a TCGplayer
- * search (Japanese Pokémon, which TCGdex has no IDs for).
+ * search (Japanese Pokémon, which TCGdex has no IDs for; searched by
+ * `searchName`, the English name where there is one).
  * @returns {{ href: string, exact: boolean }|null}  null while the Pokémon card is still loading
  */
-function tcgplayerLink(c, magic, pokemon, typedName, finish) {
+function tcgplayerLink(c, magic, pokemon, searchName, finish) {
   const search = (category, q) => ({
     href: `${TCGPLAYER}/search/${category}/product?q=${encodeURIComponent(q.trim())}`,
     exact: false,
@@ -42,7 +44,7 @@ function tcgplayerLink(c, magic, pokemon, typedName, finish) {
   const id = tcgplayerId(pokemon.card);
   if (id) return { href: `${TCGPLAYER}/product/${id}`, exact: true };
   return c.lang === 'ja'
-    ? search('pokemon-japan', `${typedName || c.name} ${c.number}`)
+    ? search('pokemon-japan', `${searchName} ${c.number}`)
     : search('pokemon', `${c.name} ${c.number}`);
 }
 
@@ -53,13 +55,14 @@ const CARDMARKET = 'https://www.cardmarket.com/en';
  * product link (`Products?idProduct=<id>`: "Sorry, you have been blocked",
  * even in a normal browser), so Magic uses Scryfall's own Cardmarket link
  * (purchase_uris.cardmarket, which works), and Pokémon a Cardmarket search
- * by name.
+ * by name (English for Japanese cards: Cardmarket finds nothing for
+ * Japanese text).
  * @returns {{ href: string, exact: boolean }|null}
  */
-function cardmarketLink(c, magic, typedName) {
+function cardmarketLink(c, magic, searchName) {
   if (magic?.purchase_uris?.cardmarket) return { href: magic.purchase_uris.cardmarket, exact: true };
   const game = magic ? 'Magic' : 'Pokemon';
-  const name = magic ? magic.name : c.lang === 'ja' ? typedName || c.name : c.name;
+  const name = magic ? magic.name : searchName;
   return { href: `${CARDMARKET}/${game}/Products/Search?searchString=${encodeURIComponent(name.trim())}`, exact: false };
 }
 
@@ -73,6 +76,8 @@ export default function SelectedCard({ candidate: c, typedName, pokemon, finish,
   const pokemonFinish = pokemonVersion?.finish;
   const [face, setFace] = useState(0);
   const pokemonImages = useCardImages(c);   // TCGdex's, or a backup when it has none
+  // Japanese cards: an English name for TCGplayer / Cardmarket searches.
+  const englishName = useEnglishPokemonName(pokemon.card, c?.lang);
   useEffect(() => setFace(0), [c?.key]);
 
   if (!c) {
@@ -101,8 +106,11 @@ export default function SelectedCard({ candidate: c, typedName, pokemon, finish,
   const rarity = magic ? MAGIC_RARITY[magic.rarity] ?? magic.rarity : pokemon.card?.rarity;
   const size = c.printedSize ?? pokemon.card?.set?.cardCount?.official ?? null;
   const link = magic ? magic.scryfall_uri : pokemon.page;
-  const tcgplayer = tcgplayerLink(c, magic, pokemon, typedName, finish);
-  const cardmarket = cardmarketLink(c, magic, typedName);
+  // What to search other sites for: Japanese cards by their English name
+  // (Pokédex number), else what was typed, else the card's own name.
+  const searchName = c.lang === 'ja' ? englishName || typedName || c.name : c.name;
+  const tcgplayer = tcgplayerLink(c, magic, pokemon, searchName, finish);
+  const cardmarket = cardmarketLink(c, magic, searchName);
   const name = flippable ? magic.card_faces[face].name : c.name;
   // Foil sheen (spec 8.4): the whole card for Magic foil or etched; for
   // Pokémon, the art window for holo and everything but it for reverse holo.
