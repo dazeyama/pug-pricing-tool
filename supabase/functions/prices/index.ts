@@ -53,7 +53,10 @@ const fold = (s: unknown) => String(s ?? '').toLowerCase().normalize('NFKD')
   .replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
 /** "SV2a: Pokemon Card 151" → ["sv2a", "pokemon", "card", "151"]: whole words, so "sv2" ≠ "sv2a". */
 const words = (s: unknown) => String(s ?? '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
-const normNumber = (n: unknown) => String(n ?? '').trim().toLowerCase().replace(/^([a-z]*-?)0+(?=\d)/, '$1');
+// JustTCG writes "025/165" and "TG12/TG30"; TCGdex just "025" and "TG12". Compare
+// the part before the "/", without leading zeros.
+const normNumber = (n: unknown) => String(n ?? '').trim().toLowerCase().split('/')[0]
+  .replace(/^([a-z]*-?)0+(?=\d)/, '$1');
 
 /** The next 00:00 UTC, when the daily allowance resets. */
 function nextUtcMidnight(): string {
