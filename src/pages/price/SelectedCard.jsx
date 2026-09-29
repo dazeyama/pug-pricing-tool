@@ -5,6 +5,14 @@ import * as scry from '../../lib/scryfall.js';
 import { useCardImages } from './useCardImages.js';
 import { POKEMON_CARD_BACK, tcgplayerId } from '../../lib/pokemonImages.js';
 
+// Pokémon rarities whose art covers the whole card (TCGdex's names, English
+// and Japanese). Their holo shines across the whole card.
+const FULL_ART = new Set([
+  'full art trainer', 'illustration rare', 'special illustration rare', 'ultra rare', 'hyper rare',
+  'mega hyper rare', 'secret rare', 'shiny ultra rare', 'black white rare', 'character rare',
+  'character super rare', 'holo rare vmax', 'holo rare vstar', 'shiny rare vmax',
+]);
+
 const MAGIC_RARITY = { mythic: 'Mythic rare', common: 'Common', uncommon: 'Uncommon', rare: 'Rare', special: 'Special', bonus: 'Bonus' };
 
 const TCGPLAYER = 'https://www.tcgplayer.com';
@@ -78,9 +86,13 @@ export default function SelectedCard({ candidate: c, typedName, pokemon, finish,
   // Pokémon, the art window for holo and everything but it for reverse holo.
   // Cards from before 2003 have a smaller art window.
   const era = (pokemon.info?.releaseDate ?? c.releasedAt ?? '9999') < '2003' ? ' vintage' : '';
+  // Full art: by rarity, or Trainer Gallery / Galarian Gallery numbers.
+  const fullArt = !magic && (FULL_ART.has(String(pokemon.card?.rarity ?? '').toLowerCase())
+    || /^(tg|gg)\d/i.test(c.number));
   const shine = magic
     ? (finish === 'foil' || finish === 'etched' ? 'foil' : null)
-    : pokemonFinish === 'holo' ? `holo${era}` : pokemonFinish === 'reverse' ? `reverse${era}` : null;
+    : pokemonFinish === 'holo' ? (fullArt ? 'pokemon-full' : `holo${era}`)
+      : pokemonFinish === 'reverse' ? `reverse${era}` : null;
   const finishTag = magic
     ? { foil: 'FOIL', etched: 'ETCHED FOIL' }[finish]
     : { holo: 'HOLO', reverse: 'REVERSE HOLO' }[pokemonFinish];

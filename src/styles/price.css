@@ -185,6 +185,29 @@
 .card-shine.holo.vintage { --shine-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Crect x='11' y='11.5' width='78' height='38.5'/%3E%3C/svg%3E"); }
 .card-shine.reverse { --shine-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M0 0H100V100H0Z M7.5 8.5H92.5V53.5H7.5Z'/%3E%3C/svg%3E"); }
 .card-shine.reverse.vintage { --shine-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M0 0H100V100H0Z M11 11.5H89V50H11Z'/%3E%3C/svg%3E"); }
+/* Pokémon: stronger than Magic's sheen (owner, 2026-09-29), since holo only
+   covers part of the card. Full-art cards shine across the whole card. */
+.card-shine.holo, .card-shine.reverse, .card-shine.pokemon-full { opacity: .42; }
+.card-shine.pokemon-full { --shine-area: linear-gradient(#000, #000); }
+
+/* Holo: god rays out of the art box. The mask is the bands over (art window,
+   plus rays that fade with distance from the art's centre); the rays turn
+   slowly. Layers composite bottom-up: fade ∩ rays, ∪ art window, ∩ bands. */
+@property --ray-angle { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+.card-shine.holo {
+  --ray-center: 50% 31%;
+  --shine-rays: repeating-conic-gradient(from var(--ray-angle) at var(--ray-center),
+    #000 0deg 2.5deg, rgba(0, 0, 0, .12) 2.5deg 10deg);
+  --shine-ray-fade: radial-gradient(ellipse 80% 62% at var(--ray-center),
+    #000 18%, rgba(0, 0, 0, .5) 42%, transparent 74%);
+  -webkit-mask-image: var(--shine-bands), var(--shine-area), var(--shine-rays), var(--shine-ray-fade);
+  -webkit-mask-composite: source-in, source-over, source-in, source-over;
+  mask-image: var(--shine-bands), var(--shine-area), var(--shine-rays), var(--shine-ray-fade);
+  mask-composite: intersect, add, intersect, add;
+  animation: foil-drift 9s ease-in-out infinite alternate, ray-turn 40s linear infinite;
+}
+.card-shine.holo.vintage { --ray-center: 50% 30.75%; }
+@keyframes ray-turn { to { --ray-angle: 360deg; } }
 @keyframes foil-drift {
   from { background-position: 0% 0%, 0% 50%; }
   to { background-position: 100% 100%, 100% 50%; }
@@ -201,7 +224,7 @@
   animation: tag-drift 3s linear infinite;
 }
 @keyframes tag-drift { to { background-position: 200% 0; } }
-@media (prefers-reduced-motion: reduce) { .card-shine, .finish-tag { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .card-shine, .card-shine.holo, .finish-tag { animation: none; } }
 
 /* An image still on the way: a card-shaped shimmer with a spinner and
    "Loading…", clearly different from the card back and from an empty slot. */
