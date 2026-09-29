@@ -188,7 +188,7 @@ There are **two Supabase projects**, so testing on `localhost` never touches the
 - **Public sign-ups must be OFF** in both projects (Authentication → Sign In / Providers → "Allow new users to sign up" off). Otherwise anyone could create an account with the public publishable key and pass the `authenticated` RLS policies. Phase 1 must confirm this is off before any real data exists.
 - The app opens on a **login screen with a single password field**, the PUG logo and "PUG Pricing Tool". A correct password signs that email in, and supabase-js keeps the session in the browser, so a device stays signed in.
 - Wrong password: an inline error, no lockout. Settings has **Sign out**.
-- **Changing the password:** the engineer documents in the README how to set a new one: the dashboard's user menu if it offers it, otherwise a one-off Admin API call (`auth.admin.updateUserById`) run locally with the secret key. Don't rely on password-recovery emails; Supabase's built-in mailer only delivers to project team members unless custom SMTP is set up.
+- **Changing the password:** the engineer documents in `docs/SETUP.md` how to set a new one: the dashboard's user menu if it offers it, otherwise a one-off Admin API call (`auth.admin.updateUserById`) run locally with the secret key. Don't rely on password-recovery emails; Supabase's built-in mailer only delivers to project team members unless custom SMTP is set up.
 - **All tables have RLS enabled.** Policies allow `authenticated` full access to app tables, except `secrets`, which has **no** policies, so only the secret (service-role) key can touch it.
 - The app never mentions Auth users. The only "users" in the UI are staff profiles (Section 7.3).
 
@@ -207,9 +207,10 @@ The owner wants to enter, edit and delete API keys in Settings, and the key must
 ```
 pug-pricing-tool/
 ├── CLAUDE.md                     project rules for Claude Code (Appendix A)
-├── README.md                     how to run, deploy, change the store password
+├── README.md                     a very short public description of what the tool is for
 ├── docs/
 │   ├── DESIGN_SPEC.md            this document
+│   ├── SETUP.md                  how to run, deploy, change the store password
 │   └── assets/pug-logo.webp      the logo as supplied (2400×2400, transparent)
 ├── public/
 │   ├── background.webp           copied from audit-tool
@@ -1447,7 +1448,7 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 - Header global search (Section 13) with grouped results, keyboard, and jump + flash.
 - Backup download/restore (11.5), the `restore_backup` function, the pre-restore auto-download, the backup reminder banner, and the plan-status text.
 - Polish pass: empty states, loading states, error toasts, tooltips, the 1366×768 check.
-- **Launch:** apply all migrations to **prod**, deploy the Edge Functions to prod, set the GitHub Actions variables, and write the README (run, deploy, change the store password, restore a pause). **Push to `main` only when the owner says go**, then confirm the Pages deploy succeeded.
+- **Launch:** apply all migrations to **prod**, deploy the Edge Functions to prod, set the GitHub Actions variables, and finish `docs/SETUP.md` (run, deploy, change the store password, restore a pause). The public `README.md` stays a very short description of the tool's purpose (owner's decision, 2026-09-29). **Push to `main` only when the owner says go**, then confirm the Pages deploy succeeded.
 
 **Owner tasks**
 - Say "push" when ready.
