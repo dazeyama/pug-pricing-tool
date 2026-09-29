@@ -682,6 +682,7 @@ Examples: `Lightning Bolt 161/295`, `Abrade 37/291 SOA`, `Charizard ex 125/197 O
 
 Parsing rules (`src/lib/query.js`), applied to the trimmed input:
 
+0. **Commas are treated as spaces** (owner's decision, 2026-09-29): `Gut, True Soul Zealot` searches as `Gut True Soul Zealot`, which matches more cleanly in practice.
 1. If the last token is 2–6 letters or digits containing at least one letter, and doesn't contain `/`, **and** the token before it contains `/` (or matches a known set code), it's the **set code**. Case-insensitive, matched against Scryfall set codes and Pokémon printed abbreviations.
 2. The next last token containing `/` is **`<number>/<size>`**. The number keeps letters and symbols (`263s`, `TG05`, `SV107`, `★`). The size may be numeric (`295`) or prefixed (`TG30`).
 3. A last token that is purely a collector-number pattern, with no `/`, is accepted as a **number only**.

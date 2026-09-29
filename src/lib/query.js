@@ -31,7 +31,9 @@ const NUMBER_ONLY = /^(?:[a-z]{0,5}-?\d+[a-z★†]{0,3}|[★†])$/i;
  * @returns {ParsedQuery}
  */
 export function parseQuery(input, isKnownSetCode = () => false) {
-  const tokens = String(input ?? '').trim().split(/\s+/).filter(Boolean);
+  // 0. Commas are spaces (owner's decision, 2026-09-29): "Gut, True Soul
+  //    Zealot" searches as "Gut True Soul Zealot", which matches more cleanly.
+  const tokens = String(input ?? '').replace(/,/g, ' ').trim().split(/\s+/).filter(Boolean);
   let setCode = null;
   let setCodeFrom = null;
   let number = null;

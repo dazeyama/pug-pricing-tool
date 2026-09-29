@@ -42,6 +42,10 @@ const cases = [
   ['Porygon2',                               'Porygon2',         null,    null,   null,    null],
   ['Mewtwo GX',                              'Mewtwo GX',        null,    null,   null,    null],
   ['',                                       '',                 null,    null,   null,    null],
+  // Commas are spaces.
+  ['Gut, True Soul Zealot',                  'Gut True Soul Zealot', null, null,  null,    null],
+  ['Sheoldred, the Apocalypse 107/281',      'Sheoldred the Apocalypse', '107', '281', null, null],
+  ['Jace,Vryn\'s Prodigy',                   'Jace Vryn\'s Prodigy', null, null,   null,    null],
 ];
 
 for (const [input, name, number, size, setCode, setCodeFrom] of cases) {
