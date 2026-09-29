@@ -20,7 +20,13 @@ let setsByCode = null;
  * @returns {Promise<Map<string, ScryfallSet>>}  keyed by lower-case code
  */
 export function loadSets() {
-  setsPromise ??= storedOrDownload('pug.scryfall.sets', DAY, async () => {
+  // .v2: adds `digital`, so Arena-only set codes aren't treated as sets.
+  try {
+    localStorage.removeItem('pug.scryfall.sets');   // the old copy, without it
+  } catch {
+    // storage blocked: nothing to clean up
+  }
+  setsPromise ??= storedOrDownload('pug.scryfall.sets.v2', DAY, async () => {
     const data = await transport.getJson(`${API}/sets`);
     return data.data.map((s) => ({
       code: s.code,
@@ -28,6 +34,7 @@ export function loadSets() {
       printed_size: s.printed_size ?? null,
       released_at: s.released_at ?? null,
       set_type: s.set_type,
+      digital: Boolean(s.digital),
       icon_svg_uri: s.icon_svg_uri ?? null,
     }));
   }).then((list) => {
@@ -47,7 +54,8 @@ export function setByCode(code) {
 
 /** True if Scryfall knows this set code (once the list has loaded). */
 export function isMagicSetCode(token) {
-  return Boolean(setsByCode?.has(String(token).toLowerCase()));
+  const set = setsByCode?.get(String(token).toLowerCase());
+  return Boolean(set && !set.digital);   // Arena/MTGO-only sets can't be bought over the counter
 }
 
 let namesPromise = null;
@@ -89,7 +97,8 @@ export async function searchPrints(q, signal) {
   if (q.number) parts.push(`cn:"${q.number.replace(/"/g, '')}"`);
   if (q.setCode) parts.push(`set:${q.setCode.toLowerCase()}`);
   if (!parts.length) return { cards: [], total: 0, hasMore: false };
-  parts.push('lang:en');
+  // English, paper only: Arena-only cards (e.g. Arena Anthology 3) can't be bought.
+  parts.push('lang:en', 'game:paper');
 
   const params = new URLSearchParams({
     q: parts.join(' '), unique: 'prints', order: 'released', dir: 'desc',
@@ -110,8 +119,8 @@ export function fetchSiblings(card, signal) {
   const oracle = card.oracle_id ?? card.card_faces?.[0]?.oracle_id;
   return siblingCache.get(`${oracle ?? card.name}:${card.set}`, async () => {
     const q = oracle
-      ? `oracleid:${oracle} set:${card.set} lang:en`
-      : `!"${card.name.replace(/"/g, '')}" set:${card.set} lang:en`;
+      ? `oracleid:${oracle} set:${card.set} lang:en game:paper`
+      : `!"${card.name.replace(/"/g, '')}" set:${card.set} lang:en game:paper`;
     const params = new URLSearchParams({
       q, unique: 'prints', include_extras: 'true', include_variations: 'true', order: 'set',
     });

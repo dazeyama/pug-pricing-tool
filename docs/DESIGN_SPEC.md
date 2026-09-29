@@ -297,6 +297,8 @@ Division of labour: **Scryfall and TCGdex supply everything about the card** (na
 
 **Language:** English printings only (`lang:en`), so add `lang:en` to every search.
 
+**Paper only** (owner's decision, 2026-09-29): every Scryfall query also carries `game:paper`, so digital-only printings (Arena, e.g. Arena Anthology 3; MTGO, e.g. Masters Edition) never show up, since the store can't buy them. Digital-only set codes aren't recognized as set codes in the search line either.
+
 ### 5.2 TCGdex (Pokémon)
 
 - Base URL: `https://api.tcgdex.net/v2/{lang}` with `lang` = `en` or `ja`. No key.
