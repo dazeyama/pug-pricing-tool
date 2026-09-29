@@ -126,6 +126,30 @@ Deno.serve(async (req) => {
     }
 
     const fetchedAt = new Date().toISOString();
+
+    // The JustTCG set for a printed set code ("SV2a" → the set whose name or
+    // ID has "sv2a" as a word, if exactly one does), remembered in price_map
+    // as pokemon:set:<code> (spec 5.3's set mapping), a miss for 7 days.
+    const setIds = new Map<string, string | null>();
+    const justtcgSet = async (l: Lookup, log: string[]): Promise<string | null> => {
+      const code = l.setCode!.toLowerCase();
+      const mapKey = `${l.game}:set:${code}`;
+      if (setIds.has(mapKey)) return setIds.get(mapKey)!;
+      const { data: row } = await db.from('price_map').select('*').eq('source_key', mapKey).maybeSingle();
+      if (row && (row.justtcg_card_id || now - Date.parse(row.resolved_at) < RETRY_UNMATCHED_MS)) {
+        setIds.set(mapKey, row.justtcg_card_id);
+        log.push(`set ${code}: remembered ${row.justtcg_card_id ?? 'none'}`);
+        return row.justtcg_card_id;
+      }
+      const res = await call(key, `/sets?${new URLSearchParams({ game: GAMES[l.game], q: l.setCode! })}`);
+      const sets: any[] = res?.data ?? [];
+      const hits = sets.filter((s: any) => words(s.name).includes(code) || words(s.id).includes(code));
+      const id = hits.length === 1 ? hits[0].id : null;
+      log.push(`sets for ${code}: ${sets.length} back [${sets.slice(0, 8).map((s: any) => `${s.id}`).join('; ')}] → ${id ?? 'none'}`);
+      setIds.set(mapKey, id);
+      mapRows.push({ source_key: mapKey, justtcg_card_id: id, resolved_at: fetchedAt });
+      return id;
+    };
     const cacheRows: any[] = [];
     const mapRows: any[] = [];
     const found = (l: Lookup, card: any | null) => {
@@ -156,13 +180,14 @@ Deno.serve(async (req) => {
 
     // 3. No identifier: search by name and number, and only accept one clear
     //    match (spec 5.3: don't guess). English also has to match the set name.
-    //    JustTCG's `number` filter wants its own format, "025/165" (TCGdex has
-    //    "025"; a plain "025" finds nothing), so that's tried first; if it
-    //    finds nothing, the name alone (up to 100 cards) with the number
-    //    checked here (owner's Pikachu SV2a, 2026-09-29).
-    const candidates = async (l: Lookup, number: string | null, limit: number) => {
-      const params = new URLSearchParams({ game: GAMES[l.game], q: l.name!, limit: String(limit) });
-      if (number) params.set('number', number);
+    //    Starter allows 20 results a search. Up to three steps, each only if
+    //    the one before found nothing (owner's Pikachu SV2a, 2026-09-29):
+    //    a) the name with JustTCG's own number format, "025/165";
+    //    b) the name inside the card's JustTCG set, found once by its set code;
+    //    c) the name alone.
+    //    What each step got back is logged when nothing (or several) match.
+    const search = async (l: Lookup, extra: Record<string, string>, log: string[], label: string) => {
+      const params = new URLSearchParams({ game: GAMES[l.game], q: l.name!, limit: '20', ...extra });
       if (l.lang === 'ja') params.set('language', 'Japanese');
       const res = await call(key, `/cards?${params}`);
       const all: any[] = res?.data ?? [];
@@ -172,30 +197,33 @@ Deno.serve(async (req) => {
         const want = fold(l.setName);
         cards = cards.filter((c: any) => fold(c.set_name).includes(want) || want.includes(fold(c.set_name)));
       }
-      return { all, cards };
+      log.push(`${label}: ${all.length} back [${all.slice(0, 8)
+        .map((c: any) => `${c.number} ${c.set_name} (${(c.variants ?? []).length} var)`).join('; ')}]`);
+      return cards;
     };
     for (const l of searches) {
-      let all: any[] = [];
+      const log: string[] = [];
       let cards: any[] = [];
       let failed = false;
-      const attempt = async (number: string | null, limit: number) => {
+      const attempt = async (label: string, run: () => Promise<any[]>) => {
+        if (cards.length) return;
         try {
-          ({ all, cards } = await candidates(l, number, limit));
+          cards = await run();
         } catch (e) {
           if (e instanceof QuotaError) throw e;
           failed = true;
-          console.error(`prices: search failed for ${l.key} (number ${number ?? 'none'})`, e);
+          log.push(`${label}: failed (${(e as Error).message})`);
         }
       };
       const printed = justtcgNumber(l.number!, l.size);
-      if (printed) await attempt(printed, 20);
-      if (!cards.length) await attempt(null, 100);
-      // A search that errored proves nothing: answer "no price" now, but don't
-      // remember it as "no match" for 7 days.
-      if (!cards.length && failed) {
-        results[l.key] = { card: null, fetchedAt: null };
-        continue;
+      if (printed) await attempt(`number ${printed}`, () => search(l, { number: printed }, log, `number ${printed}`));
+      if (l.setCode) {
+        await attempt(`set ${l.setCode}`, async () => {
+          const set = await justtcgSet(l, log);
+          return set ? search(l, { set }, log, `set ${set}`) : [];
+        });
       }
+      await attempt('name only', () => search(l, {}, log, 'name only'));
       // Several with that name and number (other sets): the one whose set
       // name or ID has the card's set code as a word, if exactly one does
       // (owner, 2026-09-29). TCGplayer names Japanese sets "SV2a: …".
@@ -204,13 +232,18 @@ Deno.serve(async (req) => {
         const inSet = cards.filter((c: any) => words(c.set_name).includes(code) || words(c.set).includes(code));
         if (inSet.length === 1) cards = inSet;
       }
-      found(l, cards.length === 1 ? cards[0] : null);
-      // Why not, for the function's logs (Supabase dashboard → Edge Functions → prices → Logs).
       if (cards.length !== 1) {
-        const seen = all.slice(0, 12).map((c: any) => `${c.number} ${c.set_name} (${(c.variants ?? []).length} variants)`);
+        // Why not, for the function's logs (Supabase dashboard → Edge Functions → prices → Logs).
         console.log(`prices: ${cards.length ? `${cards.length} matches, not guessing` : 'no match'} for ${l.key}`
-          + ` (q="${l.name}", number ${l.number}${l.size ? `/${l.size}` : ''}); JustTCG returned ${all.length}: ${seen.join('; ')}`);
+          + ` (q="${l.name}", number ${l.number}, set ${l.setCode ?? '?'}): ${log.join(' | ')}`);
       }
+      // A search that errored proves nothing: answer "no price" now, but don't
+      // remember it as "no match" for 7 days.
+      if (!cards.length && failed) {
+        results[l.key] = { card: null, fetchedAt: null };
+        continue;
+      }
+      found(l, cards.length === 1 ? cards[0] : null);
     }
 
     // 4. Share with every computer.
