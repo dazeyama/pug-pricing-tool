@@ -4,7 +4,7 @@ import BallIcon from '../../components/BallIcon.jsx';
 import GameBadge from '../../components/GameBadge.jsx';
 import * as scry from '../../lib/scryfall.js';
 import { useCardImages } from './useCardImages.js';
-import { POKEMON_CARD_BACK, cardmarketId, tcgplayerId } from '../../lib/pokemonImages.js';
+import { POKEMON_CARD_BACK, tcgplayerId } from '../../lib/pokemonImages.js';
 
 // Pokémon rarities whose art covers the whole card (TCGdex's names, English
 // and Japanese). Their holo shines across the whole card.
@@ -49,26 +49,18 @@ function tcgplayerLink(c, magic, pokemon, typedName, finish) {
 const CARDMARKET = 'https://www.cardmarket.com/en';
 
 /**
- * The card on Cardmarket (owner, 2026-09-29): its product page by Cardmarket
- * ID (Scryfall's cardmarket_id for Magic; TCGdex's for the chosen Pokémon
- * version, else any of the card's), the same address Scryfall links to;
- * otherwise a Cardmarket search.
- * @returns {{ href: string, exact: boolean }|null}  null while the Pokémon card is still loading
+ * The card on Cardmarket (owner, 2026-09-29). Cardmarket blocks a bare
+ * product link (`Products?idProduct=<id>`: "Sorry, you have been blocked",
+ * even in a normal browser), so Magic uses Scryfall's own Cardmarket link
+ * (purchase_uris.cardmarket, which works), and Pokémon a Cardmarket search
+ * by name.
+ * @returns {{ href: string, exact: boolean }|null}
  */
-function cardmarketLink(c, magic, pokemon, pokemonVersion, typedName) {
-  const search = (game, q) => ({
-    href: `${CARDMARKET}/${game}/Products/Search?searchString=${encodeURIComponent(q.trim())}`,
-    exact: false,
-  });
-  if (magic) {
-    return magic.cardmarket_id
-      ? { href: `${CARDMARKET}/Magic/Products?idProduct=${magic.cardmarket_id}`, exact: true }
-      : search('Magic', magic.name);
-  }
-  if (!pokemon.resolved) return null;
-  const id = pokemonVersion?.cardmarketId ?? cardmarketId(pokemon.card);
-  if (id) return { href: `${CARDMARKET}/Pokemon/Products?idProduct=${id}`, exact: true };
-  return search('Pokemon', c.lang === 'ja' ? typedName || c.name : c.name);
+function cardmarketLink(c, magic, typedName) {
+  if (magic?.purchase_uris?.cardmarket) return { href: magic.purchase_uris.cardmarket, exact: true };
+  const game = magic ? 'Magic' : 'Pokemon';
+  const name = magic ? magic.name : c.lang === 'ja' ? typedName || c.name : c.name;
+  return { href: `${CARDMARKET}/${game}/Products/Search?searchString=${encodeURIComponent(name.trim())}`, exact: false };
 }
 
 /**
@@ -110,7 +102,7 @@ export default function SelectedCard({ candidate: c, typedName, pokemon, finish,
   const size = c.printedSize ?? pokemon.card?.set?.cardCount?.official ?? null;
   const link = magic ? magic.scryfall_uri : pokemon.page;
   const tcgplayer = tcgplayerLink(c, magic, pokemon, typedName, finish);
-  const cardmarket = cardmarketLink(c, magic, pokemon, pokemonVersion, typedName);
+  const cardmarket = cardmarketLink(c, magic, typedName);
   const name = flippable ? magic.card_faces[face].name : c.name;
   // Foil sheen (spec 8.4): the whole card for Magic foil or etched; for
   // Pokémon, the art window for holo and everything but it for reverse holo.
@@ -219,7 +211,7 @@ export default function SelectedCard({ candidate: c, typedName, pokemon, finish,
                 href={cardmarket.href}
                 target="_blank"
                 rel="noreferrer"
-                title={cardmarket.exact ? 'This printing on Cardmarket (Europe)' : 'No Cardmarket ID for this card: searches Cardmarket'}
+                title={cardmarket.exact ? 'This printing on Cardmarket (Europe)' : 'Searches Cardmarket (Europe) for this card by name'}
               >
                 <span className="link-verb">{cardmarket.exact ? 'View on ' : 'Find on '}</span>Cardmarket ↗
               </a>
