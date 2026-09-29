@@ -45,7 +45,10 @@ export default function SelectedCard({ candidate: c, typedName }) {
             <div className="card-wrap card-empty">Type a card above</div>
           </div>
         </div>
-        <div className="area-info" />
+        {/* Drawn empty, so nothing below it moves when a card is picked. */}
+        <aside className="area-info">
+          <div className="card-info empty">Card details appear here</div>
+        </aside>
       </>
     );
   }
@@ -58,6 +61,7 @@ export default function SelectedCard({ candidate: c, typedName }) {
   const rarity = magic ? MAGIC_RARITY[magic.rarity] ?? magic.rarity : pokemon.card?.rarity;
   const size = c.printedSize ?? pokemon.card?.set?.cardCount?.official ?? null;
   const link = magic ? magic.scryfall_uri : pokemon.page;
+  const name = flippable ? magic.card_faces[face].name : c.name;
   // A Japanese name staff can't read gets the English name they typed beside it.
   const latin = /^[\p{Script=Latin}\p{N}\p{P}\p{Zs}\p{S}]*$/u.test(c.name);
 
@@ -80,24 +84,28 @@ export default function SelectedCard({ candidate: c, typedName }) {
         </div>
       </div>
 
+      {/* A fixed height for every card (see .area-info), so the suggestions
+          below never shift: one line each, long text ends in "…". */}
       <aside className="area-info">
         <div className="card-info">
-          <h2 className="info-name">{flippable ? magic.card_faces[face].name : c.name}</h2>
-          {!latin && typedName && <p className="info-typed">{typedName}</p>}
-          <p className="info-set">
+          <h2 className="info-name" title={name}>{name}</h2>
+          <p className="info-set" title={`${c.setName} (${c.setCode})`}>
             {set?.icon_svg_uri && <img className="set-icon" src={set.icon_svg_uri} alt="" />}
-            <span>{c.setName}</span> <span className="info-code">({c.setCode})</span>
+            <span className="info-set-name">{c.setName}</span> <span className="info-code">({c.setCode})</span>
           </p>
-          <p className="info-number">#{c.number}{size ? ` / ${size}` : ''}</p>
-          {rarity && <p className="info-rarity">{rarity}</p>}
+          <p className="info-number">
+            #{c.number}{size ? ` / ${size}` : ''}
+            {rarity && <span className="info-rarity"> · {rarity}</span>}
+          </p>
           <p className="info-tags">
             <GameBadge game={c.game} />
             <span>{c.lang === 'ja' ? 'Japanese' : 'English'}</span>
             {c.lang === 'ja' && <span className="tag-jp">JP</span>}
+            {!latin && typedName && <span className="info-typed" title="What you typed">{typedName}</span>}
+            {pokemon.card?.regulationMark && (
+              <span className="info-reg">Regulation <strong>{pokemon.card.regulationMark}</strong></span>
+            )}
           </p>
-          {pokemon.card?.regulationMark && (
-            <p className="info-reg">Regulation mark <strong>{pokemon.card.regulationMark}</strong></p>
-          )}
           {link && (
             <a className="info-link" href={link} target="_blank" rel="noreferrer">
               View on {magic ? 'Scryfall' : 'TCGdex'} ↗

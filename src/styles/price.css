@@ -97,11 +97,14 @@
      card    | thumbs  | side      (finish & details)
      prices  | thumbs  | actions   (Qty · CLEAR · ADD CARD)                 */
 .stage-body {
+  /* The info box's row is a fixed height, drawn with or without a card, so
+     the suggestions under it never move. */
+  --info-h: 170px;
   flex: 1;
   min-height: 0;
   display: grid;
   grid-template-columns: 336px minmax(0, 1fr) clamp(260px, 21vw, 380px);
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: var(--info-h) minmax(0, 1fr) auto;
   grid-template-areas:
     "card   info   ."
     "card   thumbs side"
@@ -182,23 +185,36 @@
 
 /* ---- Card info, beside the card ---- */
 .card-info {
+  height: 100%;
+  overflow: hidden;
   background: rgba(24, 28, 46, .9);
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 14px 18px;
   max-width: 440px;
 }
+.card-info.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 13px;
+  border-style: dashed;
+  background: rgba(15, 18, 32, .35);
+}
+/* One line per detail, so every card's box is the same height. */
+.card-info p, .info-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .card-info p { margin: 0 0 6px; }
-.card-info p:last-child { margin-bottom: 0; }
 .info-name { margin: 0 0 6px; font-size: 22px; line-height: 1.2; }
-.info-typed { color: var(--muted); font-size: 13px; }
-.info-set { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.set-icon { width: 18px; height: 18px; filter: invert(1); opacity: .85; }
-.info-code { color: var(--muted); }
+.info-set { display: flex; align-items: center; gap: 6px; }
+.info-set-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.set-icon { width: 18px; height: 18px; flex: none; filter: invert(1); opacity: .85; }
+.info-code { flex: none; color: var(--muted); }
 .info-number { font-size: 16px; font-variant-numeric: tabular-nums; }
-.info-rarity { color: var(--muted); }
+.info-rarity { color: var(--muted); font-size: 14px; }
 .info-tags { display: flex; align-items: center; gap: 8px; }
-.info-link { display: inline-block; margin-top: 2px; font-size: 13px; }
+.info-typed { color: var(--muted); font-size: 13px; }
+.info-link { display: inline-block; font-size: 13px; }
 
 /* Space kept for later phases, so the layout already sits where it will. */
 .stage-slot {
