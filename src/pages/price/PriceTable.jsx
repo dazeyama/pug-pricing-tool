@@ -136,7 +136,7 @@ export default function PriceTable({
       return (
         <span className="pc-price" style={priceStyle(formatMoney(price))}>
           {formatMoney(price)}
-          <span className="fb-tag">{ladder[code].base?.from === 'Cardmarket' ? 'cardmarket' : 'fallback'}</span>
+          <span className="fb-tag">{ladder[code].base?.from === 'Cardmarket' ? 'CM' : 'fallback'}</span>
         </span>
       );
     }

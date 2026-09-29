@@ -623,7 +623,8 @@
    The most important thing on the screen (owner, 2026-09-29): big buttons,
    big prices, a colour edge per condition (NM green → DMG red). */
 .price-table { display: flex; flex-direction: column; gap: 6px; }
-.price-buttons { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+/* minmax(0, 1fr): a long label never widens a column past the table. */
+.price-buttons { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
 .price-btn {
   --cond: var(--border);
   height: 80px;
