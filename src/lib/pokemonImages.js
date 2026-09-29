@@ -78,23 +78,37 @@ function isCardImage(url) {
   }));
 }
 
-const byNameCache = memoryCache(DAY);
+const setCards = memoryCache(DAY);
+/** Every card in a pokemontcg.io set (number, name, images), up to 500. */
+function ptcgSetCards(setId) {
+  return setCards.get(setId, async () => {
+    const cards = [];
+    for (let page = 1; page <= 2; page++) {
+      const data = await ptcg.getJson(`${PTCG_API}/cards?q=${encodeURIComponent(`set.id:${setId}`)}`
+        + `&select=number,name,images&pageSize=250&page=${page}`);
+      cards.push(...(data?.data ?? []));
+      if (!data || cards.length >= (data.totalCount ?? 0)) break;
+    }
+    return cards;
+  });
+}
+
 /**
  * A card in a pokemontcg.io set by name, for sets it numbers differently
  * from TCGdex (the Classic Collections keep their original numbers: Pikachu
- * is #014 in TCGdex, #58 there). Only a single, unambiguous match counts.
+ * is #014 in TCGdex, #58 there). Names are compared folded, since the two
+ * spell some differently ("Zekrom GX" / "Zekrom-GX"), and only a single
+ * match counts. The set's list is fetched once rather than searched: its
+ * name search treats those spellings as different.
  */
-function ptcgCardByName(setId, name) {
-  return byNameCache.get(`${setId}:${name}`, async () => {
-    const q = `set.id:${setId} name:"${String(name).replace(/"/g, '')}"`;
-    const data = await ptcg.getJson(
-      `${PTCG_API}/cards?q=${encodeURIComponent(q)}&select=number,name,images&pageSize=5`);
-    // name:"Pikachu" also matches "Pikachu & Zekrom-GX": keep exact names only.
-    const want = setKey(name);
-    const cards = (data?.data ?? []).filter((card) => setKey(card.name) === want);
-    return cards.length === 1 && cards[0].images?.small ? cards[0] : null;
-  });
+async function ptcgCardByName(setId, name) {
+  const want = setKey(name);
+  const cards = (await ptcgSetCards(setId)).filter((card) => setKey(card.name) === want);
+  return cards.length === 1 && cards[0].images?.small ? cards[0] : null;
 }
+
+/** Shown for a Pokémon card no source has a picture of. */
+export const POKEMON_CARD_BACK = `${import.meta.env.BASE_URL}pokemon-card-back.webp`;
 
 /**
  * pokemontcg.io drops leading zeros from plain numbers only: TCGdex "006" →

@@ -3,17 +3,25 @@ import { useState } from 'react';
 /**
  * A card image with real-card corners and shadow (Audit Tool .card-wrap), in
  * two stages: the small image, blurred, until the large one has loaded. With
- * no image at all (older Japanese cards), or none that loads, a plain card
- * back with the name and number. Remount with a `key` per image so each card
- * starts fresh. Never crop or overlay a card image (Scryfall's image rules).
+ * no image at all, or none that loads, the game's card back (`back`, Pokémon)
+ * or a plain panel with the name and number. Remount with a `key` per image
+ * so each card starts fresh. Never crop or overlay a card image (Scryfall's
+ * image rules).
  */
-export default function CardImage({ thumb, image, alt, name, number, className = '' }) {
+export default function CardImage({ thumb, image, alt, name, number, back, className = '' }) {
   // 'loading' → 'loaded', or 'large-failed' (show the small one, sharp).
   const [stage, setStage] = useState(image ? 'loading' : 'large-failed');
   const [thumbFailed, setThumbFailed] = useState(false);
   const hasThumb = thumb && !thumbFailed;
 
   if (!hasThumb && (!image || stage === 'large-failed')) {
+    if (back) {
+      return (
+        <div className={`card-wrap ${className}`}>
+          <img className="card-img" src={back} alt={`${alt} (no picture)`} />
+        </div>
+      );
+    }
     return (
       <div className={`card-wrap card-back ${className}`} role="img" aria-label={alt}>
         <span className="card-back-name">{name}</span>

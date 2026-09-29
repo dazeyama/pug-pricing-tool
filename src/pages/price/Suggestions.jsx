@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import GameBadge from '../../components/GameBadge.jsx';
 import { useCardImages } from './useCardImages.js';
+import { POKEMON_CARD_BACK } from '../../lib/pokemonImages.js';
 
 /** Suggestions shown at once: 2 rows of 5 (owner's layout, 2026-09-29). */
 export const ROW = 10;
@@ -54,6 +55,8 @@ export function Thumb({ c, highlighted, selected, onPick }) {
       <span className="thumb-img">
         {showImage ? (
           <img src={thumb} alt={c.name} loading="lazy" onError={() => setFailed(thumb)} />
+        ) : c.game === 'pokemon' ? (
+          <img src={POKEMON_CARD_BACK} alt={`${c.name} (no picture)`} />
         ) : (
           <span className="thumb-back">{c.name}</span>
         )}

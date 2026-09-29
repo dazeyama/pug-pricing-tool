@@ -4,6 +4,7 @@ import GameBadge from '../../components/GameBadge.jsx';
 import * as scry from '../../lib/scryfall.js';
 import * as dex from '../../lib/tcgdex.js';
 import { useCardImages } from './useCardImages.js';
+import { POKEMON_CARD_BACK } from '../../lib/pokemonImages.js';
 
 const MAGIC_RARITY = { mythic: 'Mythic rare', common: 'Common', uncommon: 'Uncommon', rare: 'Rare', special: 'Special', bonus: 'Bonus' };
 
@@ -73,7 +74,15 @@ export default function SelectedCard({ candidate: c, typedName }) {
         <div className="stage-label">Selected card</div>
         <div className="card-box">
           {/* Keyed by the image too: a backup image arriving later starts a fresh load. */}
-          <CardImage key={`${c.key}:${face}:${image ?? 'none'}`} thumb={thumb} image={image} alt={c.name} name={c.name} number={c.number} />
+          <CardImage
+            key={`${c.key}:${face}:${image ?? 'none'}`}
+            thumb={thumb}
+            image={image}
+            back={c.game === 'pokemon' ? POKEMON_CARD_BACK : undefined}
+            alt={c.name}
+            name={c.name}
+            number={c.number}
+          />
           {flippable && (
             <button
               type="button"
