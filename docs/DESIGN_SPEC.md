@@ -757,6 +757,8 @@ A panel under the finish control, filled automatically from the selected printin
 
 **Traits (Pokémon):** 1st Edition (TCGdex `variants.firstEdition`), W Promo stamp (`variants.wPromo`), reverse-holo pattern (Poké Ball / Master Ball etc., where `variants_detailed` exposes it, shown as a sub-choice under REVERSE), rarity (read-only chip), and language (read-only, set by EN|JP).
 
+**As built (Phase 4, 2026-09-29):** TCGdex's `variants_detailed` lists every physical version of a card, not just flags: `type` (normal / holo / reverse), `subtype` (unlimited, shadowless, shadowless-red-cheek, 1999-2000-copyright…), `foil` pattern (pokeball, masterball, cosmos…) and `stamp`s (1st-edition, set-logo, pokemon-together, snowflake, poketour-99…); `size` jumbo versions are ignored. So instead of separate 1st Edition / W Promo checkboxes, the details panel shows a **Version** radio list for the chosen finish, one plain-words entry per version ("Shadowless · 1st Edition", "Poké Ball pattern"). The chosen version sets the line's `first_edition` (the 1st-edition stamp) and `treatments` (subtype, pattern, other stamps). Choosing NORMAL | HOLO | REVERSE starts on that finish's plainest version. Cards without `variants_detailed` fall back to `variants` (a Standard and, where `firstEdition` is set, a 1st Edition version per finish). Pokémon printings aren't moved between as siblings: the details they differ in are rarity and number, which are shown, not toggled.
+
 **How toggling works** (owner's decisions: only valid toggles; stay within the same set):
 
 1. When a card is selected, load **all printings of that card in the same set** (Section 5.1, or the same name + set for TCGdex) and compute each one's trait set.
@@ -1735,6 +1737,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 72 | Store time zone (2026-09-29) | Confirmed: Pacific time, `America/Los_Angeles` |
 | 73 | Price screen layout (2026-09-29) | Owner's sketch replaces the single stack: card left at Scryfall's 336×468 with prices under it; card info beside it with 10 suggestions (2×5) below; finish & details beside the suggestions with Qty/CLEAR/ADD CARD under them. Scryfall's image sizes are the reference for card images (Section 8.1) |
 | 74 | Tokens and emblems (2026-09-29) | Not searchable: Magic tokens, emblems and art cards stay out of search results (Section 1.4) |
+| ◆ 75 | Pokémon versions (Phase 4, 2026-09-29) | A Version list from TCGdex's `variants_detailed` (subtype, foil pattern, stamps incl. 1st Edition) replaces separate 1st Edition / W Promo checkboxes (Section 8.6) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

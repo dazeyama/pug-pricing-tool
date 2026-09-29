@@ -2,37 +2,10 @@ import { useEffect, useState } from 'react';
 import CardImage from '../../components/CardImage.jsx';
 import GameBadge from '../../components/GameBadge.jsx';
 import * as scry from '../../lib/scryfall.js';
-import * as dex from '../../lib/tcgdex.js';
 import { useCardImages } from './useCardImages.js';
 import { POKEMON_CARD_BACK, tcgplayerId } from '../../lib/pokemonImages.js';
 
 const MAGIC_RARITY = { mythic: 'Mythic rare', common: 'Common', uncommon: 'Uncommon', rare: 'Rare', special: 'Special', bonus: 'Bonus' };
-
-/** Full Pokémon card and set details for the info panel (rarity, regulation mark, page link). */
-function usePokemonDetail(c) {
-  const [detail, setDetail] = useState({ key: null, card: null, info: null });
-  useEffect(() => {
-    if (c?.game !== 'pokemon') return undefined;
-    let alive = true;
-    const brief = { localId: c.number, name: c.name };
-    Promise.allSettled([dex.fetchCard(c.lang, c.tcgdexId), dex.ensureSetInfo(c.lang, c.setId)])
-      .then(([card, info]) => {
-        if (!alive) return;
-        setDetail({
-          key: c.key,
-          card: card.status === 'fulfilled' ? card.value : null,
-          info: info.status === 'fulfilled' ? info.value : null,
-          page: info.status === 'fulfilled' ? dex.cardPage(c.lang, brief, info.value) : null,
-        });
-      });
-    return () => {
-      alive = false;
-    };
-  }, [c]);
-  return detail.key === c?.key
-    ? { ...detail, resolved: true }
-    : { card: null, info: null, page: null, resolved: false };
-}
 
 const TCGPLAYER = 'https://www.tcgplayer.com';
 
@@ -42,12 +15,16 @@ const TCGPLAYER = 'https://www.tcgplayer.com';
  * search (Japanese Pokémon, which TCGdex has no IDs for).
  * @returns {{ href: string, exact: boolean }|null}  null while the Pokémon card is still loading
  */
-function tcgplayerLink(c, magic, pokemon, typedName) {
+function tcgplayerLink(c, magic, pokemon, typedName, finish) {
   const search = (category, q) => ({
     href: `${TCGPLAYER}/search/${category}/product?q=${encodeURIComponent(q.trim())}`,
     exact: false,
   });
   if (magic) {
+    // Etched foils are their own product on TCGplayer (spec 5.3).
+    if (finish === 'etched' && magic.tcgplayer_etched_id) {
+      return { href: `${TCGPLAYER}/product/${magic.tcgplayer_etched_id}`, exact: true };
+    }
     return magic.tcgplayer_id
       ? { href: `${TCGPLAYER}/product/${magic.tcgplayer_id}`, exact: true }
       : search('magic', magic.name);
@@ -60,10 +37,13 @@ function tcgplayerLink(c, magic, pokemon, typedName) {
     : search('pokemon', `${c.name} ${c.number}`);
 }
 
-/** The selected card, large, with its info panel on the right (spec 8.4). */
-export default function SelectedCard({ candidate: c, typedName }) {
+/**
+ * The selected card, large, with its info panel beside it (spec 8.4).
+ * `pokemon` is the shared full-card detail (usePokemonDetail); `finish` the
+ * chosen Magic finish.
+ */
+export default function SelectedCard({ candidate: c, typedName, pokemon, finish }) {
   const [face, setFace] = useState(0);
-  const pokemon = usePokemonDetail(c);
   const pokemonImages = useCardImages(c);   // TCGdex's, or a backup when it has none
   useEffect(() => setFace(0), [c?.key]);
 
@@ -92,7 +72,7 @@ export default function SelectedCard({ candidate: c, typedName }) {
   const rarity = magic ? MAGIC_RARITY[magic.rarity] ?? magic.rarity : pokemon.card?.rarity;
   const size = c.printedSize ?? pokemon.card?.set?.cardCount?.official ?? null;
   const link = magic ? magic.scryfall_uri : pokemon.page;
-  const tcgplayer = tcgplayerLink(c, magic, pokemon, typedName);
+  const tcgplayer = tcgplayerLink(c, magic, pokemon, typedName, finish);
   const name = flippable ? magic.card_faces[face].name : c.name;
   // A Japanese name staff can't read gets the English name they typed beside it.
   const latin = /^[\p{Script=Latin}\p{N}\p{P}\p{Zs}\p{S}]*$/u.test(c.name);

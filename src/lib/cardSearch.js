@@ -48,36 +48,45 @@ export function warmUp(lang) {
 
 // ---------------------------------------------------------------- Magic
 
+/**
+ * A Scryfall card as a Candidate. Also used for sibling printings the details
+ * panel moves to, which don't come from a search.
+ * @returns {Candidate}
+ */
+export function magicCandidate(card) {
+  const set = scry.setByCode(card.set);
+  return {
+    key: `mtg:${card.id}`,
+    game: 'mtg',
+    lang: 'en',
+    name: card.name,
+    setCode: card.set.toUpperCase(),
+    setName: card.set_name,
+    setId: card.set,
+    number: card.collector_number,
+    printedSize: set?.printed_size ?? null,
+    releasedAt: card.released_at ?? null,
+    order: 0,
+    thumb: scry.cardImage(card, 'small'),
+    image: scry.cardImage(card, 'large'),
+    score: 0,
+    rarity: card.rarity,
+    setIcon: set?.icon_svg_uri ?? null,
+    scryfall: card,
+  };
+}
+
 async function magicCandidates(q, signal) {
-  const sets = await scry.loadSets();
+  await scry.loadSets();
   const { cards, total, hasMore } = await scry.searchPrints(
     { name: q.name, number: q.number, setCode: q.magicSet }, signal);
   const size = numericSize(q.size);
   const list = [];
   for (const card of cards) {
-    const set = sets.get(card.set);
-    const printedSize = set?.printed_size ?? null;
+    const c = magicCandidate(card);
     // Filter by size only where the set's printed size is known (SLD, PLST… have none).
-    if (size != null && printedSize != null && printedSize !== size) continue;
-    list.push({
-      key: `mtg:${card.id}`,
-      game: 'mtg',
-      lang: 'en',
-      name: card.name,
-      setCode: card.set.toUpperCase(),
-      setName: card.set_name,
-      setId: card.set,
-      number: card.collector_number,
-      printedSize,
-      releasedAt: card.released_at ?? null,
-      order: 0,
-      thumb: scry.cardImage(card, 'small'),
-      image: scry.cardImage(card, 'large'),
-      score: 0,
-      rarity: card.rarity,
-      setIcon: set?.icon_svg_uri ?? null,
-      scryfall: card,
-    });
+    if (size != null && c.printedSize != null && c.printedSize !== size) continue;
+    list.push(c);
   }
   return { list, total: hasMore ? total : list.length, hasMore };
 }

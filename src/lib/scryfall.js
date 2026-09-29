@@ -1,7 +1,7 @@
 // Scryfall: Magic card data (spec 5.1). Public and keyless; every call goes
 // through one serialized queue. English printings only.
 import { createTransport } from './transport.js';
-import { DAY, storedOrDownload } from './cache.js';
+import { DAY, memoryCache, storedOrDownload } from './cache.js';
 
 const API = 'https://api.scryfall.com';
 const transport = createTransport({ spacingMs: 100 });
@@ -97,6 +97,27 @@ export async function searchPrints(q, signal) {
   const data = await transport.getJson(`${API}/cards/search?${params}`, { signal });
   if (!data) return { cards: [], total: 0, hasMore: false };   // 404: nothing matched
   return { cards: data.data, total: data.total_cards, hasMore: data.has_more };
+}
+
+const siblingCache = memoryCache(DAY);
+/**
+ * Every English printing of a card in its set, extras and variations
+ * included (spec 5.1): the siblings the details panel moves between.
+ * Reversible cards carry their oracle ID on the faces; failing that, the name.
+ * @returns {Promise<any[]>} Scryfall cards, the given one among them
+ */
+export function fetchSiblings(card, signal) {
+  const oracle = card.oracle_id ?? card.card_faces?.[0]?.oracle_id;
+  return siblingCache.get(`${oracle ?? card.name}:${card.set}`, async () => {
+    const q = oracle
+      ? `oracleid:${oracle} set:${card.set} lang:en`
+      : `!"${card.name.replace(/"/g, '')}" set:${card.set} lang:en`;
+    const params = new URLSearchParams({
+      q, unique: 'prints', include_extras: 'true', include_variations: 'true', order: 'set',
+    });
+    const data = await transport.getJson(`${API}/cards/search?${params}`, { signal });
+    return data?.data?.length ? data.data : [card];
+  });
 }
 
 /**

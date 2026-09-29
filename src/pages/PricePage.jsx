@@ -3,8 +3,13 @@ import SearchBar from './price/SearchBar.jsx';
 import SelectedCard from './price/SelectedCard.jsx';
 import Suggestions, { ROW } from './price/Suggestions.jsx';
 import ShowAllModal from './price/ShowAllModal.jsx';
+import FinishPanel from './price/FinishPanel.jsx';
 import { useCardSearch } from './price/useCardSearch.js';
-import { warmUp } from '../lib/cardSearch.js';
+import { usePokemonDetail, useMagicSiblings } from './price/usePrintingDetail.js';
+import { warmUp, magicCandidate } from '../lib/cardSearch.js';
+import {
+  defaultMagicFinish, magicFinishes, pokemonVersions, defaultPokemonVersion, POKEMON_FINISHES,
+} from '../lib/printings.js';
 import { readLocal, writeLocal } from '../lib/local.js';
 
 const BACKGROUND = { '--stage-bg': `url(${import.meta.env.BASE_URL}background.webp)` };
@@ -19,8 +24,8 @@ function usePokemonLang() {
   }];
 }
 
-// The Price tab (spec 8). Phase 3: search, suggestions and the selected card.
-// Finish and details (Phase 4), prices (Phase 5) and the buy list (Phase 6)
+// The Price tab (spec 8): search, suggestions, the selected card, and its
+// finish and details (Phase 4). Prices (Phase 5) and the buy list (Phase 6)
 // are marked where they'll go.
 export default function PricePage() {
   const [text, setText] = useState('');
@@ -34,6 +39,17 @@ export default function PricePage() {
   selectedRef.current = selected;
 
   useEffect(() => warmUp(lang), [lang]);
+
+  // The chosen finish (Magic) or version (Pokémon) of the selected card. Tied
+  // to the card's key, so a newly selected card starts on its defaults.
+  const [printing, setPrinting] = useState({ key: null, finish: null, version: null });
+  const pokemon = usePokemonDetail(selected);
+  const siblings = useMagicSiblings(selected);
+  const magic = selected?.game === 'mtg' ? selected.scryfall : null;
+  const own = printing.key === selected?.key;
+  const finish = magic ? (own && printing.finish) || defaultMagicFinish(magic) : null;
+  const versions = selected?.game === 'pokemon' ? pokemonVersions(pokemon.card) : [];
+  const version = versions.find((v) => own && v.id === printing.version) ?? defaultPokemonVersion(versions);
 
   const visible = search.candidates.slice(0, ROW);
   const hasShowAll = search.candidates.length > ROW;
@@ -68,6 +84,31 @@ export default function PricePage() {
     focusSearch();
   }
 
+  /** Move to a sibling printing in the same set (details panel, spec 8.6). */
+  function moveTo(card, nextFinish) {
+    const c = magicCandidate(card);
+    setSelected(c);
+    setPrinting({ key: c.key, finish: nextFinish, version: null });
+    setHighlight(visible.findIndex((v) => v.key === c.key));
+    focusSearch();
+  }
+
+  /** Alt+F: toggle foil (Magic) or cycle the finish (Pokémon). */
+  function cycleFinish() {
+    if (magic) {
+      const options = magicFinishes(magic);
+      if (finish !== 'etched' && options.nonfoil && options.foil) {
+        setPrinting({ key: selected.key, finish: finish === 'foil' ? 'nonfoil' : 'foil', version: null });
+      }
+    } else if (version) {
+      const available = POKEMON_FINISHES.filter((f) => versions.some((v) => v.finish === f));
+      const next = available[(available.indexOf(version.finish) + 1) % available.length];
+      const of = versions.filter((v) => v.finish === next);
+      const pick = of.find((v) => !v.treatments.length && !v.firstEdition) ?? of[0];
+      setPrinting({ key: selected.key, finish: null, version: pick.id });
+    }
+  }
+
   function clear() {
     setText('');
     setSelected(null);
@@ -90,6 +131,9 @@ export default function PricePage() {
     } else if (e.key === 'Enter' && hasShowAll && highlight === visible.length) {
       e.preventDefault();
       setShowAll(true);
+    } else if (e.altKey && e.key.toLowerCase() === 'f') {
+      e.preventDefault();
+      cycleFinish();
     }
   }
 
@@ -117,7 +161,7 @@ export default function PricePage() {
             beside it with the suggestions below; finish & details beside the
             suggestions with the action row under them. Grid areas in price.css. */}
         <div className="stage-body">
-          <SelectedCard candidate={selected} typedName={search.parsed?.name} />
+          <SelectedCard candidate={selected} typedName={search.parsed?.name} pokemon={pokemon} finish={finish} />
           <Suggestions
             search={search}
             lang={lang}
@@ -127,7 +171,23 @@ export default function PricePage() {
             onShowAll={() => setShowAll(true)}
           />
           <div className="area-side">
-            <div className="stage-slot">Finish &amp; details · Phase 4</div>
+            <FinishPanel
+              candidate={selected}
+              finish={finish}
+              siblings={siblings}
+              onFinish={(f) => {
+                setPrinting({ key: selected.key, finish: f, version: null });
+                focusSearch();
+              }}
+              onMove={moveTo}
+              pokemon={pokemon}
+              versions={versions}
+              version={version}
+              onVersion={(id) => {
+                setPrinting({ key: selected.key, finish: null, version: id });
+                focusSearch();
+              }}
+            />
           </div>
           <div className="area-prices">
             <div className="stage-slot">NM · LP · MP · HP · DMG prices · Phase 5</div>
@@ -136,7 +196,7 @@ export default function PricePage() {
             <div className="stage-slot">Qty · CLEAR · ADD CARD · Phase 6</div>
           </div>
         </div>
-        <p className="hint-strip">↓↑ pick · Esc clear</p>
+        <p className="hint-strip">↓↑ pick · Esc clear · Alt+F foil</p>
       </div>
 
       <aside className="buy-list">
