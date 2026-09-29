@@ -78,13 +78,19 @@ export default function SelectedCard({ candidate: c, typedName, pokemon, finish,
   const shine = magic
     ? (finish === 'foil' || finish === 'etched' ? 'foil' : null)
     : pokemonFinish === 'holo' ? 'foil' : pokemonFinish === 'reverse' ? 'reverse' : null;
+  const finishTag = magic
+    ? { foil: 'FOIL', etched: 'ETCHED FOIL' }[finish]
+    : { holo: 'HOLO', reverse: 'REVERSE HOLO' }[pokemonFinish];
   // A Japanese name staff can't read gets the English name they typed beside it.
   const latin = /^[\p{Script=Latin}\p{N}\p{P}\p{Zs}\p{S}]*$/u.test(c.name);
 
   return (
     <>
       <div className="area-card">
-        <div className="stage-label">Selected card</div>
+        <div className="stage-label">
+          Selected card
+          {finishTag && <span className="finish-tag">✦ {finishTag}</span>}
+        </div>
         <div className="card-box">
           {/* Keyed by the image too: a backup image arriving later starts a fresh load. */}
           <CardImage

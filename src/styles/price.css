@@ -159,29 +159,43 @@
   pointer-events: none;
   border-radius: inherit;
   background:
-    linear-gradient(115deg, transparent 20%, rgba(255, 255, 255, .55) 32%, transparent 44%,
-      transparent 58%, rgba(255, 255, 255, .4) 68%, transparent 80%),
+    linear-gradient(115deg, transparent 16%, rgba(255, 255, 255, .85) 28%, transparent 40%,
+      transparent 54%, rgba(255, 255, 255, .7) 64%, transparent 76%),
     linear-gradient(115deg, #ff2d95, #ffd84d, #3dffb4, #38b6ff, #a45bff, #ff2d95);
-  background-size: 260% 260%, 320% 320%;
-  mix-blend-mode: overlay;
-  opacity: .6;
-  animation: foil-drift 7s ease-in-out infinite alternate;
+  background-size: 220% 220%, 300% 300%;
+  /* color-dodge lights the card up in rainbow colours: unmistakably foil
+     (owner: "I really need to know when it's on"). */
+  mix-blend-mode: color-dodge;
+  opacity: .62;
+  animation: foil-drift 4.5s ease-in-out infinite alternate;
   -webkit-mask-image: var(--shine-bands), linear-gradient(to bottom, #000 86%, transparent 93%);
   -webkit-mask-composite: source-in;
   mask-image: var(--shine-bands), linear-gradient(to bottom, #000 86%, transparent 93%);
   mask-composite: intersect;
 }
 .card-shine.foil {
-  --shine-bands: linear-gradient(135deg, rgba(0, 0, 0, .3) 0%, #000 28%, rgba(0, 0, 0, .3) 52%, #000 76%, rgba(0, 0, 0, .3) 100%);
+  --shine-bands: linear-gradient(135deg, rgba(0, 0, 0, .55) 0%, #000 28%, rgba(0, 0, 0, .55) 52%, #000 76%, rgba(0, 0, 0, .55) 100%);
 }
 .card-shine.reverse {
-  --shine-bands: linear-gradient(135deg, #000 0%, rgba(0, 0, 0, .3) 28%, #000 52%, rgba(0, 0, 0, .3) 76%, #000 100%);
+  --shine-bands: linear-gradient(135deg, #000 0%, rgba(0, 0, 0, .55) 28%, #000 52%, rgba(0, 0, 0, .55) 76%, #000 100%);
 }
 @keyframes foil-drift {
   from { background-position: 0% 0%, 0% 50%; }
   to { background-position: 100% 100%, 100% 50%; }
 }
-@media (prefers-reduced-motion: reduce) { .card-shine { animation: none; } }
+/* The finish named beside "SELECTED CARD", in the sheen's colours. */
+.finish-tag {
+  margin-left: 8px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  background: linear-gradient(90deg, #ff2d95, #ffd84d, #3dffb4, #38b6ff, #a45bff, #ff2d95) 0 0 / 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: tag-drift 3s linear infinite;
+}
+@keyframes tag-drift { to { background-position: 200% 0; } }
+@media (prefers-reduced-motion: reduce) { .card-shine, .finish-tag { animation: none; } }
 
 /* An image still on the way: a card-shaped shimmer with a spinner and
    "Loading…", clearly different from the card back and from an empty slot. */
