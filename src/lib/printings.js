@@ -202,7 +202,7 @@ function titleCase(s) {
  * euros (a warning check only).
  * @returns {{ id: string, finish: string, label: string, firstEdition: boolean,
  *   treatments: string[], tcgplayerId: string|null, marketPrice: number|null,
- *   cardmarketPrice: number|null }[]}
+ *   cardmarketPrice: number|null, cardmarketId?: number|null }[]}
  */
 export function pokemonVersions(card) {
   const detailed = (card?.variants_detailed ?? []).filter((v) => (v.size ?? 'standard') === 'standard'
@@ -236,6 +236,7 @@ export function pokemonVersions(card) {
         tcgplayerId: v.thirdParty?.tcgplayer != null ? String(v.thirdParty.tcgplayer) : null,
         marketPrice: marketPriceIn(v.pricing?.tcgplayer),
         cardmarketPrice: cardmarketIn(v.pricing?.cardmarket, v.type),
+        cardmarketId: v.thirdParty?.cardmarket ?? v.pricing?.cardmarket?.idProduct ?? null,
       };
     });
   }

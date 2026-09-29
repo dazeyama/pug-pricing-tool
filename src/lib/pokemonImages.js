@@ -132,6 +132,16 @@ export function tcgplayerId(card) {
   return null;
 }
 
+/** The card's Cardmarket product ID from TCGdex (any version), or null. */
+export function cardmarketId(card) {
+  const variants = card?.variants_detailed ?? [];
+  for (const v of variants) {
+    const id = v.thirdParty?.cardmarket ?? v.pricing?.cardmarket?.idProduct;
+    if (id) return id;
+  }
+  return card?.pricing?.cardmarket?.idProduct ?? null;
+}
+
 const resolved = memoryCache(DAY);
 /**
  * Backup images for a Pokémon candidate with none from TCGdex.
