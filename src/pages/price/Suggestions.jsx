@@ -16,11 +16,17 @@ function SetMark({ c }) {
   const [broken, setBroken] = useState(false);
   const rarity = RARITIES.has(c.rarity) ? c.rarity : 'unknown';
   if (c.setIcon && !broken) {
+    // A CSS mask loads the SVG cross-origin. Scryfall's SVG host only sends
+    // its CORS header when asked and doesn't mark the answer "Vary: Origin",
+    // so a copy cached by a plain <img> (the info panel's set icon) would
+    // break the mask. Masks get their own address, always fetched with CORS.
+    const src = `${c.setIcon}${c.setIcon.includes('?') ? '&' : '?'}mask=1`;
     return (
       <span className={`thumb-symbol r-${rarity}`} aria-hidden="true">
-        <span className="thumb-symbol-glyph" style={{ '--icon': `url("${c.setIcon}")` }} />
-        {/* A CSS mask can't report a failed load; this hidden copy can. */}
-        <img className="thumb-symbol-probe" src={c.setIcon} alt="" onError={() => setBroken(true)} />
+        <span className="thumb-symbol-glyph" style={{ '--icon': `url("${src}")` }} />
+        {/* A mask can't report a failed load; this hidden copy, fetched the
+            same way, can, and swaps in the set-code chip. */}
+        <img className="thumb-symbol-probe" src={src} crossOrigin="anonymous" alt="" onError={() => setBroken(true)} />
       </span>
     );
   }
