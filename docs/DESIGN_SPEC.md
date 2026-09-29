@@ -724,6 +724,7 @@ Parsing rules (`src/lib/query.js`), applied to the trimmed input:
   - a link icon to the card's page on Scryfall or TCGdex;
   - beside it, **View on TCGplayer ↗** (owner's decision, 2026-09-29): the product page by TCGplayer ID (Scryfall's `tcgplayer_id` for Magic, TCGdex's for English Pokémon), or, with no ID (Japanese Pokémon), **Find on TCGplayer ↗**, a TCGplayer search for the typed name and number.
 - ⟲ **Flip** for Magic double-faced cards (Section 5.1).
+- **Foil sheen** (owner's decision, 2026-09-29, like Moxfield's foil indicator): while the chosen finish is Magic **foil** or **etched**, or Pokémon **HOLO**, a see-through, slowly drifting rainbow sheen covers the selected card, brighter and dimmer in diagonal bands. **REVERSE** holo uses the same sheen with the band mask inverted, so it looks slightly different. The sheen fades out above the bottom (artist/copyright) strip, so that strip stays clear as Scryfall's image rules require. It stands still for viewers who prefer reduced motion. Thumbnails don't get it.
 
 ### 8.5 Finish control (the big switch)
 

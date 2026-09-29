@@ -8,10 +8,11 @@ import CardLoading from './CardLoading.jsx';
  * that, while the caller is still finding an image (Pokémon backups). With
  * no image at all, or none that loads, the game's card back (`back`,
  * Pokémon) or a plain panel with the name and number. Remount with a `key`
- * per image so each card starts fresh. Never crop or overlay a card image
- * (Scryfall's image rules).
+ * per image so each card starts fresh. Never crop or cover a card image
+ * (Scryfall's image rules); the only overlay is `shine` ('foil' | 'reverse'),
+ * a see-through foil sheen that fades out above the bottom strip.
  */
-export default function CardImage({ thumb, image, alt, name, number, back, loading = false, className = '' }) {
+export default function CardImage({ thumb, image, alt, name, number, back, loading = false, shine = null, className = '' }) {
   // 'loading' → 'loaded', or 'large-failed' (show the small one, sharp).
   const [stage, setStage] = useState(image ? 'loading' : 'large-failed');
   const [thumbFailed, setThumbFailed] = useState(false);
@@ -64,6 +65,7 @@ export default function CardImage({ thumb, image, alt, name, number, back, loadi
           onError={() => setStage('large-failed')}
         />
       )}
+      {shine && !waiting && <span className={`card-shine ${shine}`} aria-hidden="true" />}
     </div>
   );
 }

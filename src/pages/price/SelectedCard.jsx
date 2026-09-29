@@ -40,9 +40,9 @@ function tcgplayerLink(c, magic, pokemon, typedName, finish) {
 /**
  * The selected card, large, with its info panel beside it (spec 8.4).
  * `pokemon` is the shared full-card detail (usePokemonDetail); `finish` the
- * chosen Magic finish.
+ * chosen Magic finish; `pokemonFinish` the chosen Pokémon one (for the shine).
  */
-export default function SelectedCard({ candidate: c, typedName, pokemon, finish }) {
+export default function SelectedCard({ candidate: c, typedName, pokemon, finish, pokemonFinish }) {
   const [face, setFace] = useState(0);
   const pokemonImages = useCardImages(c);   // TCGdex's, or a backup when it has none
   useEffect(() => setFace(0), [c?.key]);
@@ -74,6 +74,10 @@ export default function SelectedCard({ candidate: c, typedName, pokemon, finish 
   const link = magic ? magic.scryfall_uri : pokemon.page;
   const tcgplayer = tcgplayerLink(c, magic, pokemon, typedName, finish);
   const name = flippable ? magic.card_faces[face].name : c.name;
+  // Foil sheen: Magic foil or etched, Pokémon holo; reverse holo gets the inverted mask.
+  const shine = magic
+    ? (finish === 'foil' || finish === 'etched' ? 'foil' : null)
+    : pokemonFinish === 'holo' ? 'foil' : pokemonFinish === 'reverse' ? 'reverse' : null;
   // A Japanese name staff can't read gets the English name they typed beside it.
   const latin = /^[\p{Script=Latin}\p{N}\p{P}\p{Zs}\p{S}]*$/u.test(c.name);
 
@@ -89,6 +93,7 @@ export default function SelectedCard({ candidate: c, typedName, pokemon, finish 
             image={image}
             back={c.game === 'pokemon' ? POKEMON_CARD_BACK : undefined}
             loading={!magic && pokemonImages.status === 'loading'}
+            shine={shine}
             alt={c.name}
             name={c.name}
             number={c.number}

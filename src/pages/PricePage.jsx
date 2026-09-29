@@ -161,7 +161,13 @@ export default function PricePage() {
             beside it with the suggestions below; finish & details beside the
             suggestions with the action row under them. Grid areas in price.css. */}
         <div className="stage-body">
-          <SelectedCard candidate={selected} typedName={search.parsed?.name} pokemon={pokemon} finish={finish} />
+          <SelectedCard
+            candidate={selected}
+            typedName={search.parsed?.name}
+            pokemon={pokemon}
+            finish={finish}
+            pokemonFinish={version?.finish}
+          />
           <Suggestions
             search={search}
             lang={lang}
