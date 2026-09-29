@@ -798,8 +798,9 @@ A row of five large buttons directly under the selected card (Section 8.1):
 - **Loading:** show shimmering placeholders while prices load.
 - **No JustTCG price** for a cell:
   - The **fallback** market price stands in for NM: Scryfall `prices.usd` / `usd_foil` / `usd_etched` for Magic, or TCGdex's TCGplayer market price for the version (English only) for Pokémon.
-  - **Every condition** without a JustTCG price shows that fallback price × its **Master Fallback Percentage** (owner's decision, 2026-09-29; Settings, Section 11.4), rounded to the cent, with a small "fallback" tag and a tooltip showing the working. Defaults: **Magic** NM 100%, LP 90%, MP 80%, HP 70%, DMG 60%; **Pokémon** NM 100%, LP 85%, MP 70%, HP 55%, DMG 40%.
+  - **Every condition** without a JustTCG price shows that fallback price × its **Master Fallback Percentage** (owner's decision, 2026-09-29; Settings, Section 11.4), with a small "fallback" tag and a tooltip showing the working. Defaults: **Magic** NM 100%, LP 90%, MP 80%, HP 70%, DMG 60%; **Pokémon** NM 100%, LP 85%, MP 70%, HP 55%, DMG 40%.
   - With no fallback price either (e.g. Japanese Pokémon without a JustTCG price), cells show "—".
+- **Prices never rise as the condition drops** (owner's decision, 2026-09-29). Reading NM → DMG, a JustTCG price higher than the condition above it (e.g. MP more than LP) is **thrown out** and replaced by a fallback: JustTCG's own NM price × the condition's Master Fallback Percentage, or, without a JustTCG NM, the Scryfall/TCGdex fallback × the percentage. A fallback that would still come out above the condition above it is lowered to that condition's price. These cells carry the "fallback" tag, and the tooltip names the thrown-out price (`priceLadder` in `src/lib/prices.js`). The comparison uses unrounded prices.
 - **Rounding** (owner's decision, 2026-09-29): every market and fallback price is **rounded down** before it's shown or used as the purchase price: under $1 to the cent; $1–$10 to the nearest quarter; $10–$100 to the dollar; $100–$1,000 to the $5; $1,000 and up to the $10 (`roundDownPrice` in `src/lib/money.js`). The tooltip shows the unrounded price. Manual prices aren't rounded. A line's `market_price` keeps the unrounded JustTCG price (Phase 6). A condition with "—" can still be selected, but then ADD CARD needs a manual price.
 - A small caption under the table: "Prices via JustTCG · updated 2h ago" (from the cached `fetched_at`).
 
@@ -1436,7 +1437,8 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 - [ ] Settings → API keys: the key shows masked, and Test shows your plan and remaining requests.
 - [ ] Select a card: five prices appear. NM is selected. Flipping foil changes the prices instantly.
 - [ ] Select the same card on another computer: prices appear without the usage meter going up (shared cache).
-- [ ] An obscure card with no JustTCG data shows a "fallback" NM price and "—" elsewhere.
+- [ ] An obscure card with no JustTCG data shows "fallback" prices on all five conditions (Settings → Master Fallback Percentages).
+- [ ] A card where JustTCG has a lower condition priced above a better one (e.g. MP > LP): that price shows as "fallback", and its tooltip says it was thrown out.
 - [ ] Manual price: the ✎ price shows bold with the market price struck through beneath it.
 - [ ] Arrow quickly through 10 suggestions: the usage meter rises by about 1, not 10.
 - [ ] Etched Magic card: the price looks like the etched listing, not the regular foil.
@@ -1737,7 +1739,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 27–32 | Buy list | Qty box; merge identical lines; `[LP]`-style tag when not NM (◆ plus `1st Ed`, `JP`, pattern in the same bracket); order added, newest at the bottom; grouped by game; remove asks how many |
 | 33 | Purchase price | JustTCG market price (or manual); Cash 33% and Credit 66% shown |
 | 34 | Totals | Sidebar bottom, collection header, day-page panels; (follow-up) Cash/Credit in totals only |
-| 35 | No JustTCG price | Labeled Scryfall/TCGdex fallback (◆ NM only; other conditions need a manual price) |
+| 35 | No JustTCG price | Labeled Scryfall/TCGdex fallback (owner, 2026-09-29: every condition, via the Master Fallback Percentages; replaces "◆ NM only") |
 | 36 | Collection prices | Locked when added |
 | 37–39 | Details / foil | Only valid toggles; same set only; non-foil default |
 | 40–42 | Finishes | Etched toggle `*E*`; Pokémon NORMAL\|HOLO\|REVERSE selector; `*H*` / `*RH*` |
@@ -1757,6 +1759,9 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 73 | Price screen layout (2026-09-29) | Owner's sketch replaces the single stack: card left at Scryfall's 336×468 with prices under it; card info beside it with 10 suggestions (2×5) below; finish & details beside the suggestions with Qty/CLEAR/ADD CARD under them. Scryfall's image sizes are the reference for card images (Section 8.1) |
 | 74 | Tokens and emblems (2026-09-29) | Not searchable: Magic tokens, emblems and art cards stay out of search results (Section 1.4) |
 | ◆ 75 | Pokémon versions (Phase 4, 2026-09-29) | A Version list from TCGdex's `variants_detailed` (subtype, foil pattern, stamps incl. 1st Edition) replaces separate 1st Edition / W Promo checkboxes (Section 8.6) |
+| 76 | Fallback prices (2026-09-29) | Every condition without a JustTCG price is the fallback × its Master Fallback Percentage (Settings); defaults Magic 100/90/80/70/60, Pokémon 100/85/70/55/40 (Section 8.7) |
+| 77 | Price rounding (2026-09-29) | Market and fallback prices round **down**: < $1 cent; $1–$10 quarter; $10–$100 dollar; $100–$1,000 $5; ≥ $1,000 $10. Whole-dollar amounts show without ".00" |
+| 78 | Prices never rise (2026-09-29) | A JustTCG price above the better condition's is thrown out and replaced by a fallback; no fallback may exceed the better condition (Section 8.7) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

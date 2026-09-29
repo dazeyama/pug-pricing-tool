@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CONDITIONS } from '../../lib/prices.js';
-import { formatMoney, parseMoney, roundDownPrice } from '../../lib/money.js';
+import { formatMoney, parseMoney } from '../../lib/money.js';
 import { timeAgo } from '../../lib/time.js';
 
 /** Big prices, stepping down so "$1,234.56" still fits a button. */
@@ -11,23 +11,13 @@ function priceStyle(text) {
 }
 
 /**
- * The condition / price table under the selected card (spec 8.7): five
- * buttons with JustTCG's price for the chosen printing, finish and
- * condition; NM falls back to Scryfall's or TCGdex's price, labelled; other
- * conditions show "—" and then need a manual price. ✎ Manual price
- * overrides the purchase price.
+ * The condition / price table under the selected card (spec 8.7): five big
+ * buttons, NM to DMG. Each shows its entry from the price ladder (lib/prices
+ * priceLadder): JustTCG's price, or a fallback tagged "fallback", rounded
+ * down; "—" when there's neither. ✎ Manual price overrides the purchase price.
  */
-/**
- * The fallback price for a condition: the fallback NM price × the condition's
- * Master Fallback Percentage (Settings), rounded to the cent.
- */
-function fallbackFor(fallback, pct, code) {
-  if (!fallback || pct?.[code] == null) return null;
-  return Math.round(fallback.price * Number(pct[code])) / 100;
-}
-
 export default function PriceTable({
-  candidate, prices, market, fallback, fallbackPct, fetchedAt, condition, onCondition,
+  candidate, prices, ladder, pct, fetchedAt, condition, onCondition,
   manual, onManual, manualOpen, setManualOpen, onDone,
 }) {
   const [text, setText] = useState('');
@@ -41,7 +31,6 @@ export default function PriceTable({
   }, [manualOpen]);
 
   const loading = prices.status === 'loading' || prices.status === 'waiting';
-  const fallbackSource = fallback?.source === 'scryfall_fallback' ? 'Scryfall' : 'TCGdex';
 
   function apply() {
     const value = parseMoney(text);
@@ -51,24 +40,19 @@ export default function PriceTable({
     onDone();
   }
 
-  // Market and fallback prices are rounded down by the store's steps
-  // (money.js roundDownPrice); a manual price is taken as typed.
-  const figures = (code) => {
-    const raw = market[code];
-    const rawDerived = raw == null ? fallbackFor(fallback, fallbackPct, code) : null;
-    return { raw, price: roundDownPrice(raw), rawDerived, derived: roundDownPrice(rawDerived) };
-  };
-
   /** The button's tooltip: where the price came from, any rounding, and the hotkey. */
   const tooltip = (code, i) => {
     const key = `Alt+${i + 1}`;
     if (!candidate || loading) return `${code} · ${key}`;
-    const { raw, price, rawDerived, derived } = figures(code);
-    const rounded = (from, to) => (from !== to ? `, rounded down from ${formatMoney(from)}` : '');
+    const e = ladder[code];
+    const rounded = e.raw != null && e.raw !== e.price ? `, rounded down from ${formatMoney(e.raw)}` : '';
     let about = 'no price: enter a manual price';
-    if (price != null) about = `JustTCG ${formatMoney(price)}${rounded(raw, price)}`;
-    else if (derived != null) {
-      about = `fallback ${formatMoney(derived)}: ${fallbackSource}'s ${formatMoney(fallback.price)} × ${fallbackPct[code]}%${rounded(rawDerived, derived)}`;
+    if (e.source === 'justtcg') about = `JustTCG ${formatMoney(e.price)}${rounded}`;
+    else if (e.source === 'fallback') {
+      about = `fallback ${formatMoney(e.price)}: ${e.base.from}'s ${formatMoney(e.base.price)} × ${pct[code]}%`;
+      if (e.cappedBy) about += `, lowered to ${e.cappedBy}'s price`;
+      about += rounded;
+      if (e.thrownOut != null) about += ` (JustTCG's ${formatMoney(e.thrownOut)} was higher than a better condition, so it was thrown out)`;
     }
     if (manual != null && code === condition) about = `manual ${formatMoney(manual)} (market: ${about})`;
     return `${code} · ${about} · ${key}`;
@@ -77,26 +61,22 @@ export default function PriceTable({
   const cell = (code) => {
     if (!candidate) return <span className="pc-price muted">—</span>;
     if (loading) return <span className="pc-price shimmer" aria-label="Loading price" />;
-    const { price, derived } = figures(code);
+    const { price, source } = ladder[code];
     if (manual != null && code === condition) {
       return (
         <span className="pc-price manual" style={priceStyle(`✎${formatMoney(manual)}`)}>
           <b>✎{formatMoney(manual)}</b>
-          {(price ?? derived) != null && <s>{formatMoney(price ?? derived)}</s>}
+          {price != null && <s>{formatMoney(price)}</s>}
         </span>
       );
     }
-    if (price != null) {
+    if (source === 'justtcg') {
+      return <span className="pc-price" style={priceStyle(formatMoney(price))}>{formatMoney(price)}</span>;
+    }
+    if (source === 'fallback') {
       return (
         <span className="pc-price" style={priceStyle(formatMoney(price))}>
           {formatMoney(price)}
-        </span>
-      );
-    }
-    if (derived != null) {
-      return (
-        <span className="pc-price" style={priceStyle(formatMoney(derived))}>
-          {formatMoney(derived)}
           <span className="fb-tag">fallback</span>
         </span>
       );

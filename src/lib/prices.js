@@ -14,6 +14,7 @@
 // - Etched Magic foils are their own TCGplayer product (Scryfall's
 //   tcgplayer_etched_id), priced through that product.
 import { callFunction } from './functions.js';
+import { roundDownPrice } from './money.js';
 
 export const CONDITIONS = ['NM', 'LP', 'MP', 'HP', 'DMG'];
 const CONDITION_CODES = {
@@ -129,6 +130,56 @@ export function resultFor(c, results, { finish, version, versions = [] }) {
   const id = version?.tcgplayerId ?? plain?.tcgplayerId;
   if (id) return results[`pokemon:tcgplayer:${id}`];
   return results[`pokemon:${c.lang}:${c.tcgdexId}`];
+}
+
+/**
+ * The five prices shown, NM down to DMG (spec 8.7): JustTCG's where it has
+ * one, otherwise a fallback, i.e. a base price × the condition's Master
+ * Fallback Percentage. Prices never rise as the condition drops (owner,
+ * 2026-09-29): a JustTCG price above the better condition's is thrown out
+ * and replaced by a fallback based on JustTCG's own NM price when there is
+ * one; and no fallback is allowed above the better condition either. Then
+ * every price is rounded down by the store's steps.
+ * @param {Record<string, number|null>} market  JustTCG prices by condition (conditionPrices)
+ * @param {{ price: number, source: string }|null} fallback  the Scryfall/TCGdex market price
+ * @param {Record<string, number>} pct  Master Fallback Percentages for the game
+ * @returns {Record<string, { price: number|null, raw: number|null, source: 'justtcg'|'fallback'|null,
+ *   base: { price: number, from: string }|null, thrownOut: number|null, cappedBy: string|null }>}
+ */
+export function priceLadder(market, fallback, pct) {
+  const out = {};
+  const fallbackBase = fallback
+    ? { price: fallback.price, from: fallback.source === 'scryfall_fallback' ? 'Scryfall' : 'TCGdex' }
+    : null;
+  let prev = null;          // the better condition's price, unrounded
+  let prevCode = null;
+  for (const code of CONDITIONS) {
+    let raw = market?.[code] ?? null;
+    let thrownOut = null;
+    if (raw != null && prev != null && raw > prev) {
+      thrownOut = raw;
+      raw = null;
+    }
+    const entry = { raw, source: raw != null ? 'justtcg' : null, base: null, thrownOut, cappedBy: null };
+    if (raw == null) {
+      const base = thrownOut != null && market?.NM != null
+        ? { price: market.NM, from: 'JustTCG' }
+        : fallbackBase;
+      let value = base && pct?.[code] != null ? (base.price * Number(pct[code])) / 100 : null;
+      if (value != null && prev != null && value > prev) {
+        value = prev;
+        entry.cappedBy = prevCode;
+      }
+      Object.assign(entry, { raw: value, source: value != null ? 'fallback' : null, base });
+    }
+    entry.price = roundDownPrice(entry.raw);
+    out[code] = entry;
+    if (entry.raw != null) {
+      prev = entry.raw;
+      prevCode = code;
+    }
+  }
+  return out;
 }
 
 /**

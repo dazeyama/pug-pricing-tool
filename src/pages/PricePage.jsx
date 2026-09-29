@@ -12,7 +12,7 @@ import { warmUp, magicCandidate } from '../lib/cardSearch.js';
 import {
   defaultMagicFinish, magicFinishes, pokemonVersions, defaultPokemonVersion, POKEMON_FINISHES,
 } from '../lib/printings.js';
-import { CONDITIONS, conditionPrices, fallbackPrice, resultFor } from '../lib/prices.js';
+import { CONDITIONS, conditionPrices, fallbackPrice, priceLadder, resultFor } from '../lib/prices.js';
 import { useSettings } from '../state/settings.jsx';
 import { readLocal, writeLocal } from '../lib/local.js';
 
@@ -86,6 +86,8 @@ export default function PricePage() {
   const fallback = fallbackPrice(selected, { finish, version });
   const { values: settingValues } = useSettings();
   const fallbackPct = settingValues[selected?.game === 'pokemon' ? 'fallback_pct_pokemon' : 'fallback_pct_mtg'];
+  // The five prices shown and used (JustTCG, fallbacks, never rising, rounded down).
+  const ladder = priceLadder(market, fallback, fallbackPct);
 
   const visible = search.candidates.slice(0, ROW);
   const hasShowAll = search.candidates.length > ROW;
@@ -241,9 +243,8 @@ export default function PricePage() {
             <PriceTable
               candidate={selected}
               prices={prices}
-              market={market}
-              fallback={fallback}
-              fallbackPct={fallbackPct}
+              ladder={ladder}
+              pct={fallbackPct}
               fetchedAt={result?.fetchedAt ?? null}
               condition={condition}
               onCondition={setCondition}

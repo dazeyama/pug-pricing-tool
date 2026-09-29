@@ -74,9 +74,11 @@ export default function FallbackPanel() {
       <div className="cardpanel-head"><strong>Master Fallback Percentages</strong></div>
       <div className="cardpanel-body">
         <p className="hint">
-          Used only when JustTCG has no price for a card: the Scryfall (Magic) or TCGdex (Pokémon)
+          Used when JustTCG has no price for a condition: the Scryfall (Magic) or TCGdex (Pokémon)
           market price is taken as Near Mint, and each condition is that price times its percentage.
-          Prices worked out this way are marked “fallback”.
+          Also used when JustTCG prices a worse condition above a better one: that price is thrown
+          out and replaced by JustTCG’s Near Mint times the percentage. Prices worked out this way
+          are marked “fallback”.
         </p>
         <table className="fb-table">
           <thead>
