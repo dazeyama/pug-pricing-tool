@@ -79,6 +79,7 @@ export default function SelectedCard({ candidate: c, typedName }) {
             thumb={thumb}
             image={image}
             back={c.game === 'pokemon' ? POKEMON_CARD_BACK : undefined}
+            loading={!magic && pokemonImages.status === 'loading'}
             alt={c.name}
             name={c.name}
             number={c.number}

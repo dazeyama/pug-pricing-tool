@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import GameBadge from '../../components/GameBadge.jsx';
+import CardLoading from '../../components/CardLoading.jsx';
 import { useCardImages } from './useCardImages.js';
 import { POKEMON_CARD_BACK } from '../../lib/pokemonImages.js';
 
@@ -41,10 +42,13 @@ function SetMark({ c }) {
 
 /** One suggestion: thumbnail, with the game badge and "SET #num" beneath. */
 export function Thumb({ c, highlighted, selected, onPick }) {
-  const { thumb } = useCardImages(c);
+  const { thumb, status } = useCardImages(c);
   // An image that fails to load shows the card back, never a broken-image icon.
   const [failed, setFailed] = useState(null);
+  const [loaded, setLoaded] = useState(null);
   const showImage = thumb && failed !== thumb;
+  // "Loading…" while a backup is being looked for or the image is downloading.
+  const loading = status === 'loading' || (showImage && loaded !== thumb);
   return (
     <button
       type="button"
@@ -54,12 +58,19 @@ export function Thumb({ c, highlighted, selected, onPick }) {
     >
       <span className="thumb-img">
         {showImage ? (
-          <img src={thumb} alt={c.name} loading="lazy" onError={() => setFailed(thumb)} />
-        ) : c.game === 'pokemon' ? (
+          <img
+            src={thumb}
+            alt={c.name}
+            loading="lazy"
+            onLoad={() => setLoaded(thumb)}
+            onError={() => setFailed(thumb)}
+          />
+        ) : status === 'loading' ? null : c.game === 'pokemon' ? (
           <img src={POKEMON_CARD_BACK} alt={`${c.name} (no picture)`} />
         ) : (
           <span className="thumb-back">{c.name}</span>
         )}
+        {loading && <CardLoading />}
         <SetMark c={c} />
       </span>
       {/* The game badge sits in the caption, not on the card: the top covers the

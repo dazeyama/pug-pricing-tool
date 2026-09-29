@@ -145,6 +145,29 @@
 /* contain: a card image is never stretched or cropped, whatever its box does. */
 .card-img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: contain; }
 .card-img.pending { opacity: 0; }
+
+/* An image still on the way: a card-shaped shimmer with a spinner and
+   "Loading…", clearly different from the card back and from an empty slot. */
+.card-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  border: 1px solid var(--border);
+  border-radius: inherit;
+  background: linear-gradient(110deg, #1b2034 30%, #2f3656 50%, #1b2034 70%) 0 0 / 250% 100%;
+  animation: shimmer 1.3s linear infinite;
+}
+.card-loading .spinner { width: 18px; height: 18px; border-width: 2.5px; border-color: var(--accent); border-top-color: transparent; }
+@keyframes shimmer { from { background-position: 125% 0; } to { background-position: -125% 0; } }
 .card-thumb { filter: blur(5px) saturate(1.05); }
 .card-empty, .card-back {
   display: flex;
