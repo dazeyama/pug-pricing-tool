@@ -176,7 +176,7 @@ export default function PricePage() {
             typedName={search.parsed?.name}
             pokemon={pokemon}
             finish={finish}
-            pokemonFinish={version?.finish}
+            pokemonVersion={version}
           />
           <Suggestions
             search={search}

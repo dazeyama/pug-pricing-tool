@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import CardImage from '../../components/CardImage.jsx';
+import BallIcon from '../../components/BallIcon.jsx';
 import GameBadge from '../../components/GameBadge.jsx';
 import * as scry from '../../lib/scryfall.js';
 import { useCardImages } from './useCardImages.js';
@@ -48,9 +49,11 @@ function tcgplayerLink(c, magic, pokemon, typedName, finish) {
 /**
  * The selected card, large, with its info panel beside it (spec 8.4).
  * `pokemon` is the shared full-card detail (usePokemonDetail); `finish` the
- * chosen Magic finish; `pokemonFinish` the chosen Pokémon one (for the shine).
+ * chosen Magic finish; `pokemonVersion` the chosen Pokémon version (shine,
+ * finish label, and the Poké Ball / Master Ball badge).
  */
-export default function SelectedCard({ candidate: c, typedName, pokemon, finish, pokemonFinish }) {
+export default function SelectedCard({ candidate: c, typedName, pokemon, finish, pokemonVersion }) {
+  const pokemonFinish = pokemonVersion?.finish;
   const [face, setFace] = useState(0);
   const pokemonImages = useCardImages(c);   // TCGdex's, or a backup when it has none
   useEffect(() => setFace(0), [c?.key]);
@@ -93,9 +96,14 @@ export default function SelectedCard({ candidate: c, typedName, pokemon, finish,
     ? (finish === 'foil' || finish === 'etched' ? 'foil' : null)
     : pokemonFinish === 'holo' ? (fullArt ? 'pokemon-full' : `holo${era}`)
       : pokemonFinish === 'reverse' ? `reverse${era}` : null;
+  // Poké Ball / Master Ball pattern reverse holos get a badge and say so.
+  const ball = pokemonFinish === 'reverse'
+    ? ['pokeball', 'masterball'].find((b) => pokemonVersion?.treatments?.includes(`${b}-pattern`))
+    : null;
+  const ballName = { pokeball: 'Poké Ball', masterball: 'Master Ball' }[ball];
   const finishTag = magic
     ? { foil: 'FOIL', etched: 'ETCHED FOIL' }[finish]
-    : { holo: 'HOLO', reverse: 'REVERSE HOLO' }[pokemonFinish];
+    : { holo: 'HOLO', reverse: ballName ? `REVERSE HOLO · ${ballName.toUpperCase()}` : 'REVERSE HOLO' }[pokemonFinish];
   // A Japanese name staff can't read gets the English name they typed beside it.
   const latin = /^[\p{Script=Latin}\p{N}\p{P}\p{Zs}\p{S}]*$/u.test(c.name);
 
@@ -119,6 +127,9 @@ export default function SelectedCard({ candidate: c, typedName, pokemon, finish,
             name={c.name}
             number={c.number}
           />
+          {ball && (
+            <BallIcon kind={ball} className="pattern-badge" title={`${ballName} pattern reverse holo`} />
+          )}
           {flippable && (
             <button
               type="button"

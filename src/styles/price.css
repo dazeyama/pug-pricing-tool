@@ -301,6 +301,17 @@
   cursor: pointer;
 }
 .flip-btn:hover { border-color: var(--accent); }
+/* Poké Ball / Master Ball pattern reverse holos: the ball hangs off the
+   card's top-right corner, so it covers as little of the card as it can. */
+.pattern-badge {
+  position: absolute;
+  top: -14px;
+  right: -14px;
+  z-index: 3;
+  width: 54px;
+  height: 54px;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, .6));
+}
 
 /* ---- Card info, beside the card ---- */
 .card-info {
