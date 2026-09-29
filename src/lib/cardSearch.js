@@ -30,6 +30,8 @@ export const PAGE = 175;
  *   thumb: string|null,       // small image
  *   image: string|null,       // large image
  *   score: number,            // number 4 + size 2 + set 1
+ *   rarity?: string,          // Magic: common | uncommon | rare | mythic | special | bonus
+ *   setIcon?: string|null,    // Magic: the set symbol SVG, for the hover overlay
  *   scryfall?: any,           // the Scryfall card (Magic)
  *   tcgdexId?: string,        // the TCGdex card id (Pokémon)
  * }} Candidate
@@ -72,6 +74,8 @@ async function magicCandidates(q, signal) {
       thumb: scry.cardImage(card, 'small'),
       image: scry.cardImage(card, 'large'),
       score: 0,
+      rarity: card.rarity,
+      setIcon: set?.icon_svg_uri ?? null,
       scryfall: card,
     });
   }

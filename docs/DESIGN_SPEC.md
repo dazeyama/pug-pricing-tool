@@ -692,6 +692,7 @@ Parsing rules (`src/lib/query.js`), applied to the trimmed input:
 - A **"… show all (N)"** button on the line above them when N > 10. It opens a modal grid of every match (same thumbnails, scrollable, with the same keyboard behavior). Clicking a card selects it and closes the modal.
 - The highlighted suggestion has an accent outline (the keyboard cursor, Section 8.11).
 - Clicking a thumbnail makes it the **selected card**. Clicking the selected card's thumbnail again deselects it, leaving nothing selected (owner's decision, 2026-09-29).
+- **Hover** (owner's decision, 2026-09-29): a thumbnail grows slightly with a quick, subtle animation. For Magic cards, the **set symbol** appears over the spot the card prints it (the right end of the type line, mid-right), larger than printed and **colored for rarity**: common black, uncommon silver, rare gold, mythic orange-red, special/bonus purple. Pokémon thumbnails only grow: TCGdex's set-symbol images aren't available (they return 404).
 - **Auto-select** (owner's decision): when the results narrow to exactly **one** printing, it becomes the selected card automatically. With several matches nothing is selected until the user clicks or arrows to one. The previous selection clears when the query changes enough that it no longer matches.
 - States:
   - Searching: a subtle "Searching…" with a spinner.

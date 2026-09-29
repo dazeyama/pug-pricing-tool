@@ -19,6 +19,13 @@ export function Thumb({ c, highlighted, selected, onPick }) {
           <span className="thumb-back">{c.name}</span>
         )}
         <span className="thumb-badge"><GameBadge game={c.game} /></span>
+        {/* On hover: the set symbol, large and in its rarity colour, over the
+            spot a Magic card prints it (right end of the type line). */}
+        {c.setIcon && (
+          <span className={`thumb-symbol r-${c.rarity}`} aria-hidden="true">
+            <span className="thumb-symbol-glyph" style={{ '--icon': `url("${c.setIcon}")` }} />
+          </span>
+        )}
       </span>
       <span className="thumb-label">{c.setCode} #{c.number}</span>
     </button>

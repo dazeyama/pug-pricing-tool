@@ -287,6 +287,7 @@
   align-content: start;
 }
 .thumb {
+  position: relative;
   width: var(--thumb-w);
   background: none;
   border: none;
@@ -306,8 +307,43 @@
   box-shadow: 0 2px 6px rgba(0, 0, 0, .35);
   outline: 3px solid transparent;
   outline-offset: 2px;
+  transition: transform .12s ease, box-shadow .12s ease;
 }
+/* Hover: a quick, slight lift. */
+.thumb:not(.thumb-slot):hover { z-index: 2; }
+.thumb:not(.thumb-slot):hover .thumb-img { transform: scale(1.06); box-shadow: 0 8px 20px rgba(0, 0, 0, .5); }
 .thumb-img img { width: 100%; height: 100%; display: block; object-fit: contain; }
+
+/* The set symbol overlay (Magic): shown on hover over the printed symbol's
+   spot, the right end of the type line. A CSS mask paints Scryfall's SVG in
+   the rarity colour; the dark outline keeps it readable on any frame. */
+.thumb-symbol {
+  position: absolute;
+  right: 4%;
+  top: 56.5%;
+  width: 24%;
+  aspect-ratio: 1;
+  transform: translateY(-50%);
+  opacity: 0;
+  transition: opacity .12s ease;
+  pointer-events: none;
+  filter: drop-shadow(0 0 1px #000) drop-shadow(0 0 1px #000) drop-shadow(0 1px 3px rgba(0, 0, 0, .6));
+}
+.thumb:hover .thumb-symbol { opacity: 1; }
+.thumb-symbol-glyph {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--rarity);
+  -webkit-mask: var(--icon) center / contain no-repeat;
+  mask: var(--icon) center / contain no-repeat;
+}
+/* Magic's rarity colours: black, silver, gold, orange-red, purple. */
+.r-common { --rarity: #111; filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff) drop-shadow(0 1px 3px rgba(0, 0, 0, .6)); }
+.r-uncommon { --rarity: linear-gradient(135deg, #5d6a73, #d5dee5 50%, #6d7a84); }
+.r-rare { --rarity: linear-gradient(135deg, #8a6d24, #f0d27a 50%, #9c7c2e); }
+.r-mythic { --rarity: linear-gradient(135deg, #b3321a, #f7a13a 50%, #c0441f); }
+.r-special, .r-bonus { --rarity: linear-gradient(135deg, #5a2380, #c28ae0 50%, #6a2d8f); }
 .thumb-back { display: flex; align-items: center; justify-content: center; height: 100%; padding: 6px; font-size: 11px; color: var(--muted); }
 .thumb:hover .thumb-img { outline-color: var(--border); }
 .thumb.selected .thumb-img { outline-color: var(--accent-2); }
