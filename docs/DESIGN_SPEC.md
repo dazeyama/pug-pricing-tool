@@ -71,7 +71,7 @@ PUG buys trading cards from customers over the counter, and sometimes buys whole
 | **Condition** | NM, LP, MP, HP or DMG (Near Mint, Lightly Played, Moderately Played, Heavily Played, Damaged). Default NM. |
 | **Market price** | JustTCG's price for the printing, finish and condition. |
 | **Purchase price** (unit price) | What's recorded for a line: the market price, or a manual price if one was entered. |
-| **Cash / Credit** | What the store pays: the purchase total × the Cash % or Credit % from Settings (defaults 33% and 66%). |
+| **Cash / Credit** | What the store pays: the purchase total × the Cash % or Credit %. These come from **Master Buy Percentages** in Settings (defaults 33% and 66%), unless the buy has a **custom rate** (Section 8.9.1). |
 | **User** | A staff profile (name + color) picked from the header dropdown. It isn't a login. |
 | **Device** | One browser on one store computer, identified by a random ID stored in that browser and given a friendly name ("Front Counter"). |
 | **Master Crystal Inventory** | The full inventory CSV exported from Crystal Commerce ("CC") and uploaded in Settings. The future export uses it to match set names. |
@@ -394,7 +394,8 @@ All IDs are `uuid default gen_random_uuid()` unless noted, and all timestamps ar
 | updated_at, last_edited_by | timestamptz, uuid → staff_users | bumped on any change to the buy or its lines |
 | confirmed_at, confirmed_by | timestamptz, uuid → staff_users | walk-in only, set at confirm |
 | paid_at | timestamptz | collection: when status became `paid` |
-| cash_pct, credit_pct | numeric(5,2) | Snapshotted at confirm (walk-in) or when marked Paid/Ours (collection). `null` = use current Settings. |
+| custom_cash_pct, custom_credit_pct | numeric(5,2) null | A **custom rate** for this buy only (Section 8.9.1). `null` = use the Master Buy Percentages. Set independently: a buy can have a custom Cash % and the master Credit %. |
+| cash_pct, credit_pct | numeric(5,2) | Snapshotted at confirm (walk-in) or when marked Paid/Ours (collection): the custom rate where set, otherwise the master percentage. `null` = not snapshotted yet. |
 | version | integer default 1 | Bumped once per write transaction. Writes carry the version they read and are refused if stale (CM pattern). |
 
 **`buy_lines`**
@@ -494,14 +495,15 @@ Every change that affects buy contents, or anything the changelog records, goes 
 | `draft_add_line(device, line, merge)` | Creates this device's draft if none exists; inserts or merges a line | none (drafts aren't logged) |
 | `draft_remove_line(line_id, qty)` | Decrements the quantity or deletes the line | none |
 | `draft_cancel(buy_id)` | Deletes the draft and its lines | none |
-| `confirm_buy(buy_id, user, customer_name, notes, cash_pct, credit_pct, expected_version)` | draft → confirmed; stamps `confirmed_*`; snapshots percentages | `buy_confirmed` with all lines and totals |
+| `draft_set_custom_rates(device, custom_cash_pct, custom_credit_pct)` | Sets or clears this device's draft custom rates (Section 8.9.1). Creates the draft if none exists. | none |
+| `confirm_buy(buy_id, user, customer_name, notes, cash_pct, credit_pct, expected_version)` | draft → confirmed; stamps `confirmed_*`; snapshots percentages (custom rate where set, else master) | `buy_confirmed` with all lines and totals |
 | `buy_remove_line(line_id, qty, user, expected_version)` | For confirmed buys (day page) | `buy_cards_removed` |
 | `buy_delete(buy_id, user, expected_version)` | Deletes a confirmed buy | `buy_deleted` with the full line list and totals |
 | `collection_create(name, phone, notes, user)` | | `collection_created` |
 | `collection_add_line(buy_id, line, merge, user, device, expected_version)` | Requires this device to hold the lock and status ≠ paid | `collection_cards_added` |
 | `collection_remove_line(line_id, qty, user, device, expected_version)` | Same requirements | `collection_cards_removed` |
-| `collection_update_info(buy_id, fields, user, device, expected_version)` | name / phone / notes | `collection_info_edited` with before/after |
-| `collection_set_status(buy_id, status, user, device, cash_pct, credit_pct, expected_version)` | Moving to `paid` snapshots percentages and `paid_at`; leaving `paid` clears them | `collection_status_changed` |
+| `collection_update_info(buy_id, fields, user, device, expected_version)` | name / phone / notes / custom rates (`custom_cash_pct`, `custom_credit_pct`) | `collection_info_edited` with before/after |
+| `collection_set_status(buy_id, status, user, device, cash_pct, credit_pct, expected_version)` | Moving to `paid` snapshots percentages (custom rate where set, else master) and `paid_at`; leaving `paid` clears the snapshot but **keeps** the custom rates | `collection_status_changed` |
 | `collection_delete(buy_id, user, typed_name)` | Server checks `typed_name` matches | `collection_deleted` with the full line list and totals |
 | `lock_acquire(buy_id, device, user, force)` / `lock_heartbeat` / `lock_release` | Section 9.6 | none |
 | `restore_backup(payload)` | Section 11.5 | `backup_restored` (milestone) |
@@ -556,7 +558,7 @@ Ported from CM's header, with the same structure and spacing.
 - A button showing a **color dot + the current user's name**, or "Pick user" in muted text when none is set. It opens a menu:
   - the list of active users (dot + name), with the current one checked. Click to select.
   - **+ Add user…**: an inline name field. The color is auto-assigned: the next `--pal-*` color not used by an active user, cycling when all are taken.
-  - per-user **⋯** menu: **Change color** (a 12-swatch palette) and **Delete** (confirm: "Delete Dana? Past buys will still show her name."). Delete sets `active=false`.
+  - per-user **⋯** menu: **Change color** (a 12-swatch palette) and **Delete** (confirm: "Delete Dana? Past buys will still show their name."). Delete sets `active=false`.
 - The selected user is **remembered on this device** (`localStorage`) until changed.
 - A user is **required** before any card can be added, a buy confirmed or a collection edited. When none is picked, those buttons are disabled with the tooltip "Pick a user first", and clicking one makes the user button pulse briefly.
 - Where the app records "who" (Section 6), it records the user selected at that moment.
@@ -828,8 +830,32 @@ Cash (33%)     $13.60
 Credit (66%)   $27.19
 ```
 
-  Market = Σ unit_price × qty. Cash and Credit use the percentages from Settings (live for drafts).
+  Market = Σ unit_price × qty. Cash and Credit use the buy's custom rates where set (Section 8.9.1), otherwise the Master Buy Percentages from Settings (live for drafts).
 - **Buttons:** **CANCEL** (red, smaller) and **CONFIRM BUY** (green, large), with the same sizes as CLEAR / ADD CARD so the two rows mirror each other.
+
+#### 8.9.1 Custom rates for one buy (owner's decision, 2026-09-29)
+
+On the pricing screens (the Price tab's buy list and a collection's pricing screen, Section 9.4), the **Cash (33%)** and **Credit (66%)** percentages in the totals block are **clickable**. They're not clickable anywhere else: confirmed buys on day pages keep the rates they were confirmed with.
+
+```
+Market          $41.20
+Cash (40% ✎)    $16.48   ◄── click
+Credit (66%)    $27.19
+┌─ Rates for this buy ───────────────┐
+│ Cash   [ 40   ] %   master 33%     │
+│ Credit [ 66   ] %   master 66%     │
+│ [Use master rates]          [Done] │
+└────────────────────────────────────┘
+```
+
+- Clicking either percentage opens a small **subpanel** attached to the totals block, with a **Cash %** and a **Credit %** input. Rates are entered as **percentages** (`40`, not `0.40`): 0–100, up to 2 decimals, the same rules as Master Buy Percentages (Section 11.4). Each input shows the master value beside it for reference.
+- A rate is saved **with the buy** (`buys.custom_cash_pct`, `custom_credit_pct`) as soon as its input loses focus or Enter is pressed. Esc or **Done** closes the subpanel. **Use master rates** clears both custom rates.
+- Cash and Credit are independent: a buy can have a custom Cash % and the master Credit %. Typing the master value back into an input clears that custom rate.
+- While a custom rate is set, its label shows the custom percentage with a **✎** in the accent color, and the tooltip "Custom rate for this buy. Master rate: 33%".
+- Changing Master Buy Percentages in Settings **doesn't** change a buy's custom rates.
+- Needs a picked user and a connection, like any edit (Sections 7.3, 7.9).
+- **Walk-in buys:** saved through `draft_set_custom_rates`. Setting a rate before the first card creates the draft. The CONFIRM BUY dialog shows the rates in use, custom ones marked ✎. `confirm_buy` snapshots them. The next customer's buy starts at the master rates. CANCEL discards the custom rates along with the draft, even when the list is empty. Not logged, like all draft activity.
+- **Collections:** saved through `collection_update_info` and logged as **Collection details edited** (Actions category) with field rows like `cash %: 33 → 40` (Section 12.3). Disabled while Paid/Ours or read-only (Sections 9.5, 9.6). Custom rates survive an unlock from Paid/Ours.
 
 ### 8.10 Walk-in buys: drafts, confirm, cancel
 
@@ -837,13 +863,13 @@ Credit (66%)   $27.19
 - **Drafts are saved continuously.** Every add and remove is written immediately, so a refresh, crash or closed tab loses nothing. When the Price tab opens, load this device's draft if there is one.
 - **CONFIRM BUY** (enabled when the draft has ≥1 line and a user is picked) opens a dialog:
   - "Confirm buy — **12 cards**";
-  - totals (Market / Cash / Credit);
+  - totals (Market / Cash / Credit), with any custom rate marked ✎ (Section 8.9.1);
   - optional **Customer name** and **Notes** fields (owner's decision);
   - the confirming user shown with their color dot;
   - [Cancel] [Confirm buy].
 
   Confirming calls `confirm_buy` and shows a toast: "Buy confirmed — Buy 3 today (Magic + Pokémon)". Then the sidebar and stage reset for the next customer.
-- **CANCEL**: if the list is empty, just reset. Otherwise ask "Cancel this buy? **12 cards** will be discarded." with [Keep buy] [Discard] (red). Discarding deletes the draft. It isn't logged, because drafts aren't part of the record.
+- **CANCEL**: if the list is empty, just reset (deleting an empty draft that only held custom rates). Otherwise ask "Cancel this buy? **12 cards** will be discarded." with [Keep buy] [Discard] (red). Discarding deletes the draft. It isn't logged, because drafts aren't part of the record.
 - Drafts never appear on the Calendar, in search or in the changelog.
 
 ### 8.11 Keyboard (owner's decision: full keyboard flow)
@@ -934,11 +960,11 @@ The **Price tab's screen, reused** (the same components), with these differences
   - **Name** and **phone**, each editable inline (✎), and **Notes**, editable inline (multi-line; saves on blur or Ctrl+Enter). Each save calls `collection_update_info` and is logged.
   - **Status:** a **dropdown** (Processing / Priced / Paid/Ours) **and** a **step-forward button**: "Mark as Priced →" while Processing, "Mark as Paid/Ours →" while Priced (owner's decision: both controls).
   - **Created** date + creator (color dot) and **Last edited** date + user (owner's decision: creator and last editor).
-  - **Totals** on the right, the same block as the sidebar (owner's decision).
+  - **Totals** on the right, the same block as the sidebar (owner's decision), with the same clickable percentages for custom rates (Section 8.9.1).
   - **⋯ menu** holding **Delete collection…**, kept away from everyday controls (Section 9.7).
 - **Sidebar:** the same list, grouping, format, hover-red and "Remove card?" behavior as Section 8.9, titled "COLLECTION LIST". **Each add and remove saves immediately** and is logged (Section 12). There are **no CONFIRM BUY / CANCEL** buttons. In their place is a single blue **EXPORT** button (Section 14).
 - **Prices lock when a card is added** (owner's decision). There is no refresh.
-- **Cash/Credit** use the current Settings percentages until the collection is marked Paid/Ours, when they're snapshotted onto the collection.
+- **Cash/Credit** use the collection's custom rates where set (Section 8.9.1), otherwise the current Master Buy Percentages, until the collection is marked Paid/Ours, when they're snapshotted onto the collection.
 
 ### 9.5 Status and locking at Paid/Ours
 
@@ -1081,10 +1107,11 @@ The most prominent panel, with a **red border and a "Required" badge** until a f
   - "Updated 3 minutes ago".
 - The bar turns amber at 80% and red at 95%.
 
-### 11.4 Buy percentages (owner's decision)
+### 11.4 Master Buy Percentages (owner's decision)
 
 - **Cash %** (default 33) and **Credit %** (default 66): number inputs, 0–100, up to 2 decimals. Save on blur.
-- Changes apply to drafts and unpaid collections immediately. They **don't** change confirmed buys or Paid/Ours collections, whose percentages were snapshotted.
+- Changes apply to drafts and unpaid collections immediately. They **don't** change confirmed buys or Paid/Ours collections, whose percentages were snapshotted, or any buy with a custom rate.
+- These are the store-wide defaults. Staff can set a custom rate for a single buy from the pricing screens (Section 8.9.1).
 
 ### 11.5 Backup and restore (owner's decision: cloud backups + backup file)
 
@@ -1171,7 +1198,7 @@ Credits: "Card data and images from Scryfall (Magic) and TCGdex (Pokémon). Pric
 | `collection_created` | Collection created | Collections / large blue | Name, phone, notes as fields |
 | `collection_cards_added` | Cards added to collection | Collections / blue | Added lines (+), totals |
 | `collection_cards_removed` | Cards removed from collection | Collections / blue | Removed lines (−), totals |
-| `collection_info_edited` | Collection details edited | Actions / slate | Field rows (name, phone, notes) |
+| `collection_info_edited` | Collection details edited | Actions / slate | Field rows (name, phone, notes, cash %, credit %). A custom rate reads `cash %: 33 → 40`; clearing one reads `cash %: 40 → master (33)`. |
 | `collection_status_changed` | Status changed | Actions / slate | `status: Priced → Paid/Ours`; "unlocked" when leaving Paid/Ours |
 | `collection_deleted` | Collection deleted | Collections / red cross | All lines (−) at deletion, totals, name and phone |
 | `backup_restored` | — | milestone (always shown) | Drawn as CM's green milestone pill across the line: "Backup restored — <file name>" |
@@ -1293,7 +1320,7 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 **Build**
 - Migrations for **all tables** in Section 6.1, RLS (Section 4.4), indexes, and Realtime publication. The Storage bucket `master-inventory` (private; `authenticated` can read and write).
 - Header **user dropdown** (Section 7.3): add, auto-color, change color, delete (hide), remembered per device. The "Pick a user first" guard helper.
-- Settings page skeleton with: **Master Crystal Inventory** (Section 11.1, fully working), **Buy percentages** (11.4), **This computer** (11.6), footer (11.7).
+- Settings page skeleton with: **Master Crystal Inventory** (Section 11.1, fully working), **Master Buy Percentages** (11.4), **This computer** (11.6), footer (11.7).
 - The **Master Crystal Inventory banner** (Section 7.5) and the **offline banner**.
 - Realtime subscriptions for `staff_users`, `settings` and `master_inventory_files`.
 
@@ -1373,6 +1400,7 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 
 **Build**
 - The Postgres write functions for drafts and `confirm_buy` (Section 6.2), including the `events` writes for `buy_confirmed`.
+- A new migration adding `buys.custom_cash_pct` / `custom_credit_pct` (Section 6.1; 0001 is already applied, so don't edit it), `draft_set_custom_rates`, and the clickable percentages with the custom-rate subpanel (Section 8.9.1) on the Price tab.
 - Qty, **ADD CARD**, **CLEAR** (Section 8.8); the sidebar with game groups, line format (`lineFormat.js`, with unit tests for the formatter), hover-red remove with quantity (8.9); totals; **CONFIRM BUY** dialog with customer name/notes; **CANCEL** (8.10); per-device draft restore; the "Pick a user first" guard; Enter to add. Alt+Q.
 
 **Where to look**
@@ -1382,6 +1410,7 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 - [ ] Magic and Pokémon lines sit under their own headers, newest at the bottom.
 - [ ] Hover turns a line red. Remove on a qty-3 line asks how many.
 - [ ] Totals: Market, Cash 33%, Credit 66% are right (check one by hand).
+- [ ] Click **Cash (33%)**: the subpanel opens. Set 40: the label reads **Cash (40% ✎)** and the total changes. Refresh: still 40. **Use master rates** puts it back to 33. After CONFIRM BUY, the next buy starts at 33.
 - [ ] CONFIRM BUY shows the count and total and accepts a customer name; afterwards the list is empty.
 - [ ] CANCEL with cards asks first; Discard empties it.
 - [ ] With no user picked, ADD CARD is disabled and the user button pulses.
@@ -1393,6 +1422,7 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 
 **Build**
 - Collection write functions and events (Section 6.2). Lock functions and Realtime (9.6).
+- Custom rates on collections (Section 8.9.1): the clickable percentages in the collection header's totals, saved through `collection_update_info` and logged.
 - The collections table with sort, status filter, search, live updates and lock indicator (9.1). **+ Price Collection** with phone validation (9.2–9.3).
 - The collection pricing screen (9.4) reusing the Price components: header bar with inline edits, status dropdown + step button, creator/last editor, totals, ⋯ menu; COLLECTION LIST with saved-on-add; the blue **EXPORT** placeholder.
 - Paid/Ours locking and unlock (9.5); one-computer editing with Take over (9.6); two-step delete with the typed name (9.7).
@@ -1401,6 +1431,7 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 - [ ] Create a collection without a phone number: blocked. With `5551234567`: shows as `(555) 123-4567`.
 - [ ] Add cards, close the tab, reopen: all there. The table's "Last edited" updated.
 - [ ] Mark as Priced → Mark as Paid/Ours: the screen locks. Unlock returns it to Priced.
+- [ ] Set a custom Credit % on a collection: its totals use it; changing Master Buy Percentages in Settings doesn't touch it; it's locked while Paid/Ours and still there after Unlock.
 - [ ] Open the same collection on a second computer: it's view-only and names the first computer and user. Take over: the first computer turns view-only.
 - [ ] Close the first computer's browser entirely: within about a minute the second can edit without Take over.
 - [ ] Delete: two steps, the name must be typed. The collection disappears from the table.
@@ -1673,6 +1704,9 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | C1–C6 | Changelog details | Walk-in buys logged at confirm only; also collection status and info edits; acting user on every entry; one timeline + game filter; entries link to targets; totals on entries |
 | 67 | Branding | Logo + title |
 | 68–69 | Phases | 10 small phases; per-phase "Where to look" checklists and the user-is-qa memory |
+| 70 | Settings name (2026-09-29) | "Buy percentages" is called **Master Buy Percentages** |
+| 71 | Custom rates (2026-09-29) | On the pricing screens the Cash/Credit percentages are clickable and open a subpanel for a custom rate for that one buy, saved with the buy (Section 8.9.1). Entered as a percent; pricing screens only, not day pages; custom rates on collections are logged as Actions entries |
+| 72 | Store time zone (2026-09-29) | Confirmed: Pacific time, `America/Los_Angeles` |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |
@@ -1689,4 +1723,4 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 2. **Supabase plan for prod**: Free (weekly manual backups, pauses after 7 idle days) vs. Pro ($25/month: daily backups, no pausing).
 3. **Japanese Pokémon**: confirm coverage after the Phase 3 spike, and how names should display.
 4. **JustTCG plan**: watch the usage meter during the first weeks and move to Professional if the daily limit binds.
-5. **Store time zone**: the spec assumes America/Los_Angeles (`STORE_TZ`). Change the constant if the store is elsewhere.
+5. ~~**Store time zone**~~: confirmed Pacific time, `America/Los_Angeles` (`STORE_TZ`), 2026-09-29.

@@ -53,7 +53,7 @@
 .inv-previous .inv-name { overflow-wrap: anywhere; }
 .inv-previous .inv-action { text-align: right; width: 1%; white-space: nowrap; }
 
-/* Buy percentages */
+/* Master Buy Percentages */
 .pct-row { display: flex; gap: 28px; }
 .pct-field { width: 160px; }
 .pct-input { display: flex; align-items: center; gap: 6px; }

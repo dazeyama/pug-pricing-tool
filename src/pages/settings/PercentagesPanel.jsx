@@ -65,11 +65,11 @@ function PercentField({ label, settingKey }) {
   );
 }
 
-// Settings → Buy percentages (spec 11.4).
+// Settings → Master Buy Percentages (spec 11.4).
 export default function PercentagesPanel() {
   return (
     <section className="cardpanel settings-panel">
-      <div className="cardpanel-head"><strong>Buy percentages</strong></div>
+      <div className="cardpanel-head"><strong>Master Buy Percentages</strong></div>
       <div className="cardpanel-body">
         <p className="hint">
           What the store pays, as a share of the market total. Changes apply right away to
