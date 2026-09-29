@@ -37,7 +37,7 @@ function SetMark({ c }) {
   return <span className={`thumb-chip r-${rarity}`} aria-hidden="true">{c.setCode}</span>;
 }
 
-/** One suggestion: thumbnail with its game badge in the corner, "SET #num" beneath. */
+/** One suggestion: thumbnail, with the game badge and "SET #num" beneath. */
 export function Thumb({ c, highlighted, selected, onPick }) {
   return (
     <button
@@ -52,10 +52,14 @@ export function Thumb({ c, highlighted, selected, onPick }) {
         ) : (
           <span className="thumb-back">{c.name}</span>
         )}
-        <span className="thumb-badge"><GameBadge game={c.game} /></span>
         <SetMark c={c} />
       </span>
-      <span className="thumb-label">{c.setCode} #{c.number}</span>
+      {/* The game badge sits in the caption, not on the card: the top covers the
+          name, and Scryfall's rules keep overlays off the bottom strip. */}
+      <span className="thumb-label">
+        <GameBadge game={c.game} />
+        <span className="thumb-label-text">{c.setCode} #{c.number}</span>
+      </span>
     </button>
   );
 }

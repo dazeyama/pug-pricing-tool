@@ -688,7 +688,7 @@ Parsing rules (`src/lib/query.js`), applied to the trimmed input:
 
 ### 8.3 Suggestions row
 
-- Up to **10 thumbnails** of the best matches in rank order, in **2 rows of 5** under the card info (Section 8.1). Each has a game badge in its corner and `SET #num` beneath it.
+- Up to **10 thumbnails** of the best matches in rank order, in **2 rows of 5** under the card info (Section 8.1). Beneath each is a caption with its game badge and `SET #num` (owner's decision, 2026-09-29: a badge on the card's top corner covered the name, and Scryfall's image rules keep overlays off the bottom strip).
 - A **"… show all (N)"** button on the line above them when N > 10. It opens a modal grid of every match (same thumbnails, scrollable, with the same keyboard behavior). Clicking a card selects it and closes the modal.
 - The highlighted suggestion has an accent outline (the keyboard cursor, Section 8.11).
 - Clicking a thumbnail makes it the **selected card**. Clicking the selected card's thumbnail again deselects it, leaving nothing selected (owner's decision, 2026-09-29).

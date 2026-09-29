@@ -403,16 +403,18 @@
   background: rgba(0, 0, 0, .38);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .05);
 }
-/* Top corner: never over the card's bottom (copyright) strip. */
-.thumb-badge { position: absolute; top: 4px; left: 4px; }
+/* Caption: game badge, then "SET #num". Nothing overlays the card itself. */
 .thumb-label {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   margin-top: 5px;
   font-size: 12px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 17px;
 }
+.thumb-label .game-badge { flex: none; font-size: 9.5px; padding: 1px 5px; }
+.thumb-label-text { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* The show-all modal's grid: Scryfall's small-image width. */
 .all-grid {
