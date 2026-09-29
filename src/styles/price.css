@@ -125,6 +125,27 @@
 .area-thumbs { grid-area: thumbs; min-height: 0; display: flex; flex-direction: column; container-type: size; }
 .area-quote { grid-area: quote; min-width: 0; }
 .area-side { grid-area: side; min-height: 0; display: flex; flex-direction: column; }
+/* Price warnings, top of the right column under the price panel (owner,
+   2026-09-29): one short line per reason. Finish & Details move down. */
+.price-warnings {
+  flex: none;
+  margin-bottom: 12px;
+  padding: 10px 14px 10px 12px;
+  border: 1px solid rgba(255, 204, 102, .55);
+  border-radius: 10px;
+  background: rgba(40, 32, 12, .88);
+}
+.price-warnings-head {
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--warn);
+}
+.price-warnings ul { margin: 0; padding-left: 18px; }
+.price-warnings li { font-size: 13px; line-height: 1.35; font-variant-numeric: tabular-nums; }
+.price-warnings li + li { margin-top: 3px; }
 .area-prices { grid-area: prices; }
 .area-actions { grid-area: actions; }
 

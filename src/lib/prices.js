@@ -198,8 +198,8 @@ export function priceLadder(market, fallback, pct, game) {
 }
 
 /**
- * Reasons to doubt JustTCG's prices for this printing, each a sentence for
- * the ⚠️ on the NM label (spec 8.7; owner, 2026-09-29). All from data already
+ * Reasons to doubt JustTCG's prices for this printing, each a short line for
+ * the warning box under the price panel (spec 8.7; owner, 2026-09-29). All from data already
  * loaded, so they cost no requests:
  *  - TCGplayer's market price (Scryfall/TCGdex × the NM percentage) is 25%+
  *    and $1+ away from JustTCG's NM;
@@ -225,7 +225,7 @@ export function priceWarnings({ market, fallback, pct, unlimitedNM, cardmarket, 
     const diff = Math.abs(other - nm);
     if (diff >= 1 && diff >= nm * 0.25) {
       const from = fallback.source === 'scryfall_fallback' ? 'Scryfall' : 'TCGdex';
-      out.push(`JustTCG's NM ${formatMoney(nm)} and ${from}'s ${formatMoney(other)} are ${Math.round((diff / nm) * 100)}% apart`);
+      out.push(`${from} says NM is ${formatMoney(other)} (${Math.round((diff / nm) * 100)}% apart)`);
     }
   }
   const best = CONDITIONS.find((c) => market?.[c] != null);
@@ -233,19 +233,18 @@ export function priceWarnings({ market, fallback, pct, unlimitedNM, cardmarket, 
     const top = market[best];
     const over = CONDITIONS.filter((c) => c !== best && market[c] != null && market[c] > top * 2);
     if (over.length) {
-      const list = over.map((c) => `${c} at ${formatMoney(market[c])}`).join(' and ');
-      out.push(`JustTCG prices ${list}, over twice its ${best} of ${formatMoney(top)}`);
+      const list = over.map((c) => `${c} ${formatMoney(market[c])}`).join(', ');
+      out.push(`${list} ${over.length > 1 ? 'are' : 'is'} over 2× ${best} (${formatMoney(top)})`);
     }
   }
   if (nm != null && unlimitedNM != null && nm < unlimitedNM) {
-    out.push(`This 1st Edition's JustTCG NM ${formatMoney(nm)} is below the Unlimited version's ${formatMoney(unlimitedNM)}`);
+    out.push(`Below Unlimited's NM (${formatMoney(unlimitedNM)})`);
   }
   if (nm != null && cardmarket != null && eurUsd != null) {
     const usd = cardmarket * eurUsd;
     const ratio = Math.max(usd, nm) / Math.min(usd, nm);
     if (ratio >= 2 && Math.abs(usd - nm) >= 5) {
-      out.push(`Cardmarket (Europe) averages ${formatEur(cardmarket)} ≈ ${formatMoney(Math.round(usd))}, `
-        + `${ratio.toFixed(1)}× ${usd > nm ? 'more' : 'less'} than JustTCG's NM ${formatMoney(nm)}`);
+      out.push(`Cardmarket ${formatEur(cardmarket)} ≈ ${formatMoney(Math.round(usd))} (${ratio.toFixed(1)}× ${usd > nm ? 'more' : 'less'})`);
     }
   }
   return out;

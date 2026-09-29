@@ -17,6 +17,7 @@ import {
 } from '../lib/prices.js';
 import { useSettings } from '../state/settings.jsx';
 import QuotePanel from './price/QuotePanel.jsx';
+import PriceWarnings from './price/PriceWarnings.jsx';
 import { useEurUsd } from '../lib/useEurUsd.js';
 import { readLocal, writeLocal } from '../lib/local.js';
 
@@ -270,6 +271,7 @@ export default function PricePage() {
             creditPct={settingValues.credit_pct}
           />
           <div className="area-side">
+            <PriceWarnings warnings={warnings} />
             <FinishPanel
               candidate={selected}
               finish={finish}
