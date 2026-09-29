@@ -273,7 +273,7 @@
    below keeps its full 64px. */
 .foil-switch {
   flex: none;
-  align-self: flex-start;
+  align-self: center;
   width: 220px;
   height: 46px;
   display: flex;
