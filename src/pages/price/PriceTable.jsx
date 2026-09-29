@@ -51,16 +51,33 @@ export default function PriceTable({
     onDone();
   }
 
+  // Market and fallback prices are rounded down by the store's steps
+  // (money.js roundDownPrice); a manual price is taken as typed.
+  const figures = (code) => {
+    const raw = market[code];
+    const rawDerived = raw == null ? fallbackFor(fallback, fallbackPct, code) : null;
+    return { raw, price: roundDownPrice(raw), rawDerived, derived: roundDownPrice(rawDerived) };
+  };
+
+  /** The button's tooltip: where the price came from, any rounding, and the hotkey. */
+  const tooltip = (code, i) => {
+    const key = `Alt+${i + 1}`;
+    if (!candidate || loading) return `${code} · ${key}`;
+    const { raw, price, rawDerived, derived } = figures(code);
+    const rounded = (from, to) => (from !== to ? `, rounded down from ${formatMoney(from)}` : '');
+    let about = 'no price: enter a manual price';
+    if (price != null) about = `JustTCG ${formatMoney(price)}${rounded(raw, price)}`;
+    else if (derived != null) {
+      about = `fallback ${formatMoney(derived)}: ${fallbackSource}'s ${formatMoney(fallback.price)} × ${fallbackPct[code]}%${rounded(rawDerived, derived)}`;
+    }
+    if (manual != null && code === condition) about = `manual ${formatMoney(manual)} (market: ${about})`;
+    return `${code} · ${about} · ${key}`;
+  };
+
   const cell = (code) => {
     if (!candidate) return <span className="pc-price muted">—</span>;
     if (loading) return <span className="pc-price shimmer" aria-label="Loading price" />;
-    // Market and fallback prices are rounded down by the store's steps
-    // (money.js roundDownPrice); a manual price is taken as typed.
-    const raw = market[code];
-    const price = roundDownPrice(raw);
-    const rawDerived = raw == null ? fallbackFor(fallback, fallbackPct, code) : null;
-    const derived = roundDownPrice(rawDerived);
-    const unrounded = (from, to) => (from != null && from !== to ? ` (${formatMoney(from)} before rounding down)` : '');
+    const { price, derived } = figures(code);
     if (manual != null && code === condition) {
       return (
         <span className="pc-price manual" style={priceStyle(`✎${formatMoney(manual)}`)}>
@@ -71,18 +88,14 @@ export default function PriceTable({
     }
     if (price != null) {
       return (
-        <span className="pc-price" style={priceStyle(formatMoney(price))} title={`JustTCG ${code} price${unrounded(raw, price)}`}>
+        <span className="pc-price" style={priceStyle(formatMoney(price))}>
           {formatMoney(price)}
         </span>
       );
     }
     if (derived != null) {
       return (
-        <span
-          className="pc-price"
-          style={priceStyle(formatMoney(derived))}
-          title={`No JustTCG price: ${fallbackSource}'s market price ${formatMoney(fallback.price)} × ${fallbackPct[code]}% for ${code} (Settings → Master Fallback Percentages)${unrounded(rawDerived, derived)}`}
-        >
+        <span className="pc-price" style={priceStyle(formatMoney(derived))}>
           {formatMoney(derived)}
           <span className="fb-tag">fallback</span>
         </span>
@@ -117,7 +130,7 @@ export default function PriceTable({
             aria-checked={code === condition}
             className={`price-btn cond-${code.toLowerCase()}${code === condition ? ' on' : ''}`}
             disabled={!candidate}
-            title={`${code} (Alt+${i + 1})`}
+            title={tooltip(code, i)}
             onClick={() => {
               onCondition(code);
               onDone();
