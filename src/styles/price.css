@@ -193,6 +193,18 @@
    rainbow to white. hard-light keeps its colours and still lifts the glints. */
 .card-shine.holo, .card-shine.reverse, .card-shine.pokemon-full { opacity: .45; mix-blend-mode: hard-light; }
 .card-shine.pokemon-full { --shine-area: linear-gradient(#000, #000); }
+/* Reverse holo: far more contrast (owner, 2026-09-29). The rainbow alternates
+   with deep navy/purple bands; under hard-light the dark bands darken the card
+   and the bright ones lift it, so it reads as reverse holo and dims a little. */
+.card-shine.reverse {
+  background:
+    linear-gradient(115deg, transparent 16%, rgba(255, 255, 255, .9) 28%, transparent 40%,
+      transparent 54%, rgba(255, 255, 255, .75) 64%, transparent 76%),
+    linear-gradient(115deg, #ff2d95 0%, #1a0b2e 10%, #ffd84d 20%, #0b1e2e 30%, #3dffb4 40%,
+      #0e0b2e 50%, #38b6ff 60%, #1a0b2e 70%, #a45bff 80%, #0b1e2e 90%, #ff2d95 100%);
+  background-size: 220% 220%, 300% 300%;
+  opacity: .6;
+}
 
 /* Holo: god rays out of the art box. The mask is the bands over (art window,
    plus rays that fade with distance from the art's centre); the rays turn
