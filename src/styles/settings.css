@@ -82,6 +82,13 @@
 .meter-bar i.red { background: var(--bad); }
 .usage-foot { margin: 12px 0 0; }
 
+/* Master Fallback Percentages: games down, conditions across. */
+.fb-table { border-collapse: collapse; }
+.fb-table th { padding: 4px 10px 6px 0; font-size: 12px; font-weight: 700; color: var(--muted); text-align: left; }
+.fb-table tbody th { padding-right: 16px; font-size: 13.5px; color: var(--text); }
+.fb-table td { padding: 3px 10px 3px 0; }
+.fb-box input { width: 74px; }
+
 /* Master Buy Percentages */
 .pct-row { display: flex; gap: 28px; }
 .pct-field { width: 160px; }

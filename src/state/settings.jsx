@@ -4,7 +4,14 @@ import { useLiveTable } from '../lib/useLiveTable.js';
 
 // App settings (spec 6.1 `settings`): key/value rows, live on every computer.
 
-export const DEFAULTS = { cash_pct: 33, credit_pct: 66 };
+export const DEFAULTS = {
+  cash_pct: 33,
+  credit_pct: 66,
+  // Master Fallback Percentages (owner, 2026-09-29): with only a fallback NM
+  // price (no JustTCG price), each condition is that price × its percentage.
+  fallback_pct_mtg: { NM: 100, LP: 90, MP: 80, HP: 70, DMG: 60 },
+  fallback_pct_pokemon: { NM: 100, LP: 85, MP: 70, HP: 55, DMG: 40 },
+};
 
 const SettingsContext = createContext(null);
 
@@ -14,7 +21,13 @@ export function SettingsProvider({ children }) {
 
   const values = useMemo(() => {
     const out = { ...DEFAULTS };
-    for (const row of data ?? []) out[row.key] = row.value;
+    for (const row of data ?? []) {
+      // Objects merge over the defaults, so a partial saved value still has every key.
+      const base = DEFAULTS[row.key];
+      out[row.key] = base && typeof base === 'object' && row.value && typeof row.value === 'object'
+        ? { ...base, ...row.value }
+        : row.value;
+    }
     return out;
   }, [data]);
 

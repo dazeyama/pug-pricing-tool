@@ -13,6 +13,7 @@ import {
   defaultMagicFinish, magicFinishes, pokemonVersions, defaultPokemonVersion, POKEMON_FINISHES,
 } from '../lib/printings.js';
 import { CONDITIONS, conditionPrices, fallbackPrice, resultFor } from '../lib/prices.js';
+import { useSettings } from '../state/settings.jsx';
 import { readLocal, writeLocal } from '../lib/local.js';
 
 const BACKGROUND = { '--stage-bg': `url(${import.meta.env.BASE_URL}background.webp)` };
@@ -83,6 +84,8 @@ export default function PricePage() {
     firstEdition: version?.firstEdition,
   });
   const fallback = fallbackPrice(selected, { finish, version });
+  const { values: settingValues } = useSettings();
+  const fallbackPct = settingValues[selected?.game === 'pokemon' ? 'fallback_pct_pokemon' : 'fallback_pct_mtg'];
 
   const visible = search.candidates.slice(0, ROW);
   const hasShowAll = search.candidates.length > ROW;
@@ -240,6 +243,7 @@ export default function PricePage() {
               prices={prices}
               market={market}
               fallback={fallback}
+              fallbackPct={fallbackPct}
               fetchedAt={result?.fetchedAt ?? null}
               condition={condition}
               onCondition={setCondition}

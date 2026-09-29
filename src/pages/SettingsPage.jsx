@@ -2,6 +2,7 @@ import MasterInventoryPanel from './settings/MasterInventoryPanel.jsx';
 import PercentagesPanel from './settings/PercentagesPanel.jsx';
 import ApiKeysPanel from './settings/ApiKeysPanel.jsx';
 import UsagePanel from './settings/UsagePanel.jsx';
+import FallbackPanel from './settings/FallbackPanel.jsx';
 import ThisComputerPanel from './settings/ThisComputerPanel.jsx';
 import { formatDate } from '../lib/time.js';
 
@@ -20,6 +21,7 @@ export default function SettingsPage() {
         <ApiKeysPanel />
         <UsagePanel />
         <PercentagesPanel />
+        <FallbackPanel />
         <ThisComputerPanel />
         <footer className="settings-footer">
           <p>

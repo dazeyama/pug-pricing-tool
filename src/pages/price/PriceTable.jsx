@@ -17,8 +17,17 @@ function priceStyle(text) {
  * conditions show "—" and then need a manual price. ✎ Manual price
  * overrides the purchase price.
  */
+/**
+ * The fallback price for a condition: the fallback NM price × the condition's
+ * Master Fallback Percentage (Settings), rounded to the cent.
+ */
+function fallbackFor(fallback, pct, code) {
+  if (!fallback || pct?.[code] == null) return null;
+  return Math.round(fallback.price * Number(pct[code])) / 100;
+}
+
 export default function PriceTable({
-  candidate, prices, market, fallback, fetchedAt, condition, onCondition,
+  candidate, prices, market, fallback, fallbackPct, fetchedAt, condition, onCondition,
   manual, onManual, manualOpen, setManualOpen, onDone,
 }) {
   const [text, setText] = useState('');
@@ -46,23 +55,24 @@ export default function PriceTable({
     if (!candidate) return <span className="pc-price muted">—</span>;
     if (loading) return <span className="pc-price shimmer" aria-label="Loading price" />;
     const price = market[code];
+    const derived = price == null ? fallbackFor(fallback, fallbackPct, code) : null;
     if (manual != null && code === condition) {
       return (
         <span className="pc-price manual" style={priceStyle(`✎${formatMoney(manual)}`)}>
           <b>✎{formatMoney(manual)}</b>
-          {price != null && <s>{formatMoney(price)}</s>}
+          {(price ?? derived) != null && <s>{formatMoney(price ?? derived)}</s>}
         </span>
       );
     }
     if (price != null) return <span className="pc-price" style={priceStyle(formatMoney(price))}>{formatMoney(price)}</span>;
-    if (code === 'NM' && fallback) {
+    if (derived != null) {
       return (
         <span
           className="pc-price"
-          style={priceStyle(formatMoney(fallback.price))}
-          title={`No JustTCG price — this is ${fallbackSource}'s market price`}
+          style={priceStyle(formatMoney(derived))}
+          title={`No JustTCG price: ${fallbackSource}'s market price ${formatMoney(fallback.price)} × ${fallbackPct[code]}% for ${code} (Settings → Master Fallback Percentages)`}
         >
-          {formatMoney(fallback.price)}
+          {formatMoney(derived)}
           <span className="fb-tag">fallback</span>
         </span>
       );

@@ -483,7 +483,7 @@ All IDs are `uuid default gen_random_uuid()` unless noted, and all timestamps ar
 | summary | text default '' | One plain sentence |
 
 **`settings`**: key/value (`key text PK`, `value jsonb`, `updated_at`, `updated_by`)
-- `cash_pct` (default `33`), `credit_pct` (default `66`), `last_backup_at` (timestamp of the last downloaded backup).
+- `cash_pct` (default `33`), `credit_pct` (default `66`), `last_backup_at` (timestamp of the last downloaded backup), `fallback_pct_mtg` (default `{NM:100, LP:90, MP:80, HP:70, DMG:60}`) and `fallback_pct_pokemon` (default `{NM:100, LP:85, MP:70, HP:55, DMG:40}`), the Master Fallback Percentages.
 
 **`secrets`**: `provider text PK`, `value text`, `updated_at`. **RLS on, no policies.** Only Edge Functions using the service role can read or write it.
 
@@ -797,9 +797,9 @@ A row of five large buttons directly under the selected card (Section 8.1):
 - Each button shows the condition label and **the JustTCG price for the selected printing + finish + condition**. These are the most important thing on the screen (owner, 2026-09-29): tall buttons with large bold prices (long prices step down to fit) and a colored top edge per condition, NM green, LP yellow-green, MP amber, HP orange, DMG red. The selected condition is filled with accent color. **NM is selected by default**, and resets to NM after each add and on CLEAR.
 - **Loading:** show shimmering placeholders while prices load.
 - **No JustTCG price** for a cell:
-  - **NM cell:** show the **fallback** price, i.e. Scryfall `prices.usd` / `usd_foil` / `usd_etched` for Magic, or TCGdex `pricing.tcgplayer` market price for the finish for Pokémon. Mark it with a small "fallback" tag and a tooltip: "No JustTCG price — this is Scryfall's/TCGdex's market price".
-  - **Other cells:** show "—".
-  - A condition with "—" can still be selected, but then ADD CARD needs a manual price.
+  - The **fallback** market price stands in for NM: Scryfall `prices.usd` / `usd_foil` / `usd_etched` for Magic, or TCGdex's TCGplayer market price for the version (English only) for Pokémon.
+  - **Every condition** without a JustTCG price shows that fallback price × its **Master Fallback Percentage** (owner's decision, 2026-09-29; Settings, Section 11.4), rounded to the cent, with a small "fallback" tag and a tooltip showing the working. Defaults: **Magic** NM 100%, LP 90%, MP 80%, HP 70%, DMG 60%; **Pokémon** NM 100%, LP 85%, MP 70%, HP 55%, DMG 40%.
+  - With no fallback price either (e.g. Japanese Pokémon without a JustTCG price), cells show "—". A condition with "—" can still be selected, but then ADD CARD needs a manual price.
 - A small caption under the table: "Prices via JustTCG · updated 2h ago" (from the cached `fetched_at`).
 
 **Manual price:**
@@ -1157,6 +1157,7 @@ The most prominent panel, with a **red border and a "Required" badge** until a f
 - **Cash %** (default 33) and **Credit %** (default 66): number inputs, 0–100, up to 2 decimals. Save on blur.
 - Changes apply to drafts and unpaid collections immediately. They **don't** change confirmed buys or Paid/Ours collections, whose percentages were snapshotted, or any buy with a custom rate.
 - These are the store-wide defaults. Staff can set a custom rate for a single buy from the pricing screens (Section 8.9.1).
+- **Master Fallback Percentages** (owner's decision, 2026-09-29): a panel beside these with a Magic and a Pokémon row of NM / LP / MP / HP / DMG percentages (0–100, up to 2 decimals, saved on blur), used for fallback prices (Section 8.7).
 
 ### 11.5 Backup and restore (owner's decision: cloud backups + backup file)
 
