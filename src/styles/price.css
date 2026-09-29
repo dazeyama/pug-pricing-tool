@@ -237,6 +237,7 @@
 .info-rarity { color: var(--muted); font-size: 14px; }
 .info-tags { display: flex; align-items: center; gap: 8px; }
 .info-typed { color: var(--muted); font-size: 13px; }
+.info-links { display: flex; gap: 18px; }
 .info-link { display: inline-block; font-size: 13px; }
 
 /* Space kept for later phases, so the layout already sits where it will. */

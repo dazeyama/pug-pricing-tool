@@ -120,7 +120,7 @@ function ptcgNumber(localId) {
 }
 
 /** The TCGplayer product ID on TCGdex's full card (standard size first). */
-function tcgplayerId(card) {
+export function tcgplayerId(card) {
   const variants = card?.variants_detailed ?? [];
   const standard = variants.filter((v) => (v.size ?? 'standard') === 'standard');
   for (const v of [...standard, ...variants]) {

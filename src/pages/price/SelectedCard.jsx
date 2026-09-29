@@ -4,7 +4,7 @@ import GameBadge from '../../components/GameBadge.jsx';
 import * as scry from '../../lib/scryfall.js';
 import * as dex from '../../lib/tcgdex.js';
 import { useCardImages } from './useCardImages.js';
-import { POKEMON_CARD_BACK } from '../../lib/pokemonImages.js';
+import { POKEMON_CARD_BACK, tcgplayerId } from '../../lib/pokemonImages.js';
 
 const MAGIC_RARITY = { mythic: 'Mythic rare', common: 'Common', uncommon: 'Uncommon', rare: 'Rare', special: 'Special', bonus: 'Bonus' };
 
@@ -29,7 +29,35 @@ function usePokemonDetail(c) {
       alive = false;
     };
   }, [c]);
-  return detail.key === c?.key ? detail : { card: null, info: null, page: null };
+  return detail.key === c?.key
+    ? { ...detail, resolved: true }
+    : { card: null, info: null, page: null, resolved: false };
+}
+
+const TCGPLAYER = 'https://www.tcgplayer.com';
+
+/**
+ * The card on TCGplayer: its product page when the TCGplayer ID is known
+ * (Scryfall for Magic, TCGdex for English Pokémon), otherwise a TCGplayer
+ * search (Japanese Pokémon, which TCGdex has no IDs for).
+ * @returns {{ href: string, exact: boolean }|null}  null while the Pokémon card is still loading
+ */
+function tcgplayerLink(c, magic, pokemon, typedName) {
+  const search = (category, q) => ({
+    href: `${TCGPLAYER}/search/${category}/product?q=${encodeURIComponent(q.trim())}`,
+    exact: false,
+  });
+  if (magic) {
+    return magic.tcgplayer_id
+      ? { href: `${TCGPLAYER}/product/${magic.tcgplayer_id}`, exact: true }
+      : search('magic', magic.name);
+  }
+  if (!pokemon.resolved) return null;
+  const id = tcgplayerId(pokemon.card);
+  if (id) return { href: `${TCGPLAYER}/product/${id}`, exact: true };
+  return c.lang === 'ja'
+    ? search('pokemon-japan', `${typedName || c.name} ${c.number}`)
+    : search('pokemon', `${c.name} ${c.number}`);
 }
 
 /** The selected card, large, with its info panel on the right (spec 8.4). */
@@ -64,6 +92,7 @@ export default function SelectedCard({ candidate: c, typedName }) {
   const rarity = magic ? MAGIC_RARITY[magic.rarity] ?? magic.rarity : pokemon.card?.rarity;
   const size = c.printedSize ?? pokemon.card?.set?.cardCount?.official ?? null;
   const link = magic ? magic.scryfall_uri : pokemon.page;
+  const tcgplayer = tcgplayerLink(c, magic, pokemon, typedName);
   const name = flippable ? magic.card_faces[face].name : c.name;
   // A Japanese name staff can't read gets the English name they typed beside it.
   const latin = /^[\p{Script=Latin}\p{N}\p{P}\p{Zs}\p{S}]*$/u.test(c.name);
@@ -119,11 +148,24 @@ export default function SelectedCard({ candidate: c, typedName }) {
               <span className="info-reg">Regulation <strong>{pokemon.card.regulationMark}</strong></span>
             )}
           </p>
-          {link && (
-            <a className="info-link" href={link} target="_blank" rel="noreferrer">
-              View on {magic ? 'Scryfall' : 'TCGdex'} ↗
-            </a>
-          )}
+          <p className="info-links">
+            {link && (
+              <a className="info-link" href={link} target="_blank" rel="noreferrer">
+                View on {magic ? 'Scryfall' : 'TCGdex'} ↗
+              </a>
+            )}
+            {tcgplayer && (
+              <a
+                className="info-link"
+                href={tcgplayer.href}
+                target="_blank"
+                rel="noreferrer"
+                title={tcgplayer.exact ? 'This printing on TCGplayer' : 'No TCGplayer ID for this card: searches TCGplayer'}
+              >
+                {tcgplayer.exact ? 'View on TCGplayer' : 'Find on TCGplayer'} ↗
+              </a>
+            )}
+          </p>
         </div>
       </aside>
     </>

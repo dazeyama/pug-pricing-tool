@@ -721,7 +721,8 @@ Parsing rules (`src/lib/query.js`), applied to the trimmed input:
   - game badge;
   - language;
   - for Pokémon, the regulation mark if present;
-  - a link icon to the card's page on Scryfall or TCGdex.
+  - a link icon to the card's page on Scryfall or TCGdex;
+  - beside it, **View on TCGplayer ↗** (owner's decision, 2026-09-29): the product page by TCGplayer ID (Scryfall's `tcgplayer_id` for Magic, TCGdex's for English Pokémon), or, with no ID (Japanese Pokémon), **Find on TCGplayer ↗**, a TCGplayer search for the typed name and number.
 - ⟲ **Flip** for Magic double-faced cards (Section 5.1).
 
 ### 8.5 Finish control (the big switch)
