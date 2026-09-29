@@ -705,6 +705,7 @@ Parsing rules (`src/lib/query.js`), applied to the trimmed input:
 - **Auto-select** (owner's decision): when the results narrow to exactly **one** printing, it becomes the selected card automatically. With several matches nothing is selected until the user clicks or arrows to one. The previous selection clears when the query changes enough that it no longer matches.
 - States:
   - Searching: a subtle "Searching…" with a spinner.
+  - Image still loading (a thumbnail or the selected card, including a Pokémon backup still being looked up, Section 5.2): a card-shaped shimmer with a spinner and "Loading…". The card back appears only once every source has been tried (owner's decision, 2026-09-29).
   - No match: "No cards match. Check the number and set code." Also show the name correction when one was tried.
   - A source failed: its badge greys out, with "Scryfall didn't respond — retrying…" or "TCGdex didn't respond — retrying…". The other game's results still show.
 
