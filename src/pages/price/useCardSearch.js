@@ -3,8 +3,9 @@ import { rank, runSearch } from '../../lib/cardSearch.js';
 import { isAbort } from '../../lib/transport.js';
 
 // Live search as the user types (spec 8.2): 250ms debounce, at least 2
-// characters, both games every time. A newer query aborts the older one, so
-// its queued requests are dropped and its answers ignored.
+// characters, both games unless MTG | PKM leaves one out. A newer query
+// aborts the older one, so its queued requests are dropped and its answers
+// ignored.
 
 const IDLE = { status: 'idle', list: [], total: 0, hasMore: false };
 const START = {
@@ -21,8 +22,10 @@ const START = {
 /**
  * @param {string} text  the search bar's contents
  * @param {'en'|'ja'} lang  Pokémon language
+ * @param {{ mtg: boolean, pokemon: boolean }} games  which games to search
  */
-export function useCardSearch(text, lang) {
+export function useCardSearch(text, lang, games) {
+  const gamesKey = `${games.mtg ? 'mtg' : ''}|${games.pokemon ? 'pokemon' : ''}`;
   const [state, setState] = useState(START);
   const runs = useRef(0);
 
@@ -45,12 +48,12 @@ export function useCardSearch(text, lang) {
         tried: null,
         runId,
         games: {
-          mtg: { ...s.games.mtg, status: 'searching' },
-          pokemon: { ...s.games.pokemon, status: 'searching' },
+          mtg: games.mtg ? { ...s.games.mtg, status: 'searching' } : { ...IDLE, status: 'off' },
+          pokemon: games.pokemon ? { ...s.games.pokemon, status: 'searching' } : { ...IDLE, status: 'off' },
         },
       }));
       try {
-        const { correction, tried } = await runSearch(input, lang, controller.signal, {
+        const { correction, tried } = await runSearch(input, lang, games, controller.signal, {
           onParsed: (parsed) => setState((s) => ({ ...s, parsed })),
           onUpdate: (game, result) => {
             if (!controller.signal.aborted) setState((s) => ({ ...s, games: { ...s.games, [game]: result } }));
@@ -65,7 +68,7 @@ export function useCardSearch(text, lang) {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [text, lang]);
+  }, [text, lang, gamesKey]);
 
   const candidates = useMemo(
     () => rank([state.games.mtg.list, state.games.pokemon.list], state.parsed ?? {}),

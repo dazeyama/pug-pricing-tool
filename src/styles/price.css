@@ -89,6 +89,13 @@
 .lang-toggle button + button { border-left: 1px solid var(--border); }
 .lang-toggle button:hover { color: var(--text); }
 .lang-toggle button.on { background: var(--accent-2); color: #fff; }
+.lang-toggle button:disabled { opacity: .4; cursor: default; }
+.lang-toggle button:disabled:hover { color: var(--muted); }
+/* MTG | PKM: each game on or off, in its badge colours when on. The last one
+   on can't be switched off (owner, 2026-09-29). */
+.game-toggle button.mtg.on { background: var(--pal-indigo); color: #fff; }
+.game-toggle button.pokemon.on { background: var(--pal-amber); color: #1a1405; }
+.game-toggle button.last { cursor: default; }
 .search-note { margin: 6px 2px 0; min-height: 18px; font-size: 13px; color: var(--muted); }
 .search-note strong { color: var(--text); }
 

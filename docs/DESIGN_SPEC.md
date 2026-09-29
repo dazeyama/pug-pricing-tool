@@ -682,8 +682,9 @@ Card image sizes follow Scryfall's as the reference: the selected card is 336×4
 ### 8.2 Main search bar
 
 - A large input (about 56px tall, 20px text) at the top of the stage. **It never moves and isn't an overlay.** It has focus when the screen opens and gets focus back after every add and every CLEAR.
-- An **EN | JP** segmented toggle at its right edge. It affects **Pokémon only** (Magic is always English), defaults to **EN**, and is remembered per device. While JP is on, a small "JP" chip shows in the input.
-- Search runs live as the user types (debounce 250ms, minimum 2 characters). **Both games are queried every time** (owner's decision), and results mix together with game badges.
+- An **MTG | PKM** toggle left of EN | JP (owner's decision, 2026-09-29) picks the games searched. Each side switches on and off (in its badge color when on); **both are on by default**, and **at least one stays on** (the last one on can't be switched off). A game that's off isn't queried at all, and the "Showing results for" correction only suggests names from the games that are on. The choice holds for the whole buy and **resets to both** when the buy is confirmed or cancelled (Phase 6) or the Price tab is left; a page refresh also resets it. When nothing matches, the empty message says which game is off.
+- An **EN | JP** segmented toggle at its right edge. It affects **Pokémon only** (Magic is always English), defaults to **EN**, and is remembered per device. While JP is on, a small "JP" chip shows in the input. It's greyed out while PKM is off.
+- Search runs live as the user types (debounce 250ms, minimum 2 characters). **Both games are queried every time** (owner's decision) unless MTG | PKM switches one off, and results mix together with game badges.
 
 **Query syntax.** The expected line is what's printed on the card:
 
@@ -1450,6 +1451,7 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 - [ ] A card whose Scryfall/TCGdex price is far from JustTCG's NM shows ⚠️ on the NM label.
 - [ ] Price panel (beside the card info): the selected condition's price in green, Credit and Cash under it; it follows condition, foil, Use Fallback and manual price.
 - [ ] Arrow quickly through 10 suggestions: the usage meter rises by about 1, not 10.
+- [ ] MTG | PKM: switch PKM off and search `Charizard`: only Magic cards show (or "No cards match … PKM is off"), and EN | JP greys out. The last game on can't be switched off. Leave the Price tab and come back: both are on again.
 - [ ] Etched Magic card: the price looks like the etched listing, not the regular foil.
 
 ---
@@ -1459,7 +1461,7 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 **Build**
 - The Postgres write functions for drafts and `confirm_buy` (Section 6.2), including the `events` writes for `buy_confirmed`.
 - A new migration adding `buys.custom_cash_pct` / `custom_credit_pct` (Section 6.1; 0001 is already applied, so don't edit it), `draft_set_custom_rates`, and the clickable percentages with the custom-rate subpanel (Section 8.9.1) on the Price tab.
-- Qty, **ADD CARD**, **CLEAR** (Section 8.8); the sidebar with game groups, line format (`lineFormat.js`, with unit tests for the formatter), hover-red remove with quantity (8.9); totals; **CONFIRM BUY** dialog with customer name/notes; **CANCEL** (8.10); per-device draft restore; the "Pick a user first" guard; Enter to add. Alt+Q.
+- Qty, **ADD CARD**, **CLEAR** (Section 8.8); the sidebar with game groups, line format (`lineFormat.js`, with unit tests for the formatter), hover-red remove with quantity (8.9); totals; **CONFIRM BUY** dialog with customer name/notes; **CANCEL** (8.10); CONFIRM BUY and CANCEL reset MTG | PKM to both (8.2); per-device draft restore; the "Pick a user first" guard; Enter to add. Alt+Q.
 
 **Where to look**
 - [ ] Add 3 cards, refresh the page: the buy list is still there.
@@ -1777,6 +1779,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 82 | Price table foot (2026-09-29) | Use Fallback and ✎ Manual price centered under the buttons; the "Prices via JustTCG" caption on its own line below |
 | 83 | Price panel (2026-09-29) | Beside the card info: the selected condition's price in green, with Credit and Cash chips under it, rounded down by the price steps. Display only, never saved (Section 8.7) |
 | 84 | Totals rounding (2026-09-29) | Buy and collection totals' Cash / Credit round down by the price steps too, from the summed total (Section 7.8) |
+| 85 | Game filter (2026-09-29) | MTG \| PKM toggle left of EN \| JP: both on by default, at least one on; held for the buy, reset to both when a buy is confirmed/cancelled or the Price tab is left (Section 8.2) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

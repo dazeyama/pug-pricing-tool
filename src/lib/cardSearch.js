@@ -196,13 +196,17 @@ function nameIndex(game, names) {
 
 /**
  * "lightnig bolt" → "Lightning Bolt": only when the name isn't part of any
- * known name, and only the single best match across both games.
+ * known name, and only the single best match across the games searched.
  * @returns {Promise<{ game: 'mtg'|'pokemon', name: string }|null>}
  */
-export async function findCorrection(name) {
+export async function findCorrection(name, games = { mtg: true, pokemon: true }) {
   const key = nameKey(name);
   if (key.length < 3) return null;
-  const [magic, pokemon] = await Promise.allSettled([scry.loadNames(), dex.loadNames()]);
+  const off = () => Promise.reject(new Error('Switched off'));
+  const [magic, pokemon] = await Promise.allSettled([
+    games.mtg ? scry.loadNames() : off(),
+    games.pokemon ? dex.loadNames() : off(),
+  ]);
   const catalogs = [];
   if (magic.status === 'fulfilled') catalogs.push(nameIndex('mtg', magic.value));
   if (pokemon.status === 'fulfilled') catalogs.push(nameIndex('pokemon', pokemon.value));
@@ -230,7 +234,7 @@ const sleep = (ms, signal) => new Promise((resolve, reject) => {
 });
 
 /**
- * @typedef {{ status: 'searching'|'retrying'|'ok'|'failed'|'skipped',
+ * @typedef {{ status: 'searching'|'retrying'|'ok'|'failed'|'skipped'|'off',
  *   list: Candidate[], total: number, hasMore: boolean }} GameResult
  */
 
@@ -248,18 +252,19 @@ function routeSetCode(parsed, lang) {
 }
 
 /**
- * Search both games. `onParsed` fires once the line is read; `onUpdate(game,
- * result)` fires as each game changes. Resolves when both are done; rejects
- * only with AbortError.
+ * Search both games, or one (MTG | PKM). `onParsed` fires once the line is
+ * read; `onUpdate(game, result)` fires as each game changes. Resolves when
+ * both are done; rejects only with AbortError.
  * @param {string} input
  * @param {'en'|'ja'} lang  Pokémon language (Magic is always English)
+ * @param {{ mtg: boolean, pokemon: boolean }} games  which games to search
  * @param {AbortSignal} signal
  * @param {{ onParsed: (parsed: any) => void,
  *           onUpdate: (game: 'mtg'|'pokemon', result: GameResult) => void }} callbacks
  * @returns {Promise<{ correction: { game: string, name: string }|null, tried: string|null }>}
  *   tried: a correction that was searched but found nothing either
  */
-export async function runSearch(input, lang, signal, { onParsed, onUpdate }) {
+export async function runSearch(input, lang, games, signal, { onParsed, onUpdate }) {
   await Promise.allSettled([scry.loadSets(), dex.loadSetList(lang)]);
   if (signal.aborted) throw new DOMException('Superseded', 'AbortError');
   const known = (t) => scry.isMagicSetCode(t) || dex.isPokemonSetCode(lang, t);
@@ -276,6 +281,11 @@ export async function runSearch(input, lang, signal, { onParsed, onUpdate }) {
   // nothing. A source that stops answering is retried every few seconds.
   const runGame = async (game, p) => {
     const empty = { list: [], total: 0, hasMore: false };
+    // A game switched off with MTG | PKM isn't asked at all.
+    if (!games[game]) {
+      onUpdate(game, { status: 'off', ...empty });
+      return empty;
+    }
     for (let round = 0; ; round++) {
       try {
         const route = routeSetCode(p, lang);
@@ -301,7 +311,7 @@ export async function runSearch(input, lang, signal, { onParsed, onUpdate }) {
 
   // Nothing anywhere: try the closest known name.
   if (parsed.name && results.every((r) => !r.list.length)) {
-    const correction = await findCorrection(parsed.name);
+    const correction = await findCorrection(parsed.name, games);
     if (signal.aborted) throw new DOMException('Superseded', 'AbortError');
     if (correction) {
       const result = await runGame(correction.game, { ...parsed, name: correction.name });

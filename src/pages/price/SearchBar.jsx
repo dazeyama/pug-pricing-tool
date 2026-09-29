@@ -1,6 +1,12 @@
 // The main search bar (spec 8.2): large, fixed at the top of the stage, never
-// an overlay. EN | JP at its right edge switches Pokémon's language only.
-export default function SearchBar({ inputRef, value, onChange, onKeyDown, lang, onLang, note }) {
+// an overlay. At its right edge, MTG | PKM picks the games searched (either
+// or both, never neither), and EN | JP switches Pokémon's language only.
+const GAMES = [
+  { key: 'mtg', label: 'MTG', name: 'Magic' },
+  { key: 'pokemon', label: 'PKM', name: 'Pokémon' },
+];
+
+export default function SearchBar({ inputRef, value, onChange, onKeyDown, lang, onLang, games, onGames, note }) {
   return (
     <div className="main-search">
       <div className="main-search-row">
@@ -21,7 +27,29 @@ export default function SearchBar({ inputRef, value, onChange, onKeyDown, lang, 
             onChange={(e) => onChange(e.target.value)}
             onKeyDown={onKeyDown}
           />
-          {lang === 'ja' && <span className="jp-chip" title="Pokémon searches are Japanese">JP</span>}
+          {lang === 'ja' && games.pokemon && <span className="jp-chip" title="Pokémon searches are Japanese">JP</span>}
+        </div>
+        <div className="lang-toggle game-toggle" role="group" aria-label="Games to search">
+          {GAMES.map((g) => {
+            const on = games[g.key];
+            const last = on && GAMES.every((o) => o.key === g.key || !games[o.key]);
+            let title = on ? `Searching ${g.name}: click to leave it out` : `Not searching ${g.name}: click to include it`;
+            if (last) title = `Searching ${g.name} only: at least one game stays on`;
+            return (
+              <button
+                key={g.key}
+                type="button"
+                aria-pressed={on}
+                className={`${g.key}${on ? ' on' : ''}${last ? ' last' : ''}`}
+                title={title}
+                onClick={() => {
+                  if (!last) onGames({ ...games, [g.key]: !on });
+                }}
+              >
+                {g.label}
+              </button>
+            );
+          })}
         </div>
         <div className="lang-toggle" role="radiogroup" aria-label="Pokémon language">
           {['en', 'ja'].map((l) => (
@@ -31,7 +59,9 @@ export default function SearchBar({ inputRef, value, onChange, onKeyDown, lang, 
               role="radio"
               aria-checked={lang === l}
               className={lang === l ? 'on' : ''}
-              title={l === 'en' ? 'English Pokémon' : 'Japanese Pokémon (search by number and set code)'}
+              disabled={!games.pokemon}
+              title={!games.pokemon ? 'Pokémon is switched off (PKM)'
+                : l === 'en' ? 'English Pokémon' : 'Japanese Pokémon (search by number and set code)'}
               onClick={() => onLang(l)}
             >
               {l === 'en' ? 'EN' : 'JP'}

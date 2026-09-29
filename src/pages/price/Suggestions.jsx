@@ -99,6 +99,8 @@ function Status({ search, lang }) {
       );
     }
   }
+  // A game switched off with MTG | PKM: say so when nothing matches.
+  const off = ['mtg', 'pokemon'].find((g) => search.games[g].status === 'off');
   if (search.searching) {
     bits.unshift(<span key="busy" className="searching"><span className="spinner" aria-hidden="true" /> Searching…</span>);
   } else if (search.query && search.settled && !search.candidates.length) {
@@ -106,11 +108,12 @@ function Status({ search, lang }) {
       <span key="none" className="no-match">
         No cards match. Check the number and set code.
         {search.tried && <> Also tried <strong>{search.tried}</strong>.</>}
+        {off && <> Only {off === 'mtg' ? 'Pokémon' : 'Magic'} is being searched ({off === 'mtg' ? 'MTG' : 'PKM'} is off).</>}
       </span>,
     );
   }
   const p = search.parsed;
-  if (lang === 'ja' && search.query && p && !p.number && !p.setCode) {
+  if (lang === 'ja' && off !== 'pokemon' && search.query && p && !p.number && !p.setCode) {
     bits.push(<span key="jp" className="jp-hint">Japanese Pokémon: search by number and set code, e.g. 25/165 SV2a.</span>);
   }
   return <div className="suggest-status" aria-live="polite">{bits}</div>;

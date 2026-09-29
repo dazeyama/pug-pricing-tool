@@ -29,13 +29,19 @@ function usePokemonLang() {
   }];
 }
 
+// MTG | PKM (owner, 2026-09-29): which games search asks, both by default.
+// Kept for the whole buy, and back to both when the Price tab is left (the
+// page unmounts) or, from Phase 6, when a buy is confirmed or cancelled.
+const BOTH_GAMES = { mtg: true, pokemon: true };
+
 // The Price tab (spec 8): search, suggestions, the selected card, and its
 // finish and details (Phase 4). Prices (Phase 5) and the buy list (Phase 6)
 // are marked where they'll go.
 export default function PricePage() {
   const [text, setText] = useState('');
   const [lang, setLang] = usePokemonLang();
-  const search = useCardSearch(text, lang);
+  const [games, setGames] = useState(BOTH_GAMES);
+  const search = useCardSearch(text, lang, games);
   const [selected, setSelected] = useState(null);
   const [highlight, setHighlight] = useState(-1);
   const [showAll, setShowAll] = useState(false);
@@ -209,6 +215,11 @@ export default function PricePage() {
           lang={lang}
           onLang={(l) => {
             setLang(l);
+            focusSearch();
+          }}
+          games={games}
+          onGames={(g) => {
+            setGames(g);
             focusSearch();
           }}
           note={note}
