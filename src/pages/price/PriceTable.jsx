@@ -52,8 +52,10 @@ export default function PriceTable({
     let about = 'no price: enter a manual price';
     if (e.source === 'justtcg') about = `JustTCG ${formatMoney(e.price)}${rounded}`;
     else if (e.source === 'fallback') {
-      about = `fallback ${formatMoney(e.price)}: ${e.base.from}'s ${formatMoney(e.base.price)} × ${pct[code]}%`;
-      if (e.cappedBy) about += `, lowered to ${e.cappedBy}'s price`;
+      about = e.cap
+        ? `fallback ${formatMoney(e.price)}: ${e.cap.pct}% below ${e.cap.code}'s ${formatMoney(e.cap.from)}`
+          + ` (${e.base.from}'s ${formatMoney(e.base.price)} × ${pct[code]}% = ${formatMoney(e.cap.was)} wasn't below ${e.cap.code})`
+        : `fallback ${formatMoney(e.price)}: ${e.base.from}'s ${formatMoney(e.base.price)} × ${pct[code]}%`;
       about += rounded;
       if (e.thrownOut != null) about += ` (JustTCG's ${formatMoney(e.thrownOut)} was higher than a better condition, so it was thrown out)`;
       if (fallbackOn) about += ' (Use Fallback is on)';

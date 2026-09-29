@@ -132,22 +132,29 @@ export function resultFor(c, results, { finish, version, versions = [] }) {
   return results[`pokemon:${c.lang}:${c.tcgdexId}`];
 }
 
+// A fallback that would show the same as (or more than) the condition above
+// it goes this far below that condition's price instead (owner, 2026-09-29).
+const CAP_STEP = { mtg: 10, pokemon: 15 };
+
 /**
  * The five prices shown, NM down to DMG (spec 8.7): JustTCG's where it has
  * one, otherwise a fallback, i.e. a base price × the condition's Master
  * Fallback Percentage. The base is JustTCG's own NM price when it has one,
  * else the Scryfall/TCGdex price (owner, 2026-09-29). Prices never rise as
  * the condition drops: a JustTCG price above the better condition's is
- * thrown out and replaced by a fallback, and no fallback is allowed above
- * the better condition either. Then every price is rounded down by the
+ * thrown out and replaced by a fallback; and a fallback that would show the
+ * same as or more than the better condition is set 10% (Magic) or 15%
+ * (Pokémon) below it instead. Then every price is rounded down by the
  * store's steps.
  * @param {Record<string, number|null>} market  JustTCG prices by condition (conditionPrices)
  * @param {{ price: number, source: string }|null} fallback  the Scryfall/TCGdex market price
  * @param {Record<string, number>} pct  Master Fallback Percentages for the game
+ * @param {'mtg'|'pokemon'} game
  * @returns {Record<string, { price: number|null, raw: number|null, source: 'justtcg'|'fallback'|null,
- *   base: { price: number, from: string }|null, thrownOut: number|null, cappedBy: string|null }>}
+ *   base: { price: number, from: string }|null, thrownOut: number|null,
+ *   cap: { code: string, pct: number, from: number, was: number }|null }>}
  */
-export function priceLadder(market, fallback, pct) {
+export function priceLadder(market, fallback, pct, game) {
   const out = {};
   let base = null;
   if (market?.NM != null) base = { price: market.NM, from: 'JustTCG' };
@@ -161,12 +168,14 @@ export function priceLadder(market, fallback, pct) {
       thrownOut = raw;
       raw = null;
     }
-    const entry = { raw, source: raw != null ? 'justtcg' : null, base: null, thrownOut, cappedBy: null };
+    const entry = { raw, source: raw != null ? 'justtcg' : null, base: null, thrownOut, cap: null };
     if (raw == null) {
       let value = base && pct?.[code] != null ? (base.price * Number(pct[code])) / 100 : null;
-      if (value != null && prev != null && value > prev) {
-        value = prev;
-        entry.cappedBy = prevCode;
+      // Compared as shown (rounded), so two conditions never show one price.
+      if (value != null && prev != null && roundDownPrice(value) >= roundDownPrice(prev)) {
+        const step = CAP_STEP[game] ?? CAP_STEP.mtg;
+        entry.cap = { code: prevCode, pct: step, from: prev, was: value };
+        value = (prev * (100 - step)) / 100;
       }
       Object.assign(entry, { raw: value, source: value != null ? 'fallback' : null, base });
     }

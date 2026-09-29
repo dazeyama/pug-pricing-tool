@@ -105,7 +105,7 @@ export default function PricePage() {
   const canUseFallback = fallback != null && CONDITIONS.some((c) => market[c] != null);
   const fallbackOn = useFallback && canUseFallback;
   // The five prices shown and used (JustTCG, fallbacks, never rising, rounded down).
-  const ladder = priceLadder(fallbackOn ? {} : market, fallback, fallbackPct);
+  const ladder = priceLadder(fallbackOn ? {} : market, fallback, fallbackPct, selected?.game);
   const nmWarning = nmMismatch(market, fallback, fallbackPct);
 
   const visible = search.candidates.slice(0, ROW);
