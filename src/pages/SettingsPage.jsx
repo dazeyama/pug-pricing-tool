@@ -20,7 +20,8 @@ export default function SettingsPage() {
         <ThisComputerPanel />
         <footer className="settings-footer">
           <p>
-            Card data and images from Scryfall (Magic) and TCGdex (Pokémon). Prices via JustTCG.
+            Card data and images from Scryfall (Magic) and TCGdex (Pokémon), with some Pokémon images
+            from pokemontcg.io and TCGplayer. Prices via JustTCG.
             Not affiliated with Wizards of the Coast or The Pokémon Company.
           </p>
           <p>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import GameBadge from '../../components/GameBadge.jsx';
+import { useCardImages } from './useCardImages.js';
 
 /** Suggestions shown at once: 2 rows of 5 (owner's layout, 2026-09-29). */
 export const ROW = 10;
@@ -39,6 +40,7 @@ function SetMark({ c }) {
 
 /** One suggestion: thumbnail, with the game badge and "SET #num" beneath. */
 export function Thumb({ c, highlighted, selected, onPick }) {
+  const { thumb } = useCardImages(c);
   return (
     <button
       type="button"
@@ -47,8 +49,8 @@ export function Thumb({ c, highlighted, selected, onPick }) {
       onClick={() => onPick(c)}
     >
       <span className="thumb-img">
-        {c.thumb ? (
-          <img src={c.thumb} alt={c.name} loading="lazy" />
+        {thumb ? (
+          <img src={thumb} alt={c.name} loading="lazy" />
         ) : (
           <span className="thumb-back">{c.name}</span>
         )}

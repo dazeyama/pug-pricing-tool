@@ -312,7 +312,14 @@ Division of labour: **Scryfall and TCGdex supply everything about the card** (na
 
 **Fields used from a TCGdex card:** `id`, `localId`, `name`, `image`, `rarity`, `set` (`id`, `name`, `cardCount`), `variants` (`normal`, `reverse`, `holo`, `firstEdition`, `wPromo`), `variants_detailed` where present (newer data includes third-party IDs and per-variant pricing), and `pricing.tcgplayer` (fallback price only).
 
-**Images:** TCGdex's `image` is a base URL. Append `/high.webp` for the selected card and `/low.webp` for thumbnails. Some cards have no image: show a neutral card back with the name and number printed on it.
+**Images:** TCGdex's `image` is a base URL. Append `/high.webp` for the selected card and `/low.webp` for thumbnails.
+
+**Backup images** (owner's request, 2026-09-29). TCGdex has no picture of 7% of English cards (1,590, including whole sets such as Shining Fates' Shiny Vault, Dragon Majesty, Shining Legends, Crown Zenith's Galarian Gallery and the trainer kits) and 70% of Japanese cards (8,899). For those, `src/lib/pokemonImages.js` tries, in order:
+1. **pokemontcg.io's image CDN**, `images.pokemontcg.io/<set>/<number>.png` (and `_hires.png`), for English cards. Its set IDs are matched to TCGdex's by ID or folded name from `GET api.pokemontcg.io/v2/sets` (cached 7 days; that API often answers 500/502 and works on retry). A missing card there still returns a card-back picture with status 404, so each address is checked with a `HEAD` request first (the CDN allows CORS). This covered about 930 of the 1,590 missing English images.
+2. **TCGplayer's product image**, `tcgplayer-cdn.tcgplayer.com/product/<id>_200w.jpg` (and `_in_1000x1000.jpg`), using the TCGplayer ID on TCGdex's full card (`variants_detailed[].thirdParty.tcgplayer`). English only: TCGdex has no TCGplayer IDs for Japanese cards.
+3. Otherwise a neutral card back with the name and number printed on it.
+
+Japanese cards have no backup yet. JustTCG (Phase 5) returns a TCGplayer ID per card, which can point the selected card at TCGplayer's image then. Settings' footer credits pokemontcg.io and TCGplayer for the images they supply.
 
 **Set codes (owner's decision):** display the **printed abbreviation** from the set's `abbreviation` field (`PAL`, `OBF`, `SV2a`). Older sets have no printed abbreviation. For those, fall back to the TCGdex set ID in upper case (`BASE1`) and treat it as the code for search too.
 

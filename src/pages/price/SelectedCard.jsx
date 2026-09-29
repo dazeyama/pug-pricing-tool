@@ -3,6 +3,7 @@ import CardImage from '../../components/CardImage.jsx';
 import GameBadge from '../../components/GameBadge.jsx';
 import * as scry from '../../lib/scryfall.js';
 import * as dex from '../../lib/tcgdex.js';
+import { useCardImages } from './useCardImages.js';
 
 const MAGIC_RARITY = { mythic: 'Mythic rare', common: 'Common', uncommon: 'Uncommon', rare: 'Rare', special: 'Special', bonus: 'Bonus' };
 
@@ -34,6 +35,7 @@ function usePokemonDetail(c) {
 export default function SelectedCard({ candidate: c, typedName }) {
   const [face, setFace] = useState(0);
   const pokemon = usePokemonDetail(c);
+  const pokemonImages = useCardImages(c);   // TCGdex's, or a backup when it has none
   useEffect(() => setFace(0), [c?.key]);
 
   if (!c) {
@@ -55,8 +57,8 @@ export default function SelectedCard({ candidate: c, typedName }) {
 
   const magic = c.game === 'mtg' ? c.scryfall : null;
   const flippable = magic && scry.hasBackFace(magic);
-  const thumb = magic ? scry.cardImage(magic, 'small', face) : c.thumb;
-  const image = magic ? scry.cardImage(magic, 'large', face) : c.image;
+  const thumb = magic ? scry.cardImage(magic, 'small', face) : pokemonImages.thumb;
+  const image = magic ? scry.cardImage(magic, 'large', face) : pokemonImages.image;
   const set = magic ? scry.setByCode(c.setId) : null;
   const rarity = magic ? MAGIC_RARITY[magic.rarity] ?? magic.rarity : pokemon.card?.rarity;
   const size = c.printedSize ?? pokemon.card?.set?.cardCount?.official ?? null;
@@ -70,7 +72,8 @@ export default function SelectedCard({ candidate: c, typedName }) {
       <div className="area-card">
         <div className="stage-label">Selected card</div>
         <div className="card-box">
-          <CardImage key={`${c.key}:${face}`} thumb={thumb} image={image} alt={c.name} name={c.name} number={c.number} />
+          {/* Keyed by the image too: a backup image arriving later starts a fresh load. */}
+          <CardImage key={`${c.key}:${face}:${image ?? 'none'}`} thumb={thumb} image={image} alt={c.name} name={c.name} number={c.number} />
           {flippable && (
             <button
               type="button"
