@@ -691,7 +691,7 @@ Parsing rules (`src/lib/query.js`), applied to the trimmed input:
 - Up to **10 thumbnails** of the best matches in rank order, in **2 rows of 5** under the card info (Section 8.1). Each has a game badge in its corner and `SET #num` beneath it.
 - A **"… show all (N)"** button on the line above them when N > 10. It opens a modal grid of every match (same thumbnails, scrollable, with the same keyboard behavior). Clicking a card selects it and closes the modal.
 - The highlighted suggestion has an accent outline (the keyboard cursor, Section 8.11).
-- Clicking a thumbnail makes it the **selected card**.
+- Clicking a thumbnail makes it the **selected card**. Clicking the selected card's thumbnail again deselects it, leaving nothing selected (owner's decision, 2026-09-29).
 - **Auto-select** (owner's decision): when the results narrow to exactly **one** printing, it becomes the selected card automatically. With several matches nothing is selected until the user clicks or arrows to one. The previous selection clears when the query changes enough that it no longer matches.
 - States:
   - Searching: a subtle "Searching…" with a spinner.

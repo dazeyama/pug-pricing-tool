@@ -59,10 +59,11 @@ export default function PricePage() {
     input.current?.focus();
   }
 
+  // Clicking the selected card again deselects it.
   function pick(c) {
-    setSelected(c);
-    const index = visible.findIndex((v) => v.key === c.key);
-    setHighlight(index);
+    const again = selected?.key === c.key;
+    setSelected(again ? null : c);
+    setHighlight(again ? -1 : visible.findIndex((v) => v.key === c.key));
     setShowAll(false);
     focusSearch();
   }
