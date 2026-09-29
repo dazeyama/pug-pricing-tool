@@ -502,45 +502,60 @@
 .versions legend { padding: 0; margin-bottom: 4px; font-size: 12px; color: var(--muted); }
 .area-prices .stage-slot, .area-actions .stage-slot { height: 96px; }
 
-/* ---- Condition / price table under the card (spec 8.7) ---- */
+/* ---- Condition / price table under the card (spec 8.7) ----
+   The most important thing on the screen (owner, 2026-09-29): big buttons,
+   big prices, a colour edge per condition (NM green → DMG red). */
 .price-table { display: flex; flex-direction: column; gap: 6px; }
-.price-buttons { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+.price-buttons { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
 .price-btn {
-  height: 58px;
+  --cond: var(--border);
+  height: 80px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 5px;
   padding: 2px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: rgba(24, 28, 46, .92);
+  border: 2px solid var(--border);
+  border-top: 5px solid var(--cond);
+  border-radius: 9px;
+  background: rgba(24, 28, 46, .95);
   color: var(--text);
   font: inherit;
   cursor: pointer;
 }
-.price-btn:hover:not(:disabled) { border-color: var(--accent); }
-.price-btn.on { background: var(--accent-2); border-color: var(--accent); }
+.price-btn.cond-nm { --cond: #3ecf8e; }
+.price-btn.cond-lp { --cond: #a3d65c; }
+.price-btn.cond-mp { --cond: #ffcc66; }
+.price-btn.cond-hp { --cond: #ff9f43; }
+.price-btn.cond-dmg { --cond: #ff6b6b; }
+.price-btn:hover:not(:disabled) { border-color: var(--accent); border-top-color: var(--cond); }
+.price-btn.on {
+  background: var(--accent-2);
+  border-color: #fff;
+  border-top-color: var(--cond);
+  box-shadow: 0 0 0 2px var(--accent);
+}
 .price-btn:disabled { cursor: default; opacity: .7; }
-.pc-cond { font-size: 12px; font-weight: 800; letter-spacing: .06em; }
+.pc-cond { font-size: 16px; font-weight: 800; letter-spacing: .06em; }
 .pc-price {
   display: flex;
   flex-direction: column;
   align-items: center;
-  font-size: 13.5px;
-  font-weight: 600;
+  font-size: var(--pc-size, 18px);
+  font-weight: 800;
   line-height: 1.1;
+  white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
-.pc-price.muted { color: var(--muted); }
+.pc-price.muted { color: var(--muted); font-size: 18px; }
 .pc-price.manual b { font-weight: 800; }
-.pc-price.manual s { font-size: 10.5px; font-weight: 500; color: var(--muted); }
+.pc-price.manual s { font-size: 11px; font-weight: 500; color: var(--muted); }
 .price-btn.on .pc-price.manual s, .price-btn.on .pc-price.muted { color: rgba(255, 255, 255, .7); }
-.fb-tag { font-size: 9px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--warn); }
+.fb-tag { font-size: 9.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--warn); }
 .pc-price.shimmer {
   width: 70%;
-  height: 12px;
+  height: 16px;
   border-radius: 4px;
   background: linear-gradient(90deg, #232842 25%, #343c60 50%, #232842 75%) 0 0 / 250% 100%;
   animation: shimmer 1.2s linear infinite;

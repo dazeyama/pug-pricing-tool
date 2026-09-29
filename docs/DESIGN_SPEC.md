@@ -794,7 +794,7 @@ A row of five large buttons directly under the selected card (Section 8.1):
 └────────┘ └────────┘ └────────┘ └────────┘ └────────┘
 ```
 
-- Each button shows the condition label and **the JustTCG price for the selected printing + finish + condition**. The selected condition is filled with accent color. **NM is selected by default**, and resets to NM after each add and on CLEAR.
+- Each button shows the condition label and **the JustTCG price for the selected printing + finish + condition**. These are the most important thing on the screen (owner, 2026-09-29): tall buttons with large bold prices (long prices step down to fit) and a colored top edge per condition, NM green, LP yellow-green, MP amber, HP orange, DMG red. The selected condition is filled with accent color. **NM is selected by default**, and resets to NM after each add and on CLEAR.
 - **Loading:** show shimmering placeholders while prices load.
 - **No JustTCG price** for a cell:
   - **NM cell:** show the **fallback** price, i.e. Scryfall `prices.usd` / `usd_foil` / `usd_etched` for Magic, or TCGdex `pricing.tcgplayer` market price for the finish for Pokémon. Mark it with a small "fallback" tag and a tooltip: "No JustTCG price — this is Scryfall's/TCGdex's market price".

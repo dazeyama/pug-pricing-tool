@@ -4,6 +4,12 @@ import { CONDITIONS } from '../../lib/prices.js';
 import { formatMoney, parseMoney } from '../../lib/money.js';
 import { timeAgo } from '../../lib/time.js';
 
+/** Big prices, stepping down so "$1,234.56" still fits a button. */
+function priceStyle(text) {
+  const n = text.length;
+  return { '--pc-size': n <= 6 ? '18px' : n === 7 ? '16px' : n === 8 ? '14px' : '12.5px' };
+}
+
 /**
  * The condition / price table under the selected card (spec 8.7): five
  * buttons with JustTCG's price for the chosen printing, finish and
@@ -42,16 +48,20 @@ export default function PriceTable({
     const price = market[code];
     if (manual != null && code === condition) {
       return (
-        <span className="pc-price manual">
-          <b>✎ {formatMoney(manual)}</b>
+        <span className="pc-price manual" style={priceStyle(`✎${formatMoney(manual)}`)}>
+          <b>✎{formatMoney(manual)}</b>
           {price != null && <s>{formatMoney(price)}</s>}
         </span>
       );
     }
-    if (price != null) return <span className="pc-price">{formatMoney(price)}</span>;
+    if (price != null) return <span className="pc-price" style={priceStyle(formatMoney(price))}>{formatMoney(price)}</span>;
     if (code === 'NM' && fallback) {
       return (
-        <span className="pc-price" title={`No JustTCG price — this is ${fallbackSource}'s market price`}>
+        <span
+          className="pc-price"
+          style={priceStyle(formatMoney(fallback.price))}
+          title={`No JustTCG price — this is ${fallbackSource}'s market price`}
+        >
           {formatMoney(fallback.price)}
           <span className="fb-tag">fallback</span>
         </span>
@@ -84,7 +94,7 @@ export default function PriceTable({
             type="button"
             role="radio"
             aria-checked={code === condition}
-            className={`price-btn${code === condition ? ' on' : ''}`}
+            className={`price-btn cond-${code.toLowerCase()}${code === condition ? ' on' : ''}`}
             disabled={!candidate}
             title={`${code} (Alt+${i + 1})`}
             onClick={() => {
