@@ -85,6 +85,13 @@ export default function Suggestions({ search, lang, highlight, selectedKey, onPi
         {visible.map((c, i) => (
           <Thumb key={c.key} c={c} highlighted={highlight === i} selected={c.key === selectedKey} onPick={onPick} />
         ))}
+        {/* The rest of the 10 slots as faded card shapes, so the grid never looks empty. */}
+        {Array.from({ length: ROW - visible.length }, (_, i) => (
+          <span key={`slot-${i}`} className="thumb thumb-slot" aria-hidden="true">
+            <span className="thumb-img" />
+            <span className="thumb-label">&nbsp;</span>
+          </span>
+        ))}
       </div>
     </div>
   );
