@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CONDITIONS } from '../../lib/prices.js';
-import { formatMoney, parseMoney } from '../../lib/money.js';
+import { formatMoney, parseMoney, roundDownPrice } from '../../lib/money.js';
 import { timeAgo } from '../../lib/time.js';
 
 /** Big prices, stepping down so "$1,234.56" still fits a button. */
@@ -54,8 +54,13 @@ export default function PriceTable({
   const cell = (code) => {
     if (!candidate) return <span className="pc-price muted">—</span>;
     if (loading) return <span className="pc-price shimmer" aria-label="Loading price" />;
-    const price = market[code];
-    const derived = price == null ? fallbackFor(fallback, fallbackPct, code) : null;
+    // Market and fallback prices are rounded down by the store's steps
+    // (money.js roundDownPrice); a manual price is taken as typed.
+    const raw = market[code];
+    const price = roundDownPrice(raw);
+    const rawDerived = raw == null ? fallbackFor(fallback, fallbackPct, code) : null;
+    const derived = roundDownPrice(rawDerived);
+    const unrounded = (from, to) => (from != null && from !== to ? ` (${formatMoney(from)} before rounding down)` : '');
     if (manual != null && code === condition) {
       return (
         <span className="pc-price manual" style={priceStyle(`✎${formatMoney(manual)}`)}>
@@ -64,13 +69,19 @@ export default function PriceTable({
         </span>
       );
     }
-    if (price != null) return <span className="pc-price" style={priceStyle(formatMoney(price))}>{formatMoney(price)}</span>;
+    if (price != null) {
+      return (
+        <span className="pc-price" style={priceStyle(formatMoney(price))} title={`JustTCG ${code} price${unrounded(raw, price)}`}>
+          {formatMoney(price)}
+        </span>
+      );
+    }
     if (derived != null) {
       return (
         <span
           className="pc-price"
           style={priceStyle(formatMoney(derived))}
-          title={`No JustTCG price: ${fallbackSource}'s market price ${formatMoney(fallback.price)} × ${fallbackPct[code]}% for ${code} (Settings → Master Fallback Percentages)`}
+          title={`No JustTCG price: ${fallbackSource}'s market price ${formatMoney(fallback.price)} × ${fallbackPct[code]}% for ${code} (Settings → Master Fallback Percentages)${unrounded(rawDerived, derived)}`}
         >
           {formatMoney(derived)}
           <span className="fb-tag">fallback</span>

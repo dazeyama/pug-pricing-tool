@@ -7,6 +7,20 @@ export function formatMoney(amount) {
   return amount == null || Number.isNaN(Number(amount)) ? '—' : usd.format(Number(amount));
 }
 
+/**
+ * Store rounding for market and fallback prices (owner, 2026-09-29), always
+ * down: under $1 to the cent; $1–$10 to the quarter; $10–$50 to the dollar;
+ * $50–$1,000 to the $5; $1,000 and up to the $10. Done in whole cents so
+ * float error can't push a price across a step. Manual prices aren't rounded.
+ * @returns {number|null}
+ */
+export function roundDownPrice(price) {
+  if (price == null || Number.isNaN(Number(price))) return null;
+  const cents = Math.round(Number(price) * 100);
+  const step = cents >= 100_000 ? 1000 : cents >= 5000 ? 500 : cents >= 1000 ? 100 : cents >= 100 ? 25 : 1;
+  return (Math.floor(cents / step) * step) / 100;
+}
+
 /** "12.5" / "$12.50" / "12" → 12.5; null for anything that isn't a price ≥ 0 with ≤ 2 decimals. */
 export function parseMoney(text) {
   const clean = String(text ?? '').trim().replace(/^\$/, '').replace(/,/g, '');

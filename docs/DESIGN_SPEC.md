@@ -799,7 +799,8 @@ A row of five large buttons directly under the selected card (Section 8.1):
 - **No JustTCG price** for a cell:
   - The **fallback** market price stands in for NM: Scryfall `prices.usd` / `usd_foil` / `usd_etched` for Magic, or TCGdex's TCGplayer market price for the version (English only) for Pokémon.
   - **Every condition** without a JustTCG price shows that fallback price × its **Master Fallback Percentage** (owner's decision, 2026-09-29; Settings, Section 11.4), rounded to the cent, with a small "fallback" tag and a tooltip showing the working. Defaults: **Magic** NM 100%, LP 90%, MP 80%, HP 70%, DMG 60%; **Pokémon** NM 100%, LP 85%, MP 70%, HP 55%, DMG 40%.
-  - With no fallback price either (e.g. Japanese Pokémon without a JustTCG price), cells show "—". A condition with "—" can still be selected, but then ADD CARD needs a manual price.
+  - With no fallback price either (e.g. Japanese Pokémon without a JustTCG price), cells show "—".
+- **Rounding** (owner's decision, 2026-09-29): every market and fallback price is **rounded down** before it's shown or used as the purchase price: under $1 to the cent; $1–$10 to the nearest quarter; $10–$50 to the dollar; $50–$1,000 to the $5; $1,000 and up to the $10 (`roundDownPrice` in `src/lib/money.js`). The tooltip shows the unrounded price. Manual prices aren't rounded. A line's `market_price` keeps the unrounded JustTCG price (Phase 6). A condition with "—" can still be selected, but then ADD CARD needs a manual price.
 - A small caption under the table: "Prices via JustTCG · updated 2h ago" (from the cached `fetched_at`).
 
 **Manual price:**
