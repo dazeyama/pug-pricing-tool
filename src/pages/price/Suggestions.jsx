@@ -21,12 +21,11 @@ function SetMark({ c }) {
     // so a copy cached by a plain <img> (the info panel's set icon) would
     // break the mask. Masks get their own address, always fetched with CORS.
     const src = `${c.setIcon}${c.setIcon.includes('?') ? '&' : '?'}mask=1`;
-    // Three layers of the same shape: a soft halo, a crisp edge, then the
-    // symbol in its rarity colour. No CSS filter: under the hover's scaling
-    // Chrome drew a filter's outline offset from the symbol.
+    // Two layers of the same shape: a solid shadow edge, then the symbol in
+    // its rarity colour. No CSS filter: under the hover's scaling Chrome drew
+    // a filter's outline offset from the symbol.
     return (
       <span className={`thumb-symbol r-${rarity}`} style={{ '--icon': `url("${src}")` }} aria-hidden="true">
-        <span className="thumb-symbol-halo" />
         <span className="thumb-symbol-edge" />
         <span className="thumb-symbol-glyph" />
         {/* A mask can't report a failed load; this hidden copy, fetched the

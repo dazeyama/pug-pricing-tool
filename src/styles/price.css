@@ -329,7 +329,7 @@
 }
 .thumb:hover .thumb-symbol, .thumb:hover .thumb-chip { opacity: 1; transform: translateY(-50%) scale(1); }
 
-/* The symbol: Scryfall's SVG painted through CSS masks, three layers deep. The
+/* The symbol: Scryfall's SVG painted through CSS masks, two layers deep. The
    outline is the same shape nudged 8 ways (mask layers add up), not a CSS
    filter: under the hover's scale, Chrome drew a drop-shadow offset from the
    symbol, like a misaligned second copy. */
@@ -338,26 +338,27 @@
   width: 38%;
   aspect-ratio: 1;
 }
-.thumb-symbol-halo, .thumb-symbol-edge, .thumb-symbol-glyph { position: absolute; inset: 0; }
-.thumb-symbol-halo, .thumb-symbol-edge {
-  --m: var(--icon) calc(50% - var(--o)) 50% / contain no-repeat,
-       var(--icon) calc(50% + var(--o)) 50% / contain no-repeat,
-       var(--icon) 50% calc(50% - var(--o)) / contain no-repeat,
+.thumb-symbol-edge, .thumb-symbol-glyph { position: absolute; inset: 0; }
+/* One solid, crisp shadow 3px out: the shape offset 12 ways (every 30°), so
+   its edge stays smooth at that width. It animates with the symbol. */
+.thumb-symbol-edge {
+  --o: 3px;
+  --m: var(--icon) calc(50% + var(--o)) 50% / contain no-repeat,
+       var(--icon) calc(50% - var(--o)) 50% / contain no-repeat,
        var(--icon) 50% calc(50% + var(--o)) / contain no-repeat,
-       var(--icon) calc(50% - var(--o) * .7) calc(50% - var(--o) * .7) / contain no-repeat,
-       var(--icon) calc(50% + var(--o) * .7) calc(50% - var(--o) * .7) / contain no-repeat,
-       var(--icon) calc(50% - var(--o) * .7) calc(50% + var(--o) * .7) / contain no-repeat,
-       var(--icon) calc(50% + var(--o) * .7) calc(50% + var(--o) * .7) / contain no-repeat;
+       var(--icon) 50% calc(50% - var(--o)) / contain no-repeat,
+       var(--icon) calc(50% + var(--o) * .866) calc(50% + var(--o) * .5) / contain no-repeat,
+       var(--icon) calc(50% + var(--o) * .866) calc(50% - var(--o) * .5) / contain no-repeat,
+       var(--icon) calc(50% - var(--o) * .866) calc(50% + var(--o) * .5) / contain no-repeat,
+       var(--icon) calc(50% - var(--o) * .866) calc(50% - var(--o) * .5) / contain no-repeat,
+       var(--icon) calc(50% + var(--o) * .5) calc(50% + var(--o) * .866) / contain no-repeat,
+       var(--icon) calc(50% + var(--o) * .5) calc(50% - var(--o) * .866) / contain no-repeat,
+       var(--icon) calc(50% - var(--o) * .5) calc(50% + var(--o) * .866) / contain no-repeat,
+       var(--icon) calc(50% - var(--o) * .5) calc(50% - var(--o) * .866) / contain no-repeat;
   -webkit-mask: var(--m);
   mask: var(--m);
+  background: var(--edge, #000);
 }
-/* The outline waits for the pop-in to finish (.05s delay + .2s), then fades in:
-   its fixed pixel offsets look wrong while the symbol is still scaling up.
-   Leaving hides it at once. */
-.thumb-symbol-halo, .thumb-symbol-edge { opacity: 0; transition: opacity .1s ease; }
-.thumb:hover .thumb-symbol-halo, .thumb:hover .thumb-symbol-edge { opacity: 1; transition-delay: .25s; }
-.thumb-symbol-halo { --o: 2.6px; background: rgba(0, 0, 0, .4); }
-.thumb-symbol-edge { --o: 1.3px; background: var(--edge, rgba(0, 0, 0, .9)); }
 .thumb-symbol-glyph {
   background: var(--rarity);
   -webkit-mask: var(--icon) center / contain no-repeat;
