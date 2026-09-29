@@ -55,6 +55,7 @@ export function lookupsFor(c, { pokemonCard, versions, jaName }) {
   return [{
     key: `pokemon:${c.lang}:${c.tcgdexId}`, game: 'pokemon', lang: c.lang,
     name, number: c.number, setName: c.lang === 'en' ? c.setName : undefined, setCode: c.setCode,
+    size: c.printedSize ?? pokemonCard?.set?.cardCount?.official ?? undefined,
   }];
 }
 

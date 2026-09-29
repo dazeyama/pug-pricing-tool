@@ -22,6 +22,7 @@ type Lookup = {
   key: string; game: 'mtg' | 'pokemon'; lang: 'en' | 'ja';
   scryfallId?: string; tcgplayerId?: string; name?: string; number?: string; setName?: string;
   setCode?: string;   // printed set code ("SV2a", "OBF"): breaks a tie between search matches
+  size?: number;      // printed set size (165): JustTCG's numbers are "025/165"
 };
 
 /** Only what the app reads; price history and statistics are dropped. */
@@ -55,6 +56,11 @@ const fold = (s: unknown) => String(s ?? '').toLowerCase().normalize('NFKD')
 const words = (s: unknown) => String(s ?? '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
 // JustTCG writes "025/165" and "TG12/TG30"; TCGdex just "025" and "TG12". Compare
 // the part before the "/", without leading zeros.
+/** "25" + 165 → "025/165", JustTCG's number format; null for "TG12" and the like. */
+const justtcgNumber = (n: string, size?: number) =>
+  /^\d+$/.test(n) && size && /^\d+$/.test(String(size))
+    ? `${n.padStart(3, '0')}/${String(size).padStart(3, '0')}`
+    : null;
 const normNumber = (n: unknown) => String(n ?? '').trim().toLowerCase().split('/')[0]
   .replace(/^([a-z]*-?)0+(?=\d)/, '$1');
 
@@ -150,15 +156,45 @@ Deno.serve(async (req) => {
 
     // 3. No identifier: search by name and number, and only accept one clear
     //    match (spec 5.3: don't guess). English also has to match the set name.
-    for (const l of searches) {
-      const params = new URLSearchParams({ game: GAMES[l.game], q: l.name!, number: l.number!, limit: '20' });
+    //    JustTCG's `number` filter wants its own format, "025/165" (TCGdex has
+    //    "025"; a plain "025" finds nothing), so that's tried first; if it
+    //    finds nothing, the name alone (up to 100 cards) with the number
+    //    checked here (owner's Pikachu SV2a, 2026-09-29).
+    const candidates = async (l: Lookup, number: string | null, limit: number) => {
+      const params = new URLSearchParams({ game: GAMES[l.game], q: l.name!, limit: String(limit) });
+      if (number) params.set('number', number);
       if (l.lang === 'ja') params.set('language', 'Japanese');
       const res = await call(key, `/cards?${params}`);
-      let cards: any[] = (res?.data ?? []).filter((c: any) => normNumber(c.number) === normNumber(l.number));
+      const all: any[] = res?.data ?? [];
+      let cards = all.filter((c: any) => normNumber(c.number) === normNumber(l.number));
       if (l.lang === 'ja') cards = cards.filter((c: any) => (c.variants ?? []).length);
       else if (l.setName) {
         const want = fold(l.setName);
         cards = cards.filter((c: any) => fold(c.set_name).includes(want) || want.includes(fold(c.set_name)));
+      }
+      return { all, cards };
+    };
+    for (const l of searches) {
+      let all: any[] = [];
+      let cards: any[] = [];
+      let failed = false;
+      const attempt = async (number: string | null, limit: number) => {
+        try {
+          ({ all, cards } = await candidates(l, number, limit));
+        } catch (e) {
+          if (e instanceof QuotaError) throw e;
+          failed = true;
+          console.error(`prices: search failed for ${l.key} (number ${number ?? 'none'})`, e);
+        }
+      };
+      const printed = justtcgNumber(l.number!, l.size);
+      if (printed) await attempt(printed, 20);
+      if (!cards.length) await attempt(null, 100);
+      // A search that errored proves nothing: answer "no price" now, but don't
+      // remember it as "no match" for 7 days.
+      if (!cards.length && failed) {
+        results[l.key] = { card: null, fetchedAt: null };
+        continue;
       }
       // Several with that name and number (other sets): the one whose set
       // name or ID has the card's set code as a word, if exactly one does
@@ -169,7 +205,12 @@ Deno.serve(async (req) => {
         if (inSet.length === 1) cards = inSet;
       }
       found(l, cards.length === 1 ? cards[0] : null);
-      if (cards.length > 1) console.log(`prices: ${cards.length} JustTCG matches for ${l.key}; not guessing`);
+      // Why not, for the function's logs (Supabase dashboard → Edge Functions → prices → Logs).
+      if (cards.length !== 1) {
+        const seen = all.slice(0, 12).map((c: any) => `${c.number} ${c.set_name} (${(c.variants ?? []).length} variants)`);
+        console.log(`prices: ${cards.length ? `${cards.length} matches, not guessing` : 'no match'} for ${l.key}`
+          + ` (q="${l.name}", number ${l.number}${l.size ? `/${l.size}` : ''}); JustTCG returned ${all.length}: ${seen.join('; ')}`);
+      }
     }
 
     // 4. Share with every computer.
