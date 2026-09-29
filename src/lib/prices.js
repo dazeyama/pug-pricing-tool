@@ -135,11 +135,12 @@ export function resultFor(c, results, { finish, version, versions = [] }) {
 /**
  * The five prices shown, NM down to DMG (spec 8.7): JustTCG's where it has
  * one, otherwise a fallback, i.e. a base price × the condition's Master
- * Fallback Percentage. Prices never rise as the condition drops (owner,
- * 2026-09-29): a JustTCG price above the better condition's is thrown out
- * and replaced by a fallback based on JustTCG's own NM price when there is
- * one; and no fallback is allowed above the better condition either. Then
- * every price is rounded down by the store's steps.
+ * Fallback Percentage. The base is JustTCG's own NM price when it has one,
+ * else the Scryfall/TCGdex price (owner, 2026-09-29). Prices never rise as
+ * the condition drops: a JustTCG price above the better condition's is
+ * thrown out and replaced by a fallback, and no fallback is allowed above
+ * the better condition either. Then every price is rounded down by the
+ * store's steps.
  * @param {Record<string, number|null>} market  JustTCG prices by condition (conditionPrices)
  * @param {{ price: number, source: string }|null} fallback  the Scryfall/TCGdex market price
  * @param {Record<string, number>} pct  Master Fallback Percentages for the game
@@ -148,9 +149,9 @@ export function resultFor(c, results, { finish, version, versions = [] }) {
  */
 export function priceLadder(market, fallback, pct) {
   const out = {};
-  const fallbackBase = fallback
-    ? { price: fallback.price, from: fallback.source === 'scryfall_fallback' ? 'Scryfall' : 'TCGdex' }
-    : null;
+  let base = null;
+  if (market?.NM != null) base = { price: market.NM, from: 'JustTCG' };
+  else if (fallback) base = { price: fallback.price, from: fallback.source === 'scryfall_fallback' ? 'Scryfall' : 'TCGdex' };
   let prev = null;          // the better condition's price, unrounded
   let prevCode = null;
   for (const code of CONDITIONS) {
@@ -162,9 +163,6 @@ export function priceLadder(market, fallback, pct) {
     }
     const entry = { raw, source: raw != null ? 'justtcg' : null, base: null, thrownOut, cappedBy: null };
     if (raw == null) {
-      const base = thrownOut != null && market?.NM != null
-        ? { price: market.NM, from: 'JustTCG' }
-        : fallbackBase;
       let value = base && pct?.[code] != null ? (base.price * Number(pct[code])) / 100 : null;
       if (value != null && prev != null && value > prev) {
         value = prev;

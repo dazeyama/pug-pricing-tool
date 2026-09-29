@@ -65,20 +65,19 @@ function PctBox({ game, code }) {
   );
 }
 
-// Settings → Master Fallback Percentages (owner, 2026-09-29): when JustTCG has
-// no price, the Scryfall/TCGdex market price stands in for NM and each other
-// condition is that price × its percentage here.
+// Settings → Master Fallback Percentages (owner, 2026-09-29): a condition
+// JustTCG doesn't price (or prices out of order) is JustTCG's NM, else the
+// Scryfall/TCGdex market price, × its percentage here (lib/prices priceLadder).
 export default function FallbackPanel() {
   return (
     <section className="cardpanel settings-panel">
       <div className="cardpanel-head"><strong>Master Fallback Percentages</strong></div>
       <div className="cardpanel-body">
         <p className="hint">
-          Used when JustTCG has no price for a condition: the Scryfall (Magic) or TCGdex (Pokémon)
-          market price is taken as Near Mint, and each condition is that price times its percentage.
-          Also used when JustTCG prices a worse condition above a better one: that price is thrown
-          out and replaced by JustTCG’s Near Mint times the percentage. Prices worked out this way
-          are marked “fallback”.
+          Used when JustTCG has no price for a condition, or prices a worse condition above a better
+          one (that price is thrown out): the condition gets JustTCG’s Near Mint price times its
+          percentage. Without a JustTCG Near Mint, the Scryfall (Magic) or TCGdex (Pokémon) market
+          price is used instead. Prices worked out this way are marked “fallback”.
         </p>
         <table className="fb-table">
           <thead>
