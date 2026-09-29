@@ -92,18 +92,31 @@
 .search-note { margin: 6px 2px 0; min-height: 18px; font-size: 13px; color: var(--muted); }
 .search-note strong { color: var(--text); }
 
-/* ---- Middle: details column | selected card | card info ---- */
-.stage-mid {
+/* ---- Below the search bar (owner's layout, 2026-09-29) -------------------
+     card    | info    | .
+     card    | thumbs  | side      (finish & details)
+     prices  | thumbs  | actions   (Qty · CLEAR · ADD CARD)                 */
+.stage-body {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) auto minmax(240px, 1fr);
-  gap: 28px;
-  /* The card is sized from this box's height (cqh units), so it always has
-     the real card's shape instead of being squeezed into a column. */
-  container-type: size;
+  grid-template-columns: 336px minmax(0, 1fr) clamp(260px, 21vw, 380px);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "card   info   ."
+    "card   thumbs side"
+    "prices thumbs actions";
+  gap: 16px 32px;
 }
-.left-col, .info-col { min-height: 0; overflow: auto; }
+/* The card and thumbnail areas are size containers: their contents are sized
+   from the space the grid gives them (cqw/cqh), never the other way round. */
+.area-card { grid-area: card; min-height: 0; display: flex; flex-direction: column; container-type: size; }
+.area-info { grid-area: info; min-width: 0; }
+.area-thumbs { grid-area: thumbs; min-height: 0; display: flex; flex-direction: column; container-type: size; }
+.area-side { grid-area: side; min-height: 0; display: flex; flex-direction: column; }
+.area-prices { grid-area: prices; }
+.area-actions { grid-area: actions; }
+
 .stage-label {
   font-size: .78rem;
   font-weight: 700;
@@ -111,13 +124,12 @@
   text-transform: uppercase;
   color: var(--muted);
   margin-bottom: 8px;
-  text-align: center;
 }
-.card-col { min-height: 0; display: flex; flex-direction: column; }
-.card-box { position: relative; flex: 1; min-height: 0; display: flex; justify-content: center; }
-/* All the height the middle row has, less the label above; the width follows
-   from the card's aspect ratio. */
-.card-box .card-wrap { flex: none; height: min(calc(100cqh - 26px), 560px); width: auto; }
+
+/* ---- The selected card: Scryfall's card-page size, 336 × 468, left-aligned.
+        It only shrinks when the window is too short for it. ---- */
+.card-box { position: relative; align-self: flex-start; }
+.card-box .card-wrap { height: min(calc(100cqh - 26px), 468px); width: auto; }
 
 .card-wrap {
   position: relative;
@@ -168,15 +180,16 @@
 }
 .flip-btn:hover { border-color: var(--accent); }
 
+/* ---- Card info, beside the card ---- */
 .card-info {
   background: rgba(24, 28, 46, .9);
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 16px 18px;
-  margin-top: 26px;
-  max-width: 360px;
+  padding: 14px 18px;
+  max-width: 440px;
 }
-.card-info p { margin: 0 0 8px; }
+.card-info p { margin: 0 0 6px; }
+.card-info p:last-child { margin-bottom: 0; }
 .info-name { margin: 0 0 6px; font-size: 22px; line-height: 1.2; }
 .info-typed { color: var(--muted); font-size: 13px; }
 .info-set { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
@@ -185,7 +198,7 @@
 .info-number { font-size: 16px; font-variant-numeric: tabular-nums; }
 .info-rarity { color: var(--muted); }
 .info-tags { display: flex; align-items: center; gap: 8px; }
-.info-link { display: inline-block; margin-top: 4px; font-size: 13px; }
+.info-link { display: inline-block; margin-top: 2px; font-size: 13px; }
 
 /* Space kept for later phases, so the layout already sits where it will. */
 .stage-slot {
@@ -200,18 +213,24 @@
   padding: 10px;
   background: rgba(15, 18, 32, .35);
 }
-.left-col .stage-slot { height: 180px; margin-top: 26px; }
+.area-side .stage-slot { flex: 1; }
+.area-prices .stage-slot, .area-actions .stage-slot { height: 96px; }
 
-/* ---- Suggestions row ---- */
-.suggest { flex: none; }
+/* ---- Suggestions: 2 rows of 5 under the card info ---- */
+.suggest-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 28px;
+  margin-bottom: 8px;
+}
 .suggest-status {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
   gap: 6px 16px;
-  min-height: 20px;
-  margin-bottom: 6px;
   font-size: 13px;
   color: var(--muted);
 }
@@ -227,11 +246,32 @@
   border-radius: 50%;
   animation: spin .7s linear infinite;
 }
-/* Centred under the selected card. */
-.thumbs { display: flex; justify-content: center; gap: 14px; align-items: flex-start; min-height: 190px; }
-.thumb {
-  width: 124px;
+.show-all {
   flex: none;
+  background: rgba(24, 28, 46, .85);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 5px 14px;
+  cursor: pointer;
+}
+.show-all:hover { border-color: var(--accent); }
+.show-all.highlight { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+
+/* A thumbnail is at most Scryfall's small image, 146 × 204, and shrinks to
+   fit 5 across and 2 rows down: 36px for the line above, 16px between the
+   rows, 22px per label; 0.7176 is a card's width/height (488/680). */
+.thumbs {
+  --thumb-w: min(146px, calc((100cqw - 4 * 14px) / 5), calc((100cqh - 36px - 16px - 2 * 22px) / 2 * 0.7176));
+  display: grid;
+  grid-template-columns: repeat(5, var(--thumb-w));
+  gap: 16px 14px;
+  align-content: start;
+}
+.thumb {
+  width: var(--thumb-w);
   background: none;
   border: none;
   padding: 0;
@@ -266,32 +306,17 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.show-all {
-  width: 124px;
-  aspect-ratio: 488 / 680;
-  flex: none;
-  border: 2px dashed var(--border);
-  border-radius: 8px;
-  background: rgba(24, 28, 46, .8);
-  color: var(--text);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 6px;
-}
-.show-all:hover, .show-all.highlight { border-color: var(--accent); border-style: solid; }
 
+/* The show-all modal's grid: Scryfall's small-image width. */
 .all-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(124px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(146px, 1fr));
   gap: 14px 12px;
   padding: 4px;
   outline: none;
 }
 .all-grid .thumb { width: auto; }
 
-/* ---- Bottom band (Phases 5–6) and the key hints ---- */
-.stage-bottom { flex: none; display: grid; grid-template-columns: 1fr 380px; gap: 16px; height: 76px; }
 .hint-strip { flex: none; margin: 0; font-size: 12px; color: var(--muted); text-align: right; }
 
 /* ---- Buy list sidebar (Audit Tool list panel, docked right) ---- */
@@ -314,13 +339,12 @@
 .list-count { font-size: 13px; color: var(--muted); }
 .list-empty { margin: 18px 16px; color: var(--muted); font-size: 13px; }
 
-/* Short windows (1366×768 laptops): the card and thumbnails give up height first. */
+/* Short windows (1366×768 laptops): tighter spacing; the card and thumbnails
+   size themselves to what's left. Fuller 1366×768 pass in Phase 10. */
 @media (max-height: 820px) {
   .stage { gap: 8px; padding-top: 10px; }
   .main-search-field input { height: 48px; font-size: 18px; }
-  .thumb, .show-all { width: 96px; }
-  .thumbs { min-height: 152px; }
-  .stage-bottom { height: 64px; }
-  .card-info { margin-top: 20px; padding: 12px 14px; }
+  .card-info { padding: 12px 14px; }
   .info-name { font-size: 19px; }
+  .area-prices .stage-slot, .area-actions .stage-slot { height: 80px; }
 }

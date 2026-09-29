@@ -1,6 +1,7 @@
 import GameBadge from '../../components/GameBadge.jsx';
 
-export const ROW = 7;
+/** Suggestions shown at once: 2 rows of 5 (owner's layout, 2026-09-29). */
+export const ROW = 10;
 
 /** One suggestion: thumbnail with its game badge in the corner, "SET #num" beneath. */
 export function Thumb({ c, highlighted, selected, onPick }) {
@@ -26,7 +27,7 @@ export function Thumb({ c, highlighted, selected, onPick }) {
 
 const SOURCE = { mtg: 'Scryfall', pokemon: 'TCGdex' };
 
-/** Why the row is empty, or a source that isn't answering (spec 8.3 states). */
+/** Why the grid is empty, or a source that isn't answering (spec 8.3 states). */
 function Status({ search, lang }) {
   const bits = [];
   for (const game of ['mtg', 'pokemon']) {
@@ -57,19 +58,19 @@ function Status({ search, lang }) {
   return <div className="suggest-status" aria-live="polite">{bits}</div>;
 }
 
-/** The suggestions row (spec 8.3): up to 7 thumbnails, then "… show all (N)". */
+/**
+ * The suggestions (spec 8.3): up to 10 thumbnails in 2 rows of 5, with
+ * "… show all (N)" on the line above when there are more.
+ */
 export default function Suggestions({ search, lang, highlight, selectedKey, onPick, onShowAll }) {
   const visible = search.candidates.slice(0, ROW);
   const more = search.candidates.length > ROW;
   const count = search.hasMore ? `${search.candidates.length}+` : search.candidates.length;
 
   return (
-    <div className="suggest">
-      <Status search={search} lang={lang} />
-      <div className="thumbs">
-        {visible.map((c, i) => (
-          <Thumb key={c.key} c={c} highlighted={highlight === i} selected={c.key === selectedKey} onPick={onPick} />
-        ))}
+    <div className="area-thumbs">
+      <div className="suggest-head">
+        <Status search={search} lang={lang} />
         {more && (
           <button
             type="button"
@@ -79,6 +80,11 @@ export default function Suggestions({ search, lang, highlight, selectedKey, onPi
             … show all ({count})
           </button>
         )}
+      </div>
+      <div className="thumbs">
+        {visible.map((c, i) => (
+          <Thumb key={c.key} c={c} highlighted={highlight === i} selected={c.key === selectedKey} onPick={onPick} />
+        ))}
       </div>
     </div>
   );

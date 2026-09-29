@@ -629,28 +629,33 @@ The main screen. Collections reuse it (Section 9.4) with small differences.
 The Price screen fills the viewport below the header with **no page scroll**. It has two regions: the **stage** on the left (all remaining width) and the **buy list sidebar** on the right (**340px**, full height). `background.webp` covers the **whole tab** at 50% opacity (AT `.stage::before`, `center / cover`). The sidebar sits on top of it as a slightly translucent panel (`--panel` at 90% opacity), so the art shows faintly behind the list.
 
 ```
-┌──────────────────────────────── STAGE ─────────────────────────────────┬──── BUY LIST ────┐
-│ ┌──────────────────────────────────────────────────────────┐ [EN|JP]   │ BUY LIST   12 cards│
-│ │ 🔍  Lightning Bolt 161/295 2X2                            │           │ ── Magic (9) ──   │
-│ └──────────────────────────────────────────────────────────┘           │ 1 Abrade (SOA) 37 │
-│                                                                        │ 1 Adarkar Wastes  │
-│  ┌─ FINISH ─────────┐    ┌──── SELECTED CARD ────┐   ┌─ CARD INFO ───┐ │   (DMU) 243 *F*   │
-│  │ FOIL  [ ON|OFF ] │    │                       │   │ Lightning Bolt│ │ …                 │
-│  └──────────────────┘    │                       │   │ Double Masters│ │ ── Pokémon (3) ── │
-│  ┌─ DETAILS ────────┐    │    (large image)      │   │  2022 (2X2)   │ │ 1 Charizard ex    │
-│  │ ☐ Borderless     │    │                       │   │ #161 / 331    │ │   (OBF) 125 *H*   │
-│  │ ☑ Showcase       │    │                       │   │ Uncommon  MTG │ │ …                 │
-│  │ ☐ Extended art   │    │                       │   └───────────────┘ │                   │
-│  │ chips: Surge foil│    └───────────────────────┘                     │                   │
-│  └──────────────────┘                                                  │                   │
-│  [t1][t2][t3][t4][t5][t6][t7]  … show all (23)                         │ Market   $41.20   │
-│  ┌─ NM ─┐┌─ LP ─┐┌─ MP ─┐┌─ HP ─┐┌─ DMG ┐   [ ✎ Manual price ]          │ Cash 33% $13.60   │
-│  │$2.10 ││$1.80 ││$1.40 ││$0.95 ││$0.60 │                               │ Credit 66% $27.19 │
-│  └──────┘└──────┘└──────┘└──────┘└──────┘      Qty [ 1 ] [CLEAR][ADD CARD]│ [CANCEL][CONFIRM BUY]│
-└────────────────────────────────────────────────────────────────────────┴──────────────────┘
+┌──────────────────────────────────── STAGE ────────────────────────────────────┬──── BUY LIST ────┐
+│ ┌─────────────────────────────────────────────────────────────────┐ [EN|JP]   │ BUY LIST 12 cards│
+│ │ 🔍  Lightning Bolt 161/295 2X2                                   │           │ ── Magic (9) ──  │
+│ └─────────────────────────────────────────────────────────────────┘           │ 1 Abrade (SOA) 37│
+│  SELECTED CARD                                                                 │ 1 Adarkar Wastes │
+│ ┌──────────────┐  ┌─ CARD INFO ───────────┐                                   │   (DMU) 243 *F*  │
+│ │              │  │ Lightning Bolt        │                                   │ …                │
+│ │              │  │ Double Masters (2X2)  │                                   │ ── Pokémon (3) ──│
+│ │  336 × 468   │  │ #161 / 331 · Uncommon │                                   │ 1 Charizard ex   │
+│ │ (Scryfall's  │  └───────────────────────┘          … show all (23)          │   (OBF) 125 *H*  │
+│ │  card-page   │  [t1] [t2] [t3] [t4] [t5]     ┌─ FINISH ─────────────┐       │ …                │
+│ │  size)       │                               │ FOIL  [ ON | OFF ]   │       │                  │
+│ │              │                               ├─ DETAILS ────────────┤       │                  │
+│ └──────────────┘  [t6] [t7] [t8] [t9] [t10]    │ ☐ Borderless …       │       │ Market   $41.20  │
+│ ┌NM─┐┌LP─┐┌MP─┐┌HP─┐┌DMG┐ [✎]                  └──────────────────────┘       │ Cash 33% $13.60  │
+│ │$2 ││$1 ││$1 ││$0 ││$0 │                     Qty [ 1 ] [CLEAR] [ADD CARD]     │ Credit 66% $27.19│
+│ └───┘└───┘└───┘└───┘└───┘                                     ↓↑ pick · Esc … │[CANCEL][CONFIRM] │
+└────────────────────────────────────────────────────────────────────────────────┴──────────────────┘
 ```
 
-Vertical order in the stage, from the owner's notes: **main search bar** at the top → **selected card** (with the finish control and details panel on its left, card info on its right) → **suggestions row** → **condition / price table** → action row (**Qty, CLEAR, ADD CARD**) anchored bottom-right. The sidebar's bottom holds the totals and **CANCEL / CONFIRM BUY**. These mirror CLEAR / ADD CARD in size, shape and position.
+Below the main search bar, the stage is three columns (**owner's layout, 2026-09-29**, replacing the original single stack):
+
+| Left | Middle | Right |
+|---|---|---|
+| **Selected card** at Scryfall's card-page size (**336×468**), left-aligned, with the **condition / price table** directly under it | **Card info** beside the card, then the **suggestions**: 10 thumbnails in **2 rows of 5** | Beside the suggestions: the **finish control** and **details panel**, then the action row (**Qty, CLEAR, ADD CARD**) under them |
+
+Card image sizes follow Scryfall's as the reference: the selected card is 336×468, and a thumbnail is at most Scryfall's small image (146×204), shrinking only to fit 5 across and 2 rows down. The selected card shrinks only when the window is too short for it. The sidebar's bottom holds the totals and **CANCEL / CONFIRM BUY**, which mirror CLEAR / ADD CARD in size, shape and position.
 
 ### 8.2 Main search bar
 
@@ -683,8 +688,8 @@ Parsing rules (`src/lib/query.js`), applied to the trimmed input:
 
 ### 8.3 Suggestions row
 
-- Up to **7 thumbnails** of the best matches in rank order, in one row **below the selected card**. Each has a game badge in its corner and `SET #num` beneath it.
-- After them, a **"… show all (N)"** button when N > 7. It opens a modal grid of every match (same thumbnails, scrollable, with the same keyboard behavior). Clicking a card selects it and closes the modal.
+- Up to **10 thumbnails** of the best matches in rank order, in **2 rows of 5** under the card info (Section 8.1). Each has a game badge in its corner and `SET #num` beneath it.
+- A **"… show all (N)"** button on the line above them when N > 10. It opens a modal grid of every match (same thumbnails, scrollable, with the same keyboard behavior). Clicking a card selects it and closes the modal.
 - The highlighted suggestion has an accent outline (the keyboard cursor, Section 8.11).
 - Clicking a thumbnail makes it the **selected card**.
 - **Auto-select** (owner's decision): when the results narrow to exactly **one** printing, it becomes the selected card automatically. With several matches nothing is selected until the user clicks or arrows to one. The previous selection clears when the query changes enough that it no longer matches.
@@ -695,7 +700,7 @@ Parsing rules (`src/lib/query.js`), applied to the trimmed input:
 
 ### 8.4 Selected card
 
-- The large card image (AT `.card-wrap`, `--card-radius`, `--shadow`) with two-stage image loading. Height is about 45% of the stage height (roughly 420px at 1080p), which is "slightly smaller" than AT's full-height card.
+- The large card image (AT `.card-wrap`, `--card-radius`, `--shadow`) with two-stage image loading, at **Scryfall's card-page size, 336×468**, left-aligned (owner's decision, 2026-09-29). It keeps the card's proportions at all times and only shrinks when the window is too short.
 - Above it, a small caps label **SELECTED CARD**. With nothing selected, show an empty card-shaped frame reading "Type a card above".
 - **Card info panel** to the right of the card:
   - name (large);
@@ -710,7 +715,7 @@ Parsing rules (`src/lib/query.js`), applied to the trimmed input:
 
 ### 8.5 Finish control (the big switch)
 
-This sits at the top of the left column, above the details panel. It must be **large, bold and obvious**.
+This sits at the top of the right column, beside the suggestions and above the details panel (Section 8.1). It must be **large, bold and obvious**.
 
 - **Magic:** a full-width toggle switch, at least 64px tall, labeled **FOIL**. **ON is green with the knob right; OFF is red with the knob left**, and the text ON/OFF is inside the track.
   - Default **OFF (non-foil)** when the printing exists both ways (owner's decision).
@@ -750,7 +755,7 @@ A panel under the finish control, filled automatically from the selected printin
 
 ### 8.7 Condition / price table
 
-A row of five large buttons below the suggestions:
+A row of five large buttons directly under the selected card (Section 8.1):
 
 ```
 ┌── NM ──┐ ┌── LP ──┐ ┌── MP ──┐ ┌── HP ──┐ ┌── DMG ─┐     [ ✎ Manual price ]
@@ -776,7 +781,7 @@ A row of five large buttons below the suggestions:
 
 ### 8.8 Quantity, ADD CARD, CLEAR
 
-Bottom-right of the stage: **Qty [ 1 ]**, then **CLEAR** (red, smaller), then **ADD CARD** (green, large: about 64px tall, bold, 20px text).
+Under the finish control and details panel, at the bottom of the right column (Section 8.1): **Qty [ 1 ]**, then **CLEAR** (red, smaller), then **ADD CARD** (green, large: about 64px tall, bold, 20px text).
 
 - **Qty:** a number box, 1–99, default 1. It resets to 1 after each add and on CLEAR.
 - **ADD CARD** is enabled only when all of these hold:
@@ -888,7 +893,7 @@ Focus normally stays in the search bar.
 | Key | Action |
 |---|---|
 | typing | search |
-| **↓ / ↑** | move the highlight through the suggestions (and onto "show all"). The highlighted card becomes the selected card. ← / → stay as text-cursor keys. |
+| **↓ / ↑** | move the highlight through the 10 suggestions in order (and on past the 10th to "show all"). The highlighted card becomes the selected card. ← / → stay as text-cursor keys. |
 | **Enter** | ADD CARD (when enabled). On the "show all" button, it opens the modal. |
 | **Esc** | CLEAR. Inside a modal, it closes the modal instead. |
 | **Alt+1 … Alt+5** | select NM / LP / MP / HP / DMG |
@@ -1356,7 +1361,7 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 
 **Where to look**
 - [ ] `Lightning Bolt 161/295` or a card from your case: the exact printing is auto-selected.
-- [ ] `Sol Ring`: 7 thumbnails + "… show all (N)", and picking from the modal selects the card and closes it.
+- [ ] `Sol Ring`: 10 thumbnails in 2 rows of 5 + "… show all (N)", and picking from the modal selects the card and closes it.
 - [ ] `Charizard ex 125/197 OBF`: the Pokémon printing shows, with the PKM badge and set code OBF.
 - [ ] A typo (`lightnig bolt`) still finds it, with the "Showing results for" note.
 - [ ] Try a promo/secret number (`TG05/TG30`, `263s`) and a set with no printed size (SLD).
@@ -1400,7 +1405,7 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 - [ ] Select the same card on another computer: prices appear without the usage meter going up (shared cache).
 - [ ] An obscure card with no JustTCG data shows a "fallback" NM price and "—" elsewhere.
 - [ ] Manual price: the ✎ price shows bold with the market price struck through beneath it.
-- [ ] Arrow quickly through 7 suggestions: the usage meter rises by about 1, not 7.
+- [ ] Arrow quickly through 10 suggestions: the usage meter rises by about 1, not 10.
 - [ ] Etched Magic card: the price looks like the etched listing, not the regular foil.
 
 ---
@@ -1716,6 +1721,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 70 | Settings name (2026-09-29) | "Buy percentages" is called **Master Buy Percentages** |
 | 71 | Custom rates (2026-09-29) | On the pricing screens the Cash/Credit percentages are clickable and open a subpanel for a custom rate for that one buy, saved with the buy (Section 8.9.1). Entered as a percent; pricing screens only, not day pages; custom rates on collections are logged as Actions entries |
 | 72 | Store time zone (2026-09-29) | Confirmed: Pacific time, `America/Los_Angeles` |
+| 73 | Price screen layout (2026-09-29) | Owner's sketch replaces the single stack: card left at Scryfall's 336×468 with prices under it; card info beside it with 10 suggestions (2×5) below; finish & details beside the suggestions with Qty/CLEAR/ADD CARD under them. Scryfall's image sizes are the reference for card images (Section 8.1) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

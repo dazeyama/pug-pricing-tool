@@ -39,13 +39,13 @@ export default function SelectedCard({ candidate: c, typedName }) {
   if (!c) {
     return (
       <>
-        <div className="card-col">
+        <div className="area-card">
           <div className="stage-label">Selected card</div>
           <div className="card-box">
             <div className="card-wrap card-empty">Type a card above</div>
           </div>
         </div>
-        <div className="info-col" />
+        <div className="area-info" />
       </>
     );
   }
@@ -63,7 +63,7 @@ export default function SelectedCard({ candidate: c, typedName }) {
 
   return (
     <>
-      <div className="card-col">
+      <div className="area-card">
         <div className="stage-label">Selected card</div>
         <div className="card-box">
           <CardImage key={`${c.key}:${face}`} thumb={thumb} image={image} alt={c.name} name={c.name} number={c.number} />
@@ -80,7 +80,7 @@ export default function SelectedCard({ candidate: c, typedName }) {
         </div>
       </div>
 
-      <aside className="info-col">
+      <aside className="area-info">
         <div className="card-info">
           <h2 className="info-name">{flippable ? magic.card_faces[face].name : c.name}</h2>
           {!latin && typedName && <p className="info-typed">{typedName}</p>}

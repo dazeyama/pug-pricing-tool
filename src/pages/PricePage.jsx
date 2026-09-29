@@ -112,25 +112,28 @@ export default function PricePage() {
           note={note}
         />
 
-        <div className="stage-mid">
-          <div className="left-col">
+        {/* Owner's layout (2026-09-29): card left with prices under it; info
+            beside it with the suggestions below; finish & details beside the
+            suggestions with the action row under them. Grid areas in price.css. */}
+        <div className="stage-body">
+          <SelectedCard candidate={selected} typedName={search.parsed?.name} />
+          <Suggestions
+            search={search}
+            lang={lang}
+            highlight={highlight}
+            selectedKey={selected?.key}
+            onPick={pick}
+            onShowAll={() => setShowAll(true)}
+          />
+          <div className="area-side">
             <div className="stage-slot">Finish &amp; details · Phase 4</div>
           </div>
-          <SelectedCard candidate={selected} typedName={search.parsed?.name} />
-        </div>
-
-        <Suggestions
-          search={search}
-          lang={lang}
-          highlight={highlight}
-          selectedKey={selected?.key}
-          onPick={pick}
-          onShowAll={() => setShowAll(true)}
-        />
-
-        <div className="stage-bottom">
-          <div className="stage-slot">NM · LP · MP · HP · DMG prices · Phase 5</div>
-          <div className="stage-slot">Qty · CLEAR · ADD CARD · Phase 6</div>
+          <div className="area-prices">
+            <div className="stage-slot">NM · LP · MP · HP · DMG prices · Phase 5</div>
+          </div>
+          <div className="area-actions">
+            <div className="stage-slot">Qty · CLEAR · ADD CARD · Phase 6</div>
+          </div>
         </div>
         <p className="hint-strip">↓↑ pick · Esc clear</p>
       </div>
