@@ -321,6 +321,15 @@ Division of labour: **Scryfall and TCGdex supply everything about the card** (na
 - In the buy list and database, store the name TCGdex returns. If it isn't Latin script, show it as `<English name typed> / <Japanese name>` so staff can read it. Always tag the line `[JP]`.
 - If the spike finds TCGdex's Japanese coverage too thin, tell the owner before building further.
 
+**Phase 3 spike findings (2026-09-29, reported to the owner):**
+- The printed code is **`abbreviation.official`** (an object, not a string) and is only on a set's **detail** record, not in `GET /sets`. Older English sets have one too (Base Set = `BS`, 151 = `MEW`). The app fetches set details per set, caches them 7 days, and runs a low-priority background fill of every set so typed codes are recognized. GraphQL doesn't expose the field either.
+- **Japanese sets have no abbreviation; their IDs are the printed codes** (`SV2a`, `SV4K`, `M2a`). They're displayed exactly as printed (`SV2a`, not `SV2A`). Coverage: 184 sets from 1996 to the current M era. Images are present from Sword & Shield (2020) on and mostly missing before that, so older Japanese cards use the card-back placeholder.
+- **Name search also returns Pokémon TCG Pocket cards** (digital-only; series `tcgp`, set IDs like `A1`, `A2b`, `P-A`). They're filtered out everywhere.
+- The **`localId` filter is a loose match** (`6` also matches `036`), so numbers are re-checked exactly.
+- `variants_detailed` exists, with `size` (`standard` / `jumbo`: use standard only) and `thirdParty.tcgplayer` product IDs for **English** cards. **Japanese cards have only Cardmarket IDs and EUR prices**, so there is no USD fallback price for them (Section 8.7): a Japanese card without a JustTCG price needs a manual price.
+- tcgdex.net card pages route by ID (`/database/<serie>-x/<set>-x/<localId>-x`), so English cards link there. The Japanese site doesn't, so Japanese cards have no link.
+- **Scryfall's `printed_size` is only set for roughly 2020–2023 sets** (e.g. present for DMU and 2X2, absent for DSK, FDN, LTR, CMR, SLD). Size filtering and the size part of ranking apply only where it's known, as Section 8.2 already allows.
+
 ### 5.3 JustTCG (prices only)
 
 - Base URL: `https://api.justtcg.com/v1`. Header `x-api-key`. **Called only from the `prices` Edge Function.**
@@ -1721,6 +1730,6 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 
 1. **Export design doc**: the owner writes it. It includes the Crystal Commerce CSV column mapping, so **attach a sample CC export** (a few rows is enough).
 2. **Supabase plan for prod**: Free (weekly manual backups, pauses after 7 idle days) vs. Pro ($25/month: daily backups, no pausing).
-3. **Japanese Pokémon**: confirm coverage after the Phase 3 spike, and how names should display.
+3. **Japanese Pokémon**: coverage confirmed good in the Phase 3 spike (Section 5.2 findings). Still open: how names should display, and the missing USD fallback price for Japanese cards (Phase 5).
 4. **JustTCG plan**: watch the usage meter during the first weeks and move to Professional if the daily limit binds.
 5. ~~**Store time zone**~~: confirmed Pacific time, `America/Los_Angeles` (`STORE_TZ`), 2026-09-29.

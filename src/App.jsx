@@ -20,12 +20,17 @@ import DayPage from './pages/DayPage.jsx';
 import SettingsPage from './pages/SettingsPage.jsx';
 import ChangelogPage from './pages/ChangelogPage.jsx';
 
-/** Header, then the current tab. The tab's panel is keyed by tab so it fades in on each switch. */
+/**
+ * Header, then the current tab. The tab's panel is keyed by tab so it fades in
+ * on each switch. The Price screen fills the window below the header with no
+ * page scroll (spec 8.1); every other tab scrolls normally.
+ */
 function Layout() {
   const { pathname } = useLocation();
   const { label } = useDevice();
+  const fullScreen = pathname === '/price';
   return (
-    <>
+    <div className={`shell${fullScreen ? ' shell-fixed' : ''}`}>
       <Header />
       <main>
         <Banners />
@@ -34,7 +39,7 @@ function Layout() {
         </section>
       </main>
       {!label && <DeviceNameModal />}
-    </>
+    </div>
   );
 }
 

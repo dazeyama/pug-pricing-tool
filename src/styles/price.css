@@ -1,0 +1,318 @@
+/* The Price screen (spec 8.1): the stage on the left, the buy list docked
+   right, Audit Tool's background art behind both at 50%. No page scroll:
+   panels shrink or scroll inside themselves. */
+
+.shell { min-height: 100vh; display: flex; flex-direction: column; }
+.shell > header { flex: none; }
+.shell-fixed { height: 100vh; overflow: hidden; }
+.shell-fixed main {
+  flex: 1;
+  min-height: 0;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.shell-fixed main > .banner { margin: 10px 24px 0; flex: none; }
+.shell-fixed main > .panel.active { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+
+.price-screen { position: relative; flex: 1; min-height: 0; display: flex; }
+.price-screen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--stage-bg) center / cover no-repeat;
+  opacity: .5;
+  pointer-events: none;
+}
+.price-screen > * { position: relative; z-index: 1; }
+
+.stage {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 24px 10px;
+}
+
+/* ---- Main search bar: large, fixed at the top, never an overlay ---- */
+.main-search { flex: none; }
+.main-search-row { display: flex; gap: 12px; align-items: stretch; }
+.main-search-field { position: relative; flex: 1; }
+.main-search-icon {
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+}
+.main-search-field input {
+  margin: 0;
+  height: 56px;
+  font-size: 20px;
+  padding: 0 64px 0 52px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+}
+.main-search-field input:focus { border-color: var(--accent); }
+.main-search-field input::placeholder { color: var(--muted); font-size: 17px; }
+.jp-chip, .tag-jp {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: var(--pal-crimson);
+  color: #fff;
+}
+.jp-chip { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); }
+.lang-toggle {
+  display: flex;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--bg);
+}
+.lang-toggle button {
+  min-width: 58px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.lang-toggle button + button { border-left: 1px solid var(--border); }
+.lang-toggle button:hover { color: var(--text); }
+.lang-toggle button.on { background: var(--accent-2); color: #fff; }
+.search-note { margin: 6px 2px 0; min-height: 18px; font-size: 13px; color: var(--muted); }
+.search-note strong { color: var(--text); }
+
+/* ---- Middle: details column | selected card | card info ---- */
+.stage-mid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto minmax(240px, 1fr);
+  gap: 28px;
+}
+.left-col, .info-col { min-height: 0; overflow: auto; }
+.stage-label {
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+  text-align: center;
+}
+.card-col { min-height: 0; display: flex; flex-direction: column; }
+.card-box { position: relative; flex: 1; min-height: 0; display: flex; justify-content: center; }
+.card-box .card-wrap { height: 100%; max-height: 460px; }
+
+.card-wrap {
+  position: relative;
+  aspect-ratio: 488 / 680;
+  border-radius: var(--card-radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  background: var(--panel-2);
+}
+.card-img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.card-img.pending { opacity: 0; }
+.card-thumb { filter: blur(5px) saturate(1.05); }
+.card-empty, .card-back {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  text-align: center;
+  color: var(--muted);
+  border: 2px dashed var(--border);
+  box-shadow: none;
+  background: rgba(15, 18, 32, .55);
+}
+.card-back {
+  border: 6px solid #2a3150;
+  background: linear-gradient(160deg, #20253a, #11152a);
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+.card-back-name { font-size: 18px; font-weight: 700; }
+.card-back-number { color: var(--muted); }
+.flip-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  background: rgba(15, 18, 32, .85);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.flip-btn:hover { border-color: var(--accent); }
+
+.card-info {
+  background: rgba(24, 28, 46, .9);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 18px;
+  margin-top: 26px;
+  max-width: 360px;
+}
+.card-info p { margin: 0 0 8px; }
+.info-name { margin: 0 0 6px; font-size: 22px; line-height: 1.2; }
+.info-typed { color: var(--muted); font-size: 13px; }
+.info-set { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.set-icon { width: 18px; height: 18px; filter: invert(1); opacity: .85; }
+.info-code { color: var(--muted); }
+.info-number { font-size: 16px; font-variant-numeric: tabular-nums; }
+.info-rarity { color: var(--muted); }
+.info-tags { display: flex; align-items: center; gap: 8px; }
+.info-link { display: inline-block; margin-top: 4px; font-size: 13px; }
+
+/* Space kept for later phases, so the layout already sits where it will. */
+.stage-slot {
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  color: var(--muted);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 10px;
+  background: rgba(15, 18, 32, .35);
+}
+.left-col .stage-slot { height: 180px; margin-top: 26px; }
+
+/* ---- Suggestions row ---- */
+.suggest { flex: none; }
+.suggest-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 16px;
+  min-height: 20px;
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.source-down { display: inline-flex; align-items: center; gap: 6px; color: var(--warn); }
+.no-match strong { color: var(--text); }
+.jp-hint { color: var(--warn); }
+.searching { display: inline-flex; align-items: center; gap: 8px; }
+.spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--muted);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+.thumbs { display: flex; gap: 12px; align-items: flex-start; min-height: 150px; }
+.thumb {
+  width: 92px;
+  flex: none;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--text);
+  cursor: pointer;
+  text-align: center;
+  font: inherit;
+}
+.thumb-img {
+  position: relative;
+  display: block;
+  aspect-ratio: 488 / 680;
+  border-radius: var(--card-radius);
+  overflow: hidden;
+  background: var(--panel-2);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .35);
+  outline: 3px solid transparent;
+  outline-offset: 2px;
+}
+.thumb-img img { width: 100%; height: 100%; display: block; }
+.thumb-back { display: flex; align-items: center; justify-content: center; height: 100%; padding: 6px; font-size: 11px; color: var(--muted); }
+.thumb:hover .thumb-img { outline-color: var(--border); }
+.thumb.selected .thumb-img { outline-color: var(--accent-2); }
+.thumb.highlight .thumb-img { outline-color: var(--accent); }
+/* Top corner: never over the card's bottom (copyright) strip. */
+.thumb-badge { position: absolute; top: 4px; left: 4px; }
+.thumb-label {
+  display: block;
+  margin-top: 5px;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.show-all {
+  width: 92px;
+  aspect-ratio: 488 / 680;
+  flex: none;
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  background: rgba(24, 28, 46, .8);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px;
+}
+.show-all:hover, .show-all.highlight { border-color: var(--accent); border-style: solid; }
+
+.all-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 14px 12px;
+  padding: 4px;
+  outline: none;
+}
+.all-grid .thumb { width: auto; }
+
+/* ---- Bottom band (Phases 5–6) and the key hints ---- */
+.stage-bottom { flex: none; display: grid; grid-template-columns: 1fr 380px; gap: 16px; height: 76px; }
+.hint-strip { flex: none; margin: 0; font-size: 12px; color: var(--muted); text-align: right; }
+
+/* ---- Buy list sidebar (Audit Tool list panel, docked right) ---- */
+.buy-list {
+  flex: none;
+  width: 340px;
+  display: flex;
+  flex-direction: column;
+  background: rgba(24, 28, 46, .9);
+  border-left: 1px solid var(--border);
+}
+.list-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 16px 16px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.list-title { font-size: .78rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.list-count { font-size: 13px; color: var(--muted); }
+.list-empty { margin: 18px 16px; color: var(--muted); font-size: 13px; }
+
+/* Short windows (1366×768 laptops): the card and thumbnails give up height first. */
+@media (max-height: 820px) {
+  .stage { gap: 8px; padding-top: 10px; }
+  .main-search-field input { height: 48px; font-size: 18px; }
+  .thumb, .show-all { width: 70px; }
+  .thumbs { min-height: 116px; }
+  .stage-bottom { height: 64px; }
+  .card-info { margin-top: 20px; padding: 12px 14px; }
+  .info-name { font-size: 19px; }
+}
