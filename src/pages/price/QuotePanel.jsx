@@ -1,13 +1,42 @@
+import { useEffect, useRef, useState } from 'react';
 import { formatMoney, payout } from '../../lib/money.js';
+import PriceWarnings from './PriceWarnings.jsx';
 
 /**
  * The price panel beside the card info (owner, 2026-09-29): the selected
  * condition's purchase price, big and green, with what the store would pay
  * in Credit and Cash under it. Display only: nothing here is saved, it's
  * worked out again from the price and the Master Buy Percentages.
- * @param {{ source: 'justtcg'|'fallback'|'manual'|null }} props
+ *
+ * When JustTCG's price looks wrong, one amber line under the chips says so;
+ * hovering it shows the reasons in a box floating over Finish & Details, and
+ * clicking keeps the box open until the next click anywhere (owner: nothing
+ * else may lose room to it).
+ * @param {{ source: 'justtcg'|'fallback'|'manual'|null, warnings: string[] }} props
  */
-export default function QuotePanel({ candidate, loading, condition, price, source, cashPct, creditPct }) {
+export default function QuotePanel({
+  candidate, loading, condition, price, source, cashPct, creditPct, warnings, onDone,
+}) {
+  const [hover, setHover] = useState(false);
+  const [pinned, setPinned] = useState(false);
+  const box = useRef(null);
+
+  // A new card starts closed.
+  useEffect(() => {
+    setHover(false);
+    setPinned(false);
+  }, [candidate?.key]);
+
+  // Pinned open: any click outside the panel closes it.
+  useEffect(() => {
+    if (!pinned) return undefined;
+    const close = (e) => {
+      if (!box.current?.contains(e.target)) setPinned(false);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [pinned]);
+
   if (!candidate) {
     return (
       <aside className="area-quote">
@@ -32,9 +61,10 @@ export default function QuotePanel({ candidate, loading, condition, price, sourc
       </span>
     );
   };
+  const warned = !loading && warnings.length > 0;
 
   return (
-    <aside className="area-quote">
+    <aside className="area-quote" ref={box} onMouseLeave={() => setHover(false)}>
       <div className="quote">
         <div className="quote-label">
           <span className={`quote-cond cond-${condition.toLowerCase()}`}>{condition}</span>
@@ -50,7 +80,26 @@ export default function QuotePanel({ candidate, loading, condition, price, sourc
           {chip('Credit', creditPct)}
           {chip('Cash', cashPct)}
         </div>
+        {warned && (
+          <button
+            type="button"
+            className={`quote-warn${pinned ? ' on' : ''}`}
+            aria-expanded={hover || pinned}
+            onMouseEnter={() => setHover(true)}
+            onClick={() => {
+              setPinned(!pinned);
+              onDone();
+            }}
+          >
+            ⚠️ Price may be wrong ({warnings.length})
+          </button>
+        )}
       </div>
+      {warned && (hover || pinned) && (
+        <div className="quote-pop">
+          <PriceWarnings warnings={warnings} />
+        </div>
+      )}
     </aside>
   );
 }

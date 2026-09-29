@@ -15,7 +15,7 @@ function priceStyle(text) {
  * buttons, NM to DMG. Each shows its entry from the price ladder (lib/prices
  * priceLadder): JustTCG's price, or a fallback tagged "fallback", rounded
  * down; "—" when there's neither. ⚠️ on NM when JustTCG's prices look
- * wrong (the reasons are in the box under the price panel). Under them: Use Fallback (every price from
+ * wrong (the reasons are behind the warning line in the price panel). Under them: Use Fallback (every price from
  * Scryfall/TCGdex and the fallback percentages instead of JustTCG) and ✎ Manual price (overrides the purchase price),
  * then the caption.
  */
@@ -64,7 +64,7 @@ export default function PriceTable({
       if (fallbackOn) about += ' (Use Fallback is on)';
     }
     if (manual != null && code === condition) about = `manual ${formatMoney(manual)} (market: ${about})`;
-    const warn = code === 'NM' && warnings.length ? ' · ⚠️ may be wrong: see the warning under the price' : '';
+    const warn = code === 'NM' && warnings.length ? ' · ⚠️ may be wrong: see the warning in the price panel' : '';
     return `${code} · ${about}${warn} · ${key}`;
   };
 

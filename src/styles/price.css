@@ -123,17 +123,20 @@
 .area-card { grid-area: card; min-height: 0; display: flex; flex-direction: column; container-type: size; }
 .area-info { grid-area: info; min-width: 0; }
 .area-thumbs { grid-area: thumbs; min-height: 0; display: flex; flex-direction: column; container-type: size; }
-.area-quote { grid-area: quote; min-width: 0; }
+.area-quote { grid-area: quote; min-width: 0; position: relative; }
+/* The warning list hangs below the panel; its top padding bridges the gap so
+   moving the mouse down onto it doesn't close it. */
+.quote-pop { position: absolute; top: 100%; left: 0; right: 0; z-index: 30; padding-top: 6px; }
 .area-side { grid-area: side; min-height: 0; display: flex; flex-direction: column; }
-/* Price warnings, top of the right column under the price panel (owner,
-   2026-09-29): one short line per reason. Finish & Details move down. */
+/* Price warnings (owner, 2026-09-29): one short line per reason, in a box
+   that floats over Finish & Details from the price panel's warning line, so
+   nothing else ever loses room to it. */
 .price-warnings {
-  flex: none;
-  margin-bottom: 12px;
   padding: 10px 14px 10px 12px;
   border: 1px solid rgba(255, 204, 102, .55);
   border-radius: 10px;
-  background: rgba(40, 32, 12, .88);
+  background: rgb(40, 32, 12);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, .55);
 }
 .price-warnings-head {
   margin-bottom: 6px;
@@ -452,6 +455,18 @@
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+.quote-warn {
+  padding: 2px 10px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: none;
+  color: var(--warn);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.quote-warn:hover, .quote-warn.on { border-color: rgba(255, 204, 102, .55); background: rgba(255, 204, 102, .1); }
 .quote-chip-label { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 
 /* One line per detail, so every card's box is the same height. */

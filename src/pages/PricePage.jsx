@@ -17,7 +17,6 @@ import {
 } from '../lib/prices.js';
 import { useSettings } from '../state/settings.jsx';
 import QuotePanel from './price/QuotePanel.jsx';
-import PriceWarnings from './price/PriceWarnings.jsx';
 import { useEurUsd } from '../lib/useEurUsd.js';
 import { readLocal, writeLocal } from '../lib/local.js';
 
@@ -269,9 +268,10 @@ export default function PricePage() {
             source={manual != null ? 'manual' : ladder[condition].source}
             cashPct={settingValues.cash_pct}
             creditPct={settingValues.credit_pct}
+            warnings={warnings}
+            onDone={focusSearch}
           />
           <div className="area-side">
-            <PriceWarnings warnings={warnings} />
             <FinishPanel
               candidate={selected}
               finish={finish}
