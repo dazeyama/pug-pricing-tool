@@ -729,7 +729,8 @@ Parsing rules (`src/lib/query.js`), applied to the trimmed input:
 
 This sits at the top of the right column, beside the suggestions and above the details panel (Section 8.1). It must be **large, bold and obvious**.
 
-- **Magic:** a full-width toggle switch, at least 64px tall, labeled **FOIL**. **ON is green with the knob right; OFF is red with the knob left**, and the text ON/OFF is inside the track.
+- **Magic:** a compact toggle switch (about 220×46px, owner's decision 2026-09-29; the Pokémon selector below keeps its full width and 64px), labeled **FOIL**. **ON is green with the knob right; OFF is red with the knob left**, and the text ON/OFF is inside the track.
+- The finish control and details panel sit together in a faint dark box with a clearly visible frame; only the details list scrolls, with an easy-to-see scrollbar (owner's decision, 2026-09-29).
   - Default **OFF (non-foil)** when the printing exists both ways (owner's decision).
   - When the printing exists in only one finish (`finishes` has only `foil`, or only `nonfoil`), the switch is **locked** in that state with a 🔒 and the tooltip "Only printed in foil" / "Only printed non-foil".
   - **Etched** is a separate checkbox in the details panel (Section 8.6). When etched is on, the switch shows **ETCHED** in its ON state and is locked on.

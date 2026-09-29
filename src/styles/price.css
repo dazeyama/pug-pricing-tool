@@ -254,19 +254,32 @@
   background: rgba(15, 18, 32, .35);
 }
 /* ---- Finish and details (spec 8.5–8.6), the right column ---- */
-.finish-panel { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; padding-right: 2px; }
+/* A faint dark box with a clear frame, like the preview slots. The finish
+   control stays put; only the details list scrolls. */
+.finish-panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 14px 14px;
+  background: rgba(0, 0, 0, .32);
+  border: 1px solid rgba(154, 161, 189, .45);
+  border-radius: 12px;
+}
 .details-label { margin-top: 14px; }
 
-/* The big FOIL switch: green with the knob right when on, red with the knob
-   left when off, at least 64px tall. */
+/* The FOIL switch: green with the knob right when on, red with the knob left
+   when off. Compact (owner's decision, 2026-09-29); the Pokémon selector
+   below keeps its full 64px. */
 .foil-switch {
   flex: none;
-  width: 100%;
-  height: 64px;
+  align-self: flex-start;
+  width: 220px;
+  height: 46px;
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 8px;
+  padding: 0 6px;
   border: none;
   border-radius: 999px;
   font: inherit;
@@ -278,12 +291,12 @@
 .foil-switch.off { background: #e05555; color: #fff; flex-direction: row-reverse; }
 .foil-switch:disabled { cursor: not-allowed; opacity: .85; }
 .foil-switch:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
-.foil-text { flex: 1; text-align: center; font-size: 20px; font-weight: 800; letter-spacing: .06em; }
-.foil-lock { font-size: 16px; }
+.foil-text { flex: 1; text-align: center; font-size: 16px; font-weight: 800; letter-spacing: .06em; }
+.foil-lock { font-size: 13px; }
 .foil-knob {
   flex: none;
-  width: 48px;
-  height: 48px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   background: #fff;
   box-shadow: 0 2px 6px rgba(0, 0, 0, .35);
@@ -316,7 +329,21 @@
 .finish-segments button:disabled { color: var(--muted); opacity: .4; cursor: not-allowed; }
 
 /* Details: checkboxes for traits that can change, chips for ones that can't. */
-.details { display: flex; flex-direction: column; gap: 6px; }
+.details {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-right: 6px;
+}
+.details > * { flex: none; }
+/* A scrollbar that's easy to see and grab when the list overflows. */
+.details::-webkit-scrollbar { width: 10px; }
+.details::-webkit-scrollbar-track { background: rgba(255, 255, 255, .07); border-radius: 999px; }
+.details::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 999px; }
+.details::-webkit-scrollbar-thumb:hover { background: var(--text); }
 .details-note { margin: 0; color: var(--muted); font-size: 13px; }
 .trait-row {
   display: flex;
