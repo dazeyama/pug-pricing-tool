@@ -1,0 +1,41 @@
+/* The login screen (spec 4.4): logo, title and a single password field. */
+
+.login {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.login-box {
+  width: 380px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, .45);
+  padding: 32px 32px 28px;
+  text-align: center;
+}
+.login-logo { width: 150px; height: 150px; display: block; margin: 0 auto 16px; }
+.login-box h1 { margin: 0; font-size: 22px; font-weight: 600; }
+.login-box .brand-sub { margin: 4px 0 24px; color: var(--muted); font-size: 13px; }
+.login-form { text-align: left; }
+.login-form input[type=password] { font-size: 15px; padding: 10px 12px; }
+.login-error { color: var(--bad); font-size: 13px; margin: 8px 0 0; min-height: 18px; }
+.login-form .btn.primary {
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px 14px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* A full-screen message for states before the app can run (missing config). */
+.fatal {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.fatal .banner { max-width: 560px; line-height: 1.5; }

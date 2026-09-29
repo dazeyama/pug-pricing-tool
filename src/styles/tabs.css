@@ -1,0 +1,142 @@
+/* Header, search box and tabs, ported from Collection Manager (spec 7.2, B.2). */
+
+header {
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 0 0;
+}
+/* Header content lines up with the page body: same max width, same gutter. */
+.header-top, nav#tabs {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* Brand on the left, user + search on the right, tabs left-aligned underneath. */
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+}
+.brand { display: flex; align-items: center; gap: 14px; }
+header h1 { margin: 0; font-size: 20px; font-weight: 600; }
+
+.brand-mark {
+  --brand-size: 52px;
+  width: var(--brand-size);
+  height: var(--brand-size);
+  flex: none;
+  display: block;
+}
+.brand-text { display: flex; flex-direction: column; justify-content: center; }
+.brand-sub { margin: 2px 0 0; color: var(--muted); font-size: 12px; }
+
+.header-right { display: flex; align-items: center; gap: 10px; }
+
+/* ---- Staff user button (spec 7.3). Phase 1: placeholder only. ---- */
+.user-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text);
+  padding: 8px 14px;
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.user-btn:hover { border-color: var(--accent); }
+.user-btn .user-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--c, var(--border));
+  flex: none;
+}
+.user-btn .user-name.none { color: var(--muted); }
+.user-btn .caret { color: var(--muted); font-size: 11px; }
+
+/* ---- Global search (spec 13). Phase 1: visual only. ---- */
+.search-col { flex: 0 1 340px; min-width: 200px; transition: flex-basis .12s ease; }
+.search-wrap { position: relative; }
+.search-icon {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+}
+/* Scoped to .search-wrap so it beats the generic input[type=search] rule. */
+.search-wrap .search-input {
+  margin-top: 0;
+  padding: 9px 14px 9px 42px;
+  font-size: 14px;
+  background: var(--bg);
+  border-radius: 999px;
+}
+.search-input::placeholder { color: var(--muted); }
+
+/* On a pricing screen the main search bar is the focus, so this one steps back. */
+.search-col.compact { flex-basis: 220px; min-width: 180px; }
+.search-col.compact .search-icon { left: 11px; }
+.search-col.compact .search-input { padding: 6px 12px 6px 34px; font-size: 13px; }
+
+/* Results drop under the search box, over whatever tab you are on (Phase 10). */
+.search-results {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: min(460px, 92vw);
+  max-height: 70vh;
+  overflow: auto;
+  z-index: 320;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, .55);
+  padding: 14px 16px;
+  text-align: left;
+}
+
+/* ---- Tabs: equal-width, outlined; an idle tab lifts on hover. ---- */
+nav#tabs { display: flex; gap: 8px; justify-content: flex-start; }
+/* Changelog is a record of the work, not a step in it: pushed to the right. */
+.tab.tab-apart { margin-left: auto; }
+
+.tab {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-bottom: none;                 /* the active tab draws its own, below */
+  color: var(--muted);
+  min-width: 140px;
+  text-align: center;
+  padding: 9px 22px;                   /* a touch shorter than the active tab */
+  align-self: flex-end;
+  transition: padding .12s ease;       /* the lift eases; the colour snaps */
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: .01em;
+  border-radius: 8px 8px 0 0;
+  cursor: pointer;
+}
+.tab:hover { color: var(--text); background: var(--panel-2); border-color: var(--muted); }
+/* Hovering an idle tab lifts it to the active tab's height. */
+.tab:not(.active):hover { padding: 11px 22px 11px; border-bottom: 3px solid var(--muted); }
+.tab.active {
+  color: var(--text);
+  background: var(--panel-2);
+  border-color: var(--border);
+  border-bottom: 3px solid var(--accent);
+  padding: 11px 22px 11px;
+}
+
+/* Tab content fades in on every switch. */
+.panel { display: none; }
+.panel.active { display: block; animation: fade .15s ease; }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }

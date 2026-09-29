@@ -1,0 +1,117 @@
+/* Panels, modal, toast and loading cues, ported from Collection Manager. */
+
+/* ---- Card panels: the colored top edge comes from --c ---- */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(430px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+.cardpanel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--c, var(--border));
+  border-radius: 9px;
+  overflow: hidden;
+}
+.cardpanel-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--panel-2);
+  border-bottom: 1px solid var(--border);
+}
+.cardpanel-body { padding: 12px; }
+.setting-value { margin: 0 0 14px; font-size: 15px; }
+
+/* ---- Modal ---- */
+.modal {
+  position: fixed; inset: 0; z-index: 150;
+  background: rgba(0, 0, 0, .6);
+  display: flex; align-items: center; justify-content: center;
+}
+.modal-box {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+  width: min(520px, 92vw); max-height: 82vh; display: flex; flex-direction: column;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, .6);
+}
+.modal-box.wide { width: min(760px, 94vw); }
+.modal-head {
+  padding: 12px 16px; border-bottom: 1px solid var(--border); font-weight: 600;
+}
+.modal-body { padding: 14px 16px; overflow: auto; }
+.modal-body p { margin: 0 0 10px; }
+.modal-foot {
+  display: flex; justify-content: flex-end; gap: 8px;
+  padding: 12px 16px; border-top: 1px solid var(--border);
+}
+
+/* ---- Toast ---- */
+.toast-stack {
+  position: fixed; right: 20px; bottom: 20px; z-index: 300;
+  display: flex; flex-direction: column-reverse; gap: 10px;
+  pointer-events: none;
+}
+.toast {
+  max-width: 420px;
+  background: var(--panel-2); border: 1px solid var(--border); border-left: 3px solid var(--accent);
+  border-radius: 8px; padding: 10px 14px; font-size: 13px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .5);
+  opacity: 0; transform: translateY(8px); transition: opacity .2s, transform .2s;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.ok { border-left-color: var(--good); }
+.toast.err { border-left-color: var(--bad); }
+.toast.warn { border-left-color: var(--warn); }
+
+/* ---- Loading cues: a sweep across the top while any request is in flight,
+        and a spinner on whichever button started it. ---- */
+#loading-bar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  overflow: hidden;
+  z-index: 400;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .15s;
+}
+body.loading #loading-bar { opacity: 1; }
+#loading-bar::before {
+  content: "";
+  display: block;
+  height: 100%;
+  width: 35%;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  animation: sweep 1.1s linear infinite;
+}
+@keyframes sweep {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(360%); }
+}
+body.loading { cursor: progress; }
+
+.btn.busy, .icon-btn.busy { color: transparent !important; position: relative; pointer-events: none; }
+.btn.busy::after, .icon-btn.busy::after {
+  content: "";
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 12px; height: 12px;
+  margin: -6px 0 0 -6px;
+  border: 2px solid var(--text);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading-note { animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { opacity: .45; } 50% { opacity: .9; } }
+
+/* ---- The jump-and-flash a search result lands on (Phase 10) ---- */
+.flash-target { animation: flashTarget 1.8s ease forwards; }
+@keyframes flashTarget {
+  0%, 55% { box-shadow: 0 0 0 3px var(--accent), 0 0 24px 3px rgba(108, 140, 255, .45); }
+  100% { box-shadow: 0 0 0 0 rgba(108, 140, 255, 0); }
+}

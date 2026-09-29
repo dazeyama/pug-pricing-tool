@@ -1,0 +1,33 @@
+/* Colour tokens, copied verbatim from Collection Manager (static/style.css :root).
+   Spec Appendix B.1. The only place these hex values live. */
+:root {
+  --bg: #0f1220;
+  --panel: #181c2e;
+  --panel-2: #20253a;
+  --border: #2c3350;
+  --text: #e6e8f0;
+  --muted: #9aa1bd;
+  --accent: #6c8cff;
+  --accent-2: #4f6ae0;
+  --good: #3ecf8e;
+  --bad: #ff6b6b;
+  --warn: #ffcc66;
+
+  /* Staff-user palette (spec 7.3): a user's colour is one of these names. */
+  --pal-crimson: #c0394b;
+  --pal-orange:  #d4722c;
+  --pal-amber:   #d8a520;
+  --pal-olive:   #8a9a2b;
+  --pal-green:   #3f9c53;
+  --pal-teal:    #2b9e8b;
+  --pal-cyan:    #2f9dc4;
+  --pal-blue:    #3a72d0;
+  --pal-indigo:  #5a5bc4;
+  --pal-violet:  #8455c8;
+  --pal-magenta: #b8459b;
+  --pal-slate:   #6b7590;
+
+  /* Audit Tool card presentation (spec B.4), used from Phase 3. */
+  --shadow: 0 2px 6px rgba(0, 0, 0, .35), 0 18px 48px rgba(0, 0, 0, .35);
+  --card-radius: 4.75% / 3.5%;
+}
