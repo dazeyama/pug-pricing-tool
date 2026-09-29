@@ -132,7 +132,26 @@
 /* ---- The selected card: Scryfall's card-page size, 336 × 468, left-aligned.
         It only shrinks when the window is too short for it. ---- */
 .card-box { position: relative; align-self: flex-start; }
-.card-box .card-wrap { height: min(calc(100cqh - 26px), 468px); width: auto; }
+/* --card-h: the card's height, leaving room for the label above (26px) and
+   the finish line below (28px). */
+.area-card { --card-h: min(calc(100cqh - 54px), 468px); }
+.card-box .card-wrap { height: var(--card-h); width: auto; }
+
+/* The finish named under the card, centred on it: one line whatever happens,
+   the font shrinking with the card (21 is about the widest label's length
+   in ems, "✦ REVERSE HOLO · MASTER BALL"). */
+.finish-line {
+  flex: none;
+  display: flex;
+  justify-content: center;
+  width: calc(var(--card-h) * .7176);
+  height: 22px;
+  margin-top: 6px;
+  align-items: center;
+  white-space: nowrap;
+  font-size: min(.78rem, calc(var(--card-h) * .7176 / 21));
+  text-transform: uppercase;
+}
 
 .card-wrap {
   position: relative;
@@ -228,9 +247,8 @@
   from { background-position: 0% 0%, 0% 50%; }
   to { background-position: 100% 100%, 100% 50%; }
 }
-/* The finish named beside "SELECTED CARD", in the sheen's colours. */
+/* The finish label's text, in the sheen's colours. */
 .finish-tag {
-  margin-left: 8px;
   font-weight: 800;
   letter-spacing: .1em;
   background: linear-gradient(90deg, #ff2d95, #ffd84d, #3dffb4, #38b6ff, #a45bff, #ff2d95) 0 0 / 200% 100%;
@@ -301,15 +319,16 @@
   cursor: pointer;
 }
 .flip-btn:hover { border-color: var(--accent); }
-/* Poké Ball / Master Ball pattern reverse holos: the ball hangs off the
-   card's top-right corner, so it covers as little of the card as it can. */
+/* Poké Ball / Master Ball pattern reverse holos: the ball sits inside the
+   card's bottom-right corner, clear of the edges, sized with the card. */
 .pattern-badge {
   position: absolute;
-  top: -14px;
-  right: -14px;
+  right: 6%;
+  bottom: 5%;
   z-index: 3;
-  width: 54px;
-  height: 54px;
+  width: 15%;
+  height: auto;
+  aspect-ratio: 1;
   filter: drop-shadow(0 3px 6px rgba(0, 0, 0, .6));
 }
 

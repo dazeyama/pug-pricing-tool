@@ -66,6 +66,7 @@ export default function SelectedCard({ candidate: c, typedName, pokemon, finish,
           <div className="card-box">
             <div className="card-wrap card-empty">Type a card above</div>
           </div>
+          <div className="finish-line" />
         </div>
         {/* Drawn empty, so nothing below it moves when a card is picked. */}
         <aside className="area-info">
@@ -110,10 +111,7 @@ export default function SelectedCard({ candidate: c, typedName, pokemon, finish,
   return (
     <>
       <div className="area-card">
-        <div className="stage-label">
-          Selected card
-          {finishTag && <span className="finish-tag">✦ {finishTag}</span>}
-        </div>
+        <div className="stage-label">Selected card</div>
         <div className="card-box">
           {/* Keyed by the image too: a backup image arriving later starts a fresh load. */}
           <CardImage
@@ -140,6 +138,11 @@ export default function SelectedCard({ candidate: c, typedName, pokemon, finish,
               ⟲ Flip
             </button>
           )}
+        </div>
+        {/* The finish, named under the card: always one line, always there so
+            the card never moves when it appears. */}
+        <div className="finish-line">
+          {finishTag && <span className="finish-tag">✦ {finishTag}</span>}
         </div>
       </div>
 
