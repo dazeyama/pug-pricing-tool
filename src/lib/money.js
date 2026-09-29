@@ -25,6 +25,17 @@ export function roundDownPrice(price) {
   return (Math.floor(cents / step) * step) / 100;
 }
 
+/**
+ * amount × pct%, to the cent, half-up (spec 7.8): Cash and Credit. Worked in
+ * whole cents, trimmed to 6 places first so float error can't tip a half.
+ * @returns {number|null}
+ */
+export function percentOf(amount, pct) {
+  if (amount == null || pct == null || Number.isNaN(Number(amount)) || Number.isNaN(Number(pct))) return null;
+  const cents = Math.round(Number(amount) * 100);
+  return Math.round(Number(((cents * Number(pct)) / 100).toFixed(6))) / 100;
+}
+
 /** "12.5" / "$12.50" / "12" → 12.5; null for anything that isn't a price ≥ 0 with ≤ 2 decimals. */
 export function parseMoney(text) {
   const clean = String(text ?? '').trim().replace(/^\$/, '').replace(/,/g, '');

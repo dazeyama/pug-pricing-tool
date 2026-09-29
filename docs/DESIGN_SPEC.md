@@ -656,10 +656,10 @@ The Price screen fills the viewport below the header with **no page scroll**. It
 │ │ 🔍  Lightning Bolt 161/295 2X2                                   │           │ ── Magic (9) ──  │
 │ └─────────────────────────────────────────────────────────────────┘           │ 1 Abrade (SOA) 37│
 │  SELECTED CARD                                                                 │ 1 Adarkar Wastes │
-│ ┌──────────────┐  ┌─ CARD INFO ───────────┐                                   │   (DMU) 243 *F*  │
-│ │              │  │ Lightning Bolt        │                                   │ …                │
-│ │              │  │ Double Masters (2X2)  │                                   │ ── Pokémon (3) ──│
-│ │  336 × 468   │  │ #161 / 331 · Uncommon │                                   │ 1 Charizard ex   │
+│ ┌──────────────┐  ┌─ CARD INFO ───────────┐  ┌─ PRICE ───────────────────┐    │   (DMU) 243 *F*  │
+│ │              │  │ Lightning Bolt        │  │ NM  $2.10                 │    │ …                │
+│ │              │  │ Double Masters (2X2)  │  │[Credit $1.39] [Cash $0.69]│    │ ── Pokémon (3) ──│
+│ │  336 × 468   │  │ #161 / 331 · Uncommon │  └───────────────────────────┘    │ 1 Charizard ex   │
 │ │ (Scryfall's  │  └───────────────────────┘          … show all (23)          │   (OBF) 125 *H*  │
 │ │  card-page   │  [t1] [t2] [t3] [t4] [t5]     ┌─ FINISH ─────────────┐       │ …                │
 │ │  size)       │                               │ FOIL  [ ON | OFF ]   │       │                  │
@@ -675,7 +675,7 @@ Below the main search bar, the stage is three columns (**owner's layout, 2026-09
 
 | Left | Middle | Right |
 |---|---|---|
-| **Selected card** at Scryfall's card-page size (**336×468**), centered in its column, with the **condition / price table** directly under it | **Card info** beside the card, then the **suggestions**: 10 thumbnails in **2 rows of 5** | Beside the suggestions: the **finish control** and **details panel**, then the action row (**Qty, CLEAR, ADD CARD**) under them |
+| **Selected card** at Scryfall's card-page size (**336×468**), centered in its column, with the **condition / price table** directly under it | **Card info** beside the card, then the **suggestions**: 10 thumbnails in **2 rows of 5** | Beside the card info: the **price panel** (Section 8.7). Beside the suggestions: the **finish control** and **details panel**, then the action row (**Qty, CLEAR, ADD CARD**) under them |
 
 Card image sizes follow Scryfall's as the reference: the selected card is 336×468, and a thumbnail is at most Scryfall's small image (146×204), shrinking only to fit 5 across and 2 rows down. The selected card shrinks only when the window is too short for it. The sidebar's bottom holds the totals and **CANCEL / CONFIRM BUY**, which mirror CLEAR / ADD CARD in size, shape and position.
 
@@ -814,7 +814,9 @@ A row of five large buttons directly under the selected card (Section 8.1):
 - The manual price becomes the line's `unit_price` with `price_source = 'manual'`. `market_price` still records JustTCG's price when there is one.
 - **×** clears the manual price. It also clears when a different condition is picked (owner's decision, 2026-09-29: a manual price belongs to its condition), on CLEAR, and after each add.
 
-**Purchase price** of the next line = manual price if set, else the price shown on the selected condition (JustTCG's, or the fallback's). ADD CARD is disabled when none exists.
+**Purchase price** of the next line = manual price if set, else the price shown on the selected condition (JustTCG's, or the fallback's).
+
+**Price panel** (owner's decision, 2026-09-29): beside the card info, the same height as it. It shows the purchase price for the selected condition in large green type, labeled with the condition (and "fallback" or "✎ manual" when it is one). Under it, two smaller chips: **Credit** and **Cash**, the purchase price × the Master Buy Percentages, rounded half-up to the cent (`percentOf` in `src/lib/money.js`; a chip's tooltip shows the percentage). It's **display only**: nothing is saved, since it can always be worked out again. It follows condition, finish, Use Fallback and manual price changes as they happen, shows "—" when there's no price, and a dashed "Price appears here" box with no card. Phase 6: use the buy's custom rates (Section 8.9.1) where set. ADD CARD is disabled when none exists.
 
 ### 8.8 Quantity, ADD CARD, CLEAR
 
@@ -1446,6 +1448,7 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 - [ ] Manual price: the ✎ price shows bold with the market price struck through beneath it. Picking another condition clears it.
 - [ ] Use Fallback: hovering shows the fallback NM price; pressing it puts that price on NM (tagged "fallback"); pressing again goes back.
 - [ ] A card whose Scryfall/TCGdex price is far from JustTCG's NM shows ⚠️ on the NM label.
+- [ ] Price panel (beside the card info): the selected condition's price in green, Credit and Cash under it; it follows condition, foil, Use Fallback and manual price.
 - [ ] Arrow quickly through 10 suggestions: the usage meter rises by about 1, not 10.
 - [ ] Etched Magic card: the price looks like the etched listing, not the regular foil.
 
@@ -1744,7 +1747,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 26 | Scope | Singles only (no preference given) |
 | 27–32 | Buy list | Qty box; merge identical lines; `[LP]`-style tag when not NM (◆ plus `1st Ed`, `JP`, pattern in the same bracket); order added, newest at the bottom; grouped by game; remove asks how many |
 | 33 | Purchase price | JustTCG market price (or manual); Cash 33% and Credit 66% shown |
-| 34 | Totals | Sidebar bottom, collection header, day-page panels; (follow-up) Cash/Credit in totals only |
+| 34 | Totals | Sidebar bottom, collection header, day-page panels; (follow-up) Cash/Credit in totals only (owner, 2026-09-29: plus the Price screen's display-only price panel for the current card, decision 83) |
 | 35 | No JustTCG price | Labeled Scryfall/TCGdex fallback (owner, 2026-09-29: every condition, via the Master Fallback Percentages; replaces "◆ NM only") |
 | 36 | Collection prices | Locked when added |
 | 37–39 | Details / foil | Only valid toggles; same set only; non-foil default |
@@ -1772,6 +1775,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 80 | Manual price and condition (2026-09-29) | Picking a different condition clears the manual price |
 | 81 | NM warning (2026-09-29) | ⚠️ on the NM label when JustTCG's NM and the fallback NM differ by 25%+ and at least $1 |
 | 82 | Price table foot (2026-09-29) | Use Fallback and ✎ Manual price centered under the buttons; the "Prices via JustTCG" caption on its own line below |
+| 83 | Price panel (2026-09-29) | Beside the card info: the selected condition's price in green, with Credit and Cash chips under it. Display only, never saved (Section 8.7) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

@@ -93,7 +93,7 @@
 .search-note strong { color: var(--text); }
 
 /* ---- Below the search bar (owner's layout, 2026-09-29) -------------------
-     card    | info    | .
+     card    | info    | quote     (the selected price, Credit, Cash)
      card    | thumbs  | side      (finish & details)
      prices  | thumbs  | actions   (Qty · CLEAR · ADD CARD)                 */
 .stage-body {
@@ -106,7 +106,7 @@
   grid-template-columns: 336px minmax(0, 1fr) clamp(260px, 21vw, 380px);
   grid-template-rows: var(--info-h) minmax(0, 1fr) auto;
   grid-template-areas:
-    "card   info   ."
+    "card   info   quote"
     "card   thumbs side"
     "prices thumbs actions";
   gap: 16px 32px;
@@ -116,6 +116,7 @@
 .area-card { grid-area: card; min-height: 0; display: flex; flex-direction: column; container-type: size; }
 .area-info { grid-area: info; min-width: 0; }
 .area-thumbs { grid-area: thumbs; min-height: 0; display: flex; flex-direction: column; container-type: size; }
+.area-quote { grid-area: quote; min-width: 0; }
 .area-side { grid-area: side; min-height: 0; display: flex; flex-direction: column; }
 .area-prices { grid-area: prices; }
 .area-actions { grid-area: actions; }
@@ -354,6 +355,77 @@
   border-style: dashed;
   background: rgba(15, 18, 32, .35);
 }
+/* ---- Price panel beside the card info (owner, 2026-09-29): the selected
+        condition's price, big and green, with Credit and Cash chips. ---- */
+.quote {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(24, 28, 46, .9);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.quote.empty { color: var(--muted); font-size: 13px; border-style: dashed; background: rgba(15, 18, 32, .35); }
+.quote-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.quote-cond {
+  --cond: var(--border);
+  padding: 1px 7px;
+  border-radius: 5px;
+  border-top: 3px solid var(--cond);
+  background: var(--panel-2);
+  color: var(--text);
+  letter-spacing: .06em;
+}
+.quote-cond.cond-nm { --cond: #3ecf8e; }
+.quote-cond.cond-lp { --cond: #a3d65c; }
+.quote-cond.cond-mp { --cond: #ffcc66; }
+.quote-cond.cond-hp { --cond: #ff9f43; }
+.quote-cond.cond-dmg { --cond: #ff6b6b; }
+.quote-tag { color: var(--warn); letter-spacing: .05em; }
+.quote-price {
+  font-size: 44px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--good);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.quote-price.none { color: var(--muted); }
+.quote-price.shimmer {
+  width: 60%;
+  height: 44px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #232842 25%, #343c60 50%, #232842 75%) 0 0 / 250% 100%;
+  animation: shimmer 1.2s linear infinite;
+}
+.quote-chips { display: flex; gap: 8px; }
+.quote-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--panel-2);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.quote-chip-label { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+
 /* One line per detail, so every card's box is the same height. */
 .card-info p, .info-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .card-info p { margin: 0 0 6px; }

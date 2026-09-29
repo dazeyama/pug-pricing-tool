@@ -14,6 +14,7 @@ import {
 } from '../lib/printings.js';
 import { CONDITIONS, conditionPrices, fallbackPrice, nmMismatch, priceLadder, resultFor } from '../lib/prices.js';
 import { useSettings } from '../state/settings.jsx';
+import QuotePanel from './price/QuotePanel.jsx';
 import { readLocal, writeLocal } from '../lib/local.js';
 
 const BACKGROUND = { '--stage-bg': `url(${import.meta.env.BASE_URL}background.webp)` };
@@ -230,6 +231,15 @@ export default function PricePage() {
             selectedKey={selected?.key}
             onPick={pick}
             onShowAll={() => setShowAll(true)}
+          />
+          <QuotePanel
+            candidate={selected}
+            loading={prices.status === 'loading' || prices.status === 'waiting'}
+            condition={condition}
+            price={manual ?? ladder[condition].price}
+            source={manual != null ? 'manual' : ladder[condition].source}
+            cashPct={settingValues.cash_pct}
+            creditPct={settingValues.credit_pct}
           />
           <div className="area-side">
             <FinishPanel
