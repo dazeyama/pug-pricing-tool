@@ -181,6 +181,26 @@ export function priceLadder(market, fallback, pct) {
 }
 
 /**
+ * JustTCG's NM and the fallback's NM (Scryfall/TCGdex × the NM percentage)
+ * disagree enough to warn about (owner, 2026-09-29): 25% or more of
+ * JustTCG's price, and at least $1 apart so cheap cards stay quiet.
+ * @returns {{ justtcg: number, fallback: number, from: string, pct: number } | null}
+ */
+export function nmMismatch(market, fallback, pct) {
+  const justtcg = market?.NM;
+  if (justtcg == null || !fallback || pct?.NM == null) return null;
+  const other = (fallback.price * Number(pct.NM)) / 100;
+  const diff = Math.abs(other - justtcg);
+  if (diff < 1 || diff < justtcg * 0.25) return null;
+  return {
+    justtcg,
+    fallback: other,
+    from: fallback.source === 'scryfall_fallback' ? 'Scryfall' : 'TCGdex',
+    pct: Math.round((diff / justtcg) * 100),
+  };
+}
+
+/**
  * The fallback NM price (spec 8.7) when JustTCG has none: Scryfall's
  * usd / usd_foil / usd_etched for Magic, TCGdex's TCGplayer market price for
  * Pokémon (English only: TCGdex has no USD prices for Japanese cards).

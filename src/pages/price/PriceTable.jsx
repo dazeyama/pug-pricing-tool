@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CONDITIONS } from '../../lib/prices.js';
-import { formatMoney, parseMoney } from '../../lib/money.js';
+import { formatMoney, parseMoney, roundDownPrice } from '../../lib/money.js';
 import { timeAgo } from '../../lib/time.js';
 
 /** Big prices, stepping down so "$1,234.56" still fits a button. */
@@ -14,11 +14,14 @@ function priceStyle(text) {
  * The condition / price table under the selected card (spec 8.7): five big
  * buttons, NM to DMG. Each shows its entry from the price ladder (lib/prices
  * priceLadder): JustTCG's price, or a fallback tagged "fallback", rounded
- * down; "—" when there's neither. ✎ Manual price overrides the purchase price.
+ * down; "—" when there's neither. ⚠️ on NM when JustTCG and the fallback
+ * disagree (nmWarning). Under them: Use Fallback (NM from Scryfall/TCGdex
+ * instead of JustTCG) and ✎ Manual price (overrides the purchase price),
+ * then the caption.
  */
 export default function PriceTable({
-  candidate, prices, ladder, pct, fetchedAt, condition, onCondition,
-  manual, onManual, manualOpen, setManualOpen, onDone,
+  candidate, prices, ladder, pct, market, fallback, nmWarning, fallbackOn, onUseFallback,
+  fetchedAt, condition, onCondition, manual, onManual, manualOpen, setManualOpen, onDone,
 }) {
   const [text, setText] = useState('');
   const input = useRef(null);
@@ -53,10 +56,31 @@ export default function PriceTable({
       if (e.cappedBy) about += `, lowered to ${e.cappedBy}'s price`;
       about += rounded;
       if (e.thrownOut != null) about += ` (JustTCG's ${formatMoney(e.thrownOut)} was higher than a better condition, so it was thrown out)`;
+      if (code === 'NM' && fallbackOn) about += ' (Use Fallback is on)';
     }
     if (manual != null && code === condition) about = `manual ${formatMoney(manual)} (market: ${about})`;
-    return `${code} · ${about} · ${key}`;
+    const warn = code === 'NM' && nmWarning
+      ? ` · ⚠️ JustTCG's ${formatMoney(nmWarning.justtcg)} and ${nmWarning.from}'s ${formatMoney(nmWarning.fallback)} are ${nmWarning.pct}% apart: check before buying`
+      : '';
+    return `${code} · ${about}${warn} · ${key}`;
   };
+
+  // Use Fallback: NM from Scryfall/TCGdex as if JustTCG had no NM price.
+  const fbFrom = candidate?.game === 'mtg' ? 'Scryfall' : 'TCGdex';
+  const fbNM = fallback && pct?.NM != null ? roundDownPrice((fallback.price * Number(pct.NM)) / 100) : null;
+  let fbTitle = 'Price NM from the fallback instead of JustTCG';
+  let fbUsable = false;
+  if (candidate && !loading) {
+    if (market?.NM == null) fbTitle = 'NM already uses the fallback: JustTCG has no NM price';
+    else if (fbNM == null) fbTitle = `No ${fbFrom} price for this printing`;
+    else {
+      fbUsable = true;
+      const justtcg = formatMoney(roundDownPrice(market.NM));
+      fbTitle = fallbackOn
+        ? `NM is ${fbFrom}'s ${formatMoney(fbNM)}, not JustTCG's ${justtcg}. Click to go back to JustTCG`
+        : `Use ${fbFrom}'s ${formatMoney(fbNM)} for NM instead of JustTCG's ${justtcg}`;
+    }
+  }
 
   const cell = (code) => {
     if (!candidate) return <span className="pc-price muted">—</span>;
@@ -116,62 +140,80 @@ export default function PriceTable({
               onDone();
             }}
           >
-            <span className="pc-cond">{code}</span>
+            <span className="pc-cond">
+              {code === 'NM' && nmWarning && <span className="pc-warn" aria-label="Price warning">⚠️</span>}
+              {code}
+            </span>
             {cell(code)}
           </button>
         ))}
       </div>
       <div className="price-foot">
-        {manualOpen ? (
-          <span className="manual-edit">
-            $
-            <input
-              ref={input}
-              type="text"
-              inputMode="decimal"
-              aria-label="Manual price"
-              placeholder="0.00"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onBlur={apply}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  apply();
-                } else if (e.key === 'Escape') {
-                  e.preventDefault();
-                  setManualOpen(false);
-                  onDone();
-                }
-              }}
-            />
-          </span>
-        ) : (
+        <div className="price-tools">
           <button
             type="button"
-            className={`btn small manual-btn${manual != null ? ' on' : ''}`}
-            disabled={!candidate}
-            title="Type a price for this card (Alt+M)"
-            onClick={() => setManualOpen(true)}
-          >
-            ✎ Manual price
-          </button>
-        )}
-        {manual != null && !manualOpen && (
-          <button
-            type="button"
-            className="icon-btn"
-            title="Clear the manual price"
-            aria-label="Clear the manual price"
+            className={`btn small fallback-btn${fallbackOn ? ' on' : ''}`}
+            disabled={!fbUsable}
+            title={fbTitle}
+            aria-pressed={fallbackOn}
             onClick={() => {
-              onManual(null);
+              onUseFallback(!fallbackOn);
               onDone();
             }}
           >
-            ×
+            Use Fallback
           </button>
-        )}
-        <span className="price-caption">{caption}</span>
+          {manualOpen ? (
+            <span className="manual-edit">
+              $
+              <input
+                ref={input}
+                type="text"
+                inputMode="decimal"
+                aria-label="Manual price"
+                placeholder="0.00"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                onBlur={apply}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    apply();
+                  } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    setManualOpen(false);
+                    onDone();
+                  }
+                }}
+              />
+            </span>
+          ) : (
+            <button
+              type="button"
+              className={`btn small manual-btn${manual != null ? ' on' : ''}`}
+              disabled={!candidate}
+              title="Type a price for this card (Alt+M)"
+              onClick={() => setManualOpen(true)}
+            >
+              ✎ Manual price
+            </button>
+          )}
+          {manual != null && !manualOpen && (
+            <button
+              type="button"
+              className="icon-btn"
+              title="Clear the manual price"
+              aria-label="Clear the manual price"
+              onClick={() => {
+                onManual(null);
+                onDone();
+              }}
+            >
+              ×
+            </button>
+          )}
+        </div>
+        <div className="price-caption">{caption}</div>
       </div>
     </div>
   );

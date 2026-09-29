@@ -12,7 +12,7 @@ import { warmUp, magicCandidate } from '../lib/cardSearch.js';
 import {
   defaultMagicFinish, magicFinishes, pokemonVersions, defaultPokemonVersion, POKEMON_FINISHES,
 } from '../lib/printings.js';
-import { CONDITIONS, conditionPrices, fallbackPrice, priceLadder, resultFor } from '../lib/prices.js';
+import { CONDITIONS, conditionPrices, fallbackPrice, nmMismatch, priceLadder, resultFor } from '../lib/prices.js';
 import { useSettings } from '../state/settings.jsx';
 import { readLocal, writeLocal } from '../lib/local.js';
 
@@ -65,14 +65,20 @@ export default function PricePage() {
     }
   }, [selected?.key]);
 
-  // Condition and manual price (spec 8.7): NM and none for every new card.
-  const [pricing, setPricing] = useState({ key: null, condition: 'NM', manual: null });
+  // Condition, manual price and Use Fallback (spec 8.7): NM, none and off for
+  // every new card. A manual price belongs to its condition: picking another
+  // condition clears it (owner, 2026-09-29).
+  const [pricing, setPricing] = useState({ key: null, condition: 'NM', manual: null, useFallback: false });
   const [manualOpen, setManualOpen] = useState(false);
   const pricingOwn = pricing.key === selected?.key;
   const condition = pricingOwn ? pricing.condition : 'NM';
   const manual = pricingOwn ? pricing.manual : null;
-  const setCondition = (code) => setPricing({ key: selected?.key, condition: code, manual });
-  const setManual = (value) => setPricing({ key: selected?.key, condition, manual: value });
+  const useFallback = pricingOwn ? pricing.useFallback : false;
+  const setCondition = (code) => setPricing({
+    key: selected?.key, condition: code, manual: code === condition ? manual : null, useFallback,
+  });
+  const setManual = (value) => setPricing({ key: selected?.key, condition, manual: value, useFallback });
+  const setUseFallback = (on) => setPricing({ key: selected?.key, condition, manual, useFallback: on });
   useEffect(() => setManualOpen(false), [selected?.key]);
 
   const prices = usePrices(selected, { pokemon, versions, typedName: search.parsed?.name });
@@ -86,8 +92,13 @@ export default function PricePage() {
   const fallback = fallbackPrice(selected, { finish, version });
   const { values: settingValues } = useSettings();
   const fallbackPct = settingValues[selected?.game === 'pokemon' ? 'fallback_pct_pokemon' : 'fallback_pct_mtg'];
+  // Use Fallback: NM priced as if JustTCG had no NM price (only possible
+  // when there's a fallback to use and a JustTCG NM to replace).
+  const canUseFallback = market.NM != null && fallback != null;
+  const fallbackOn = useFallback && canUseFallback;
   // The five prices shown and used (JustTCG, fallbacks, never rising, rounded down).
-  const ladder = priceLadder(market, fallback, fallbackPct);
+  const ladder = priceLadder(fallbackOn ? { ...market, NM: null } : market, fallback, fallbackPct);
+  const nmWarning = nmMismatch(market, fallback, fallbackPct);
 
   const visible = search.candidates.slice(0, ROW);
   const hasShowAll = search.candidates.length > ROW;
@@ -245,6 +256,11 @@ export default function PricePage() {
               prices={prices}
               ladder={ladder}
               pct={fallbackPct}
+              market={market}
+              fallback={fallback}
+              nmWarning={nmWarning}
+              fallbackOn={fallbackOn}
+              onUseFallback={setUseFallback}
               fetchedAt={result?.fetchedAt ?? null}
               condition={condition}
               onCondition={setCondition}
