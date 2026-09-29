@@ -78,7 +78,8 @@ header h1 { margin: 0; font-size: 20px; font-weight: 600; }
   top: calc(100% + 6px);
   right: 0;
   z-index: 320;
-  width: 270px;
+  /* Wide enough for all 12 colour swatches on one line under the indent. */
+  width: 320px;
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 9px;
@@ -115,6 +116,7 @@ header h1 { margin: 0; font-size: 20px; font-weight: 600; }
   margin: 2px 4px 6px 27px;
   padding: 8px 0 4px;
 }
+.user-edit .swatches { flex-wrap: nowrap; }
 .user-add { border-top: 1px solid var(--border); margin-top: 6px; padding-top: 6px; }
 .user-add-btn {
   width: 100%;
