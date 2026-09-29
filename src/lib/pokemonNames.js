@@ -30,12 +30,20 @@ export function englishPokemonName(card, list = names) {
   return [mega ? 'Mega' : null, species.join(' & '), form, suffix].filter(Boolean).join(' ');
 }
 
-/** The English name of a Japanese TCGdex card, once the name list has loaded (else null). */
+/**
+ * The English name of a Japanese TCGdex card: a string; null when there
+ * isn't one (not Japanese, a Trainer or Energy, the list failed to load);
+ * undefined while the name list is still loading, so price lookups can wait.
+ * @returns {string|null|undefined}
+ */
 export function useEnglishPokemonName(card, lang) {
   const needed = lang === 'ja' && (card?.dexId ?? []).length > 0;
   const [list, setList] = useState(names);
+  const [failed, setFailed] = useState(false);
   useEffect(() => {
-    if (needed && !list) load().then(setList, () => {});
-  }, [needed, list]);
-  return needed ? englishPokemonName(card, list) : null;
+    if (needed && !list && !failed) load().then(setList, () => setFailed(true));
+  }, [needed, list, failed]);
+  if (!needed) return null;
+  if (!list) return failed ? null : undefined;
+  return englishPokemonName(card, list);
 }

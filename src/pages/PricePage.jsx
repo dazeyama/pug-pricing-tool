@@ -18,6 +18,7 @@ import {
 import { useSettings } from '../state/settings.jsx';
 import QuotePanel from './price/QuotePanel.jsx';
 import { useEurUsd } from '../lib/useEurUsd.js';
+import { useEnglishPokemonName } from '../lib/pokemonNames.js';
 import { readLocal, writeLocal } from '../lib/local.js';
 
 const BACKGROUND = { '--stage-bg': `url(${import.meta.env.BASE_URL}background.webp)` };
@@ -92,7 +93,12 @@ export default function PricePage() {
   const setOverride = (next) => setPricing({ key: selected?.key, condition, manual, override: next });
   useEffect(() => setManualOpen(false), [selected?.key]);
 
-  const prices = usePrices(selected, { pokemon, versions, typedName: search.parsed?.name });
+  // A Japanese card's English name (Pokédex number): shown beside the
+  // Japanese one, and used for JustTCG, TCGplayer and Cardmarket searches.
+  const englishName = useEnglishPokemonName(pokemon.card, selected?.lang);
+  const prices = usePrices(selected, {
+    pokemon, versions, jaName: englishName || search.parsed?.name, waitName: englishName === undefined,
+  });
   const result = resultFor(selected, prices.results, { finish, version, versions });
   const market = conditionPrices(result?.card, {
     game: selected?.game,
@@ -255,6 +261,7 @@ export default function PricePage() {
           <SelectedCard
             candidate={selected}
             typedName={search.parsed?.name}
+            englishName={englishName ?? null}
             pokemon={pokemon}
             finish={finish}
             pokemonVersion={version}

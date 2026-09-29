@@ -5,7 +5,6 @@ import GameBadge from '../../components/GameBadge.jsx';
 import * as scry from '../../lib/scryfall.js';
 import { useCardImages } from './useCardImages.js';
 import { POKEMON_CARD_BACK, tcgplayerId } from '../../lib/pokemonImages.js';
-import { useEnglishPokemonName } from '../../lib/pokemonNames.js';
 
 // Pokémon rarities whose art covers the whole card (TCGdex's names, English
 // and Japanese). Their holo shines across the whole card.
@@ -55,14 +54,14 @@ const CARDMARKET = 'https://www.cardmarket.com/en';
  * product link (`Products?idProduct=<id>`: "Sorry, you have been blocked",
  * even in a normal browser), so Magic uses Scryfall's own Cardmarket link
  * (purchase_uris.cardmarket, which works), and Pokémon a Cardmarket search
- * by name (English for Japanese cards: Cardmarket finds nothing for
- * Japanese text).
+ * by name and collector number, which Cardmarket's search matches best
+ * (English for Japanese cards: it finds nothing for Japanese text).
  * @returns {{ href: string, exact: boolean }|null}
  */
 function cardmarketLink(c, magic, searchName) {
   if (magic?.purchase_uris?.cardmarket) return { href: magic.purchase_uris.cardmarket, exact: true };
   const game = magic ? 'Magic' : 'Pokemon';
-  const name = magic ? magic.name : searchName;
+  const name = magic ? magic.name : `${searchName} ${c.number ?? ''}`;
   return { href: `${CARDMARKET}/${game}/Products/Search?searchString=${encodeURIComponent(name.trim())}`, exact: false };
 }
 
@@ -72,12 +71,10 @@ function cardmarketLink(c, magic, searchName) {
  * chosen Magic finish; `pokemonVersion` the chosen Pokémon version (shine,
  * finish label, and the Poké Ball / Master Ball badge).
  */
-export default function SelectedCard({ candidate: c, typedName, pokemon, finish, pokemonVersion }) {
+export default function SelectedCard({ candidate: c, typedName, englishName, pokemon, finish, pokemonVersion }) {
   const pokemonFinish = pokemonVersion?.finish;
   const [face, setFace] = useState(0);
   const pokemonImages = useCardImages(c);   // TCGdex's, or a backup when it has none
-  // Japanese cards: an English name for TCGplayer / Cardmarket searches.
-  const englishName = useEnglishPokemonName(pokemon.card, c?.lang);
   useEffect(() => setFace(0), [c?.key]);
 
   if (!c) {
@@ -176,7 +173,10 @@ export default function SelectedCard({ candidate: c, typedName, pokemon, finish,
           below never shift: one line each, long text ends in "…". */}
       <aside className="area-info">
         <div className="card-info">
-          <h2 className="info-name" title={name}>{name}</h2>
+          <h2 className="info-name" title={englishName ? `${name} (${englishName})` : name}>
+            {name}
+            {englishName && <span className="info-en">{englishName}</span>}
+          </h2>
           <p className="info-set" title={`${c.setName} (${c.setCode})`}>
             {set?.icon_svg_uri && <img className="set-icon" src={set.icon_svg_uri} alt="" />}
             <span className="info-set-name">{c.setName}</span> <span className="info-code">({c.setCode})</span>
@@ -189,7 +189,7 @@ export default function SelectedCard({ candidate: c, typedName, pokemon, finish,
             <GameBadge game={c.game} />
             <span>{c.lang === 'ja' ? 'Japanese' : 'English'}</span>
             {c.lang === 'ja' && <span className="tag-jp">JP</span>}
-            {!latin && typedName && <span className="info-typed" title="What you typed">{typedName}</span>}
+            {!latin && typedName && !englishName && <span className="info-typed" title="What you typed">{typedName}</span>}
             {pokemon.card?.regulationMark && (
               <span className="info-reg">Regulation <strong>{pokemon.card.regulationMark}</strong></span>
             )}

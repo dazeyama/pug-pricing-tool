@@ -481,6 +481,8 @@
 .info-rarity { color: var(--muted); font-size: 14px; }
 .info-tags { display: flex; align-items: center; gap: 8px; }
 .info-typed { color: var(--muted); font-size: 13px; }
+/* A Japanese card's English name, beside the Japanese one. */
+.info-en { margin-left: 10px; font-size: .72em; font-weight: 600; color: var(--muted); }
 .info-links { display: flex; gap: 18px; }
 .info-link { display: inline-block; font-size: 13px; }
 /* All three links with "View on" need about 400px of the box's inside

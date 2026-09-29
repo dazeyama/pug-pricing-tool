@@ -32,7 +32,7 @@ export function conditionCode(name) {
  * switching finish or condition never costs another one.
  * @returns {{ key: string, game: string, lang: string, [k: string]: any }[]}
  */
-export function lookupsFor(c, { pokemonCard, versions, typedName }) {
+export function lookupsFor(c, { pokemonCard, versions, jaName }) {
   if (!c) return [];
   if (c.game === 'mtg') {
     const card = c.scryfall;
@@ -48,7 +48,9 @@ export function lookupsFor(c, { pokemonCard, versions, typedName }) {
   if (ids.length) {
     return ids.map((id) => ({ key: `pokemon:tcgplayer:${id}`, game: 'pokemon', lang: c.lang, tcgplayerId: id }));
   }
-  const name = c.lang === 'ja' ? (typedName || '') : c.name;
+  // Japanese cards' own names are Japanese; JustTCG's are English. `jaName`
+  // is the English name (Pokédex number) or what was typed (owner, 2026-09-29).
+  const name = c.lang === 'ja' ? (jaName || '') : c.name;
   if (!pokemonCard && !c.number) return [];
   return [{
     key: `pokemon:${c.lang}:${c.tcgdexId}`, game: 'pokemon', lang: c.lang,

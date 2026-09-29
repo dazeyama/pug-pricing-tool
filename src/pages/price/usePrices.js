@@ -15,15 +15,17 @@ const results = new Map();   // lookup key → { card, fetchedAt }
  *   results: Record<string, { card: any, fetchedAt: string|null }>|null,
  *   error: string|null, retry: () => void }}
  */
-export function usePrices(selected, { pokemon, versions, typedName }) {
+export function usePrices(selected, { pokemon, versions, jaName, waitName }) {
   const { reachedLimit } = usePriceLimit();
   const { offline } = useConnection();
   const [state, setState] = useState({ key: null, status: 'idle', error: null });
   const [attempt, setAttempt] = useState(0);
 
-  // A Pokémon card's lookups need its full TCGdex card (TCGplayer IDs).
-  const ready = selected && (selected.game === 'mtg' || pokemon.resolved);
-  const lookups = ready ? lookupsFor(selected, { pokemonCard: pokemon.card, versions, typedName }) : [];
+  // A Pokémon card's lookups need its full TCGdex card (TCGplayer IDs), and
+  // a Japanese card's its English name (waitName while that loads): a lookup
+  // sent without it would be remembered as "no price" for the page's life.
+  const ready = selected && (selected.game === 'mtg' || (pokemon.resolved && !waitName));
+  const lookups = ready ? lookupsFor(selected, { pokemonCard: pokemon.card, versions, jaName }) : [];
   const signature = lookups.map((l) => l.key).join('|');
   const lookupsRef = useRef(lookups);
   lookupsRef.current = lookups;
