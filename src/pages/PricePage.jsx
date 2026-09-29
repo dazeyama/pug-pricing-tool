@@ -51,6 +51,16 @@ export default function PricePage() {
   const versions = selected?.game === 'pokemon' ? pokemonVersions(pokemon.card) : [];
   const version = versions.find((v) => own && v.id === printing.version) ?? defaultPokemonVersion(versions);
 
+  // Every card starts on its defaults (owner's decision, 2026-09-29): a choice
+  // is forgotten as soon as another card is selected, so coming back to a card
+  // doesn't bring back an old finish. A Details jump sets the new printing's
+  // finish in the same step, so it survives.
+  useEffect(() => {
+    if (printing.key && printing.key !== selected?.key) {
+      setPrinting({ key: null, finish: null, version: null });
+    }
+  }, [selected?.key]);
+
   const visible = search.candidates.slice(0, ROW);
   const hasShowAll = search.candidates.length > ROW;
 
