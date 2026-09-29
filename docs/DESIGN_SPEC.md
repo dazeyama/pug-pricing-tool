@@ -629,7 +629,7 @@ After the store password: if this browser has no device ID, create one and ask *
 
 - Dates: "Sat, Aug 17, 2026". Times: "3:42 PM". Always in `STORE_TZ`.
 - Phone: `(555) 123-4567`.
-- Money: `$1,234.56`. Totals round the **sum**, not each line: `cash = round(total × cash_pct / 100, 2)`, half-up.
+- Money: `$1,234.56`; whole-dollar amounts drop the cents, `$12` not `$12.00` (owner's decision, 2026-09-29). Totals round the **sum**, not each line: `cash = round(total × cash_pct / 100, 2)`, half-up.
 
 ### 7.9 Connection required
 

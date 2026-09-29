@@ -1,10 +1,14 @@
-// Money (spec 4.9, 7.8): USD, shown as $1,234.56. Totals round the sum, not
-// each line (Phase 6 adds the totals).
+// Money (spec 4.9, 7.8): USD, shown as $1,234.56, and whole dollars without
+// ".00" ($12, $1,230; owner, 2026-09-29). Totals round the sum, not each
+// line (Phase 6 adds the totals).
 const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+const usdWhole = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 
-/** $1,234.56, or '—' for no amount. */
+/** $1,234.56, $12 (never $12.00), or '—' for no amount. */
 export function formatMoney(amount) {
-  return amount == null || Number.isNaN(Number(amount)) ? '—' : usd.format(Number(amount));
+  if (amount == null || Number.isNaN(Number(amount))) return '—';
+  const n = Number(amount);
+  return Math.round(n * 100) % 100 === 0 ? usdWhole.format(n) : usd.format(n);
 }
 
 /**
