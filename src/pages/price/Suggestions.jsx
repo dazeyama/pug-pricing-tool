@@ -1,7 +1,31 @@
+import { useState } from 'react';
 import GameBadge from '../../components/GameBadge.jsx';
 
 /** Suggestions shown at once: 2 rows of 5 (owner's layout, 2026-09-29). */
 export const ROW = 10;
+
+const RARITIES = new Set(['common', 'uncommon', 'rare', 'mythic', 'special', 'bonus']);
+
+/**
+ * Shown on hover over the spot a Magic card prints its set symbol (right end
+ * of the type line): the symbol, large, in its rarity colour. With no symbol
+ * (every Pokémon card, or a Magic icon that won't load) a small chip with the
+ * set code instead, in the same colour; slate when the rarity isn't known.
+ */
+function SetMark({ c }) {
+  const [broken, setBroken] = useState(false);
+  const rarity = RARITIES.has(c.rarity) ? c.rarity : 'unknown';
+  if (c.setIcon && !broken) {
+    return (
+      <span className={`thumb-symbol r-${rarity}`} aria-hidden="true">
+        <span className="thumb-symbol-glyph" style={{ '--icon': `url("${c.setIcon}")` }} />
+        {/* A CSS mask can't report a failed load; this hidden copy can. */}
+        <img className="thumb-symbol-probe" src={c.setIcon} alt="" onError={() => setBroken(true)} />
+      </span>
+    );
+  }
+  return <span className={`thumb-chip r-${rarity}`} aria-hidden="true">{c.setCode}</span>;
+}
 
 /** One suggestion: thumbnail with its game badge in the corner, "SET #num" beneath. */
 export function Thumb({ c, highlighted, selected, onPick }) {
@@ -19,13 +43,7 @@ export function Thumb({ c, highlighted, selected, onPick }) {
           <span className="thumb-back">{c.name}</span>
         )}
         <span className="thumb-badge"><GameBadge game={c.game} /></span>
-        {/* On hover: the set symbol, large and in its rarity colour, over the
-            spot a Magic card prints it (right end of the type line). */}
-        {c.setIcon && (
-          <span className={`thumb-symbol r-${c.rarity}`} aria-hidden="true">
-            <span className="thumb-symbol-glyph" style={{ '--icon': `url("${c.setIcon}")` }} />
-          </span>
-        )}
+        <SetMark c={c} />
       </span>
       <span className="thumb-label">{c.setCode} #{c.number}</span>
     </button>

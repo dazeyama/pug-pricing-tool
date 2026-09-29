@@ -307,29 +307,36 @@
   box-shadow: 0 2px 6px rgba(0, 0, 0, .35);
   outline: 3px solid transparent;
   outline-offset: 2px;
-  transition: transform .12s ease, box-shadow .12s ease;
+  transition: transform .18s cubic-bezier(.2, .8, .3, 1.25), box-shadow .18s ease;
 }
-/* Hover: a quick, slight lift. */
-.thumb:not(.thumb-slot):hover { z-index: 2; }
-.thumb:not(.thumb-slot):hover .thumb-img { transform: scale(1.06); box-shadow: 0 8px 20px rgba(0, 0, 0, .5); }
+/* Hover: the card pops up and forward, with a slight overshoot. */
+.thumb:not(.thumb-slot):hover { z-index: 3; }
+.thumb:not(.thumb-slot):hover .thumb-img {
+  transform: translateY(-6px) scale(1.14);
+  box-shadow: 0 18px 38px rgba(0, 0, 0, .7), 0 0 0 1px rgba(255, 255, 255, .08);
+}
 .thumb-img img { width: 100%; height: 100%; display: block; object-fit: contain; }
 
-/* The set symbol overlay (Magic): shown on hover over the printed symbol's
-   spot, the right end of the type line. A CSS mask paints Scryfall's SVG in
-   the rarity colour; the dark outline keeps it readable on any frame. */
-.thumb-symbol {
+/* The set mark: over the printed symbol's spot, the right end of the type
+   line, shown on hover. It pops in a beat after the card. */
+.thumb-symbol, .thumb-chip {
   position: absolute;
-  right: 4%;
   top: 56.5%;
-  width: 24%;
-  aspect-ratio: 1;
-  transform: translateY(-50%);
-  opacity: 0;
-  transition: opacity .12s ease;
   pointer-events: none;
-  filter: drop-shadow(0 0 1px #000) drop-shadow(0 0 1px #000) drop-shadow(0 1px 3px rgba(0, 0, 0, .6));
+  opacity: 0;
+  transform: translateY(-50%) scale(.4);
+  transition: opacity .15s ease .05s, transform .2s cubic-bezier(.2, .8, .3, 1.4) .05s;
 }
-.thumb:hover .thumb-symbol { opacity: 1; }
+.thumb:hover .thumb-symbol, .thumb:hover .thumb-chip { opacity: 1; transform: translateY(-50%) scale(1); }
+
+/* The symbol: Scryfall's SVG painted in the rarity colour through a CSS mask,
+   with a dark outline so it reads on any frame. */
+.thumb-symbol {
+  right: 2%;
+  width: 38%;
+  aspect-ratio: 1;
+  filter: drop-shadow(0 0 1px #000) drop-shadow(0 0 1.5px #000) drop-shadow(0 2px 4px rgba(0, 0, 0, .7));
+}
 .thumb-symbol-glyph {
   display: block;
   width: 100%;
@@ -338,12 +345,35 @@
   -webkit-mask: var(--icon) center / contain no-repeat;
   mask: var(--icon) center / contain no-repeat;
 }
-/* Magic's rarity colours: black, silver, gold, orange-red, purple. */
-.r-common { --rarity: #111; filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff) drop-shadow(0 1px 3px rgba(0, 0, 0, .6)); }
-.r-uncommon { --rarity: linear-gradient(135deg, #5d6a73, #d5dee5 50%, #6d7a84); }
-.r-rare { --rarity: linear-gradient(135deg, #8a6d24, #f0d27a 50%, #9c7c2e); }
-.r-mythic { --rarity: linear-gradient(135deg, #b3321a, #f7a13a 50%, #c0441f); }
-.r-special, .r-bonus { --rarity: linear-gradient(135deg, #5a2380, #c28ae0 50%, #6a2d8f); }
+.thumb-symbol-probe { display: none; }
+
+/* No symbol: a small chip with the set code, in the rarity colour. */
+.thumb-chip {
+  right: 5%;
+  max-width: 70%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--rarity);
+  color: var(--rarity-text);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, .75), 0 3px 8px rgba(0, 0, 0, .6);
+}
+
+/* Rarity colours (Magic's): black, silver, gold, orange-red, purple; slate
+   when the rarity isn't known (Pokémon suggestions). */
+.r-common { --rarity: #111; --rarity-text: #fff; }
+.thumb-symbol.r-common { filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1.5px #fff) drop-shadow(0 2px 4px rgba(0, 0, 0, .7)); }
+.thumb-chip.r-common { box-shadow: 0 0 0 1.5px rgba(255, 255, 255, .85), 0 3px 8px rgba(0, 0, 0, .6); }
+.r-uncommon { --rarity: linear-gradient(135deg, #5d6a73, #d5dee5 50%, #6d7a84); --rarity-text: #10151a; }
+.r-rare { --rarity: linear-gradient(135deg, #8a6d24, #f0d27a 50%, #9c7c2e); --rarity-text: #1c1406; }
+.r-mythic { --rarity: linear-gradient(135deg, #b3321a, #f7a13a 50%, #c0441f); --rarity-text: #1d0a04; }
+.r-special, .r-bonus { --rarity: linear-gradient(135deg, #5a2380, #c28ae0 50%, #6a2d8f); --rarity-text: #fff; }
+.r-unknown { --rarity: var(--pal-slate); --rarity-text: #fff; }
 .thumb-back { display: flex; align-items: center; justify-content: center; height: 100%; padding: 6px; font-size: 11px; color: var(--muted); }
 .thumb:hover .thumb-img { outline-color: var(--border); }
 .thumb.selected .thumb-img { outline-color: var(--accent-2); }
