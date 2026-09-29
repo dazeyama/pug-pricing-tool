@@ -1,0 +1,74 @@
+/* Settings tab (spec 11): one panel per section, stacked. */
+
+.settings-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 900px;
+}
+.settings-panel .cardpanel-head { font-size: 14.5px; }
+.settings-panel .cardpanel-body { padding: 14px 16px 16px; }
+.settings-panel .hint { margin-top: 0; }
+.settings-sub {
+  margin: 18px 0 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+/* Master Crystal Inventory: red until there's a file, then green. */
+.cardpanel.is-required { --c: var(--bad); border-color: var(--bad); }
+.cardpanel.is-ok { --c: var(--good); border-color: var(--good); }
+.badge.required { border-color: var(--bad); color: var(--bad); font-weight: 700; }
+
+.btn.big { padding: 11px 20px; font-size: 15px; font-weight: 600; }
+.inv-error { margin: 12px 0 0; }
+
+.inv-current {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 7px 12px;
+  margin: 16px 0 0;
+  align-items: baseline;
+}
+.inv-current dt { color: var(--muted); font-size: 12px; }
+.inv-current dd { margin: 0; }
+.inv-dl { margin-left: 10px; }
+.inv-columns summary { cursor: pointer; color: var(--muted); }
+.inv-columns summary:hover { color: var(--text); }
+.chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.chip {
+  font-size: 11.5px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+}
+
+.inv-previous { width: 100%; border-collapse: collapse; font-size: 13px; }
+.inv-previous td { padding: 5px 8px; border-bottom: 1px solid var(--border); }
+.inv-previous tr:last-child td { border-bottom: none; }
+.inv-previous .inv-name { overflow-wrap: anywhere; }
+.inv-previous .inv-action { text-align: right; width: 1%; white-space: nowrap; }
+
+/* Buy percentages */
+.pct-row { display: flex; gap: 28px; }
+.pct-field { width: 160px; }
+.pct-input { display: flex; align-items: center; gap: 6px; }
+.pct-input input { margin-top: 0; font-size: 15px; }
+.pct-sign { color: var(--muted); }
+.field-error { color: var(--bad); font-size: 12px; margin: 6px 0 0; width: 320px; }
+
+/* This computer */
+.device-name { max-width: 320px; font-size: 14px; }
+.settings-panel .device-name + .hint { margin: 6px 0 14px; }
+
+.settings-footer {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 4px 2px 12px;
+}
+.settings-footer p { margin: 0 0 4px; }

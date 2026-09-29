@@ -1,38 +1,33 @@
-import { useState } from 'react';
-import { useSession } from '../state/session.jsx';
-import { useDevice } from '../state/device.jsx';
+import MasterInventoryPanel from './settings/MasterInventoryPanel.jsx';
+import PercentagesPanel from './settings/PercentagesPanel.jsx';
+import ThisComputerPanel from './settings/ThisComputerPanel.jsx';
+import { formatDate } from '../lib/time.js';
 
-// Settings (spec 11). Phase 1 has only "This computer" (11.6): the device
-// name and Sign out. Renaming, the other panels and the footer come in Phase 2.
+/* global __APP_VERSION__, __BUILD_DATE__ */
+
+// Settings (spec 11), top to bottom, each section in a panel. API keys and
+// the JustTCG meter arrive in Phase 5, backups in Phase 10. Staff users are
+// managed in the header dropdown, not here.
 export default function SettingsPage() {
-  const { signOut } = useSession();
-  const { label } = useDevice();
-  const [busy, setBusy] = useState(false);
-
-  async function onSignOut() {
-    setBusy(true);
-    await signOut();
-    // The login screen replaces this page; nothing to reset.
-  }
-
   return (
     <>
       <div className="panel-head">
         <div className="panel-title"><h2>Settings</h2></div>
       </div>
-      <div className="card-grid">
-        <section className="cardpanel">
-          <div className="cardpanel-head"><strong>This computer</strong></div>
-          <div className="cardpanel-body">
-            <label>Computer name</label>
-            <p className="setting-value">{label}</p>
-            <button type="button" className={`btn danger-ghost${busy ? ' busy' : ''}`} onClick={onSignOut}>
-              Sign out
-            </button>
-          </div>
-        </section>
+      <div className="settings-stack">
+        <MasterInventoryPanel />
+        <PercentagesPanel />
+        <ThisComputerPanel />
+        <footer className="settings-footer">
+          <p>
+            Card data and images from Scryfall (Magic) and TCGdex (Pokémon). Prices via JustTCG.
+            Not affiliated with Wizards of the Coast or The Pokémon Company.
+          </p>
+          <p>
+            PUG Pricing Tool {__APP_VERSION__} · built {formatDate(__BUILD_DATE__)}
+          </p>
+        </footer>
       </div>
-      <p className="empty">The rest of Settings arrives in Phase 2.</p>
     </>
   );
 }

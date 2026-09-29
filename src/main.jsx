@@ -8,6 +8,7 @@ import './styles/base.css';
 import './styles/tabs.css';
 import './styles/panels.css';
 import './styles/login.css';
+import './styles/settings.css';
 
 // HashRouter: GitHub Pages can't rewrite deep links, and #/routes survive a refresh.
 createRoot(document.getElementById('root')).render(

@@ -48,6 +48,10 @@ textarea { resize: vertical; }
 .btn.ghost { background: transparent; }
 .btn.small { padding: 5px 10px; font-size: 12px; }
 .btn:disabled { opacity: .5; cursor: not-allowed; }
+/* Looks disabled but stays clickable, so a click can say why (GuardButton). */
+.btn.is-disabled { opacity: .5; cursor: not-allowed; }
+.btn.is-disabled:hover { border-color: var(--border); filter: none; }
+.btn.primary.is-disabled:hover { background: var(--accent-2); border-color: var(--accent-2); }
 .btn.danger { background: var(--bad); border-color: var(--bad); color: #1a0d0d; font-weight: 600; }
 .btn.danger:hover { filter: brightness(1.1); }
 /* Outlined red, for a destructive action that lives among ordinary buttons. */
@@ -96,6 +100,7 @@ main { padding: 24px; max-width: 1400px; margin: 0 auto; }
 .banner.ok { border-color: var(--good); color: var(--good); }
 .banner.err { border-color: var(--bad); color: var(--bad); }
 .banner.warn { border-color: var(--warn); color: var(--warn); }
+.banner a { color: inherit; font-weight: 600; margin-left: 8px; }
 
 .badge {
   flex: none;

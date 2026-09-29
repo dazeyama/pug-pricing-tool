@@ -36,7 +36,8 @@ header h1 { margin: 0; font-size: 20px; font-weight: 600; }
 
 .header-right { display: flex; align-items: center; gap: 10px; }
 
-/* ---- Staff user button (spec 7.3). Phase 1: placeholder only. ---- */
+/* ---- Staff user button and menu (spec 7.3) ---- */
+.user-menu { position: relative; }
 .user-btn {
   display: inline-flex;
   align-items: center;
@@ -50,16 +51,100 @@ header h1 { margin: 0; font-size: 20px; font-weight: 600; }
   cursor: pointer;
   white-space: nowrap;
 }
-.user-btn:hover { border-color: var(--accent); }
-.user-btn .user-dot {
+.user-btn:hover, .user-btn.open { border-color: var(--accent); }
+.user-btn .user-name { font-weight: 600; }
+.user-btn .user-name.none { color: var(--muted); font-weight: 400; }
+.user-btn .caret { color: var(--muted); font-size: 11px; }
+/* Something needed a user and none is picked. */
+.user-btn.pulse { animation: userPulse 1s ease; }
+@keyframes userPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(108, 140, 255, 0); }
+  25%, 60% { box-shadow: 0 0 0 4px var(--accent); border-color: var(--accent); }
+}
+
+/* A user's colour dot, wherever a user is shown. */
+.user-dot {
   width: 10px;
   height: 10px;
   border-radius: 50%;
   background: var(--c, var(--border));
   flex: none;
+  display: inline-block;
 }
-.user-btn .user-name.none { color: var(--muted); }
-.user-btn .caret { color: var(--muted); font-size: 11px; }
+.user-tag { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+
+.user-pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 320;
+  width: 270px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .5);
+  padding: 6px;
+}
+.user-empty { margin: 6px 8px 8px; color: var(--muted); font-size: 12.5px; }
+.user-row { display: flex; align-items: center; gap: 2px; border-radius: 6px; }
+.user-row:hover { background: var(--panel-2); }
+.user-pick {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 14px;
+  text-align: left;
+  padding: 7px 8px;
+  cursor: pointer;
+}
+.user-row.current .user-pick { font-weight: 600; }
+.user-row-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.user-check { color: var(--accent); font-weight: 700; }
+/* The ⋯ button changes things, but isn't destructive: no red hover. */
+.user-more:hover, .user-more.on { color: var(--text); border-color: var(--border); background: var(--bg); }
+.user-edit {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 2px 4px 6px 27px;
+  padding: 8px 0 4px;
+}
+.user-add { border-top: 1px solid var(--border); margin-top: 6px; padding-top: 6px; }
+.user-add-btn {
+  width: 100%;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: var(--accent);
+  font-size: 13.5px;
+  text-align: left;
+  padding: 7px 8px;
+  cursor: pointer;
+}
+.user-add-btn:hover { background: var(--panel-2); }
+.user-add-row { display: flex; gap: 6px; align-items: center; padding: 4px; }
+.user-add-row input { margin-top: 0; }
+.user-error { margin: 2px 6px 4px; color: var(--bad); font-size: 12px; }
+
+/* The fixed palette, as swatches (CM). */
+.swatches { display: inline-flex; flex-wrap: wrap; gap: 5px; }
+.swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  background: var(--s);
+  cursor: pointer;
+  padding: 0;
+}
+.swatch:hover { border-color: var(--text); }
+.swatch.active { border-color: var(--text); box-shadow: 0 0 0 2px var(--panel), 0 0 0 3px var(--s); }
 
 /* ---- Global search (spec 13). Phase 1: visual only. ---- */
 .search-col { flex: 0 1 340px; min-width: 200px; transition: flex-basis .12s ease; }
