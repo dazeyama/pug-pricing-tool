@@ -153,6 +153,15 @@ const STAMP_NAMES = {
   snowflake: 'Snowflake stamp', 'poketour-99': "Poké Tour '99 stamp", 'w-promo': 'W Promo stamp',
 };
 const FOIL_NAMES = { pokeball: 'Poké Ball pattern', masterball: 'Master Ball pattern', cosmos: 'Cosmos foil' };
+const SUBTYPE_NAMES = {
+  shadowless: 'Shadowless',
+  'shadowless-red-cheek': 'Shadowless · Red Cheeks',
+  '1999-2000-copyright': '1999–2000 Copyright (4th print)',
+};
+// Base Set's 1st Edition print run is all shadowless, so on a 1st Edition
+// version "Shadowless" says nothing: collectors and TCGplayer just call it
+// "1st Edition" (owner, 2026-09-29).
+const FIRST_EDITION_SUBTYPE_NAMES = { shadowless: null, 'shadowless-red-cheek': 'Red Cheeks' };
 
 /** The first TCGplayer market price in a TCGdex pricing block ({ holofoil: { marketPrice } …}). */
 function marketPriceIn(tcgplayer) {
@@ -172,7 +181,9 @@ function titleCase(s) {
 /**
  * The versions of a Pokémon card, from TCGdex's variants_detailed (standard
  * size only), each with a stable id, its finish and a plain-words label:
- * subtype (Shadowless…), foil pattern (Poké Ball…), stamps (1st Edition…).
+ * 1st Edition first, then subtype (Shadowless…), foil pattern (Poké Ball…)
+ * and other stamps. The plain version reads "Unlimited" when the card also
+ * has a 1st Edition (the collectors' word), else "Standard".
  * Older data without variants_detailed falls back to the plain `variants`.
  * Each also carries its TCGplayer product ID (JustTCG lookup) and TCGplayer
  * market price (the fallback NM price, spec 8.7).
@@ -183,12 +194,20 @@ export function pokemonVersions(card) {
   const detailed = (card?.variants_detailed ?? []).filter((v) => (v.size ?? 'standard') === 'standard'
     && POKEMON_FINISHES.includes(v.type));
   if (detailed.length) {
+    const hasFirst = detailed.some((v) => (v.stamp ?? []).includes('1st-edition'));
     return detailed.map((v) => {
       const stamps = v.stamp ?? [];
+      const first = stamps.includes('1st-edition');
       const parts = [];
-      if (v.subtype && v.subtype !== 'unlimited') parts.push(titleCase(v.subtype));
+      if (first) parts.push(STAMP_NAMES['1st-edition']);
+      if (v.subtype && v.subtype !== 'unlimited') {
+        const name = first && v.subtype in FIRST_EDITION_SUBTYPE_NAMES
+          ? FIRST_EDITION_SUBTYPE_NAMES[v.subtype]
+          : SUBTYPE_NAMES[v.subtype] ?? titleCase(v.subtype);
+        if (name) parts.push(name);
+      }
       if (v.foil) parts.push(FOIL_NAMES[v.foil] ?? `${titleCase(v.foil)} foil`);
-      for (const s of stamps) parts.push(STAMP_NAMES[s] ?? `${titleCase(s)} stamp`);
+      for (const s of stamps) if (s !== '1st-edition') parts.push(STAMP_NAMES[s] ?? `${titleCase(s)} stamp`);
       const treatments = [
         ...(v.subtype && v.subtype !== 'unlimited' ? [v.subtype] : []),
         ...(v.foil ? [`${v.foil}-pattern`] : []),
@@ -197,8 +216,8 @@ export function pokemonVersions(card) {
       return {
         id: [v.type, v.subtype ?? '', v.foil ?? '', stamps.join('+')].join('|'),
         finish: v.type,
-        label: parts.join(' · ') || (v.subtype === 'unlimited' ? 'Unlimited' : 'Standard'),
-        firstEdition: stamps.includes('1st-edition'),
+        label: parts.join(' · ') || (v.subtype === 'unlimited' || hasFirst ? 'Unlimited' : 'Standard'),
+        firstEdition: first,
         treatments,
         tcgplayerId: v.thirdParty?.tcgplayer != null ? String(v.thirdParty.tcgplayer) : null,
         marketPrice: marketPriceIn(v.pricing?.tcgplayer),
@@ -215,7 +234,7 @@ export function pokemonVersions(card) {
       finish, treatments: [], tcgplayerId: key && pricing[key].productId ? String(pricing[key].productId) : null,
       marketPrice: key ? pricing[key].marketPrice ?? null : null,
     };
-    out.push({ ...base, id: `${finish}|||`, label: 'Standard', firstEdition: false });
+    out.push({ ...base, id: `${finish}|||`, label: v.firstEdition ? 'Unlimited' : 'Standard', firstEdition: false });
     if (v.firstEdition) out.push({ ...base, id: `${finish}|||1st-edition`, label: '1st Edition', firstEdition: true, marketPrice: null });
   }
   return out;
