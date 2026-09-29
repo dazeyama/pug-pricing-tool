@@ -166,8 +166,8 @@
   /* color-dodge lights the card up in rainbow colours: unmistakably foil
      (owner: "I really need to know when it's on"). */
   mix-blend-mode: color-dodge;
-  opacity: .62;
-  animation: foil-drift 4.5s ease-in-out infinite alternate;
+  opacity: .31;                                   /* halved from .62 (owner, 2026-09-29) */
+  animation: foil-drift 9s ease-in-out infinite alternate;   /* half speed */
   -webkit-mask-image: var(--shine-bands), linear-gradient(to bottom, #000 86%, transparent 93%);
   -webkit-mask-composite: source-in;
   mask-image: var(--shine-bands), linear-gradient(to bottom, #000 86%, transparent 93%);
