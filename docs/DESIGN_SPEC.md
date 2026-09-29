@@ -629,7 +629,7 @@ After the store password: if this browser has no device ID, create one and ask *
 
 - Dates: "Sat, Aug 17, 2026". Times: "3:42 PM". Always in `STORE_TZ`.
 - Phone: `(555) 123-4567`.
-- Money: `$1,234.56`; whole-dollar amounts drop the cents, `$12` not `$12.00` (owner's decision, 2026-09-29). Totals round the **sum**, not each line: `cash = round(total × cash_pct / 100, 2)`, half-up.
+- Money: `$1,234.56`; whole-dollar amounts drop the cents, `$12` not `$12.00` (owner's decision, 2026-09-29). Totals round the **sum**, not each line, and Cash / Credit round **down** by the same steps as prices (owner's decision, 2026-09-29): `cash = roundDownPrice(total × cash_pct / 100)`, i.e. under $1 to the cent, $1–$10 to the quarter, $10–$100 to the dollar, $100–$1,000 to the $5, $1,000 and up to the $10 (`payout` in `src/lib/money.js`). Market totals aren't rounded further: they're sums of already-rounded prices (or manual prices).
 
 ### 7.9 Connection required
 
@@ -665,8 +665,8 @@ The Price screen fills the viewport below the header with **no page scroll**. It
 │ │  size)       │                               │ FOIL  [ ON | OFF ]   │       │                  │
 │ │              │                               ├─ DETAILS ────────────┤       │                  │
 │ └──────────────┘  [t6] [t7] [t8] [t9] [t10]    │ ☐ Borderless …       │       │ Market   $41.20  │
-│ ┌NM─┐┌LP─┐┌MP─┐┌HP─┐┌DMG┐ [✎]                  └──────────────────────┘       │ Cash 33% $13.60  │
-│ │$2 ││$1 ││$1 ││$0 ││$0 │                     Qty [ 1 ] [CLEAR] [ADD CARD]     │ Credit 66% $27.19│
+│ ┌NM─┐┌LP─┐┌MP─┐┌HP─┐┌DMG┐ [✎]                  └──────────────────────┘       │ Cash 33% $13     │
+│ │$2 ││$1 ││$1 ││$0 ││$0 │                     Qty [ 1 ] [CLEAR] [ADD CARD]     │ Credit 66% $27   │
 │ └───┘└───┘└───┘└───┘└───┘                                     ↓↑ pick · Esc … │[CANCEL][CONFIRM] │
 └────────────────────────────────────────────────────────────────────────────────┴──────────────────┘
 ```
@@ -879,11 +879,11 @@ Examples:
 
 ```
 Market         $41.20
-Cash (33%)     $13.60
-Credit (66%)   $27.19
+Cash (33%)     $13
+Credit (66%)   $27
 ```
 
-  Market = Σ unit_price × qty. Cash and Credit use the buy's custom rates where set (Section 8.9.1), otherwise the Master Buy Percentages from Settings (live for drafts).
+  Market = Σ unit_price × qty. Cash and Credit are the Market total × the percentage, rounded down by the price steps (Section 7.8). They use the buy's custom rates where set (Section 8.9.1), otherwise the Master Buy Percentages from Settings (live for drafts).
 - **Buttons:** **CANCEL** (red, smaller) and **CONFIRM BUY** (green, large), with the same sizes as CLEAR / ADD CARD so the two rows mirror each other.
 
 #### 8.9.1 Custom rates for one buy (owner's decision, 2026-09-29)
@@ -892,8 +892,8 @@ On the pricing screens (the Price tab's buy list and a collection's pricing scre
 
 ```
 Market          $41.20
-Cash (40% ✎)    $16.48   ◄── click
-Credit (66%)    $27.19
+Cash (40% ✎)    $16      ◄── click
+Credit (66%)    $27
 ┌─ Rates for this buy ───────────────┐
 │ Cash   [ 40   ] %   master 33%     │
 │ Credit [ 66   ] %   master 66%     │
@@ -999,8 +999,8 @@ The **Price tab's screen, reused** (the same components), with these differences
 
 ```
 < BACK   Jordan Reyes · (555) 201-3344 · [Processing ▾] [Mark as Priced →]      Market $412.50
-         Notes: 2 binders + bulk box, wants credit      ✎                         Cash (33%) $136.13
-         Created Aug 14 by ● Dana · Last edited today 3:12 PM by ● Sam  [⋯]     Credit (66%) $272.25
+         Notes: 2 binders + bulk box, wants credit      ✎                         Cash (33%) $135
+         Created Aug 14 by ● Dana · Last edited today 3:12 PM by ● Sam  [⋯]     Credit (66%) $270
 ┌──────────────── STAGE (same as Price tab) ──────────────────┬──── COLLECTION LIST ────┐
 │                                                            │  (same list format)      │
 │                                                            │                          │
@@ -1092,7 +1092,7 @@ Saturday, August 17, 2026 · Magic
 │ 1  Abrade (SOA) 37                   │  │ 4  Lightning Bolt (2X2) 161      │
 │ 1  Adarkar Wastes (DMU) 243 *F*      │  │ …                                │
 │ …                                    │  │                                  │
-│ Market $41.20 · Cash $13.60 · Credit $27.19 │ Also has 3 Pokémon cards →     │
+│ Market $41.20 · Cash $13 · Credit $27       │ Also has 3 Pokémon cards →     │
 └──────────────────────────────────────┘  └──────────────────────────────────┘
                                                                     [   EXPORT   ]
 ```
@@ -1218,8 +1218,8 @@ Credits: "Card data and images from Scryfall (Magic) and TCGdex (Pokémon). Pric
         ┌──────────────────────────────────────────────────────┐
    ●────┤ Aug 17, 2026 · 2:37 PM                BUY CONFIRMED │
         │ BUY  Buy 2 · Sat Aug 17   MTG PKM        +14   ● Sam │
-        │ Customer: Alex M. · Market $61.40 · Cash $20.26 ·    │
-        │ Credit $40.52                                        │
+        │ Customer: Alex M. · Market $61.40 · Cash $20 ·       │
+        │ Credit $40                                           │
         │ ──────────────────────────────────────────────────── │
         │ + 4 Lightning Bolt (2X2) 161                          │
         │ + 1 Charizard ex (OBF) 125 *H*                        │
@@ -1776,6 +1776,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 81 | NM warning (2026-09-29) | ⚠️ on the NM label when JustTCG's NM and the fallback NM differ by 25%+ and at least $1 |
 | 82 | Price table foot (2026-09-29) | Use Fallback and ✎ Manual price centered under the buttons; the "Prices via JustTCG" caption on its own line below |
 | 83 | Price panel (2026-09-29) | Beside the card info: the selected condition's price in green, with Credit and Cash chips under it, rounded down by the price steps. Display only, never saved (Section 8.7) |
+| 84 | Totals rounding (2026-09-29) | Buy and collection totals' Cash / Credit round down by the price steps too, from the summed total (Section 7.8) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |
@@ -1792,5 +1793,4 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 2. **Supabase plan for prod**: Free (weekly manual backups, pauses after 7 idle days) vs. Pro ($25/month: daily backups, no pausing).
 3. **Japanese Pokémon**: coverage confirmed good in the Phase 3 spike (Section 5.2 findings). Still open: how names should display, and the missing USD fallback price for Japanese cards (Phase 5).
 4. **JustTCG plan**: watch the usage meter during the first weeks and move to Professional if the daily limit binds.
-5. **Totals rounding** (before Phase 6): the price panel's Cash/Credit round down by the price steps (decision 83). Should the buy totals' Cash/Credit do the same, or stay half-up to the cent as Section 7.8 says?
 5. ~~**Store time zone**~~: confirmed Pacific time, `America/Los_Angeles` (`STORE_TZ`), 2026-09-29.

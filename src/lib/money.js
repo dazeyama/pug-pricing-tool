@@ -1,6 +1,6 @@
 // Money (spec 4.9, 7.8): USD, shown as $1,234.56, and whole dollars without
-// ".00" ($12, $1,230; owner, 2026-09-29). Totals round the sum, not each
-// line (Phase 6 adds the totals).
+// ".00" ($12, $1,230; owner, 2026-09-29). Cash / Credit round down by the
+// price steps, and totals from the sum, not each line (Phase 6 adds totals).
 const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 const usdWhole = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 
