@@ -15,8 +15,8 @@ function priceStyle(text) {
  * buttons, NM to DMG. Each shows its entry from the price ladder (lib/prices
  * priceLadder): JustTCG's price, or a fallback tagged "fallback", rounded
  * down; "—" when there's neither. ⚠️ on NM when JustTCG and the fallback
- * disagree (nmWarning). Under them: Use Fallback (NM from Scryfall/TCGdex
- * instead of JustTCG) and ✎ Manual price (overrides the purchase price),
+ * disagree (nmWarning). Under them: Use Fallback (every price from
+ * Scryfall/TCGdex and the fallback percentages instead of JustTCG) and ✎ Manual price (overrides the purchase price),
  * then the caption.
  */
 export default function PriceTable({
@@ -56,7 +56,7 @@ export default function PriceTable({
       if (e.cappedBy) about += `, lowered to ${e.cappedBy}'s price`;
       about += rounded;
       if (e.thrownOut != null) about += ` (JustTCG's ${formatMoney(e.thrownOut)} was higher than a better condition, so it was thrown out)`;
-      if (code === 'NM' && fallbackOn) about += ' (Use Fallback is on)';
+      if (fallbackOn) about += ' (Use Fallback is on)';
     }
     if (manual != null && code === condition) about = `manual ${formatMoney(manual)} (market: ${about})`;
     const warn = code === 'NM' && nmWarning
@@ -65,20 +65,20 @@ export default function PriceTable({
     return `${code} · ${about}${warn} · ${key}`;
   };
 
-  // Use Fallback: NM from Scryfall/TCGdex as if JustTCG had no NM price.
+  // Use Fallback: every price from Scryfall/TCGdex (NM) and the fallback
+  // percentages, as if JustTCG had no prices at all.
   const fbFrom = candidate?.game === 'mtg' ? 'Scryfall' : 'TCGdex';
   const fbNM = fallback && pct?.NM != null ? roundDownPrice((fallback.price * Number(pct.NM)) / 100) : null;
-  let fbTitle = 'Price NM from the fallback instead of JustTCG';
+  let fbTitle = 'Price every condition from the fallback instead of JustTCG';
   let fbUsable = false;
   if (candidate && !loading) {
-    if (market?.NM == null) fbTitle = 'NM already uses the fallback: JustTCG has no NM price';
+    if (!CONDITIONS.some((c) => market?.[c] != null)) fbTitle = 'Prices already come from the fallback: JustTCG has none for this printing';
     else if (fbNM == null) fbTitle = `No ${fbFrom} price for this printing`;
     else {
       fbUsable = true;
-      const justtcg = formatMoney(roundDownPrice(market.NM));
       fbTitle = fallbackOn
-        ? `NM is ${fbFrom}'s ${formatMoney(fbNM)}, not JustTCG's ${justtcg}. Click to go back to JustTCG`
-        : `Use ${fbFrom}'s ${formatMoney(fbNM)} for NM instead of JustTCG's ${justtcg}`;
+        ? `Prices are from ${fbFrom}'s ${formatMoney(fbNM)} NM and the fallback percentages. Click to go back to JustTCG`
+        : `Use ${fbFrom}'s ${formatMoney(fbNM)} for NM, and the fallback percentages for the other conditions, instead of JustTCG's prices`;
     }
   }
 

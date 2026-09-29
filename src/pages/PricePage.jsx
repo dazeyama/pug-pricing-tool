@@ -93,12 +93,13 @@ export default function PricePage() {
   const fallback = fallbackPrice(selected, { finish, version });
   const { values: settingValues } = useSettings();
   const fallbackPct = settingValues[selected?.game === 'pokemon' ? 'fallback_pct_pokemon' : 'fallback_pct_mtg'];
-  // Use Fallback: NM priced as if JustTCG had no NM price (only possible
-  // when there's a fallback to use and a JustTCG NM to replace).
-  const canUseFallback = market.NM != null && fallback != null;
+  // Use Fallback (owner, 2026-09-29): every JustTCG price thrown out; NM is
+  // the fallback and the other conditions its Master Fallback Percentages.
+  // Only possible with a fallback to use and JustTCG prices to replace.
+  const canUseFallback = fallback != null && CONDITIONS.some((c) => market[c] != null);
   const fallbackOn = useFallback && canUseFallback;
   // The five prices shown and used (JustTCG, fallbacks, never rising, rounded down).
-  const ladder = priceLadder(fallbackOn ? { ...market, NM: null } : market, fallback, fallbackPct);
+  const ladder = priceLadder(fallbackOn ? {} : market, fallback, fallbackPct);
   const nmWarning = nmMismatch(market, fallback, fallbackPct);
 
   const visible = search.candidates.slice(0, ROW);
