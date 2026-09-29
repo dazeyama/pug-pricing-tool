@@ -4,6 +4,15 @@ export const PALETTE = [
   'pal-cyan', 'pal-blue', 'pal-indigo', 'pal-violet', 'pal-magenta', 'pal-slate',
 ];
 
+// The lighter half of the palette, where dark text reads better than white
+// (by WCAG contrast against the tokens.css values). Re-check if those change.
+const DARK_TEXT = new Set(['pal-orange', 'pal-amber', 'pal-olive', 'pal-green', 'pal-teal', 'pal-cyan']);
+
+/** Text colour for something filled with a palette colour. */
+export function textOn(color) {
+  return DARK_TEXT.has(color) ? 'var(--bg)' : '#fff';
+}
+
 /** CSS colour for a palette token name, e.g. 'pal-teal' → 'var(--pal-teal)'. */
 export function colorVar(color) {
   return `var(--${PALETTE.includes(color) ? color : 'border'})`;

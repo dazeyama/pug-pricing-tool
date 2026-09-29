@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStaff } from '../state/staff.jsx';
 import { useToast } from './Toast.jsx';
-import { PALETTE, colorVar } from '../lib/palette.js';
+import { PALETTE, colorVar, textOn } from '../lib/palette.js';
 import Modal from './Modal.jsx';
 
 // The staff-user button and menu (spec 7.3), left of the header search.
@@ -91,16 +91,15 @@ export default function UserMenu() {
     <div className="user-menu" ref={wrap}>
       <button
         type="button"
-        className={`user-btn${pulsing ? ' pulse' : ''}${open ? ' open' : ''}`}
+        className={`user-btn${current ? ' filled' : ''}${pulsing ? ' pulse' : ''}${open ? ' open' : ''}`}
+        style={current ? { '--c': colorVar(current.color), '--c-text': textOn(current.color) } : undefined}
+        title={current ? `Working as ${current.name}` : 'Pick who is working at this computer'}
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => (open ? close() : setOpen(true))}
       >
         {current ? (
-          <>
-            <span className="user-dot" style={{ '--c': colorVar(current.color) }} />
-            <span className="user-name">{current.name}</span>
-          </>
+          <span className="user-name">{current.name}</span>
         ) : (
           <span className="user-name none">Pick user</span>
         )}

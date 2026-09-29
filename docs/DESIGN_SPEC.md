@@ -555,7 +555,7 @@ Ported from CM's header, with the same structure and spacing.
 
 ### 7.3 Staff users (the "user" dropdown)
 
-- A button showing a **color dot + the current user's name**, or "Pick user" in muted text when none is set. It opens a menu:
+- A large chip **filled with the current user's color** and showing their name in bold (owner's decision, 2026-09-29: it must be obvious at all times who is selected). The lighter palette colors use dark text, the rest white. With no user set, it's an outlined chip reading "Pick user" in muted text. It opens a menu:
   - the list of active users (dot + name), with the current one checked. Click to select.
   - **+ Add user…**: an inline name field. The color is auto-assigned: the next `--pal-*` color not used by an active user, cycling when all are taken.
   - per-user **⋯** menu: **Change color** (a 12-swatch palette) and **Delete** (confirm: "Delete Dana? Past buys will still show their name."). Delete sets `active=false`.

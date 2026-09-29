@@ -38,23 +38,38 @@ header h1 { margin: 0; font-size: 20px; font-weight: 600; }
 
 /* ---- Staff user button and menu (spec 7.3) ---- */
 .user-menu { position: relative; }
+/* Big and filled with the picked user's colour, so who's working at this
+   computer is obvious from across the counter. */
 .user-btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 170px;
   background: var(--bg);
-  border: 1px solid var(--border);
+  border: 2px solid var(--border);
   border-radius: 999px;
   color: var(--text);
-  padding: 8px 14px;
-  font-size: 14px;
+  padding: 9px 18px 9px 20px;
+  font-size: 17px;
   cursor: pointer;
   white-space: nowrap;
 }
 .user-btn:hover, .user-btn.open { border-color: var(--accent); }
-.user-btn .user-name { font-weight: 600; }
-.user-btn .user-name.none { color: var(--muted); font-weight: 400; }
-.user-btn .caret { color: var(--muted); font-size: 11px; }
+.user-btn .user-name { font-weight: 700; max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
+.user-btn .user-name.none { color: var(--muted); font-weight: 500; }
+.user-btn .caret { color: var(--muted); font-size: 12px; }
+.user-btn.filled {
+  background: var(--c);
+  border-color: var(--c);
+  color: var(--c-text);
+}
+.user-btn.filled .caret { color: inherit; opacity: .7; }
+/* A ring in the user's colour, off the chip, so hover never hides the colour. */
+.user-btn.filled:hover, .user-btn.filled.open {
+  border-color: var(--c);
+  box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--c);
+}
 /* Something needed a user and none is picked. */
 .user-btn.pulse { animation: userPulse 1s ease; }
 @keyframes userPulse {
