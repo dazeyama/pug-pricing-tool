@@ -330,12 +330,13 @@
 .thumb:hover .thumb-symbol, .thumb:hover .thumb-chip { opacity: 1; transform: translateY(-50%) scale(1); }
 
 /* The symbol: Scryfall's SVG painted in the rarity colour through a CSS mask,
-   with a dark outline so it reads on any frame. */
+   with a dark outline so it reads on any frame. Outlines only, centred: an
+   offset shadow on a thin-lined symbol reads as a second, misaligned copy. */
 .thumb-symbol {
   right: 2%;
   width: 38%;
   aspect-ratio: 1;
-  filter: drop-shadow(0 0 1px #000) drop-shadow(0 0 1.5px #000) drop-shadow(0 2px 4px rgba(0, 0, 0, .7));
+  filter: drop-shadow(0 0 .6px #000) drop-shadow(0 0 .6px #000) drop-shadow(0 0 2px rgba(0, 0, 0, .55));
 }
 .thumb-symbol-glyph {
   display: block;
@@ -361,14 +362,14 @@
   font-size: 12px;
   font-weight: 800;
   letter-spacing: .04em;
-  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, .75), 0 3px 8px rgba(0, 0, 0, .6);
+  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, .75), 0 0 6px rgba(0, 0, 0, .55);
 }
 
 /* Rarity colours (Magic's): black, silver, gold, orange-red, purple; slate
    when the rarity isn't known (Pokémon suggestions). */
 .r-common { --rarity: #111; --rarity-text: #fff; }
-.thumb-symbol.r-common { filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1.5px #fff) drop-shadow(0 2px 4px rgba(0, 0, 0, .7)); }
-.thumb-chip.r-common { box-shadow: 0 0 0 1.5px rgba(255, 255, 255, .85), 0 3px 8px rgba(0, 0, 0, .6); }
+.thumb-symbol.r-common { filter: drop-shadow(0 0 .6px #fff) drop-shadow(0 0 .6px #fff); }
+.thumb-chip.r-common { box-shadow: 0 0 0 1.5px rgba(255, 255, 255, .85), 0 0 6px rgba(0, 0, 0, .55); }
 .r-uncommon { --rarity: linear-gradient(135deg, #5d6a73, #d5dee5 50%, #6d7a84); --rarity-text: #10151a; }
 .r-rare { --rarity: linear-gradient(135deg, #8a6d24, #f0d27a 50%, #9c7c2e); --rarity-text: #1c1406; }
 .r-mythic { --rarity: linear-gradient(135deg, #b3321a, #f7a13a 50%, #c0441f); --rarity-text: #1d0a04; }
