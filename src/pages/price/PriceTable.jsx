@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CONDITIONS } from '../../lib/prices.js';
-import { formatMoney, parseMoney, roundDownPrice } from '../../lib/money.js';
+import { formatEur, formatMoney, parseMoney, roundDownPrice } from '../../lib/money.js';
 import { timeAgo } from '../../lib/time.js';
 
 /** Big prices, stepping down so "$1,234.56" still fits a button. */
@@ -15,12 +15,13 @@ function priceStyle(text) {
  * buttons, NM to DMG. Each shows its entry from the price ladder (lib/prices
  * priceLadder): JustTCG's price, or a fallback tagged "fallback", rounded
  * down; "—" when there's neither. ⚠️ on NM when JustTCG's prices look
- * wrong (the reasons are behind the warning line in the price panel). Under them: Use Fallback (every price from
- * Scryfall/TCGdex and the fallback percentages instead of JustTCG) and ✎ Manual price (overrides the purchase price),
- * then the caption.
+ * wrong (the reasons are behind the warning line in the price panel). Under
+ * them: Use Fallback and Use Cardmarket (every price from Scryfall/TCGdex, or
+ * Cardmarket, and the fallback percentages instead of JustTCG; `override`),
+ * ✎ Manual price (overrides the purchase price), then the caption.
  */
 export default function PriceTable({
-  candidate, prices, ladder, pct, market, fallback, warnings, fallbackOn, onUseFallback,
+  candidate, prices, ladder, pct, market, fallback, cardmarket, warnings, override, onOverride,
   fetchedAt, condition, onCondition, manual, onManual, manualOpen, setManualOpen, onDone,
 }) {
   const [text, setText] = useState('');
@@ -61,7 +62,7 @@ export default function PriceTable({
         : `fallback ${formatMoney(e.price)}: ${e.base.from}'s ${formatMoney(e.base.price)} × ${pct[code]}%`;
       about += rounded;
       if (e.thrownOut != null) about += ` (JustTCG's ${formatMoney(e.thrownOut)} was higher than a better condition, so it was thrown out)`;
-      if (fallbackOn) about += ' (Use Fallback is on)';
+      if (override) about += ` (Use ${override === 'cardmarket' ? 'Cardmarket' : 'Fallback'} is on)`;
     }
     if (manual != null && code === condition) about = `manual ${formatMoney(manual)} (market: ${about})`;
     const warn = code === 'NM' && warnings.length ? ' · ⚠️ may be wrong: see the warning in the price panel' : '';
@@ -79,11 +80,42 @@ export default function PriceTable({
     else if (fbNM == null) fbTitle = `No ${fbFrom} price for this printing`;
     else {
       fbUsable = true;
-      fbTitle = fallbackOn
+      fbTitle = override === 'fallback'
         ? `Prices are from ${fbFrom}'s ${formatMoney(fbNM)} NM and the fallback percentages. Click to go back to JustTCG`
         : `Use ${fbFrom}'s ${formatMoney(fbNM)} for NM, and the fallback percentages for the other conditions, instead of JustTCG's prices`;
     }
   }
+
+  // Use Cardmarket: the same, from Cardmarket's European price in dollars.
+  const cmNM = cardmarket.usd != null && pct?.NM != null ? roundDownPrice((cardmarket.usd * Number(pct.NM)) / 100) : null;
+  let cmTitle = 'Price every condition from Cardmarket instead of JustTCG';
+  let cmUsable = false;
+  if (candidate && !loading) {
+    if (cardmarket.eur == null) cmTitle = 'No Cardmarket price for this printing';
+    else if (cardmarket.rate == null) cmTitle = "Needs today's euro exchange rate, which hasn't loaded";
+    else {
+      cmUsable = true;
+      const was = `Cardmarket's ${formatEur(cardmarket.eur)} (≈ ${formatMoney(cmNM)})`;
+      cmTitle = override === 'cardmarket'
+        ? `Prices are from ${was} NM and the fallback percentages. Click to go back to JustTCG`
+        : `Use ${was} for NM, and the fallback percentages for the other conditions, instead of JustTCG's prices`;
+    }
+  }
+  const overrideButton = (kind, label, usable, title) => (
+    <button
+      type="button"
+      className={`btn small override-btn${override === kind ? ' on' : ''}`}
+      disabled={!usable}
+      title={title}
+      aria-pressed={override === kind}
+      onClick={() => {
+        onOverride(override === kind ? null : kind);
+        onDone();
+      }}
+    >
+      {label}
+    </button>
+  );
 
   const cell = (code) => {
     if (!candidate) return <span className="pc-price muted">—</span>;
@@ -104,7 +136,7 @@ export default function PriceTable({
       return (
         <span className="pc-price" style={priceStyle(formatMoney(price))}>
           {formatMoney(price)}
-          <span className="fb-tag">fallback</span>
+          <span className="fb-tag">{ladder[code].base?.from === 'Cardmarket' ? 'cardmarket' : 'fallback'}</span>
         </span>
       );
     }
@@ -153,19 +185,8 @@ export default function PriceTable({
       </div>
       <div className="price-foot">
         <div className="price-tools">
-          <button
-            type="button"
-            className={`btn small fallback-btn${fallbackOn ? ' on' : ''}`}
-            disabled={!fbUsable}
-            title={fbTitle}
-            aria-pressed={fallbackOn}
-            onClick={() => {
-              onUseFallback(!fallbackOn);
-              onDone();
-            }}
-          >
-            Use Fallback
-          </button>
+          {overrideButton('fallback', 'Use Fallback', fbUsable, fbTitle)}
+          {overrideButton('cardmarket', 'Use Cardmarket', cmUsable, cmTitle)}
           {manualOpen ? (
             <span className="manual-edit">
               $

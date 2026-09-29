@@ -75,20 +75,21 @@ export default function PricePage() {
     }
   }, [selected?.key]);
 
-  // Condition, manual price and Use Fallback (spec 8.7): NM, none and off for
+  // Condition, manual price and override (spec 8.7): NM, none and none for
   // every new card. A manual price belongs to its condition: picking another
-  // condition clears it (owner, 2026-09-29).
-  const [pricing, setPricing] = useState({ key: null, condition: 'NM', manual: null, useFallback: false });
+  // condition clears it (owner, 2026-09-29). The override is Use Fallback
+  // ('fallback') or Use Cardmarket ('cardmarket'), never both.
+  const [pricing, setPricing] = useState({ key: null, condition: 'NM', manual: null, override: null });
   const [manualOpen, setManualOpen] = useState(false);
   const pricingOwn = pricing.key === selected?.key;
   const condition = pricingOwn ? pricing.condition : 'NM';
   const manual = pricingOwn ? pricing.manual : null;
-  const useFallback = pricingOwn ? pricing.useFallback : false;
+  const override = pricingOwn ? pricing.override : null;
   const setCondition = (code) => setPricing({
-    key: selected?.key, condition: code, manual: code === condition ? manual : null, useFallback,
+    key: selected?.key, condition: code, manual: code === condition ? manual : null, override,
   });
-  const setManual = (value) => setPricing({ key: selected?.key, condition, manual: value, useFallback });
-  const setUseFallback = (on) => setPricing({ key: selected?.key, condition, manual, useFallback: on });
+  const setManual = (value) => setPricing({ key: selected?.key, condition, manual: value, override });
+  const setOverride = (next) => setPricing({ key: selected?.key, condition, manual, override: next });
   useEffect(() => setManualOpen(false), [selected?.key]);
 
   const prices = usePrices(selected, { pokemon, versions, typedName: search.parsed?.name });
@@ -102,16 +103,22 @@ export default function PricePage() {
   const fallback = fallbackPrice(selected, { finish, version });
   const { values: settingValues } = useSettings();
   const fallbackPct = settingValues[selected?.game === 'pokemon' ? 'fallback_pct_pokemon' : 'fallback_pct_mtg'];
-  // Use Fallback (owner, 2026-09-29): every JustTCG price thrown out; NM is
-  // the fallback and the other conditions its Master Fallback Percentages.
-  // Only possible with a fallback to use and JustTCG prices to replace.
+  // Use Fallback / Use Cardmarket (owner, 2026-09-29): every JustTCG price
+  // thrown out; NM is the Scryfall/TCGdex price, or Cardmarket's in dollars,
+  // and the other conditions that × the Master Fallback Percentages. Use
+  // Fallback needs JustTCG prices to replace; Use Cardmarket needs a
+  // Cardmarket price and the day's euro rate.
+  const eurUsd = useEurUsd();
+  const cardmarketEur = cardmarketPrice(selected, { finish, version });
+  const cardmarketUsd = cardmarketEur != null && eurUsd != null ? cardmarketEur * eurUsd : null;
   const canUseFallback = fallback != null && CONDITIONS.some((c) => market[c] != null);
-  const fallbackOn = useFallback && canUseFallback;
+  const activeOverride = (override === 'fallback' && canUseFallback) || (override === 'cardmarket' && cardmarketUsd != null)
+    ? override : null;
+  const base = activeOverride === 'cardmarket' ? { price: cardmarketUsd, source: 'cardmarket' } : fallback;
   // The five prices shown and used (JustTCG, fallbacks, never rising, rounded down).
-  const ladder = priceLadder(fallbackOn ? {} : market, fallback, fallbackPct, selected?.game);
+  const ladder = priceLadder(activeOverride ? {} : market, base, fallbackPct, selected?.game);
   // ⚠️ on NM (spec 8.7): reasons to doubt JustTCG's prices. A 1st Edition is
   // checked against its Unlimited version, whose prices came in the same request.
-  const eurUsd = useEurUsd();
   const unlimited = !magic && version?.firstEdition
     ? versions.find((v) => v.finish === version.finish && !v.firstEdition && !v.treatments.length)
     : null;
@@ -121,7 +128,7 @@ export default function PricePage() {
     }).NM
     : null;
   const warnings = priceWarnings({
-    market, fallback, pct: fallbackPct, unlimitedNM, cardmarket: cardmarketPrice(selected, { finish, version }), eurUsd,
+    market, fallback, pct: fallbackPct, unlimitedNM, cardmarket: cardmarketEur, eurUsd,
   });
 
   const visible = search.candidates.slice(0, ROW);
@@ -265,7 +272,7 @@ export default function PricePage() {
             loading={prices.status === 'loading' || prices.status === 'waiting'}
             condition={condition}
             price={manual ?? ladder[condition].price}
-            source={manual != null ? 'manual' : ladder[condition].source}
+            source={manual != null ? 'manual' : activeOverride === 'cardmarket' ? 'cardmarket' : ladder[condition].source}
             cashPct={settingValues.cash_pct}
             creditPct={settingValues.credit_pct}
             warnings={warnings}
@@ -299,8 +306,9 @@ export default function PricePage() {
               market={market}
               fallback={fallback}
               warnings={warnings}
-              fallbackOn={fallbackOn}
-              onUseFallback={setUseFallback}
+              cardmarket={{ eur: cardmarketEur, usd: cardmarketUsd, rate: eurUsd }}
+              override={activeOverride}
+              onOverride={setOverride}
               fetchedAt={result?.fetchedAt ?? null}
               condition={condition}
               onCondition={setCondition}

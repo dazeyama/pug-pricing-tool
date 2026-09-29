@@ -135,6 +135,8 @@ export function resultFor(c, results, { finish, version, versions = [] }) {
 // A fallback that would show the same as (or more than) the condition above
 // it goes this far below that condition's price instead (owner, 2026-09-29).
 const CAP_STEP = { mtg: 10, pokemon: 15 };
+// Where a fallback base price came from, for tooltips.
+const BASE_NAMES = { scryfall_fallback: 'Scryfall', tcgdex_fallback: 'TCGdex', cardmarket: 'Cardmarket' };
 
 /**
  * The five prices shown, NM down to DMG (spec 8.7): JustTCG's where it has
@@ -159,7 +161,7 @@ export function priceLadder(market, fallback, pct, game) {
   const out = {};
   let base = null;
   if (market?.NM != null) base = { price: market.NM, from: 'JustTCG' };
-  else if (fallback) base = { price: fallback.price, from: fallback.source === 'scryfall_fallback' ? 'Scryfall' : 'TCGdex' };
+  else if (fallback) base = { price: fallback.price, from: BASE_NAMES[fallback.source] ?? 'fallback' };
   let prev = null;          // the better condition's price, unrounded
   let prevCode = null;
   for (const code of CONDITIONS) {

@@ -681,8 +681,10 @@
 /* Use Fallback and ✎ Manual price centred under the buttons, the caption on
    its own line below them (owner, 2026-09-29). */
 .price-foot { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.price-tools { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 26px; }
-.manual-btn.on, .fallback-btn.on { border-color: var(--warn); color: var(--warn); }
+.price-tools { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 26px; }
+/* Use Fallback, Use Cardmarket, ✎ Manual price and its × in 336px. */
+.price-tools .btn.small { padding: 5px 8px; white-space: nowrap; }
+.manual-btn.on, .override-btn.on { border-color: var(--warn); color: var(--warn); }
 .manual-edit { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; }
 .manual-edit input { width: 86px; margin: 0; padding: 4px 8px; font-size: 14px; }
 .price-caption {
