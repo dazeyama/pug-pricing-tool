@@ -360,7 +360,7 @@ Japanese cards have no backup yet. JustTCG (Phase 5) returns a TCGplayer ID per 
 
 - **Pokémon set mapping:** match each TCGdex set to a JustTCG set once, by normalized set name from `GET /sets?game=pokemon` (or `pokemon-japan`), and cache it in `price_map` under `pokemon:set:<lang>:<tcgdex set id>`. If a name doesn't match exactly, leave it unmapped and log it to the console. The owner can report missing sets.
 - A resolved mapping is stored in `price_map` (Section 6) so each printing is resolved **once**, then looked up by JustTCG card ID afterwards.
-- If step 2 returns zero or several candidates, don't guess. Treat it as "no JustTCG price" and use the fallback (Section 8.7).
+- If step 2 returns several candidates, the **set code breaks the tie** (owner's decision, 2026-09-29): keep the one whose JustTCG set name or set ID contains the card's printed set code as a whole word ("SV2a" in "SV2a: Pokemon Card 151"; "SV2" doesn't match it). If that doesn't leave exactly one, or step 2 returns none, don't guess. Treat it as "no JustTCG price" and use the fallback (Section 8.7).
 
 **The `prices` Edge Function:**
 - **Edge Function auth (applies to `prices` and `secrets`):** projects using the new publishable/secret keys must deploy functions with **`--no-verify-jwt`** (or `verify_jwt = false` in `supabase/config.toml`), because Supabase's built-in JWT check rejects them. Each function must then **verify the caller itself**: read the `Authorization: Bearer <access token>` header that supabase-js sends for the signed-in session, validate it with `supabase.auth.getClaims(token)` (or `auth.getUser(token)`), and return 401 if it's missing or invalid. Never skip this check. Without it, anyone could spend the JustTCG quota or overwrite the key.
@@ -1810,6 +1810,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 92 | English names for Japanese cards (2026-09-29) | Cardmarket and TCGplayer searches for a Japanese Pokémon use its English name, from its Pokédex number (PokeAPI's species names, stored in the app) plus markers like ex / V / GX / Mega (Section 8.4) |
 | 93 | Japanese cards in English (2026-09-29) | The English name also shows in the info box beside the Japanese name, and is what JustTCG is searched by for a Japanese card's price (Sections 5.3, 8.4) |
 | 94 | Cardmarket search (2026-09-29) | Find on Cardmarket searches the name **and** the collector number ("Pikachu 025"), which Cardmarket's search matches best (Section 8.4) |
+| 95 | Search tie-break (2026-09-29) | When a JustTCG name + number search finds several cards, the one whose set name or ID contains the printed set code as a word wins; still no guessing otherwise (Section 5.3) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

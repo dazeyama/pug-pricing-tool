@@ -21,6 +21,7 @@ const GAMES = { mtg: 'magic-the-gathering', pokemon: 'pokemon' } as const;
 type Lookup = {
   key: string; game: 'mtg' | 'pokemon'; lang: 'en' | 'ja';
   scryfallId?: string; tcgplayerId?: string; name?: string; number?: string; setName?: string;
+  setCode?: string;   // printed set code ("SV2a", "OBF"): breaks a tie between search matches
 };
 
 /** Only what the app reads; price history and statistics are dropped. */
@@ -50,6 +51,8 @@ const cardKey = (card: any) => card.uuid ?? card.id;
 
 const fold = (s: unknown) => String(s ?? '').toLowerCase().normalize('NFKD')
   .replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
+/** "SV2a: Pokemon Card 151" → ["sv2a", "pokemon", "card", "151"]: whole words, so "sv2" ≠ "sv2a". */
+const words = (s: unknown) => String(s ?? '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
 const normNumber = (n: unknown) => String(n ?? '').trim().toLowerCase().replace(/^([a-z]*-?)0+(?=\d)/, '$1');
 
 /** The next 00:00 UTC, when the daily allowance resets. */
@@ -153,6 +156,14 @@ Deno.serve(async (req) => {
       else if (l.setName) {
         const want = fold(l.setName);
         cards = cards.filter((c: any) => fold(c.set_name).includes(want) || want.includes(fold(c.set_name)));
+      }
+      // Several with that name and number (other sets): the one whose set
+      // name or ID has the card's set code as a word, if exactly one does
+      // (owner, 2026-09-29). TCGplayer names Japanese sets "SV2a: …".
+      if (cards.length > 1 && l.setCode) {
+        const code = l.setCode.toLowerCase();
+        const inSet = cards.filter((c: any) => words(c.set_name).includes(code) || words(c.set).includes(code));
+        if (inSet.length === 1) cards = inSet;
       }
       found(l, cards.length === 1 ? cards[0] : null);
       if (cards.length > 1) console.log(`prices: ${cards.length} JustTCG matches for ${l.key}; not guessing`);
