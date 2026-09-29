@@ -129,9 +129,10 @@
   margin-bottom: 8px;
 }
 
-/* ---- The selected card: Scryfall's card-page size, 336 × 468, left-aligned.
-        It only shrinks when the window is too short for it. ---- */
-.card-box { position: relative; align-self: flex-start; }
+/* ---- The selected card: Scryfall's card-page size, 336 × 468, centred in
+        its column, empty or not (owner, 2026-09-29). It only shrinks when the
+        window is too short for it. ---- */
+.card-box { position: relative; align-self: center; }
 /* --card-h: the card's height, leaving room for the label above (26px) and
    the finish line below (32px). */
 .area-card { --card-h: min(calc(100cqh - 58px), 468px); }
@@ -143,6 +144,7 @@
    "✦ FOIL" is big and "✦ REVERSE HOLO · MASTER BALL" still fits. */
 .finish-line {
   flex: none;
+  align-self: center;
   display: flex;
   justify-content: center;
   width: calc(var(--card-h) * .7176);

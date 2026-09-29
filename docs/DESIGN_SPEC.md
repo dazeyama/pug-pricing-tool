@@ -675,7 +675,7 @@ Below the main search bar, the stage is three columns (**owner's layout, 2026-09
 
 | Left | Middle | Right |
 |---|---|---|
-| **Selected card** at Scryfall's card-page size (**336×468**), left-aligned, with the **condition / price table** directly under it | **Card info** beside the card, then the **suggestions**: 10 thumbnails in **2 rows of 5** | Beside the suggestions: the **finish control** and **details panel**, then the action row (**Qty, CLEAR, ADD CARD**) under them |
+| **Selected card** at Scryfall's card-page size (**336×468**), centered in its column, with the **condition / price table** directly under it | **Card info** beside the card, then the **suggestions**: 10 thumbnails in **2 rows of 5** | Beside the suggestions: the **finish control** and **details panel**, then the action row (**Qty, CLEAR, ADD CARD**) under them |
 
 Card image sizes follow Scryfall's as the reference: the selected card is 336×468, and a thumbnail is at most Scryfall's small image (146×204), shrinking only to fit 5 across and 2 rows down. The selected card shrinks only when the window is too short for it. The sidebar's bottom holds the totals and **CANCEL / CONFIRM BUY**, which mirror CLEAR / ADD CARD in size, shape and position.
 
@@ -725,7 +725,7 @@ Parsing rules (`src/lib/query.js`), applied to the trimmed input:
 
 ### 8.4 Selected card
 
-- The large card image (AT `.card-wrap`, `--card-radius`, `--shadow`) with two-stage image loading, at **Scryfall's card-page size, 336×468**, left-aligned (owner's decision, 2026-09-29). It keeps the card's proportions at all times and only shrinks when the window is too short.
+- The large card image (AT `.card-wrap`, `--card-radius`, `--shadow`) with two-stage image loading, at **Scryfall's card-page size, 336×468** (owner's decision, 2026-09-29), centered in its column whether empty or showing a card (owner, 2026-09-29), so a card shrunk by a short window stays in the middle. It keeps the card's proportions at all times and only shrinks when the window is too short.
 - Above it, a small caps label **SELECTED CARD**. With nothing selected, show an empty card-shaped frame reading "Type a card above".
 - **Card info panel** to the right of the card:
   - name (large);
