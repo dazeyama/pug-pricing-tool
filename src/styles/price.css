@@ -375,7 +375,7 @@
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 14px 18px;
-  max-width: 440px;
+  max-width: 500px;   /* room for the three links in full (owner, 2026-09-29) */
 }
 .card-info.empty {
   display: flex;
@@ -483,10 +483,11 @@
 .info-typed { color: var(--muted); font-size: 13px; }
 .info-links { display: flex; gap: 18px; }
 .info-link { display: inline-block; font-size: 13px; }
-/* All three links with "View on" need about 400px; narrower (1366×768)
-   they read "Scryfall ↗ TCGplayer ↗ Cardmarket ↗" (owner, 2026-09-29). */
+/* All three links with "View on" need about 400px of the box's inside
+   (measured in Segoe UI 13px); with a margin, under 420px (1366×768) they
+   read "Scryfall ↗ TCGplayer ↗ Cardmarket ↗" (owner, 2026-09-29). */
 .card-info { container-type: inline-size; }
-@container (max-width: 403px) {
+@container (max-width: 419px) {
   .link-verb { display: none; }
 }
 
