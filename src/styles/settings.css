@@ -1,16 +1,24 @@
 /* Settings tab (spec 11): one panel per section, two columns across the
-   page, related panels side by side (owner, 2026-09-29). A row's panels
-   share its height. */
+   page, related panels side by side (owner, 2026-09-29). Every panel is the
+   same fixed height (owner, 2026-09-30), sized to the tallest: the Master
+   Crystal Inventory with its current file and four previous copies. Anything
+   more (the column list opened, an error) scrolls inside the panel. */
 
 .settings-grid {
+  --settings-panel-h: 540px;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
   align-items: stretch;
 }
 .settings-grid > .settings-footer { grid-column: 1 / -1; }
-.settings-panel .cardpanel-head { font-size: 14.5px; }
-.settings-panel .cardpanel-body { padding: 14px 16px 16px; }
+.settings-panel {
+  display: flex;
+  flex-direction: column;
+  height: var(--settings-panel-h);
+}
+.settings-panel .cardpanel-head { flex: none; font-size: 14.5px; }
+.settings-panel .cardpanel-body { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 16px 16px; }
 .settings-panel .hint { margin-top: 0; }
 .settings-sub {
   margin: 18px 0 6px;

@@ -1234,7 +1234,7 @@ Saturday, August 17, 2026 · Magic
 
 ## 11. Settings tab
 
-Sections, each in a CM panel, laid out in **two columns across the page, with related panels side by side** (owner's decision, 2026-09-29; a row's panels share its height):
+Sections, each in a CM panel, laid out in **two columns across the page, with related panels side by side** (owner's decision, 2026-09-29). **Every panel is the same fixed height** (owner's decision, 2026-09-30): 540px, enough for the tallest (the Master Crystal Inventory with its current file and four previous copies); anything more, like its opened column list, scrolls inside the panel:
 
 | Left | Right |
 |---|---|
@@ -2007,6 +2007,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 144 | Card edits don't fold (2026-09-29) | Only runs of card adds or removes fold into one panel; each card edit stands alone (Section 12.6) |
 | 145 | Changelog style pass (2026-09-29) | Entries coloured by game (mixed buys both), more chips (headline, counts, user, totals, statuses), and Cash green / Credit blue carried into the log's words (Section 12.2) |
 | 146 | Mixed entries whole under a game filter (2026-09-29) | Filtering the Changelog to Magic or Pokémon still shows mixed entries whole, as multi-game panels, instead of trimming them to one game (Section 12.4) |
+| 147 | Settings panels one fixed height (2026-09-30) | Every Settings panel is the same fixed height, sized to fit the tallest as it stands; extra content scrolls inside the panel (Section 11) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |
