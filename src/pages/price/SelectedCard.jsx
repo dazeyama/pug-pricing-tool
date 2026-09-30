@@ -20,12 +20,13 @@ const TCGPLAYER = 'https://www.tcgplayer.com';
 
 /**
  * The card on TCGplayer: its product page when the TCGplayer ID is known
- * (Scryfall for Magic, TCGdex for English Pokémon), otherwise a TCGplayer
+ * (Scryfall for Magic; TCGdex for English Pokémon, the chosen version's own
+ * product where it has one: 1st Edition, Poké Ball pattern…), otherwise a TCGplayer
  * search (Japanese Pokémon, which TCGdex has no IDs for; searched by
  * `searchName`, the English name where there is one).
  * @returns {{ href: string, exact: boolean }|null}  null while the Pokémon card is still loading
  */
-function tcgplayerLink(c, magic, pokemon, searchName, finish) {
+function tcgplayerLink(c, magic, pokemon, pokemonVersion, searchName, finish) {
   const search = (category, q) => ({
     href: `${TCGPLAYER}/search/${category}/product?q=${encodeURIComponent(q.trim())}`,
     exact: false,
@@ -40,7 +41,7 @@ function tcgplayerLink(c, magic, pokemon, searchName, finish) {
       : search('magic', magic.name);
   }
   if (!pokemon.resolved) return null;
-  const id = tcgplayerId(pokemon.card);
+  const id = pokemonVersion?.tcgplayerId ?? tcgplayerId(pokemon.card);
   if (id) return { href: `${TCGPLAYER}/product/${id}`, exact: true };
   return c.lang === 'ja'
     ? search('pokemon-japan', `${searchName} ${c.number}`)
@@ -106,7 +107,7 @@ export default function SelectedCard({ candidate: c, typedName, englishName, pok
   // What to search other sites for: Japanese cards by their English name
   // (Pokédex number), else what was typed, else the card's own name.
   const searchName = c.lang === 'ja' ? englishName || typedName || c.name : c.name;
-  const tcgplayer = tcgplayerLink(c, magic, pokemon, searchName, finish);
+  const tcgplayer = tcgplayerLink(c, magic, pokemon, pokemonVersion, searchName, finish);
   const cardmarket = cardmarketLink(c, magic, searchName);
   const name = flippable ? magic.card_faces[face].name : c.name;
   // Foil sheen (spec 8.4): the whole card for Magic foil or etched; for
