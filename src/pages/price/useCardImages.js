@@ -3,7 +3,8 @@ import { fallbackImages } from '../../lib/pokemonImages.js';
 
 /**
  * A candidate's images: its own, or for a Pokémon card TCGdex has no picture
- * of, a backup from pokemontcg.io or TCGplayer once found.
+ * of, a backup once found: pokemontcg.io or TCGplayer (English), Limitless
+ * TCG (Japanese).
  *
  * status: 'ready' (there are image URLs), 'loading' (still looking for a
  * backup) or 'none' (every source tried; show the card back).

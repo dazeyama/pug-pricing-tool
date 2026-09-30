@@ -12,8 +12,14 @@
 //   2. TCGplayer's product image, by the TCGplayer ID that TCGdex's full card
 //      carries (variants_detailed → thirdParty.tcgplayer), loaded first to
 //      reject its 403s and its landscape "Image Coming Soon" banner.
-// Japanese: none yet. TCGdex has no TCGplayer IDs for Japanese cards; JustTCG
-// (Phase 5) returns one per card, which can point at TCGplayer's image then.
+// Japanese (owner, 2026-09-29): Limitless TCG's image CDN,
+//   limitlesstcg.nyc3.digitaloceanspaces.com/tpc/<set>/<set>_<number>_R_JP_<size>.png,
+//   by TCGdex's set ID (the printed code: SM12a, SV2a) and the number without
+//   leading zeros (SM12a_1). Sizes XS 136×189, SM 274×381, LG 460×640. A
+//   missing card answers 403, so the SM picture is loaded first (isCardImage).
+//   Checked 2026-09-29: whole Japanese sets TCGdex has no pictures of (SM12a,
+//   SM8b, S8b, SV5M…) were 19 of 21 there; misses were top secret rares.
+//   Credited in Settings' footer.
 import { createTransport } from './transport.js';
 import { DAY, memoryCache, storedOrDownload } from './cache.js';
 import * as dex from './tcgdex.js';
@@ -21,6 +27,7 @@ import * as dex from './tcgdex.js';
 const PTCG_API = 'https://api.pokemontcg.io/v2';
 const PTCG_IMAGES = 'https://images.pokemontcg.io';
 const TCGPLAYER_IMAGES = 'https://tcgplayer-cdn.tcgplayer.com/product';
+const LIMITLESS_IMAGES = 'https://limitlesstcg.nyc3.digitaloceanspaces.com/tpc';
 // pokemontcg.io's API often answers 500/502 and then works on a retry.
 const ptcg = createTransport({ spacingMs: 200, tries: 6 });
 
@@ -141,6 +148,14 @@ const resolved = memoryCache(DAY);
  */
 export function fallbackImages(c) {
   return resolved.get(c.key, async () => {
+    if (c.lang === 'ja') {
+      const set = encodeURIComponent(c.setId);
+      const number = String(c.number ?? '').replace(/^0+(?=\d)/, '');
+      const base = `${LIMITLESS_IMAGES}/${set}/${set}_${encodeURIComponent(number)}_R_JP`;
+      return number && await isCardImage(`${base}_SM.png`)
+        ? { thumb: `${base}_SM.png`, image: `${base}_LG.png`, source: 'Limitless' }
+        : null;
+    }
     if (c.lang !== 'en') return null;
 
     try {

@@ -323,7 +323,7 @@ Division of labour: **Scryfall and TCGdex supply everything about the card** (na
 
 Note: TCGdex gives **30th Celebration** (`30th`, 158 cards, all with images) and **30th Classic Collection** (`30th-c`, 30 cards, no images or TCGplayer IDs) the same printed code, `30C`.
 
-Japanese cards have no backup yet. JustTCG (Phase 5) returns a TCGplayer ID per card, which can point the selected card at TCGplayer's image then. Settings' footer credits pokemontcg.io and TCGplayer for the images they supply.
+**Japanese cards** (owner's decision, 2026-09-29): **Limitless TCG's image CDN**, `https://limitlesstcg.nyc3.digitaloceanspaces.com/tpc/<set>/<set>_<number>_R_JP_<size>.png`, by TCGdex's Japanese set ID (the printed code: `SM12a`, `SV2a`) and the number without leading zeros (`SM12a_1`); sizes `XS` 136×189, `SM` 274×381 (thumbnail), `LG` 460×640 (selected card). A missing card answers 403, so the `SM` picture is loaded first. Checked 2026-09-29: TCGdex has no pictures for whole older Japanese sets (SM12a, SM8b, S8b, SV5M…: 955 cards across 11 sets sampled), and Limitless had 19 of 21 sampled, missing only top secret rares. Cardmarket isn't usable for images (addresses need its internal set folders, and it blocks outside requests). JustTCG doesn't carry Japanese cards (Section 5.3), so there's no TCGplayer ID for them either. Settings' footer credits pokemontcg.io, TCGplayer and Limitless TCG for the images they supply.
 
 **Set codes (owner's decision):** display the **printed abbreviation** from the set's `abbreviation` field (`PAL`, `OBF`, `SV2a`). Older sets have no printed abbreviation. For those, fall back to the TCGdex set ID in upper case (`BASE1`) and treat it as the code for search too.
 
@@ -1205,7 +1205,7 @@ The most prominent panel, with a **red border and a "Required" badge** until a f
 
 ### 11.7 Footer
 
-Credits: "Card data and images from Scryfall (Magic) and TCGdex (Pokémon). Prices via JustTCG. Not affiliated with Wizards of the Coast or The Pokémon Company." Plus the app version and build date.
+Credits: "Card data and images from Scryfall (Magic) and TCGdex (Pokémon), with some Pokémon images from pokemontcg.io, TCGplayer and Limitless TCG (Japanese). Prices via JustTCG. Not affiliated with Wizards of the Coast or The Pokémon Company." Plus the app version and build date.
 
 **Staff users are managed in the header dropdown, not here.**
 
@@ -1475,6 +1475,7 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 - [ ] Arrow quickly through 10 suggestions: the usage meter rises by about 1, not 10.
 - [ ] MTG | PKM: switch PKM off and search `Charizard`: only Magic cards show (or "No cards match … PKM is off"), and EN | JP greys out. The last game on can't be switched off. Leave the Price tab and come back: both are on again.
 - [ ] Etched Magic card: the price looks like the etched listing, not the regular foil.
+- [ ] Japanese images: JP, a card from TCG Tag Team All Stars (`1/173 SM12a`) or VMAX Climax (S8b) shows a real picture (from Limitless), not the card back; a top secret rare Limitless lacks still shows the card back. Settings' footer credits Limitless TCG.
 - [ ] Japanese Pokémon without JustTCG data (JP, `25/165 SV2a`): all five prices appear on their own, tagged CM, caption "No JustTCG price: Cardmarket prices shown."; Use Cardmarket is greyed out.
 - [ ] Cardmarket link (after View on TCGplayer): Magic's View on Cardmarket opens the card's page (Isshin, FCA 54); Pokémon's Find on Cardmarket opens a Cardmarket search for the name (Charizard). Neither shows "Sorry, you have been blocked". A Japanese Pokémon (JP, `25/165 SV2a`) shows "ピカチュウ Pikachu", searches Cardmarket for "Pikachu 025" and TCGplayer for "Pikachu 025", and prices from JustTCG's Japanese listing if it has one. On the 1366×768 laptop the three links read "Scryfall ↗ TCGplayer ↗ Cardmarket ↗".
 
@@ -1815,6 +1816,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 94 | Cardmarket search (2026-09-29) | Find on Cardmarket searches the name **and** the collector number ("Pikachu 025"), which Cardmarket's search matches best (Section 8.4) |
 | 95 | Search tie-break (2026-09-29) | When a JustTCG name + number search finds several cards, the one whose set name or ID contains the printed set code as a word wins; still no guessing otherwise (Section 5.3) |
 | 96 | Japanese fallback (2026-09-29) | A Japanese Pokémon with no JustTCG price for any condition is priced from Cardmarket automatically (NM = Cardmarket in dollars, the rest by the fallback percentages, tagged CM) (Section 8.7) |
+| 97 | Japanese images (2026-09-29) | Japanese Pokémon with no TCGdex picture use Limitless TCG's image CDN (by set code and number), then the card back; credited in Settings' footer (Sections 5.2, 11.7) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |
