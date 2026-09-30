@@ -8,7 +8,7 @@ import PriceTable from './price/PriceTable.jsx';
 import { usePrices } from './price/usePrices.js';
 import { useCardSearch } from './price/useCardSearch.js';
 import { usePokemonDetail, useMagicSiblings } from './price/usePrintingDetail.js';
-import { warmUp, magicCandidate } from '../lib/cardSearch.js';
+import { warmUp, magicCandidate, otherLanguageSet } from '../lib/cardSearch.js';
 import {
   defaultMagicFinish, magicFinishes, pokemonVersions, defaultPokemonVersion, POKEMON_FINISHES,
 } from '../lib/printings.js';
@@ -236,9 +236,40 @@ export default function PricePage() {
     }
   }
 
-  const note = search.correction ? (
-    <>Showing results for <strong>{search.correction.name}</strong></>
-  ) : null;
+  // A set code from the other Pokémon language ("2/184 S8b" with EN on):
+  // say so, with a one-click switch (owner, 2026-09-29).
+  const typedSet = search.parsed?.setCode ?? null;
+  const [langHint, setLangHint] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    setLangHint(null);
+    if (typedSet) otherLanguageSet(typedSet, lang).then((other) => alive && other && setLangHint({ code: typedSet, lang: other }));
+    return () => {
+      alive = false;
+    };
+  }, [typedSet, lang]);
+
+  let note = null;
+  if (langHint) {
+    const jp = langHint.lang === 'ja';
+    note = (
+      <>
+        <strong>{langHint.code}</strong> is {jp ? 'a Japanese' : 'an English'} Pokémon set:{' '}
+        <button
+          type="button"
+          className="link-btn"
+          onClick={() => {
+            setLang(langHint.lang);
+            focusSearch();
+          }}
+        >
+          switch to {jp ? 'JP' : 'EN'}
+        </button>
+      </>
+    );
+  } else if (search.correction) {
+    note = <>Showing results for <strong>{search.correction.name}</strong></>;
+  }
 
   return (
     <div className="price-screen" style={BACKGROUND}>

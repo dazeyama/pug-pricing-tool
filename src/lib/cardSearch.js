@@ -46,6 +46,19 @@ export function warmUp(lang) {
   dex.loadNames().catch(() => {});
 }
 
+/**
+ * A typed set code that only the other Pokémon language has ("S8b" with EN
+ * on is Japanese; "OBF" with JP on is English): that language, else null.
+ * Magic codes and the current language's codes are never "other".
+ * @returns {Promise<'en'|'ja'|null>}
+ */
+export async function otherLanguageSet(code, lang) {
+  if (!code || scry.isMagicSetCode(code) || dex.isPokemonSetCode(lang, code)) return null;
+  const other = lang === 'en' ? 'ja' : 'en';
+  if (other === 'ja') await dex.loadSetList('ja').catch(() => null);
+  return dex.isPokemonSetCode(other, code) ? other : null;
+}
+
 // ---------------------------------------------------------------- Magic
 
 /**
