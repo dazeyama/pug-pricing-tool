@@ -1022,7 +1022,7 @@ Collections  14                                     [ Search name or phone… ] 
 - **Lock indicator:** when a collection is open for editing on another device, show an "✎ open on <device> (<user>)" sub-line on its row.
 - **Live:** the table updates through Realtime.
 - **Click a row** to open the collection's pricing screen (`#/collections/:id`).
-- **Empty state:** "No collections yet. Press + Price Collection to start one."
+- **Empty state:** "No collections yet. Press + Price Collection to start one." It shows as the table's only row, under the column headings; a search or filter with no results reads "No collections match." the same way. The table and the page stay full width whatever they show, and the heading row is one line: **Collections (count)** on the left, **+ Price Collection** and the search box on the right (owner's decisions, 2026-09-29), so nothing moves between views.
 
 ### 9.2 + Price Collection
 
@@ -1885,6 +1885,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 113 | Right-click a suggestion (2026-09-29) | Right-clicking a suggestion thumbnail (row or show all) searches that card's plain name, a quick "every printing" (Section 8.3) |
 | 114 | Suggestions clear on a new search (2026-09-29) | The last query's thumbnails go as soon as a new search starts, instead of staying until the new results arrive (Section 8.3) |
 | 115 | Phone number on walk-in buys (2026-09-29) | CONFIRM BUY has an optional phone number, formatted and checked like a collection's, saved in `buys.phone` and named in the changelog summary (Sections 6.1, 8.10) |
+| 116 | Collections table layout (2026-09-29) | One heading line (title and count, then + Price Collection and search on the right); the table is always drawn, full width, with an empty or "no match" message as its only row, so nothing moves (Section 9.1) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

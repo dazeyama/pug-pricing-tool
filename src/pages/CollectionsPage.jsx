@@ -136,60 +136,63 @@ export default function CollectionsPage() {
         ))}
       </div>
 
-      {!loaded ? (
-        <p className="empty">Loading…</p>
-      ) : !all.length ? (
-        <p className="empty">No collections yet. Press + Price Collection to start one.</p>
-      ) : !rows.length ? (
-        <p className="empty">No collections match.</p>
-      ) : (
-        <table className="col-table">
-          <thead>
-            <tr>
-              {COLUMNS.map((c) => (
-                <th
-                  key={c.key}
-                  className={`col-${c.key}`}
-                  aria-sort={sort.key === c.key ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}
-                >
-                  <button type="button" className="sort-btn" onClick={() => sortBy(c.key)}>
-                    {c.label}
-                    <span className="sort-mark" aria-hidden="true">
-                      {sort.key === c.key ? (sort.dir === 'asc' ? ' ▲' : ' ▼') : ''}
-                    </span>
-                  </button>
-                </th>
-              ))}
+      {/* The table is always drawn, its headings too, so nothing moves when
+          it's empty (owner, 2026-09-29): the message is its only row. */}
+      <table className="col-table">
+        <thead>
+          <tr>
+            {COLUMNS.map((c) => (
+              <th
+                key={c.key}
+                className={`col-${c.key}`}
+                aria-sort={sort.key === c.key ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}
+              >
+                <button type="button" className="sort-btn" onClick={() => sortBy(c.key)}>
+                  {c.label}
+                  <span className="sort-mark" aria-hidden="true">
+                    {sort.key === c.key ? (sort.dir === 'asc' ? ' ▲' : ' ▼') : ''}
+                  </span>
+                </button>
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {!rows.length && (
+            <tr className="col-empty-row">
+              <td colSpan={COLUMNS.length} className="empty">
+                {!loaded ? 'Loading…'
+                  : !all.length ? 'No collections yet. Press + Price Collection to start one.'
+                    : 'No collections match.'}
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {rows.map((c) => {
-              const elsewhere = openElsewhere(c.id);
-              return (
-                <tr
-                  key={c.id}
-                  className="col-row"
-                  tabIndex={0}
-                  onClick={() => navigate(`/collections/${c.id}`)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') navigate(`/collections/${c.id}`);
-                  }}
-                >
-                  <td className="col-name">
-                    {c.customer_name}
-                    {elsewhere && <span className="lock-line">{elsewhere}</span>}
-                  </td>
-                  <td className="col-phone">{formatPhone(c.phone)}</td>
-                  <td><span className={`status-chip ${c.status}`}>{statusLabel(c.status)}</span></td>
-                  <td className="col-date">{formatShortDate(c.created_at)}</td>
-                  <td className="col-date">{formatRecent(c.updated_at)}</td>
-                  <td className="col-notes" title={c.notes || undefined}>{c.notes}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      )}
+          )}
+          {rows.map((c) => {
+            const elsewhere = openElsewhere(c.id);
+            return (
+              <tr
+                key={c.id}
+                className="col-row"
+                tabIndex={0}
+                onClick={() => navigate(`/collections/${c.id}`)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') navigate(`/collections/${c.id}`);
+                }}
+              >
+                <td className="col-name">
+                  {c.customer_name}
+                  {elsewhere && <span className="lock-line">{elsewhere}</span>}
+                </td>
+                <td className="col-phone">{formatPhone(c.phone)}</td>
+                <td><span className={`status-chip ${c.status}`}>{statusLabel(c.status)}</span></td>
+                <td className="col-date">{formatShortDate(c.created_at)}</td>
+                <td className="col-date">{formatRecent(c.updated_at)}</td>
+                <td className="col-notes" title={c.notes || undefined}>{c.notes}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
 
       {creating && (
         <NewCollectionModal busy={busy} onCreate={create} onClose={() => setCreating(false)} />

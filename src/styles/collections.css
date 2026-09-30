@@ -2,6 +2,11 @@
    pricing screen (the Price screen with a header bar on top). */
 
 /* ---- The table (9.1) ---- */
+/* The page keeps its full width (up to main's 1400px) whatever it shows, so
+   the controls don't shift when the table gives way to "No collections
+   match." (owner, 2026-09-29). main otherwise shrinks to its contents. */
+main.main-collections { width: 100%; }
+
 /* One line (owner, 2026-09-29): Collections (count) … + Price Collection, search. */
 .col-table-head { flex-wrap: nowrap; gap: 12px; }
 .col-table-head .panel-title { margin-right: auto; }
@@ -63,6 +68,7 @@
 .col-table th[aria-sort="ascending"] .sort-btn,
 .col-table th[aria-sort="descending"] .sort-btn { color: var(--text); }
 .col-table td { padding: 10px 12px; border-top: 1px solid var(--border); vertical-align: top; }
+.col-table td.empty { padding: 28px 12px; text-align: center; }
 .col-row { cursor: pointer; }
 .col-row:hover, .col-row:focus-visible { background: var(--panel-2); outline: none; }
 .col-row:hover .col-name { color: var(--accent); }
