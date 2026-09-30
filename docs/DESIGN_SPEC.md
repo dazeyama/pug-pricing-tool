@@ -728,12 +728,13 @@ Parsing rules (`src/lib/query.js`), applied to the trimmed input:
 - **Name correction:** if the name part doesn't match any known name as a prefix or substring, run a Fuse.js search against the cached name catalogs (Scryfall catalog; TCGdex names per language). Retry with the best match when its score passes the threshold. Show "Showing results for **Lightning Bolt**" under the bar when a correction was applied.
 - **Magic:** `cards/search` with `q = <name terms> lang:en` plus `cn:<number>` and `set:<code>` when given. Then filter by `printed_size` using the cached sets list, **only when that set's `printed_size` is known** (sets like SLD or PLST have none, and those printings are kept but ranked lower).
 - **Pokémon (EN):** TCGdex `cards?name=<name>` (plus `localId` when a number is given), then filter by set `cardCount.official` = size, and by printed abbreviation = set code when given. **(JP):** match by set code + number + size (Section 5.2).
-- **Ranking:** (1) number + size + set all match, (2) number + size, (3) number, (4) name only. Within a rank, newest release first. Magic and Pokémon interleave by rank.
+- **Ranking:** (1) number + size + set all match, (2) number + size, (3) number, (4) name only. Within a rank, newest release first (or oldest first with the sort toggle, Section 8.3). Magic and Pokémon interleave by rank.
 - **Paging:** take the first page of each source (Scryfall returns up to 175). If there are more, "show all" says "175+ — refine your search".
 
 ### 8.3 Suggestions row
 
 - Up to **10 thumbnails** of the best matches in rank order, in **2 rows of 5** under the card info (Section 8.1). Beneath each is a caption with its game badge and `SET #num` (owner's decision, 2026-09-29: a badge on the card's top corner covered the name, and Scryfall's image rules keep overlays off the bottom strip).
+- **Sort toggle** (owner's decision, 2026-09-29): on the same line, at the left (the status follows it), a small pill that reads **↓ Newest first** (the default) or, clicked, **↑ Oldest first** (accent-colored while reversed). It flips the date order within each rank; the rank still comes first, so exact number/set matches lead either way. It **re-runs the search** (Scryfall `dir=asc`, TCGdex sorted before the first page is cut), so oldest first starts at the true oldest printing even when there are 175+. Remembered like MTG | PKM: for the whole buy, back to newest first when a buy is confirmed or cancelled or the Price tab is left.
 - A **"… show all (N)"** button on the line above them when N > 10. It opens a modal grid of every match (same thumbnails, scrollable, with the same keyboard behavior). Clicking a card selects it and closes the modal.
 - The highlighted suggestion has an accent outline (the keyboard cursor, Section 8.11).
 - Clicking a thumbnail makes it the **selected card**. Clicking the selected card's thumbnail again deselects it, leaving nothing selected (owner's decision, 2026-09-29).
@@ -1848,6 +1849,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 106 | Sign out a user (2026-09-29) | An icon beside the user chip clears the picked user, blocking user-only actions until one is picked (Section 7.3) |
 | 107 | Outside links in pop-ups (2026-09-29) | Scryfall/TCGdex, TCGplayer and Cardmarket open in one reused pop-up window per site instead of new tabs (Section 8.4) |
 | 108 | Japanese lines in English (2026-09-29) | Buy-list lines for Japanese cards show the English name when the app has one, saved as `buy_lines.name_en`; the Japanese name stays in `name` (Sections 5.2, 6.1) |
+| 109 | Suggestions sort toggle (2026-09-29) | A Newest first / Oldest first pill left on the suggestions' top line flips the date order within each rank and re-runs the search; kept for the buy like MTG | PKM (Sections 8.2, 8.3) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

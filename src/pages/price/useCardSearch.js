@@ -3,7 +3,9 @@ import { rank, runSearch } from '../../lib/cardSearch.js';
 import { isAbort } from '../../lib/transport.js';
 
 // Live search as the user types (spec 8.2): 250ms debounce, at least 2
-// characters, both games unless MTG | PKM leaves one out. A newer query
+// characters, both games unless MTG | PKM leaves one out, newest printings
+// first unless the sort toggle says oldest (it re-runs the search, so the
+// first page is the oldest, not the newest 175 turned round). A newer query
 // aborts the older one, so its queued requests are dropped and its answers
 // ignored.
 
@@ -23,8 +25,9 @@ const START = {
  * @param {string} text  the search bar's contents
  * @param {'en'|'ja'} lang  Pokémon language
  * @param {{ mtg: boolean, pokemon: boolean }} games  which games to search
+ * @param {boolean} [oldest]  oldest printings first
  */
-export function useCardSearch(text, lang, games) {
+export function useCardSearch(text, lang, games, oldest = false) {
   const gamesKey = `${games.mtg ? 'mtg' : ''}|${games.pokemon ? 'pokemon' : ''}`;
   const [state, setState] = useState(START);
   const runs = useRef(0);
@@ -53,7 +56,7 @@ export function useCardSearch(text, lang, games) {
         },
       }));
       try {
-        const { correction, tried } = await runSearch(input, lang, games, controller.signal, {
+        const { correction, tried } = await runSearch(input, lang, games, oldest, controller.signal, {
           onParsed: (parsed) => setState((s) => ({ ...s, parsed })),
           onUpdate: (game, result) => {
             if (!controller.signal.aborted) setState((s) => ({ ...s, games: { ...s.games, [game]: result } }));
@@ -68,11 +71,11 @@ export function useCardSearch(text, lang, games) {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [text, lang, gamesKey]);
+  }, [text, lang, gamesKey, oldest]);
 
   const candidates = useMemo(
-    () => rank([state.games.mtg.list, state.games.pokemon.list], state.parsed ?? {}),
-    [state.games, state.parsed],
+    () => rank([state.games.mtg.list, state.games.pokemon.list], state.parsed ?? {}, oldest),
+    [state.games, state.parsed, oldest],
   );
   const total = state.games.mtg.total + state.games.pokemon.total;
   const hasMore = state.games.mtg.hasMore || state.games.pokemon.hasMore;

@@ -92,7 +92,8 @@ function editQuery(line) {
 
 // MTG | PKM (owner, 2026-09-29): which games search asks, both by default.
 // Kept for the whole buy, and back to both when the Price tab is left (the
-// page unmounts) or when a buy is confirmed or cancelled.
+// page unmounts) or when a buy is confirmed or cancelled. The suggestions'
+// sort toggle (newest / oldest first) is kept and reset the same way.
 const BOTH_GAMES = { mtg: true, pokemon: true };
 
 // The Price tab (spec 8): search, suggestions, the selected card with its
@@ -102,7 +103,8 @@ export default function PricePage() {
   const [text, setText] = useState('');
   const [lang, setLang] = usePokemonLang();
   const [games, setGames] = useState(BOTH_GAMES);
-  const search = useCardSearch(text, lang, games);
+  const [oldest, setOldest] = useState(false);
+  const search = useCardSearch(text, lang, games, oldest);
   const [selected, setSelected] = useState(null);
   const [highlight, setHighlight] = useState(-1);
   const [showAll, setShowAll] = useState(false);
@@ -430,6 +432,7 @@ export default function PricePage() {
     toast(`Buy confirmed — Buy ${done.number} today (${names})`, 'ok');
     clear();
     setGames(BOTH_GAMES);
+    setOldest(false);
   }
 
   /** CANCEL (spec 8.10): the draft goes, custom rates and all. */
@@ -437,6 +440,7 @@ export default function PricePage() {
     if (await draft.cancel()) {
       clear();
       setGames(BOTH_GAMES);
+      setOldest(false);
     }
   }
 
@@ -555,6 +559,11 @@ export default function PricePage() {
             selectedKey={selected?.key}
             onPick={pick}
             onShowAll={() => setShowAll(true)}
+            oldest={oldest}
+            onOldest={(o) => {
+              setOldest(o);
+              focusSearch();
+            }}
           />
           <QuotePanel
             candidate={selected}

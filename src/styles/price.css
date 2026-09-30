@@ -728,6 +728,8 @@
   margin-bottom: 8px;
 }
 .suggest-status {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -747,7 +749,7 @@
   border-radius: 50%;
   animation: spin .7s linear infinite;
 }
-.show-all {
+.show-all, .sort-toggle {
   flex: none;
   background: rgba(24, 28, 46, .85);
   border: 1px solid var(--border);
@@ -758,7 +760,11 @@
   padding: 5px 14px;
   cursor: pointer;
 }
-.show-all:hover { border-color: var(--accent); }
+.show-all:hover, .sort-toggle:hover { border-color: var(--accent); }
+/* The suggestions' sort toggle, left of the status (owner, 2026-09-29):
+   plain when newest first (the default), accent when turned to oldest. */
+.sort-toggle { font-weight: 500; color: var(--muted); padding: 5px 12px; }
+.sort-toggle.reversed { color: var(--accent); border-color: var(--accent); }
 .show-all.highlight { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
 
 /* A thumbnail is at most Scryfall's small image, 146 × 204, and shrinks to

@@ -92,7 +92,7 @@ export function magicCandidate(card) {
 async function magicCandidates(q, signal) {
   await scry.loadSets();
   const { cards, total, hasMore } = await scry.searchPrints(
-    { name: q.name, number: q.number, setCode: q.magicSet }, signal);
+    { name: q.name, number: q.number, setCode: q.magicSet, oldest: q.oldest }, signal);
   const size = numericSize(q.size);
   const list = [];
   for (const card of cards) {
@@ -141,7 +141,9 @@ async function pokemonCandidates(lang, q, signal) {
 
   const dated = (r) => dex.setInfo(lang, r.setId)?.releaseDate ?? '';
   const order = (r) => dex.setBrief(lang, r.setId)?.index ?? 0;
-  rows.sort((a, b) => dated(b).localeCompare(dated(a)) || order(b) - order(a));
+  // Sorted before the first page is taken, so oldest first really starts at the oldest.
+  const dir = q.oldest ? -1 : 1;
+  rows.sort((a, b) => dir * (dated(b).localeCompare(dated(a)) || order(b) - order(a)));
   const total = rows.length;
   rows = rows.slice(0, PAGE);
   // Codes for the first row of suggestions, so they read "OBF #125" at once.
@@ -186,15 +188,18 @@ function scoreOf(c, q) {
 }
 
 /**
- * Both games' candidates, interleaved by rank, newest release first within a rank.
+ * Both games' candidates, interleaved by rank, newest release first within a
+ * rank, or oldest first (the sort toggle, owner 2026-09-29). The rank still
+ * comes first: the best matches lead either way.
+ * @param {boolean} [oldest]
  * @returns {Candidate[]}
  */
-export function rank(lists, q) {
+export function rank(lists, q, oldest = false) {
   const all = lists.flat().map((c) => ({ ...c, score: scoreOf(c, q) }));
+  const dir = oldest ? -1 : 1;
   return all.sort((a, b) =>
     b.score - a.score
-    || (b.releasedAt ?? '').localeCompare(a.releasedAt ?? '')
-    || b.order - a.order);
+    || dir * ((b.releasedAt ?? '').localeCompare(a.releasedAt ?? '') || (b.order ?? 0) - (a.order ?? 0)));
 }
 
 // ---------------------------------------------------------------- correction
@@ -271,13 +276,14 @@ function routeSetCode(parsed, lang) {
  * @param {string} input
  * @param {'en'|'ja'} lang  Pokémon language (Magic is always English)
  * @param {{ mtg: boolean, pokemon: boolean }} games  which games to search
+ * @param {boolean} oldest  oldest printings first (the sort toggle)
  * @param {AbortSignal} signal
  * @param {{ onParsed: (parsed: any) => void,
  *           onUpdate: (game: 'mtg'|'pokemon', result: GameResult) => void }} callbacks
  * @returns {Promise<{ correction: { game: string, name: string }|null, tried: string|null }>}
  *   tried: a correction that was searched but found nothing either
  */
-export async function runSearch(input, lang, games, signal, { onParsed, onUpdate }) {
+export async function runSearch(input, lang, games, oldest, signal, { onParsed, onUpdate }) {
   await Promise.allSettled([scry.loadSets(), dex.loadSetList(lang)]);
   if (signal.aborted) throw new DOMException('Superseded', 'AbortError');
   const known = (t) => scry.isMagicSetCode(t) || dex.isPokemonSetCode(lang, t);
@@ -286,8 +292,8 @@ export async function runSearch(input, lang, games, signal, { onParsed, onUpdate
   onParsed(parsed);
 
   const fetchers = {
-    mtg: (p) => magicCandidates({ ...p, magicSet: routeSetCode(p, lang).magicSet }, signal),
-    pokemon: (p) => pokemonCandidates(lang, { ...p, pokemonSet: routeSetCode(p, lang).pokemonSet }, signal),
+    mtg: (p) => magicCandidates({ ...p, oldest, magicSet: routeSetCode(p, lang).magicSet }, signal),
+    pokemon: (p) => pokemonCandidates(lang, { ...p, oldest, pokemonSet: routeSetCode(p, lang).pokemonSet }, signal),
   };
 
   // One game: the query, then the plain reading if a guessed set code found

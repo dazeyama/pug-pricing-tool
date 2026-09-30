@@ -103,8 +103,10 @@ export async function searchPrints(q, signal) {
   // ("2/184 S8b" found tokens and art cards, owner 2026-09-29), so say so.
   parts.push('lang:en', 'game:paper', '-is:extra');
 
+  // Newest first, or oldest first with the suggestions' sort toggle
+  // (q.oldest): Scryfall sorts, so the first page is the right end of the list.
   const params = new URLSearchParams({
-    q: parts.join(' '), unique: 'prints', order: 'released', dir: 'desc',
+    q: parts.join(' '), unique: 'prints', order: 'released', dir: q.oldest ? 'asc' : 'desc',
   });
   const data = await transport.getJson(`${API}/cards/search?${params}`, { signal });
   if (!data) return { cards: [], total: 0, hasMore: false };   // 404: nothing matched

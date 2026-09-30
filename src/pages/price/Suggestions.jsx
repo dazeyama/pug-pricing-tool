@@ -120,10 +120,11 @@ function Status({ search, lang }) {
 }
 
 /**
- * The suggestions (spec 8.3): up to 10 thumbnails in 2 rows of 5, with
- * "… show all (N)" on the line above when there are more.
+ * The suggestions (spec 8.3): up to 10 thumbnails in 2 rows of 5. On the line
+ * above: the sort toggle (newest / oldest first) on the left, "… show all (N)"
+ * on the right when there are more.
  */
-export default function Suggestions({ search, lang, highlight, selectedKey, onPick, onShowAll }) {
+export default function Suggestions({ search, lang, highlight, selectedKey, onPick, onShowAll, oldest, onOldest }) {
   const visible = search.candidates.slice(0, ROW);
   const more = search.candidates.length > ROW;
   const count = search.hasMore ? `${search.candidates.length}+` : search.candidates.length;
@@ -131,6 +132,17 @@ export default function Suggestions({ search, lang, highlight, selectedKey, onPi
   return (
     <div className="area-thumbs">
       <div className="suggest-head">
+        <button
+          type="button"
+          className={`sort-toggle${oldest ? ' reversed' : ''}`}
+          aria-pressed={oldest}
+          title={oldest
+            ? 'Oldest printings first. Click for newest first.'
+            : 'Newest printings first. Click for oldest first.'}
+          onClick={() => onOldest(!oldest)}
+        >
+          <span aria-hidden="true">{oldest ? '↑' : '↓'}</span> {oldest ? 'Oldest first' : 'Newest first'}
+        </button>
         <Status search={search} lang={lang} />
         {more && (
           <button
