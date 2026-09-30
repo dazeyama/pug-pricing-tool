@@ -9,6 +9,8 @@ import { storeDay } from '../lib/calendar.js';
 import { formatMoney } from '../lib/money.js';
 import { nameKey } from '../lib/normalize.js';
 import GameBadge from '../components/GameBadge.jsx';
+import { statusTone } from './collections/status.js';
+import { colorVar } from '../lib/palette.js';
 import UserTag from '../components/UserTag.jsx';
 
 const PAGE = 20;      // panels per page (CM's CHANGE_PAGE)
@@ -319,7 +321,43 @@ function linkFor(first, view, targets) {
   return null;
 }
 
-/** One panel on the line (spec 12.2). */
+// The Cash and Credit colours carry into the log's words (owner, 2026-09-29):
+// "$120 cash", "$262.50 in credit", "Cash $13"… in green or blue.
+const MONEY = /(\$[\d,]+(?:\.\d{2})?(?: in)? (cash|credit)\b|\b(Cash|Credit) \$[\d,]+(?:\.\d{2})?)/g;
+
+/** Text with its cash and credit amounts in their colours. */
+function MoneyText({ text }) {
+  const out = [];
+  let last = 0;
+  for (const m of String(text ?? '').matchAll(MONEY)) {
+    if (m.index > last) out.push(text.slice(last, m.index));
+    const credit = (m[2] ?? m[3]).toLowerCase() === 'credit';
+    out.push(<span key={m.index} className={credit ? 'is-credit' : 'is-cash'}>{m[0]}</span>);
+    last = m.index + m[0].length;
+  }
+  if (last < String(text ?? '').length) out.push(String(text).slice(last));
+  return <>{out}</>;
+}
+
+const STATUS_VALUES = { Processing: 'processing', Priced: 'priced', 'Paid/Ours': 'paid', Completed: 'completed' };
+
+/** A status as the chip it is on the Collections tab: Paid/Ours green or blue by how it was paid. */
+function StatusChip({ label, method }) {
+  const status = STATUS_VALUES[label];
+  if (!status) return <>{label}</>;
+  return <span className={`status-chip ${statusTone({ status, paid_method: method })}`}>{label}</span>;
+}
+
+/** A field row's value: statuses as chips, rates and money in the Cash / Credit colours. */
+function FieldValue({ field, value, method }) {
+  if (value == null) return null;
+  if (field === 'status') return <StatusChip label={String(value)} method={method} />;
+  if (field === 'cash %') return <span className="is-cash">{String(value)}</span>;
+  if (field === 'credit %') return <span className="is-credit">{String(value)}</span>;
+  return <MoneyText text={String(value)} />;
+}
+
+/** One panel on the line (spec 12.2), coloured by its game (owner, 2026-09-29). */
 function Entry({ panel, view, side, targets, onFunnel }) {
   const { first } = view;
   const category = categoryOf(first.action);
@@ -332,13 +370,21 @@ function Entry({ panel, view, side, targets, onFunnel }) {
   const summary = view.folded ? `${n} card${n === 1 ? '' : 's'} ${view.added ? 'added' : 'removed'}.` : first.summary;
   const t = view.totals;
   const user = first.staff_user_name ? { name: first.staff_user_name, color: first.staff_user_color } : null;
+  // Magic indigo, Pokémon amber, both for a mixed buy; no cards: the category's colour.
+  const tint = view.games.length > 1 ? 'g-mixed' : view.games.length ? `g-${view.games[0]}` : 'g-none';
+  // How a Paid/Ours in this entry was paid, for its status chip's colour.
+  const method = /\b(cash|credit)\b/.exec(view.fields.find((f) => f.field === 'paid')?.after ?? first.summary ?? '')?.[1];
   return (
     <div className={`tl-slot ${side}`}>
       <span className={`tl-dot ${category}${made ? ' created' : ''}${gone ? ' gone' : ''}`} aria-hidden="true" />
-      <article className={`cardpanel tl-panel${category === 'actions' ? ' tl-state' : ''}`}>
+      <article className={`cardpanel tl-panel ${tint} cat-${category}${category === 'actions' ? ' tl-state' : ''}`}>
         <header className="cardpanel-head tl-head">
           <span className="tl-when">{entryWhen(view.newest, view.oldest)}</span>
-          <span className={`tl-what${made ? ' made' : ''}${gone ? ' gone' : ''}`}>{HEADLINES[first.action] ?? first.action}</span>
+          <span className="tl-what-wrap">
+            <span className={`tl-what cat-${category}${made ? ' made' : ''}${gone ? ' gone' : ''}`}>
+              {HEADLINES[first.action] ?? first.action}
+            </span>
+          </span>
           {first.target_id && (
             <button
               type="button"
@@ -361,41 +407,44 @@ function Entry({ panel, view, side, targets, onFunnel }) {
                 : <span title={known ? 'Deleted' : undefined}>{first.target_name}</span>}
             </strong>
             {view.games.map((g) => <GameBadge key={g} game={g} />)}
-            <span className="tl-counts">
-              {view.added > 0 && <span className="ch-add">+{view.added}</span>}
-              {view.added > 0 && view.removed > 0 && ' '}
-              {view.removed > 0 && <span className="ch-rem">−{view.removed}</span>}
-            </span>
-            <UserTag user={user} />
-          </div>
-          <div className="tl-summary">
-            {summary}
-            {t && t.market != null && (
-              <>
-                {' '}· Market {formatMoney(t.market)}
-                {t.cash != null && <> · <span className="is-cash">Cash {formatMoney(t.cash)}</span></>}
-                {t.credit != null && <> · <span className="is-credit">Credit {formatMoney(t.credit)}</span></>}
-              </>
+            {view.added > 0 && <span className="count-chip add">+{view.added}</span>}
+            {view.removed > 0 && <span className="count-chip rem">−{view.removed}</span>}
+            {user && (
+              <span className="tl-user" style={{ '--c': colorVar(user.color) }}>
+                <UserTag user={user} />
+              </span>
             )}
           </div>
+          <div className="tl-summary"><MoneyText text={summary} /></div>
+          {t && t.market != null && (
+            <div className="tl-totals">
+              <span className="money-chip">Market <strong>{formatMoney(t.market)}</strong></span>
+              {t.cash != null && <span className="money-chip cash">Cash <strong>{formatMoney(t.cash)}</strong></span>}
+              {t.credit != null && <span className="money-chip credit">Credit <strong>{formatMoney(t.credit)}</strong></span>}
+            </div>
+          )}
           {(view.rows.length > 0 || view.fields.length > 0) && (
             <div className="tl-rows">
               {view.rows.map((l, i) => (
-                <div key={`r${i}`} className="tl-row">
+                <div key={`r${i}`} className={`tl-row game-${l.game}`}>
                   <span className={`ch-mark ${l.sign === '+' ? 'add' : 'rem'}`}>{l.sign === '+' ? '+' : '−'}</span>
                   <span className="tl-card">{l.text}</span>
                   {l.unit_price != null && <span className="tl-price">{formatMoney(l.unit_price)}</span>}
                 </div>
               ))}
               {view.fields.map((f, i) => (
-                <div key={`f${i}`} className="tl-row">
+                <div key={`f${i}`} className="tl-row tl-field">
                   <span className="ch-mark field">•</span>
                   <span className="tl-card">
-                    <span className="ch-field">{f.field}</span>:{' '}
+                    <span className="ch-field">{f.field}</span>
                     {f.before != null && f.after != null ? (
-                      <>{String(f.before)} → {String(f.after)}</>
+                      <>
+                        <FieldValue field={f.field} value={f.before} method={method} />
+                        <span className="ch-arrow">→</span>
+                        <FieldValue field={f.field} value={f.after} method={method} />
+                      </>
                     ) : (
-                      <>{String(f.after ?? f.before ?? '')}</>
+                      <FieldValue field={f.field} value={f.after ?? f.before} method={method} />
                     )}
                   </span>
                 </div>

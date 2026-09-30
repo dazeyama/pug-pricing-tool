@@ -1373,6 +1373,12 @@ Then "Not affiliated with Wizards of the Coast or The Pokémon Company." and the
 - **Card rows:** always open, in a scroll box (max 168px, CM `.tl-rows`). Each row is `+` (green) or `−` (red) followed by the line text (Section 8.9). Additions come first, then removals.
 - **Field rows** for edits: `name: "Jordan R." → "Jordan Reyes"`, `status: Processing → Priced`. These panels are dimmed (CM `.tl-state`, opacity .78).
 - **As built:** the funnel sits at the right of the header strip (as in CM). Card rows show each line's price per card after it, muted. A folded run's summary reads what it adds up to ("7 cards added."). **A buy's name links to the day page of the day the buy was confirmed**, not the day of the change (owner's decision, 2026-09-29), in the game on show; a collection's to the collection.
+- **Style pass** (owner's decisions, 2026-09-29), like the Calendar's:
+  - **Panels take their game's colour:** Magic indigo, Pokémon amber (tint, border, top edge, header strip); a mixed buy blends the two, with a stripe from indigo to amber along its top. An entry with no cards (created, status, details) keeps its category's colour on its top edge.
+  - **More chips:** the headline is a chip in its category's colour (Buys green, Collections blue, Actions slate), filled green for a landmark made and red for one gone; +N / −N are green and red chips; the user is a chip outlined in their colour; Market / Cash / Credit sit in a row of chips under the summary; field names are small chips.
+  - **Cash and Credit keep their colours everywhere in the log:** "$120 cash" green and "$240 credit" blue in summaries and field rows, the cash % / credit % rows, and the Cash / Credit chips.
+  - **Statuses** in field rows are the Collections tab's status chips (Processing amber, Priced red, Paid/Ours green or blue by how it was paid, Completed grey).
+  - Each card row has a thin mark in its game's colour on its left.
 - **Dots:** buy entries use a green-bordered dot, collection entries a blue-bordered dot, and field/status entries a slate dot. **As built:** status changes are Collections, so their dot is blue (owner's decision, 2026-09-29; Section 12.4); only detail edits are slate. **Creation** (buy confirmed, collection created) is the large dot. **Deletion** is the small red cross (CM `.tl-dot.gone`). Dots aren't clickable (no rewind).
 
 ### 12.3 What is recorded
@@ -1999,6 +2005,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 142 | Status changes are Collections (Phase 9, 2026-09-29) | Status-change entries (offer, price paid, Completed) count as Collections and show by default; only detail edits are Actions (Sections 12.3, 12.4) |
 | 143 | Buy links go to the confirm day (2026-09-29) | A buy's changelog entries link to the day page of the day it was confirmed, not the day of the change (Section 12.2) |
 | 144 | Card edits don't fold (2026-09-29) | Only runs of card adds or removes fold into one panel; each card edit stands alone (Section 12.6) |
+| 145 | Changelog style pass (2026-09-29) | Entries coloured by game (mixed buys both), more chips (headline, counts, user, totals, statuses), and Cash green / Credit blue carried into the log's words (Section 12.2) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |
