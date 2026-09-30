@@ -21,7 +21,7 @@ function priceStyle(text) {
  * ✎ Manual price (overrides the purchase price), then the caption.
  */
 export default function PriceTable({
-  candidate, prices, ladder, pct, market, fallback, cardmarket, warnings, override, onOverride,
+  candidate, prices, ladder, pct, market, fallback, cardmarket, warnings, override, onOverride, autoCardmarket,
   fetchedAt, condition, onCondition, manual, onManual, manualOpen, setManualOpen, onDone,
 }) {
   const [text, setText] = useState('');
@@ -63,6 +63,7 @@ export default function PriceTable({
       about += rounded;
       if (e.thrownOut != null) about += ` (JustTCG's ${formatMoney(e.thrownOut)} was higher than a better condition, so it was thrown out)`;
       if (override) about += ` (Use ${override === 'cardmarket' ? 'Cardmarket' : 'Fallback'} is on)`;
+      else if (autoCardmarket) about += ' (JustTCG has no price for this Japanese card)';
     }
     if (manual != null && code === condition) about = `manual ${formatMoney(manual)} (market: ${about})`;
     const warn = code === 'NM' && warnings.length ? ' · ⚠️ may be wrong: see the warning in the price panel' : '';
@@ -92,6 +93,7 @@ export default function PriceTable({
   let cmUsable = false;
   if (candidate && !loading) {
     if (cardmarket.eur == null) cmTitle = 'No Cardmarket price for this printing';
+    else if (autoCardmarket) cmTitle = 'Prices already come from Cardmarket: JustTCG has none for this Japanese card';
     else if (cardmarket.rate == null) cmTitle = "Needs today's euro exchange rate, which hasn't loaded";
     else {
       cmUsable = true;
@@ -156,6 +158,7 @@ export default function PriceTable({
     );
   } else if (loading) caption = <span className="muted">Loading prices…</span>;
   else if (fetchedAt) caption = <span className="muted">Prices via JustTCG · updated {timeAgo(fetchedAt)}</span>;
+  else if (autoCardmarket) caption = <span className="muted">No JustTCG price: Cardmarket prices shown.</span>;
   else caption = <span className="muted">No JustTCG price for this printing.</span>;
 
   return (

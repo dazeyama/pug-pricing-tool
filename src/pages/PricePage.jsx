@@ -120,7 +120,14 @@ export default function PricePage() {
   const canUseFallback = fallback != null && CONDITIONS.some((c) => market[c] != null);
   const activeOverride = (override === 'fallback' && canUseFallback) || (override === 'cardmarket' && cardmarketUsd != null)
     ? override : null;
-  const base = activeOverride === 'cardmarket' ? { price: cardmarketUsd, source: 'cardmarket' } : fallback;
+  // Japanese Pokémon with no JustTCG price for any condition (TCGdex has no
+  // dollar price for them either): Cardmarket is the fallback on its own
+  // (owner, 2026-09-29), like Scryfall/TCGdex for everything else.
+  const autoCardmarket = !activeOverride && selected?.game === 'pokemon' && selected?.lang === 'ja'
+    && cardmarketUsd != null && !CONDITIONS.some((c) => market[c] != null);
+  const base = activeOverride === 'cardmarket' || autoCardmarket
+    ? { price: cardmarketUsd, source: 'cardmarket' }
+    : fallback;
   // The five prices shown and used (JustTCG, fallbacks, never rising, rounded down).
   const ladder = priceLadder(activeOverride ? {} : market, base, fallbackPct, selected?.game);
   // ⚠️ on NM (spec 8.7): reasons to doubt JustTCG's prices. A 1st Edition is
@@ -279,7 +286,9 @@ export default function PricePage() {
             loading={prices.status === 'loading' || prices.status === 'waiting'}
             condition={condition}
             price={manual ?? ladder[condition].price}
-            source={manual != null ? 'manual' : activeOverride === 'cardmarket' ? 'cardmarket' : ladder[condition].source}
+            source={manual != null ? 'manual'
+              : ladder[condition].base?.from === 'Cardmarket' && ladder[condition].source === 'fallback' ? 'cardmarket'
+                : ladder[condition].source}
             cashPct={settingValues.cash_pct}
             creditPct={settingValues.credit_pct}
             warnings={warnings}
@@ -315,8 +324,9 @@ export default function PricePage() {
               warnings={warnings}
               cardmarket={{ eur: cardmarketEur, usd: cardmarketUsd, rate: eurUsd }}
               override={activeOverride}
+              autoCardmarket={autoCardmarket}
               onOverride={setOverride}
-              fetchedAt={result?.fetchedAt ?? null}
+              fetchedAt={result?.card ? result.fetchedAt : null /* a "no match" has a date too */}
               condition={condition}
               onCondition={setCondition}
               manual={manual}
