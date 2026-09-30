@@ -1030,7 +1030,7 @@ Collections  14                                     [ Search name or phone… ] 
 │ ✎ open on Front Counter (Dana)                                                                    │
 ```
 
-- **Columns** (owner's list): **Name, Phone Number, Status, Date of creation, Date last edited, Last edited by** (the user with their colour dot, added 2026-09-29), **Notes.** **Order as built** (owner's decision, 2026-09-29): Name, Phone, Paid, Created, Last edited, Last edited by, Notes, then **Status and Offer last**. Notes are truncated to one line, with the full text in a tooltip.
+- **Columns** (owner's list): **Name, Phone Number, Status, Date of creation, Date last edited, Last edited by** (the user with their colour dot, added 2026-09-29), **Notes.** **Order as built** (owner's decision, 2026-09-29): Name, Phone, Status, Created, Last edited, Last edited by, Notes, then **Offer, and Paid last**. Notes are truncated to one line, with the full text in a tooltip.
 - **Sort:** click a column header to sort ascending, click again for descending. Default is **Last edited, newest first**.
 - **Status filter:** All / Processing / Priced / Paid/Ours. Default is All.
   - **As of 2026-09-29 (owner's decisions):** the chips are **All · Processing** (amber) **· Priced** (red) **· Paid/Ours Cash** (green) **· Paid/Ours Credit** (blue) **· Completed** (grey, last). A chip shows its colour while on. The same colours mark the Status column's chips and a collection's details: Processing amber, Priced red, Paid/Ours green or blue by how it was paid (the Cash / Credit colours), Completed grey.
@@ -1960,7 +1960,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 126 | Status colours (2026-09-29) | Processing amber, Priced red, Paid/Ours green (cash) or blue (credit), Completed grey; filter chips Paid/Ours Cash and Paid/Ours Credit replace Paid/Ours, Completed last (Section 9.1) |
 | 127 | Rule-box foil (2026-09-29) | Rule-box Pokémon (ex, V, VMAX, VSTAR, GX and the like) get the whole-card foil sheen like full-art cards, holo or reverse (Section 8.4) |
 | 128 | Holo masks by era (2026-09-29) | Six art-window masks by release year (1999, 2003, 2007, 2011, 2017, 2023+), measured on full-size scans, replace the modern/vintage pair (Section 8.4) |
-| 129 | Status and Offer last (2026-09-29) | The collections table ends with Status and Offer, after Notes (Section 9.1) |
+| 129 | Offer and Paid last (2026-09-29) | The collections table ends with Offer and then Paid, after Notes; Status stays after Phone (Section 9.1; the owner corrected a first "Status and Offer last") |
 | 130 | Big BACK button (2026-09-29) | A collection's < BACK is a large bold button at the top left, before the search bar, instead of in the details (Section 9.4) |
 | 131 | Removing from Paid/Ours (2026-09-29) | Cards can still be removed from a Paid/Ours collection, not added or edited; a Completed collection allows neither (Sections 6.2, 9.5; migration 0012) |
 | ◆ | Environments | Separate Supabase dev and prod projects |

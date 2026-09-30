@@ -20,9 +20,9 @@ const STALE_MS = 60_000;   // a lock without a heartbeat for 60s is stale (spec 
 const STATUS_ORDER = { processing: 0, priced: 1, paid: 2, completed: 3 };
 
 // The table's columns (spec 9.1), in order: the value each sorts by and its
-// cell. Status and Offer come last, after Notes (owner, 2026-09-29). `by`
-// looks up a staff user (Last edited by); `elsewhere` is a row's "✎ open on"
-// line. An offer or price not set yet (TBD) sorts as -1.
+// cell. Offer and Paid come last, after Notes, Paid the very last (owner,
+// 2026-09-29). `by` looks up a staff user (Last edited by); `elsewhere` is a
+// row's "✎ open on" line. An offer or price not set yet (TBD) sorts as -1.
 const columns = (by) => [
   {
     key: 'name',
@@ -40,10 +40,8 @@ const columns = (by) => [
     cell: (c) => <td key="phone" className="col-phone">{formatPhone(c.phone)}</td>,
   },
   {
-    key: 'paid',
-    label: 'Paid',
-    value: (c) => (isClosed(c.status) && c.paid_price != null ? Number(c.paid_price) : -1),
-    cell: (c) => <td key="paid" className="col-money"><PaidText buy={c} /></td>,
+    key: 'status', label: 'Status', value: (c) => STATUS_ORDER[c.status],
+    cell: (c) => <td key="status"><span className={`status-chip ${statusTone(c)}`}>{statusLabel(c.status)}</span></td>,
   },
   {
     key: 'created', label: 'Created', value: (c) => c.created_at,
@@ -64,14 +62,16 @@ const columns = (by) => [
     cell: (c) => <td key="notes" className="col-notes" title={c.notes || undefined}>{c.notes}</td>,
   },
   {
-    key: 'status', label: 'Status', value: (c) => STATUS_ORDER[c.status],
-    cell: (c) => <td key="status"><span className={`status-chip ${statusTone(c)}`}>{statusLabel(c.status)}</span></td>,
-  },
-  {
     key: 'offer',
     label: 'Offer',
     value: (c) => (c.status === 'processing' || c.offer_cash == null ? -1 : Number(c.offer_cash)),
     cell: (c) => <td key="offer" className="col-money"><OfferText buy={c} /></td>,
+  },
+  {
+    key: 'paid',
+    label: 'Paid',
+    value: (c) => (isClosed(c.status) && c.paid_price != null ? Number(c.paid_price) : -1),
+    cell: (c) => <td key="paid" className="col-money"><PaidText buy={c} /></td>,
   },
 ];
 
