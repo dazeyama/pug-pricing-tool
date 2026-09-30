@@ -1,11 +1,14 @@
-/* Settings tab (spec 11): one panel per section, stacked. */
+/* Settings tab (spec 11): one panel per section, two columns across the
+   page, related panels side by side (owner, 2026-09-29). A row's panels
+   share its height. */
 
-.settings-stack {
-  display: flex;
-  flex-direction: column;
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
-  max-width: 900px;
+  align-items: stretch;
 }
+.settings-grid > .settings-footer { grid-column: 1 / -1; }
 .settings-panel .cardpanel-head { font-size: 14.5px; }
 .settings-panel .cardpanel-body { padding: 14px 16px 16px; }
 .settings-panel .hint { margin-top: 0; }

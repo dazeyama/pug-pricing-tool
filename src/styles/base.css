@@ -75,7 +75,9 @@ textarea { resize: vertical; }
 .icon-btn:hover { color: var(--bad); border-color: var(--border); background: var(--bg); }
 
 /* ---- Tab-page heading row (CM .panel-head) ---- */
-main { padding: 24px; max-width: 1400px; margin: 0 auto; }
+/* Full width up to 1400px on every tab, whatever the page holds, so nothing
+   shifts as its contents change (owner, 2026-09-29). */
+main { width: 100%; padding: 24px; max-width: 1400px; margin: 0 auto; }
 
 .panel-head {
   display: flex;

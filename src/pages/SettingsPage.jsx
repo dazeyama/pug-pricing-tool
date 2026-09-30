@@ -20,21 +20,24 @@ const CREDITS = [
   ['Euro to dollar rate', 'Frankfurter (European Central Bank)'],
 ];
 
-// Settings (spec 11), top to bottom, each section in a panel. Backups arrive
-// in Phase 10. Staff users are managed in the header dropdown, not here.
+// Settings (spec 11), each section in a panel, two columns across the page
+// with related panels side by side (owner, 2026-09-29): the required CSV
+// with this computer, the JustTCG key with its usage, and the two sets of
+// percentages. Backups arrive in Phase 10. Staff users are managed in the
+// header dropdown, not here.
 export default function SettingsPage() {
   return (
     <>
       <div className="panel-head">
         <div className="panel-title"><h2>Settings</h2></div>
       </div>
-      <div className="settings-stack">
+      <div className="settings-grid">
         <MasterInventoryPanel />
+        <ThisComputerPanel />
         <ApiKeysPanel />
         <UsagePanel />
         <PercentagesPanel />
         <FallbackPanel />
-        <ThisComputerPanel />
         <footer className="settings-footer">
           {/* Where everything comes from, one line each (owner, 2026-09-29). */}
           <ul className="credits">

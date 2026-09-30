@@ -31,13 +31,12 @@ function Layout() {
   const { pathname } = useLocation();
   const { label } = useDevice();
   const fullScreen = isPricingScreen(pathname);
-  const tab = tabKeyFor(pathname);
   return (
     <div className={`shell${fullScreen ? ' shell-fixed' : ''}`}>
       <Header />
-      <main className={`main-${tab}`}>
+      <main>
         <Banners />
-        <section className="panel active" key={tab}>
+        <section className="panel active" key={tabKeyFor(pathname)}>
           <Outlet />
         </section>
       </main>

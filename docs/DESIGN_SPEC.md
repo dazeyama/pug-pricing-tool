@@ -1181,7 +1181,15 @@ Saturday, August 17, 2026 · Magic
 
 ## 11. Settings tab
 
-Sections top to bottom, each in a CM panel.
+Sections, each in a CM panel, laid out in **two columns across the page, with related panels side by side** (owner's decision, 2026-09-29; a row's panels share its height):
+
+| Left | Right |
+|---|---|
+| Master Crystal Inventory (11.1) | This computer (11.6) |
+| API keys (11.2) | JustTCG usage (11.3) |
+| Master Buy Percentages (11.4) | Master Fallback Percentages (11.4) |
+
+Backups (11.5, Phase 10) will take a row of their own. The credits footer (11.7) spans both columns.
 
 ### 11.1 Master Crystal Inventory (required)
 
@@ -1898,6 +1906,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 116 | Collections table layout (2026-09-29) | One heading line (title and count, then + Price Collection and search on the right); the table is always drawn, full width, with an empty or "no match" message as its only row, so nothing moves (Section 9.1) |
 | 117 | Header search size (2026-09-29) | The header search is much larger off the pricing screens instead of smaller on them (Section 13) |
 | 118 | Credits list (2026-09-29) | Settings' footer credits are a bulleted list, one source per line, adding PokeAPI and Frankfurter (Section 11.7) |
+| 119 | Settings in two columns (2026-09-29) | Settings' panels sit in two columns across the page, related panels side by side (Section 11) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |
