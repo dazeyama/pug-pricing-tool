@@ -605,6 +605,7 @@ Ported from CM's header, with the same structure and spacing.
   - **+ Add user…**: an inline name field. The color is auto-assigned: the next `--pal-*` color not used by an active user, cycling when all are taken.
   - per-user **⋯** menu: **Change color** (a 12-swatch palette) and **Delete** (confirm: "Delete Dana? Past buys will still show their name."). Delete sets `active=false`.
 - The selected user is **remembered on this device** (`localStorage`) until changed.
+- **Sign out** (owner's decision, 2026-09-29): a small round icon button (an exit arrow, no text) right of the chip, shown while a user is picked. It sets the computer back to no user ("Pick user"), with a toast "Dana signed out. Pick a user to carry on.", so everything that needs a user is blocked again until someone picks one. It doesn't sign the store's account out of the app.
 - A user is **required** before any card can be added, a buy confirmed or a collection edited. When none is picked, those buttons are disabled with the tooltip "Pick a user first", and clicking one makes the user button pulse briefly.
 - Where the app records "who" (Section 6), it records the user selected at that moment.
 
@@ -1841,6 +1842,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 103 | Edit look and line previews (2026-09-29) | While editing, EDIT CARD is blue and CLEAR reads CANCEL; hovering a buy-list line shows a small picture of the card beside the sidebar (Sections 8.8, 8.9) |
 | 104 | Line prices and Cash/Credit colors (2026-09-29) | The buy list shows each line's price per card before it (display only); Cash is green and Credit blue everywhere (`--cash`, `--credit`; Sections 7.8, 8.9) |
 | 105 | Sidebar takes spare width (2026-09-29) | The buy list grows (340px up to 560px) by the width the suggestions can't use, so Finish & Details sits right after the thumbnails (Section 8.1) |
+| 106 | Sign out a user (2026-09-29) | An icon beside the user chip clears the picked user, blocking user-only actions until one is picked (Section 7.3) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

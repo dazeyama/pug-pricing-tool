@@ -87,7 +87,16 @@ export default function UserMenu() {
 
   const { current, active } = staff;
 
+  /** Sign out: back to no user picked, so actions ask for one again (owner, 2026-09-29). */
+  function signOut() {
+    const name = current?.name;
+    close();
+    staff.select(null);
+    if (name) toast(`${name} signed out. Pick a user to carry on.`, 'ok');
+  }
+
   return (
+    <div className="user-area">
     <div className="user-menu" ref={wrap}>
       <button
         type="button"
@@ -225,6 +234,23 @@ export default function UserMenu() {
           </p>
         </Modal>
       )}
+    </div>
+    {current && (
+      <button
+        type="button"
+        className="user-signout"
+        title={`Sign out ${current.name} (no user picked until someone picks one)`}
+        aria-label={`Sign out ${current.name}`}
+        onClick={signOut}
+      >
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"
+          strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+          <polyline points="16 17 21 12 16 7" />
+          <line x1="21" y1="12" x2="9" y2="12" />
+        </svg>
+      </button>
+    )}
     </div>
   );
 }

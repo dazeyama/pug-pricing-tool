@@ -37,7 +37,22 @@ header h1 { margin: 0; font-size: 20px; font-weight: 600; }
 .header-right { display: flex; align-items: center; gap: 10px; }
 
 /* ---- Staff user button and menu (spec 7.3) ---- */
+.user-area { display: flex; align-items: center; gap: 6px; }
 .user-menu { position: relative; }
+/* Sign out: just an icon beside the chip, while a user is picked. */
+.user-signout {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  background: var(--bg);
+  color: var(--muted);
+  cursor: pointer;
+}
+.user-signout:hover { border-color: var(--accent); color: var(--text); }
 /* Big and filled with the picked user's colour, so who's working at this
    computer is obvious from across the counter. */
 .user-btn {
