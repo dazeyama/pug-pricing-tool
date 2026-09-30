@@ -21,6 +21,7 @@ const MESSAGES = {
   name_mismatch: "The name you typed doesn't match.",
   bad_name: 'The name must be 1 to 80 characters.',
   bad_phone: 'Enter a 10-digit US phone number.',
+  bad_last4: 'The Last 4 ID is up to 4 letters or digits.',
   bad_pct: 'Enter a percentage from 0 to 100.',
   no_user: 'Pick a user first.',
 };

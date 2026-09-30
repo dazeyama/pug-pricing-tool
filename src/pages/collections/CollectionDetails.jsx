@@ -6,7 +6,7 @@ import { STATUSES, statusLabel } from './status.js';
 import { PHONE_ERROR, formatPhone, phoneDigits, validPhone } from '../../lib/phone.js';
 import { formatRecent, formatShortDate, formatTime } from '../../lib/time.js';
 import { readLocal, writeLocal } from '../../lib/local.js';
-import { cleanName, nameError } from './CollectionModals.jsx';
+import { cleanLast4, cleanName, nameError } from './CollectionModals.jsx';
 
 const OPEN_KEY = 'pug.collectionDetailsOpen';
 
@@ -68,8 +68,8 @@ function MoreMenu({ onDelete, deleteBlocked }) {
  * A collection's details, at the foot of its sidebar above the totals
  * (owner, 2026-09-29: nothing may take height from the stage). The top line
  * is always there: Back, the name and status (click to fold the rest away),
- * the ⋯ menu, and the view-only / Paid/Ours banners. Unfolded: name, phone
- * and notes edited in place, the status dropdown and step button, and who
+ * the ⋯ menu, and the view-only / Paid/Ours banners. Unfolded: name, phone,
+ * Last 4 ID and notes edited in place, the status dropdown and step button, and who
  * created and last edited it.
  */
 export default function CollectionDetails({
@@ -154,6 +154,19 @@ export default function CollectionDetails({
               format={formatPhone}
               validate={(t) => (validPhone(t) ? null : PHONE_ERROR)}
               onSave={(t) => onInfo({ phone: phoneDigits(t) })}
+              canEdit={api.canEdit}
+              editBlocked={api.editBlocked}
+            />
+          </dd>
+          <dt>Last 4 ID</dt>
+          <dd>
+            <InlineEdit
+              className="cd-last4"
+              label="Last 4 ID"
+              value={buy.id_last4 ?? ''}
+              format={cleanLast4}
+              placeholder="none"
+              onSave={(t) => onInfo({ id_last4: cleanLast4(t) })}
               canEdit={api.canEdit}
               editBlocked={api.editBlocked}
             />

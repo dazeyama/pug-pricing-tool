@@ -431,6 +431,7 @@ All IDs are `uuid default gen_random_uuid()` unless noted, and all timestamps ar
 | status | text not null | walk_in: `draft` \| `confirmed`; collection: `processing` \| `priced` \| `paid` (shown as "Paid/Ours"). A CHECK ties allowed values to `kind`. |
 | customer_name | text | walk-in: optional (entered at confirm); collection: required |
 | phone | text | collection: required; walk-in: optional, entered at confirm (added 2026-09-29). 10 digits stored (Section 9.3) |
+| id_last4 | text null | collection: the customer's Last 4 ID, optional, 1–4 of `A–Z 0–9` (Section 9.2; migration 0010) |
 | notes | text default '' | |
 | draft_device_id | uuid → devices | walk-in drafts only. **Unique partial index** where `status='draft'`: one draft per device. |
 | created_at, created_by | timestamptz, uuid → staff_users | collection: the creator |
@@ -544,7 +545,7 @@ Every change that affects buy contents, or anything the changelog records, goes 
 | `confirm_buy(buy_id, user, customer_name, notes, cash_pct, credit_pct, expected_version, line_texts, phone)` | draft → confirmed; stamps `confirmed_*`; snapshots percentages (custom rate where set, else the master rate the screen showed). `line_texts` maps each line ID to its buy-list text (`lineFormat.js`) for the entry's card rows. Returns `{ number, games, target_name }`. | `buy_confirmed` with all lines and totals |
 | `buy_remove_line(line_id, qty, user, expected_version)` | For confirmed buys (day page) | `buy_cards_removed` |
 | `buy_delete(buy_id, user, expected_version)` | Deletes a confirmed buy | `buy_deleted` with the full line list and totals |
-| `collection_create(name, phone, notes, user)` | | `collection_created` |
+| `collection_create(name, phone, notes, user, device, id_last4)` | `id_last4` optional (migration 0010); `collection_update_info` takes `id_last4` too | `collection_created` |
 | `collection_add_line(buy_id, line, merge, user, device, expected_version)` | Requires this device to hold the lock and status ≠ paid | `collection_cards_added` |
 | `collection_update_line(line_id, line, user, device, expected_version, old_text, new_text)` | EDIT CARD on a collection (as built, Phase 7): saves the edited line over the old one at **today's price** (owner's decision, 2026-09-29: edits always re-price, collections included), merging with an identical line like `draft_update_line`. Same requirements as adding. | `collection_line_edited`: the old line (−) and the new one (+) |
 | `collection_remove_line(line_id, qty, user, device, expected_version)` | Same requirements | `collection_cards_removed` |
@@ -1032,6 +1033,7 @@ A big primary button top-right, styled like CM's `.btn.primary`, larger. It need
 |---|---|
 | Name | Required, 1–80 characters |
 | Phone number | Required, US format (Section 9.3) |
+| Last 4 ID | Optional (owner's decision, 2026-09-29): up to 4 letters or digits, capitals (typed lower case turns upper case; anything else is dropped). Saved in `buys.id_last4`. Not shown on the table; shown and edited in the collection's details, and logged like the other details ("last 4 ID"). |
 | Notes | Optional, multi-line |
 
 [Cancel] [Create]. Create calls `collection_create`: status **Processing**, created now by the current user, then opens the new collection.
@@ -1919,6 +1921,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 118 | Credits list (2026-09-29) | Settings' footer credits are a bulleted list, one source per line, adding PokeAPI and Frankfurter (Section 11.7) |
 | 119 | Settings in two columns (2026-09-29) | Settings' panels sit in two columns across the page, related panels side by side (Section 11) |
 | 120 | Collection details in the sidebar (2026-09-29) | A collection's details move from the header bar to the sidebar's foot, above the totals (where the Price tab has them), collapsible; nothing sits above the stage (Section 9.4) |
+| 121 | Last 4 ID on collections (2026-09-29) | An optional Last 4 ID (up to 4 letters/digits, capitals) in + Price Collection, saved with the collection, shown and edited in its details, not on the table (Sections 6.1, 9.2) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

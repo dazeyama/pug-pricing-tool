@@ -166,6 +166,8 @@
 .cd-fields dd { margin: 0; min-width: 0; }
 .cd-name-edit .ie-value { font-weight: 600; }
 .cd-phone .ie-value { font-variant-numeric: tabular-nums; }
+.cd-last4 .ie-value, .last4-input { font-family: ui-monospace, Consolas, monospace; letter-spacing: .12em; }
+.last4-input { max-width: 120px; }
 .cd-notes .ie-value { white-space: pre-wrap; overflow-wrap: anywhere; }
 .cd-status { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .status-select {

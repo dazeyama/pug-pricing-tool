@@ -6,6 +6,9 @@ import { PHONE_ERROR, formatPhone, phoneDigits, validPhone } from '../../lib/pho
 /** A name as saved: trimmed, single spaces. */
 export const cleanName = (text) => text.trim().replace(/\s+/g, ' ');
 
+/** "Last 4 ID" as typed (owner, 2026-09-29): letters and digits only, capitals, at most 4. */
+export const cleanLast4 = (text) => String(text ?? '').replace(/[^a-z0-9]/gi, '').toUpperCase().slice(0, 4);
+
 /** Why a name can't be saved (1–80 characters, spec 9.2), or null. */
 export function nameError(text) {
   const n = cleanName(text).length;
@@ -15,12 +18,14 @@ export function nameError(text) {
 }
 
 /**
- * + Price Collection (spec 9.2): name, phone (formatted as typed), notes.
- * Create stays disabled until the name and a 10-digit phone number are in.
+ * + Price Collection (spec 9.2): name, phone (formatted as typed), an
+ * optional Last 4 ID (owner, 2026-09-29), notes. Create stays disabled until
+ * the name and a 10-digit phone number are in.
  */
 export function NewCollectionModal({ busy, onCreate, onClose }) {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [last4, setLast4] = useState('');
   const [notes, setNotes] = useState('');
   const [touched, setTouched] = useState({ name: false, phone: false });
   const nameProblem = nameError(name);
@@ -28,7 +33,7 @@ export function NewCollectionModal({ busy, onCreate, onClose }) {
   const ready = !nameProblem && !phoneProblem && !busy;
   const submit = () => {
     setTouched({ name: true, phone: true });
-    if (ready) onCreate({ name: cleanName(name), phone: phoneDigits(phone), notes: notes.trim() });
+    if (ready) onCreate({ name: cleanName(name), phone: phoneDigits(phone), idLast4: last4, notes: notes.trim() });
   };
 
   return (
@@ -73,6 +78,18 @@ export function NewCollectionModal({ busy, onCreate, onClose }) {
             onBlur={() => setTouched((t) => ({ ...t, phone: true }))}
           />
           {touched.phone && phoneProblem && <span className="field-error">{phoneProblem}</span>}
+        </label>
+        <label className="field">
+          <span>Last 4 ID <em>(optional)</em></span>
+          <input
+            type="text"
+            className="last4-input"
+            value={last4}
+            placeholder="A1B2"
+            autoCapitalize="characters"
+            spellCheck={false}
+            onChange={(e) => setLast4(cleanLast4(e.target.value))}
+          />
         </label>
         <label className="field">
           <span>Notes <em>(optional)</em></span>

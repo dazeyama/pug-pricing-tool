@@ -88,10 +88,15 @@ export default function CollectionsPage() {
     setSort((s) => (s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' }));
   }
 
-  async function create({ name, phone, notes }) {
+  async function create({ name, phone, idLast4, notes }) {
     setBusy(true);
     const { data: id, error } = await withLoading(() => supabase.rpc('collection_create', {
-      p_name: name, p_phone: phone, p_notes: notes, p_user: staff.current?.id ?? null, p_device: deviceId,
+      p_name: name,
+      p_phone: phone,
+      p_notes: notes,
+      p_user: staff.current?.id ?? null,
+      p_device: deviceId,
+      p_id_last4: idLast4 || null,
     }));
     setBusy(false);
     if (error) {
