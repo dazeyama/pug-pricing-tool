@@ -1085,7 +1085,7 @@ The **Price tab's screen, reused** (the same components), with these differences
 
 - **Details in the sidebar** (owner's decision, 2026-09-29, replacing the header bar below: it took height the stage can't spare). At the foot of the sidebar, **above the totals**, which sit exactly where they do on the Price tab, with EXPORT under them:
   - **Back:** a large, bold **< BACK** button at the top left of the screen, directly before the search bar and as tall as it (owner's decision, 2026-09-29, moved out of the details), returns to the table. Clicking the Collections tab does the same.
-  - **Top line, always shown:** the name and a status chip, which fold the rest away or bring it back (**collapsible**, remembered per computer); the **⋯** menu. The view-only banner with **Take over** and the Paid/Ours banner with **🔒 Unlock** sit under it, also always shown.
+  - **Top line, always shown:** the name and a status chip, which fold the rest away or bring it back (**collapsible**); the **⋯** menu. **As built (owner's decision, 2026-09-30):** the top line is a filled amber header bar over a framed panel, with a large **fold button** (a chevron) at its right; the details are **always unfolded when a collection opens**, and folding lasts only until it's closed (no longer remembered per computer). The view-only banner with **Take over** and the Paid/Ours banner with **🔒 Unlock** sit under it, also always shown.
   - **Unfolded:** Name, Phone and Notes edited in place; Status (the dropdown and step button); Created and Edited, each with its user. Everything below as specified for the header bar, just stacked.
   - Nothing is drawn above the stage.
   - **Looks distinct from the Price tab** (owner's decision, 2026-09-29): the background art is **mirrored**, and the accent colour for everything on the screen (stage and sidebar: outlines, highlights, the selected condition, toggles, buttons, EXPORT) is **amber** instead of the blue-purple (`--accent` `#f2b53a`, `--accent-2` `#a86f12`, on `.price-screen.collection-screen`). The header, the Collections table and dialogs keep the usual accent; Cash green and Credit blue don't change.
@@ -2008,6 +2008,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 145 | Changelog style pass (2026-09-29) | Entries coloured by game (mixed buys both), more chips (headline, counts, user, totals, statuses), and Cash green / Credit blue carried into the log's words (Section 12.2) |
 | 146 | Mixed entries whole under a game filter (2026-09-29) | Filtering the Changelog to Magic or Pokémon still shows mixed entries whole, as multi-game panels, instead of trimming them to one game (Section 12.4) |
 | 147 | Settings panels one fixed height (2026-09-30) | Every Settings panel is the same fixed height, sized to fit the tallest as it stands; extra content scrolls inside the panel (Section 11) |
+| 148 | Collection details header bar (2026-09-30) | A collection's details get a filled amber header bar and a large fold button, and always open unfolded; folding isn't remembered (Section 9.4) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

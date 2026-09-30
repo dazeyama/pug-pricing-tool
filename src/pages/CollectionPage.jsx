@@ -151,6 +151,7 @@ function CollectionScreen({ id }) {
         <>
           {buy ? (
             <CollectionDetails
+              key={buy.id}
               buy={buy}
               byId={staff.byId}
               api={api}
