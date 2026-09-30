@@ -54,7 +54,7 @@ PUG buys trading cards from customers over the counter, and sometimes buys whole
 - **Offline use.** The app requires a connection (Section 7.9).
 - **Undo or rewind from the changelog.** The changelog is view-only (Section 12).
 - **Individual staff accounts.** One shared store password protects the app. "Users" are color-coded staff profiles that are picked, not logged into (Section 7.3).
-- **Sealed product, graded slabs, oversized cards.** Singles only. **Magic tokens, emblems and art cards are excluded** (owner's decision, 2026-09-29): Scryfall's default search leaves these "extras" out, and the main search keeps it that way (no `include_extras`).
+- **Sealed product, graded slabs, oversized cards.** Singles only. **Magic tokens, emblems and art cards are excluded** (owner's decision, 2026-09-29): the main search adds **`-is:extra`** (Scryfall's own "extras": tokens, emblems, art series, minigames, front cards, planes…). Scryfall leaves extras out of a plain name search by itself, but a collector number or set in the query brings them back: `cn:"2"` alone returned 734 cards, 89 of them extras on the first page ("2/184 S8b", owner, 2026-09-29); with `-is:extra`, 439 and none.
 
 ---
 
@@ -298,6 +298,8 @@ Division of labour: **Scryfall and TCGdex supply everything about the card** (na
 **Language:** English printings only (`lang:en`), so add `lang:en` to every search.
 
 **Paper only** (owner's decision, 2026-09-29): every Scryfall query also carries `game:paper`, so digital-only printings (Arena, e.g. Arena Anthology 3; MTGO, e.g. Masters Edition) never show up, since the store can't buy them. Digital-only set codes aren't recognized as set codes in the search line either.
+
+**No extras** (owner's decision, 2026-09-29): the main search also carries **`-is:extra`**, so tokens, emblems and art cards never show up (Section 1.4). Scryfall only leaves them out of plain name searches; a `cn:` or `set:` brings them back (`"2/184 S8b"` showed tokens and art cards). The details panel's sibling query keeps `include_extras`, since it only looks for the same card (same oracle ID) in one set.
 
 ### 5.2 TCGdex (Pokémon)
 
@@ -1475,6 +1477,7 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 - [ ] Arrow quickly through 10 suggestions: the usage meter rises by about 1, not 10.
 - [ ] MTG | PKM: switch PKM off and search `Charizard`: only Magic cards show (or "No cards match … PKM is off"), and EN | JP greys out. The last game on can't be switched off. Leave the Price tab and come back: both are on again.
 - [ ] Etched Magic card: the price looks like the etched listing, not the regular foil.
+- [ ] No tokens or art cards: search `2/184 S8b` (EN) or `Treasure 14`: no tokens, emblems or art series cards among the suggestions.
 - [ ] Japanese images: JP, a card from TCG Tag Team All Stars (`1/173 SM12a`) or VMAX Climax (S8b) shows a real picture (from Limitless), not the card back; a top secret rare Limitless lacks still shows the card back. Settings' footer credits Limitless TCG.
 - [ ] Japanese Pokémon without JustTCG data (JP, `25/165 SV2a`): all five prices appear on their own, tagged CM, caption "No JustTCG price: Cardmarket prices shown."; Use Cardmarket is greyed out.
 - [ ] Cardmarket link (after View on TCGplayer): Magic's View on Cardmarket opens the card's page (Isshin, FCA 54); Pokémon's Find on Cardmarket opens a Cardmarket search for the name (Charizard). Neither shows "Sorry, you have been blocked". A Japanese Pokémon (JP, `25/165 SV2a`) shows "ピカチュウ Pikachu", searches Cardmarket for "Pikachu 025" and TCGplayer for "Pikachu 025", and prices from JustTCG's Japanese listing if it has one. On the 1366×768 laptop the three links read "Scryfall ↗ TCGplayer ↗ Cardmarket ↗".
@@ -1793,7 +1796,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 71 | Custom rates (2026-09-29) | On the pricing screens the Cash/Credit percentages are clickable and open a subpanel for a custom rate for that one buy, saved with the buy (Section 8.9.1). Entered as a percent; pricing screens only, not day pages; custom rates on collections are logged as Actions entries |
 | 72 | Store time zone (2026-09-29) | Confirmed: Pacific time, `America/Los_Angeles` |
 | 73 | Price screen layout (2026-09-29) | Owner's sketch replaces the single stack: card left at Scryfall's 336×468 with prices under it; card info beside it with 10 suggestions (2×5) below; finish & details beside the suggestions with Qty/CLEAR/ADD CARD under them. Scryfall's image sizes are the reference for card images (Section 8.1) |
-| 74 | Tokens and emblems (2026-09-29) | Not searchable: Magic tokens, emblems and art cards stay out of search results (Section 1.4) |
+| 74 | Tokens and emblems (2026-09-29) | Not searchable: Magic tokens, emblems and art cards stay out of search results, by `-is:extra` in the Magic search (Section 1.4) |
 | ◆ 75 | Pokémon versions (Phase 4, 2026-09-29) | A Version list from TCGdex's `variants_detailed` (subtype, foil pattern, stamps incl. 1st Edition) replaces separate 1st Edition / W Promo checkboxes (Section 8.6) |
 | 76 | Fallback prices (2026-09-29) | Every condition without a JustTCG price is a base price × its Master Fallback Percentage (Settings); the base is JustTCG's NM when it has one, else Scryfall/TCGdex; defaults Magic 100/90/80/70/60, Pokémon 100/85/70/55/40 (Section 8.7) |
 | 77 | Price rounding (2026-09-29) | Market and fallback prices round **down**: < $1 cent; $1–$10 quarter; $10–$100 dollar; $100–$1,000 $5; ≥ $1,000 $10. Whole-dollar amounts show without ".00" |

@@ -98,7 +98,10 @@ export async function searchPrints(q, signal) {
   if (q.setCode) parts.push(`set:${q.setCode.toLowerCase()}`);
   if (!parts.length) return { cards: [], total: 0, hasMore: false };
   // English, paper only: Arena-only cards (e.g. Arena Anthology 3) can't be bought.
-  parts.push('lang:en', 'game:paper');
+  // No extras (tokens, emblems, art cards…; spec 1.4): Scryfall leaves them out
+  // of a plain name search by itself, but a cn: or set: brings them back
+  // ("2/184 S8b" found tokens and art cards, owner 2026-09-29), so say so.
+  parts.push('lang:en', 'game:paper', '-is:extra');
 
   const params = new URLSearchParams({
     q: parts.join(' '), unique: 'prints', order: 'released', dir: 'desc',
