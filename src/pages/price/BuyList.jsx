@@ -217,7 +217,7 @@ export default function BuyList({
                     className="buy-line"
                     title={l.id === editingId
                       ? 'Being edited: EDIT CARD saves the changes, Esc leaves it as it was'
-                      : `${formatMoney(l.unit_price)} each · click to edit`}
+                      : `${l.name_en ? `${l.name} · ` : ''}${formatMoney(l.unit_price)} each · click to edit`}
                     onClick={() => (canEdit ? onEdit(l) : editBlocked())}
                   >
                     {lineText(l)}

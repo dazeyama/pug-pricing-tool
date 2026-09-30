@@ -45,9 +45,11 @@ const cents = (n) => (n == null ? null : Math.round(n * 100) / 100);
  * @param {object|null} p.result  the JustTCG result for the printing ({ card, fetchedAt })
  * @param {object|null} p.variant  the JustTCG variant for the condition
  * @param {string|null} p.imageUrl
+ * @param {string|null} [p.englishName]  a Japanese card's English name (pokemonNames.js)
  */
 export function buildLine({
   candidate: c, finish, version, pokemonCard, condition, quantity, ladder, manual, snapshot, result, variant, imageUrl,
+  englishName,
 }) {
   const entry = ladder[condition];
   const unitPrice = manual ?? entry?.price;
@@ -81,6 +83,7 @@ export function buildLine({
       game: 'mtg',
       lang: 'en',
       name: card.name,
+      name_en: null,
       name_key: nameKey(card.name),
       set_code: card.set.toUpperCase(),
       set_name: card.set_name ?? null,
@@ -103,6 +106,7 @@ export function buildLine({
     game: 'pokemon',
     lang: c.lang,
     name: c.name,
+    name_en: c.lang === 'ja' ? englishName || null : null,
     name_key: nameKey(c.name),
     set_code: c.setCode,
     set_name: c.setName ?? null,

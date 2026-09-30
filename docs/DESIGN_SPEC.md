@@ -332,6 +332,7 @@ Note: TCGdex gives **30th Celebration** (`30th`, 158 cards, all with images) and
 **Japanese (owner's decision: English + Japanese Pokémon).** This is **best-effort** and must be verified with a short spike at the start of Phase 3:
 - Japanese cards come from `/v2/ja/`. Their names are in Japanese, so a clerk can't reliably type them. Japanese matching therefore uses the **set code + collector number** (and printed size). The typed name is only used to rank results.
 - In the buy list and database, store the name TCGdex returns. If it isn't Latin script, show it as `<English name typed> / <Japanese name>` so staff can read it. Always tag the line `[JP]`.
+  - **As built (owner's decision, 2026-09-29):** lines show the card's **English name** when the app has one (from its Pokédex numbers, Section 8.4), e.g. `1 Pikachu (SV2a) 025 *H* [JP]`, and the Japanese name otherwise (Trainers, Energy). It's saved with the line as `name_en` (migration 0007), so the buy list, the changelog and later the day pages and export all read it; `name` keeps TCGdex's Japanese name, shown on hover in the buy list. The typed name isn't used: it may be partial.
 - If the spike finds TCGdex's Japanese coverage too thin, tell the owner before building further.
 
 **Phase 3 spike findings (2026-09-29, reported to the owner):**
@@ -450,6 +451,7 @@ All IDs are `uuid default gen_random_uuid()` unless noted, and all timestamps ar
 | game | text | `mtg` \| `pokemon` |
 | lang | text | `en` \| `ja` |
 | name | text | Display name as stored (Section 5.2 for Japanese) |
+| name_en | text | A Japanese card's English name, shown instead of `name` when set (Section 5.2); null otherwise (added 2026-09-29) |
 | name_key | text | Normalized name (Section 3.1), for search. Indexed with `pg_trgm`. |
 | set_code | text | Display code: Scryfall `set` in upper case, or the Pokémon printed abbreviation |
 | set_name | text | Needed later by the export |
@@ -1328,7 +1330,7 @@ The data isn't folded, only the drawing. Pagination counts drawn panels.
 
 - **Where:** in the header on every tab; smaller on pricing screens (Section 7.2).
 - **Input:** the same syntax as the main search (Section 8.2). **Partial names work.** `bolt` finds every stored line whose name contains "bolt", across every printing and number. Adding `/size`, a number or a set code narrows the results. Both games are searched.
-- **Scope** (owner's decision): lines in **confirmed walk-in buys** and **collections**, but not drafts. The query runs in Postgres (`name_key` trigram/ILIKE, plus number, size and set equality), limited to 200 lines.
+- **Scope** (owner's decision): lines in **confirmed walk-in buys** and **collections**, but not drafts. The query runs in Postgres (`name_key` trigram/ILIKE, plus number, size and set equality), limited to 200 lines. Japanese lines should also match on `name_en` (the English name staff will type).
 - **Results dropdown** (CM `.search-results`, opening under the box):
   - Grouped by **printing**: a heading line such as "Lightning Bolt (2X2) 161 *F*", with a game badge. Then two sub-groups:
     - **Buys:** one row per buy: "Sat, Aug 17, 2026 · Magic · Buy 2 · ● Sam · qty 4".
@@ -1845,6 +1847,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 105 | Sidebar takes spare width (2026-09-29) | The buy list grows (340px up to 560px) by the width the suggestions can't use, so Finish & Details sits right after the thumbnails (Section 8.1) |
 | 106 | Sign out a user (2026-09-29) | An icon beside the user chip clears the picked user, blocking user-only actions until one is picked (Section 7.3) |
 | 107 | Outside links in pop-ups (2026-09-29) | Scryfall/TCGdex, TCGplayer and Cardmarket open in one reused pop-up window per site instead of new tabs (Section 8.4) |
+| 108 | Japanese lines in English (2026-09-29) | Buy-list lines for Japanese cards show the English name when the app has one, saved as `buy_lines.name_en`; the Japanese name stays in `name` (Sections 5.2, 6.1) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

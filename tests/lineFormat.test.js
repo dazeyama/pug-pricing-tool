@@ -34,6 +34,13 @@ test('reverse holo, Japanese, Poké Ball pattern, MP: tags in order', () => {
   })), '1 Pikachu (SV2a) 025 *RH* [MP, JP, Poké Ball]');
 });
 
+// Japanese cards in English (owner, 2026-09-29).
+test('a Japanese card shows its English name when the line has one', () => {
+  const jp = { name: 'ピカチュウ', set_code: 'SV2a', collector_number: '025', finish: 'holo', lang: 'ja' };
+  assert.equal(lineText(line({ ...jp, name_en: 'Pikachu' })), '1 Pikachu (SV2a) 025 *H* [JP]');
+  assert.equal(lineText(line(jp)), '1 ピカチュウ (SV2a) 025 *H* [JP]');
+});
+
 // Shadowless (owner, 2026-09-29).
 test('Shadowless gets SL', () => {
   assert.equal(lineText(line({ name: 'Charizard', set_code: 'BS', collector_number: '4', finish: 'holo', treatments: ['shadowless'] })),

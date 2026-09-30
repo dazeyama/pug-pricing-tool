@@ -389,6 +389,7 @@ export default function PricePage() {
       result,
       variant: ladder[condition]?.source === 'justtcg' ? conditionVariants(result?.card, opts)[condition] : null,
       imageUrl: magic ? null : images.thumb,
+      englishName,
       snapshot: {
         justtcg: market,
         fallback,
