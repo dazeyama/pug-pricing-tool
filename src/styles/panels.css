@@ -47,6 +47,14 @@
   padding: 12px 16px; border-top: 1px solid var(--border);
 }
 
+/* A modal that blocks at once but only shows if it lasts: saving this
+   computer is normally a blink (DeviceSaveModal). */
+.modal.modal-late { animation: modalLate .6s steps(1, end) both; }
+.modal.modal-late .modal-box { animation: modalLateBox .25s ease .6s both; }
+@keyframes modalLate { from { background: transparent; } to { background: rgba(0, 0, 0, .6); } }
+@keyframes modalLateBox { from { opacity: 0; } to { opacity: 1; } }
+.device-save-error { margin: 0; overflow-wrap: anywhere; }
+
 /* ---- Toast ---- */
 .toast-stack {
   position: fixed; right: 20px; bottom: 20px; z-index: 300;

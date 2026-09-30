@@ -12,6 +12,7 @@ import Header, { isPricingScreen } from './components/Header.jsx';
 import Banners from './components/Banners.jsx';
 import { tabKeyFor } from './components/Tabs.jsx';
 import DeviceNameModal from './components/DeviceNameModal.jsx';
+import DeviceSaveModal from './components/DeviceSaveModal.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import PricePage from './pages/PricePage.jsx';
 import CollectionsPage from './pages/CollectionsPage.jsx';
@@ -29,7 +30,7 @@ import ChangelogPage from './pages/ChangelogPage.jsx';
  */
 function Layout() {
   const { pathname } = useLocation();
-  const { label } = useDevice();
+  const { label, saved } = useDevice();
   const fullScreen = isPricingScreen(pathname);
   return (
     <div className={`shell${fullScreen ? ' shell-fixed' : ''}`}>
@@ -40,7 +41,8 @@ function Layout() {
           <Outlet />
         </section>
       </main>
-      {!label && <DeviceNameModal />}
+      {/* Name this computer, then wait for its row in `devices` (owner's bug, 2026-09-30). */}
+      {!label ? <DeviceNameModal /> : !saved && <DeviceSaveModal />}
     </div>
   );
 }

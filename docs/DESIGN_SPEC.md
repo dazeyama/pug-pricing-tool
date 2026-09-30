@@ -630,6 +630,8 @@ Ported from CM's header, with the same structure and spacing.
 
 After the store password: if this browser has no device ID, create one and ask **"Name this computer"** (placeholder "Front Counter"). Save it to `devices`. The name can be edited later in Settings.
 
+**As built (owner's bug, 2026-09-30):** drafts, collection locks and changelog entries all point at the computer's `devices` row, so **nothing can write with its ID until that row is confirmed saved**. Until then a blocking **"Connecting this computer…"** dialog covers the app (it only fades in if the save takes over half a second). If the save fails, the dialog shows the error with a **Retry** button. Before this, a browser whose one save didn't land got "violates foreign key constraint buys_draft_device_id_fkey" on its first card. A browser that has a name but lost its ID gets a new ID.
+
 ### 7.5 Banners (below the header, above the tab content)
 
 | Banner | When | Style |
@@ -2010,6 +2012,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 147 | Settings panels one fixed height (2026-09-30) | Every Settings panel is the same fixed height, 332px (the Master Crystal Inventory with just a current file); extra content scrolls inside the panel (Section 11) |
 | 148 | Collection details header bar (2026-09-30) | A collection's details get a filled amber header bar and a large fold button, and always open unfolded; folding isn't remembered (Section 9.4) |
 | 149 | Test deploy on dev (2026-09-30) | Before Phase 10, version 0.9.0-dev goes live on GitHub Pages built against the **dev** project, for testing at the store; the Actions variables go back to prod at launch (Section 15, Phase 10) |
+| 150 | Wait for the computer's row (2026-09-30) | The app is blocked until this computer is saved to `devices`, with the error and a Retry if the save fails, so no draft or lock can point at a missing computer (Section 7.4) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

@@ -7,9 +7,9 @@ import { createPortal } from 'react-dom';
  * for questions that need an answer. Never use alert()/confirm() (spec 7.6).
  *
  * @param {{ title: string, children: any, footer?: any,
- *           onClose?: () => void, wide?: boolean }} props
+ *           onClose?: () => void, wide?: boolean, className?: string }} props
  */
-export default function Modal({ title, children, footer, onClose, wide }) {
+export default function Modal({ title, children, footer, onClose, wide, className = '' }) {
   useEffect(() => {
     if (!onClose) return undefined;
     const onKey = (e) => {
@@ -24,7 +24,7 @@ export default function Modal({ title, children, footer, onClose, wide }) {
 
   return createPortal(
     <div
-      className="modal"
+      className={`modal${className ? ` ${className}` : ''}`}
       onMouseDown={(e) => {
         if (onClose && e.target === e.currentTarget) onClose();
       }}
