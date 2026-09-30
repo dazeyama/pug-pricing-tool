@@ -925,6 +925,137 @@
 .list-title { font-size: .78rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
 .list-count { font-size: 13px; color: var(--muted); }
 .list-empty { margin: 18px 16px; color: var(--muted); font-size: 13px; }
+.list-body { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 0 10px; }
+.list-group + .list-group { margin-top: 8px; }
+.group-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 8px 16px 4px;
+  background: rgb(24, 28, 46);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+/* One line: plain text, wraps, the whole line the hit target; red on hover
+   (spec 8.9: click to remove). */
+.buy-line {
+  display: block;
+  width: 100%;
+  padding: 3px 16px;
+  border: none;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.35;
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.buy-line:hover { color: var(--bad); }
+.buy-line.flash { animation: line-flash 1.6s ease-out; }
+@keyframes line-flash {
+  0%, 30% { background: rgba(62, 207, 142, .28); }
+  100% { background: transparent; }
+}
+
+/* Totals, custom rates, CANCEL / CONFIRM BUY: the sidebar's foot. */
+.list-foot { flex: none; padding: 10px 16px 14px; border-top: 1px solid var(--border); }
+.totals { position: relative; margin-bottom: 10px; }
+.total-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 0;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+.total-row strong { font-size: 16px; }
+.pct-link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-decoration: underline dotted var(--muted);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.pct-link:hover { color: var(--accent); }
+.pct-link.custom, .custom-mark { color: var(--accent); }
+.rates-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 8px);
+  z-index: 20;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, .55);
+}
+.rates-head { margin-bottom: 8px; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.rate-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-size: 14px; }
+.rate-name { width: 52px; }
+.rate-row input { width: 64px; margin: 0; padding: 4px 8px; }
+.rate-master { margin-left: auto; font-size: 12px; color: var(--muted); }
+.rates-foot { display: flex; justify-content: space-between; margin-top: 8px; }
+.list-buttons { display: flex; gap: 10px; align-items: stretch; }
+
+/* CLEAR / ADD CARD and CANCEL / CONFIRM BUY mirror each other (spec 8.9):
+   a smaller red button beside a large green one, about 64px tall. */
+.clear-btn, .cancel-btn {
+  flex: none;
+  padding: 0 16px;
+  border-color: var(--bad);
+  background: transparent;
+  color: var(--bad);
+  font-weight: 700;
+  letter-spacing: .04em;
+}
+.clear-btn:hover, .cancel-btn:hover:not(:disabled) { background: rgba(255, 107, 107, .12); border-color: var(--bad); }
+.add-btn, .confirm-btn {
+  flex: 1;
+  min-height: 64px;
+  border-color: var(--good);
+  background: var(--good);
+  color: #0d2418;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: .04em;
+}
+.add-btn:hover, .confirm-btn:hover { filter: brightness(1.08); border-color: var(--good); }
+.add-btn.is-disabled, .confirm-btn.is-disabled { filter: saturate(.4); }
+.confirm-btn.small-confirm { flex: none; min-height: 0; font-size: 14px; padding: 8px 16px; }
+.action-row { display: flex; align-items: stretch; gap: 10px; height: 64px; }
+.qty-box {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.qty-box input { width: 64px; height: 100%; margin: 0; font-size: 20px; font-weight: 700; text-align: center; }
+.area-actions { align-self: end; }
+
+/* Remove and CONFIRM BUY dialogs. */
+.remove-qty { display: flex; align-items: center; gap: 8px; }
+.remove-qty input { width: 72px; margin: 0; }
+.confirm-totals { margin-bottom: 12px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; }
+.confirm-field { display: block; margin-bottom: 10px; }
+.confirm-field span { display: block; margin-bottom: 4px; font-size: 13px; color: var(--muted); }
+.confirm-field em { font-style: normal; opacity: .75; }
+.confirm-field input, .confirm-field textarea { width: 100%; margin: 0; }
+.confirm-user { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
 
 /* Short windows (1366×768 laptops): tighter spacing; the card and thumbnails
    size themselves to what's left. Fuller 1366×768 pass in Phase 10. */

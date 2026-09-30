@@ -89,10 +89,11 @@ function printingFits(printing, { game, finish, firstEdition }) {
 }
 
 /**
- * NM…DMG prices from a JustTCG card for the chosen finish.
- * @returns {Record<string, number|null>}
+ * The JustTCG variant for each condition (NM…DMG) of the chosen finish: the
+ * first priced one that fits.
+ * @returns {Record<string, object|null>}
  */
-export function conditionPrices(card, { game, lang, finish, firstEdition }) {
+export function conditionVariants(card, { game, lang, finish, firstEdition }) {
   const out = Object.fromEntries(CONDITIONS.map((c) => [c, null]));
   if (!card) return out;
   const variants = (card.variants ?? []).filter((v) => (lang === 'ja' ? isJapanese(v) : isEnglish(v)));
@@ -104,9 +105,18 @@ export function conditionPrices(card, { game, lang, finish, firstEdition }) {
   }
   for (const v of fits) {
     const code = conditionCode(v.condition);
-    if (code && typeof v.price === 'number' && out[code] == null) out[code] = v.price;
+    if (code && typeof v.price === 'number' && out[code] == null) out[code] = v;
   }
   return out;
+}
+
+/**
+ * NM…DMG prices from a JustTCG card for the chosen finish.
+ * @returns {Record<string, number|null>}
+ */
+export function conditionPrices(card, opts) {
+  const variants = conditionVariants(card, opts);
+  return Object.fromEntries(CONDITIONS.map((c) => [c, variants[c]?.price ?? null]));
 }
 
 /**

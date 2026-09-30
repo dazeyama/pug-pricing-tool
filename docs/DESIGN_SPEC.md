@@ -463,8 +463,8 @@ All IDs are `uuid default gen_random_uuid()` unless noted, and all timestamps ar
 | condition | text | `NM` \| `LP` \| `MP` \| `HP` \| `DMG` |
 | quantity | integer > 0 | |
 | unit_price | numeric(10,2) not null | The purchase price per copy |
-| market_price | numeric(10,2) null | JustTCG price at add time, when there was one |
-| price_source | text | `justtcg` \| `scryfall_fallback` \| `tcgdex_fallback` \| `cardmarket` (Use Cardmarket, Section 8.7) \| `manual` |
+| market_price | numeric(10,2) null | The market price for the line's condition at add time, **before rounding** (as built, Phase 6): JustTCG's own price, or the fallback it came to; recorded even when a manual price was typed. Null when there was none. |
+| price_source | text | Where `unit_price` came from: `justtcg` (JustTCG's price for the condition) \| `justtcg_fallback` (JustTCG's NM × a Master Fallback Percentage: JustTCG had no price for the condition, or it was thrown out) \| `scryfall_fallback` \| `tcgdex_fallback` \| `cardmarket` (Use Cardmarket, or a Japanese card's automatic fallback, Section 8.7) \| `manual`. `justtcg_fallback` and `cardmarket` added in migration 0004 (owner's go-ahead for Phase 6, 2026-09-29). |
 | price_snapshot | jsonb | Every condition × printing price seen at add time (useful for export and disputes) |
 | priced_at | timestamptz | When the price was fetched |
 | scryfall_id, oracle_id, tcgdex_id, tcgplayer_id, justtcg_card_id, justtcg_variant_id | text null | Source identifiers for the future export |
@@ -534,11 +534,11 @@ Every change that affects buy contents, or anything the changelog records, goes 
 
 | Function | Does | Event written |
 |---|---|---|
-| `draft_add_line(device, line, merge)` | Creates this device's draft if none exists; inserts or merges a line | none (drafts aren't logged) |
-| `draft_remove_line(line_id, qty)` | Decrements the quantity or deletes the line | none |
+| `draft_add_line(device, line, user, merge)` | Creates this device's draft if none exists; inserts or merges a line | none (drafts aren't logged) |
+| `draft_remove_line(line_id, qty, user)` | Decrements the quantity or deletes the line | none |
 | `draft_cancel(buy_id)` | Deletes the draft and its lines | none |
-| `draft_set_custom_rates(device, custom_cash_pct, custom_credit_pct)` | Sets or clears this device's draft custom rates (Section 8.9.1). Creates the draft if none exists. | none |
-| `confirm_buy(buy_id, user, customer_name, notes, cash_pct, credit_pct, expected_version)` | draft → confirmed; stamps `confirmed_*`; snapshots percentages (custom rate where set, else master) | `buy_confirmed` with all lines and totals |
+| `draft_set_custom_rates(device, custom_cash_pct, custom_credit_pct, user)` | Sets or clears this device's draft custom rates (Section 8.9.1). Creates the draft if none exists. | none |
+| `confirm_buy(buy_id, user, customer_name, notes, cash_pct, credit_pct, expected_version, line_texts)` | draft → confirmed; stamps `confirmed_*`; snapshots percentages (custom rate where set, else the master rate the screen showed). `line_texts` maps each line ID to its buy-list text (`lineFormat.js`) for the entry's card rows. Returns `{ number, games, target_name }`. | `buy_confirmed` with all lines and totals |
 | `buy_remove_line(line_id, qty, user, expected_version)` | For confirmed buys (day page) | `buy_cards_removed` |
 | `buy_delete(buy_id, user, expected_version)` | Deletes a confirmed buy | `buy_deleted` with the full line list and totals |
 | `collection_create(name, phone, notes, user)` | | `collection_created` |
@@ -551,6 +551,8 @@ Every change that affects buy contents, or anything the changelog records, goes 
 | `restore_backup(payload)` | Section 11.5 | `backup_restored` (milestone) |
 
 Staff users, devices, settings and CSV metadata are written directly (RLS permits it) and aren't logged, except where noted.
+
+**As built (Phase 6, migrations 0004–0005):** the draft functions take the acting user too (for `last_edited_by`); `draft_for_device` finds or creates the device's draft (two tabs on one computer share it). `round_down_price(numeric)` is the app's `roundDownPrice` in SQL, used for the Cash / Credit totals in `buy_confirmed` entries. A `buy_confirmed` entry's target name is **"Buy N · Tue Sep 29, 2026"**, N numbered among that day's confirmed buys (store time) with cards of the buy's first game (Magic before Pokémon), the day page it links to; its summary is one sentence, "5 cards bought from Alex M." The toast after confirming uses the same N: "Buy confirmed — Buy 3 today (Magic + Pokémon)".
 
 ### 6.3 Realtime
 
@@ -876,7 +878,7 @@ Styled as AT's list panel, docked right.
 |---|---|
 | name | As stored. Double-faced Magic cards use the full `Front // Back` name. |
 | SET | Magic: the Scryfall set code in upper case. Pokémon: the printed abbreviation (Section 5.2). |
-| number | The collector number as printed, without the size |
+| number | The collector number as printed, without the size (Pokémon keep TCGdex's printed form, e.g. `025`) |
 | finish marker | Magic: `*F*` foil, `*E*` etched, nothing for non-foil. Pokémon: `*H*` holo, `*RH*` reverse holo, nothing for normal. |
 | tags | Only non-defaults, in this order, comma-separated in one bracket: condition if not NM (`LP`), `1st Ed`, `SL`, `JP`, reverse pattern (`Poké Ball`). **`SL` = Shadowless** (owner's decision, 2026-09-29): a Base Set version whose TCGdex subtype is `shadowless` or `shadowless-red-cheek` but that isn't 1st Edition (every 1st Edition is shadowless, so `1st Ed` alone says it). A Shadowless Charizard ($2,146 NM) and an Unlimited one ($945) must never print the same. |
 
@@ -888,7 +890,7 @@ Examples:
 1 Abrade (SOA) 37 [LP]
 2 Sol Ring (CMR) 472 *E*
 1 Charizard ex (OBF) 125 *H*
-1 Pikachu (SV2a) 25 *RH* [MP, JP, Poké Ball]
+1 Pikachu (SV2a) 025 *RH* [MP, JP, Poké Ball]
 1 Charizard (BS) 4 *H* [SL]
 ```
 
@@ -1825,6 +1827,8 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 97 | Japanese images (2026-09-29) | Japanese Pokémon with no TCGdex picture use Limitless TCG's image CDN (by set code and number), then the card back; credited in Settings' footer (Sections 5.2, 11.7) |
 | 98 | Wrong-language set code (2026-09-29) | A set code only the other Pokémon language has gets a note under the search bar with a one-click "switch to JP" / "switch to EN" (Section 8.2) |
 | 99 | Shadowless tag (2026-09-29) | Buy-list lines tag Shadowless (non-1st-Edition) Base Set versions `[SL]`, after `1st Ed` (Section 8.9, Phase 6) |
+| 100 | Price sources (Phase 6, 2026-09-29) | `price_source` gains `justtcg_fallback` (JustTCG NM × percentage) and `cardmarket`; `market_price` is the condition's market price before rounding, kept even under a manual price (Section 6.1) |
+| 101 | Buy numbers (Phase 6, 2026-09-29) | A confirmed buy's changelog name and toast use "Buy N" among the day's buys with cards of its first game (Magic before Pokémon), matching that game's day page (Section 6.2) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

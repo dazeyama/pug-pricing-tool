@@ -13,13 +13,25 @@ import {
   defaultMagicFinish, magicFinishes, pokemonVersions, defaultPokemonVersion, POKEMON_FINISHES,
 } from '../lib/printings.js';
 import {
-  CONDITIONS, cardmarketPrice, conditionPrices, fallbackPrice, priceLadder, priceWarnings, resultFor,
+  CONDITIONS, cardmarketPrice, conditionPrices, conditionVariants, fallbackPrice, priceLadder, priceWarnings,
+  resultFor,
 } from '../lib/prices.js';
 import { useSettings } from '../state/settings.jsx';
 import QuotePanel from './price/QuotePanel.jsx';
 import { useEurUsd } from '../lib/useEurUsd.js';
 import { useEnglishPokemonName } from '../lib/pokemonNames.js';
 import { readLocal, writeLocal } from '../lib/local.js';
+import ActionRow, { parseQty } from './price/ActionRow.jsx';
+import BuyList, { marketTotal } from './price/BuyList.jsx';
+import ConfirmBuyModal from './price/ConfirmBuyModal.jsx';
+import { useDraft } from './price/useDraft.js';
+import { useCardImages } from './price/useCardImages.js';
+import { buildLine } from '../lib/buyLine.js';
+import { lineText } from '../lib/lineFormat.js';
+import { useDevice } from '../state/device.jsx';
+import { useStaff } from '../state/staff.jsx';
+import { useConnection } from '../state/connection.jsx';
+import { useToast } from '../components/Toast.jsx';
 
 const BACKGROUND = { '--stage-bg': `url(${import.meta.env.BASE_URL}background.webp)` };
 const LANG_KEY = 'pug.pokemonLang';
@@ -35,12 +47,12 @@ function usePokemonLang() {
 
 // MTG | PKM (owner, 2026-09-29): which games search asks, both by default.
 // Kept for the whole buy, and back to both when the Price tab is left (the
-// page unmounts) or, from Phase 6, when a buy is confirmed or cancelled.
+// page unmounts) or when a buy is confirmed or cancelled.
 const BOTH_GAMES = { mtg: true, pokemon: true };
 
-// The Price tab (spec 8): search, suggestions, the selected card, and its
-// finish and details (Phase 4). Prices (Phase 5) and the buy list (Phase 6)
-// are marked where they'll go.
+// The Price tab (spec 8): search, suggestions, the selected card with its
+// finish, details and prices, and the buy list: this computer's walk-in
+// draft, added to with ADD CARD and finished with CONFIRM BUY (Phase 6).
 export default function PricePage() {
   const [text, setText] = useState('');
   const [lang, setLang] = usePokemonLang();
@@ -144,6 +156,37 @@ export default function PricePage() {
     market, fallback, pct: fallbackPct, unlimitedNM, cardmarket: cardmarketEur, eurUsd,
   });
 
+  // ---- The buy (spec 8.8–8.10): this computer's draft ----
+  const { deviceId } = useDevice();
+  const draft = useDraft(deviceId);
+  const { current: user, pulse } = useStaff();
+  const { offline } = useConnection();
+  const toast = useToast();
+  const [qty, setQty] = useState('1');
+  const qtyRef = useRef(null);
+  const [flashId, setFlashId] = useState(null);
+  const [confirming, setConfirming] = useState(false);
+  const images = useCardImages(selected);   // a Pokémon thumbnail for the line (backups too)
+  // This buy's rates: its custom ones where set, else the Master Buy
+  // Percentages (spec 8.9.1), for the totals and the price panel.
+  const master = { cash: Number(settingValues.cash_pct), credit: Number(settingValues.credit_pct) };
+  const customCash = draft.buy?.custom_cash_pct != null ? Number(draft.buy.custom_cash_pct) : null;
+  const customCredit = draft.buy?.custom_credit_pct != null ? Number(draft.buy.custom_credit_pct) : null;
+  const rates = { cash: customCash ?? master.cash, credit: customCredit ?? master.credit, customCash, customCredit };
+
+  // ADD CARD's requirements (spec 8.8), besides a user (GuardButton).
+  const pricesLoading = prices.status === 'loading' || prices.status === 'waiting';
+  const unitPrice = manual ?? ladder[condition]?.price ?? null;
+  let addBlocked = null;
+  if (!selected) addBlocked = 'Select a card first';
+  else if (magic ? !finish : !version) addBlocked = "Waiting for the card's versions";
+  else if (pricesLoading) addBlocked = 'Waiting for prices';
+  else if (unitPrice == null) addBlocked = 'No price: enter a manual price (Alt+M)';
+  else if (parseQty(qty) == null) addBlocked = 'Quantity must be 1 to 99';
+  else if (offline) addBlocked = 'No connection';
+  const canEdit = Boolean(user) && !offline;
+  const editBlocked = () => (user ? toast('No connection: nothing can change until it comes back.', 'err') : pulse());
+
   const visible = search.candidates.slice(0, ROW);
   const hasShowAll = search.candidates.length > ROW;
 
@@ -202,11 +245,83 @@ export default function PricePage() {
     }
   }
 
+  /** CLEAR (spec 8.8): the stage back to empty and defaults; never the buy list. */
   function clear() {
     setText('');
     setSelected(null);
     setHighlight(-1);
+    setPrinting({ key: null, finish: null, version: null });
+    setPricing({ key: null, condition: 'NM', manual: null, override: null });
+    setManualOpen(false);
+    setQty('1');
     focusSearch();
+  }
+
+  /** ADD CARD (spec 8.8): save the line (merging), flash it, reset the stage. */
+  async function addCard() {
+    if (!user) {
+      pulse();
+      return;
+    }
+    if (addBlocked || draft.busy) return;
+    const opts = { game: selected.game, lang: selected.lang, finish: magic ? finish : version.finish, firstEdition: version?.firstEdition };
+    const line = buildLine({
+      candidate: selected,
+      finish,
+      version,
+      pokemonCard: pokemon.card,
+      condition,
+      quantity: parseQty(qty),
+      ladder,
+      manual,
+      result,
+      variant: ladder[condition]?.source === 'justtcg' ? conditionVariants(result?.card, opts)[condition] : null,
+      imageUrl: magic ? null : images.thumb,
+      snapshot: {
+        justtcg: market,
+        fallback,
+        cardmarket: cardmarketEur != null ? { eur: cardmarketEur, rate: eurUsd } : null,
+        override: activeOverride,
+        auto_cardmarket: autoCardmarket,
+        manual: manual ?? null,
+        warnings,
+      },
+    });
+    const id = await draft.add(line, user.id);
+    if (!id) return;
+    setFlashId(id);
+    setTimeout(() => setFlashId((f) => (f === id ? null : f)), 1600);
+    clear();
+  }
+
+  /** CONFIRM BUY's dialog confirmed (spec 8.10). */
+  async function confirmBuy({ customerName, notes }) {
+    if (!user) {
+      pulse();
+      return;
+    }
+    const done = await draft.confirm({
+      userId: user.id,
+      customerName,
+      notes,
+      cashPct: master.cash,
+      creditPct: master.credit,
+      lineTexts: Object.fromEntries(draft.lines.map((l) => [l.id, lineText(l)])),
+    });
+    if (!done) return;
+    setConfirming(false);
+    const names = done.games.map((g) => (g === 'mtg' ? 'Magic' : 'Pokémon')).join(' + ');
+    toast(`Buy confirmed — Buy ${done.number} today (${names})`, 'ok');
+    clear();
+    setGames(BOTH_GAMES);
+  }
+
+  /** CANCEL (spec 8.10): the draft goes, custom rates and all. */
+  async function cancelBuy() {
+    if (await draft.cancel()) {
+      clear();
+      setGames(BOTH_GAMES);
+    }
   }
 
   // Focus stays in the search bar; these keys drive everything (spec 8.11).
@@ -224,6 +339,13 @@ export default function PricePage() {
     } else if (e.key === 'Enter' && hasShowAll && highlight === visible.length) {
       e.preventDefault();
       setShowAll(true);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      addCard();
+    } else if (e.altKey && e.key.toLowerCase() === 'q') {
+      e.preventDefault();
+      qtyRef.current?.focus();
+      qtyRef.current?.select();
     } else if (e.altKey && e.key.toLowerCase() === 'f') {
       e.preventDefault();
       cycleFinish();
@@ -320,8 +442,8 @@ export default function PricePage() {
             source={manual != null ? 'manual'
               : ladder[condition].base?.from === 'Cardmarket' && ladder[condition].source === 'fallback' ? 'cardmarket'
                 : ladder[condition].source}
-            cashPct={settingValues.cash_pct}
-            creditPct={settingValues.credit_pct}
+            cashPct={rates.cash}
+            creditPct={rates.credit}
             warnings={warnings}
             onDone={focusSearch}
           />
@@ -368,19 +490,52 @@ export default function PricePage() {
             />
           </div>
           <div className="area-actions">
-            <div className="stage-slot">Qty · CLEAR · ADD CARD · Phase 6</div>
+            <ActionRow
+              qtyRef={qtyRef}
+              qty={qty}
+              onQty={setQty}
+              onClear={clear}
+              onAdd={addCard}
+              blocked={addBlocked}
+              busy={draft.busy}
+              onDone={focusSearch}
+            />
           </div>
         </div>
-        <p className="hint-strip">↓↑ pick · Esc clear · Alt+1–5 condition · Alt+F foil · Alt+M manual price</p>
+        <p className="hint-strip">
+          ↓↑ pick · Enter add · Esc clear · Alt+1–5 condition · Alt+F foil · Alt+Q qty · Alt+M manual price
+        </p>
       </div>
 
-      <aside className="buy-list">
-        <div className="list-head">
-          <span className="list-title">Buy list</span>
-          <span className="list-count">0 cards</span>
-        </div>
-        <p className="list-empty">Cards you add will appear here (Phase 6).</p>
-      </aside>
+      <BuyList
+        lines={draft.lines}
+        loaded={draft.loaded}
+        rates={rates}
+        master={master}
+        flashId={flashId}
+        canEdit={canEdit}
+        editBlocked={editBlocked}
+        busy={draft.busy}
+        onRemove={(line, n) => draft.remove(line.id, n, user?.id)}
+        onSaveRates={(cash, credit) => draft.setRates(cash, credit, user?.id)}
+        onCancel={cancelBuy}
+        onConfirm={() => (canEdit ? setConfirming(true) : editBlocked())}
+        onDone={focusSearch}
+      />
+      {confirming && (
+        <ConfirmBuyModal
+          count={draft.lines.reduce((n, l) => n + l.quantity, 0)}
+          market={marketTotal(draft.lines)}
+          rates={rates}
+          user={user}
+          busy={draft.busy}
+          onConfirm={confirmBuy}
+          onClose={() => {
+            setConfirming(false);
+            focusSearch();
+          }}
+        />
+      )}
 
       {showAll && (
         <ShowAllModal
