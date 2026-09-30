@@ -146,7 +146,19 @@ export default function BuyList({
   const [removing, setRemoving] = useState(null);
   const [ratesOpen, setRatesOpen] = useState(false);
   const [asking, setAsking] = useState(false);
+  const [preview, setPreview] = useState(null);   // { src, top, right } while a line is hovered
   const list = useRef(null);
+  const aside = useRef(null);
+
+  /** A small card picture beside the sidebar, level with the hovered line (owner, 2026-09-29). */
+  function showPreview(line, row) {
+    if (!line.image_url) return;
+    const r = row.getBoundingClientRect();
+    const side = aside.current.getBoundingClientRect();
+    const height = 204;
+    const top = Math.min(Math.max(8, r.top + r.height / 2 - height / 2), window.innerHeight - height - 8);
+    setPreview({ src: line.image_url, top, right: window.innerWidth - side.left + 12 });
+  }
 
   const count = lines.reduce((n, l) => n + l.quantity, 0);
   const market = marketTotal(lines);
@@ -175,7 +187,7 @@ export default function BuyList({
   };
 
   return (
-    <aside className="buy-list">
+    <aside className="buy-list" ref={aside}>
       <div className="list-head">
         <span className="list-title">Buy list</span>
         <span className="list-count">{count} card{count === 1 ? '' : 's'}</span>
@@ -194,6 +206,8 @@ export default function BuyList({
                   key={l.id}
                   data-line={l.id}
                   className={`buy-line-row${l.id === flashId ? ' flash' : ''}${l.id === editingId ? ' editing' : ''}`}
+                  onMouseEnter={(e) => showPreview(l, e.currentTarget)}
+                  onMouseLeave={() => setPreview(null)}
                 >
                   <button
                     type="button"
@@ -259,6 +273,11 @@ export default function BuyList({
         </div>
       </div>
 
+      {preview && (
+        <div className="line-preview" style={{ top: preview.top, right: preview.right }} aria-hidden="true">
+          <img src={preview.src} alt="" />
+        </div>
+      )}
       {removing && (
         <RemoveModal
           line={removing}

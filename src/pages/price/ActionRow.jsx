@@ -44,10 +44,10 @@ export default function ActionRow({ qtyRef, qty, onQty, onClear, onAdd, blocked,
         title={editing ? 'Stop editing (Esc): the line stays as it was' : 'Clear the card (Esc). The buy list stays.'}
         onClick={onClear}
       >
-        CLEAR
+        {editing ? 'CANCEL' : 'CLEAR'}
       </button>
       <GuardButton
-        className="btn add-btn"
+        className={`btn add-btn${editing ? ' editing' : ''}`}
         disabled={Boolean(blocked) || busy}
         title={blocked ?? (busy ? 'Saving…'
           : editing ? 'Save the changes over the line being edited (Enter)' : 'Add this card to the buy list (Enter)')}
