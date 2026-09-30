@@ -946,6 +946,11 @@
   text-transform: uppercase;
   color: var(--muted);
 }
+/* The game's name in its badge colours, like the MTG | PKM toggle and the
+   game chips (owner, 2026-09-29). */
+.group-chip { display: inline-block; padding: 2px 9px; border-radius: 999px; }
+.group-chip.mtg { background: var(--pal-indigo); color: #fff; }
+.group-chip.pokemon { background: var(--pal-amber); color: #1a1405; }
 /* One line: plain text, wraps, the whole text the hit target; the accent
    colour on hover (click to edit), and a red × at the end removes it
    (owner, 2026-09-29). */

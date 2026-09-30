@@ -200,7 +200,9 @@ export default function BuyList({
           if (!mine.length) return null;
           return (
             <section key={g.game} className="list-group">
-              <div className="group-head">{g.name} ({mine.reduce((n, l) => n + l.quantity, 0)})</div>
+              <div className="group-head">
+                <span className={`group-chip ${g.game}`}>{g.name} ({mine.reduce((n, l) => n + l.quantity, 0)})</span>
+              </div>
               {mine.map((l) => (
                 <div
                   key={l.id}
