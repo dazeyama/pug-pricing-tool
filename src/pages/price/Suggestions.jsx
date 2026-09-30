@@ -41,7 +41,11 @@ function SetMark({ c }) {
 }
 
 /** One suggestion: thumbnail, with the game badge and "SET #num" beneath. */
-export function Thumb({ c, highlighted, selected, onPick }) {
+/**
+ * One suggestion. Clicking picks it; right-clicking searches its name, to see
+ * every printing of the card (owner, 2026-09-29).
+ */
+export function Thumb({ c, highlighted, selected, onPick, onSearchName }) {
   const { thumb, status } = useCardImages(c);
   // An image that fails to load shows the card back, never a broken-image icon.
   const [failed, setFailed] = useState(null);
@@ -53,8 +57,13 @@ export function Thumb({ c, highlighted, selected, onPick }) {
     <button
       type="button"
       className={`thumb${highlighted ? ' highlight' : ''}${selected ? ' selected' : ''}`}
-      title={`${c.name} · ${c.setName} (${c.setCode}) #${c.number}`}
+      title={`${c.name} · ${c.setName} (${c.setCode}) #${c.number}\nRight-click: every printing of ${c.name}`}
       onClick={() => onPick(c)}
+      onContextMenu={(e) => {
+        if (!onSearchName) return;
+        e.preventDefault();
+        onSearchName(c.name);
+      }}
     >
       <span className="thumb-img">
         {showImage ? (
@@ -124,7 +133,9 @@ function Status({ search, lang }) {
  * above: the sort toggle (newest / oldest first) on the left, "… show all (N)"
  * on the right when there are more.
  */
-export default function Suggestions({ search, lang, highlight, selectedKey, onPick, onShowAll, oldest, onOldest }) {
+export default function Suggestions({
+  search, lang, highlight, selectedKey, onPick, onSearchName, onShowAll, oldest, onOldest,
+}) {
   const visible = search.candidates.slice(0, ROW);
   const more = search.candidates.length > ROW;
   const count = search.hasMore ? `${search.candidates.length}+` : search.candidates.length;
@@ -156,7 +167,14 @@ export default function Suggestions({ search, lang, highlight, selectedKey, onPi
       </div>
       <div className="thumbs">
         {visible.map((c, i) => (
-          <Thumb key={c.key} c={c} highlighted={highlight === i} selected={c.key === selectedKey} onPick={onPick} />
+          <Thumb
+            key={c.key}
+            c={c}
+            highlighted={highlight === i}
+            selected={c.key === selectedKey}
+            onPick={onPick}
+            onSearchName={onSearchName}
+          />
         ))}
         {/* The rest of the 10 slots as faded card shapes, so the grid never looks empty. */}
         {Array.from({ length: ROW - visible.length }, (_, i) => (

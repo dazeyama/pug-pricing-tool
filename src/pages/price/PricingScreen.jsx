@@ -331,6 +331,17 @@ export default function PricingScreen({
     focusSearch();
   }
 
+  /**
+   * Right-clicking a suggestion (owner, 2026-09-29): its name, as typed text,
+   * becomes the search, a quick "every printing of this card". Plain text, so
+   * other cards with those words in their names come up too.
+   */
+  function searchName(name) {
+    setText(name);
+    setShowAll(false);
+    focusSearch();
+  }
+
   /** Move to a sibling printing in the same set (details panel, spec 8.6). */
   function moveTo(card, nextFinish) {
     const c = magicCandidate(card);
@@ -558,6 +569,7 @@ export default function PricingScreen({
               highlight={highlight}
               selectedKey={selected?.key}
               onPick={pick}
+              onSearchName={searchName}
               onShowAll={() => setShowAll(true)}
               oldest={oldest}
               onOldest={(o) => {
@@ -665,6 +677,7 @@ export default function PricingScreen({
             hasMore={search.hasMore}
             selectedKey={selected?.key}
             onPick={pick}
+            onSearchName={searchName}
             onClose={() => {
               setShowAll(false);
               focusSearch();

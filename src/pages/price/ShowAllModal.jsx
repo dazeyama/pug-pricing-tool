@@ -8,7 +8,7 @@ import { PAGE } from '../../lib/cardSearch.js';
  * (←/→ one card, ↑/↓ one row), Enter picks it; clicking picks too. Picking
  * selects the card and closes the modal; Esc just closes it.
  */
-export default function ShowAllModal({ candidates, hasMore, selectedKey, onPick, onClose }) {
+export default function ShowAllModal({ candidates, hasMore, selectedKey, onPick, onSearchName, onClose }) {
   const start = Math.max(0, candidates.findIndex((c) => c.key === selectedKey));
   const [cursor, setCursor] = useState(start);
   const grid = useRef(null);
@@ -45,7 +45,14 @@ export default function ShowAllModal({ candidates, hasMore, selectedKey, onPick,
       )}
       <div className="all-grid" ref={grid} tabIndex={0} onKeyDown={onKeyDown} aria-label="All matching cards">
         {candidates.map((c, i) => (
-          <Thumb key={c.key} c={c} highlighted={i === cursor} selected={c.key === selectedKey} onPick={onPick} />
+          <Thumb
+            key={c.key}
+            c={c}
+            highlighted={i === cursor}
+            selected={c.key === selectedKey}
+            onPick={onPick}
+            onSearchName={onSearchName}
+          />
         ))}
       </div>
     </Modal>
