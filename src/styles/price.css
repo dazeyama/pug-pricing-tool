@@ -468,6 +468,11 @@
 }
 .quote-warn:hover, .quote-warn.on { border-color: rgba(255, 204, 102, .55); background: rgba(255, 204, 102, .1); }
 .quote-chip-label { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+/* Cash green, Credit blue (tokens.css). */
+.quote-chip.cash { border-color: color-mix(in srgb, var(--cash) 55%, transparent); }
+.quote-chip.credit { border-color: color-mix(in srgb, var(--credit) 55%, transparent); }
+.quote-chip.cash b, .quote-chip.cash .quote-chip-label { color: var(--cash); }
+.quote-chip.credit b, .quote-chip.credit .quote-chip-label { color: var(--credit); }
 
 /* One line per detail, so every card's box is the same height. */
 .card-info p, .info-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -945,6 +950,19 @@
    colour on hover (click to edit), and a red × at the end removes it
    (owner, 2026-09-29). */
 .buy-line-row { display: flex; align-items: flex-start; padding-right: 8px; }
+/* The price picked, per card, before the line (owner, 2026-09-29): a
+   right-aligned column so the lines start level. Display only; the line
+   text itself stays Moxfield-style. */
+.line-price {
+  flex: none;
+  width: 4.6em;
+  padding: 3px 0 3px 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
 .buy-line-row.editing { background: rgba(108, 140, 255, .16); box-shadow: inset 3px 0 0 var(--accent); }
 .buy-line-row.editing .buy-line { color: var(--accent); }
 .line-x {
@@ -965,7 +983,7 @@
   display: block;
   flex: 1;
   min-width: 0;
-  padding: 3px 8px 3px 16px;
+  padding: 3px 8px 3px 10px;
   border: none;
   background: none;
   color: var(--text);
@@ -1022,6 +1040,12 @@
 }
 .pct-link:hover { color: var(--accent); }
 .pct-link.custom, .custom-mark { color: var(--accent); }
+.total-row.cash, .total-row.cash .pct-link { color: var(--cash); }
+.total-row.credit, .total-row.credit .pct-link { color: var(--credit); }
+.total-row.cash .pct-link { text-decoration-color: color-mix(in srgb, var(--cash) 60%, transparent); }
+.total-row.credit .pct-link { text-decoration-color: color-mix(in srgb, var(--credit) 60%, transparent); }
+.rate-row.cash .rate-name { color: var(--cash); }
+.rate-row.credit .rate-name { color: var(--credit); }
 .rates-panel {
   position: absolute;
   left: 0;

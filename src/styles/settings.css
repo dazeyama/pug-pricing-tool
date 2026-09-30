@@ -92,6 +92,8 @@
 /* Master Buy Percentages */
 .pct-row { display: flex; gap: 28px; }
 .pct-field { width: 160px; }
+.pct-field.cash label { color: var(--cash); }
+.pct-field.credit label { color: var(--credit); }
 .pct-input { display: flex; align-items: center; gap: 6px; }
 .pct-input input { margin-top: 0; font-size: 15px; }
 .pct-sign { color: var(--muted); }

@@ -103,7 +103,7 @@ function RatesPanel({ rates, master, onSave, onClose }) {
   }
 
   const row = (which, label) => (
-    <label className="rate-row">
+    <label className={`rate-row ${which}`}>
       <span className="rate-name">{label}</span>
       <input
         type="text"
@@ -209,6 +209,7 @@ export default function BuyList({
                   onMouseEnter={(e) => showPreview(l, e.currentTarget)}
                   onMouseLeave={() => setPreview(null)}
                 >
+                  <span className="line-price" title="Price per card">{formatMoney(l.unit_price)}</span>
                   <button
                     type="button"
                     className="buy-line"
@@ -238,8 +239,8 @@ export default function BuyList({
       <div className="list-foot">
         <div className="totals">
           <div className="total-row"><span>Market</span><strong>{formatMoney(market)}</strong></div>
-          <div className="total-row">{pct('cash', 'Cash')}<strong>{formatMoney(payout(market, rates.cash))}</strong></div>
-          <div className="total-row">{pct('credit', 'Credit')}<strong>{formatMoney(payout(market, rates.credit))}</strong></div>
+          <div className="total-row cash">{pct('cash', 'Cash')}<strong>{formatMoney(payout(market, rates.cash))}</strong></div>
+          <div className="total-row credit">{pct('credit', 'Credit')}<strong>{formatMoney(payout(market, rates.credit))}</strong></div>
           {ratesOpen && (
             <RatesPanel
               rates={rates}

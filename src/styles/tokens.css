@@ -12,6 +12,10 @@
   --good: #3ecf8e;
   --bad: #ff6b6b;
   --warn: #ffcc66;
+  /* Cash is always green and Credit always blue, wherever they appear
+     (owner, 2026-09-29). */
+  --cash: #3ecf8e;
+  --credit: #6c8cff;
 
   /* Staff-user palette (spec 7.3): a user's colour is one of these names. */
   --pal-crimson: #c0394b;

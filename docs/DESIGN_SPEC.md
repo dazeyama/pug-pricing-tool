@@ -643,6 +643,7 @@ After the store password: if this browser has no device ID, create one and ask *
 
 - Dates: "Sat, Aug 17, 2026". Times: "3:42 PM". Always in `STORE_TZ`.
 - Phone: `(555) 123-4567`.
+- **Cash is always green and Credit always blue** (owner's decision, 2026-09-29): tokens `--cash` (`#3ecf8e`) and `--credit` (`#6c8cff`) in `tokens.css`, used for their labels and amounts everywhere: the buy-list totals, the price panel's chips, the rates subpanel, the CONFIRM BUY dialog, Settings' Master Buy Percentages, and later the day pages, collections and changelog.
 - Money: `$1,234.56`; whole-dollar amounts drop the cents, `$12` not `$12.00` (owner's decision, 2026-09-29). Totals round the **sum**, not each line, and Cash / Credit round **down** by the same steps as prices (owner's decision, 2026-09-29): `cash = roundDownPrice(total × cash_pct / 100)`, i.e. under $1 to the cent, $1–$10 to the quarter, $10–$100 to the dollar, $100–$1,000 to the $5, $1,000 and up to the $10 (`payout` in `src/lib/money.js`). Market totals aren't rounded further: they're sums of already-rounded prices (or manual prices).
 
 ### 7.9 Connection required
@@ -895,6 +896,7 @@ Examples:
 1 Charizard (BS) 4 *H* [SL]
 ```
 
+- **The price picked, per card, shows before each line** in the sidebar (owner's decision, 2026-09-29, deliberately beyond the Moxfield format): a right-aligned, muted column, e.g. `$2.50  2 Sol Ring (CMR) 472 *E*`. Display only: the line text itself (changelog, export) stays as above.
 - Lines wrap; don't truncate them.
 - **Edit** (owner's decision, 2026-09-29, replacing click-to-remove): hovering a line turns its text the **blue accent** color; clicking it **loads that exact card back** onto the stage: the search bar is filled with a line that finds it ("Sol Ring 472 CMR", "Charizard 4/102 BS", Japanese "025/165 SV2a"; EN | JP and MTG | PKM switch to suit), the card is selected when the results arrive, and everything saved with it is put back: finish or Pokémon version, condition, quantity, a manual price, and Use Fallback / Use Cardmarket (from `price_snapshot`). The line is highlighted and the note under the search bar reads "Editing <line>: EDIT CARD saves the changes, Esc leaves it as it was." **ADD CARD reads EDIT CARD and turns blue** (the accent color), and **CLEAR reads CANCEL** (owner, 2026-09-29); pressing EDIT CARD (or Enter) saves the stage over that line through `draft_update_line` (anything can change, even the printing; if the result is identical to another line they merge, keeping the earlier place), then the stage resets and adding carries on as normal. CLEAR / Esc stops editing without saving. If the card can't be found again, a toast says so and nothing changes.
 - **Preview** (owner's decision, 2026-09-29): hovering a line shows its card's picture (`image_url`) just left of the sidebar, level with the line, at a search suggestion's size (146 × 204). A plain picture, no foil effects.
@@ -1835,6 +1837,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 101 | Buy numbers (Phase 6, 2026-09-29) | A confirmed buy's changelog name and toast use "Buy N" among the day's buys with cards of its first game (Magic before Pokémon), matching that game's day page (Section 6.2) |
 | 102 | Editing buy-list lines (2026-09-29) | Clicking a line (blue on hover) loads the card back with its saved choices and ADD CARD becomes EDIT CARD, saving over the line; removing moves to a red × at the line's end (Section 8.9) |
 | 103 | Edit look and line previews (2026-09-29) | While editing, EDIT CARD is blue and CLEAR reads CANCEL; hovering a buy-list line shows a small picture of the card beside the sidebar (Sections 8.8, 8.9) |
+| 104 | Line prices and Cash/Credit colors (2026-09-29) | The buy list shows each line's price per card before it (display only); Cash is green and Credit blue everywhere (`--cash`, `--credit`; Sections 7.8, 8.9) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

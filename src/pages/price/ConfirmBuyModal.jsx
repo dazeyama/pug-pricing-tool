@@ -14,7 +14,7 @@ export default function ConfirmBuyModal({ count, market, rates, user, busy, onCo
     if (!busy) onConfirm({ customerName: customer, notes });
   };
   const rate = (label, which, custom) => (
-    <div className="total-row">
+    <div className={`total-row ${which}`}>
       <span>{label} ({Number(rates[which])}%{custom != null && <span className="custom-mark"> ✎</span>})</span>
       <strong>{formatMoney(payout(market, rates[which]))}</strong>
     </div>

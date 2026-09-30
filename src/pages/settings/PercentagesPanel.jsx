@@ -41,7 +41,7 @@ function PercentField({ label, settingKey }) {
   }
 
   return (
-    <div className="pct-field">
+    <div className={`pct-field ${settingKey === 'cash_pct' ? 'cash' : 'credit'}`}>
       <label htmlFor={`pct-${settingKey}`}>{label}</label>
       <div className="pct-input">
         <input
