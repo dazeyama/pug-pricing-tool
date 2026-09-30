@@ -93,7 +93,8 @@ export default function CollectionsPage() {
   const locks = useLiveTable('collection_locks', () => supabase
     .from('collection_locks')
     .select('buy_id, device_id, staff_user_id, heartbeat_at, devices(label)'));
-  const [sort, setSort] = useState({ key: 'edited', dir: 'desc' });
+  // Newest collections first by default (owner, 2026-09-29).
+  const [sort, setSort] = useState({ key: 'created', dir: 'desc' });
   const [status, setStatus] = useState('all');
   const [query, setQuery] = useState('');
   const [creating, setCreating] = useState(false);

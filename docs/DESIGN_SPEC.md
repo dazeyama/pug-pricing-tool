@@ -1031,7 +1031,7 @@ Collections  14                                     [ Search name or phone… ] 
 ```
 
 - **Columns** (owner's list): **Name, Phone Number, Status, Date of creation, Date last edited, Last edited by** (the user with their colour dot, added 2026-09-29), **Notes.** **Order as built** (owner's decision, 2026-09-29): Name, Phone, Status, Created, Last edited, Last edited by, Notes, then **Offer, and Paid last**. Notes are truncated to one line, with the full text in a tooltip.
-- **Sort:** click a column header to sort ascending, click again for descending. Default is **Last edited, newest first**.
+- **Sort:** click a column header to sort ascending, click again for descending. Default is **Created, newest first** (▼) (owner's decision, 2026-09-29, replacing Last edited).
 - **Status filter:** All / Processing / Priced / Paid/Ours. Default is All.
   - **As of 2026-09-29 (owner's decisions):** the chips are **All · Processing** (amber) **· Priced** (red) **· Paid/Ours Cash** (green) **· Paid/Ours Credit** (blue) **· Completed** (grey, last). A chip shows its colour while on. The same colours mark the Status column's chips and a collection's details: Processing amber, Priced red, Paid/Ours green or blue by how it was paid (the Cash / Credit colours), Completed grey.
   - **Offer** and **Paid** columns, after Status (owner's decision, 2026-09-29): the offer as "$120 / $240" (cash green / credit blue) and the price paid in green (cash) or blue (credit). Either reads **TBD** in amber until there's a figure; the offer always reads TBD while Processing. Both sort, TBD first.
@@ -1963,6 +1963,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 129 | Offer and Paid last (2026-09-29) | The collections table ends with Offer and then Paid, after Notes; Status stays after Phone (Section 9.1; the owner corrected a first "Status and Offer last") |
 | 130 | Big BACK button (2026-09-29) | A collection's < BACK is a large bold button at the top left, before the search bar, instead of in the details (Section 9.4) |
 | 131 | Removing from Paid/Ours (2026-09-29) | Cards can still be removed from a Paid/Ours collection, not added or edited; a Completed collection allows neither (Sections 6.2, 9.5; migration 0012) |
+| 132 | Default sort (2026-09-29) | The collections table opens sorted by Created, newest first, instead of Last edited (Section 9.1) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |
