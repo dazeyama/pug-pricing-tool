@@ -52,3 +52,13 @@ export function parseMoney(text) {
   if (!/^\d+(\.\d{1,2})?$/.test(clean)) return null;
   return Number(clean);
 }
+
+/**
+ * The credit offer that goes with a cash offer (owner, 2026-09-29): the same
+ * deal at the collection's rates (cash × credit % ÷ cash %), rounded down by
+ * the price steps like every payout. Null with no cash rate to scale by.
+ */
+export function creditOfferFor(cash, cashPct, creditPct) {
+  if (cash == null || !Number(cashPct)) return null;
+  return roundDownPrice((Number(cash) * Number(creditPct)) / Number(cashPct));
+}

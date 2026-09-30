@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import PricingScreen from './price/PricingScreen.jsx';
 import CollectionDetails from './collections/CollectionDetails.jsx';
-import { statusLabel } from './collections/status.js';
+import { isClosed, statusLabel } from './collections/status.js';
 import { ConfirmModal, DeleteCollectionModal } from './collections/CollectionModals.jsx';
+import { OfferModal, PaidModal } from './collections/DealModals.jsx';
+import { marketTotal } from './price/BuyList.jsx';
 import { useCollection } from './collections/useCollection.js';
 import { useCollectionLock } from './collections/useCollectionLock.js';
 import ExportButton from '../components/ExportButton.jsx';
@@ -17,7 +19,8 @@ import { useToast } from '../components/Toast.jsx';
 // collection's list in the sidebar and its details at the sidebar's foot,
 // above the totals (owner, 2026-09-29). Every add and remove saves at once
 // and is logged; there's no CONFIRM BUY, only EXPORT. One computer edits at
-// a time (9.6); Paid/Ours locks it (9.5).
+// a time (9.6); Paid/Ours and Completed lock it (9.5). Marking it Priced
+// records the offer, Paid/Ours the price paid (owner, 2026-09-29).
 export default function CollectionPage() {
   const { id } = useParams();
   // A fresh screen per collection: its search, toggles and lock start over.
@@ -34,7 +37,8 @@ function CollectionScreen({ id }) {
   const { values } = useSettings();
   const lock = useCollectionLock(id, { deviceId, userId: user?.id });
   const col = useCollection(id, { deviceId, onLockLost: lock.recheck });
-  const [asking, setAsking] = useState(null);   // 'paid' | 'unlock' | 'takeover' | 'delete'
+  // 'offer' | 'paid' | 'complete' | 'reopen' | 'unlock' | 'takeover' | 'delete'
+  const [asking, setAsking] = useState(null);
   const [unlockTo, setUnlockTo] = useState('priced');
   const seen = useRef(false);
   const deleting = useRef(false);   // our own delete: no "deleted on another computer"
@@ -51,13 +55,14 @@ function CollectionScreen({ id }) {
     }
   }, [buy, col.missing]);
 
-  // Rates (spec 8.9.1, 9.4): the Paid/Ours snapshot, else the collection's
-  // custom rates where set, else the Master Buy Percentages.
+  // Rates (spec 8.9.1, 9.4): the Paid/Ours snapshot (kept while Completed),
+  // else the collection's custom rates where set, else the Master Buy
+  // Percentages.
   const master = { cash: Number(values.cash_pct), credit: Number(values.credit_pct) };
   const customCash = buy?.custom_cash_pct != null ? Number(buy.custom_cash_pct) : null;
   const customCredit = buy?.custom_credit_pct != null ? Number(buy.custom_credit_pct) : null;
-  const paid = buy?.status === 'paid';
-  const rates = paid && buy.cash_pct != null
+  const closed = Boolean(buy) && isClosed(buy.status);
+  const rates = closed && buy.cash_pct != null
     ? { cash: Number(buy.cash_pct), credit: Number(buy.credit_pct), customCash, customCredit }
     : { cash: customCash ?? master.cash, credit: customCredit ?? master.credit, customCash, customCredit };
 
@@ -70,9 +75,10 @@ function CollectionScreen({ id }) {
   if (!buy) locked = 'Loading the collection';
   else if (lock.status === 'checking') locked = 'Checking who is editing this collection';
   else if (viewOnly) locked = `View only: ${holderLabel} is editing this collection. Take over to edit`;
-  else if (paid) locked = 'Paid/Ours: unlock it to edit';
+  else if (buy.status === 'paid') locked = 'Paid/Ours: unlock it to edit';
+  else if (buy.status === 'completed') locked = 'Completed: reopen it to edit';
 
-  // The status can change while Paid/Ours (that's how it unlocks), not while view-only.
+  // The status can change while locked (that's how it unlocks), not while view-only.
   const canChangeStatus = Boolean(user) && !offline && lock.status === 'held' && Boolean(buy);
   let statusBlocked = null;
   if (!user) statusBlocked = 'Pick a user first';
@@ -82,11 +88,18 @@ function CollectionScreen({ id }) {
   const deleteBlocked = viewOnly ? `${holderLabel} is editing this collection: take over first`
     : offline ? 'No connection' : null;
 
-  /** Status changes: Paid/Ours and leaving it ask first (spec 9.5). */
+  /**
+   * Status changes (spec 9.5): Priced asks for the offer, Paid/Ours for the
+   * price paid, Completed and leaving a locked status ask first; only
+   * Priced → Processing just happens.
+   */
   function changeStatus(next) {
     if (!canChangeStatus || next === buy.status) return;
-    if (next === 'paid') setAsking('paid');
-    else if (paid) {
+    if (next === 'priced' && buy.status === 'processing') setAsking('offer');
+    else if (next === 'paid' && buy.status === 'completed') setAsking('reopen');
+    else if (next === 'paid') setAsking('paid');
+    else if (next === 'completed') setAsking('complete');
+    else if (closed) {
       setUnlockTo(next);
       setAsking('unlock');
     } else {
@@ -140,6 +153,7 @@ function CollectionScreen({ id }) {
                 setUnlockTo('priced');
                 setAsking('unlock');
               }}
+              onReopen={() => setAsking('reopen')}
               onBack={back}
               onInfo={(fields) => col.updateInfo(fields, user?.id)}
               onStatus={changeStatus}
@@ -154,21 +168,74 @@ function CollectionScreen({ id }) {
             </div>
           )}
 
-          {asking === 'paid' && (
-            <ConfirmModal
-              title="Mark as Paid/Ours?"
-              yes="Mark Paid/Ours"
+          {asking === 'offer' && (
+            <OfferModal
+              market={marketTotal(col.lines)}
+              rates={rates}
+              current={buy.offer_cash}
+              busy={col.busy}
               onClose={() => {
                 setAsking(null);
                 api.focusSearch();
               }}
+              onSave={async ({ cash, credit }) => {
+                if (await col.setStatus('priced', user?.id, master, { offerCash: cash, offerCredit: credit })) {
+                  setAsking(null);
+                  api.focusSearch();
+                }
+              }}
+            />
+          )}
+          {asking === 'paid' && (
+            <PaidModal
+              market={marketTotal(col.lines)}
+              rates={rates}
+              offer={{
+                cash: buy.status === 'processing' ? null : buy.offer_cash,
+                credit: buy.status === 'processing' ? null : buy.offer_credit,
+              }}
+              busy={col.busy}
+              onClose={() => {
+                setAsking(null);
+                api.focusSearch();
+              }}
+              onSave={async ({ price, method }) => {
+                if (await col.setStatus('paid', user?.id, master, { paidPrice: price, paidMethod: method })) {
+                  setAsking(null);
+                  api.focusSearch();
+                }
+              }}
+            />
+          )}
+          {asking === 'complete' && (
+            <ConfirmModal
+              title="Mark as Completed?"
+              yes="Mark Completed"
+              onClose={() => setAsking(null)}
+              onYes={async () => {
+                setAsking(null);
+                await col.setStatus('completed', user?.id, master);
+                api.focusSearch();
+              }}
+            >
+              <p>
+                Its cards have moved on: split up, sorted away or put into inventory. A Completed
+                collection stays locked and is left out of search.
+              </p>
+            </ConfirmModal>
+          )}
+          {asking === 'reopen' && (
+            <ConfirmModal
+              title="Reopen this collection?"
+              yes="Reopen"
+              onClose={() => setAsking(null)}
               onYes={async () => {
                 setAsking(null);
                 await col.setStatus('paid', user?.id, master);
                 api.focusSearch();
               }}
             >
-              <p>The collection will be locked.</p>
+              <p>It will go back to Paid/Ours, still locked, with the price paid kept.</p>
             </ConfirmModal>
           )}
           {asking === 'unlock' && (
@@ -182,7 +249,10 @@ function CollectionScreen({ id }) {
                 api.focusSearch();
               }}
             >
-              <p>It will go back to {statusLabel(unlockTo)} and can be edited.</p>
+              <p>
+                It will go back to {statusLabel(unlockTo)} and can be edited. The price paid is cleared
+                {unlockTo === 'priced' ? '; the offer stays' : ''}.
+              </p>
             </ConfirmModal>
           )}
           {asking === 'takeover' && (

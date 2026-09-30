@@ -81,7 +81,9 @@
 /* "✎ open on Front Counter (Dana)" under the name. */
 .lock-line { display: block; margin-top: 3px; font-size: 12px; font-weight: 500; color: var(--warn); }
 
-/* Status chips and the header's dropdown: Processing amber, Priced blue, Paid/Ours green. */
+/* Status colours (owner, 2026-09-29): Processing amber, Priced red, Paid/Ours
+   green for cash or blue for credit, Completed grey. Chips, the details'
+   dropdown and banner, and the filter chips (when on) share them. */
 .status-chip {
   display: inline-block;
   padding: 2px 10px;
@@ -91,9 +93,22 @@
   font-weight: 700;
   white-space: nowrap;
 }
-.status-chip.processing, .status-select.processing, .filter-pill.processing.active { color: var(--warn); }
-.status-chip.priced, .status-select.priced, .filter-pill.priced.active { color: var(--accent); }
-.status-chip.paid, .status-select.paid, .filter-pill.paid.active { color: var(--good); }
+.tone-processing { --tone: var(--warn); }
+.tone-priced { --tone: var(--bad); }
+.tone-paid-cash { --tone: var(--cash); }
+.tone-paid-credit { --tone: var(--credit); }
+.tone-completed { --tone: var(--muted); }
+.status-chip, .status-select { color: var(--tone, var(--text)); }
+.filter-pill.active { color: var(--tone, var(--text)); border-color: var(--tone, var(--accent)); }
+.filter-pill.active.tone-all { background: rgba(108, 140, 255, .14); }
+.filter-pill.active:not(.tone-all) { background: color-mix(in srgb, var(--tone) 14%, transparent); }
+
+/* Offer / Paid: TBD in amber until there's a figure; cash green, credit blue. */
+.tbd { color: var(--warn); font-weight: 700; font-size: 12px; letter-spacing: .06em; }
+.is-cash { color: var(--cash); }
+.is-credit { color: var(--credit); }
+.deal-slash { color: var(--muted); }
+.col-table .col-money { white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 600; }
 
 /* ---- New collection / delete dialogs ---- */
 .form-stack { display: flex; flex-direction: column; gap: 12px; min-width: 360px; }
@@ -101,6 +116,33 @@
 .field em { color: var(--muted); font-weight: 400; }
 .field input, .field textarea { width: 100%; font-weight: 400; }
 .form-stack .field-error, .field .field-error { width: auto; margin: 0; font-weight: 500; }
+/* Offer / final price dialogs */
+.deal-field { margin-top: 12px; }
+.money-input { display: flex; align-items: center; gap: 6px; }
+.money-sign { font-size: 20px; font-weight: 700; color: var(--muted); }
+.money-input input { font-size: 20px; font-weight: 700; padding: 8px 10px; font-variant-numeric: tabular-nums; }
+.deal-result { display: flex; gap: 18px; margin: 4px 0 8px; font-size: 14px; }
+.deal-result strong { margin-left: 4px; font-size: 16px; }
+.deal-offer { font-size: 14px; }
+.pay-method { display: flex; gap: 8px; margin: 12px 0 0; }
+.pay-choice {
+  flex: 1;
+  padding: 10px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-2);
+  color: var(--muted);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.pay-choice.cash:hover, .pay-choice.cash.on { border-color: var(--cash); color: var(--cash); }
+.pay-choice.credit:hover, .pay-choice.credit.on { border-color: var(--credit); color: var(--credit); }
+.pay-choice.cash.on { background: color-mix(in srgb, var(--cash) 16%, transparent); }
+.pay-choice.credit.on { background: color-mix(in srgb, var(--credit) 16%, transparent); }
 .coming-soon { margin: 6px 0; font-size: 18px; font-weight: 800; letter-spacing: .06em; text-align: center; }
 
 /* ---- A collection's details (9.4): the sidebar's foot, above the totals ---- */
@@ -153,7 +195,8 @@
   font-size: 12.5px;
 }
 .cd-banner.view-only { background: rgba(255, 204, 102, .12); color: var(--warn); }
-.cd-banner.paid { background: rgba(62, 207, 142, .12); color: var(--good); font-weight: 700; }
+.cd-banner[class*="tone-"] { background: color-mix(in srgb, var(--tone) 14%, transparent); color: var(--tone); font-weight: 700; }
+.cd-banner .is-cash, .cd-banner .is-credit { color: inherit; }
 .cd-banner .user-tag { color: var(--text); }
 .cd-fields {
   display: grid;

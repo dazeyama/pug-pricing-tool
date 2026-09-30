@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import UserTag from '../../components/UserTag.jsx';
 import GuardButton from '../../components/GuardButton.jsx';
 import InlineEdit from './InlineEdit.jsx';
-import { STATUSES, statusLabel } from './status.js';
+import { STATUSES, isClosed, statusLabel, statusTone } from './status.js';
+import { formatMoney } from '../../lib/money.js';
 import { PHONE_ERROR, formatPhone, phoneDigits, validPhone } from '../../lib/phone.js';
 import { formatRecent, formatShortDate, formatTime } from '../../lib/time.js';
 import { readLocal, writeLocal } from '../../lib/local.js';
@@ -64,6 +65,31 @@ function MoreMenu({ onDelete, deleteBlocked }) {
   );
 }
 
+/** "TBD" in amber until there's a figure (owner, 2026-09-29). */
+const TBD = <span className="tbd">TBD</span>;
+
+/** The offer as "$120 cash / $240 credit", or TBD (always TBD while Processing). */
+export function OfferText({ buy }) {
+  if (buy.status === 'processing' || (buy.offer_cash == null && buy.offer_credit == null)) return TBD;
+  return (
+    <span className="deal-pair">
+      {buy.offer_cash != null && <span className="is-cash">{formatMoney(buy.offer_cash)}</span>}
+      {buy.offer_cash != null && buy.offer_credit != null && <span className="deal-slash"> / </span>}
+      {buy.offer_credit != null && <span className="is-credit">{formatMoney(buy.offer_credit)}</span>}
+    </span>
+  );
+}
+
+/** The price paid, green for cash or blue for credit, or TBD. */
+export function PaidText({ buy, withMethod = false }) {
+  if (!isClosed(buy.status) || buy.paid_price == null) return TBD;
+  return (
+    <span className={`is-${buy.paid_method}`}>
+      {formatMoney(buy.paid_price)}{withMethod && ` ${buy.paid_method}`}
+    </span>
+  );
+}
+
 /**
  * A collection's details, at the foot of its sidebar above the totals
  * (owner, 2026-09-29: nothing may take height from the stage). The top line
@@ -74,7 +100,7 @@ function MoreMenu({ onDelete, deleteBlocked }) {
  */
 export default function CollectionDetails({
   buy, byId, api, canChangeStatus, statusBlocked, deleteBlocked,
-  viewOnly, holder, onTakeOver, onUnlock, onBack, onInfo, onStatus, onDelete,
+  viewOnly, holder, onTakeOver, onUnlock, onReopen, onBack, onInfo, onStatus, onDelete,
 }) {
   const [open, setOpen] = useState(() => readLocal(OPEN_KEY) !== 'no');
   const toggle = () => {
@@ -83,9 +109,12 @@ export default function CollectionDetails({
       return !o;
     });
   };
-  const paid = buy.status === 'paid';
-  const step = buy.status === 'processing' ? { to: 'priced', label: 'Mark as Priced →' }
-    : buy.status === 'priced' ? { to: 'paid', label: 'Mark as Paid/Ours →' } : null;
+  const tone = statusTone(buy);
+  const step = {
+    processing: { to: 'priced', label: 'Mark as Priced →' },
+    priced: { to: 'paid', label: 'Mark as Paid/Ours →' },
+    paid: { to: 'completed', label: 'Mark as Completed →' },
+  }[buy.status] ?? null;
 
   return (
     <section className={`col-details${open ? ' open' : ''}`} aria-label="Collection details">
@@ -99,7 +128,7 @@ export default function CollectionDetails({
           onClick={toggle}
         >
           <span className="cd-name">{buy.customer_name}</span>
-          <span className={`status-chip ${buy.status}`}>{statusLabel(buy.status)}</span>
+          <span className={`status-chip ${tone}`}>{statusLabel(buy.status)}</span>
           <span className="cd-chevron" aria-hidden="true">{open ? '▾' : '▸'}</span>
         </button>
         <MoreMenu onDelete={onDelete} deleteBlocked={deleteBlocked} />
@@ -115,16 +144,29 @@ export default function CollectionDetails({
           <GuardButton className="btn small" onClick={onTakeOver}>Take over</GuardButton>
         </div>
       )}
-      {paid && (
-        <div className="cd-banner paid">
-          <span>Paid/Ours — locked.</span>
+      {buy.status === 'paid' && (
+        <div className={`cd-banner ${tone}`}>
+          <span>Paid/Ours — <PaidText buy={buy} withMethod />. Locked.</span>
           <GuardButton
-            className="btn small good-ghost"
+            className="btn small ghost"
             disabled={!canChangeStatus}
             title={canChangeStatus ? 'Unlock: back to Priced, and editable' : statusBlocked}
             onClick={onUnlock}
           >
             🔒 Unlock
+          </GuardButton>
+        </div>
+      )}
+      {buy.status === 'completed' && (
+        <div className="cd-banner tone-completed">
+          <span>Completed — locked, and left out of search.</span>
+          <GuardButton
+            className="btn small ghost"
+            disabled={!canChangeStatus}
+            title={canChangeStatus ? 'Reopen: back to Paid/Ours, still locked' : statusBlocked}
+            onClick={onReopen}
+          >
+            Reopen
           </GuardButton>
         </div>
       )}
@@ -187,14 +229,19 @@ export default function CollectionDetails({
           <dt>Status</dt>
           <dd className="cd-status">
             <select
-              className={`status-select ${buy.status}`}
+              className={`status-select ${tone}`}
               aria-label="Status"
               value={buy.status}
               disabled={!canChangeStatus}
               title={canChangeStatus ? 'Status' : statusBlocked}
               onChange={(e) => onStatus(e.target.value)}
             >
-              {STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+              {STATUSES.map((s) => (
+                // Completed only follows Paid/Ours.
+                <option key={s.value} value={s.value} disabled={s.value === 'completed' && !isClosed(buy.status)}>
+                  {s.label}
+                </option>
+              ))}
             </select>
             {step && (
               <GuardButton
@@ -207,6 +254,10 @@ export default function CollectionDetails({
               </GuardButton>
             )}
           </dd>
+          <dt>Offer</dt>
+          <dd><OfferText buy={buy} /></dd>
+          <dt>Paid</dt>
+          <dd><PaidText buy={buy} withMethod /></dd>
           <dt>Created</dt>
           <dd>{formatShortDate(buy.created_at)} by <UserTag user={byId(buy.created_by)} /></dd>
           <dt>Edited</dt>

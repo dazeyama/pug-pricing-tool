@@ -428,10 +428,13 @@ All IDs are `uuid default gen_random_uuid()` unless noted, and all timestamps ar
 |---|---|---|
 | id | uuid PK | |
 | kind | text not null | `walk_in` \| `collection` |
-| status | text not null | walk_in: `draft` \| `confirmed`; collection: `processing` \| `priced` \| `paid` (shown as "Paid/Ours"). A CHECK ties allowed values to `kind`. |
+| status | text not null | walk_in: `draft` \| `confirmed`; collection: `processing` \| `priced` \| `paid` (shown as "Paid/Ours") \| `completed` (added 2026-09-29, migration 0011). A CHECK ties allowed values to `kind`. |
 | customer_name | text | walk-in: optional (entered at confirm); collection: required |
 | phone | text | collection: required; walk-in: optional, entered at confirm (added 2026-09-29). 10 digits stored (Section 9.3) |
 | id_last4 | text null | collection: the customer's Last 4 ID, optional, 1–4 of `A–Z 0–9` (Section 9.2; migration 0010) |
+| offer_cash, offer_credit | numeric(10,2) null | collection: **the offer** made when it was marked Priced (owner's decision, 2026-09-29): the cash figure typed in, and the credit offer worked out from it (Section 9.5). Kept when it goes back to Processing (the table shows TBD then); a new offer replaces it. Migration 0011. |
+| paid_price, paid_method | numeric(10,2) null, text null | collection: **the price paid**, typed in when it was marked Paid/Ours, and `cash` or `credit` (owner's decision, 2026-09-29). Both or neither. Cleared when it's unlocked back to Priced or Processing; kept while Completed. Migration 0011. |
+| completed_at | timestamptz null | collection: when it was marked Completed |
 | notes | text default '' | |
 | draft_device_id | uuid → devices | walk-in drafts only. **Unique partial index** where `status='draft'`: one draft per device. |
 | created_at, created_by | timestamptz, uuid → staff_users | collection: the creator |
@@ -550,7 +553,7 @@ Every change that affects buy contents, or anything the changelog records, goes 
 | `collection_update_line(line_id, line, user, device, expected_version, old_text, new_text)` | EDIT CARD on a collection (as built, Phase 7): saves the edited line over the old one at **today's price** (owner's decision, 2026-09-29: edits always re-price, collections included), merging with an identical line like `draft_update_line`. Same requirements as adding. | `collection_line_edited`: the old line (−) and the new one (+) |
 | `collection_remove_line(line_id, qty, user, device, expected_version)` | Same requirements | `collection_cards_removed` |
 | `collection_update_info(buy_id, fields, user, device, expected_version)` | name / phone / notes / custom rates (`custom_cash_pct`, `custom_credit_pct`) | `collection_info_edited` with before/after |
-| `collection_set_status(buy_id, status, user, device, cash_pct, credit_pct, expected_version)` | Moving to `paid` snapshots percentages (custom rate where set, else master) and `paid_at`; leaving `paid` clears the snapshot but **keeps** the custom rates | `collection_status_changed` |
+| `collection_set_status(buy_id, status, user, device, cash_pct, credit_pct, expected_version, offer_cash, offer_credit, paid_price, paid_method)` | Moving to `paid` snapshots percentages (custom rate where set, else master) and `paid_at`; leaving `paid` clears the snapshot but **keeps** the custom rates. **As of migration 0011 (owner, 2026-09-29):** Processing → Priced needs `offer_cash` (`offer_needed`; `offer_credit` is worked out from the rates when not given); → Paid/Ours needs `paid_price` and `paid_method` (`paid_price_needed`, `paid_method_needed`), except reopening from Completed, which keeps them; → Completed only from Paid/Ours (`complete_after_paid`). Unlocking to Priced or Processing clears the price paid; the offer stays. Completed refuses content writes like Paid/Ours (`collection_completed`). | `collection_status_changed`, with `offer` / `paid` field rows and the collection's totals when an offer or price is set |
 | `collection_delete(buy_id, user, typed_name)` | Server checks `typed_name` matches | `collection_deleted` with the full line list and totals |
 | `lock_acquire(buy_id, device, user, force)` / `lock_heartbeat` / `lock_release` | Section 9.6 | none |
 | `restore_backup(payload)` | Section 11.5 | `backup_restored` (milestone) |
@@ -1019,6 +1022,8 @@ Collections  14                                     [ Search name or phone… ] 
 - **Columns** (owner's list): **Name, Phone Number, Status, Date of creation, Date last edited, Last edited by** (the user with their colour dot, added 2026-09-29), **Notes.** Notes are truncated to one line, with the full text in a tooltip.
 - **Sort:** click a column header to sort ascending, click again for descending. Default is **Last edited, newest first**.
 - **Status filter:** All / Processing / Priced / Paid/Ours. Default is All.
+  - **As of 2026-09-29 (owner's decisions):** the chips are **All · Processing** (amber) **· Priced** (red) **· Paid/Ours Cash** (green) **· Paid/Ours Credit** (blue) **· Completed** (grey, last). A chip shows its colour while on. The same colours mark the Status column's chips and a collection's details: Processing amber, Priced red, Paid/Ours green or blue by how it was paid (the Cash / Credit colours), Completed grey.
+  - **Offer** and **Paid** columns, after Status (owner's decision, 2026-09-29): the offer as "$120 / $240" (cash green / credit blue) and the price paid in green (cash) or blue (credit). Either reads **TBD** in amber until there's a figure; the offer always reads TBD while Processing. Both sort, TBD first.
 - **Search box:** matches name (case- and accent-insensitive substring) and phone (digits substring).
 - **Lock indicator:** when a collection is open for editing on another device, show an "✎ open on <device> (<user>)" sub-line on its row.
 - **Live:** the table updates through Realtime.
@@ -1090,12 +1095,19 @@ The **Price tab's screen, reused** (the same components), with these differences
 
 ### 9.5 Status and locking at Paid/Ours
 
-- **Processing → Priced → Paid/Ours.** Any status can be chosen from the dropdown.
+**The deal (owner's decision, 2026-09-29).** Prices are simple maths, but a price is agreed between two people: the store makes an adjusted offer, the customer haggles. So the app records the real figures as the collection moves on:
+- **Marking it Priced** (the step button, or the dropdown from Processing) opens **"Mark as Priced"**: Market, Cash and Credit at the collection's rates, then **Set an offer (cash)**, a money field for the whole collection. The **credit offer** is worked out and shown as it's typed: the same deal at the collection's rates, cash × credit % ÷ cash %, rounded down by the price steps (e.g. $120 cash at 33% / 66% → $240 credit). **Save offer** stores both (`offer_cash`, `offer_credit`) and sets Priced. The field starts with the last offer, if any.
+- **Marking it Paid/Ours** opens **"Mark as Paid/Ours"**: the same Market / Cash / Credit, the offer if there is one, a **Cash | Credit** choice (required, nothing chosen at first) and **Set a final purchase price**, the amount actually paid. Choosing Cash or Credit fills in that offer when nothing's typed yet. **Mark Paid/Ours** stores them (`paid_price`, `paid_method`) and locks the collection. This replaces the plain "Mark as Paid/Ours?" question below.
+- **Completed** (owner's decision, 2026-09-29) comes **after Paid/Ours**: the collection has been broken apart, sorted away or uploaded into inventory, so its cards can't be assumed to be where they were. "Mark as Completed →" (the step button while Paid/Ours) asks first. A Completed collection stays locked like Paid/Ours (grey banner "Completed — locked, and left out of search." with **Reopen**, back to Paid/Ours with the price paid kept), is **left out of the header search entirely** (Section 13), and is effectively how a collection is retired without deleting its history. Completed can only follow Paid/Ours (the dropdown greys it out before then).
+- **Unlocking** back to Priced or Processing clears the price paid (it wasn't paid after all); the offer stays. Every step is logged with its figures (Section 12.3).
+
+- **Processing → Priced → Paid/Ours → Completed.** Any status can be chosen from the dropdown, with the dialogs above.
 - Choosing **Paid/Ours** asks: "Mark as Paid/Ours? The collection will be locked." [Cancel] [Mark Paid/Ours]. Once Paid/Ours:
   - ADD CARD, remove, and info edits are disabled.
   - A green banner reads "Paid/Ours — locked." with an **🔒 Unlock** button.
 - **Unlock** (or choosing another status from the dropdown) asks "Unlock this collection? It will go back to Priced and can be edited." [Cancel] [Unlock]. This sets the status to **Priced** and is logged.
   - **As built:** 🔒 Unlock goes back to Priced. Choosing Processing from the dropdown while Paid/Ours asks the same question naming Processing, and goes there. The status can change while Paid/Ours (that's how it unlocks), but not from a view-only computer.
+  - **As of 2026-09-29:** the Paid/Ours banner is green or blue by how it was paid and names the price ("Paid/Ours — $262.50 credit. Locked."). The details show **Offer** and **Paid** lines under Status, TBD in amber until set. The step button runs Mark as Priced → Mark as Paid/Ours → Mark as Completed.
 
 ### 9.6 One computer at a time (owner's decision)
 
@@ -1347,7 +1359,7 @@ Then "Not affiliated with Wizards of the Coast or The Pokémon Company." and the
 | `collection_cards_removed` | Cards removed from collection | Collections / blue | Removed lines (−), totals |
 | `collection_line_edited` | Card edited in collection | Collections / blue | The line as it was (−) and as saved (+), each with its price; no totals (added Phase 7, owner's decision 2026-09-29 that edits re-price) |
 | `collection_info_edited` | Collection details edited | Actions / slate | Field rows (name, phone, notes, cash %, credit %). A custom rate reads `cash %: 33 → 40`; clearing one reads `cash %: 40 → master (33)`. |
-| `collection_status_changed` | Status changed | Actions / slate | `status: Priced → Paid/Ours`; "unlocked" when leaving Paid/Ours |
+| `collection_status_changed` | Status changed | Actions / slate | `status: Priced → Paid/Ours`; "unlocked" when leaving Paid/Ours. **As of migration 0011:** marking Priced adds `offer: $120 cash / $240 credit` and marking Paid/Ours `paid: $262.50 credit`, each with the collection's totals then; summaries read "Marked Priced: offered $120 cash / $240 credit.", "Marked Paid/Ours: paid $262.50 in credit, locked.", "Marked Completed: its cards have moved on.", "Reopened: back to Paid/Ours, still locked." |
 | `collection_deleted` | Collection deleted | Collections / red cross | All lines (−) at deletion, totals, name and phone |
 | `backup_restored` | — | milestone (always shown) | Drawn as CM's green milestone pill across the line: "Backup restored — <file name>" |
 
@@ -1388,7 +1400,7 @@ The data isn't folded, only the drawing. Pagination counts drawn panels.
 
 - **Where:** in the header on every tab. **Much larger (about 640px wide, taller, 16px text) everywhere except the pricing screens**, where it keeps its normal size (owner's decision, 2026-09-29, replacing "smaller on pricing screens"): there the main search bar is the focus (Section 7.2).
 - **Input:** the same syntax as the main search (Section 8.2). **Partial names work.** `bolt` finds every stored line whose name contains "bolt", across every printing and number. Adding `/size`, a number or a set code narrows the results. Both games are searched.
-- **Scope** (owner's decision): lines in **confirmed walk-in buys** and **collections**, but not drafts. The query runs in Postgres (`name_key` trigram/ILIKE, plus number, size and set equality), limited to 200 lines. Japanese lines should also match on `name_en` (the English name staff will type).
+- **Scope** (owner's decision): lines in **confirmed walk-in buys** and **collections**, but not drafts. **Completed collections are skipped completely** (owner's decision, 2026-09-29): their cards have moved on, so they can't be found where they were. Paid/Ours collections are searched (their cards are in the store), as are Processing and Priced ones. The query runs in Postgres (`name_key` trigram/ILIKE, plus number, size and set equality), limited to 200 lines. Japanese lines should also match on `name_en` (the English name staff will type).
 - **Results dropdown** (CM `.search-results`, opening under the box):
   - Grouped by **printing**: a heading line such as "Lightning Bolt (2X2) 161 *F*", with a game badge. Then two sub-groups:
     - **Buys:** one row per buy: "Sat, Aug 17, 2026 · Magic · Buy 2 · ● Sam · qty 4".
@@ -1594,6 +1606,10 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 - [ ] Create a collection without a phone number: blocked. With `5551234567`: shows as `(555) 123-4567`.
 - [ ] Add cards, close the tab, reopen: all there. The table's "Last edited" updated.
 - [ ] Mark as Priced → Mark as Paid/Ours: the screen locks. Unlock returns it to Priced.
+- [ ] Mark as Priced asks for an offer: type 120 at 33% / 66% and the credit offer reads $240. The table's Offer shows "$120 / $240"; Paid reads TBD in amber.
+- [ ] Mark as Paid/Ours asks Cash or Credit and the final price: pick Credit, type 262.50. The status chip and Paid column turn blue; the Paid/Ours Credit filter finds it.
+- [ ] Mark as Completed: grey, locked, and the Completed filter (last) finds it. Reopen puts it back to Paid/Ours with the price kept.
+- [ ] Filter chips: Processing amber, Priced red, Paid/Ours Cash green, Paid/Ours Credit blue, Completed grey.
 - [ ] Set a custom Credit % on a collection: its totals use it; changing Master Buy Percentages in Settings doesn't touch it; it's locked while Paid/Ours and still there after Unlock.
 - [ ] Open the same collection on a second computer: it's view-only and names the first computer and user. Take over: the first computer turns view-only.
 - [ ] Close the first computer's browser entirely: within about a minute the second can edit without Take over.
@@ -1629,7 +1645,7 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 - Categories with click / Ctrl+click behavior, game filter, text filter, funnel, and the Show-everything bar. Folding of add/remove runs. Clickable targets. Opening-state reset on re-click.
 
 **Where to look**
-- [ ] Every action from Phases 6–8 appears: buy confirmed (large green dot, all cards, totals), cards removed, buy deleted (red cross), collection created (large blue dot), cards added, status changed, details edited, collection deleted.
+- [ ] Every action from Phases 6–8 appears: buy confirmed (large green dot, all cards, totals), cards removed, buy deleted (red cross), collection created (large blue dot), cards added, card edited, status changed (with the offer or price paid, and Completed / Reopened), details edited, collection deleted.
 - [ ] Twenty quick adds to one collection show as **one** "Cards added to collection" panel.
 - [ ] Today/Yesterday labels and alternating sides look like CM.
 - [ ] Clicking a buy title opens its day page; clicking a collection opens it; a deleted one isn't a link.
@@ -1642,7 +1658,7 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 ### Phase 10: Global search, backups and launch
 
 **Build**
-- Header global search (Section 13) with grouped results, keyboard, and jump + flash.
+- Header global search (Section 13) with grouped results, keyboard, and jump + flash. **Completed collections are left out of the query** (owner, 2026-09-29).
 - Backup download/restore (11.5), the `restore_backup` function, the pre-restore auto-download, the backup reminder banner, and the plan-status text.
 - Polish pass: empty states, loading states, error toasts, tooltips, the 1366×768 check.
 - **Launch:** apply all migrations to **prod**, deploy the Edge Functions to prod, set the GitHub Actions variables, and finish `docs/SETUP.md` (run, deploy, change the store password, restore a pause). The public `README.md` stays a very short description of the tool's purpose (owner's decision, 2026-09-29). **Push to `main` only when the owner says go**, then confirm the Pages deploy succeeded.
@@ -1655,6 +1671,7 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 **Where to look**
 - [ ] Header search `bolt`: every buy and collection containing any Lightning Bolt printing, grouped by printing. Clicking one jumps there and flashes it.
 - [ ] Search `Charizard 125/197`: narrows to that printing.
+- [ ] A card in a Completed collection doesn't come up; mark that collection back to Paid/Ours (Reopen) and it does.
 - [ ] Download backup: a JSON file saves, and the reminder banner goes away.
 - [ ] Restore (on **dev only**): type RESTORE, a pre-restore file downloads first, then the data matches the backup, and a "Backup restored" milestone is in the changelog.
 - [ ] Everything still works on a 1366×768 laptop.
@@ -1923,6 +1940,10 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 120 | Collection details in the sidebar (2026-09-29) | A collection's details move from the header bar to the sidebar's foot, above the totals (where the Price tab has them), collapsible; nothing sits above the stage (Section 9.4) |
 | 121 | Last 4 ID on collections (2026-09-29) | An optional Last 4 ID (up to 4 letters/digits, capitals) in + Price Collection, saved with the collection, shown and edited in its details, not on the table (Sections 6.1, 9.2) |
 | 122 | Last edited by column (2026-09-29) | The collections table shows who last edited each collection, after Last edited, sortable (Section 9.1) |
+| 123 | The offer (2026-09-29) | Marking a collection Priced asks for a cash offer; the credit offer is worked out at its rates and shown; both are saved (`offer_cash`, `offer_credit`) and shown on the table (Sections 6.1, 9.1, 9.5) |
+| 124 | The price paid (2026-09-29) | Marking a collection Paid/Ours asks for the final purchase price and Cash or Credit; saved (`paid_price`, `paid_method`), shown on the table in green or blue, filterable (Sections 6.1, 9.1, 9.5) |
+| 125 | Completed status (2026-09-29) | After Paid/Ours comes Completed: locked, grey, and skipped entirely by the header search since its cards have moved on (Sections 9.5, 13; Phase 10) |
+| 126 | Status colours (2026-09-29) | Processing amber, Priced red, Paid/Ours green (cash) or blue (credit), Completed grey; filter chips Paid/Ours Cash and Paid/Ours Credit replace Paid/Ours, Completed last (Section 9.1) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

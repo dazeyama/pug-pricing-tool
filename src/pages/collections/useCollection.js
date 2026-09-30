@@ -15,6 +15,11 @@ const MESSAGES = {
   stale_version: 'This collection changed on another computer — reloaded.',
   not_lock_holder: 'Another computer is editing this collection now. Take over to edit.',
   collection_paid: 'This collection is Paid/Ours: unlock it to edit.',
+  collection_completed: 'This collection is Completed: reopen it to edit.',
+  offer_needed: 'Set an offer to mark it Priced.',
+  paid_price_needed: 'Set the final purchase price to mark it Paid/Ours.',
+  paid_method_needed: 'Choose Cash or Credit to mark it Paid/Ours.',
+  complete_after_paid: 'Only a Paid/Ours collection can be marked Completed.',
   collection_gone: 'This collection was deleted.',
   line_gone: 'That card was already removed.',
   locked_elsewhere: 'Another computer is editing this collection: take over first.',
@@ -150,10 +155,22 @@ export function useCollection(id, { deviceId, onLockLost }) {
     { custom_cash_pct: cash, custom_credit_pct: credit }, userId,
   ), [updateInfo]);
 
-  /** Processing / Priced / Paid/Ours; `master` is the rates the screen shows. */
-  const setStatus = useCallback(async (status, userId, master) => {
+  /**
+   * Processing / Priced / Paid/Ours / Completed; `master` is the rates the
+   * screen shows. `deal`: the offer for Priced ({ offerCash, offerCredit }),
+   * the final price for Paid/Ours ({ paidPrice, paidMethod }).
+   */
+  const setStatus = useCallback(async (status, userId, master, deal = {}) => {
     const r = await run('collection_set_status', {
-      p_buy_id: id, p_status: status, p_cash_pct: master.cash, p_credit_pct: master.credit, ...mine(userId),
+      p_buy_id: id,
+      p_status: status,
+      p_cash_pct: master.cash,
+      p_credit_pct: master.credit,
+      ...mine(userId),
+      p_offer_cash: deal.offerCash ?? null,
+      p_offer_credit: deal.offerCredit ?? null,
+      p_paid_price: deal.paidPrice ?? null,
+      p_paid_method: deal.paidMethod ?? null,
     }, "Couldn't change the status");
     return r.ok;
   }, [id, run, deviceId]);

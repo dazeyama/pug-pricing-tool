@@ -9,21 +9,28 @@ import { withLoading } from '../lib/loading.js';
 import GuardButton from '../components/GuardButton.jsx';
 import UserTag from '../components/UserTag.jsx';
 import { NewCollectionModal } from './collections/CollectionModals.jsx';
-import { STATUSES, statusLabel } from './collections/status.js';
+import { FILTERS, isClosed, statusLabel, statusTone } from './collections/status.js';
+import { OfferText, PaidText } from './collections/CollectionDetails.jsx';
 import { errorMessage } from './collections/useCollection.js';
 import { useDevice } from '../state/device.jsx';
 import { useStaff } from '../state/staff.jsx';
 import { useToast } from '../components/Toast.jsx';
 
 const STALE_MS = 60_000;   // a lock without a heartbeat for 60s is stale (spec 9.6)
-const STATUS_ORDER = { processing: 0, priced: 1, paid: 2 };
+const STATUS_ORDER = { processing: 0, priced: 1, paid: 2, completed: 3 };
 
 // Sortable columns (spec 9.1): the value each sorts by. `by` looks up a
-// staff user (Last edited by).
+// staff user (Last edited by). An offer or price not set yet (TBD) sorts as -1.
 const columns = (by) => [
   { key: 'name', label: 'Name', value: (c) => nameKey(c.customer_name) },
   { key: 'phone', label: 'Phone', value: (c) => c.phone },
   { key: 'status', label: 'Status', value: (c) => STATUS_ORDER[c.status] },
+  {
+    key: 'offer',
+    label: 'Offer',
+    value: (c) => (c.status === 'processing' || c.offer_cash == null ? -1 : Number(c.offer_cash)),
+  },
+  { key: 'paid', label: 'Paid', value: (c) => (isClosed(c.status) && c.paid_price != null ? Number(c.paid_price) : -1) },
   { key: 'created', label: 'Created', value: (c) => c.created_at },
   { key: 'edited', label: 'Last edited', value: (c) => c.updated_at },
   { key: 'editor', label: 'Last edited by', value: (c) => nameKey(by(c.last_edited_by)?.name ?? '') },
@@ -42,7 +49,8 @@ export default function CollectionsPage() {
   const toast = useToast();
   const { data, loaded } = useLiveTable('buys', () => supabase
     .from('buys')
-    .select('id, customer_name, phone, status, notes, created_at, updated_at, last_edited_by')
+    .select('id, customer_name, phone, status, notes, created_at, updated_at, last_edited_by, '
+      + 'offer_cash, offer_credit, paid_price, paid_method')
     .eq('kind', 'collection'));
   const locks = useLiveTable('collection_locks', () => supabase
     .from('collection_locks')
@@ -66,9 +74,10 @@ export default function CollectionsPage() {
     const words = nameKey(query);
     const digits = query.replace(/\D/g, '');
     const column = COLUMNS.find((c) => c.key === sort.key);
+    const filter = FILTERS.find((f) => f.value === status) ?? FILTERS[0];
     const dir = sort.dir === 'asc' ? 1 : -1;
     return all
-      .filter((c) => status === 'all' || c.status === status)
+      .filter(filter.match)
       .filter((c) => !words
         || nameKey(c.customer_name).includes(words)
         || (digits && c.phone?.includes(digits)))
@@ -132,11 +141,11 @@ export default function CollectionsPage() {
       </div>
 
       <div className="status-filter" role="group" aria-label="Status">
-        {[{ value: 'all', label: 'All' }, ...STATUSES].map((s) => (
+        {FILTERS.map((s) => (
           <button
             key={s.value}
             type="button"
-            className={`filter-pill ${s.value}${status === s.value ? ' active' : ''}`}
+            className={`filter-pill tone-${s.value}${status === s.value ? ' active' : ''}`}
             aria-pressed={status === s.value}
             onClick={() => setStatus(s.value)}
           >
@@ -193,7 +202,9 @@ export default function CollectionsPage() {
                   {elsewhere && <span className="lock-line">{elsewhere}</span>}
                 </td>
                 <td className="col-phone">{formatPhone(c.phone)}</td>
-                <td><span className={`status-chip ${c.status}`}>{statusLabel(c.status)}</span></td>
+                <td><span className={`status-chip ${statusTone(c)}`}>{statusLabel(c.status)}</span></td>
+                <td className="col-money"><OfferText buy={c} /></td>
+                <td className="col-money"><PaidText buy={c} /></td>
                 <td className="col-date">{formatShortDate(c.created_at)}</td>
                 <td className="col-date">{formatRecent(c.updated_at)}</td>
                 <td className="col-editor"><UserTag user={staff.byId(c.last_edited_by)} /></td>
