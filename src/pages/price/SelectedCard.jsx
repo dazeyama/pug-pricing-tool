@@ -5,6 +5,7 @@ import GameBadge from '../../components/GameBadge.jsx';
 import * as scry from '../../lib/scryfall.js';
 import { useCardImages } from './useCardImages.js';
 import { POKEMON_CARD_BACK, tcgplayerId } from '../../lib/pokemonImages.js';
+import { openPopup, popupName } from '../../lib/popup.js';
 
 // Pokémon rarities whose art covers the whole card (TCGdex's names, English
 // and Japanese). Their holo shines across the whole card.
@@ -196,10 +197,17 @@ export default function SelectedCard({ candidate: c, typedName, englishName, pok
             )}
           </p>
           {/* "View on" / "Find on" drop out when the box is too narrow for
-              all three links (price.css). */}
+              all three links (price.css). Each opens in its site's reused
+              pop-up window (lib/popup.js). */}
           <p className="info-links">
             {link && (
-              <a className="info-link" href={link} target="_blank" rel="noreferrer">
+              <a
+                className="info-link"
+                href={link}
+                target={popupName(magic ? 'scryfall' : 'tcgdex')}
+                referrerPolicy="no-referrer"
+                onClick={(e) => openPopup(e, magic ? 'scryfall' : 'tcgdex')}
+              >
                 <span className="link-verb">View on </span>{magic ? 'Scryfall' : 'TCGdex'} ↗
               </a>
             )}
@@ -207,8 +215,9 @@ export default function SelectedCard({ candidate: c, typedName, englishName, pok
               <a
                 className="info-link"
                 href={tcgplayer.href}
-                target="_blank"
-                rel="noreferrer"
+                target={popupName('tcgplayer')}
+                referrerPolicy="no-referrer"
+                onClick={(e) => openPopup(e, 'tcgplayer')}
                 title={tcgplayer.exact ? 'This printing on TCGplayer' : 'No TCGplayer ID for this card: searches TCGplayer'}
               >
                 <span className="link-verb">{tcgplayer.exact ? 'View on ' : 'Find on '}</span>TCGplayer ↗
@@ -218,8 +227,9 @@ export default function SelectedCard({ candidate: c, typedName, englishName, pok
               <a
                 className="info-link"
                 href={cardmarket.href}
-                target="_blank"
-                rel="noreferrer"
+                target={popupName('cardmarket')}
+                referrerPolicy="no-referrer"
+                onClick={(e) => openPopup(e, 'cardmarket')}
                 title={cardmarket.exact ? 'This printing on Cardmarket (Europe)' : 'Searches Cardmarket (Europe) for this card by name'}
               >
                 <span className="link-verb">{cardmarket.exact ? 'View on ' : 'Find on '}</span>Cardmarket ↗
