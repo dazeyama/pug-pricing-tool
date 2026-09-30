@@ -1463,27 +1463,27 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 **Owner tasks**
 - Enter the JustTCG key in **Settings → API keys** on the dev site once the section exists (and again on prod at launch).
 
-**Where to look**
-- [ ] Settings → API keys: the key shows masked, and Test shows your plan and remaining requests.
-- [ ] Select a card: five prices appear. NM is selected. Flipping foil changes the prices instantly.
-- [ ] Select the same card on another computer: prices appear without the usage meter going up (shared cache).
-- [ ] An obscure card with no JustTCG data shows "fallback" prices on all five conditions (Settings → Master Fallback Percentages).
-- [ ] A card where JustTCG has a lower condition priced above a better one (e.g. MP > LP): that price shows as "fallback", and its tooltip says it was thrown out.
-- [ ] Isshin, Two Heavens as One (FCA 54), non-foil: MP shows $7 (10% below LP's $7.78) and DMG $3.50 (10% below HP's $4), both "fallback"; never the same price as the condition above.
-- [ ] Manual price: the ✎ price shows bold with the market price struck through beneath it. Picking another condition clears it.
-- [ ] Use Fallback: hovering shows the fallback NM price; pressing it replaces all five prices with fallbacks (NM = the fallback, the rest by the fallback percentages, all tagged "fallback"); pressing again goes back.
-- [ ] Use Cardmarket (between Use Fallback and ✎ Manual price): hovering shows Cardmarket's euro price and its dollar value; pressing it prices every condition from it (tagged "CM"; Base Set Charizard 1st Edition: about $2,810 / $2,390 / $1,970 / $1,540 / $1,120); pressing Use Fallback switches to that instead; pressing again goes back to JustTCG.
-- [ ] A card whose Scryfall/TCGdex price is far from JustTCG's NM shows ⚠️ on the NM label.
-- [ ] Base Set Charizard, HOLO, 1st Edition: ⚠️ on NM and "⚠️ Price may be wrong (3)" in the price panel; hovering it lists the three reasons over Finish & Details, which keep their full height. Unlimited Charizard and Isshin (FCA 54) show neither.
-- [ ] Price panel (beside the card info): the selected condition's price in green, Credit and Cash under it; it follows condition, foil, Use Fallback, Use Cardmarket and manual price.
-- [ ] Arrow quickly through 10 suggestions: the usage meter rises by about 1, not 10.
-- [ ] MTG | PKM: switch PKM off and search `Charizard`: only Magic cards show (or "No cards match … PKM is off"), and EN | JP greys out. The last game on can't be switched off. Leave the Price tab and come back: both are on again.
-- [ ] Etched Magic card: the price looks like the etched listing, not the regular foil.
-- [ ] No tokens or art cards: search `2/184 S8b` (EN) or `Treasure 14`: no tokens, emblems or art series cards among the suggestions.
-- [ ] `2/184 S8b` with EN on: the note under the search bar reads "S8b is a Japanese Pokémon set: switch to JP"; clicking it switches to JP and finds the card. `125/197 OBF` with JP on offers "switch to EN".
-- [ ] Japanese images: JP, a card from TCG Tag Team All Stars (`1/173 SM12a`) or VMAX Climax (S8b) shows a real picture (from Limitless), not the card back; a top secret rare Limitless lacks still shows the card back. Settings' footer credits Limitless TCG.
-- [ ] Japanese Pokémon without JustTCG data (JP, `25/165 SV2a`): all five prices appear on their own, tagged CM, caption "No JustTCG price: Cardmarket prices shown."; Use Cardmarket is greyed out.
-- [ ] Cardmarket link (after View on TCGplayer): Magic's View on Cardmarket opens the card's page (Isshin, FCA 54); Pokémon's Find on Cardmarket opens a Cardmarket search for the name (Charizard). Neither shows "Sorry, you have been blocked". A Japanese Pokémon (JP, `25/165 SV2a`) shows "ピカチュウ Pikachu", searches Cardmarket for "Pikachu 025" and TCGplayer for "Pikachu 025", and prices from JustTCG's Japanese listing if it has one. On the 1366×768 laptop the three links read "Scryfall ↗ TCGplayer ↗ Cardmarket ↗".
+**Where to look** (all tested by the owner and working, 2026-09-29)
+- [x] Settings → API keys: the key shows masked, and Test shows your plan and remaining requests.
+- [x] Select a card: five prices appear. NM is selected. Flipping foil changes the prices instantly.
+- [x] Select the same card on another computer: prices appear without the usage meter going up (shared cache).
+- [x] An obscure card with no JustTCG data shows "fallback" prices on all five conditions (Settings → Master Fallback Percentages).
+- [x] A card where JustTCG has a lower condition priced above a better one (e.g. MP > LP): that price shows as "fallback", and its tooltip says it was thrown out.
+- [x] Isshin, Two Heavens as One (FCA 54), non-foil: MP shows $7 (10% below LP's $7.78) and DMG $3.50 (10% below HP's $4), both "fallback"; never the same price as the condition above.
+- [x] Manual price: the ✎ price shows bold with the market price struck through beneath it. Picking another condition clears it.
+- [x] Use Fallback: hovering shows the fallback NM price; pressing it replaces all five prices with fallbacks (NM = the fallback, the rest by the fallback percentages, all tagged "fallback"); pressing again goes back.
+- [x] Use Cardmarket (between Use Fallback and ✎ Manual price): hovering shows Cardmarket's euro price and its dollar value; pressing it prices every condition from it (tagged "CM"; Base Set Charizard 1st Edition: about $2,810 / $2,390 / $1,970 / $1,540 / $1,120); pressing Use Fallback switches to that instead; pressing again goes back to JustTCG.
+- [x] A card whose Scryfall/TCGdex price is far from JustTCG's NM shows ⚠️ on the NM label.
+- [x] Base Set Charizard, HOLO, 1st Edition: ⚠️ on NM and "⚠️ Price may be wrong (3)" in the price panel; hovering it lists the three reasons over Finish & Details, which keep their full height. Unlimited Charizard and Isshin (FCA 54) show neither.
+- [x] Price panel (beside the card info): the selected condition's price in green, Credit and Cash under it; it follows condition, foil, Use Fallback, Use Cardmarket and manual price.
+- [x] Arrow quickly through 10 suggestions: the usage meter rises by about 1, not 10.
+- [x] MTG | PKM: switch PKM off and search `Charizard`: only Magic cards show (or "No cards match … PKM is off"), and EN | JP greys out. The last game on can't be switched off. Leave the Price tab and come back: both are on again.
+- [x] Etched Magic card: the price looks like the etched listing, not the regular foil.
+- [x] No tokens or art cards: search `2/184 S8b` (EN) or `Treasure 14`: no tokens, emblems or art series cards among the suggestions.
+- [x] `2/184 S8b` with EN on: the note under the search bar reads "S8b is a Japanese Pokémon set: switch to JP"; clicking it switches to JP and finds the card. `125/197 OBF` with JP on offers "switch to EN".
+- [x] Japanese images: JP, a card from TCG Tag Team All Stars (`1/173 SM12a`) or VMAX Climax (S8b) shows a real picture (from Limitless), not the card back; a top secret rare Limitless lacks still shows the card back. Settings' footer credits Limitless TCG.
+- [x] Japanese Pokémon without JustTCG data (JP, `25/165 SV2a`): all five prices appear on their own, tagged CM, caption "No JustTCG price: Cardmarket prices shown."; Use Cardmarket is greyed out.
+- [x] Cardmarket link (after View on TCGplayer): Magic's View on Cardmarket opens the card's page (Isshin, FCA 54); Pokémon's Find on Cardmarket opens a Cardmarket search for the name (Charizard). Neither shows "Sorry, you have been blocked". A Japanese Pokémon (JP, `25/165 SV2a`) shows "ピカチュウ Pikachu", searches Cardmarket for "Pikachu 025" and TCGplayer for "Pikachu 025", and prices from JustTCG's Japanese listing if it has one. On the 1366×768 laptop the three links read "Scryfall ↗ TCGplayer ↗ Cardmarket ↗".
 
 ---
 
