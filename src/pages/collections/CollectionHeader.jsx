@@ -3,9 +3,9 @@ import UserTag from '../../components/UserTag.jsx';
 import GuardButton from '../../components/GuardButton.jsx';
 import InlineEdit from './InlineEdit.jsx';
 import { Totals, marketTotal } from '../price/BuyList.jsx';
-import { formatPhone, phoneDigits, validPhone } from '../../lib/phone.js';
+import { PHONE_ERROR, formatPhone, phoneDigits, validPhone } from '../../lib/phone.js';
 import { formatRecent, formatShortDate } from '../../lib/time.js';
-import { PHONE_ERROR, cleanName, nameError } from './CollectionModals.jsx';
+import { cleanName, nameError } from './CollectionModals.jsx';
 
 export const STATUSES = [
   { value: 'processing', label: 'Processing' },

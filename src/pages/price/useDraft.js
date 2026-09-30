@@ -104,12 +104,13 @@ export function useDraft(deviceId) {
   }, [run, state.buy]);
 
   /** @returns {Promise<{ number: number, games: string[], target_name: string }|null>} */
-  const confirm = useCallback(async ({ userId, customerName, notes, cashPct, creditPct, lineTexts }) => {
+  const confirm = useCallback(async ({ userId, customerName, phone, notes, cashPct, creditPct, lineTexts }) => {
     if (!state.buy) return null;
     const r = await run('confirm_buy', {
       p_buy_id: state.buy.id,
       p_user: userId,
       p_customer_name: customerName,
+      p_phone: phone || null,
       p_notes: notes,
       p_cash_pct: cashPct,
       p_credit_pct: creditPct,

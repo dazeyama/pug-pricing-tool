@@ -2,6 +2,8 @@
 // stored as 10 digits. A leading 1 (the country code) is dropped: no US area
 // code starts with 1.
 
+export const PHONE_ERROR = 'Enter a 10-digit US phone number';
+
 /** The digits to store: at most 10, without a leading 1. */
 export function phoneDigits(input) {
   let digits = String(input ?? '').replace(/\D/g, '');

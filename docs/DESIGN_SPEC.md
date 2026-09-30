@@ -430,7 +430,7 @@ All IDs are `uuid default gen_random_uuid()` unless noted, and all timestamps ar
 | kind | text not null | `walk_in` \| `collection` |
 | status | text not null | walk_in: `draft` \| `confirmed`; collection: `processing` \| `priced` \| `paid` (shown as "Paid/Ours"). A CHECK ties allowed values to `kind`. |
 | customer_name | text | walk-in: optional (entered at confirm); collection: required |
-| phone | text | collection: required, 10 digits stored (Section 9.3) |
+| phone | text | collection: required; walk-in: optional, entered at confirm (added 2026-09-29). 10 digits stored (Section 9.3) |
 | notes | text default '' | |
 | draft_device_id | uuid → devices | walk-in drafts only. **Unique partial index** where `status='draft'`: one draft per device. |
 | created_at, created_by | timestamptz, uuid → staff_users | collection: the creator |
@@ -541,7 +541,7 @@ Every change that affects buy contents, or anything the changelog records, goes 
 | `draft_remove_line(line_id, qty, user)` | Decrements the quantity or deletes the line | none |
 | `draft_cancel(buy_id)` | Deletes the draft and its lines | none |
 | `draft_set_custom_rates(device, custom_cash_pct, custom_credit_pct, user)` | Sets or clears this device's draft custom rates (Section 8.9.1). Creates the draft if none exists. | none |
-| `confirm_buy(buy_id, user, customer_name, notes, cash_pct, credit_pct, expected_version, line_texts)` | draft → confirmed; stamps `confirmed_*`; snapshots percentages (custom rate where set, else the master rate the screen showed). `line_texts` maps each line ID to its buy-list text (`lineFormat.js`) for the entry's card rows. Returns `{ number, games, target_name }`. | `buy_confirmed` with all lines and totals |
+| `confirm_buy(buy_id, user, customer_name, notes, cash_pct, credit_pct, expected_version, line_texts, phone)` | draft → confirmed; stamps `confirmed_*`; snapshots percentages (custom rate where set, else the master rate the screen showed). `line_texts` maps each line ID to its buy-list text (`lineFormat.js`) for the entry's card rows. Returns `{ number, games, target_name }`. | `buy_confirmed` with all lines and totals |
 | `buy_remove_line(line_id, qty, user, expected_version)` | For confirmed buys (day page) | `buy_cards_removed` |
 | `buy_delete(buy_id, user, expected_version)` | Deletes a confirmed buy | `buy_deleted` with the full line list and totals |
 | `collection_create(name, phone, notes, user)` | | `collection_created` |
@@ -965,6 +965,7 @@ Credit (66%)    $27
   - "Confirm buy — **12 cards**";
   - totals (Market / Cash / Credit), with any custom rate marked ✎ (Section 8.9.1);
   - optional **Customer name** and **Notes** fields (owner's decision);
+  - an optional **Phone number** (owner's decision, 2026-09-29), working as on a collection (Section 9.3): formatted to `(555) 123-4567` as it's typed, a leading 1 dropped, stored as 10 digits in `buys.phone`. Blank is fine; anything else must be a whole 10-digit number ("Enter a 10-digit US phone number", and Confirm buy stays disabled). `confirm_buy` takes it as `p_phone` (migration 0009). The changelog summary names it: "5 cards bought from Alex M., (555) 201-3344.";
   - the confirming user shown with their color dot;
   - [Cancel] [Confirm buy].
 
@@ -1883,6 +1884,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 112 | Collections as built (Phase 7, 2026-09-29) | Totals in the header only; view-only computers take a freed or stale lock by themselves; the dropdown can unlock to Processing; functions take the device and line texts (Sections 6.2, 9.4–9.6) |
 | 113 | Right-click a suggestion (2026-09-29) | Right-clicking a suggestion thumbnail (row or show all) searches that card's plain name, a quick "every printing" (Section 8.3) |
 | 114 | Suggestions clear on a new search (2026-09-29) | The last query's thumbnails go as soon as a new search starts, instead of staying until the new results arrive (Section 8.3) |
+| 115 | Phone number on walk-in buys (2026-09-29) | CONFIRM BUY has an optional phone number, formatted and checked like a collection's, saved in `buys.phone` and named in the changelog summary (Sections 6.1, 8.10) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

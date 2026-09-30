@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import Modal from '../../components/Modal.jsx';
-import { formatPhone, phoneDigits, validPhone } from '../../lib/phone.js';
+import { PHONE_ERROR, formatPhone, phoneDigits, validPhone } from '../../lib/phone.js';
 
-export const PHONE_ERROR = 'Enter a 10-digit US phone number';
 
 /** A name as saved: trimmed, single spaces. */
 export const cleanName = (text) => text.trim().replace(/\s+/g, ' ');
