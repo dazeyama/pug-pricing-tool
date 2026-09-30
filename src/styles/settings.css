@@ -1,11 +1,11 @@
 /* Settings tab (spec 11): one panel per section, two columns across the
    page, related panels side by side (owner, 2026-09-29). Every panel is the
-   same fixed height (owner, 2026-09-30), sized to the tallest: the Master
-   Crystal Inventory with its current file and four previous copies. Anything
-   more (the column list opened, an error) scrolls inside the panel. */
+   same fixed height (owner, 2026-09-30): the Master Crystal Inventory's with
+   a current file and no previous copies. Anything more (previous copies, the
+   column list opened, an error) scrolls inside the panel. */
 
 .settings-grid {
-  --settings-panel-h: 540px;
+  --settings-panel-h: 332px;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
