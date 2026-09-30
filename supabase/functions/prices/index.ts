@@ -191,8 +191,15 @@ Deno.serve(async (req) => {
       if (l.lang === 'ja') params.set('language', 'Japanese');
       const res = await call(key, `/cards?${params}`);
       const all: any[] = res?.data ?? [];
-      let cards = all.filter((c: any) => normNumber(c.number) === normNumber(l.number));
-      if (l.lang === 'ja') cards = cards.filter((c: any) => (c.variants ?? []).length);
+      const numbered = all.filter((c: any) => normNumber(c.number) === normNumber(l.number));
+      let cards = numbered;
+      if (l.lang === 'ja') {
+        cards = cards.filter((c: any) => (c.variants ?? []).length);
+        // The card is there but has no Japanese listings: the other steps
+        // would only find the same (owner's Pikachu SV2a log, 2026-09-29), so
+        // stop here and save their requests.
+        if (numbered.length && !cards.length) noJapanese = true;
+      }
       else if (l.setName) {
         const want = fold(l.setName);
         cards = cards.filter((c: any) => fold(c.set_name).includes(want) || want.includes(fold(c.set_name)));
@@ -201,12 +208,14 @@ Deno.serve(async (req) => {
         .map((c: any) => `${c.number} ${c.set_name} (${(c.variants ?? []).length} var)`).join('; ')}]`);
       return cards;
     };
+    let noJapanese = false;
     for (const l of searches) {
       const log: string[] = [];
       let cards: any[] = [];
       let failed = false;
+      noJapanese = false;
       const attempt = async (label: string, run: () => Promise<any[]>) => {
-        if (cards.length) return;
+        if (cards.length || noJapanese) return;
         try {
           cards = await run();
         } catch (e) {
