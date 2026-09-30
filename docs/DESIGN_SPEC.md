@@ -1508,19 +1508,19 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 - A new migration adding `buys.custom_cash_pct` / `custom_credit_pct` (Section 6.1; 0001 is already applied, so don't edit it), `draft_set_custom_rates`, and the clickable percentages with the custom-rate subpanel (Section 8.9.1) on the Price tab.
 - Qty, **ADD CARD**, **CLEAR** (Section 8.8); the sidebar with game groups, line format (`lineFormat.js`, with unit tests for the formatter), hover-red remove with quantity (8.9); totals; **CONFIRM BUY** dialog with customer name/notes; **CANCEL** (8.10); CONFIRM BUY and CANCEL reset MTG | PKM to both (8.2); per-device draft restore; the "Pick a user first" guard; Enter to add. Alt+Q.
 
-**Where to look**
-- [ ] Add 3 cards, refresh the page: the buy list is still there.
-- [ ] Add the same NM card twice: one line, qty 2. Add it as LP: a second line with `[LP]`.
-- [ ] Foil shows `*F*`, etched `*E*`, holo `*H*`, reverse `*RH*`; a Japanese card shows `[JP]`.
-- [ ] Magic and Pokémon lines sit under their own headers, newest at the bottom.
-- [ ] Hover turns a line blue. Clicking it loads that card back with its condition, quantity and any manual price; the button reads EDIT CARD; change the condition and press it: the line changes and adding carries on. Esc while editing leaves the line as it was.
-- [ ] The red × at a line's end removes it; on a qty-3 line it asks how many.
-- [ ] Totals: Market, Cash 33%, Credit 66% are right (check one by hand).
-- [ ] Click **Cash (33%)**: the subpanel opens. Set 40: the label reads **Cash (40% ✎)** and the total changes. Refresh: still 40. **Use master rates** puts it back to 33. After CONFIRM BUY, the next buy starts at 33.
-- [ ] CONFIRM BUY shows the count and total and accepts a customer name; afterwards the list is empty.
-- [ ] CANCEL with cards asks first; Discard empties it.
-- [ ] With no user picked, ADD CARD is disabled and the user button pulses.
-- [ ] Keyboard only: type → ↓ → Enter adds → the cursor is back in search.
+**Where to look** (owner tested every item, 2026-09-29)
+- [x] Add 3 cards, refresh the page: the buy list is still there.
+- [x] Add the same NM card twice: one line, qty 2. Add it as LP: a second line with `[LP]`.
+- [x] Foil shows `*F*`, etched `*E*`, holo `*H*`, reverse `*RH*`; a Japanese card shows `[JP]`.
+- [x] Magic and Pokémon lines sit under their own headers, newest at the bottom.
+- [x] Hover turns a line blue. Clicking it loads that card back with its condition, quantity and any manual price; the button reads EDIT CARD; change the condition and press it: the line changes and adding carries on. Esc while editing leaves the line as it was.
+- [x] The red × at a line's end removes it; on a qty-3 line it asks how many.
+- [x] Totals: Market, Cash 33%, Credit 66% are right (check one by hand).
+- [x] Click **Cash (33%)**: the subpanel opens. Set 40: the label reads **Cash (40% ✎)** and the total changes. Refresh: still 40. **Use master rates** puts it back to 33. After CONFIRM BUY, the next buy starts at 33.
+- [x] CONFIRM BUY shows the count and total and accepts a customer name; afterwards the list is empty.
+- [x] CANCEL with cards asks first; Discard empties it.
+- [x] With no user picked, ADD CARD is disabled and the user button pulses.
+- [x] Keyboard only: type → ↓ → Enter adds → the cursor is back in search.
 
 ---
 
@@ -1864,6 +1864,6 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 
 1. **Export design doc**: the owner writes it. It includes the Crystal Commerce CSV column mapping, so **attach a sample CC export** (a few rows is enough).
 2. **Supabase plan for prod**: Free (weekly manual backups, pauses after 7 idle days) vs. Pro ($25/month: daily backups, no pausing).
-3. **Japanese Pokémon**: coverage confirmed good in the Phase 3 spike (Section 5.2 findings). Still open: how names should display, and the missing USD fallback price for Japanese cards (Phase 5).
+3. ~~**Japanese Pokémon**~~: coverage confirmed good in the Phase 3 spike (Section 5.2 findings). Names: lines show the English name from the Pokédex number (decision 108); the USD fallback is Cardmarket, automatically (Section 8.7). Resolved 2026-09-29.
 4. **JustTCG plan**: watch the usage meter during the first weeks and move to Professional if the daily limit binds.
 5. ~~**Store time zone**~~: confirmed Pacific time, `America/Los_Angeles` (`STORE_TZ`), 2026-09-29.
