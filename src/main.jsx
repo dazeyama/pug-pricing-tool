@@ -12,6 +12,7 @@ import './styles/settings.css';
 import './styles/price.css';
 import './styles/collections.css';
 import './styles/calendar.css';
+import './styles/changelog.css';
 
 // HashRouter: GitHub Pages can't rewrite deep links, and #/routes survive a refresh.
 createRoot(document.getElementById('root')).render(

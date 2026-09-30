@@ -13,4 +13,4 @@
   code, docs or commit messages. Never commit "PUG Pricing Tool.txt" (contains a live key).
 - Database changes are new migration files; apply to the dev project only unless told otherwise.
 - The owner is QA — see memory `user-is-qa`.
-- Current phase: 8
+- Current phase: 9

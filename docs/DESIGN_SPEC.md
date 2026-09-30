@@ -1344,6 +1344,7 @@ Then "Not affiliated with Wizards of the Coast or The Pokémon Company." and the
   - **each day starts on the left**; right-hand entries drop half a row so the columns interleave (CM's `margin-top: 34px`).
 - **Pager:** 20 entries per page (`CHANGE_PAGE = 20`), at the top and again at the foot beside **↑ Back to top**. The foot row shows only when the page scrolls. The log is read when the tab opens, not on page load.
 - All CSS comes from CM's `.timeline`, `.tl-*` and `.ch-mark` rules (Appendix B.3).
+- **As built (Phase 9):** the filters run in Postgres, so the log is never loaded whole: entries come 200 at a time, newest first, with the categories, game, funnel and text filter applied, and more are fetched as pages need them (`src/pages/ChangelogPage.jsx`). Folding and the game trim are worked out in the browser (`src/lib/changelog.js`). The pager reads "Page 2 of 5" ("5+" until the last batch is in), with ‹ Newer / Older ›. The count badge is the number of recorded entries matching the filters. The text filter uses two columns Postgres keeps on each entry (migration 0014): `search_text` (names, summary, card and field rows, lower case, common accents folded, so "pokemon" finds "Pokémon") and `search_digits` (the digits of the summary and field rows). A filter that's only a phone number (3+ digits, no letters) matches those digits **or any entry for a buy or collection with that phone**, so a collection's whole history comes up.
 
 ### 12.2 An entry panel
 
@@ -1371,7 +1372,8 @@ Then "Not affiliated with Wizards of the Coast or The Pokémon Company." and the
 - **Summary line:** a plain sentence, plus **totals** (owner's decision): Market / Cash / Credit on buy confirmed, buy deleted, collection deleted, and cards-added/removed entries (the total of the lines in that entry).
 - **Card rows:** always open, in a scroll box (max 168px, CM `.tl-rows`). Each row is `+` (green) or `−` (red) followed by the line text (Section 8.9). Additions come first, then removals.
 - **Field rows** for edits: `name: "Jordan R." → "Jordan Reyes"`, `status: Processing → Priced`. These panels are dimmed (CM `.tl-state`, opacity .78).
-- **Dots:** buy entries use a green-bordered dot, collection entries a blue-bordered dot, and field/status entries a slate dot. **Creation** (buy confirmed, collection created) is the large dot. **Deletion** is the small red cross (CM `.tl-dot.gone`). Dots aren't clickable (no rewind).
+- **As built:** the funnel sits at the right of the header strip (as in CM). Card rows show each line's price per card after it, muted. A folded run's summary reads what it adds up to ("7 cards added."). **A buy's name links to the day page of the day the buy was confirmed**, not the day of the change (owner's decision, 2026-09-29), in the game on show; a collection's to the collection.
+- **Dots:** buy entries use a green-bordered dot, collection entries a blue-bordered dot, and field/status entries a slate dot. **As built:** status changes are Collections, so their dot is blue (owner's decision, 2026-09-29; Section 12.4); only detail edits are slate. **Creation** (buy confirmed, collection created) is the large dot. **Deletion** is the small red cross (CM `.tl-dot.gone`). Dots aren't clickable (no rewind).
 
 ### 12.3 What is recorded
 
@@ -1387,7 +1389,7 @@ Then "Not affiliated with Wizards of the Coast or The Pokémon Company." and the
 | `collection_cards_removed` | Cards removed from collection | Collections / blue | Removed lines (−), totals |
 | `collection_line_edited` | Card edited in collection | Collections / blue | The line as it was (−) and as saved (+), each with its price; no totals (added Phase 7, owner's decision 2026-09-29 that edits re-price) |
 | `collection_info_edited` | Collection details edited | Actions / slate | Field rows (name, phone, notes, cash %, credit %). A custom rate reads `cash %: 33 → 40`; clearing one reads `cash %: 40 → master (33)`. |
-| `collection_status_changed` | Status changed | Actions / slate | `status: Priced → Paid/Ours`; "unlocked" when leaving Paid/Ours. **As of migration 0011:** marking Priced adds `offer: $120 cash / $240 credit` and marking Paid/Ours `paid: $262.50 credit`, each with the collection's totals then; summaries read "Marked Priced: offered $120 cash / $240 credit.", "Marked Paid/Ours: paid $262.50 in credit, locked.", "Marked Completed: its cards have moved on.", "Reopened: back to Paid/Ours, still locked." |
+| `collection_status_changed` | Status changed | **Collections / blue** (owner's decision, 2026-09-29: it carries the offer and the price paid, so it shows by default; was Actions / slate) | `status: Priced → Paid/Ours`; "unlocked" when leaving Paid/Ours. **As of migration 0011:** marking Priced adds `offer: $120 cash / $240 credit` and marking Paid/Ours `paid: $262.50 credit`, each with the collection's totals then; summaries read "Marked Priced: offered $120 cash / $240 credit.", "Marked Paid/Ours: paid $262.50 in credit, locked.", "Marked Completed: its cards have moved on.", "Reopened: back to Paid/Ours, still locked." |
 | `collection_deleted` | Collection deleted | Collections / red cross | All lines (−) at deletion, totals, name and phone |
 | `backup_restored` | — | milestone (always shown) | Drawn as CM's green milestone pill across the line: "Backup restored — <file name>" |
 
@@ -1400,7 +1402,7 @@ Then "Not affiliated with Wizards of the Coast or The Pokémon Company." and the
 ### 12.4 Filters
 
 - **Category toggles**, CM behavior:
-  - three buttons: **Buys** (green), **Collections** (blue), **Actions** (slate: collection details and status edits);
+  - three buttons: **Buys** (green), **Collections** (blue), **Actions** (slate: collection details and status edits; **as built, detail edits only**: status changes are Collections, owner's decision 2026-09-29);
   - **click** = show only that category;
   - **Ctrl+click or right-click** = add or remove it from what's showing;
   - they can't all be turned off.
@@ -1415,7 +1417,7 @@ The tab opens with **Buys + Collections on, Actions off**, game **All**, page 1,
 
 ### 12.6 Folding (drawing only)
 
-One ADD CARD writes one event. Drawing rule: a run of **consecutive `collection_cards_added` events** (or removals) on the **same collection** by the **same user**, each within **15 minutes** of the previous one, with no other event for that collection in between, is **drawn as one panel**:
+One ADD CARD writes one event. Drawing rule: a run of **consecutive `collection_cards_added` events** (or removals) on the **same collection** by the **same user**, each within **15 minutes** of the previous one, with no other event for that collection in between, is **drawn as one panel**. **Card edits don't fold** (owner's decision, 2026-09-29): each shows its old and new line.
 - the headline says "Cards added to collection";
 - the counts and card rows are summed;
 - the time range is shown ("2:04 – 2:41 PM").
@@ -1684,6 +1686,9 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 - [ ] The funnel shows only that collection's history; Show everything returns.
 - [ ] The Magic filter hides Pokémon-only entries and trims mixed ones to their Magic cards.
 - [ ] Ctrl+click adds categories; the last one can't be switched off.
+- [ ] Status changes (with the offer / price paid) show with Actions off; a name, phone or notes edit shows only with Actions on.
+- [ ] A card removed from a buy days later links to the day that buy was confirmed.
+- [ ] Two card edits in a row stay two panels. Typing a collection's phone number (digits only) shows its whole history.
 
 ---
 
@@ -1991,6 +1996,9 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 139 | Calendar always 6 weeks (2026-09-29) | Month grids always have 6 week rows of fixed-height days, so the panels fit any month and never change size (Section 10.1) |
 | 140 | Day pages by game colour (2026-09-29) | Magic day pages are themed indigo and Pokémon ones amber, accent included; panels keep their user-coloured top edge (Section 10.2) |
 | 141 | EXPORT on the day page's header row (2026-09-29) | A day page's EXPORT sits on the header row, right-aligned opposite < BACK and level with it, for both games (Sections 10.2, 14) |
+| 142 | Status changes are Collections (Phase 9, 2026-09-29) | Status-change entries (offer, price paid, Completed) count as Collections and show by default; only detail edits are Actions (Sections 12.3, 12.4) |
+| 143 | Buy links go to the confirm day (2026-09-29) | A buy's changelog entries link to the day page of the day it was confirmed, not the day of the change (Section 12.2) |
+| 144 | Card edits don't fold (2026-09-29) | Only runs of card adds or removes fold into one panel; each card edit stands alone (Section 12.6) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

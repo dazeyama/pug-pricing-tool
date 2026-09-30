@@ -1,0 +1,189 @@
+/* The Changelog (spec 12, Phase 9): CM's timeline (Appendix B.3), with this
+   app's categories: Buys green, Collections blue, Actions slate. */
+
+/* ---- The controls ---- */
+.ch-head { flex-wrap: wrap; gap: 10px 12px; }
+.ch-head .panel-title { margin-right: auto; }
+.kind-toggles { display: inline-flex; gap: 6px; }
+.kind-btn { font-weight: 600; opacity: .5; }
+.kind-btn:hover { opacity: .8; }
+.kind-btn.on { opacity: 1; color: #fff; }
+.kind-btn.k-buys.on { background: var(--good); border-color: var(--good); color: #0d2418; }
+.kind-btn.k-collections.on { background: var(--accent-2); border-color: var(--accent-2); }
+.kind-btn.k-actions.on { background: var(--pal-slate); border-color: var(--pal-slate); }
+.ch-games { display: inline-flex; gap: 6px; }
+.ch-game.active.mtg { color: #fff; background: var(--pal-indigo); border-color: var(--pal-indigo); }
+.ch-game.active.pokemon { color: #1a1405; background: var(--pal-amber); border-color: var(--pal-amber); }
+.ch-game.active.all { background: rgba(108, 140, 255, .14); border-color: var(--accent); }
+.ch-filter-box { width: 280px; margin: 0; border-radius: 999px; padding: 7px 14px; }
+.ch-pager { display: inline-flex; align-items: center; gap: 8px; }
+.ch-page { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; min-width: 88px; text-align: center; }
+
+/* "Showing Jordan Reyes, entries matching bolt only [Show everything]" */
+.change-scope {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 8px 12px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+}
+.change-scope .btn { margin-left: auto; }
+
+/* ---- The timeline ---- */
+.timeline {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 56px;
+  row-gap: 16px;
+  padding: 4px 0 8px;
+}
+.timeline::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--border);
+}
+.tl-day { grid-column: 1 / -1; display: flex; justify-content: center; margin: 10px 0 2px; position: relative; z-index: 2; }
+.tl-day span {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--muted);
+}
+.tl-milestone span { border-color: var(--good); color: var(--good); box-shadow: 0 0 0 4px var(--bg); }
+
+.tl-slot { position: relative; grid-column: 1; }
+/* Right-hand entries drop half a row so the two columns interleave. */
+.tl-slot.right { grid-column: 2; margin-top: 34px; }
+.tl-dot {
+  position: absolute;
+  top: 18px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--panel-2);
+  border: 2px solid var(--muted);
+  z-index: 1;
+}
+/* Centred on the line: half the 56px gap plus half the dot. */
+.tl-slot.left .tl-dot { right: calc(-28px - 5.5px); }
+.tl-slot.right .tl-dot { left: calc(-28px - 5.5px); }
+.tl-dot.buys { border-color: var(--good); }
+.tl-dot.collections { border-color: var(--accent); }
+.tl-dot.actions { border-color: var(--pal-slate); }
+/* A buy confirmed or a collection created: the landmark, a bigger dot. */
+.tl-dot.created { width: 21px; height: 21px; top: 13px; border-width: 4px; background: var(--panel); }
+.tl-slot.left .tl-dot.created { right: calc(-28px - 10.5px); }
+.tl-slot.right .tl-dot.created { left: calc(-28px - 10.5px); }
+/* A deletion: a small red cross, the line masked behind it. */
+.tl-dot.gone { width: 15px; height: 15px; top: 16px; border: 0; border-radius: 0; background: var(--bg); }
+.tl-dot.gone::before, .tl-dot.gone::after {
+  content: "";
+  position: absolute;
+  top: 1px;
+  left: 50%;
+  width: 2.5px;
+  height: 13px;
+  margin-left: -1.25px;
+  border-radius: 2px;
+  background: var(--bad);
+}
+.tl-dot.gone::before { transform: rotate(45deg); }
+.tl-dot.gone::after { transform: rotate(-45deg); }
+.tl-slot.left .tl-dot.gone { right: calc(-28px - 7.5px); }
+.tl-slot.right .tl-dot.gone { left: calc(-28px - 7.5px); }
+
+.tl-panel { overflow: hidden; }
+/* Detail edits are recorded as carefully, but read as background. */
+.tl-panel.tl-state { opacity: .78; }
+.tl-head { padding: 7px 11px; min-height: 38px; }
+.tl-when { flex: none; font-size: 12.5px; font-weight: 600; color: var(--text); }
+.tl-what {
+  flex: 1;
+  min-width: 0;
+  text-align: right;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tl-what.made { color: var(--good); font-weight: 700; }
+.tl-what.gone { color: var(--bad); font-weight: 700; }
+.icon-btn.ch-filter { display: inline-flex; align-items: center; padding: 4px 6px; }
+.icon-btn.ch-filter:hover { color: var(--accent); border-color: var(--accent); }
+.tl-body { padding: 9px 12px 11px; }
+.tl-title { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; margin-bottom: 2px; }
+.tl-title strong { flex: 1; min-width: 0; font-size: 13.5px; }
+.tl-title strong a { color: var(--text); text-decoration: none; border-bottom: 1px dotted var(--muted); }
+.tl-title strong a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+.tl-counts { flex: none; font-size: 12px; font-variant-numeric: tabular-nums; }
+.tl-summary { font-size: 11.5px; color: var(--muted); margin-bottom: 7px; }
+.ch-kind {
+  flex: none;
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+.ch-kind.buy { border-color: var(--good); color: var(--good); }
+.ch-kind.collection { border-color: var(--accent); color: var(--accent); }
+
+/* The card and field rows: always open, scrolling in place when long. */
+.tl-rows {
+  max-height: 168px;
+  overflow-y: auto;
+  padding-right: 4px;
+  border-top: 1px solid var(--border);
+  padding-top: 6px;
+}
+.tl-row { display: flex; align-items: baseline; gap: 6px; padding: 1px 0; font-size: 12.5px; white-space: nowrap; }
+.tl-card { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.tl-price { flex: none; color: var(--muted); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+.ch-mark { flex: none; width: 15px; text-align: center; font-weight: 700; font-size: 12px; }
+.ch-mark.add, .ch-add { color: var(--good); }
+.ch-mark.rem, .ch-rem { color: var(--bad); }
+.ch-add, .ch-rem { font-weight: 600; }
+.ch-mark.field, .ch-field { color: var(--muted); }
+.ch-field { text-transform: capitalize; }
+
+/* The pager again at the foot, where you are at the end of a page. */
+.tl-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+/* Too narrow for two columns: one column, the line on the left. */
+@media (max-width: 900px) {
+  .timeline { grid-template-columns: 1fr; column-gap: 0; }
+  .timeline::before { left: 6px; margin-left: 0; }
+  .tl-slot, .tl-slot.right { grid-column: 1; margin-top: 0; margin-left: 26px; }
+  .tl-day { justify-content: flex-start; margin-left: -6px; }
+  .tl-slot.left .tl-dot, .tl-slot.right .tl-dot { left: -26px; right: auto; }
+  .tl-slot.left .tl-dot.gone, .tl-slot.right .tl-dot.gone { left: -28px; right: auto; }
+  .tl-slot.left .tl-dot.created, .tl-slot.right .tl-dot.created { left: -31px; right: auto; }
+}
