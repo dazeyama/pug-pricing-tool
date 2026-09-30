@@ -77,6 +77,9 @@ function CollectionScreen({ id }) {
   else if (viewOnly) locked = `View only: ${holderLabel} is editing this collection. Take over to edit`;
   else if (buy.status === 'paid') locked = 'Paid/Ours: unlock it to edit';
   else if (buy.status === 'completed') locked = 'Completed: reopen it to edit';
+  // Cards can still be removed from a Paid/Ours collection, not a Completed
+  // one (owner, 2026-09-29); adding and editing stay locked.
+  const removeLocked = buy?.status === 'paid' && lock.status === 'held' ? null : locked;
 
   // The status can change while locked (that's how it unlocks), not while view-only.
   const canChangeStatus = Boolean(user) && !offline && lock.status === 'held' && Boolean(buy);
@@ -134,6 +137,7 @@ function CollectionScreen({ id }) {
       rates={rates}
       master={master}
       locked={locked}
+      removeLocked={removeLocked}
       listTitle="Collection list"
       ratesTitle="Rates for this collection"
       // Back to the table: big and bold, top left, before the search bar (owner, 2026-09-29).

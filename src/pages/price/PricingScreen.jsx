@@ -109,6 +109,8 @@ const BOTH_GAMES = { mtg: true, pokemon: true };
  * @param {{ cash: number, credit: number, customCash: number|null, customCredit: number|null }} p.rates
  * @param {{ cash: number, credit: number }} p.master  the Master Buy Percentages
  * @param {string|null} [p.locked]  why nothing can change here (Paid/Ours, view-only), or null
+ * @param {string|null} [p.removeLocked]  why cards can't be removed, when that differs from
+ *   `locked` (a Paid/Ours collection can still lose cards; owner, 2026-09-29)
  * @param {string} p.listTitle  "Buy list" / "Collection list"
  * @param {string} p.ratesTitle  the rates subpanel's heading
  * @param {(api: object) => any} [p.renderListDetails]  in the sidebar's foot, above the totals (a collection's details)
@@ -117,7 +119,7 @@ const BOTH_GAMES = { mtg: true, pokemon: true };
  * @param {any} [p.searchLead]  before the search field, top left (a collection's < BACK)
  */
 export default function PricingScreen({
-  list, rates, master, locked = null, listTitle, ratesTitle,
+  list, rates, master, locked = null, removeLocked = locked, listTitle, ratesTitle,
   renderListDetails, renderListFooter, resetKey = 0, searchLead = null,
 }) {
   const [text, setText] = useState('');
@@ -250,11 +252,14 @@ export default function PricingScreen({
   else if (parseQty(qty) == null) addBlocked = 'Quantity must be 1 to 99';
   else if (offline) addBlocked = 'No connection';
   const canEdit = Boolean(user) && !offline && !locked;
-  const editBlocked = () => {
-    if (locked) toast(`${locked}.`, 'err');
+  const blockedBy = (reason) => () => {
+    if (reason) toast(`${reason}.`, 'err');
     else if (!user) pulse();
     else toast('No connection: nothing can change until it comes back.', 'err');
   };
+  const editBlocked = blockedBy(locked);
+  const canRemove = Boolean(user) && !offline && !removeLocked;
+  const removeBlocked = blockedBy(removeLocked);
 
   const visible = search.candidates.slice(0, ROW);
   const hasShowAll = search.candidates.length > ROW;
@@ -663,6 +668,9 @@ export default function PricingScreen({
           canEdit={canEdit}
           locked={locked}
           editBlocked={editBlocked}
+          canRemove={canRemove}
+          removeLocked={removeLocked}
+          removeBlocked={removeBlocked}
           onEdit={startEdit}
           onRemove={(line, n) => list.remove(line, n, user?.id)}
           onSaveRates={(cash, credit) => list.setRates(cash, credit, user?.id)}

@@ -184,11 +184,13 @@ function Totals({
  * foot holds the page's `details` (a collection's), the totals, and the
  * page's buttons (`footer`). Clicking a line edits it (onEdit; owner,
  * 2026-09-29); its red × removes it. While `locked` (Paid/Ours, view-only)
- * the lines are only read.
+ * lines can't be edited, and while `removeLocked` (Completed, view-only) the
+ * × is hidden too; a Paid/Ours collection keeps it (owner, 2026-09-29).
  */
 export default function BuyList({
   title = 'Buy list', lines, loaded, rates, master, ratesTitle, flashId, editingId,
-  canEdit, locked = null, editBlocked, onEdit, onRemove, onSaveRates, onDone, details, footer,
+  canEdit, locked = null, editBlocked, canRemove = canEdit, removeLocked = locked, removeBlocked = editBlocked,
+  onEdit, onRemove, onSaveRates, onDone, details, footer,
 }) {
   const [removing, setRemoving] = useState(null);
   const [preview, setPreview] = useState(null);   // { src, top, right } while a line is hovered
@@ -215,7 +217,7 @@ export default function BuyList({
   }, [flashId, lines]);
 
   return (
-    <aside className={`buy-list${locked ? ' locked' : ''}`} ref={aside}>
+    <aside className={`buy-list${locked ? ' locked' : ''}${removeLocked ? ' no-remove' : ''}`} ref={aside}>
       <div className="list-head">
         <span className="list-title">{title}</span>
         <span className="list-count">{count} card{count === 1 ? '' : 's'}</span>
@@ -255,7 +257,7 @@ export default function BuyList({
                     className="line-x"
                     title="Remove"
                     aria-label={`Remove ${lineText(l)}`}
-                    onClick={() => (canEdit ? setRemoving(l) : editBlocked())}
+                    onClick={() => (canRemove ? setRemoving(l) : removeBlocked())}
                   >
                     ×
                   </button>

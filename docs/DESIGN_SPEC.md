@@ -551,7 +551,7 @@ Every change that affects buy contents, or anything the changelog records, goes 
 | `collection_create(name, phone, notes, user, device, id_last4)` | `id_last4` optional (migration 0010); `collection_update_info` takes `id_last4` too | `collection_created` |
 | `collection_add_line(buy_id, line, merge, user, device, expected_version)` | Requires this device to hold the lock and status ≠ paid | `collection_cards_added` |
 | `collection_update_line(line_id, line, user, device, expected_version, old_text, new_text)` | EDIT CARD on a collection (as built, Phase 7): saves the edited line over the old one at **today's price** (owner's decision, 2026-09-29: edits always re-price, collections included), merging with an identical line like `draft_update_line`. Same requirements as adding. | `collection_line_edited`: the old line (−) and the new one (+) |
-| `collection_remove_line(line_id, qty, user, device, expected_version)` | Same requirements | `collection_cards_removed` |
+| `collection_remove_line(line_id, qty, user, device, expected_version)` | Same requirements, except that a **Paid/Ours** collection may still lose cards; Completed may not (owner, 2026-09-29; migration 0012) | `collection_cards_removed` |
 | `collection_update_info(buy_id, fields, user, device, expected_version)` | name / phone / notes / custom rates (`custom_cash_pct`, `custom_credit_pct`) | `collection_info_edited` with before/after |
 | `collection_set_status(buy_id, status, user, device, cash_pct, credit_pct, expected_version, offer_cash, offer_credit, paid_price, paid_method)` | Moving to `paid` snapshots percentages (custom rate where set, else master) and `paid_at`; leaving `paid` clears the snapshot but **keeps** the custom rates. **As of migration 0011 (owner, 2026-09-29):** Processing → Priced needs `offer_cash` (`offer_needed`; `offer_credit` is worked out from the rates when not given); → Paid/Ours needs `paid_price` and `paid_method` (`paid_price_needed`, `paid_method_needed`), except reopening from Completed, which keeps them; → Completed only from Paid/Ours (`complete_after_paid`). Unlocking to Priced or Processing clears the price paid; the offer stays. Completed refuses content writes like Paid/Ours (`collection_completed`). | `collection_status_changed`, with `offer` / `paid` field rows and the collection's totals when an offer or price is set |
 | `collection_delete(buy_id, user, typed_name)` | Server checks `typed_name` matches | `collection_deleted` with the full line list and totals |
@@ -1116,6 +1116,7 @@ The **Price tab's screen, reused** (the same components), with these differences
 - **Processing → Priced → Paid/Ours → Completed.** Any status can be chosen from the dropdown, with the dialogs above.
 - Choosing **Paid/Ours** asks: "Mark as Paid/Ours? The collection will be locked." [Cancel] [Mark Paid/Ours]. Once Paid/Ours:
   - ADD CARD, remove, and info edits are disabled.
+    - **As of 2026-09-29 (owner's decision):** cards **can still be removed** from a Paid/Ours collection (the red × stays; so the list matches what was really bought), but not added or edited. A **Completed** collection allows neither: its cards have moved on. `collection_remove_line` allows Paid/Ours and refuses Completed (`collection_completed`; migration 0012); removals are logged as usual, and the price paid doesn't change.
   - A green banner reads "Paid/Ours — locked." with an **🔒 Unlock** button.
 - **Unlock** (or choosing another status from the dropdown) asks "Unlock this collection? It will go back to Priced and can be edited." [Cancel] [Unlock]. This sets the status to **Priced** and is logged.
   - **As built:** 🔒 Unlock goes back to Priced. Choosing Processing from the dropdown while Paid/Ours asks the same question naming Processing, and goes there. The status can change while Paid/Ours (that's how it unlocks), but not from a view-only computer.
@@ -1621,6 +1622,7 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 - [ ] Mark as Priced asks for an offer: type 120 at 33% / 66% and the credit offer reads $240. The table's Offer shows "$120 / $240"; Paid reads TBD in amber.
 - [ ] Mark as Paid/Ours asks Cash or Credit and the final price: pick Credit, type 262.50. The status chip and Paid column turn blue; the Paid/Ours Credit filter finds it.
 - [ ] Mark as Completed: grey, locked, and the Completed filter (last) finds it. Reopen puts it back to Paid/Ours with the price kept.
+- [ ] A Paid/Ours collection: the red × still removes a card, but clicking a line doesn't edit it and ADD CARD is blocked. A Completed one: no ×, no editing.
 - [ ] Filter chips: Processing amber, Priced red, Paid/Ours Cash green, Paid/Ours Credit blue, Completed grey.
 - [ ] Set a custom Credit % on a collection: its totals use it; changing Master Buy Percentages in Settings doesn't touch it; it's locked while Paid/Ours and still there after Unlock.
 - [ ] Open the same collection on a second computer: it's view-only and names the first computer and user. Take over: the first computer turns view-only.
@@ -1960,6 +1962,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 128 | Holo masks by era (2026-09-29) | Six art-window masks by release year (1999, 2003, 2007, 2011, 2017, 2023+), measured on full-size scans, replace the modern/vintage pair (Section 8.4) |
 | 129 | Status and Offer last (2026-09-29) | The collections table ends with Status and Offer, after Notes (Section 9.1) |
 | 130 | Big BACK button (2026-09-29) | A collection's < BACK is a large bold button at the top left, before the search bar, instead of in the details (Section 9.4) |
+| 131 | Removing from Paid/Ours (2026-09-29) | Cards can still be removed from a Paid/Ours collection, not added or edited; a Completed collection allows neither (Sections 6.2, 9.5; migration 0012) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

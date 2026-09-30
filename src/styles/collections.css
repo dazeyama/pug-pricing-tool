@@ -298,9 +298,10 @@
 }
 .export-btn:hover { background: var(--accent); border-color: var(--accent); }
 
-/* Read only (Paid/Ours, view-only): no blue hover, no ×. */
+/* Not editable (Paid/Ours, Completed, view-only): no blue hover. No × where
+   cards can't be removed either (Completed, view-only; Paid/Ours keeps it). */
 .buy-list.locked .buy-line { cursor: default; }
 .buy-list.locked .buy-line:hover { color: inherit; }
-.buy-list.locked .line-x { display: none; }
+.buy-list.no-remove .line-x { display: none; }
 
 .col-missing { padding: 40px 24px; text-align: center; }

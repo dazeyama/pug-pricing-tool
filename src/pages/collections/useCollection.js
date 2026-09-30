@@ -14,7 +14,7 @@ import { useToast } from '../../components/Toast.jsx';
 const MESSAGES = {
   stale_version: 'This collection changed on another computer — reloaded.',
   not_lock_holder: 'Another computer is editing this collection now. Take over to edit.',
-  collection_paid: 'This collection is Paid/Ours: unlock it to edit.',
+  collection_paid: 'This collection is Paid/Ours: unlock it to add or edit cards.',
   collection_completed: 'This collection is Completed: reopen it to edit.',
   offer_needed: 'Set an offer to mark it Priced.',
   paid_price_needed: 'Set the final purchase price to mark it Paid/Ours.',
