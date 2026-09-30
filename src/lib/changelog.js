@@ -23,8 +23,8 @@ export const CATEGORIES = [
 ];
 /** Milestones are always shown (a backup restore, Phase 10). */
 export const MILESTONES = ['backup_restored'];
-/** The opening state (spec 12.5): Buys and Collections on, Actions off. */
-export const DEFAULT_CATEGORIES = ['buys', 'collections'];
+/** The opening state (spec 12.5): Buys only (owner, 2026-09-30). */
+export const DEFAULT_CATEGORIES = ['buys'];
 
 export const categoryOf = (action) => CATEGORIES.find((c) => c.actions.includes(action))?.key ?? null;
 

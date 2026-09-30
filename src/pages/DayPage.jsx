@@ -12,6 +12,7 @@ import Modal from '../components/Modal.jsx';
 import MoreMenu from '../components/MoreMenu.jsx';
 import UserTag from '../components/UserTag.jsx';
 import ExportButton from '../components/ExportButton.jsx';
+import LinePreview, { previewFor } from '../components/LinePreview.jsx';
 import { RemoveModal } from './price/BuyList.jsx';
 import { useConnection } from '../state/connection.jsx';
 import { useDevice } from '../state/device.jsx';
@@ -255,12 +256,15 @@ function totalsFor(lines, buy) {
 
 /** One buy on a day page (spec 10.2). */
 function BuyPanel({ buy, number, game, other, day, byId, busy, offline, onRemove, onDelete }) {
+  const [preview, setPreview] = useState(null);   // { src, top, left } while a line is hovered
+  const hidePreview = useCallback(() => setPreview(null), []);
+  const panel = useRef(null);
   const user = byId(buy.confirmed_by);
   const lines = buy.buy_lines.filter((l) => l.game === game);
   const others = buy.buy_lines.filter((l) => l.game === other).reduce((n, l) => n + l.quantity, 0);
   const t = totalsFor(lines, buy);
   return (
-    <article className="cardpanel buy-panel" style={{ '--c': colorVar(user?.color ?? 'pal-slate') }}>
+    <article className="cardpanel buy-panel" ref={panel} style={{ '--c': colorVar(user?.color ?? 'pal-slate') }}>
       <header className="cardpanel-head buy-panel-head">
         <strong className="buy-number">Buy {number}</strong>
         <UserTag user={user} />
@@ -293,7 +297,14 @@ function BuyPanel({ buy, number, game, other, day, byId, busy, offline, onRemove
           </thead>
           <tbody>
             {lines.map((l) => (
-              <tr key={l.id} className="drow">
+              <tr
+                key={l.id}
+                className="drow"
+                // The card's picture beside the panel, level with the row, as on the
+                // Price sidebar (owner, 2026-09-30).
+                onMouseEnter={(e) => setPreview(previewFor(l.image_url, e.currentTarget, panel.current, 'right'))}
+                onMouseLeave={hidePreview}
+              >
                 <td className="cell-price" title="Price per card">{formatMoney(l.unit_price)}</td>
                 <td className="cell-qty">{l.quantity}</td>
                 <td className="cell-name" title={l.name_en ? l.name : undefined}>{lineBody(l)}</td>
@@ -324,6 +335,7 @@ function BuyPanel({ buy, number, game, other, day, byId, busy, offline, onRemove
           </Link>
         )}
       </div>
+      <LinePreview preview={preview} onHide={hidePreview} />
     </article>
   );
 }

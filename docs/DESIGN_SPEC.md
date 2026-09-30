@@ -1217,6 +1217,7 @@ Saturday, August 17, 2026 · Magic
   - a CM-style `.deck-table` of the lines: **qty · name · set · number · finish marker + tags**, in the order added;
   - a footer with **Market · Cash · Credit** totals for **this game's lines**, using the buy's snapshotted percentages;
   - if the buy also has the other game's cards: "Also has N Pokémon cards →" (or Magic), linking to the other game's day page.
+- **Card pictures on hover** (owner's decision, 2026-09-30): hovering a card row shows its picture beside the panel, level with the row, the same as the Price sidebar's preview (Section 8.8): 146 × 204, right of the panel, or left when the window has no room there.
 - **Removing cards** (owner's decision): row hover turns red. Click → the same "Remove card?" dialog with quantity as Section 8.9, then `buy_remove_line`, which is logged. The confirmation text notes: "This buy was already confirmed."
 - **Deleting a buy:** ⋯ → Delete buy… → "Delete **Buy 2** (Dana, 2:37 PM)? All **N cards** in this buy — including any from the other game — will be permanently removed." [Cancel] [Delete buy] (red). Calls `buy_delete`, which is logged.
 - **EXPORT** is a large, bold button (Section 14). **As built (owner's decision, 2026-09-29):** on the header row, level with **< BACK** and as tall, **right-aligned**, on Magic and Pokémon day pages alike; it takes the page's game colour (below).
@@ -1421,7 +1422,7 @@ Then "Not affiliated with Wizards of the Coast or The Pokémon Company." and the
 
 ### 12.5 Opening state
 
-The tab opens with **Buys + Collections on, Actions off**, game **All**, page 1, and no filter or funnel. Clicking the Changelog tab while already on it restores this state. The choice isn't remembered across refreshes (CM behavior).
+The tab opens with **only Buys on** (owner's decision, 2026-09-30, replacing Buys + Collections), game **All**, page 1, and no filter or funnel. Clicking the Changelog tab while already on it restores this state. The choice isn't remembered across refreshes (CM behavior).
 
 ### 12.6 Folding (drawing only)
 
@@ -2014,12 +2015,14 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 149 | Test deploy on dev (2026-09-30) | Before Phase 10, version 0.9.0-dev goes live on GitHub Pages built against the **dev** project, for testing at the store; the Actions variables go back to prod at launch (Section 15, Phase 10) |
 | 150 | Wait for the computer's row (2026-09-30) | The app is blocked until this computer is saved to `devices`, with the error and a Retry if the save fails, so no draft or lock can point at a missing computer (Section 7.4) |
 | 151 | Quiet retries for the computer's row (2026-09-30) | A failed save of this computer is retried three times (1, 2, 3 seconds) before the error and Retry show (Section 7.4) |
+| 152 | Changelog opens on Buys (2026-09-30) | The Changelog opens (and resets) with only Buys selected (Section 12.5) |
+| 153 | Card pictures on day pages (2026-09-30) | Hovering a card row on a Calendar day page shows its picture beside the panel, like the Price sidebar (Section 10.2) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |
 | ◆ | Price budget | 6-hour shared price cache; prices fetched only after a selection rests for 400ms |
 | ◆ | Cancel | CANCEL asks before discarding a non-empty buy |
-| ◆ | Changelog opening | Buys + Collections on, Actions off; runs of adds/removes within 15 minutes fold into one panel |
+| ◆ | Changelog opening | Buys only on (2026-09-30; was Buys + Collections); runs of adds/removes within 15 minutes fold into one panel |
 | ◆ | Card-not-found | No free-text cards in this version |
 
 ---

@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Modal from '../../components/Modal.jsx';
+import LinePreview, { previewFor } from '../../components/LinePreview.jsx';
 import { lineText } from '../../lib/lineFormat.js';
 import { formatMoney, payout } from '../../lib/money.js';
 import { useToast } from '../../components/Toast.jsx';
@@ -197,19 +198,11 @@ export default function BuyList({
   onEdit, onRemove, onSaveRates, onDone, details, footer,
 }) {
   const [removing, setRemoving] = useState(null);
-  const [preview, setPreview] = useState(null);   // { src, top, right } while a line is hovered
+  const [preview, setPreview] = useState(null);   // { src, top, left } while a line is hovered
   const list = useRef(null);
   const aside = useRef(null);
 
-  /** A small card picture beside the sidebar, level with the hovered line (owner, 2026-09-29). */
-  function showPreview(line, row) {
-    if (!line.image_url) return;
-    const r = row.getBoundingClientRect();
-    const side = aside.current.getBoundingClientRect();
-    const height = 204;
-    const top = Math.min(Math.max(8, r.top + r.height / 2 - height / 2), window.innerHeight - height - 8);
-    setPreview({ src: line.image_url, top, right: window.innerWidth - side.left + 12 });
-  }
+  const hidePreview = useCallback(() => setPreview(null), []);
 
   const count = lines.reduce((n, l) => n + l.quantity, 0);
   const market = marketTotal(lines);
@@ -242,8 +235,9 @@ export default function BuyList({
                   key={l.id}
                   data-line={l.id}
                   className={`buy-line-row${l.id === flashId ? ' flash' : ''}${l.id === editingId ? ' editing' : ''}`}
-                  onMouseEnter={(e) => showPreview(l, e.currentTarget)}
-                  onMouseLeave={() => setPreview(null)}
+                  // A small card picture left of the sidebar, level with the line (owner, 2026-09-29).
+                  onMouseEnter={(e) => setPreview(previewFor(l.image_url, e.currentTarget, aside.current, 'left'))}
+                  onMouseLeave={hidePreview}
                 >
                   <span className="line-price" title="Price per card">{formatMoney(l.unit_price)}</span>
                   <button
@@ -287,11 +281,7 @@ export default function BuyList({
         {footer}
       </div>
 
-      {preview && (
-        <div className="line-preview" style={{ top: preview.top, right: preview.right }} aria-hidden="true">
-          <img src={preview.src} alt="" />
-        </div>
-      )}
+      <LinePreview preview={preview} onHide={hidePreview} />
       {removing && (
         <RemoveModal
           line={removing}
