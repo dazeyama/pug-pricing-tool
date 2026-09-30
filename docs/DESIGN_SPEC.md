@@ -1181,6 +1181,7 @@ Owner's decision: double confirmation, and not easy to press.
 - **What counts:** confirmed **walk-in buys only**. Collections don't appear on the Calendar (owner's decision). A buy is counted on the day of `confirmed_at` in `STORE_TZ`.
 - **Mixed buys:** a buy with both games counts as a buy on **both** calendars that day, and each side sees only its own lines.
 - Updates live through Realtime.
+- **Decoration** (owner's decisions, 2026-09-29): the month picker (◀ September 2026 ▶ Today) is **centred** above the grids. A **line runs down the middle** between them, half indigo, half amber. Each side is **themed in its game's colour** from the rest of the UI (the MTG | PKM chips): **Magic indigo** on the left, **Pokémon amber** on the right: the panel's top edge, border and faint tint, the weekday labels, days with buys (tinted, their count in the game colour), the hover and today's outline.
 - **As built (Phase 8):** the month sits in the URL only when it isn't the current one (`#/calendar?month=2026-08`); ◀ ▶ move a month, **Today** returns. Weeks, days and "today" are the store's calendar (`src/lib/calendar.js`). A day with no buys shows its date only and isn't a link. The dots use the confirming user's colour (slate if unknown).
 
 ### 10.2 Day page
@@ -1985,6 +1986,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 135 | Phone on day pages (2026-09-29) | A confirmed buy's phone number shows beside its customer name (Section 10.2) |
 | 136 | Last card deletes the buy (2026-09-29) | Removing a confirmed buy's last card deletes the buy, asking first; `buy_remove_line` refuses it (`last_card`) (Sections 6.2, 10.2) |
 | 137 | Collection screen in amber (2026-09-29) | Inside a collection the background art is mirrored and the screen's accent is amber, so it looks distinct from the Price tab (Section 9.4) |
+| 138 | Calendar decoration (2026-09-29) | The month picker is centred; a line runs down the middle; the Magic side is themed indigo and the Pokémon side amber (Section 10.1) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |
