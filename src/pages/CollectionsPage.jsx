@@ -7,6 +7,7 @@ import { formatPhone } from '../lib/phone.js';
 import { formatRecent, formatShortDate } from '../lib/time.js';
 import { withLoading } from '../lib/loading.js';
 import GuardButton from '../components/GuardButton.jsx';
+import UserTag from '../components/UserTag.jsx';
 import { NewCollectionModal } from './collections/CollectionModals.jsx';
 import { STATUSES, statusLabel } from './collections/status.js';
 import { errorMessage } from './collections/useCollection.js';
@@ -17,13 +18,15 @@ import { useToast } from '../components/Toast.jsx';
 const STALE_MS = 60_000;   // a lock without a heartbeat for 60s is stale (spec 9.6)
 const STATUS_ORDER = { processing: 0, priced: 1, paid: 2 };
 
-// Sortable columns (spec 9.1): the value each sorts by.
-const COLUMNS = [
+// Sortable columns (spec 9.1): the value each sorts by. `by` looks up a
+// staff user (Last edited by).
+const columns = (by) => [
   { key: 'name', label: 'Name', value: (c) => nameKey(c.customer_name) },
   { key: 'phone', label: 'Phone', value: (c) => c.phone },
   { key: 'status', label: 'Status', value: (c) => STATUS_ORDER[c.status] },
   { key: 'created', label: 'Created', value: (c) => c.created_at },
   { key: 'edited', label: 'Last edited', value: (c) => c.updated_at },
+  { key: 'editor', label: 'Last edited by', value: (c) => nameKey(by(c.last_edited_by)?.name ?? '') },
   { key: 'notes', label: 'Notes', value: (c) => nameKey(c.notes) },
 ];
 
@@ -39,7 +42,7 @@ export default function CollectionsPage() {
   const toast = useToast();
   const { data, loaded } = useLiveTable('buys', () => supabase
     .from('buys')
-    .select('id, customer_name, phone, status, notes, created_at, updated_at')
+    .select('id, customer_name, phone, status, notes, created_at, updated_at, last_edited_by')
     .eq('kind', 'collection'));
   const locks = useLiveTable('collection_locks', () => supabase
     .from('collection_locks')
@@ -58,6 +61,7 @@ export default function CollectionsPage() {
   }, []);
 
   const all = data ?? [];
+  const COLUMNS = columns(staff.byId);
   const rows = useMemo(() => {
     const words = nameKey(query);
     const digits = query.replace(/\D/g, '');
@@ -73,7 +77,7 @@ export default function CollectionsPage() {
         const y = column.value(b) ?? '';
         return (x < y ? -1 : x > y ? 1 : 0) * dir || (b.updated_at < a.updated_at ? -1 : 1);
       });
-  }, [all, status, query, sort]);
+  }, [all, status, query, sort, staff.byId]);
 
   /** Open on another computer: "✎ open on Front Counter (Dana)". */
   function openElsewhere(id) {
@@ -192,6 +196,7 @@ export default function CollectionsPage() {
                 <td><span className={`status-chip ${c.status}`}>{statusLabel(c.status)}</span></td>
                 <td className="col-date">{formatShortDate(c.created_at)}</td>
                 <td className="col-date">{formatRecent(c.updated_at)}</td>
+                <td className="col-editor"><UserTag user={staff.byId(c.last_edited_by)} /></td>
                 <td className="col-notes" title={c.notes || undefined}>{c.notes}</td>
               </tr>
             );

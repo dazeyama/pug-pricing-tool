@@ -1016,7 +1016,7 @@ Collections  14                                     [ Search name or phone… ] 
 │ ✎ open on Front Counter (Dana)                                                                    │
 ```
 
-- **Columns** (owner's list): **Name, Phone Number, Status, Date of creation, Date last edited, Notes.** Notes are truncated to one line, with the full text in a tooltip.
+- **Columns** (owner's list): **Name, Phone Number, Status, Date of creation, Date last edited, Last edited by** (the user with their colour dot, added 2026-09-29), **Notes.** Notes are truncated to one line, with the full text in a tooltip.
 - **Sort:** click a column header to sort ascending, click again for descending. Default is **Last edited, newest first**.
 - **Status filter:** All / Processing / Priced / Paid/Ours. Default is All.
 - **Search box:** matches name (case- and accent-insensitive substring) and phone (digits substring).
@@ -1922,6 +1922,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 119 | Settings in two columns (2026-09-29) | Settings' panels sit in two columns across the page, related panels side by side (Section 11) |
 | 120 | Collection details in the sidebar (2026-09-29) | A collection's details move from the header bar to the sidebar's foot, above the totals (where the Price tab has them), collapsible; nothing sits above the stage (Section 9.4) |
 | 121 | Last 4 ID on collections (2026-09-29) | An optional Last 4 ID (up to 4 letters/digits, capitals) in + Price Collection, saved with the collection, shown and edited in its details, not on the table (Sections 6.1, 9.2) |
+| 122 | Last edited by column (2026-09-29) | The collections table shows who last edited each collection, after Last edited, sortable (Section 9.1) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |
