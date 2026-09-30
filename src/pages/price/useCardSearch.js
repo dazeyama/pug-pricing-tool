@@ -41,7 +41,9 @@ export function useCardSearch(text, lang, games, oldest = false) {
     const controller = new AbortController();
     const timer = setTimeout(async () => {
       const runId = ++runs.current;
-      // Old results stay up until the new ones arrive, so nothing flickers.
+      // The old results go as soon as the new search starts (owner,
+      // 2026-09-29), so the suggestions never show cards from the last query.
+      // The selected card stays until the new results say otherwise (spec 8.12).
       setState((s) => ({
         ...s,
         query: input,
@@ -51,8 +53,8 @@ export function useCardSearch(text, lang, games, oldest = false) {
         tried: null,
         runId,
         games: {
-          mtg: games.mtg ? { ...s.games.mtg, status: 'searching' } : { ...IDLE, status: 'off' },
-          pokemon: games.pokemon ? { ...s.games.pokemon, status: 'searching' } : { ...IDLE, status: 'off' },
+          mtg: { ...IDLE, status: games.mtg ? 'searching' : 'off' },
+          pokemon: { ...IDLE, status: games.pokemon ? 'searching' : 'off' },
         },
       }));
       try {

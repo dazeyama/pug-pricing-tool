@@ -751,7 +751,7 @@ Parsing rules (`src/lib/query.js`), applied to the trimmed input:
 - **Hover** (owner's decisions, 2026-09-29): a thumbnail pops up and grows (about 14%, with a slight overshoot and a deep shadow). Then the **set symbol** pops in over the spot a Magic card prints it (the right end of the type line, mid-right), large (about 38% of the card's width) and **colored for rarity**: common black, uncommon silver, rare gold, mythic orange-red, special/bonus purple. When there's **no symbol**, a small chip with the **set code** shows there instead, in the same colors. That covers every Pokémon card (TCGdex's set-symbol images return 404, and suggestions don't carry Pokémon rarity, so these chips are slate) and any Magic symbol that fails to load.
 - **Auto-select** (owner's decision): when the results narrow to exactly **one** printing, it becomes the selected card automatically. With several matches nothing is selected until the user clicks or arrows to one. The previous selection clears when the query changes enough that it no longer matches.
 - States:
-  - Searching: a subtle "Searching…" with a spinner.
+  - Searching: a subtle "Searching…" with a spinner. The previous query's thumbnails **clear as soon as a new search starts** (owner's decision, 2026-09-29), leaving the empty card shapes; the selected card stays until the new results arrive (Section 8.12).
   - Image still loading (a thumbnail or the selected card, including a Pokémon backup still being looked up, Section 5.2): a card-shaped shimmer with a spinner and "Loading…". The card back appears only once every source has been tried (owner's decision, 2026-09-29).
   - No match: "No cards match. Check the number and set code." Also show the name correction when one was tried.
   - A source failed: its badge greys out, with "Scryfall didn't respond — retrying…" or "TCGdex didn't respond — retrying…". The other game's results still show.
@@ -1882,6 +1882,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 111 | Toggles per collection visit (Phase 7, 2026-09-29) | MTG \| PKM and Newest/Oldest first hold while on one collection and reset when it's left (Section 9.4) |
 | 112 | Collections as built (Phase 7, 2026-09-29) | Totals in the header only; view-only computers take a freed or stale lock by themselves; the dropdown can unlock to Processing; functions take the device and line texts (Sections 6.2, 9.4–9.6) |
 | 113 | Right-click a suggestion (2026-09-29) | Right-clicking a suggestion thumbnail (row or show all) searches that card's plain name, a quick "every printing" (Section 8.3) |
+| 114 | Suggestions clear on a new search (2026-09-29) | The last query's thumbnails go as soon as a new search starts, instead of staying until the new results arrive (Section 8.3) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |
