@@ -1030,7 +1030,7 @@ Collections  14                                     [ Search name or phone… ] 
 │ ✎ open on Front Counter (Dana)                                                                    │
 ```
 
-- **Columns** (owner's list): **Name, Phone Number, Status, Date of creation, Date last edited, Last edited by** (the user with their colour dot, added 2026-09-29), **Notes.** Notes are truncated to one line, with the full text in a tooltip.
+- **Columns** (owner's list): **Name, Phone Number, Status, Date of creation, Date last edited, Last edited by** (the user with their colour dot, added 2026-09-29), **Notes.** **Order as built** (owner's decision, 2026-09-29): Name, Phone, Paid, Created, Last edited, Last edited by, Notes, then **Status and Offer last**. Notes are truncated to one line, with the full text in a tooltip.
 - **Sort:** click a column header to sort ascending, click again for descending. Default is **Last edited, newest first**.
 - **Status filter:** All / Processing / Priced / Paid/Ours. Default is All.
   - **As of 2026-09-29 (owner's decisions):** the chips are **All · Processing** (amber) **· Priced** (red) **· Paid/Ours Cash** (green) **· Paid/Ours Credit** (blue) **· Completed** (grey, last). A chip shows its colour while on. The same colours mark the Status column's chips and a collection's details: Processing amber, Priced red, Paid/Ours green or blue by how it was paid (the Cash / Credit colours), Completed grey.
@@ -1957,6 +1957,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 126 | Status colours (2026-09-29) | Processing amber, Priced red, Paid/Ours green (cash) or blue (credit), Completed grey; filter chips Paid/Ours Cash and Paid/Ours Credit replace Paid/Ours, Completed last (Section 9.1) |
 | 127 | Rule-box foil (2026-09-29) | Rule-box Pokémon (ex, V, VMAX, VSTAR, GX and the like) get the whole-card foil sheen like full-art cards, holo or reverse (Section 8.4) |
 | 128 | Holo masks by era (2026-09-29) | Six art-window masks by release year (1999, 2003, 2007, 2011, 2017, 2023+), measured on full-size scans, replace the modern/vintage pair (Section 8.4) |
+| 129 | Status and Offer last (2026-09-29) | The collections table ends with Status and Offer, after Notes (Section 9.1) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

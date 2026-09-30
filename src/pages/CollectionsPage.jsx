@@ -19,22 +19,60 @@ import { useToast } from '../components/Toast.jsx';
 const STALE_MS = 60_000;   // a lock without a heartbeat for 60s is stale (spec 9.6)
 const STATUS_ORDER = { processing: 0, priced: 1, paid: 2, completed: 3 };
 
-// Sortable columns (spec 9.1): the value each sorts by. `by` looks up a
-// staff user (Last edited by). An offer or price not set yet (TBD) sorts as -1.
+// The table's columns (spec 9.1), in order: the value each sorts by and its
+// cell. Status and Offer come last, after Notes (owner, 2026-09-29). `by`
+// looks up a staff user (Last edited by); `elsewhere` is a row's "✎ open on"
+// line. An offer or price not set yet (TBD) sorts as -1.
 const columns = (by) => [
-  { key: 'name', label: 'Name', value: (c) => nameKey(c.customer_name) },
-  { key: 'phone', label: 'Phone', value: (c) => c.phone },
-  { key: 'status', label: 'Status', value: (c) => STATUS_ORDER[c.status] },
+  {
+    key: 'name',
+    label: 'Name',
+    value: (c) => nameKey(c.customer_name),
+    cell: (c, elsewhere) => (
+      <td key="name" className="col-name">
+        {c.customer_name}
+        {elsewhere && <span className="lock-line">{elsewhere}</span>}
+      </td>
+    ),
+  },
+  {
+    key: 'phone', label: 'Phone', value: (c) => c.phone,
+    cell: (c) => <td key="phone" className="col-phone">{formatPhone(c.phone)}</td>,
+  },
+  {
+    key: 'paid',
+    label: 'Paid',
+    value: (c) => (isClosed(c.status) && c.paid_price != null ? Number(c.paid_price) : -1),
+    cell: (c) => <td key="paid" className="col-money"><PaidText buy={c} /></td>,
+  },
+  {
+    key: 'created', label: 'Created', value: (c) => c.created_at,
+    cell: (c) => <td key="created" className="col-date">{formatShortDate(c.created_at)}</td>,
+  },
+  {
+    key: 'edited', label: 'Last edited', value: (c) => c.updated_at,
+    cell: (c) => <td key="edited" className="col-date">{formatRecent(c.updated_at)}</td>,
+  },
+  {
+    key: 'editor',
+    label: 'Last edited by',
+    value: (c) => nameKey(by(c.last_edited_by)?.name ?? ''),
+    cell: (c) => <td key="editor" className="col-editor"><UserTag user={by(c.last_edited_by)} /></td>,
+  },
+  {
+    key: 'notes', label: 'Notes', value: (c) => nameKey(c.notes),
+    cell: (c) => <td key="notes" className="col-notes" title={c.notes || undefined}>{c.notes}</td>,
+  },
+  {
+    key: 'status', label: 'Status', value: (c) => STATUS_ORDER[c.status],
+    cell: (c) => <td key="status"><span className={`status-chip ${statusTone(c)}`}>{statusLabel(c.status)}</span></td>,
+  },
   {
     key: 'offer',
     label: 'Offer',
     value: (c) => (c.status === 'processing' || c.offer_cash == null ? -1 : Number(c.offer_cash)),
+    cell: (c) => <td key="offer" className="col-money"><OfferText buy={c} /></td>,
   },
-  { key: 'paid', label: 'Paid', value: (c) => (isClosed(c.status) && c.paid_price != null ? Number(c.paid_price) : -1) },
-  { key: 'created', label: 'Created', value: (c) => c.created_at },
-  { key: 'edited', label: 'Last edited', value: (c) => c.updated_at },
-  { key: 'editor', label: 'Last edited by', value: (c) => nameKey(by(c.last_edited_by)?.name ?? '') },
-  { key: 'notes', label: 'Notes', value: (c) => nameKey(c.notes) },
 ];
 
 /**
@@ -197,18 +235,7 @@ export default function CollectionsPage() {
                   if (e.key === 'Enter') navigate(`/collections/${c.id}`);
                 }}
               >
-                <td className="col-name">
-                  {c.customer_name}
-                  {elsewhere && <span className="lock-line">{elsewhere}</span>}
-                </td>
-                <td className="col-phone">{formatPhone(c.phone)}</td>
-                <td><span className={`status-chip ${statusTone(c)}`}>{statusLabel(c.status)}</span></td>
-                <td className="col-money"><OfferText buy={c} /></td>
-                <td className="col-money"><PaidText buy={c} /></td>
-                <td className="col-date">{formatShortDate(c.created_at)}</td>
-                <td className="col-date">{formatRecent(c.updated_at)}</td>
-                <td className="col-editor"><UserTag user={staff.byId(c.last_edited_by)} /></td>
-                <td className="col-notes" title={c.notes || undefined}>{c.notes}</td>
+                {COLUMNS.map((col) => col.cell(c, elsewhere))}
               </tr>
             );
           })}
