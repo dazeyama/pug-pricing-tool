@@ -692,6 +692,8 @@ Below the main search bar, the stage is three columns (**owner's layout, 2026-09
 |---|---|---|
 | **Selected card** at Scryfall's card-page size (**336×468**), centered in its column, with the **condition / price table** directly under it | **Card info** beside the card, then the **suggestions**: 10 thumbnails in **2 rows of 5** | Beside the card info: the **price panel** (Section 8.7). Beside the suggestions: the **finish control** and **details panel**, then the action row (**Qty, CLEAR, ADD CARD**) under them |
 
+**Sidebar width** (owner's decision, 2026-09-29): the buy list is 340px plus whatever width the suggestions don't use, up to 560px. On a wide screen the thumbnails reach their height limit and stop growing; the width left over goes to the sidebar instead of sitting empty between the thumbnails and Finish & Details (measured with a `ResizeObserver` on the suggestions area, `useListRoom` in `PricePage.jsx`). On a narrow screen (1366×768) there's nothing spare and the sidebar stays 340px.
+
 Card image sizes follow Scryfall's as the reference: the selected card is 336×468, and a thumbnail is at most Scryfall's small image (146×204), shrinking only to fit 5 across and 2 rows down. The selected card shrinks only when the window is too short for it. The sidebar's bottom holds the totals and **CANCEL / CONFIRM BUY**, which mirror CLEAR / ADD CARD in size, shape and position.
 
 ### 8.2 Main search bar
@@ -1838,6 +1840,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 102 | Editing buy-list lines (2026-09-29) | Clicking a line (blue on hover) loads the card back with its saved choices and ADD CARD becomes EDIT CARD, saving over the line; removing moves to a red × at the line's end (Section 8.9) |
 | 103 | Edit look and line previews (2026-09-29) | While editing, EDIT CARD is blue and CLEAR reads CANCEL; hovering a buy-list line shows a small picture of the card beside the sidebar (Sections 8.8, 8.9) |
 | 104 | Line prices and Cash/Credit colors (2026-09-29) | The buy list shows each line's price per card before it (display only); Cash is green and Credit blue everywhere (`--cash`, `--credit`; Sections 7.8, 8.9) |
+| 105 | Sidebar takes spare width (2026-09-29) | The buy list grows (340px up to 560px) by the width the suggestions can't use, so Finish & Details sits right after the thumbnails (Section 8.1) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

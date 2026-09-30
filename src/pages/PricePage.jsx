@@ -45,6 +45,37 @@ function usePokemonLang() {
   }];
 }
 
+// The buy list takes the width the suggestions don't use (owner, 2026-09-29).
+// A thumbnail is at most 146px wide and also limited by the area's height
+// (price.css .thumbs); on a wide screen that leaves empty space between the
+// thumbnails and Finish & Details, which goes to the sidebar instead, up to
+// LIST_EXTRA_MAX. Measured, since the thumbnails' size depends on their column.
+const LIST_EXTRA_MAX = 220;
+
+function useListRoom(screen) {
+  const [extra, setExtra] = useState(0);
+  const current = useRef(0);
+  useEffect(() => {
+    const area = screen.current?.querySelector('.area-thumbs');
+    if (!area) return undefined;
+    const measure = () => {
+      // The same sums as .thumbs' --thumb-w: 36px line above, 16px between
+      // the rows, 22px per label, 5 across with 14px gaps.
+      const thumb = Math.min(146, ((area.clientHeight - 36 - 16 - 2 * 22) / 2) * 0.7176);
+      const spare = area.clientWidth - (5 * thumb + 4 * 14);
+      const next = Math.round(Math.min(LIST_EXTRA_MAX, Math.max(0, current.current + spare)));
+      if (Math.abs(next - current.current) >= 2) {
+        current.current = next;
+        setExtra(next);
+      }
+    };
+    const observer = new ResizeObserver(measure);
+    observer.observe(area);
+    return () => observer.disconnect();
+  }, [screen]);
+  return extra;
+}
+
 /** The search-bar key of a saved line's card (the candidate's key). */
 const lineKey = (line) => (line.game === 'mtg' ? `mtg:${line.scryfall_id}` : `pokemon:${line.lang}:${line.tcgdex_id}`);
 
@@ -184,6 +215,8 @@ export default function PricePage() {
   // selected (found), then its saved choices put back (restored); EDIT CARD
   // saves over it. { line, key, query, found, restored } or null.
   const [editing, setEditing] = useState(null);
+  const screen = useRef(null);
+  const listExtra = useListRoom(screen);
   const images = useCardImages(selected);   // a Pokémon thumbnail for the line (backups too)
   // This buy's rates: its custom ones where set, else the Master Buy
   // Percentages (spec 8.9.1), for the totals and the price panel.
@@ -482,7 +515,7 @@ export default function PricePage() {
   }
 
   return (
-    <div className="price-screen" style={BACKGROUND}>
+    <div className="price-screen" ref={screen} style={{ ...BACKGROUND, '--list-extra': `${listExtra}px` }}>
       <div className="stage">
         <SearchBar
           inputRef={input}

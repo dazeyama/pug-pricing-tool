@@ -913,10 +913,12 @@
 
 .hint-strip { flex: none; margin: 0; font-size: 12px; color: var(--muted); text-align: right; }
 
-/* ---- Buy list sidebar (Audit Tool list panel, docked right) ---- */
+/* ---- Buy list sidebar (Audit Tool list panel, docked right) ----
+   340px, plus the width the suggestions don't use (--list-extra, set by
+   PricePage's useListRoom; owner, 2026-09-29). */
 .buy-list {
   flex: none;
-  width: 340px;
+  width: calc(340px + var(--list-extra, 0px));
   display: flex;
   flex-direction: column;
   background: rgba(24, 28, 46, .9);
