@@ -109,6 +109,9 @@ export default function CollectionsPage() {
           <h2>Collections</h2>
           <span className="count-badge">{all.length}</span>
         </div>
+        <GuardButton className="btn primary big new-col-btn" onClick={() => setCreating(true)}>
+          + Price Collection
+        </GuardButton>
         <input
           type="search"
           className="col-search"
@@ -117,9 +120,6 @@ export default function CollectionsPage() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
-        <GuardButton className="btn primary big new-col-btn" onClick={() => setCreating(true)}>
-          + Price Collection
-        </GuardButton>
       </div>
 
       <div className="status-filter" role="group" aria-label="Status">

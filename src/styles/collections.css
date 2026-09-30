@@ -2,10 +2,18 @@
    pricing screen (the Price screen with a header bar on top). */
 
 /* ---- The table (9.1) ---- */
-.col-table-head { gap: 12px; }
+/* One line (owner, 2026-09-29): Collections (count) … + Price Collection, search. */
+.col-table-head { flex-wrap: nowrap; gap: 12px; }
 .col-table-head .panel-title { margin-right: auto; }
-.col-search { width: 260px; border-radius: 999px; padding: 8px 14px; }
-.new-col-btn { padding: 12px 22px; font-size: 16px; font-weight: 700; }
+.col-table-head .new-col-btn { flex: none; padding: 10px 20px; font-size: 15px; font-weight: 700; }
+.col-table-head .col-search {
+  flex: none;
+  width: 300px;
+  margin: 0;
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-size: 14px;
+}
 
 .status-filter { display: flex; gap: 6px; margin: 0 0 14px; }
 .filter-pill {
