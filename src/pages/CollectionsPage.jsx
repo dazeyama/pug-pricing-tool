@@ -8,7 +8,7 @@ import { formatRecent, formatShortDate } from '../lib/time.js';
 import { withLoading } from '../lib/loading.js';
 import GuardButton from '../components/GuardButton.jsx';
 import { NewCollectionModal } from './collections/CollectionModals.jsx';
-import { STATUSES, statusLabel } from './collections/CollectionHeader.jsx';
+import { STATUSES, statusLabel } from './collections/status.js';
 import { errorMessage } from './collections/useCollection.js';
 import { useDevice } from '../state/device.jsx';
 import { useStaff } from '../state/staff.jsx';

@@ -135,11 +135,10 @@ function RatesPanel({ title, rates, master, onSave, onClose }) {
 
 /**
  * Market, Cash and Credit (spec 8.9), with the clickable percentages that
- * open the custom-rate subpanel (8.9.1). In the sidebar's foot, or in a
- * collection's header (`drop`: the subpanel opens downward).
+ * open the custom-rate subpanel (8.9.1) above them.
  */
-export function Totals({
-  market, rates, master, ratesTitle, canEdit, editBlocked, onSaveRates, onDone, drop = false,
+function Totals({
+  market, rates, master, ratesTitle, canEdit, editBlocked, onSaveRates, onDone,
 }) {
   const [ratesOpen, setRatesOpen] = useState(false);
   const pct = (which, label) => {
@@ -159,7 +158,7 @@ export function Totals({
     );
   };
   return (
-    <div className={`totals${drop ? ' drop' : ''}`}>
+    <div className="totals">
       <div className="total-row"><span>Market</span><strong>{formatMoney(market)}</strong></div>
       <div className="total-row cash">{pct('cash', 'Cash')}<strong>{formatMoney(payout(market, rates.cash))}</strong></div>
       <div className="total-row credit">{pct('credit', 'Credit')}<strong>{formatMoney(payout(market, rates.credit))}</strong></div>
@@ -181,14 +180,15 @@ export function Totals({
 
 /**
  * The list sidebar (spec 8.9): the walk-in draft ("Buy list") or a
- * collection ("Collection list"), grouped by game in the order added, with
- * totals (unless the page shows them elsewhere) and the page's buttons
- * (`footer`). Clicking a line edits it (onEdit; owner, 2026-09-29); its red
- * × removes it. While `locked` (Paid/Ours, view-only) the lines are only read.
+ * collection ("Collection list"), grouped by game in the order added. Its
+ * foot holds the page's `details` (a collection's), the totals, and the
+ * page's buttons (`footer`). Clicking a line edits it (onEdit; owner,
+ * 2026-09-29); its red × removes it. While `locked` (Paid/Ours, view-only)
+ * the lines are only read.
  */
 export default function BuyList({
-  title = 'Buy list', lines, loaded, rates, master, ratesTitle, showTotals = true, flashId, editingId,
-  canEdit, locked = null, editBlocked, onEdit, onRemove, onSaveRates, onDone, footer,
+  title = 'Buy list', lines, loaded, rates, master, ratesTitle, flashId, editingId,
+  canEdit, locked = null, editBlocked, onEdit, onRemove, onSaveRates, onDone, details, footer,
 }) {
   const [removing, setRemoving] = useState(null);
   const [preview, setPreview] = useState(null);   // { src, top, right } while a line is hovered
@@ -267,18 +267,17 @@ export default function BuyList({
       </div>
 
       <div className="list-foot">
-        {showTotals && (
-          <Totals
-            market={market}
-            rates={rates}
-            master={master}
-            ratesTitle={ratesTitle}
-            canEdit={canEdit}
-            editBlocked={editBlocked}
-            onSaveRates={onSaveRates}
-            onDone={onDone}
-          />
-        )}
+        {details}
+        <Totals
+          market={market}
+          rates={rates}
+          master={master}
+          ratesTitle={ratesTitle}
+          canEdit={canEdit}
+          editBlocked={editBlocked}
+          onSaveRates={onSaveRates}
+          onDone={onDone}
+        />
         {footer}
       </div>
 

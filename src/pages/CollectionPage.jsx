@@ -1,14 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import PricingScreen from './price/PricingScreen.jsx';
-import CollectionHeader, { statusLabel } from './collections/CollectionHeader.jsx';
+import CollectionDetails from './collections/CollectionDetails.jsx';
+import { statusLabel } from './collections/status.js';
 import { ConfirmModal, DeleteCollectionModal } from './collections/CollectionModals.jsx';
 import { useCollection } from './collections/useCollection.js';
 import { useCollectionLock } from './collections/useCollectionLock.js';
 import ExportButton from '../components/ExportButton.jsx';
-import GuardButton from '../components/GuardButton.jsx';
-import UserTag from '../components/UserTag.jsx';
-import { formatTime } from '../lib/time.js';
 import { useSettings } from '../state/settings.jsx';
 import { useDevice } from '../state/device.jsx';
 import { useStaff } from '../state/staff.jsx';
@@ -16,9 +14,10 @@ import { useConnection } from '../state/connection.jsx';
 import { useToast } from '../components/Toast.jsx';
 
 // A collection's pricing screen (spec 9.4): the Price tab's screen with the
-// collection's header bar on top and its list in the sidebar. Every add and
-// remove saves at once and is logged; there's no CONFIRM BUY, only EXPORT.
-// One computer edits at a time (9.6); Paid/Ours locks it (9.5).
+// collection's list in the sidebar and its details at the sidebar's foot,
+// above the totals (owner, 2026-09-29). Every add and remove saves at once
+// and is logged; there's no CONFIRM BUY, only EXPORT. One computer edits at
+// a time (9.6); Paid/Ours locks it (9.5).
 export default function CollectionPage() {
   const { id } = useParams();
   // A fresh screen per collection: its search, toggles and lock start over.
@@ -124,57 +123,34 @@ function CollectionScreen({ id }) {
       locked={locked}
       listTitle="Collection list"
       ratesTitle="Rates for this collection"
-      listTotals={false}
-      renderTop={(api) => (
+      renderListDetails={(api) => (
         <>
           {buy ? (
-            <CollectionHeader
+            <CollectionDetails
               buy={buy}
-              lines={col.lines}
-              rates={rates}
-              master={master}
               byId={staff.byId}
               api={api}
               canChangeStatus={canChangeStatus}
               statusBlocked={statusBlocked}
               deleteBlocked={deleteBlocked}
+              viewOnly={viewOnly}
+              holder={{ label: holderLabel, user: holderUser, since: lock.holder?.since }}
+              onTakeOver={() => setAsking('takeover')}
+              onUnlock={() => {
+                setUnlockTo('priced');
+                setAsking('unlock');
+              }}
               onBack={back}
               onInfo={(fields) => col.updateInfo(fields, user?.id)}
               onStatus={changeStatus}
-              onSaveRates={(cash, credit) => col.setRates(cash, credit, user?.id)}
               onDelete={() => setAsking('delete')}
             />
           ) : (
-            <div className="col-head loading">
-              <button type="button" className="btn ghost back-btn" onClick={back}>‹ BACK</button>
-              <span className="muted-text">Loading…</span>
-            </div>
-          )}
-
-          {viewOnly && (
-            <div className="col-banner view-only">
-              <span>
-                ✎ Being edited on <strong>{holderLabel}</strong>
-                {holderUser && <> by <UserTag user={holderUser} /></>}
-                {lock.holder?.since && <> since {formatTime(lock.holder.since)}</>}.
-              </span>
-              <GuardButton className="btn small" onClick={() => setAsking('takeover')}>Take over</GuardButton>
-            </div>
-          )}
-          {paid && (
-            <div className="col-banner paid">
-              <span>Paid/Ours — locked.</span>
-              <GuardButton
-                className="btn small good-ghost"
-                disabled={!canChangeStatus}
-                title={canChangeStatus ? 'Unlock: back to Priced, and editable' : statusBlocked}
-                onClick={() => {
-                  setUnlockTo('priced');
-                  setAsking('unlock');
-                }}
-              >
-                🔒 Unlock
-              </GuardButton>
+            <div className="col-details">
+              <div className="cd-head">
+                <button type="button" className="cd-back" title="Back to Collections" onClick={back}>‹</button>
+                <span className="muted-text">Loading…</span>
+              </div>
             </div>
           )}
 

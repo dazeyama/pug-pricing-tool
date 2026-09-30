@@ -111,14 +111,13 @@ const BOTH_GAMES = { mtg: true, pokemon: true };
  * @param {string|null} [p.locked]  why nothing can change here (Paid/Ours, view-only), or null
  * @param {string} p.listTitle  "Buy list" / "Collection list"
  * @param {string} p.ratesTitle  the rates subpanel's heading
- * @param {boolean} [p.listTotals]  totals at the sidebar's foot (a collection shows them in its header)
- * @param {(api: object) => any} [p.renderTop]  above the stage and sidebar (a collection's header)
- * @param {(api: object) => any} [p.renderListFooter]  the sidebar's buttons
+ * @param {(api: object) => any} [p.renderListDetails]  in the sidebar's foot, above the totals (a collection's details)
+ * @param {(api: object) => any} [p.renderListFooter]  the sidebar's buttons, under the totals
  * @param {number} [p.resetKey]  changing it clears the stage and resets MTG | PKM and the sort
  */
 export default function PricingScreen({
-  list, rates, master, locked = null, listTitle, ratesTitle, listTotals = true,
-  renderTop, renderListFooter, resetKey = 0,
+  list, rates, master, locked = null, listTitle, ratesTitle,
+  renderListDetails, renderListFooter, resetKey = 0,
 }) {
   const [text, setText] = useState('');
   const [lang, setLang] = usePokemonLang();
@@ -525,12 +524,11 @@ export default function PricingScreen({
     note = <>Showing results for <strong>{search.correction.name}</strong></>;
   }
 
-  // What the page's own parts (a collection's header, the list's buttons) need.
+  // What the page's own parts (a collection's details, the list's buttons) need.
   const api = { focusSearch, canEdit, editBlocked };
 
   return (
     <>
-      {renderTop?.(api)}
       <div className="price-screen" ref={screen} style={{ ...BACKGROUND, '--list-extra': `${listExtra}px` }}>
         <div className="stage">
           <SearchBar
@@ -658,7 +656,6 @@ export default function PricingScreen({
           rates={rates}
           master={master}
           ratesTitle={ratesTitle}
-          showTotals={listTotals}
           flashId={flashId}
           editingId={editing?.line.id ?? null}
           canEdit={canEdit}
@@ -668,6 +665,7 @@ export default function PricingScreen({
           onRemove={(line, n) => list.remove(line, n, user?.id)}
           onSaveRates={(cash, credit) => list.setRates(cash, credit, user?.id)}
           onDone={focusSearch}
+          details={renderListDetails?.(api)}
           footer={renderListFooter?.(api)}
         />
 

@@ -1046,17 +1046,28 @@ A big primary button top-right, styled like CM's `.btn.primary`, larger. It need
 The **Price tab's screen, reused** (the same components), with these differences:
 
 ```
-< BACK   Jordan Reyes · (555) 201-3344 · [Processing ▾] [Mark as Priced →]      Market $412.50
-         Notes: 2 binders + bulk box, wants credit      ✎                         Cash (33%) $135
-         Created Aug 14 by ● Dana · Last edited today 3:12 PM by ● Sam  [⋯]     Credit (66%) $270
-┌──────────────── STAGE (same as Price tab) ──────────────────┬──── COLLECTION LIST ────┐
-│                                                            │  (same list format)      │
-│                                                            │                          │
-│                                                            │        [   EXPORT   ]     │
-└────────────────────────────────────────────────────────────┴──────────────────────────┘
+┌──────────────── STAGE (same as Price tab, full height) ─────┬──── COLLECTION LIST ─────┐
+│                                                            │  (same list format)       │
+│                                                            │                           │
+│                                                            │ ‹ Jordan Reyes [Priced] ▾ ⋯│
+│                                                            │ Name    Jordan Reyes ✎    │
+│                                                            │ Phone   (555) 201-3344 ✎  │
+│                                                            │ Notes   2 binders… ✎      │
+│                                                            │ Status  [Priced ▾] [Mark…]│
+│                                                            │ Created Aug 14 by ● Dana  │
+│                                                            │ Edited  today 3:12 PM ● Sam│
+│                                                            │ Market          $412.50   │
+│                                                            │ Cash (33%)      $135      │
+│                                                            │ Credit (66%)    $270      │
+│                                                            │ [        EXPORT        ]  │
+└────────────────────────────────────────────────────────────┴───────────────────────────┘
 ```
 
-- **Collection header bar** above the stage, full width:
+- **Details in the sidebar** (owner's decision, 2026-09-29, replacing the header bar below: it took height the stage can't spare). At the foot of the sidebar, **above the totals**, which sit exactly where they do on the Price tab, with EXPORT under them:
+  - **Top line, always shown:** **‹** back to the table; the name and a status chip, which fold the rest away or bring it back (**collapsible**, remembered per computer); the **⋯** menu. The view-only banner with **Take over** and the Paid/Ours banner with **🔒 Unlock** sit under it, also always shown.
+  - **Unfolded:** Name, Phone and Notes edited in place; Status (the dropdown and step button); Created and Edited, each with its user. Everything below as specified for the header bar, just stacked.
+  - Nothing is drawn above the stage.
+- **Collection header bar** (superseded by the details in the sidebar above; kept for what each control does) above the stage, full width:
   - **< BACK** at the top-left, returning to the table. Clicking the Collections tab does the same.
   - **Name** and **phone**, each editable inline (✎), and **Notes**, editable inline (multi-line; saves on blur or Ctrl+Enter). Each save calls `collection_update_info` and is logged.
   - **Status:** a **dropdown** (Processing / Priced / Paid/Ours) **and** a **step-forward button**: "Mark as Priced →" while Processing, "Mark as Paid/Ours →" while Priced (owner's decision: both controls).
@@ -1070,7 +1081,7 @@ The **Price tab's screen, reused** (the same components), with these differences
   - **Shared screen.** The Price tab and the collection screen are one component, `src/pages/price/PricingScreen.jsx`. Everything from Phases 3–6 works the same on a collection: the line prices, click-to-edit with EDIT CARD, the red ×, hover previews, MTG | PKM and the sort toggle.
   - **Editing re-prices** (owner's decision, 2026-09-29). EDIT CARD on a collection line saves today's price, as on a walk-in buy, even though adding locks a price in. The change is logged as one entry, **Card edited in collection**.
   - **Toggles** (owner's decision, 2026-09-29). MTG | PKM and Newest/Oldest first are kept while you're on one collection and reset when you leave it (Back, another tab, another collection).
-  - **Totals** show only in the header bar, on the right; their rates subpanel ("Rates for this collection") drops down. The sidebar holds the list and the blue EXPORT button, which opens "EXPORT COMING SOON" (`src/components/ExportButton.jsx`, reused on the day pages in Phase 8).
+  - **Totals** sit in the sidebar's foot as on the Price tab, with "Rates for this collection" as their subpanel's heading; under them is the blue EXPORT button, which opens "EXPORT COMING SOON" (`src/components/ExportButton.jsx`, reused on the day pages in Phase 8). (First built in a header bar; moved with the details, 2026-09-29.)
   - **Read-only list.** While read-only (Paid/Ours, another computer editing, or still loading), the lines don't turn blue, the × is hidden, and ADD CARD's tooltip and a click's toast say why.
   - **Inline edits.** Name, phone and notes are edited in place with a ✎. Enter saves (Ctrl+Enter for notes), clicking away saves, Esc cancels. An invalid name or phone stays open with the error on Enter, and is put back with a toast when you click away.
   - **Deleted elsewhere.** A collection deleted on another computer while open returns you to the table with a toast. A link to a missing collection says it doesn't exist.
@@ -1907,6 +1918,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 117 | Header search size (2026-09-29) | The header search is much larger off the pricing screens instead of smaller on them (Section 13) |
 | 118 | Credits list (2026-09-29) | Settings' footer credits are a bulleted list, one source per line, adding PokeAPI and Frankfurter (Section 11.7) |
 | 119 | Settings in two columns (2026-09-29) | Settings' panels sit in two columns across the page, related panels side by side (Section 11) |
+| 120 | Collection details in the sidebar (2026-09-29) | A collection's details move from the header bar to the sidebar's foot, above the totals (where the Price tab has them), collapsible; nothing sits above the stage (Section 9.4) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

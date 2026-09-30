@@ -103,30 +103,71 @@
 .form-stack .field-error, .field .field-error { width: auto; margin: 0; font-weight: 500; }
 .coming-soon { margin: 6px 0; font-size: 18px; font-weight: 800; letter-spacing: .06em; text-align: center; }
 
-/* ---- A collection's header bar (9.4), above the stage and the list ---- */
-.col-head {
-  flex: none;
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-  padding: 10px 24px;
-  background: var(--panel);
+/* ---- A collection's details (9.4): the sidebar's foot, above the totals ---- */
+.col-details {
+  margin: 0 0 10px;
+  padding: 0 0 10px;
   border-bottom: 1px solid var(--border);
-  position: relative;
-  z-index: 5;   /* the rates subpanel and ⋯ menu drop over the stage */
+  font-size: 13px;
 }
-.col-head.loading { align-items: center; }
-.back-btn { flex: none; font-weight: 700; letter-spacing: .04em; }
-.col-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-.col-line { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; min-width: 0; }
-.col-main { font-size: 18px; }
-.col-sep { color: var(--muted); }
-.col-label { color: var(--muted); font-size: 13px; }
-.col-notes { font-size: 13px; align-items: flex-start; }
-.col-notes .ie-value { white-space: pre-wrap; }
-.col-meta { font-size: 12.5px; color: var(--muted); }
-.col-name .ie-value { font-weight: 700; }
-.col-phone .ie-value { font-variant-numeric: tabular-nums; }
+.cd-head { display: flex; align-items: center; gap: 6px; }
+.cd-back {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel-2);
+  color: var(--text);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.cd-back:hover { border-color: var(--accent); color: var(--accent); }
+.cd-toggle {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.cd-toggle:hover { background: var(--panel-2); }
+.cd-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; font-weight: 700; }
+.cd-chevron { margin-left: auto; color: var(--muted); }
+.cd-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 12.5px;
+}
+.cd-banner.view-only { background: rgba(255, 204, 102, .12); color: var(--warn); }
+.cd-banner.paid { background: rgba(62, 207, 142, .12); color: var(--good); font-weight: 700; }
+.cd-banner .user-tag { color: var(--text); }
+.cd-fields {
+  display: grid;
+  grid-template-columns: 62px minmax(0, 1fr);
+  gap: 5px 10px;
+  margin: 10px 0 0;
+  align-items: baseline;
+}
+.cd-fields dt { color: var(--muted); font-size: 12px; }
+.cd-fields dd { margin: 0; min-width: 0; }
+.cd-name-edit .ie-value { font-weight: 600; }
+.cd-phone .ie-value { font-variant-numeric: tabular-nums; }
+.cd-notes .ie-value { white-space: pre-wrap; overflow-wrap: anywhere; }
+.cd-status { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .status-select {
   width: auto;
   padding: 4px 8px;
@@ -139,12 +180,8 @@
 .status-select option { color: var(--text); }
 .step-btn { font-weight: 700; }
 
-/* The totals, on the right; their rates subpanel opens downward. */
-.col-head .totals { flex: none; width: 250px; margin: 0; }
-.totals.drop .rates-panel { top: calc(100% + 8px); bottom: auto; left: auto; right: 0; width: 300px; }
-
-/* ⋯ → Delete collection… */
-.more-menu { position: relative; margin-left: 6px; }
+/* ⋯ → Delete collection… (opens upward: it sits near the window's foot) */
+.more-menu { position: relative; flex: none; }
 .more-btn {
   padding: 0 8px;
   border: 1px solid var(--border);
@@ -158,8 +195,8 @@
 .more-btn:hover, .more-btn[aria-expanded="true"] { color: var(--text); border-color: var(--accent); }
 .more-list {
   position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
+  bottom: calc(100% + 6px);
+  right: 0;
   z-index: 30;
   min-width: 190px;
   padding: 6px;
@@ -186,7 +223,6 @@
 /* ---- Edited in place (name, phone, notes) ---- */
 .ie { display: inline-flex; align-items: center; gap: 4px; min-width: 0; }
 .ie.editing { flex-direction: column; align-items: flex-start; }
-.col-notes .ie { flex: 1; }
 .ie-empty { color: var(--muted); font-style: italic; }
 .ie-pencil {
   padding: 0 4px;
@@ -198,25 +234,11 @@
   opacity: .6;
 }
 .ie:hover .ie-pencil, .ie-pencil:focus-visible { opacity: 1; color: var(--accent); }
-.ie-field { font-size: 14px; padding: 4px 8px; min-width: 220px; }
-.col-notes .ie-field { width: min(560px, 100%); }
+.ie-field { font-size: 13px; padding: 4px 8px; width: 100%; min-width: 0; margin-top: 0; }
+.ie.editing { width: 100%; }
 .ie-field.invalid { border-color: var(--bad); }
 .ie-hint { font-size: 11px; color: var(--muted); }
 .ie-error { font-size: 12px; color: var(--bad); }
-
-/* ---- Banners under the header: view-only (9.6) and Paid/Ours (9.5) ---- */
-.col-banner {
-  flex: none;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 8px 24px;
-  font-size: 14px;
-  border-bottom: 1px solid var(--border);
-}
-.col-banner.view-only { background: rgba(255, 204, 102, .12); color: var(--warn); }
-.col-banner.paid { background: rgba(62, 207, 142, .12); color: var(--good); font-weight: 700; }
-.col-banner .user-tag { color: var(--text); }
 
 /* ---- The sidebar on a collection: EXPORT instead of CONFIRM BUY ---- */
 .export-btn {
