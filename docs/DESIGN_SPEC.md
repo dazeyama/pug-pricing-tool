@@ -1217,7 +1217,7 @@ Saturday, August 17, 2026 · Magic
   - if the buy also has the other game's cards: "Also has N Pokémon cards →" (or Magic), linking to the other game's day page.
 - **Removing cards** (owner's decision): row hover turns red. Click → the same "Remove card?" dialog with quantity as Section 8.9, then `buy_remove_line`, which is logged. The confirmation text notes: "This buy was already confirmed."
 - **Deleting a buy:** ⋯ → Delete buy… → "Delete **Buy 2** (Dana, 2:37 PM)? All **N cards** in this buy — including any from the other game — will be permanently removed." [Cancel] [Delete buy] (red). Calls `buy_delete`, which is logged.
-- **EXPORT** is a large, bold blue button at the bottom-right (Section 14).
+- **EXPORT** is a large, bold button (Section 14). **As built (owner's decision, 2026-09-29):** on the header row, level with **< BACK** and as tall, **right-aligned**, on Magic and Pokémon day pages alike; it takes the page's game colour (below).
 - If the last buy of the day is deleted, go back to the Calendar with a toast.
 - **As built (Phase 8, owner's decisions, 2026-09-29):**
   - **< BACK** is the large bold button a collection has, returning to the Calendar on the day's month. The heading reads "Monday, August 17, 2026 · Magic" (game chip in its colours).
@@ -1450,7 +1450,7 @@ Export is the other half of the app's purpose, and it gets **its own design docu
 
 - **EXPORT buttons** appear in:
   - a collection's pricing screen, where CONFIRM BUY would be (blue);
-  - each day page, bottom-right (large, bold, blue).
+  - each day page, on the header row right-aligned opposite < BACK (large, bold; owner, 2026-09-29).
 - Clicking EXPORT opens a modal: **"EXPORT COMING SOON"** with an **[OK]** button.
 - The Master Crystal Inventory upload (Section 11.1) is fully built. The future export **must refuse to run without a current Master Crystal Inventory**. That rule belongs to the export doc, and the banner already warns.
 - The data model keeps what the export is likely to need: set names, source IDs, finishes, treatments, conditions, prices and snapshots.
@@ -1990,6 +1990,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 138 | Calendar decoration (2026-09-29) | The month picker is centred; a line runs down the middle; the Magic side is themed indigo and the Pokémon side amber (Section 10.1) |
 | 139 | Calendar always 6 weeks (2026-09-29) | Month grids always have 6 week rows of fixed-height days, so the panels fit any month and never change size (Section 10.1) |
 | 140 | Day pages by game colour (2026-09-29) | Magic day pages are themed indigo and Pokémon ones amber, accent included; panels keep their user-coloured top edge (Section 10.2) |
+| 141 | EXPORT on the day page's header row (2026-09-29) | A day page's EXPORT sits on the header row, right-aligned opposite < BACK and level with it, for both games (Sections 10.2, 14) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

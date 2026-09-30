@@ -95,7 +95,7 @@ button.cal-day:hover { border-color: var(--game); background: color-mix(in srgb,
   border-radius: 12px;
   background: linear-gradient(to bottom, color-mix(in srgb, var(--game) 14%, transparent), transparent 260px);
 }
-.day-top { margin-bottom: 12px; }
+.day-top { display: flex; align-items: stretch; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 /* < BACK, big and bold, like a collection's (owner, 2026-09-29). */
 .page-back {
   padding: 10px 22px;
@@ -150,6 +150,6 @@ button.cal-day:hover { border-color: var(--game); background: color-mix(in srgb,
 .day-page.mtg .buy-other { color: color-mix(in srgb, var(--pal-amber) 70%, #fff); }
 .day-page.pokemon .buy-other { color: color-mix(in srgb, var(--pal-indigo) 55%, #fff); }
 
-/* EXPORT: large, bold and blue, bottom right (spec 14). */
-.day-foot { display: flex; justify-content: flex-end; margin-top: 20px; }
-.export-btn.big { flex: none; min-width: 280px; }
+/* EXPORT: large and bold, top right, level with < BACK and as tall
+   (owner, 2026-09-29; spec 14). In the page's accent (the game's colour). */
+.export-btn.top { flex: none; min-height: 0; min-width: 220px; padding: 10px 28px; }

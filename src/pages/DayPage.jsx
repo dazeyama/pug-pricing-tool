@@ -185,8 +185,10 @@ function DayScreen({ game, day }) {
   return (
     // Themed in the game's colour: indigo for Magic, amber for Pokémon (calendar.css).
     <div className={`day-page ${game}`}>
+      {/* < BACK on the left, EXPORT on the right, one row (owner, 2026-09-29). */}
       <div className="day-top">
         <button type="button" className="btn page-back" title="Back to the Calendar" onClick={back}>&lt; BACK</button>
+        <ExportButton className="top" />
       </div>
       <h2 className="day-title">
         {dayTitle(day)} <span className="day-game">· <span className={`group-chip ${game}`}>{GAME_NAMES[game]}</span></span>
@@ -216,10 +218,6 @@ function DayScreen({ game, day }) {
           ))}
         </div>
       )}
-
-      <div className="day-foot">
-        <ExportButton className="big" />
-      </div>
 
       {removing && (
         <RemoveModal
