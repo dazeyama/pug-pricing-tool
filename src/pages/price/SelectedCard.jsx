@@ -6,7 +6,7 @@ import * as scry from '../../lib/scryfall.js';
 import { useCardImages } from './useCardImages.js';
 import { POKEMON_CARD_BACK, tcgplayerId } from '../../lib/pokemonImages.js';
 import { openPopup, popupName } from '../../lib/popup.js';
-import { isRuleBox } from '../../lib/pokemonFrames.js';
+import { frameEra, isRuleBox } from '../../lib/pokemonFrames.js';
 
 // Pokémon rarities whose art covers the whole card (TCGdex's names, English
 // and Japanese). Their holo shines across the whole card.
@@ -113,9 +113,9 @@ export default function SelectedCard({ candidate: c, typedName, englishName, pok
   const cardmarket = cardmarketLink(c, magic, searchName);
   const name = flippable ? magic.card_faces[face].name : c.name;
   // Foil sheen (spec 8.4): the whole card for Magic foil or etched; for
-  // Pokémon, the art window for holo and everything but it for reverse holo.
-  // Cards from before 2003 have a smaller art window.
-  const era = (pokemon.info?.releaseDate ?? c.releasedAt ?? '9999') < '2003' ? ' vintage' : '';
+  // Pokémon, the art window for holo and everything but it for reverse holo,
+  // where the art window is the card's frame era's (owner, 2026-09-29).
+  const era = ` era-${frameEra(pokemon.info?.releaseDate ?? c.releasedAt)}`;
   // Full art: by rarity, or Trainer Gallery / Galarian Gallery numbers.
   const fullArt = !magic && (FULL_ART.has(String(pokemon.card?.rarity ?? '').toLowerCase())
     || /^(tg|gg)\d/i.test(c.number));

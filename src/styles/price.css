@@ -207,9 +207,7 @@
               (artist/copyright) strip, which Scryfall's rules keep clear.
      holo     Pokémon holo: the art window only, like a real holo.
      reverse  Pokémon reverse holo: everything except the art window.
-   Art windows measured on TCGdex images with a percentage grid (2026-09-29):
-   modern cards 7.2–92.8% across, 10.5–47% down (Sylveon, Exeggcute); vintage
-   (before 2003) 11.2–89.2% across, 11.8–51.2% down (Base Set Pikachu). */
+   The art window depends on the card's frame era (.era-*, below). */
 .card-wrap { isolation: isolate; }
 .card-shine {
   position: absolute;
@@ -225,6 +223,7 @@
   mix-blend-mode: color-dodge;
   opacity: .31;                                   /* halved from .62 (owner, 2026-09-29) */
   animation: foil-drift 9s ease-in-out infinite alternate;   /* half speed */
+  --ray-center: 50% 28.5%;
   --shine-bands: linear-gradient(135deg, rgba(0, 0, 0, .55) 0%, #000 28%, rgba(0, 0, 0, .55) 52%, #000 76%, rgba(0, 0, 0, .55) 100%);
   -webkit-mask-image: var(--shine-bands), var(--shine-area);
   -webkit-mask-size: 100% 100%;
@@ -236,10 +235,52 @@
   mask-composite: intersect;
 }
 .card-shine.foil { --shine-area: linear-gradient(to bottom, #000 86%, transparent 93%); }
-.card-shine.holo { --shine-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Crect x='7.2' y='10.5' width='85.6' height='36.5'/%3E%3C/svg%3E"); }
-.card-shine.holo.vintage { --shine-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Crect x='11.2' y='11.8' width='78.0' height='39.4'/%3E%3C/svg%3E"); }
-.card-shine.reverse { --shine-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M0 0H100V100H0Z M7.2 10.5H92.8V47H7.2Z'/%3E%3C/svg%3E"); }
-.card-shine.reverse.vintage { --shine-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M0 0H100V100H0Z M11.2 11.8H89.2V51.2H11.2Z'/%3E%3C/svg%3E"); }
+/* Art windows by frame era (owner, 2026-09-29): the art window moved as the
+   frame was redesigned, so holo (the art window) and reverse holo
+   (everything else) get the era's mask. Eras by the set's release year
+   (src/lib/pokemonFrames.js); a set that breaks its era's frame is an
+   accepted outlier (Sun & Moon before Cosmic Eclipse, HeartGold SoulSilver,
+   e-Card, Evolutions). Measured on TCGdex's full-size 600 × 825 scans: each
+   edge the strongest straight line near a first guess, the median over each
+   era's sample cards, checked against red outlines. */
+/* 1999: 10.83–89.33% across, 11.76–51.52% down (Base Set, Jungle, Gym Challenge, Neo Genesis, Neo Destiny) */
+.card-shine.era-1999 {
+  --holo-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Crect x='10.83' y='11.76' width='78.5' height='39.76'/%3E%3C/svg%3E");
+  --reverse-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M0 0H100V100H0Z M10.83 11.76H89.33V51.52H10.83Z'/%3E%3C/svg%3E");
+  --ray-center: 50% 31.64%;
+}
+/* 2003: 7.33–92.67% across, 9.45–46.18% down (Ruby & Sapphire, Hidden Legends, Emerald, Crystal Guardians, Power Keepers) */
+.card-shine.era-2003 {
+  --holo-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Crect x='7.33' y='9.45' width='85.33' height='36.73'/%3E%3C/svg%3E");
+  --reverse-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M0 0H100V100H0Z M7.33 9.45H92.67V46.18H7.33Z'/%3E%3C/svg%3E");
+  --ray-center: 50% 27.82%;
+}
+/* 2007: 6.83–93.33% across, 9.33–49.94% down (Diamond & Pearl, Mysterious Treasures (Gible 85), Majestic Dawn, Platinum, Arceus) */
+.card-shine.era-2007 {
+  --holo-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Crect x='6.83' y='9.33' width='86.5' height='40.61'/%3E%3C/svg%3E");
+  --reverse-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M0 0H100V100H0Z M6.83 9.33H93.33V49.94H6.83Z'/%3E%3C/svg%3E");
+  --ray-center: 50% 29.64%;
+}
+/* 2011: 8.67–91% across, 10.55–49.7% down (Black & White, Dark Explorers, Legendary Treasures, XY, Ancient Origins) */
+.card-shine.era-2011 {
+  --holo-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Crect x='8.67' y='10.55' width='82.33' height='39.15'/%3E%3C/svg%3E");
+  --reverse-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M0 0H100V100H0Z M8.67 10.55H91V49.7H8.67Z'/%3E%3C/svg%3E");
+  --ray-center: 50% 30.12%;
+}
+/* 2017: 7.83–92.5% across, 9.82–47.15% down (Cosmic Eclipse, Sword & Shield, Brilliant Stars, Silver Tempest) */
+.card-shine.era-2017 {
+  --holo-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Crect x='7.83' y='9.82' width='84.67' height='37.33'/%3E%3C/svg%3E");
+  --reverse-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M0 0H100V100H0Z M7.83 9.82H92.5V47.15H7.83Z'/%3E%3C/svg%3E");
+  --ray-center: 50% 28.48%;
+}
+/* 2023: 8–92.5% across, 9.82–47.15% down (Scarlet & Violet, Obsidian Flames, Twilight Masquerade, Surging Sparks, Destined Rivals) */
+.card-shine.era-2023 {
+  --holo-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Crect x='8' y='9.82' width='84.5' height='37.33'/%3E%3C/svg%3E");
+  --reverse-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M0 0H100V100H0Z M8 9.82H92.5V47.15H8Z'/%3E%3C/svg%3E");
+  --ray-center: 50% 28.48%;
+}
+.card-shine.holo { --shine-area: var(--holo-area); }
+.card-shine.reverse { --shine-area: var(--reverse-area); }
 /* Pokémon: stronger than Magic's sheen (owner, 2026-09-29), since holo only
    covers part of the card. Full-art cards shine across the whole card.
    hard-light, not color-dodge: Pokémon cards are mostly light (yellow and
@@ -265,7 +306,6 @@
    slowly. Layers composite bottom-up: fade ∩ rays, ∪ art window, ∩ bands. */
 @property --ray-angle { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
 .card-shine.holo {
-  --ray-center: 50% 28.75%;
   --shine-rays: repeating-conic-gradient(from var(--ray-angle) at var(--ray-center),
     #000 0deg 2.5deg, rgba(0, 0, 0, .12) 2.5deg 10deg);
   --shine-ray-fade: radial-gradient(ellipse 80% 62% at var(--ray-center),
@@ -276,7 +316,6 @@
   mask-composite: intersect, add, intersect, add;
   animation: foil-drift 9s ease-in-out infinite alternate, ray-turn 40s linear infinite;
 }
-.card-shine.holo.vintage { --ray-center: 50% 31.5%; }
 @keyframes ray-turn { to { --ray-angle: 360deg; } }
 @keyframes foil-drift {
   from { background-position: 0% 0%, 0% 50%; }
