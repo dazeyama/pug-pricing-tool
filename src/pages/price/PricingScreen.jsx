@@ -114,10 +114,11 @@ const BOTH_GAMES = { mtg: true, pokemon: true };
  * @param {(api: object) => any} [p.renderListDetails]  in the sidebar's foot, above the totals (a collection's details)
  * @param {(api: object) => any} [p.renderListFooter]  the sidebar's buttons, under the totals
  * @param {number} [p.resetKey]  changing it clears the stage and resets MTG | PKM and the sort
+ * @param {any} [p.searchLead]  before the search field, top left (a collection's < BACK)
  */
 export default function PricingScreen({
   list, rates, master, locked = null, listTitle, ratesTitle,
-  renderListDetails, renderListFooter, resetKey = 0,
+  renderListDetails, renderListFooter, resetKey = 0, searchLead = null,
 }) {
   const [text, setText] = useState('');
   const [lang, setLang] = usePokemonLang();
@@ -547,6 +548,7 @@ export default function PricingScreen({
               focusSearch();
             }}
             note={note}
+            lead={searchLead}
           />
 
           {/* Owner's layout (2026-09-29): card left with prices under it; info

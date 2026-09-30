@@ -1082,7 +1082,8 @@ The **Price tab's screen, reused** (the same components), with these differences
 ```
 
 - **Details in the sidebar** (owner's decision, 2026-09-29, replacing the header bar below: it took height the stage can't spare). At the foot of the sidebar, **above the totals**, which sit exactly where they do on the Price tab, with EXPORT under them:
-  - **Top line, always shown:** **‹** back to the table; the name and a status chip, which fold the rest away or bring it back (**collapsible**, remembered per computer); the **⋯** menu. The view-only banner with **Take over** and the Paid/Ours banner with **🔒 Unlock** sit under it, also always shown.
+  - **Back:** a large, bold **< BACK** button at the top left of the screen, directly before the search bar and as tall as it (owner's decision, 2026-09-29, moved out of the details), returns to the table. Clicking the Collections tab does the same.
+  - **Top line, always shown:** the name and a status chip, which fold the rest away or bring it back (**collapsible**, remembered per computer); the **⋯** menu. The view-only banner with **Take over** and the Paid/Ours banner with **🔒 Unlock** sit under it, also always shown.
   - **Unfolded:** Name, Phone and Notes edited in place; Status (the dropdown and step button); Created and Edited, each with its user. Everything below as specified for the header bar, just stacked.
   - Nothing is drawn above the stage.
 - **Collection header bar** (superseded by the details in the sidebar above; kept for what each control does) above the stage, full width:
@@ -1958,6 +1959,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 127 | Rule-box foil (2026-09-29) | Rule-box Pokémon (ex, V, VMAX, VSTAR, GX and the like) get the whole-card foil sheen like full-art cards, holo or reverse (Section 8.4) |
 | 128 | Holo masks by era (2026-09-29) | Six art-window masks by release year (1999, 2003, 2007, 2011, 2017, 2023+), measured on full-size scans, replace the modern/vintage pair (Section 8.4) |
 | 129 | Status and Offer last (2026-09-29) | The collections table ends with Status and Offer, after Notes (Section 9.1) |
+| 130 | Big BACK button (2026-09-29) | A collection's < BACK is a large bold button at the top left, before the search bar, instead of in the details (Section 9.4) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

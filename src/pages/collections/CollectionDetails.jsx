@@ -93,14 +93,14 @@ export function PaidText({ buy, withMethod = false }) {
 /**
  * A collection's details, at the foot of its sidebar above the totals
  * (owner, 2026-09-29: nothing may take height from the stage). The top line
- * is always there: Back, the name and status (click to fold the rest away),
- * the ⋯ menu, and the view-only / Paid/Ours banners. Unfolded: name, phone,
+ * is always there: the name and status (click to fold the rest away), the
+ * ⋯ menu, and the view-only / Paid/Ours banners. Unfolded: name, phone,
  * Last 4 ID and notes edited in place, the status dropdown and step button, and who
  * created and last edited it.
  */
 export default function CollectionDetails({
   buy, byId, api, canChangeStatus, statusBlocked, deleteBlocked,
-  viewOnly, holder, onTakeOver, onUnlock, onReopen, onBack, onInfo, onStatus, onDelete,
+  viewOnly, holder, onTakeOver, onUnlock, onReopen, onInfo, onStatus, onDelete,
 }) {
   const [open, setOpen] = useState(() => readLocal(OPEN_KEY) !== 'no');
   const toggle = () => {
@@ -119,7 +119,6 @@ export default function CollectionDetails({
   return (
     <section className={`col-details${open ? ' open' : ''}`} aria-label="Collection details">
       <div className="cd-head">
-        <button type="button" className="cd-back" title="Back to Collections" onClick={onBack}>‹</button>
         <button
           type="button"
           className="cd-toggle"

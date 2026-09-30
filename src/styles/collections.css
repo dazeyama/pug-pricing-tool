@@ -145,6 +145,19 @@
 .pay-choice.credit.on { background: color-mix(in srgb, var(--credit) 16%, transparent); }
 .coming-soon { margin: 6px 0; font-size: 18px; font-weight: 800; letter-spacing: .06em; text-align: center; }
 
+/* < BACK, top left of a collection's screen, before the search bar (owner,
+   2026-09-29): as tall as the search field, big and bold. */
+.search-back {
+  flex: none;
+  padding: 0 22px;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  background: var(--panel-2);
+  border-width: 2px;
+}
+.search-back:hover { border-color: var(--accent); color: var(--accent); }
+
 /* ---- A collection's details (9.4): the sidebar's foot, above the totals ---- */
 .col-details {
   margin: 0 0 10px;
@@ -153,19 +166,6 @@
   font-size: 13px;
 }
 .cd-head { display: flex; align-items: center; gap: 6px; }
-.cd-back {
-  flex: none;
-  width: 28px;
-  height: 28px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--panel-2);
-  color: var(--text);
-  font-size: 18px;
-  line-height: 1;
-  cursor: pointer;
-}
-.cd-back:hover { border-color: var(--accent); color: var(--accent); }
 .cd-toggle {
   flex: 1;
   min-width: 0;

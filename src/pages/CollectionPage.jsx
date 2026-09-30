@@ -136,6 +136,12 @@ function CollectionScreen({ id }) {
       locked={locked}
       listTitle="Collection list"
       ratesTitle="Rates for this collection"
+      // Back to the table: big and bold, top left, before the search bar (owner, 2026-09-29).
+      searchLead={(
+        <button type="button" className="btn search-back" title="Back to Collections" onClick={back}>
+          &lt; BACK
+        </button>
+      )}
       renderListDetails={(api) => (
         <>
           {buy ? (
@@ -154,7 +160,6 @@ function CollectionScreen({ id }) {
                 setAsking('unlock');
               }}
               onReopen={() => setAsking('reopen')}
-              onBack={back}
               onInfo={(fields) => col.updateInfo(fields, user?.id)}
               onStatus={changeStatus}
               onDelete={() => setAsking('delete')}
@@ -162,7 +167,6 @@ function CollectionScreen({ id }) {
           ) : (
             <div className="col-details">
               <div className="cd-head">
-                <button type="button" className="cd-back" title="Back to Collections" onClick={back}>‹</button>
                 <span className="muted-text">Loading…</span>
               </div>
             </div>

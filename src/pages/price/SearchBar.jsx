@@ -1,15 +1,17 @@
 // The main search bar (spec 8.2): large, fixed at the top of the stage, never
 // an overlay. At its right edge, MTG | PKM picks the games searched (either
 // or both, never neither), and EN | JP switches Pokémon's language only.
+// `lead` goes before the field (a collection's < BACK).
 const GAMES = [
   { key: 'mtg', label: 'MTG', name: 'Magic' },
   { key: 'pokemon', label: 'PKM', name: 'Pokémon' },
 ];
 
-export default function SearchBar({ inputRef, value, onChange, onKeyDown, lang, onLang, games, onGames, note }) {
+export default function SearchBar({ inputRef, value, onChange, onKeyDown, lang, onLang, games, onGames, note, lead }) {
   return (
     <div className="main-search">
       <div className="main-search-row">
+        {lead}
         <div className="main-search-field">
           <svg className="main-search-icon" viewBox="0 0 16 16" width="20" height="20" aria-hidden="true">
             <circle cx="6.8" cy="6.8" r="4.6" fill="none" stroke="currentColor" strokeWidth="1.6" />
