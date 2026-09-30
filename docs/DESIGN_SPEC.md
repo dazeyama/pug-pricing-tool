@@ -1228,6 +1228,7 @@ Saturday, August 17, 2026 · Magic
   - Totals are this game's lines at the buy's snapshotted rates, Cash green and Credit blue.
   - **Numbering:** Buy N counts that day's buys with this game's cards in confirmed order, so deleting a buy renumbers the rest; the changelog keeps each entry's name from its time.
   - Updates live: a buy confirmed, changed or deleted on another computer shows at once.
+  - **Themed by game** (owner's decision, 2026-09-29), like its side of the Calendar: Magic day pages in **indigo**, Pokémon ones in **amber**: a soft wash of the colour at the top of the page, a heading rule in it, tinted panels and panel headings, table headings in it, and the page's accent (Back's hover, EXPORT) switched to it. Each panel's top edge stays in its confirming user's colour. "Also has N … cards →" is in the other game's colour, since it leads there.
 
 ---
 
@@ -1988,6 +1989,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 137 | Collection screen in amber (2026-09-29) | Inside a collection the background art is mirrored and the screen's accent is amber, so it looks distinct from the Price tab (Section 9.4) |
 | 138 | Calendar decoration (2026-09-29) | The month picker is centred; a line runs down the middle; the Magic side is themed indigo and the Pokémon side amber (Section 10.1) |
 | 139 | Calendar always 6 weeks (2026-09-29) | Month grids always have 6 week rows of fixed-height days, so the panels fit any month and never change size (Section 10.1) |
+| 140 | Day pages by game colour (2026-09-29) | Magic day pages are themed indigo and Pokémon ones amber, accent included; panels keep their user-coloured top edge (Section 10.2) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

@@ -82,7 +82,19 @@ button.cal-day:hover { border-color: var(--game); background: color-mix(in srgb,
 .cal-game-head { display: flex; align-items: center; gap: 10px; }
 .cal-loading { font-size: 12px; font-weight: 400; color: var(--muted); }
 
-/* ---- A day page ---- */
+/* ---- A day page ----
+   Themed in its game's colour (owner, 2026-09-29), like its side of the
+   Calendar: Magic indigo, Pokémon amber. The page's accent follows (Back's
+   hover, EXPORT), the panels and table headings take a tint, and each
+   panel's top edge stays in its confirming user's colour. */
+.day-page.mtg { --game: var(--pal-indigo); --accent: #8f90ee; --accent-2: var(--pal-indigo); }
+.day-page.pokemon { --game: var(--pal-amber); --accent: #f2b53a; --accent-2: #a86f12; }
+.day-page {
+  --game-text: color-mix(in srgb, var(--game) 55%, #fff);
+  padding: 16px 18px 18px;
+  border-radius: 12px;
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--game) 14%, transparent), transparent 260px);
+}
 .day-top { margin-bottom: 12px; }
 /* < BACK, big and bold, like a collection's (owner, 2026-09-29). */
 .page-back {
@@ -97,7 +109,13 @@ button.cal-day:hover { border-color: var(--game); background: color-mix(in srgb,
 .day-title { margin: 0; font-size: 26px; font-weight: 700; }
 .day-game { font-size: 18px; font-weight: 600; color: var(--muted); }
 .day-game .group-chip { font-size: 14px; vertical-align: middle; }
-.day-rule { margin: 14px 0 18px; border: 0; border-top: 1px solid var(--border); }
+.day-rule { margin: 14px 0 18px; border: 0; border-top: 3px solid var(--game); border-radius: 2px; }
+.day-page .buy-panel {
+  background: color-mix(in srgb, var(--game) 6%, var(--panel));
+  border-color: color-mix(in srgb, var(--game) 40%, var(--border));
+  border-top-color: var(--c);
+}
+.day-page .cardpanel-head { background: color-mix(in srgb, var(--game) 16%, var(--panel-2)); }
 
 .buy-panel-head .buy-number { font-size: 15px; }
 .buy-time { color: var(--muted); font-size: 13px; }
@@ -113,9 +131,9 @@ button.cal-day:hover { border-color: var(--game); background: color-mix(in srgb,
   font-weight: 700;
   letter-spacing: .05em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--game-text, var(--muted));
   text-align: left;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid color-mix(in srgb, var(--game, var(--border)) 45%, var(--border));
 }
 .deck-table td { padding: 4px 6px; border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent); vertical-align: top; }
 .deck-table .cell-price { width: 1%; white-space: nowrap; text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -127,7 +145,10 @@ button.cal-day:hover { border-color: var(--game); background: color-mix(in srgb,
 
 .buy-totals { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; }
 .buy-totals strong { margin-left: 4px; }
-.buy-other { display: inline-block; margin-top: 8px; font-size: 13px; color: var(--accent); }
+.buy-other { display: inline-block; margin-top: 8px; font-size: 13px; font-weight: 600; }
+/* "Also has N … cards →" leads to the other game's page: in that game's colour. */
+.day-page.mtg .buy-other { color: color-mix(in srgb, var(--pal-amber) 70%, #fff); }
+.day-page.pokemon .buy-other { color: color-mix(in srgb, var(--pal-indigo) 55%, #fff); }
 
 /* EXPORT: large, bold and blue, bottom right (spec 14). */
 .day-foot { display: flex; justify-content: flex-end; margin-top: 20px; }

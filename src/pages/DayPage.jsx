@@ -183,7 +183,8 @@ function DayScreen({ game, day }) {
   }
 
   return (
-    <div className="day-page">
+    // Themed in the game's colour: indigo for Magic, amber for Pokémon (calendar.css).
+    <div className={`day-page ${game}`}>
       <div className="day-top">
         <button type="button" className="btn page-back" title="Back to the Calendar" onClick={back}>&lt; BACK</button>
       </div>
