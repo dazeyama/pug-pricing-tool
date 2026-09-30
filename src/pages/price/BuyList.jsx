@@ -137,10 +137,11 @@ function RatesPanel({ rates, master, onSave, onClose }) {
 /**
  * The buy list sidebar (spec 8.9): this computer's draft, grouped by game in
  * the order added, with totals, custom rates, CANCEL and CONFIRM BUY.
+ * Clicking a line edits it (onEdit; owner, 2026-09-29); its red × removes it.
  */
 export default function BuyList({
-  lines, loaded, rates, master, flashId, canEdit, editBlocked, busy,
-  onRemove, onSaveRates, onCancel, onConfirm, onDone,
+  lines, loaded, rates, master, flashId, editingId, canEdit, editBlocked, busy,
+  onEdit, onRemove, onSaveRates, onCancel, onConfirm, onDone,
 }) {
   const [removing, setRemoving] = useState(null);
   const [ratesOpen, setRatesOpen] = useState(false);
@@ -189,16 +190,31 @@ export default function BuyList({
             <section key={g.game} className="list-group">
               <div className="group-head">{g.name} ({mine.reduce((n, l) => n + l.quantity, 0)})</div>
               {mine.map((l) => (
-                <button
+                <div
                   key={l.id}
-                  type="button"
                   data-line={l.id}
-                  className={`buy-line${l.id === flashId ? ' flash' : ''}`}
-                  title={`${formatMoney(l.unit_price)} each · click to remove`}
-                  onClick={() => (canEdit ? setRemoving(l) : editBlocked())}
+                  className={`buy-line-row${l.id === flashId ? ' flash' : ''}${l.id === editingId ? ' editing' : ''}`}
                 >
-                  {lineText(l)}
-                </button>
+                  <button
+                    type="button"
+                    className="buy-line"
+                    title={l.id === editingId
+                      ? 'Being edited: EDIT CARD saves the changes, Esc leaves it as it was'
+                      : `${formatMoney(l.unit_price)} each · click to edit`}
+                    onClick={() => (canEdit ? onEdit(l) : editBlocked())}
+                  >
+                    {lineText(l)}
+                  </button>
+                  <button
+                    type="button"
+                    className="line-x"
+                    title="Remove"
+                    aria-label={`Remove ${lineText(l)}`}
+                    onClick={() => (canEdit ? setRemoving(l) : editBlocked())}
+                  >
+                    ×
+                  </button>
+                </div>
               ))}
             </section>
           );

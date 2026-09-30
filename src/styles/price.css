@@ -941,12 +941,31 @@
   text-transform: uppercase;
   color: var(--muted);
 }
-/* One line: plain text, wraps, the whole line the hit target; red on hover
-   (spec 8.9: click to remove). */
+/* One line: plain text, wraps, the whole text the hit target; the accent
+   colour on hover (click to edit), and a red × at the end removes it
+   (owner, 2026-09-29). */
+.buy-line-row { display: flex; align-items: flex-start; padding-right: 8px; }
+.buy-line-row.editing { background: rgba(108, 140, 255, .16); box-shadow: inset 3px 0 0 var(--accent); }
+.buy-line-row.editing .buy-line { color: var(--accent); }
+.line-x {
+  flex: none;
+  padding: 2px 6px;
+  border: none;
+  border-radius: 5px;
+  background: none;
+  color: var(--bad);
+  font-size: 16px;
+  line-height: 1;
+  opacity: .55;
+  cursor: pointer;
+}
+.buy-line-row:hover .line-x { opacity: 1; }
+.line-x:hover { background: rgba(255, 107, 107, .15); opacity: 1; }
 .buy-line {
   display: block;
-  width: 100%;
-  padding: 3px 16px;
+  flex: 1;
+  min-width: 0;
+  padding: 3px 8px 3px 16px;
   border: none;
   background: none;
   color: var(--text);
@@ -957,8 +976,8 @@
   overflow-wrap: anywhere;
   cursor: pointer;
 }
-.buy-line:hover { color: var(--bad); }
-.buy-line.flash { animation: line-flash 1.6s ease-out; }
+.buy-line:hover { color: var(--accent); }
+.buy-line-row.flash { animation: line-flash 1.6s ease-out; }
 @keyframes line-flash {
   0%, 30% { background: rgba(62, 207, 142, .28); }
   100% { background: transparent; }

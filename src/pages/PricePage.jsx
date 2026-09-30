@@ -45,6 +45,20 @@ function usePokemonLang() {
   }];
 }
 
+/** The search-bar key of a saved line's card (the candidate's key). */
+const lineKey = (line) => (line.game === 'mtg' ? `mtg:${line.scryfall_id}` : `pokemon:${line.lang}:${line.tcgdex_id}`);
+
+/**
+ * A search line that finds exactly this saved card (spec 8.2's syntax):
+ * "Sol Ring 472 CMR", "Charizard 4/102 BS", Japanese "025/165 SV2a".
+ */
+function editQuery(line) {
+  const size = line.printed_size ? `/${line.printed_size}` : '';
+  if (line.game === 'mtg') return `${line.name} ${line.collector_number} ${line.set_code}`;
+  if (line.lang === 'ja') return `${line.collector_number}${size} ${line.set_code}`;
+  return `${line.name} ${line.collector_number}${size} ${line.set_code}`;
+}
+
 // MTG | PKM (owner, 2026-09-29): which games search asks, both by default.
 // Kept for the whole buy, and back to both when the Price tab is left (the
 // page unmounts) or when a buy is confirmed or cancelled.
@@ -166,6 +180,10 @@ export default function PricePage() {
   const qtyRef = useRef(null);
   const [flashId, setFlashId] = useState(null);
   const [confirming, setConfirming] = useState(false);
+  // Editing a buy-list line (owner, 2026-09-29): its card is searched for and
+  // selected (found), then its saved choices put back (restored); EDIT CARD
+  // saves over it. { line, key, query, found, restored } or null.
+  const [editing, setEditing] = useState(null);
   const images = useCardImages(selected);   // a Pokémon thumbnail for the line (backups too)
   // This buy's rates: its custom ones where set, else the Master Buy
   // Percentages (spec 8.9.1), for the totals and the price panel.
@@ -192,9 +210,23 @@ export default function PricePage() {
 
   // When a search settles: a lone printing is selected automatically; a
   // selection the new results don't include is dropped (spec 8.3, 8.12).
+  // While a line is being edited, its own search selects that exact card.
   useEffect(() => {
     if (!search.settled) return;
     const list = search.candidates;
+    if (editing && !editing.found) {
+      if (search.query !== editing.query) return;   // the edit's search hasn't run yet
+      const index = list.findIndex((c) => c.key === editing.key);
+      if (index >= 0) {
+        setSelected(list[index]);
+        setHighlight(index < ROW ? index : -1);
+        setEditing((e) => e && { ...e, found: true });
+      } else {
+        toast("Couldn't find that card again, so it can't be edited here. Remove it with × and add it again.", 'err');
+        setEditing(null);
+      }
+      return;
+    }
     if (list.length === 1) {
       setSelected(list[0]);
       setHighlight(0);
@@ -205,7 +237,35 @@ export default function PricePage() {
     setSelected(index >= 0 ? list[index] : null);
     setHighlight(index >= 0 && index < ROW ? index : -1);
     // Runs once per finished search, not on every re-render of the same results.
-  }, [search.runId, search.settled]);
+  }, [search.runId, search.settled, editing?.key, editing?.found]);
+
+  // The edited line's card is selected: put back what was saved with it (once).
+  useEffect(() => {
+    if (!editing?.found || editing.restored || selected?.key !== editing.key) return;
+    const { line } = editing;
+    if (line.game === 'pokemon') {
+      if (!pokemon.resolved) return;   // its versions are still loading
+      const same = (v) => JSON.stringify([...(v.treatments ?? [])].sort()) === JSON.stringify(line.treatments ?? []);
+      const v = versions.find((x) => x.id === line.price_snapshot?.version)
+        ?? versions.find((x) => x.finish === line.finish && Boolean(x.firstEdition) === line.first_edition && same(x));
+      setPrinting({ key: editing.key, finish: null, version: v?.id ?? null });
+    } else {
+      setPrinting({ key: editing.key, finish: line.finish, version: null });
+    }
+    setPricing({
+      key: editing.key,
+      condition: line.condition,
+      manual: line.price_source === 'manual' ? Number(line.unit_price) : null,
+      override: line.price_snapshot?.override ?? null,
+    });
+    setQty(String(line.quantity));
+    setEditing((e) => e && { ...e, restored: true });
+  }, [editing, selected?.key, pokemon.resolved, versions.length]);
+
+  // The line being edited went (removed, confirmed, cancelled): stop editing.
+  useEffect(() => {
+    if (editing && draft.loaded && !draft.lines.some((l) => l.id === editing.line.id)) setEditing(null);
+  }, [draft.lines, draft.loaded]);
 
   function focusSearch() {
     input.current?.focus();
@@ -254,10 +314,29 @@ export default function PricePage() {
     setPricing({ key: null, condition: 'NM', manual: null, override: null });
     setManualOpen(false);
     setQty('1');
+    setEditing(null);
     focusSearch();
   }
 
-  /** ADD CARD (spec 8.8): save the line (merging), flash it, reset the stage. */
+  /** Clicking a buy-list line: load its card back to edit it (owner, 2026-09-29). */
+  function startEdit(line) {
+    if (line.game === 'pokemon' && line.lang !== lang) setLang(line.lang);
+    if (!games[line.game]) setGames({ ...games, [line.game]: true });
+    const query = editQuery(line);
+    setEditing({ line, key: lineKey(line), query, found: false, restored: false });
+    setSelected(null);
+    setHighlight(-1);
+    setPrinting({ key: null, finish: null, version: null });
+    setPricing({ key: null, condition: 'NM', manual: null, override: null });
+    setManualOpen(false);
+    setText(query);
+    focusSearch();
+  }
+
+  /**
+   * ADD CARD (spec 8.8): save the line (merging), flash it, reset the stage.
+   * While editing, EDIT CARD: the same, saved over the line being edited.
+   */
   async function addCard() {
     if (!user) {
       pulse();
@@ -284,10 +363,13 @@ export default function PricePage() {
         override: activeOverride,
         auto_cardmarket: autoCardmarket,
         manual: manual ?? null,
+        version: version?.id ?? null,
         warnings,
       },
     });
-    const id = await draft.add(line, user.id);
+    const id = editing
+      ? await draft.update(editing.line.id, line, user.id)
+      : await draft.add(line, user.id);
     if (!id) return;
     setFlashId(id);
     setTimeout(() => setFlashId((f) => (f === id ? null : f)), 1600);
@@ -372,7 +454,13 @@ export default function PricePage() {
   }, [typedSet, lang]);
 
   let note = null;
-  if (langHint) {
+  if (editing) {
+    note = (
+      <>
+        Editing <strong>{lineText(editing.line)}</strong>: EDIT CARD saves the changes, Esc leaves it as it was.
+      </>
+    );
+  } else if (langHint) {
     const jp = langHint.lang === 'ja';
     note = (
       <>
@@ -498,6 +586,7 @@ export default function PricePage() {
               onAdd={addCard}
               blocked={addBlocked}
               busy={draft.busy}
+              editing={Boolean(editing)}
               onDone={focusSearch}
             />
           </div>
@@ -513,9 +602,11 @@ export default function PricePage() {
         rates={rates}
         master={master}
         flashId={flashId}
+        editingId={editing?.line.id ?? null}
         canEdit={canEdit}
         editBlocked={editBlocked}
         busy={draft.busy}
+        onEdit={startEdit}
         onRemove={(line, n) => draft.remove(line.id, n, user?.id)}
         onSaveRates={(cash, credit) => draft.setRates(cash, credit, user?.id)}
         onCancel={cancelBuy}

@@ -535,6 +535,7 @@ Every change that affects buy contents, or anything the changelog records, goes 
 | Function | Does | Event written |
 |---|---|---|
 | `draft_add_line(device, line, user, merge)` | Creates this device's draft if none exists; inserts or merges a line | none (drafts aren't logged) |
+| `draft_update_line(line_id, line, user)` | Saves an edited line over the old one (EDIT CARD, Section 8.9); merges with an identical line, keeping the earlier place. Returns the surviving line's ID. Migration 0006. | none |
 | `draft_remove_line(line_id, qty, user)` | Decrements the quantity or deletes the line | none |
 | `draft_cancel(buy_id)` | Deletes the draft and its lines | none |
 | `draft_set_custom_rates(device, custom_cash_pct, custom_credit_pct, user)` | Sets or clears this device's draft custom rates (Section 8.9.1). Creates the draft if none exists. | none |
@@ -895,7 +896,8 @@ Examples:
 ```
 
 - Lines wrap; don't truncate them.
-- **Remove:** hovering a line turns its text **red** (the whole line is the hit target). Clicking opens **"Remove card?"**:
+- **Edit** (owner's decision, 2026-09-29, replacing click-to-remove): hovering a line turns its text the **blue accent** color; clicking it **loads that exact card back** onto the stage: the search bar is filled with a line that finds it ("Sol Ring 472 CMR", "Charizard 4/102 BS", Japanese "025/165 SV2a"; EN | JP and MTG | PKM switch to suit), the card is selected when the results arrive, and everything saved with it is put back: finish or Pokémon version, condition, quantity, a manual price, and Use Fallback / Use Cardmarket (from `price_snapshot`). The line is highlighted and the note under the search bar reads "Editing <line>: EDIT CARD saves the changes, Esc leaves it as it was." **ADD CARD reads EDIT CARD**; pressing it (or Enter) saves the stage over that line through `draft_update_line` (anything can change, even the printing; if the result is identical to another line they merge, keeping the earlier place), then the stage resets and adding carries on as normal. CLEAR / Esc stops editing without saving. If the card can't be found again, a toast says so and nothing changes.
+- **Remove:** a red **×** at the end of each line (fainter until the line is hovered). Clicking it opens **"Remove card?"**:
   - quantity 1: "Remove **1 Abrade (SOA) 37**?" with [Cancel] [Remove].
   - quantity > 1 (owner's decision: ask how many): "Remove how many of **3 Lightning Bolt (2X2) 161**?", a number stepper (1…3, default 1), and [Cancel] [Remove] [Remove all 3].
 
@@ -1501,7 +1503,8 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 - [ ] Add the same NM card twice: one line, qty 2. Add it as LP: a second line with `[LP]`.
 - [ ] Foil shows `*F*`, etched `*E*`, holo `*H*`, reverse `*RH*`; a Japanese card shows `[JP]`.
 - [ ] Magic and Pokémon lines sit under their own headers, newest at the bottom.
-- [ ] Hover turns a line red. Remove on a qty-3 line asks how many.
+- [ ] Hover turns a line blue. Clicking it loads that card back with its condition, quantity and any manual price; the button reads EDIT CARD; change the condition and press it: the line changes and adding carries on. Esc while editing leaves the line as it was.
+- [ ] The red × at a line's end removes it; on a qty-3 line it asks how many.
 - [ ] Totals: Market, Cash 33%, Credit 66% are right (check one by hand).
 - [ ] Click **Cash (33%)**: the subpanel opens. Set 40: the label reads **Cash (40% ✎)** and the total changes. Refresh: still 40. **Use master rates** puts it back to 33. After CONFIRM BUY, the next buy starts at 33.
 - [ ] CONFIRM BUY shows the count and total and accepts a customer name; afterwards the list is empty.
@@ -1829,6 +1832,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 99 | Shadowless tag (2026-09-29) | Buy-list lines tag Shadowless (non-1st-Edition) Base Set versions `[SL]`, after `1st Ed` (Section 8.9, Phase 6) |
 | 100 | Price sources (Phase 6, 2026-09-29) | `price_source` gains `justtcg_fallback` (JustTCG NM × percentage) and `cardmarket`; `market_price` is the condition's market price before rounding, kept even under a manual price (Section 6.1) |
 | 101 | Buy numbers (Phase 6, 2026-09-29) | A confirmed buy's changelog name and toast use "Buy N" among the day's buys with cards of its first game (Magic before Pokémon), matching that game's day page (Section 6.2) |
+| 102 | Editing buy-list lines (2026-09-29) | Clicking a line (blue on hover) loads the card back with its saved choices and ADD CARD becomes EDIT CARD, saving over the line; removing moves to a red × at the line's end (Section 8.9) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

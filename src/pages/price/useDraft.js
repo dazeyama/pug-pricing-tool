@@ -14,6 +14,7 @@ const STALE = 'This buy changed on another computer — reloaded.';
 /**
  * @returns {{ buy: object|null, lines: object[], loaded: boolean, busy: boolean,
  *   add: (line: object, userId: string) => Promise<string|null>,
+ *   update: (lineId: string, line: object, userId: string) => Promise<string|null>,
  *   remove: (lineId: string, qty: number, userId: string) => Promise<boolean>,
  *   setRates: (cash: number|null, credit: number|null, userId: string) => Promise<boolean>,
  *   cancel: () => Promise<boolean>,
@@ -81,6 +82,13 @@ export function useDraft(deviceId) {
     return r.ok ? r.data : null;
   }, [deviceId, run]);
 
+  /** Save an edited line over the old one; returns the line's id (another's, if they merged). */
+  const update = useCallback(async (lineId, line, userId) => {
+    const r = await run('draft_update_line', { p_line_id: lineId, p_line: line, p_user: userId },
+      "Couldn't save the changes");
+    return r.ok ? r.data : null;
+  }, [run]);
+
   const remove = useCallback(async (lineId, qty, userId) =>
     (await run('draft_remove_line', { p_line_id: lineId, p_qty: qty, p_user: userId }, "Couldn't remove the card")).ok,
   [run]);
@@ -111,5 +119,5 @@ export function useDraft(deviceId) {
     return r.ok ? r.data : null;
   }, [run, state.buy]);
 
-  return { ...state, busy, add, remove, setRates, cancel, confirm };
+  return { ...state, busy, add, update, remove, setRates, cancel, confirm };
 }
