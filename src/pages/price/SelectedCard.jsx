@@ -6,6 +6,7 @@ import * as scry from '../../lib/scryfall.js';
 import { useCardImages } from './useCardImages.js';
 import { POKEMON_CARD_BACK, tcgplayerId } from '../../lib/pokemonImages.js';
 import { openPopup, popupName } from '../../lib/popup.js';
+import { isRuleBox } from '../../lib/pokemonFrames.js';
 
 // Pokémon rarities whose art covers the whole card (TCGdex's names, English
 // and Japanese). Their holo shines across the whole card.
@@ -118,10 +119,14 @@ export default function SelectedCard({ candidate: c, typedName, englishName, pok
   // Full art: by rarity, or Trainer Gallery / Galarian Gallery numbers.
   const fullArt = !magic && (FULL_ART.has(String(pokemon.card?.rarity ?? '').toLowerCase())
     || /^(tg|gg)\d/i.test(c.number));
+  // Rule-box Pokémon (ex, V, VMAX, VSTAR, GX…) shine across the whole card
+  // too, holo or reverse: the art-window mask doesn't fit their frames
+  // (owner, 2026-09-29).
+  const ruleBox = !magic && isRuleBox(pokemon.card, c.name);
   const shine = magic
     ? (finish === 'foil' || finish === 'etched' ? 'foil' : null)
-    : pokemonFinish === 'holo' ? (fullArt ? 'pokemon-full' : `holo${era}`)
-      : pokemonFinish === 'reverse' ? `reverse${era}` : null;
+    : pokemonFinish === 'holo' ? (fullArt || ruleBox ? 'pokemon-full' : `holo${era}`)
+      : pokemonFinish === 'reverse' ? (ruleBox ? 'pokemon-full' : `reverse${era}`) : null;
   // Poké Ball / Master Ball pattern reverse holos get a badge and say so.
   const ball = pokemonFinish === 'reverse'
     ? ['pokeball', 'masterball'].find((b) => pokemonVersion?.treatments?.includes(`${b}-pattern`))
