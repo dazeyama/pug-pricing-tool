@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import Modal from '../../components/Modal.jsx';
-import GuardButton from '../../components/GuardButton.jsx';
 import { lineText } from '../../lib/lineFormat.js';
 import { formatMoney, payout } from '../../lib/money.js';
 import { useToast } from '../../components/Toast.jsx';
@@ -65,7 +64,7 @@ function RemoveModal({ line, onRemove, onClose }) {
  * "Rates for this buy" (spec 8.9.1): a Cash % and a Credit % saved with the
  * buy on blur or Enter; the master value typed back clears that custom rate.
  */
-function RatesPanel({ rates, master, onSave, onClose }) {
+function RatesPanel({ title, rates, master, onSave, onClose }) {
   const [text, setText] = useState({ cash: String(rates.cash), credit: String(rates.credit) });
   const toast = useToast();
   const box = useRef(null);
@@ -108,7 +107,7 @@ function RatesPanel({ rates, master, onSave, onClose }) {
       <input
         type="text"
         inputMode="decimal"
-        aria-label={`${label} % for this buy`}
+        aria-label={`${label} % (${title.toLowerCase()})`}
         value={text[which]}
         onChange={(e) => setText((t) => ({ ...t, [which]: e.target.value }))}
         onBlur={() => commit(which)}
@@ -123,7 +122,7 @@ function RatesPanel({ rates, master, onSave, onClose }) {
 
   return (
     <div className="rates-panel" ref={box}>
-      <div className="rates-head">Rates for this buy</div>
+      <div className="rates-head">{title}</div>
       {row('cash', 'Cash')}
       {row('credit', 'Credit')}
       <div className="rates-foot">
@@ -135,17 +134,63 @@ function RatesPanel({ rates, master, onSave, onClose }) {
 }
 
 /**
- * The buy list sidebar (spec 8.9): this computer's draft, grouped by game in
- * the order added, with totals, custom rates, CANCEL and CONFIRM BUY.
- * Clicking a line edits it (onEdit; owner, 2026-09-29); its red × removes it.
+ * Market, Cash and Credit (spec 8.9), with the clickable percentages that
+ * open the custom-rate subpanel (8.9.1). In the sidebar's foot, or in a
+ * collection's header (`drop`: the subpanel opens downward).
+ */
+export function Totals({
+  market, rates, master, ratesTitle, canEdit, editBlocked, onSaveRates, onDone, drop = false,
+}) {
+  const [ratesOpen, setRatesOpen] = useState(false);
+  const pct = (which, label) => {
+    const custom = which === 'cash' ? rates.customCash : rates.customCredit;
+    const value = rates[which];
+    return (
+      <button
+        type="button"
+        className={`pct-link${custom != null ? ' custom' : ''}`}
+        title={custom != null
+          ? `Custom rate here. Master rate: ${Number(master[which])}%`
+          : `Set a custom ${label} rate here`}
+        onClick={() => (canEdit ? setRatesOpen((o) => !o) : editBlocked())}
+      >
+        {label} ({Number(value)}%{custom != null && ' ✎'})
+      </button>
+    );
+  };
+  return (
+    <div className={`totals${drop ? ' drop' : ''}`}>
+      <div className="total-row"><span>Market</span><strong>{formatMoney(market)}</strong></div>
+      <div className="total-row cash">{pct('cash', 'Cash')}<strong>{formatMoney(payout(market, rates.cash))}</strong></div>
+      <div className="total-row credit">{pct('credit', 'Credit')}<strong>{formatMoney(payout(market, rates.credit))}</strong></div>
+      {ratesOpen && (
+        <RatesPanel
+          title={ratesTitle}
+          rates={rates}
+          master={master}
+          onSave={onSaveRates}
+          onClose={() => {
+            setRatesOpen(false);
+            onDone();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+/**
+ * The list sidebar (spec 8.9): the walk-in draft ("Buy list") or a
+ * collection ("Collection list"), grouped by game in the order added, with
+ * totals (unless the page shows them elsewhere) and the page's buttons
+ * (`footer`). Clicking a line edits it (onEdit; owner, 2026-09-29); its red
+ * × removes it. While `locked` (Paid/Ours, view-only) the lines are only read.
  */
 export default function BuyList({
-  lines, loaded, rates, master, flashId, editingId, canEdit, editBlocked, busy,
-  onEdit, onRemove, onSaveRates, onCancel, onConfirm, onDone,
+  title = 'Buy list', lines, loaded, rates, master, ratesTitle, showTotals = true, flashId, editingId,
+  canEdit, locked = null, editBlocked, onEdit, onRemove, onSaveRates, onDone, footer,
 }) {
   const [removing, setRemoving] = useState(null);
-  const [ratesOpen, setRatesOpen] = useState(false);
-  const [asking, setAsking] = useState(false);
   const [preview, setPreview] = useState(null);   // { src, top, right } while a line is hovered
   const list = useRef(null);
   const aside = useRef(null);
@@ -169,27 +214,10 @@ export default function BuyList({
     list.current?.querySelector(`[data-line="${flashId}"]`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }, [flashId, lines]);
 
-  const pct = (which, label) => {
-    const custom = which === 'cash' ? rates.customCash : rates.customCredit;
-    const value = rates[which];
-    return (
-      <button
-        type="button"
-        className={`pct-link${custom != null ? ' custom' : ''}`}
-        title={custom != null
-          ? `Custom rate for this buy. Master rate: ${Number(master[which])}%`
-          : `Set a custom ${label} rate for this buy`}
-        onClick={() => (canEdit ? setRatesOpen((o) => !o) : editBlocked())}
-      >
-        {label} ({Number(value)}%{custom != null && ' ✎'})
-      </button>
-    );
-  };
-
   return (
-    <aside className="buy-list" ref={aside}>
+    <aside className={`buy-list${locked ? ' locked' : ''}`} ref={aside}>
       <div className="list-head">
-        <span className="list-title">Buy list</span>
+        <span className="list-title">{title}</span>
         <span className="list-count">{count} card{count === 1 ? '' : 's'}</span>
       </div>
 
@@ -217,7 +245,7 @@ export default function BuyList({
                     className="buy-line"
                     title={l.id === editingId
                       ? 'Being edited: EDIT CARD saves the changes, Esc leaves it as it was'
-                      : `${l.name_en ? `${l.name} · ` : ''}${formatMoney(l.unit_price)} each · click to edit`}
+                      : `${l.name_en ? `${l.name} · ` : ''}${formatMoney(l.unit_price)} each${locked ? '' : ' · click to edit'}`}
                     onClick={() => (canEdit ? onEdit(l) : editBlocked())}
                   >
                     {lineText(l)}
@@ -239,41 +267,19 @@ export default function BuyList({
       </div>
 
       <div className="list-foot">
-        <div className="totals">
-          <div className="total-row"><span>Market</span><strong>{formatMoney(market)}</strong></div>
-          <div className="total-row cash">{pct('cash', 'Cash')}<strong>{formatMoney(payout(market, rates.cash))}</strong></div>
-          <div className="total-row credit">{pct('credit', 'Credit')}<strong>{formatMoney(payout(market, rates.credit))}</strong></div>
-          {ratesOpen && (
-            <RatesPanel
-              rates={rates}
-              master={master}
-              onSave={onSaveRates}
-              onClose={() => {
-                setRatesOpen(false);
-                onDone();
-              }}
-            />
-          )}
-        </div>
-        <div className="list-buttons">
-          <button
-            type="button"
-            className="btn cancel-btn"
-            disabled={busy}
-            title={count ? 'Discard this buy' : 'Start over'}
-            onClick={() => (count ? setAsking(true) : onCancel())}
-          >
-            CANCEL
-          </button>
-          <GuardButton
-            className="btn confirm-btn"
-            disabled={!count || busy || !canEdit}
-            title={!count ? 'Add cards first' : busy ? 'Saving…' : !canEdit ? 'No connection' : 'Confirm this buy'}
-            onClick={onConfirm}
-          >
-            CONFIRM BUY
-          </GuardButton>
-        </div>
+        {showTotals && (
+          <Totals
+            market={market}
+            rates={rates}
+            master={master}
+            ratesTitle={ratesTitle}
+            canEdit={canEdit}
+            editBlocked={editBlocked}
+            onSaveRates={onSaveRates}
+            onDone={onDone}
+          />
+        )}
+        {footer}
       </div>
 
       {preview && (
@@ -294,29 +300,6 @@ export default function BuyList({
             onDone();
           }}
         />
-      )}
-      {asking && (
-        <Modal
-          title="Cancel this buy?"
-          onClose={() => setAsking(false)}
-          footer={(
-            <>
-              <button type="button" className="btn ghost" onClick={() => setAsking(false)}>Keep buy</button>
-              <button
-                type="button"
-                className="btn danger"
-                onClick={async () => {
-                  setAsking(false);
-                  await onCancel();
-                }}
-              >
-                Discard
-              </button>
-            </>
-          )}
-        >
-          <p><strong>{count} card{count === 1 ? '' : 's'}</strong> will be discarded.</p>
-        </Modal>
       )}
     </aside>
   );

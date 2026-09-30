@@ -8,7 +8,7 @@ import { SettingsProvider } from './state/settings.jsx';
 import { InventoryProvider } from './state/inventory.jsx';
 import { PriceLimitProvider } from './state/priceLimit.jsx';
 import { ToastProvider } from './components/Toast.jsx';
-import Header from './components/Header.jsx';
+import Header, { isPricingScreen } from './components/Header.jsx';
 import Banners from './components/Banners.jsx';
 import { tabKeyFor } from './components/Tabs.jsx';
 import DeviceNameModal from './components/DeviceNameModal.jsx';
@@ -23,13 +23,14 @@ import ChangelogPage from './pages/ChangelogPage.jsx';
 
 /**
  * Header, then the current tab. The tab's panel is keyed by tab so it fades in
- * on each switch. The Price screen fills the window below the header with no
- * page scroll (spec 8.1); every other tab scrolls normally.
+ * on each switch. The pricing screens (the Price tab and a collection) fill
+ * the window below the header with no page scroll (spec 8.1, 9.4); every
+ * other tab scrolls normally.
  */
 function Layout() {
   const { pathname } = useLocation();
   const { label } = useDevice();
-  const fullScreen = pathname === '/price';
+  const fullScreen = isPricingScreen(pathname);
   return (
     <div className={`shell${fullScreen ? ' shell-fixed' : ''}`}>
       <Header />

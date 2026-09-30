@@ -19,6 +19,23 @@ export function formatDateTime(when) {
   return `${formatDate(when)} · ${formatTime(when)}`;
 }
 
+/** "Aug 17, 2026" */
+export function formatShortDate(when) {
+  return formatInTimeZone(when, STORE_TZ, 'MMM d, yyyy');
+}
+
+/**
+ * "Today 3:12 PM", "Yesterday 9:05 AM", else "Aug 14, 2026" (spec 9.1's
+ * Last edited), by the store's calendar.
+ */
+export function formatRecent(when, now = new Date()) {
+  const day = (d) => formatInTimeZone(d, STORE_TZ, 'yyyy-MM-dd');
+  const then = day(when);
+  if (then === day(now)) return `Today ${formatTime(when)}`;
+  if (then === day(new Date(new Date(now).getTime() - 86_400_000))) return `Yesterday ${formatTime(when)}`;
+  return formatShortDate(when);
+}
+
 /** "just now", "3 minutes ago", "2 hours ago", "3 days ago". */
 export function timeAgo(when, now = Date.now()) {
   const minutes = Math.floor((now - new Date(when).getTime()) / 60_000);

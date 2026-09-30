@@ -6,7 +6,7 @@ import Tabs from './Tabs.jsx';
 const LOGO = `${import.meta.env.BASE_URL}pug-logo.webp`;
 
 /** The Price tab and a collection's pricing screen, where the header search shrinks. */
-function isPricingScreen(pathname) {
+export function isPricingScreen(pathname) {
   return pathname === '/price' || /^\/collections\/[^/]+$/.test(pathname);
 }
 

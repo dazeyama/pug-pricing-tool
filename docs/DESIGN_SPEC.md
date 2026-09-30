@@ -546,6 +546,7 @@ Every change that affects buy contents, or anything the changelog records, goes 
 | `buy_delete(buy_id, user, expected_version)` | Deletes a confirmed buy | `buy_deleted` with the full line list and totals |
 | `collection_create(name, phone, notes, user)` | | `collection_created` |
 | `collection_add_line(buy_id, line, merge, user, device, expected_version)` | Requires this device to hold the lock and status ≠ paid | `collection_cards_added` |
+| `collection_update_line(line_id, line, user, device, expected_version, old_text, new_text)` | EDIT CARD on a collection (as built, Phase 7): saves the edited line over the old one at **today's price** (owner's decision, 2026-09-29: edits always re-price, collections included), merging with an identical line like `draft_update_line`. Same requirements as adding. | `collection_line_edited`: the old line (−) and the new one (+) |
 | `collection_remove_line(line_id, qty, user, device, expected_version)` | Same requirements | `collection_cards_removed` |
 | `collection_update_info(buy_id, fields, user, device, expected_version)` | name / phone / notes / custom rates (`custom_cash_pct`, `custom_credit_pct`) | `collection_info_edited` with before/after |
 | `collection_set_status(buy_id, status, user, device, cash_pct, credit_pct, expected_version)` | Moving to `paid` snapshots percentages (custom rate where set, else master) and `paid_at`; leaving `paid` clears the snapshot but **keeps** the custom rates | `collection_status_changed` |
@@ -556,6 +557,14 @@ Every change that affects buy contents, or anything the changelog records, goes 
 Staff users, devices, settings and CSV metadata are written directly (RLS permits it) and aren't logged, except where noted.
 
 **As built (Phase 6, migrations 0004–0005):** the draft functions take the acting user too (for `last_edited_by`); `draft_for_device` finds or creates the device's draft (two tabs on one computer share it). `round_down_price(numeric)` is the app's `roundDownPrice` in SQL, used for the Cash / Credit totals in `buy_confirmed` entries. A `buy_confirmed` entry's target name is **"Buy N · Tue Sep 29, 2026"**, N numbered among that day's confirmed buys (store time) with cards of the buy's first game (Magic before Pokémon), the day page it links to; its summary is one sentence, "5 cards bought from Alex M." The toast after confirming uses the same N: "Buy confirmed — Buy 3 today (Magic + Pokémon)".
+
+**As built (Phase 7, migration 0008):**
+- **Parameters.** The collection functions also take the acting device (`p_device`, for the lock check and the entry's `device_id`). The client passes each line's buy-list text for the entry's card rows: `p_text` (add, remove), `p_old_text` / `p_new_text` (edit) and `p_line_texts` (delete), as `confirm_buy` does. `collection_delete` takes the device too, and refuses while **another** computer holds a fresh lock.
+- **Error codes.** Refusals raise short codes that the app turns into toasts (`useCollection.js`): `collection_gone`, `not_lock_holder`, `stale_version`, `collection_paid`, `locked_elsewhere`, `name_mismatch`, `bad_name`, `bad_phone`, `bad_pct`, `bad_status`, `no_user` and `line_gone`. Every collection write needs a picked user (`no_user`).
+- **Holding the lock** means the `collection_locks` row names this device. A lock that has gone quiet (a background tab's slowed timers) is still this computer's until another computer takes it, and any write refreshes it.
+- **Entries.** An entry's `target_name` is the customer's name at the time. Totals use the Paid/Ours snapshot, else the custom rates, else the master ones. Field rows show phones formatted.
+- **Helpers:** `collection_for_write` (the checks every write shares), `collection_event`, `collection_totals`, `master_pct`, `format_phone`, `status_label`, `sentence` and `pct_text`.
+- **Lock functions.** `lock_acquire` returns `{ held, device_id, device_label, staff_user_id, acquired_at }`. `lock_heartbeat(buy_id, device, user)` also moves the lock to the currently picked user.
 
 ### 6.3 Realtime
 
@@ -1055,6 +1064,14 @@ The **Price tab's screen, reused** (the same components), with these differences
 - **Sidebar:** the same list, grouping, format, hover-red and "Remove card?" behavior as Section 8.9, titled "COLLECTION LIST". **Each add and remove saves immediately** and is logged (Section 12). There are **no CONFIRM BUY / CANCEL** buttons. In their place is a single blue **EXPORT** button (Section 14).
 - **Prices lock when a card is added** (owner's decision). There is no refresh.
 - **Cash/Credit** use the collection's custom rates where set (Section 8.9.1), otherwise the current Master Buy Percentages, until the collection is marked Paid/Ours, when they're snapshotted onto the collection.
+- **As built (Phase 7):**
+  - **Shared screen.** The Price tab and the collection screen are one component, `src/pages/price/PricingScreen.jsx`. Everything from Phases 3–6 works the same on a collection: the line prices, click-to-edit with EDIT CARD, the red ×, hover previews, MTG | PKM and the sort toggle.
+  - **Editing re-prices** (owner's decision, 2026-09-29). EDIT CARD on a collection line saves today's price, as on a walk-in buy, even though adding locks a price in. The change is logged as one entry, **Card edited in collection**.
+  - **Toggles** (owner's decision, 2026-09-29). MTG | PKM and Newest/Oldest first are kept while you're on one collection and reset when you leave it (Back, another tab, another collection).
+  - **Totals** show only in the header bar, on the right; their rates subpanel ("Rates for this collection") drops down. The sidebar holds the list and the blue EXPORT button, which opens "EXPORT COMING SOON" (`src/components/ExportButton.jsx`, reused on the day pages in Phase 8).
+  - **Read-only list.** While read-only (Paid/Ours, another computer editing, or still loading), the lines don't turn blue, the × is hidden, and ADD CARD's tooltip and a click's toast say why.
+  - **Inline edits.** Name, phone and notes are edited in place with a ✎. Enter saves (Ctrl+Enter for notes), clicking away saves, Esc cancels. An invalid name or phone stays open with the error on Enter, and is put back with a toast when you click away.
+  - **Deleted elsewhere.** A collection deleted on another computer while open returns you to the table with a toast. A link to a missing collection says it doesn't exist.
 
 ### 9.5 Status and locking at Paid/Ours
 
@@ -1063,6 +1080,7 @@ The **Price tab's screen, reused** (the same components), with these differences
   - ADD CARD, remove, and info edits are disabled.
   - A green banner reads "Paid/Ours — locked." with an **🔒 Unlock** button.
 - **Unlock** (or choosing another status from the dropdown) asks "Unlock this collection? It will go back to Priced and can be edited." [Cancel] [Unlock]. This sets the status to **Priced** and is logged.
+  - **As built:** 🔒 Unlock goes back to Priced. Choosing Processing from the dropdown while Paid/Ours asks the same question naming Processing, and goes there. The status can change while Paid/Ours (that's how it unlocks), but not from a view-only computer.
 
 ### 9.6 One computer at a time (owner's decision)
 
@@ -1075,6 +1093,11 @@ A collection can only be **edited on one computer at a time**. Others can view i
 - **The lock holder** sends a heartbeat every 20s. Leaving the screen (Back, a tab change, route change, or `pagehide`) releases the lock, best effort. A crashed computer's lock goes stale after 60s.
 - **Take over** asks "Take over editing? Front Counter will switch to view-only." then calls `lock_acquire(force=true)`. The previous holder sees, via Realtime, a toast "Sam took over editing on Back Office" and flips to read-only with its own [Take over] button.
 - All collection write functions **reject** writes from a device that doesn't hold a fresh lock.
+- **As built (Phase 7, `useCollectionLock.js`):**
+  - **Taking a free lock.** A view-only computer checks every 20s, and at once when the lock is released. When the lock is free or stale it takes it by itself, with the toast "You can edit this collection now: the other computer stopped editing." So a closed or crashed computer never needs a Take over.
+  - **Releasing.** A closed tab or browser releases the lock with a request that outlives the page (`keepalive`). A tab coming back to the front checks the lock at once, since hidden tabs' timers slow down.
+  - **The holder's user.** Picking a different user moves the lock to them, so other computers' banners and the table's "✎ open on" line name who is at the keyboard.
+  - **Holding** means the lock row names this computer (Section 6.2 "As built").
 
 ### 9.7 Deleting a collection
 
@@ -1289,6 +1312,7 @@ Credits: "Card data and images from Scryfall (Magic) and TCGdex (Pokémon), with
 | `collection_created` | Collection created | Collections / large blue | Name, phone, notes as fields |
 | `collection_cards_added` | Cards added to collection | Collections / blue | Added lines (+), totals |
 | `collection_cards_removed` | Cards removed from collection | Collections / blue | Removed lines (−), totals |
+| `collection_line_edited` | Card edited in collection | Collections / blue | The line as it was (−) and as saved (+), each with its price; no totals (added Phase 7, owner's decision 2026-09-29 that edits re-price) |
 | `collection_info_edited` | Collection details edited | Actions / slate | Field rows (name, phone, notes, cash %, credit %). A custom rate reads `cash %: 33 → 40`; clearing one reads `cash %: 40 → master (33)`. |
 | `collection_status_changed` | Status changed | Actions / slate | `status: Priced → Paid/Ours`; "unlocked" when leaving Paid/Ours |
 | `collection_deleted` | Collection deleted | Collections / red cross | All lines (−) at deletion, totals, name and phone |
@@ -1543,6 +1567,9 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 - [ ] Delete: two steps, the name must be typed. The collection disappears from the table.
 - [ ] EXPORT shows "EXPORT COMING SOON".
 - [ ] Sorting, status filter and phone search work in the table.
+- [ ] Click a line in a collection: EDIT CARD saves it at today's price; the header's totals follow.
+- [ ] MTG | PKM and Oldest first stay set while you're in a collection and reset after Back.
+- [ ] The changelog isn't on screen until Phase 9, but every add, edit, remove, info edit, status change and delete writes an `events` row (Supabase Table Editor → `events`).
 
 ---
 
@@ -1849,7 +1876,10 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 106 | Sign out a user (2026-09-29) | An icon beside the user chip clears the picked user, blocking user-only actions until one is picked (Section 7.3) |
 | 107 | Outside links in pop-ups (2026-09-29) | Scryfall/TCGdex, TCGplayer and Cardmarket open in one reused pop-up window per site instead of new tabs (Section 8.4) |
 | 108 | Japanese lines in English (2026-09-29) | Buy-list lines for Japanese cards show the English name when the app has one, saved as `buy_lines.name_en`; the Japanese name stays in `name` (Sections 5.2, 6.1) |
-| 109 | Suggestions sort toggle (2026-09-29) | A Newest first / Oldest first pill left on the suggestions' top line flips the date order within each rank and re-runs the search; kept for the buy like MTG | PKM (Sections 8.2, 8.3) |
+| 109 | Suggestions sort toggle (2026-09-29) | A Newest first / Oldest first pill left on the suggestions' top line flips the date order within each rank and re-runs the search; kept for the buy like MTG \| PKM (Sections 8.2, 8.3) |
+| 110 | Collection edits re-price (Phase 7, 2026-09-29) | EDIT CARD on a collection line takes today's price, as on a walk-in buy; logged as `collection_line_edited` (Sections 6.2, 9.4, 12.3) |
+| 111 | Toggles per collection visit (Phase 7, 2026-09-29) | MTG \| PKM and Newest/Oldest first hold while on one collection and reset when it's left (Section 9.4) |
+| 112 | Collections as built (Phase 7, 2026-09-29) | Totals in the header only; view-only computers take a freed or stale lock by themselves; the dropdown can unlock to Processing; functions take the device and line texts (Sections 6.2, 9.4–9.6) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |
