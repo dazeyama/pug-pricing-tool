@@ -1248,7 +1248,17 @@ The most prominent panel, with a **red border and a "Required" badge** until a f
 
 ### 11.7 Footer
 
-Credits: "Card data and images from Scryfall (Magic) and TCGdex (Pokémon), with some Pokémon images from pokemontcg.io, TCGplayer and Limitless TCG (Japanese). Prices via JustTCG. Not affiliated with Wizards of the Coast or The Pokémon Company." Plus the app version and build date.
+Credits, as a bulleted list, one source per line (owner's decision, 2026-09-29), each "what — where from":
+- Magic card data and images — Scryfall
+- Pokémon card data and images — TCGdex
+- Backup Pokémon images — pokemontcg.io and TCGplayer
+- Japanese Pokémon images — Limitless TCG
+- English names for Japanese Pokémon — PokeAPI
+- Prices — JustTCG
+- Cardmarket prices — Scryfall (Magic) and TCGdex (Pokémon)
+- Euro to dollar rate — Frankfurter (European Central Bank)
+
+Then "Not affiliated with Wizards of the Coast or The Pokémon Company." and the app version and build date.
 
 **Staff users are managed in the header dropdown, not here.**
 
@@ -1887,6 +1897,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 115 | Phone number on walk-in buys (2026-09-29) | CONFIRM BUY has an optional phone number, formatted and checked like a collection's, saved in `buys.phone` and named in the changelog summary (Sections 6.1, 8.10) |
 | 116 | Collections table layout (2026-09-29) | One heading line (title and count, then + Price Collection and search on the right); the table is always drawn, full width, with an empty or "no match" message as its only row, so nothing moves (Section 9.1) |
 | 117 | Header search size (2026-09-29) | The header search is much larger off the pricing screens instead of smaller on them (Section 13) |
+| 118 | Credits list (2026-09-29) | Settings' footer credits are a bulleted list, one source per line, adding PokeAPI and Frankfurter (Section 11.7) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

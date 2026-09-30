@@ -110,3 +110,7 @@
   padding: 4px 2px 12px;
 }
 .settings-footer p { margin: 0 0 4px; }
+.credits { margin: 0 0 10px; padding-left: 18px; font-size: 13px; line-height: 1.7; }
+.credit-what { color: var(--text); }
+.credit-what::after { content: " —"; color: var(--muted); }
+.credit-from { color: var(--muted); }

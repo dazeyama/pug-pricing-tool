@@ -8,6 +8,18 @@ import { formatDate } from '../lib/time.js';
 
 /* global __APP_VERSION__, __BUILD_DATE__ */
 
+// The footer's credits (spec 11.7): what, and where it comes from.
+const CREDITS = [
+  ['Magic card data and images', 'Scryfall'],
+  ['Pokémon card data and images', 'TCGdex'],
+  ['Backup Pokémon images', 'pokemontcg.io and TCGplayer'],
+  ['Japanese Pokémon images', 'Limitless TCG'],
+  ['English names for Japanese Pokémon', 'PokeAPI'],
+  ['Prices', 'JustTCG'],
+  ['Cardmarket prices', 'Scryfall (Magic) and TCGdex (Pokémon)'],
+  ['Euro to dollar rate', 'Frankfurter (European Central Bank)'],
+];
+
 // Settings (spec 11), top to bottom, each section in a panel. Backups arrive
 // in Phase 10. Staff users are managed in the header dropdown, not here.
 export default function SettingsPage() {
@@ -24,11 +36,13 @@ export default function SettingsPage() {
         <FallbackPanel />
         <ThisComputerPanel />
         <footer className="settings-footer">
-          <p>
-            Card data and images from Scryfall (Magic) and TCGdex (Pokémon), with some Pokémon images
-            from pokemontcg.io, TCGplayer and Limitless TCG (Japanese). Prices via JustTCG.
-            Not affiliated with Wizards of the Coast or The Pokémon Company.
-          </p>
+          {/* Where everything comes from, one line each (owner, 2026-09-29). */}
+          <ul className="credits">
+            {CREDITS.map(([what, from]) => (
+              <li key={what}><span className="credit-what">{what}</span> <span className="credit-from">{from}</span></li>
+            ))}
+          </ul>
+          <p>Not affiliated with Wizards of the Coast or The Pokémon Company.</p>
           <p>
             PUG Pricing Tool {__APP_VERSION__} · built {formatDate(__BUILD_DATE__)}
           </p>
