@@ -3,8 +3,9 @@ import { useDevice } from '../state/device.jsx';
 
 // Until this computer's row is in the `devices` table, nothing may write with
 // its ID (drafts, collection locks and the changelog point at it). Normally a
-// blink, so the dialog only fades in if the save takes a while; if the save
-// fails, it says why and offers Retry (owner's bug, 2026-09-30).
+// blink, so the dialog only fades in if the save takes a while (it reads
+// "Connecting…" through the quiet retries); if every try fails, it says why
+// and offers Retry, which starts a new round (owner's bug, 2026-09-30).
 export default function DeviceSaveModal() {
   const { label, saveError, retrySave } = useDevice();
   return (

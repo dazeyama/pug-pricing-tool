@@ -10,12 +10,15 @@ import { useSession } from './session.jsx';
 //
 // Drafts, collection locks and the changelog all point at that row, so the
 // app waits for it (`saved`) before anything can write with this computer's
-// ID; if the save fails, the error shows with a Retry (owner's bug,
-// 2026-09-30: a browser whose one save didn't land got "violates foreign key
-// constraint buys_draft_device_id_fkey" on its first card).
+// ID. A failed save is quietly tried again a few times, since a hiccup at page
+// load is the usual cause; only then does the error show with a Retry (owner's
+// bug, 2026-09-30: a browser whose one save didn't land got "violates foreign
+// key constraint buys_draft_device_id_fkey" on its first card).
 
 const ID_KEY = 'pug.deviceId';
 const LABEL_KEY = 'pug.deviceLabel';
+// Waits before each quiet retry of a failed save: 1, 2, then 3 seconds.
+const QUIET_RETRY_MS = [1000, 2000, 3000];
 
 /** The stored ID; one is made if the name survived without it. */
 function initialId() {
@@ -41,21 +44,33 @@ export function DeviceProvider({ children }) {
   useEffect(() => {
     if (!signedIn || !deviceId || !label) return undefined;
     let alive = true;
+    let timer;
     setSaveError(null);
-    supabase
-      .from('devices')
-      .upsert({ id: deviceId, label, last_seen_at: new Date().toISOString() })
-      .then(({ error }) => {
-        if (!alive) return;
-        if (error) {
-          console.error('Saving this computer failed', error);
-          setSaveError(error.message || 'Unknown error');
-        } else {
-          setSavedId(deviceId);
-        }
-      });
+    async function save(tries) {
+      let error;
+      try {
+        ({ error } = await supabase
+          .from('devices')
+          .upsert({ id: deviceId, label, last_seen_at: new Date().toISOString() }));
+      } catch (e) {
+        error = e;
+      }
+      if (!alive) return;
+      if (!error) {
+        setSavedId(deviceId);
+        return;
+      }
+      console.error(`Saving this computer failed (try ${tries + 1})`, error);
+      if (tries < QUIET_RETRY_MS.length) {
+        timer = setTimeout(() => save(tries + 1), QUIET_RETRY_MS[tries]);
+      } else {
+        setSaveError(error.message || 'Unknown error');
+      }
+    }
+    save(0);
     return () => {
       alive = false;
+      clearTimeout(timer);
     };
   }, [signedIn, deviceId, label, attempt]);
 
