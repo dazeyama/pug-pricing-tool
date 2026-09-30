@@ -1355,7 +1355,7 @@ The data isn't folded, only the drawing. Pagination counts drawn panels.
 
 ## 13. Global search (header)
 
-- **Where:** in the header on every tab; smaller on pricing screens (Section 7.2).
+- **Where:** in the header on every tab. **Much larger (about 640px wide, taller, 16px text) everywhere except the pricing screens**, where it keeps its normal size (owner's decision, 2026-09-29, replacing "smaller on pricing screens"): there the main search bar is the focus (Section 7.2).
 - **Input:** the same syntax as the main search (Section 8.2). **Partial names work.** `bolt` finds every stored line whose name contains "bolt", across every printing and number. Adding `/size`, a number or a set code narrows the results. Both games are searched.
 - **Scope** (owner's decision): lines in **confirmed walk-in buys** and **collections**, but not drafts. The query runs in Postgres (`name_key` trigram/ILIKE, plus number, size and set equality), limited to 200 lines. Japanese lines should also match on `name_en` (the English name staff will type).
 - **Results dropdown** (CM `.search-results`, opening under the box):
@@ -1427,7 +1427,7 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 - [ ] First sign-in asks "Name this computer".
 - [ ] The header matches Collection Manager: logo, title, sub-line, search on the right, tabs below with Changelog on the right.
 - [ ] Tabs hover-lift and underline exactly like CM, and content fades in on switch.
-- [ ] The header search is smaller on the Price tab.
+- [ ] The header search is much larger on every tab but the Price tab (owner's change, 2026-09-29).
 - [ ] Narrowing the window below 1200px shows the notice.
 
 ---
@@ -1886,6 +1886,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 114 | Suggestions clear on a new search (2026-09-29) | The last query's thumbnails go as soon as a new search starts, instead of staying until the new results arrive (Section 8.3) |
 | 115 | Phone number on walk-in buys (2026-09-29) | CONFIRM BUY has an optional phone number, formatted and checked like a collection's, saved in `buys.phone` and named in the changelog summary (Sections 6.1, 8.10) |
 | 116 | Collections table layout (2026-09-29) | One heading line (title and count, then + Price Collection and search on the right); the table is always drawn, full width, with an empty or "no match" message as its only row, so nothing moves (Section 9.1) |
+| 117 | Header search size (2026-09-29) | The header search is much larger off the pricing screens instead of smaller on them (Section 13) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

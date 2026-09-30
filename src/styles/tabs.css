@@ -34,7 +34,7 @@ header h1 { margin: 0; font-size: 20px; font-weight: 600; }
 .brand-text { display: flex; flex-direction: column; justify-content: center; }
 .brand-sub { margin: 2px 0 0; color: var(--muted); font-size: 12px; }
 
-.header-right { display: flex; align-items: center; gap: 10px; }
+.header-right { flex: 1; display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
 
 /* ---- Staff user button and menu (spec 7.3) ---- */
 .user-area { display: flex; align-items: center; gap: 6px; }
@@ -199,10 +199,11 @@ header h1 { margin: 0; font-size: 20px; font-weight: 600; }
 }
 .search-input::placeholder { color: var(--muted); }
 
-/* On a pricing screen the main search bar is the focus, so this one steps back. */
-.search-col.compact { flex-basis: 220px; min-width: 180px; }
-.search-col.compact .search-icon { left: 11px; }
-.search-col.compact .search-input { padding: 6px 12px 6px 34px; font-size: 13px; }
+/* Off the pricing screens it's much larger (owner, 2026-09-29); on them the
+   main search bar is the focus, so this one keeps its normal size. */
+.search-col.wide { flex-basis: 640px; }
+.search-col.wide .search-icon { left: 17px; transform: translateY(-50%) scale(1.25); }
+.search-col.wide .search-input { padding: 13px 20px 13px 50px; font-size: 16px; }
 
 /* Results drop under the search box, over whatever tab you are on (Phase 10). */
 .search-results {
