@@ -834,7 +834,7 @@ A row of five large buttons directly under the selected card (Section 8.1):
 
 **Manual price:**
 - **✎ Manual price** opens a small inline input next to the button ("$ ___", 2 decimals, ≥ 0.00). Enter or blur applies it.
-- While a manual price is set, the selected condition button shows the manual price in **bold with a ✎ marker**, and the market price in small strikethrough beneath it.
+- While a manual price is set, the selected condition button shows the manual price in **bold**, with a **✎ beside the condition label** (like the ⚠️; owner, 2026-09-29: beside the price it clipped and widened long prices), and the market price in small strikethrough beneath it.
 - The manual price becomes the line's `unit_price` with `price_source = 'manual'`. `market_price` still records JustTCG's price when there is one.
 - **×** clears the manual price. It also clears when a different condition is picked (owner's decision, 2026-09-29: a manual price belongs to its condition), on CLEAR, and after each add.
 

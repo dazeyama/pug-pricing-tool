@@ -666,6 +666,8 @@
 .price-btn:disabled { cursor: default; opacity: .7; }
 .pc-cond { font-size: 16px; font-weight: 800; letter-spacing: .06em; }
 .pc-warn { margin-right: 4px; font-size: 14px; letter-spacing: 0; }
+.pc-manual { margin-right: 4px; font-size: 15px; letter-spacing: 0; color: var(--warn); }
+.price-btn.on .pc-manual { color: #fff; }
 .pc-price {
   display: flex;
   flex-direction: column;

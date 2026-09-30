@@ -125,8 +125,8 @@ export default function PriceTable({
     const { price, source } = ladder[code];
     if (manual != null && code === condition) {
       return (
-        <span className="pc-price manual" style={priceStyle(`✎${formatMoney(manual)}`)}>
-          <b>✎{formatMoney(manual)}</b>
+        <span className="pc-price manual" style={priceStyle(formatMoney(manual))}>
+          <b>{formatMoney(manual)}</b>
           {price != null && <s>{formatMoney(price)}</s>}
         </span>
       );
@@ -180,6 +180,8 @@ export default function PriceTable({
           >
             <span className="pc-cond">
               {code === 'NM' && warnings.length > 0 && <span className="pc-warn" aria-label="Price warning">⚠️</span>}
+              {/* ✎ beside the label, not the price, so long manual prices fit (owner, 2026-09-29). */}
+              {code === condition && manual != null && <span className="pc-manual" aria-label="Manual price">✎</span>}
               {code}
             </span>
             {cell(code)}
