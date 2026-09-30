@@ -117,7 +117,7 @@ function Changelog() {
   }, [panels.length, page, log.loading, log.done]);
 
   const shown = panels.slice((page - 1) * PAGE, page * PAGE);
-  const views = shown.map((p) => ({ panel: p, view: panelView(p, game) }));
+  const views = shown.map((p) => ({ panel: p, view: panelView(p) }));
   const pages = Math.max(1, Math.ceil(panels.length / PAGE));
   const hasNext = panels.length > page * PAGE || !log.done;
 
@@ -265,6 +265,7 @@ function Changelog() {
               key={day}
               items={items}
               targets={targets}
+              game={game}
               onFunnel={(first) => {
                 setTarget({ id: first.target_id, name: first.target_name });
                 window.scrollTo({ top: 0 });
@@ -287,7 +288,7 @@ function Changelog() {
 }
 
 /** One day: its pill, then its panels alternating left and right from the left. */
-function DayBlock({ items, targets, onFunnel }) {
+function DayBlock({ items, targets, game, onFunnel }) {
   let side = 0;
   return (
     <>
@@ -301,20 +302,21 @@ function DayBlock({ items, targets, onFunnel }) {
           );
         }
         const cls = side++ % 2 === 0 ? 'left' : 'right';
-        return <Entry key={panel.key} panel={panel} view={view} side={cls} targets={targets} onFunnel={onFunnel} />;
+        return <Entry key={panel.key} panel={panel} view={view} side={cls} targets={targets} game={game} onFunnel={onFunnel} />;
       })}
     </>
   );
 }
 
 /** Where an entry's name leads: its buy's day page or its collection; null once deleted. */
-function linkFor(first, view, targets) {
+function linkFor(first, view, targets, game) {
   const row = targets.get(first.target_id);
   if (!row) return null;
   if (first.kind === 'buy' && row.kind === 'walk_in' && row.status === 'confirmed') {
     // The day the buy was confirmed, not the day of this change (owner, 2026-09-29).
-    // The game on show (Magic first), so the Pokémon filter leads to the Pokémon page.
-    const g = view.games[0] ?? first.games?.[0] ?? 'mtg';
+    // The filtered game's page when the buy has that game (a mixed buy under
+    // the Pokémon filter opens the Pokémon page), else its first game.
+    const g = view.games.includes(game) ? game : view.games[0] ?? 'mtg';
     return `/calendar/${g}/${storeDay(new Date(row.confirmed_at))}`;
   }
   if (first.kind === 'collection' && row.kind === 'collection') return `/collections/${row.id}`;
@@ -358,12 +360,12 @@ function FieldValue({ field, value, method }) {
 }
 
 /** One panel on the line (spec 12.2), coloured by its game (owner, 2026-09-29). */
-function Entry({ panel, view, side, targets, onFunnel }) {
+function Entry({ panel, view, side, targets, game, onFunnel }) {
   const { first } = view;
   const category = categoryOf(first.action);
   const made = MADE.has(first.action);
   const gone = GONE.has(first.action);
-  const to = linkFor(first, view, targets);
+  const to = linkFor(first, view, targets, game);
   const known = targets.has(first.target_id);
   // A folded run says what it adds up to: "7 cards added."
   const n = view.added || view.removed;

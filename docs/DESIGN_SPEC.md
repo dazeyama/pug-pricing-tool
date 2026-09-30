@@ -1412,7 +1412,7 @@ Then "Not affiliated with Wizards of the Coast or The Pokémon Company." and the
   - **click** = show only that category;
   - **Ctrl+click or right-click** = add or remove it from what's showing;
   - they can't all be turned off.
-- **Game filter:** All / Magic / Pokémon. It matches entries whose `games` include that game. When filtered to one game, an entry's card rows show only that game's lines, and its counts and totals are recomputed for them.
+- **Game filter:** All / Magic / Pokémon. It matches entries whose `games` include that game. When filtered to one game, an entry's card rows show only that game's lines, and its counts and totals are recomputed for them. **As built (owner's decision, 2026-09-29): mixed entries show whole** under either game: both games' cards, counts and totals, in the mixed indigo-to-amber style. The filter only picks which entries show; a mixed buy's link opens the filtered game's day page.
 - **Text filter:** substring match (normalized) on card text in `lines`, `target_name`, customer name and phone digits.
 - **Funnel:** narrows to one `target_id`.
 - **"Show everything" bar:** while any narrowing is active, a bar reads "Showing **Jordan Reyes**, entries matching **bolt** only" with a [Show everything] button. It stays visible even when nothing matches.
@@ -1690,7 +1690,7 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 - [ ] Today/Yesterday labels and alternating sides look like CM.
 - [ ] Clicking a buy title opens its day page; clicking a collection opens it; a deleted one isn't a link.
 - [ ] The funnel shows only that collection's history; Show everything returns.
-- [ ] The Magic filter hides Pokémon-only entries and trims mixed ones to their Magic cards.
+- [ ] The Magic filter hides Pokémon-only entries and still shows mixed ones whole (both games' cards, the indigo-to-amber panel).
 - [ ] Ctrl+click adds categories; the last one can't be switched off.
 - [ ] Status changes (with the offer / price paid) show with Actions off; a name, phone or notes edit shows only with Actions on.
 - [ ] A card removed from a buy days later links to the day that buy was confirmed.
@@ -2006,6 +2006,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 143 | Buy links go to the confirm day (2026-09-29) | A buy's changelog entries link to the day page of the day it was confirmed, not the day of the change (Section 12.2) |
 | 144 | Card edits don't fold (2026-09-29) | Only runs of card adds or removes fold into one panel; each card edit stands alone (Section 12.6) |
 | 145 | Changelog style pass (2026-09-29) | Entries coloured by game (mixed buys both), more chips (headline, counts, user, totals, statuses), and Cash green / Credit blue carried into the log's words (Section 12.2) |
+| 146 | Mixed entries whole under a game filter (2026-09-29) | Filtering the Changelog to Magic or Pokémon still shows mixed entries whole, as multi-game panels, instead of trimming them to one game (Section 12.4) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

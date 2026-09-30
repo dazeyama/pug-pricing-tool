@@ -79,18 +79,17 @@ export function foldEvents(events) {
 }
 
 /**
- * What a panel shows, for the game filter (spec 12.4): `game` 'all', 'mtg'
- * or 'pokemon'. Filtered to one game, its card rows are only that game's, and
- * its counts and totals are worked out again from them; a folded panel's are
- * summed. Additions come before removals.
+ * What a panel shows: its card rows (additions before removals), counts and
+ * totals, summed for a folded run. Always the whole entry: the game filter
+ * picks which entries show, and a mixed buy shows whole under either game
+ * (owner, 2026-09-29, replacing the trim to one game's cards).
  */
-export function panelView(panel, game = 'all') {
+export function panelView(panel) {
   const [first] = panel.events;
   const last = panel.events.at(-1);
-  const all = panel.events.flatMap((e) => e.lines ?? []);
-  const lines = game === 'all' ? all : all.filter((l) => l.game === game);
+  const lines = panel.events.flatMap((e) => e.lines ?? []);
   const rows = [...lines.filter((l) => l.sign === '+'), ...lines.filter((l) => l.sign !== '+')];
-  const recount = game !== 'all' || panel.events.length > 1;
+  const recount = panel.events.length > 1;
   const count = (sign) => rows.filter((l) => (sign === '+' ? l.sign === '+' : l.sign !== '+'))
     .reduce((n, l) => n + Number(l.qty), 0);
   const added = recount ? count('+') : Number(first.added ?? 0);
@@ -102,7 +101,7 @@ export function panelView(panel, game = 'all') {
     const pct = (p) => (p == null ? null : roundDownPrice((market * Number(p)) / 100));
     totals = { ...totals, market, cash: pct(totals.cash_pct), credit: pct(totals.credit_pct) };
   }
-  const games = game === 'all' ? [...new Set(panel.events.flatMap((e) => e.games ?? []))] : [game];
+  const games = [...new Set(panel.events.flatMap((e) => e.games ?? []))];
   return {
     first,
     newest: first.at,

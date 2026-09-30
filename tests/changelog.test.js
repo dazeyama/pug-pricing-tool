@@ -59,7 +59,8 @@ test('different users, removals and card edits do not fold together', () => {
   ]).length, 2);
 });
 
-test('the game filter trims a mixed buy and works its totals out again', () => {
+// Owner, 2026-09-29: under a game filter a mixed buy still shows whole.
+test('a mixed buy shows whole: both games, all its cards and totals', () => {
   const buy = ev({
     action: 'buy_confirmed',
     games: ['mtg', 'pokemon'],
@@ -71,13 +72,12 @@ test('the game filter trims a mixed buy and works its totals out again', () => {
     totals: { market: 25, cash: 8.25, credit: 16.5, cash_pct: 33, credit_pct: 66 },
   });
   const [panel] = foldEvents([buy]);
-  const mtg = panelView(panel, 'mtg');
-  assert.equal(mtg.rows.length, 1);
-  assert.equal(mtg.added, 2);
-  assert.equal(mtg.totals.market, 20);
-  assert.equal(mtg.totals.cash, 6.5);    // 6.60 rounded down to the quarter
-  assert.deepEqual(mtg.games, ['mtg']);
-  assert.equal(panelView(panel).totals.market, 25);
+  const v = panelView(panel);
+  assert.equal(v.rows.length, 2);
+  assert.equal(v.added, 3);
+  assert.equal(v.totals.market, 25);
+  assert.equal(v.totals.cash, 8.25);
+  assert.deepEqual(v.games, ['mtg', 'pokemon']);
 });
 
 test('days and times in store time', () => {
