@@ -117,10 +117,11 @@ const BOTH_GAMES = { mtg: true, pokemon: true };
  * @param {(api: object) => any} [p.renderListFooter]  the sidebar's buttons, under the totals
  * @param {number} [p.resetKey]  changing it clears the stage and resets MTG | PKM and the sort
  * @param {any} [p.searchLead]  before the search field, top left (a collection's < BACK)
+ * @param {string} [p.className]  on the screen (a collection's: flipped background, amber accent)
  */
 export default function PricingScreen({
   list, rates, master, locked = null, removeLocked = locked, listTitle, ratesTitle,
-  renderListDetails, renderListFooter, resetKey = 0, searchLead = null,
+  renderListDetails, renderListFooter, resetKey = 0, searchLead = null, className = '',
 }) {
   const [text, setText] = useState('');
   const [lang, setLang] = usePokemonLang();
@@ -535,7 +536,7 @@ export default function PricingScreen({
 
   return (
     <>
-      <div className="price-screen" ref={screen} style={{ ...BACKGROUND, '--list-extra': `${listExtra}px` }}>
+      <div className={`price-screen ${className}`} ref={screen} style={{ ...BACKGROUND, '--list-extra': `${listExtra}px` }}>
         <div className="stage">
           <SearchBar
             inputRef={input}

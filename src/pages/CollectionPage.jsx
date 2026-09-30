@@ -138,6 +138,7 @@ function CollectionScreen({ id }) {
       master={master}
       locked={locked}
       removeLocked={removeLocked}
+      className="collection-screen"
       listTitle="Collection list"
       ratesTitle="Rates for this collection"
       // Back to the table: big and bold, top left, before the search bar (owner, 2026-09-29).

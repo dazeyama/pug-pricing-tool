@@ -1088,6 +1088,7 @@ The **Price tab's screen, reused** (the same components), with these differences
   - **Top line, always shown:** the name and a status chip, which fold the rest away or bring it back (**collapsible**, remembered per computer); the **⋯** menu. The view-only banner with **Take over** and the Paid/Ours banner with **🔒 Unlock** sit under it, also always shown.
   - **Unfolded:** Name, Phone and Notes edited in place; Status (the dropdown and step button); Created and Edited, each with its user. Everything below as specified for the header bar, just stacked.
   - Nothing is drawn above the stage.
+  - **Looks distinct from the Price tab** (owner's decision, 2026-09-29): the background art is **mirrored**, and the accent colour for everything on the screen (stage and sidebar: outlines, highlights, the selected condition, toggles, buttons, EXPORT) is **amber** instead of the blue-purple (`--accent` `#f2b53a`, `--accent-2` `#a86f12`, on `.price-screen.collection-screen`). The header, the Collections table and dialogs keep the usual accent; Cash green and Credit blue don't change.
 - **Collection header bar** (superseded by the details in the sidebar above; kept for what each control does) above the stage, full width:
   - **< BACK** at the top-left, returning to the table. Clicking the Collections tab does the same.
   - **Name** and **phone**, each editable inline (✎), and **Notes**, editable inline (multi-line; saves on blur or Ctrl+Enter). Each save calls `collection_update_info` and is logged.
@@ -1983,6 +1984,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 134 | Price per card on day pages (2026-09-29) | Day-page tables show each line's price per card, like the buy list (Section 10.2) |
 | 135 | Phone on day pages (2026-09-29) | A confirmed buy's phone number shows beside its customer name (Section 10.2) |
 | 136 | Last card deletes the buy (2026-09-29) | Removing a confirmed buy's last card deletes the buy, asking first; `buy_remove_line` refuses it (`last_card`) (Sections 6.2, 10.2) |
+| 137 | Collection screen in amber (2026-09-29) | Inside a collection the background art is mirrored and the screen's accent is amber, so it looks distinct from the Price tab (Section 9.4) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

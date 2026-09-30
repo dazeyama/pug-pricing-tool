@@ -1015,7 +1015,7 @@
   font-variant-numeric: tabular-nums;
   color: var(--muted);
 }
-.buy-line-row.editing { background: rgba(108, 140, 255, .16); box-shadow: inset 3px 0 0 var(--accent); }
+.buy-line-row.editing { background: color-mix(in srgb, var(--accent) 16%, transparent); box-shadow: inset 3px 0 0 var(--accent); }
 .buy-line-row.editing .buy-line { color: var(--accent); }
 .line-x {
   flex: none;

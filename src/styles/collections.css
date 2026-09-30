@@ -145,6 +145,19 @@
 .pay-choice.credit.on { background: color-mix(in srgb, var(--credit) 16%, transparent); }
 .coming-soon { margin: 6px 0; font-size: 18px; font-weight: 800; letter-spacing: .06em; text-align: center; }
 
+/* Inside a collection, the pricing screen looks distinct from the Price tab
+   (owner, 2026-09-29): the background art mirrored, and amber in place of
+   the blue-purple accent for everything on the screen (stage and sidebar).
+   Only here: the header, the Collections table and dialogs keep the usual
+   accent. --accent is the bright amber for outlines and text; --accent-2 a
+   deeper amber for filled buttons, dark enough for their white text. Cash
+   green and Credit blue don't change. */
+.price-screen.collection-screen {
+  --accent: #f2b53a;
+  --accent-2: #a86f12;
+}
+.price-screen.collection-screen::before { transform: scaleX(-1); }
+
 /* < BACK, top left of a collection's screen, before the search bar (owner,
    2026-09-29): as tall as the search field, big and bold. */
 .search-back {
