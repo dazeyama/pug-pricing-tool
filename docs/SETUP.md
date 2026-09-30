@@ -63,5 +63,12 @@ Providers → "Allow new users to sign up"), or anyone could create an account.
 
 ## Deploying
 
-Pushing to `main` runs `.github/workflows/deploy.yml`: it builds with the prod
-variables and publishes `dist/` to GitHub Pages. Only push when the site should change.
+Pushing to `main` runs `.github/workflows/deploy.yml`: it builds with the repository's
+Actions variables and publishes `dist/` to GitHub Pages. Only push when the site should
+change.
+
+**For now the live site runs on dev** (owner's decision, 2026-09-30): the three Actions
+variables hold the **`pug-pricing-dev`** values from `.env.development`, so version
+0.9.0-dev can be tried at the store against the dev data before launch. **At launch
+(Phase 10), set them back to the `.env.production` values** (prod, `zvxquzcfffmxwizonxuo`)
+after prod is migrated, then push again or re-run the workflow.

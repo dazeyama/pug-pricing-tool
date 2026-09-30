@@ -1704,7 +1704,7 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 - Header global search (Section 13) with grouped results, keyboard, and jump + flash. **Completed collections are left out of the query** (owner, 2026-09-29).
 - Backup download/restore (11.5), the `restore_backup` function, the pre-restore auto-download, the backup reminder banner, and the plan-status text.
 - Polish pass: empty states, loading states, error toasts, tooltips, the 1366×768 check.
-- **Launch:** apply all migrations to **prod**, deploy the Edge Functions to prod, set the GitHub Actions variables, and finish `docs/SETUP.md` (run, deploy, change the store password, restore a pause). The public `README.md` stays a very short description of the tool's purpose (owner's decision, 2026-09-29). **Push to `main` only when the owner says go**, then confirm the Pages deploy succeeded.
+- **Launch:** apply all migrations to **prod**, deploy the Edge Functions to prod, **set the GitHub Actions variables back to prod** (since 2026-09-30 they point the live site at **dev**, for testing 0.9.0-dev at the store; see `docs/SETUP.md` → Deploying), and finish `docs/SETUP.md` (run, deploy, change the store password, restore a pause). The public `README.md` stays a very short description of the tool's purpose (owner's decision, 2026-09-29). **Push to `main` only when the owner says go**, then confirm the Pages deploy succeeded.
 
 **Owner tasks**
 - Say "push" when ready.
@@ -2009,6 +2009,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 146 | Mixed entries whole under a game filter (2026-09-29) | Filtering the Changelog to Magic or Pokémon still shows mixed entries whole, as multi-game panels, instead of trimming them to one game (Section 12.4) |
 | 147 | Settings panels one fixed height (2026-09-30) | Every Settings panel is the same fixed height, 332px (the Master Crystal Inventory with just a current file); extra content scrolls inside the panel (Section 11) |
 | 148 | Collection details header bar (2026-09-30) | A collection's details get a filled amber header bar and a large fold button, and always open unfolded; folding isn't remembered (Section 9.4) |
+| 149 | Test deploy on dev (2026-09-30) | Before Phase 10, version 0.9.0-dev goes live on GitHub Pages built against the **dev** project, for testing at the store; the Actions variables go back to prod at launch (Section 15, Phase 10) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |
