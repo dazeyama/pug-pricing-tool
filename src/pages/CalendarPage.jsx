@@ -70,7 +70,11 @@ function CalendarMonth({ month }) {
     <div className="cal-grid">
       {GAMES.map(({ game, name }) => (
         <section key={game} className={`cal-game ${game}`} aria-label={`${name} buys`}>
-          <div className="cal-game-head"><span className={`group-chip ${game}`}>{name}</span></div>
+          <div className="cal-game-head">
+            <span className={`group-chip ${game}`}>{name}</span>
+            {/* In the heading, so loading never changes the panel's height. */}
+            {!loaded && <span className="cal-loading">Loading…</span>}
+          </div>
           <div className="cal-weekdays">
             {WEEKDAYS.map((d) => <span key={d}>{d}</span>)}
           </div>
@@ -114,7 +118,6 @@ function CalendarMonth({ month }) {
               );
             })}
           </div>
-          {!loaded && <p className="hint cal-loading">Loading…</p>}
         </section>
       ))}
     </div>

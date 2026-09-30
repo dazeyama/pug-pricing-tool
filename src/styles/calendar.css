@@ -50,7 +50,10 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 3px;
-  min-height: 78px;
+  /* A fixed height: every week the same, however many buys a day has
+     (the dots stop at 8 and "+N"), so no month is taller than another. */
+  height: 84px;
+  overflow: hidden;
   padding: 6px 7px;
   border: 1px solid color-mix(in srgb, var(--game) 18%, var(--border));
   border-radius: 7px;
@@ -74,7 +77,8 @@ button.cal-day:hover { border-color: var(--game); background: color-mix(in srgb,
 .cal-dots { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; }
 .cal-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--c); }
 .cal-more { font-size: 11px; color: var(--muted); }
-.cal-loading { margin: 8px 0 0; }
+.cal-game-head { display: flex; align-items: center; gap: 10px; }
+.cal-loading { font-size: 12px; font-weight: 400; color: var(--muted); }
 
 /* ---- A day page ---- */
 .day-top { margin-bottom: 12px; }

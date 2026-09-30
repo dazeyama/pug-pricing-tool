@@ -32,7 +32,16 @@ test('August 2026 starts on a Saturday: Sunday-first weeks', () => {
   assert.equal(weeks[0].length, 7);
   assert.deepEqual(weeks[0].slice(5), [null, '2026-08-01']);
   assert.equal(weeks.flat().filter(Boolean).length, 31);
-  assert.equal(weeks.at(-1).filter(Boolean).at(-1), '2026-08-31');
+  assert.equal(weeks.flat().filter(Boolean).at(-1), '2026-08-31');
+});
+
+test('every month is 6 weeks, so the Calendar never changes size', () => {
+  // February 2026 fits in exactly 4 weeks (Sun Feb 1 – Sat Feb 28).
+  const feb = monthGrid('2026-02');
+  assert.equal(feb.length, 6);
+  assert.deepEqual(feb[4], Array(7).fill(null));
+  assert.equal(monthGrid('2026-08').length, 6);   // needs 6 anyway
+  assert.equal(monthGrid('2026-09').length, 6);
 });
 
 test('a month and a day as instants in store time', () => {

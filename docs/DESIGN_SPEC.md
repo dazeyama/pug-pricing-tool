@@ -1172,7 +1172,7 @@ Owner's decision: double confirmation, and not easy to press.
 
 - **Split 50/50**: **Magic** on the left, **Pokémon** on the right, each with a header and its own identical month grid.
 - **One month picker controls both** (owner's decision): ◀ / ▶ and **Today**. The month is kept in the URL (`?month=2026-08`).
-- **Weeks start on Sunday** (owner's decision).
+- **Weeks start on Sunday** (owner's decision). **Every month is drawn as 6 weeks**, the most a month can span, with fixed-height days, so the panels are the same size for every month and never change when flipping through them (owner's decision, 2026-09-29).
 - **A day cell shows:**
   - the date number;
   - "**N buys**" (singular "1 buy");
@@ -1987,6 +1987,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 136 | Last card deletes the buy (2026-09-29) | Removing a confirmed buy's last card deletes the buy, asking first; `buy_remove_line` refuses it (`last_card`) (Sections 6.2, 10.2) |
 | 137 | Collection screen in amber (2026-09-29) | Inside a collection the background art is mirrored and the screen's accent is amber, so it looks distinct from the Price tab (Section 9.4) |
 | 138 | Calendar decoration (2026-09-29) | The month picker is centred; a line runs down the middle; the Magic side is themed indigo and the Pokémon side amber (Section 10.1) |
+| 139 | Calendar always 6 weeks (2026-09-29) | Month grids always have 6 week rows of fixed-height days, so the panels fit any month and never change size (Section 10.1) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

@@ -47,7 +47,9 @@ export function dayTitle(day) {
 
 /**
  * A month's weeks, Sunday first (owner's decision): each week 7 cells, a day
- * ("2026-08-01") or null for the days of the months either side.
+ * ("2026-08-01") or null for the days of the months either side. Always 6
+ * weeks, the most a month can span, so the Calendar is the same size every
+ * month (owner, 2026-09-29).
  * @returns {(string|null)[][]}
  */
 export function monthGrid(month) {
@@ -59,6 +61,7 @@ export function monthGrid(month) {
   while (cells.length % 7) cells.push(null);
   const weeks = [];
   for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
+  while (weeks.length < 6) weeks.push(Array.from({ length: 7 }, () => null));
   return weeks;
 }
 
