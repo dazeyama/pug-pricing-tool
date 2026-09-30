@@ -106,9 +106,18 @@ button.cal-day:hover { border-color: var(--game); background: color-mix(in srgb,
   border-width: 2px;
 }
 .page-back:hover { border-color: var(--accent); color: var(--accent); }
-.day-title { margin: 0; font-size: 26px; font-weight: 700; }
-.day-game { font-size: 18px; font-weight: 600; color: var(--muted); }
-.day-game .group-chip { font-size: 14px; vertical-align: middle; }
+.day-title { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; margin: 0; font-size: 26px; font-weight: 700; }
+/* The game, large and clear beside the date (owner, 2026-09-29): its chip,
+   bigger, bold and ringed in its colour. */
+.day-chip {
+  padding: 6px 20px;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--game) 45%, transparent),
+    0 4px 16px color-mix(in srgb, var(--game) 40%, transparent);
+}
 .day-rule { margin: 14px 0 18px; border: 0; border-top: 3px solid var(--game); border-radius: 2px; }
 .day-page .buy-panel {
   background: color-mix(in srgb, var(--game) 6%, var(--panel));

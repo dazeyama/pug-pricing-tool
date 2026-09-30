@@ -191,7 +191,8 @@ function DayScreen({ game, day }) {
         <ExportButton className="top" />
       </div>
       <h2 className="day-title">
-        {dayTitle(day)} <span className="day-game">· <span className={`group-chip ${game}`}>{GAME_NAMES[game]}</span></span>
+        {dayTitle(day)}
+        <span className={`group-chip day-chip ${game}`}>{GAME_NAMES[game]}</span>
       </h2>
       <hr className="day-rule" />
 

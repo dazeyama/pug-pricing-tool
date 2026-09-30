@@ -1220,7 +1220,7 @@ Saturday, August 17, 2026 · Magic
 - **EXPORT** is a large, bold button (Section 14). **As built (owner's decision, 2026-09-29):** on the header row, level with **< BACK** and as tall, **right-aligned**, on Magic and Pokémon day pages alike; it takes the page's game colour (below).
 - If the last buy of the day is deleted, go back to the Calendar with a toast.
 - **As built (Phase 8, owner's decisions, 2026-09-29):**
-  - **< BACK** is the large bold button a collection has, returning to the Calendar on the day's month. The heading reads "Monday, August 17, 2026 · Magic" (game chip in its colours).
+  - **< BACK** is the large bold button a collection has, returning to the Calendar on the day's month. The heading reads "Monday, August 17, 2026" followed by the game's chip, **large and clear** (owner's decision, 2026-09-29): about 19px, bold capitals ("MAGIC", "POKÉMON"), in the game's colours with a ring and glow in them.
   - **Removing cards:** each row has the **red ×** the buy list has (not a whole-row red hover), with the same "Remove card?" dialog and the note "This buy was already confirmed." Rows can't be edited: a confirmed buy is a finished deal.
   - **The last card:** removing a buy's last card would leave an empty buy, so it **deletes the buy** instead, asking first ("That's the last card in this buy, so removing it deletes the buy."). The server refuses the removal anyway (`last_card`).
   - **Table:** Price (per card, like the buy list) · Qty · Card (the line without its quantity, Japanese cards in English, `lineBody`) · ×.
