@@ -546,8 +546,8 @@ Every change that affects buy contents, or anything the changelog records, goes 
 | `draft_cancel(buy_id)` | Deletes the draft and its lines | none |
 | `draft_set_custom_rates(device, custom_cash_pct, custom_credit_pct, user)` | Sets or clears this device's draft custom rates (Section 8.9.1). Creates the draft if none exists. | none |
 | `confirm_buy(buy_id, user, customer_name, notes, cash_pct, credit_pct, expected_version, line_texts, phone)` | draft → confirmed; stamps `confirmed_*`; snapshots percentages (custom rate where set, else the master rate the screen showed). `line_texts` maps each line ID to its buy-list text (`lineFormat.js`) for the entry's card rows. Returns `{ number, games, target_name }`. | `buy_confirmed` with all lines and totals |
-| `buy_remove_line(line_id, qty, user, expected_version)` | For confirmed buys (day page) | `buy_cards_removed` |
-| `buy_delete(buy_id, user, expected_version)` | Deletes a confirmed buy | `buy_deleted` with the full line list and totals |
+| `buy_remove_line(line_id, qty, user, device, expected_version, text)` | For confirmed buys (day page). **Refuses to remove a buy's last card** (`last_card`): the day page deletes the buy instead (owner, 2026-09-29). Migration 0013. | `buy_cards_removed` |
+| `buy_delete(buy_id, user, device, expected_version, line_texts)` | Deletes a confirmed buy, both games. Migration 0013. | `buy_deleted` with the full line list and totals |
 | `collection_create(name, phone, notes, user, device, id_last4)` | `id_last4` optional (migration 0010); `collection_update_info` takes `id_last4` too | `collection_created` |
 | `collection_add_line(buy_id, line, merge, user, device, expected_version)` | Requires this device to hold the lock and status ≠ paid | `collection_cards_added` |
 | `collection_update_line(line_id, line, user, device, expected_version, old_text, new_text)` | EDIT CARD on a collection (as built, Phase 7): saves the edited line over the old one at **today's price** (owner's decision, 2026-09-29: edits always re-price, collections included), merging with an identical line like `draft_update_line`. Same requirements as adding. | `collection_line_edited`: the old line (−) and the new one (+) |
@@ -569,6 +569,8 @@ Staff users, devices, settings and CSV metadata are written directly (RLS permit
 - **Entries.** An entry's `target_name` is the customer's name at the time. Totals use the Paid/Ours snapshot, else the custom rates, else the master ones. Field rows show phones formatted.
 - **Helpers:** `collection_for_write` (the checks every write shares), `collection_event`, `collection_totals`, `master_pct`, `format_phone`, `status_label`, `sentence` and `pct_text`.
 - **Lock functions.** `lock_acquire` returns `{ held, device_id, device_label, staff_user_id, acquired_at }`. `lock_heartbeat(buy_id, device, user)` also moves the lock to the currently picked user.
+
+**As built (Phase 8, migration 0013):** `buy_target_name(buy_id)` gives a confirmed buy's name as things stand ("Buy N · Tue Sep 29, 2026", numbered like `confirm_buy`), so a removal or deletion entry names the buy as it was then; deleting a buy renumbers the rest of that day, while earlier entries keep their names. `buys_in_range(from, to)` returns each confirmed walk-in buy between two instants with its confirming user and games, for the Calendar. Entries are written by `buy_event` with the buy's snapshotted rates. Error codes: `buy_gone`, `line_gone`, `stale_version`, `last_card`, `no_user`.
 
 ### 6.3 Realtime
 
@@ -1178,6 +1180,7 @@ Owner's decision: double confirmation, and not easy to press.
 - **What counts:** confirmed **walk-in buys only**. Collections don't appear on the Calendar (owner's decision). A buy is counted on the day of `confirmed_at` in `STORE_TZ`.
 - **Mixed buys:** a buy with both games counts as a buy on **both** calendars that day, and each side sees only its own lines.
 - Updates live through Realtime.
+- **As built (Phase 8):** the month sits in the URL only when it isn't the current one (`#/calendar?month=2026-08`); ◀ ▶ move a month, **Today** returns. Weeks, days and "today" are the store's calendar (`src/lib/calendar.js`). A day with no buys shows its date only and isn't a link. The dots use the confirming user's colour (slate if unknown).
 
 ### 10.2 Day page
 
@@ -1214,6 +1217,15 @@ Saturday, August 17, 2026 · Magic
 - **Deleting a buy:** ⋯ → Delete buy… → "Delete **Buy 2** (Dana, 2:37 PM)? All **N cards** in this buy — including any from the other game — will be permanently removed." [Cancel] [Delete buy] (red). Calls `buy_delete`, which is logged.
 - **EXPORT** is a large, bold blue button at the bottom-right (Section 14).
 - If the last buy of the day is deleted, go back to the Calendar with a toast.
+- **As built (Phase 8, owner's decisions, 2026-09-29):**
+  - **< BACK** is the large bold button a collection has, returning to the Calendar on the day's month. The heading reads "Monday, August 17, 2026 · Magic" (game chip in its colours).
+  - **Removing cards:** each row has the **red ×** the buy list has (not a whole-row red hover), with the same "Remove card?" dialog and the note "This buy was already confirmed." Rows can't be edited: a confirmed buy is a finished deal.
+  - **The last card:** removing a buy's last card would leave an empty buy, so it **deletes the buy** instead, asking first ("That's the last card in this buy, so removing it deletes the buy."). The server refuses the removal anyway (`last_card`).
+  - **Table:** Price (per card, like the buy list) · Qty · Card (the line without its quantity, Japanese cards in English, `lineBody`) · ×.
+  - **Customer line:** the name and the **phone number** (from CONFIRM BUY) together: "Customer: Alex M. · (555) 201-3344".
+  - Totals are this game's lines at the buy's snapshotted rates, Cash green and Credit blue.
+  - **Numbering:** Buy N counts that day's buys with this game's cards in confirmed order, so deleting a buy renumbers the rest; the changelog keeps each entry's name from its time.
+  - Updates live: a buy confirmed, changed or deleted on another computer shows at once.
 
 ---
 
@@ -1649,6 +1661,9 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 - [ ] Remove one card from a confirmed buy; delete a buy. The counts on the calendar update.
 - [ ] Back returns to the same month. EXPORT shows the coming-soon message.
 - [ ] A buy confirmed just before midnight lands on the right day (store time).
+- [ ] The red × on a row removes a card (how many, for several); the note says the buy was already confirmed. Clicking the row itself does nothing.
+- [ ] Each row shows its price per card; the customer line shows the phone number when CONFIRM BUY had one.
+- [ ] × on a buy's only card asks to delete the whole buy instead.
 
 ---
 
@@ -1964,6 +1979,10 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 130 | Big BACK button (2026-09-29) | A collection's < BACK is a large bold button at the top left, before the search bar, instead of in the details (Section 9.4) |
 | 131 | Removing from Paid/Ours (2026-09-29) | Cards can still be removed from a Paid/Ours collection, not added or edited; a Completed collection allows neither (Sections 6.2, 9.5; migration 0012) |
 | 132 | Default sort (2026-09-29) | The collections table opens sorted by Created, newest first, instead of Last edited (Section 9.1) |
+| 133 | Day page removals (Phase 8, 2026-09-29) | Day pages remove cards with the buy list's red ×, not a red row hover; confirmed buys can't be edited (Section 10.2) |
+| 134 | Price per card on day pages (2026-09-29) | Day-page tables show each line's price per card, like the buy list (Section 10.2) |
+| 135 | Phone on day pages (2026-09-29) | A confirmed buy's phone number shows beside its customer name (Section 10.2) |
+| 136 | Last card deletes the buy (2026-09-29) | Removing a confirmed buy's last card deletes the buy, asking first; `buy_remove_line` refuses it (`last_card`) (Sections 6.2, 10.2) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

@@ -35,16 +35,25 @@ export function lineTags(line) {
 }
 
 /**
- * @param {{ quantity: number, name: string, name_en?: string|null, set_code: string, collector_number: string,
+ * The line without its quantity: "Sol Ring (CMR) 472 *E* [LP]" (the day
+ * pages' tables give the quantity its own column, spec 10.2).
+ * @param {{ name: string, name_en?: string|null, set_code: string, collector_number: string,
  *   finish: string, condition?: string, first_edition?: boolean, lang?: string,
  *   treatments?: string[] }} line  a buy_lines row
- * @param {number} [quantity]  a different count to show (e.g. how many are being removed)
  */
-export function lineText(line, quantity = line.quantity) {
-  const parts = [`${quantity} ${line.name_en || line.name} (${line.set_code}) ${line.collector_number}`];
+export function lineBody(line) {
+  const parts = [`${line.name_en || line.name} (${line.set_code}) ${line.collector_number}`];
   const marker = FINISH_MARKERS[line.finish];
   if (marker) parts.push(marker);
   const tags = lineTags(line);
   if (tags.length) parts.push(`[${tags.join(', ')}]`);
   return parts.join(' ');
+}
+
+/**
+ * @param {{ quantity: number } & Parameters<typeof lineBody>[0]} line  a buy_lines row
+ * @param {number} [quantity]  a different count to show (e.g. how many are being removed)
+ */
+export function lineText(line, quantity = line.quantity) {
+  return `${quantity} ${lineBody(line)}`;
 }

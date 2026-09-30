@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import UserTag from '../../components/UserTag.jsx';
 import GuardButton from '../../components/GuardButton.jsx';
+import MoreMenu from '../../components/MoreMenu.jsx';
 import InlineEdit from './InlineEdit.jsx';
 import { STATUSES, isClosed, statusLabel, statusTone } from './status.js';
 import { formatMoney } from '../../lib/money.js';
@@ -13,57 +14,6 @@ const OPEN_KEY = 'pug.collectionDetailsOpen';
 
 /** "today 3:12 PM" in a sentence. */
 const recent = (when) => formatRecent(when).replace(/^(Today|Yesterday)/, (m) => m.toLowerCase());
-
-/** The ⋯ menu: Delete collection…, kept away from everyday controls (spec 9.7). */
-function MoreMenu({ onDelete, deleteBlocked }) {
-  const [open, setOpen] = useState(false);
-  const wrap = useRef(null);
-  useEffect(() => {
-    if (!open) return undefined;
-    const onDown = (e) => {
-      if (!wrap.current?.contains(e.target)) setOpen(false);
-    };
-    const onKey = (e) => {
-      if (e.key === 'Escape') setOpen(false);
-    };
-    document.addEventListener('mousedown', onDown);
-    window.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onDown);
-      window.removeEventListener('keydown', onKey);
-    };
-  }, [open]);
-  return (
-    <span className="more-menu" ref={wrap}>
-      <button
-        type="button"
-        className="more-btn"
-        aria-haspopup="menu"
-        aria-expanded={open}
-        title="More"
-        onClick={() => setOpen((o) => !o)}
-      >
-        ⋯
-      </button>
-      {open && (
-        <div className="more-list" role="menu">
-          <GuardButton
-            role="menuitem"
-            className="more-item danger"
-            disabled={Boolean(deleteBlocked)}
-            title={deleteBlocked ?? 'Delete this collection and every card in it'}
-            onClick={() => {
-              setOpen(false);
-              onDelete();
-            }}
-          >
-            Delete collection…
-          </GuardButton>
-        </div>
-      )}
-    </span>
-  );
-}
 
 /** "TBD" in amber until there's a figure (owner, 2026-09-29). */
 const TBD = <span className="tbd">TBD</span>;
@@ -130,7 +80,16 @@ export default function CollectionDetails({
           <span className={`status-chip ${tone}`}>{statusLabel(buy.status)}</span>
           <span className="cd-chevron" aria-hidden="true">{open ? '▾' : '▸'}</span>
         </button>
-        <MoreMenu onDelete={onDelete} deleteBlocked={deleteBlocked} />
+        <MoreMenu
+          up
+          items={[{
+            label: 'Delete collection…',
+            danger: true,
+            blocked: deleteBlocked,
+            title: 'Delete this collection and every card in it',
+            onClick: onDelete,
+          }]}
+        />
       </div>
 
       {viewOnly && (

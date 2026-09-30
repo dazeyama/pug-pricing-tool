@@ -15,8 +15,11 @@ export function marketTotal(lines) {
   return Math.round(lines.reduce((sum, l) => sum + Number(l.unit_price) * l.quantity, 0) * 100) / 100;
 }
 
-/** "Remove card?" (spec 8.9): one copy, or how many of several. */
-function RemoveModal({ line, onRemove, onClose }) {
+/**
+ * "Remove card?" (spec 8.9): one copy, or how many of several. `note` adds a
+ * line under the question (a day page: "This buy was already confirmed.").
+ */
+export function RemoveModal({ line, note = null, onRemove, onClose }) {
   const [qty, setQty] = useState(1);
   const many = line.quantity > 1;
   return (
@@ -56,6 +59,7 @@ function RemoveModal({ line, onRemove, onClose }) {
       ) : (
         <p>Remove <strong>{lineText(line)}</strong>?</p>
       )}
+      {note && <p className="hint">{note}</p>}
     </Modal>
   );
 }
