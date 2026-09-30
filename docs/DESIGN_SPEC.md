@@ -878,7 +878,7 @@ Styled as AT's list panel, docked right.
 | SET | Magic: the Scryfall set code in upper case. Pokémon: the printed abbreviation (Section 5.2). |
 | number | The collector number as printed, without the size |
 | finish marker | Magic: `*F*` foil, `*E*` etched, nothing for non-foil. Pokémon: `*H*` holo, `*RH*` reverse holo, nothing for normal. |
-| tags | Only non-defaults, in this order, comma-separated in one bracket: condition if not NM (`LP`), `1st Ed`, `JP`, reverse pattern (`Poké Ball`) |
+| tags | Only non-defaults, in this order, comma-separated in one bracket: condition if not NM (`LP`), `1st Ed`, `SL`, `JP`, reverse pattern (`Poké Ball`). **`SL` = Shadowless** (owner's decision, 2026-09-29): a Base Set version whose TCGdex subtype is `shadowless` or `shadowless-red-cheek` but that isn't 1st Edition (every 1st Edition is shadowless, so `1st Ed` alone says it). A Shadowless Charizard ($2,146 NM) and an Unlimited one ($945) must never print the same. |
 
 Examples:
 
@@ -889,6 +889,7 @@ Examples:
 2 Sol Ring (CMR) 472 *E*
 1 Charizard ex (OBF) 125 *H*
 1 Pikachu (SV2a) 25 *RH* [MP, JP, Poké Ball]
+1 Charizard (BS) 4 *H* [SL]
 ```
 
 - Lines wrap; don't truncate them.
@@ -1823,6 +1824,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 96 | Japanese fallback (2026-09-29) | A Japanese Pokémon with no JustTCG price for any condition is priced from Cardmarket automatically (NM = Cardmarket in dollars, the rest by the fallback percentages, tagged CM) (Section 8.7) |
 | 97 | Japanese images (2026-09-29) | Japanese Pokémon with no TCGdex picture use Limitless TCG's image CDN (by set code and number), then the card back; credited in Settings' footer (Sections 5.2, 11.7) |
 | 98 | Wrong-language set code (2026-09-29) | A set code only the other Pokémon language has gets a note under the search bar with a one-click "switch to JP" / "switch to EN" (Section 8.2) |
+| 99 | Shadowless tag (2026-09-29) | Buy-list lines tag Shadowless (non-1st-Edition) Base Set versions `[SL]`, after `1st Ed` (Section 8.9, Phase 6) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |
