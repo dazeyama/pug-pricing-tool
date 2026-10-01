@@ -82,8 +82,8 @@ test('a mixed buy shows whole: both games, all its cards and totals', () => {
 
 test('days and times in store time', () => {
   const now = new Date('2026-09-29T20:00:00Z');
-  assert.equal(dayHeading('2026-09-29T16:00:00Z', now), 'Today');
-  assert.equal(dayHeading('2026-09-29T02:00:00Z', now), 'Yesterday');   // 7 PM on the 28th, Pacific
+  assert.equal(dayHeading('2026-09-29T16:00:00Z', now), 'Today · September 29, 2026');
+  assert.equal(dayHeading('2026-09-29T02:00:00Z', now), 'Yesterday · September 28, 2026');   // 7 PM on the 28th, Pacific
   assert.equal(dayHeading('2026-08-17T21:37:00Z', now), 'Monday, August 17, 2026');
   assert.equal(entryWhen('2026-08-17T21:37:00Z'), 'August 17, 2026 at 2:37 PM');
   assert.equal(entryWhen('2026-08-17T21:41:00Z', '2026-08-17T21:04:00Z'), 'August 17, 2026 · 2:04 – 2:41 PM');

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
 import { dayDate, storeDay } from '../lib/calendar.js';
 import { formatTime } from '../lib/time.js';
-import { dayHeading } from '../lib/changelog.js';
+import { relativeDay } from '../lib/changelog.js';
 import { colorVar } from '../lib/palette.js';
 import { lineTextWithCondition } from '../lib/lineFormat.js';
 import { LINE_LIMIT, MIN_CHARS, flatRows, groupResults, searchArgs } from '../lib/globalSearch.js';
@@ -30,9 +30,9 @@ const WAIT_MS = 250;
  * (owner, 2026-09-30).
  */
 function dayLabel(section) {
-  const relative = dayHeading(section.at);
+  const relative = relativeDay(section.at);
   const full = dayDate(section.day);
-  return relative === 'Today' || relative === 'Yesterday' ? `${relative} · ${full}` : full;
+  return relative ? `${relative} · ${full}` : full;
 }
 
 // The set codes stored lines use, fetched at most every five minutes.

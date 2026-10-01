@@ -116,12 +116,23 @@ export function panelView(panel) {
   };
 }
 
-/** "Today", "Yesterday", else "Saturday, August 17, 2026", by the store's calendar. */
-export function dayHeading(at, now = new Date()) {
+/** "Today" or "Yesterday" in the store's calendar, else null. */
+export function relativeDay(at, now = new Date()) {
   const day = (d) => formatInTimeZone(d, STORE_TZ, 'yyyy-MM-dd');
   const d = day(at);
   if (d === day(now)) return 'Today';
   if (d === day(new Date(new Date(now).getTime() - 86_400_000))) return 'Yesterday';
+  return null;
+}
+
+/**
+ * A day's pill: "Today · September 30, 2026", "Yesterday · September 29,
+ * 2026" (owner, 2026-09-30: with the date, as in the header search), else
+ * "Monday, August 17, 2026".
+ */
+export function dayHeading(at, now = new Date()) {
+  const relative = relativeDay(at, now);
+  if (relative) return `${relative} · ${formatInTimeZone(at, STORE_TZ, 'MMMM d, yyyy')}`;
   return formatInTimeZone(at, STORE_TZ, 'EEEE, MMMM d, yyyy');
 }
 

@@ -1353,7 +1353,7 @@ Then "Not affiliated with Wizards of the Coast or The Pokémon Company." and the
 - **Timeline:**
   - a vertical line down the middle;
   - entries **alternate left/right**, newest first;
-  - **grouped by day** with a pill on the line: **Today**, **Yesterday**, then "Saturday, August 17, 2026" in `STORE_TZ`;
+  - **grouped by day** with a pill on the line: **Today**, **Yesterday**, then "Saturday, August 17, 2026" in `STORE_TZ` (as built, owner's decision 2026-09-30: "Today · September 30, 2026" and "Yesterday · September 29, 2026", matching the header search);
   - **each day starts on the left**; right-hand entries drop half a row so the columns interleave (CM's `margin-top: 34px`).
 - **Pager:** 20 entries per page (`CHANGE_PAGE = 20`), at the top and again at the foot beside **↑ Back to top**. The foot row shows only when the page scrolls. The log is read when the tab opens, not on page load.
 - All CSS comes from CM's `.timeline`, `.tl-*` and `.ch-mark` rules (Appendix B.3).
