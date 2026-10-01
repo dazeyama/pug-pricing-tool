@@ -5,7 +5,7 @@
 | **Product** | PUG Pricing Tool: the EXPORT function (Crystal Commerce Mass Create) |
 | **Owner** | Players' Union Games (PUG) |
 | **Spec version** | 1.0 — 2026-10-01 |
-| **Status** | Approved for build, Phases E1–E5. Open (Appendix D): four details of the Sell Price rule (Section 5) and two of the Custom SKU (Section 4.4). |
+| **Status** | Approved for build, Phases E1–E5. Before the first real batch: one test upload (Appendix D #1). |
 | **Extends** | `docs/DESIGN_SPEC.md` (Section 14, "Export: placeholders only", is replaced by this document) |
 | **Project folder** | `C:\ClaudeProjects\pug-pricing-tool` |
 
@@ -166,12 +166,21 @@ The header row is exactly `Add Qty,Product Name,Category,Condition,Language,Sell
 
 Owner's decision, 2026-10-01. **Every row of an export carries the same Custom SKU: a number-only code made from the export's date**, so the batch can be tracked in CC.
 
-- **The format:** the date as `MM/DD/YY` with the slashes taken out and **no leading zero**: 06/17/26 → **`61726`**. Digits only.
-- **The date is the day the export is made**, in store time (`STORE_TZ`), not the day of the buys: exporting September 30's buys on October 1 gives October 1's code. *(To confirm: Appendix D #5.)*
-- **Two dates can give the same code** with no leading zeros anywhere: 1/11/26 and 11/1/26 are both `11126`, as are 1/12/26 and 11/2/26. One fix is to drop the month's leading zero only and always write the day as two digits (6/17/26 → `61726`, 1/11/26 → `11126`, 11/1/26 → `110126`), which gives every date its own code. *(Owner to choose: Appendix D #6.)* Until chosen, build the format in one function, `customSkuFor(date)`, with tests for both readings' examples.
+- **The format: month, day, year, digits only.** The **month has no leading zero**; the **day is always two digits**; the year is its last two digits (owner's decision, 2026-10-01):
+
+  | Date | Custom SKU |
+  |---|---|
+  | 06/17/26 | `61726` |
+  | 06/05/26 | `60526` |
+  | 01/11/26 | `11126` |
+  | 11/01/26 | `110126` |
+  | 12/31/26 | `123126` |
+
+  Keeping the day's zero gives every date its own code: with no zeros at all, 1/11/26 and 11/1/26 would both be `11126`. One function makes it, `customSkuFor(date)` (store time), tested with the table above.
+- **The date is the day the export is made**, in store time (`STORE_TZ`), not the day of the buys (owner's decision): exporting September 30's buys on October 1 gives October 1's code.
 - **Stamped** on every exported line (`cc_custom_sku`, Section 6.4). A re-download of a Completed day or collection uses the stamp, so the code never changes after the export. An undone and repeated export gets the new day's code.
 - **Exports from Can't upload cards** get the code of the day they're made.
-- **Shown on the day page** once it's exported: a chip in the header, labelled very clearly, **`Custom SKU 61726`** (Section 10). The same chip on an exported collection's screen. *(To confirm: Appendix D #7.)*
+- **Shown on the day page** once it's exported: a chip in the header, labelled very clearly, **`Custom SKU 61726`** (Section 10). **The same chip on an exported collection's screen** (owner's decision), in its details panel's header bar.
 
 ---
 
@@ -203,8 +212,8 @@ A line's `price_source` (`DESIGN_SPEC.md` 6.1; migration 0004) says how its buy 
 
 - **The ladder runs with the buy's override:** Use Fallback stays Use Fallback; Use Cardmarket stays Use Cardmarket.
 - **The ladder's own rules still apply** (`DESIGN_SPEC.md` 8.7: prices never rise as the condition drops, and so on). The Sell Price starts from the ladder's **unrounded** value for the condition (`raw`), never its rounded-down `price`.
-- **A card the buy priced by fallback**, because JustTCG had nothing for its condition then, gets JustTCG's price if it has one today: the ladder takes it, as it would for a new buy. *(To confirm: Appendix D #1.)*
-- **A manual price with no price at all today** (no JustTCG price, no fallback) is used on its own, rounded up and floored. *(To confirm: Appendix D #2.)*
+- **A card the buy priced by fallback**, because JustTCG had nothing for its condition then, gets JustTCG's price if it has one today: the ladder takes it, as it would for a new buy (owner's decision, 2026-10-01).
+- **A manual price with no price at all today** (no JustTCG price, no fallback) is used on its own, rounded up and floored (owner's decision).
 
 ### 5.3 Rounding up, and the floor
 
@@ -230,7 +239,7 @@ A line's `price_source` (`DESIGN_SPEC.md` 6.1; migration 0004) says how its buy 
 - **Cards that never had a JustTCG match** go through the same lookup as the Price screen (its `price_map` memory makes repeats cheap).
 - **Scryfall:** the cards fetched for matching (Section 7.4) already carry today's prices.
 - **Cardmarket and the euro rate:** fetched as the Price screen does (`DESIGN_SPEC.md` 8.7).
-- **If today's prices can't be fetched** (the daily limit, an outage), the export stops before anything is saved: "Today's prices couldn't be fetched: <reason>. Nothing was exported." *(To confirm: Appendix D #3.)*
+- **If today's prices can't be fetched** (the daily limit, an outage), the export stops before anything is saved: "Today's prices couldn't be fetched: <reason>. Nothing was exported." (owner's decision: never export on stale prices).
 - Prices are fetched during the dialog's Matching step (Section 8.3), so the Review step can show every card's Sell Price before anything is saved.
 
 ### 5.5 Where it's kept, and shown
@@ -239,7 +248,8 @@ A line's `price_source` (`DESIGN_SPEC.md` 6.1; migration 0004) says how its buy 
 - **The file** writes `cc_sell_price`, two decimals. **Rows merge only when their Sell Prices are equal** (Section 4.2).
 - **A re-download** of a Completed day or collection uses the stamps. Nothing is fetched again.
 - **In the Review step** each card shows both: "Bought $1.00 → Sell $1.25".
-- **After the export, the app shows the Sell Price in place of the buy price** (owner's decision): on the day page's card rows and in a collection's card list, marked "Sell", with a tooltip "Bought at $1.00 · sell price from the export". The buy price stays in the database (`unit_price`). *(What the panels' Market / Cash / Credit totals show afterwards: Appendix D #4.)*
+- **After the export, the app shows the Sell Price in place of the buy price** (owner's decision): on the day page's card rows and in a collection's card list, marked "Sell", with a tooltip "Bought at $1.00 · sell price from the export". The buy price stays in the database (`unit_price`).
+- **The totals follow** (owner's decision, 2026-10-01): an exported day page's panels and an exported collection's sidebar show Market as the sum of the Sell Prices, and Cash / Credit as that at the buy's or collection's own percentages (rounded down as always). The price actually paid stays as it was: the **Paid** chip (walk-ins) and the Paid/Ours details (collections) are the record of the deal. Undo brings the buy totals back.
 - **Undo** (Mark Paid/Ours again, or Reopen) clears the stamps, and the buy prices show again.
 - **Can't upload cards** get their Sell Price when they're exported later, from Can't upload cards (Section 9.3).
 
@@ -552,7 +562,7 @@ During `export_lines` (Section 8.4), each can't-upload line is **copied** into t
 - **Pokémon EXPORT** greyed out, with its tooltip (Section 8.1).
 - **Can't upload chip** on a card row whose line is `cc_status = 'cant_upload'`, after the export: a red chip, `Can't upload`, after the card text. Its tooltip: "Not matched to Crystal Commerce: pulled from the upload. It's in Can't upload cards."
 - **The exported note** (`DESIGN_SPEC.md` 10.2) adds the counts: "Exported … by ● Daisy: 31 cards, 3 can't upload."
-- **Sell prices** replace the buy prices on exported card rows, marked "Sell" (Section 5.5).
+- **Sell prices** replace the buy prices on exported card rows, marked "Sell", and the panel's totals follow (Section 5.5).
 - **The Custom SKU chip** in the header of an exported day, beside the date and game, labelled very clearly: **`Custom SKU 61726`** (Section 4.4).
 - **Calendar:** unchanged. An exported Magic day is still tagged Exported.
 
@@ -657,14 +667,15 @@ Each phase ends with the owner checking it on `localhost`. Apply migrations to *
 - **The Sell Price** (Section 5): `roundUpPrice` and `src/lib/sellPrice.js` (pure: a line plus today's data → the Sell Price and its basis), with tests for every row of 5.2 and 5.3; the `prices` function's `fresh` option, deployed to dev; the stamps; sell prices shown in place of buy prices on exported rows.
 - The **Can't upload** chip on day rows (10).
 - Changelog: `day_exported` / `day_unexported` with the counts.
-- *The Can't upload collection arrives in E4; until then can't-upload lines are stamped and chipped but not copied anywhere. Don't do real uploads with E3's file until the test upload (Appendix D #8) has worked.*
+- *The Can't upload collection arrives in E4; until then can't-upload lines are stamped and chipped but not copied anywhere. Don't do real uploads with E3's file until the test upload (Appendix D #1) has worked.*
 
 **Where to look**
 - [ ] Export a past Magic day: the file downloads; open it in a text editor. The header is `Add Qty,Product Name,Category,Condition,Language,Sell Price,Custom SKU`; names and categories are exactly the inventory's; conditions read `Near Mint`, `Light Play`…; same-product rows are merged.
 - [ ] Set one card to "None of these": the red pull-out list appears and Export waits for the checkbox; afterwards that card is not in the file, and its row on the day page has a **Can't upload** chip.
 - [ ] Sell Prices in the file: a $1.01 card reads `1.25`, a $0.12 card `0.40`, a $10.01 card `11.00`; a manual-priced card shows the higher of its manual price and today's price, rounded up.
 - [ ] After the export the day page shows each card's Sell price ("Sell" on the price, the buy price in its tooltip).
-- [ ] Every row's last column is the export's code (today 06/17/26 would be `61726`), and the day page's header shows the **Custom SKU** chip with the same number.
+- [ ] Every row's last column is the export's code (06/17/26 would be `61726`, 11/01/26 `110126`), and the day page's header shows the **Custom SKU** chip with the same number.
+- [ ] The exported day's panels show Market / Cash / Credit from the Sell Prices; the **Paid** chip still shows what was paid. Mark Paid/Ours again, and the buy totals come back.
 - [ ] EXPORT on the now-Completed day downloads the same file again (same prices), and nothing else changes.
 - [ ] ⋯ → Mark Paid/Ours again: the chips go, and the buys are Paid/Ours.
 
@@ -691,11 +702,13 @@ Each phase ends with the owner checking it on `localhost`. Apply migrations to *
 
 **Build**
 - Collection EXPORT (8.2): Paid/Ours → the export, then **Completed**; Completed → re-download; Processing / Priced → blocked. Pokémon lines ignored (8.5). Reopen takes its copies back out of Can't upload cards.
+- On an exported collection: the **Custom SKU** chip in its details panel's header bar (4.4), Sell prices on its cards, and its sidebar totals from them (5.5).
 - The **Crystal Commerce matching** panel in Settings (11.2).
 - Replace `DESIGN_SPEC.md` Section 14 with a pointer to this document, and add the export's decisions to its log.
 
 **Where to look**
 - [ ] A Paid/Ours collection with Magic and Pokémon cards: EXPORT matches only the Magic ones; afterwards the collection is Completed and the file has no Pokémon.
+- [ ] That collection's screen shows the **Custom SKU** chip, Sell prices on its Magic cards, and totals from them.
 - [ ] A Priced collection: EXPORT says to mark it Paid/Ours first.
 - [ ] A collection with only Pokémon cards: it becomes Completed and "No Magic cards to export." shows.
 - [ ] Settings → Crystal Commerce matching lists the set choices and remembered products; Forget one, and the next dry run asks about that card again.
@@ -775,16 +788,11 @@ Categories with no rule yet (from Section 3.3's 138 unmatched): `Mystery Booster
 | E14 | Record of cards exported from Can't upload | The changelog only |
 | E15 | Sell Price | Today's full market price for the card's condition, worked out the same way as at the buy (same source and override, fetched fresh), **rounded up** by the buy steps, **never below $0.40**; a manual price gets the higher of it and today's price, rounded (owner, 2026-10-01) |
 | E16 | Prices after export | The app shows each exported card's Sell Price in place of its buy price (owner, 2026-10-01) |
-| E17 | Custom SKU | A number-only code from the export's date, `61726` for 06/17/26, on every row; shown in a clearly labelled chip on the exported day page's header (owner, 2026-10-01) |
+| E17 | Custom SKU | A number-only code from **the export's date**: month without a leading zero, day always two digits, two-digit year (`61726` for 06/17/26, `110126` for 11/01/26), on every row; shown in a clearly labelled chip on an exported day page's header and an exported collection's screen (owner, 2026-10-01) |
+| E18 | Sell Price details | A fallback-priced card gets JustTCG's price if it has one today; a manual price with nothing to compare is used alone (rounded up, floored); if today's prices can't be fetched, nothing is exported (owner, 2026-10-01) |
+| E19 | Totals after export | Market / Cash / Credit totals follow the Sell Prices; the price paid stays the record of the deal (owner, 2026-10-01) |
 
 ## Appendix D: Open items
 
-1. **Sell Price, a fallback-priced card that JustTCG now prices** (Section 5.2): use JustTCG's price today, as a new buy would (the spec's assumption), or keep the fallback method the buy used?
-2. **Sell Price, a manual price with nothing to compare** (no JustTCG price and no fallback today): use the manual price alone, rounded up (the spec's assumption)?
-3. **Sell Price, today's prices can't be fetched** (JustTCG's daily limit or an outage): stop the export (the spec's assumption), or use the last saved prices (up to 6 hours old) with a warning?
-4. **The panels' totals after an export:** with Sell Prices shown on the cards, should a day page's or collection's Market / Cash / Credit totals switch to Sell values, or keep showing the deal as it was bought?
-5. **Custom SKU, which date:** the day the export is made (the spec's assumption), or the day of the buys?
-6. **Custom SKU, codes that collide:** with no leading zeros anywhere, 1/11/26 and 11/1/26 are both `11126`. Keep that, or drop only the month's leading zero and always write the day as two digits (1/11/26 → `11126`, 11/1/26 → `110126`)?
-7. **The Custom SKU chip on an exported collection's screen** as well as on day pages?
-8. **A test upload** of a small E3 file in CC (one or two cards the store has) to confirm Mass Create accepts the columns, the Custom SKU column, the condition words and the Sell Prices, before the first real batch.
-9. **Pokémon:** none of this applies yet (owner, 2026-09-30).
+1. **A test upload** of a small E3 file in CC before the first real batch: one or two cards the store has in stock, through Mass Create in "Only Update Products" mode, to confirm CC accepts the columns (above all **Custom SKU**, which the owner's sample didn't have), the condition words and the Sell Prices, and that **Add Qty adds**. It changes real stock and prices, so use cards whose quantity and price are easy to set back by hand in CC.
+2. **Pokémon:** none of this applies yet (owner, 2026-09-30).
