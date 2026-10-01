@@ -113,7 +113,7 @@ export function PaidText({ buy, withMethod = false }) {
  * lasts until it's closed.
  */
 export default function CollectionDetails({
-  buy, byId, api, canChangeStatus, statusBlocked, deleteBlocked,
+  buy, sku = null, byId, api, canChangeStatus, statusBlocked, deleteBlocked,
   viewOnly, holder, onTakeOver, onUnlock, onReopen, onInfo, onStatus, onDelete,
 }) {
   const [open, setOpen] = useState(true);
@@ -140,6 +140,12 @@ export default function CollectionDetails({
           <span className="cd-name">{buy.customer_name}</span>
           <span className={`status-chip ${tone}`}>{statusLabel(buy.status)}</span>
         </button>
+        {/* The export's code, labelled very clearly (export spec 4.4). */}
+        {sku && (
+          <span className="sku-chip compact" title="The Custom SKU written on every row of this collection's Mass Create file">
+            Custom SKU <strong>{sku}</strong>
+          </span>
+        )}
         <MoreMenu
           up
           items={[{

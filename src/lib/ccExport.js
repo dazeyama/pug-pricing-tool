@@ -245,6 +245,8 @@ const EXPORT_ERRORS = {
   pokemon_export_unavailable: "Pokémon export isn't available yet.",
   nothing_to_export: 'Nothing is left to export here: it was already exported.',
   bad_price: 'A Sell Price was missing: nothing was exported.',
+  collection_not_paid: 'Mark it Paid/Ours first.',
+  not_lock_holder: 'Another computer is editing this collection now: take over to export.',
   no_user: 'Pick a user first.',
 };
 

@@ -547,6 +547,14 @@ Then the browser builds the Mass Create file from the stamped lines (Section 4) 
 
 ---
 
+### 8.6 As built (Phase E5)
+
+- **Migration 0029:** `export_lines` takes `{ kind: 'collection', buy_id, version }`: the collection's editing lock is needed (`not_lock_holder`), it must be Paid/Ours (`collection_not_paid`; Completed: `nothing_to_export`), its Magic lines are checked, stamped and copied like a day's, Pokémon lines are left untouched, and it becomes **Completed** (logged as `collection_status_changed` with the counts and Custom SKU). With only Pokémon cards it just becomes Completed. The inventory is only required when something is matched.
+- **`collection_set_status`:** leaving Completed (Reopen, or Unlock to Priced / Processing) clears the export stamps and takes the collection's copies out of Can't upload cards, and its changelog summary says so. The manual **Mark as Completed** (status dropdown and step button) is kept: it completes without a file, and EXPORT on such a collection says to reopen it and export.
+- **The collection screen:** EXPORT on Paid/Ours opens the export dialog (only Pokémon: "No Magic cards to export" → Mark Completed); on Completed it downloads the same file again (named with the export's own time); on Processing / Priced it says "Mark it Paid/Ours first." The **Custom SKU** chip sits in the details' header bar; the sidebar shows **SELL** prices and its totals follow them. The Reopen dialog explains the undo.
+- **EXPORT's placeholder is gone** (`ExportButton` just runs the page's export).
+- **Settings → Crystal Commerce matching** (11.2): a wide panel split like Backups; set choices on the left, remembered products on the right (the latest 20, or a search by product name; Scryfall's card names aren't stored in the links, so the search is on CC's product name), each with Forget.
+
 ## 9. The "Can't upload cards" collection
 
 ### 9.1 What it is

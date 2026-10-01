@@ -148,7 +148,6 @@
 .pay-choice.credit:hover, .pay-choice.credit.on { border-color: var(--credit); color: var(--credit); }
 .pay-choice.cash.on { background: color-mix(in srgb, var(--cash) 16%, transparent); }
 .pay-choice.credit.on { background: color-mix(in srgb, var(--credit) 16%, transparent); }
-.coming-soon { margin: 6px 0; font-size: 18px; font-weight: 800; letter-spacing: .06em; text-align: center; }
 
 /* Inside a collection, the pricing screen looks distinct from the Price tab
    (owner, 2026-09-29): the background art mirrored, and amber in place of

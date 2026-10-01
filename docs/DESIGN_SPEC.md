@@ -49,7 +49,7 @@ PUG buys trading cards from customers over the counter, and sometimes buys whole
 
 ### 1.4 Non-goals (this spec)
 
-- **Exporting to Crystal Commerce.** Only placeholder buttons are built, plus the Master Crystal Inventory upload the export will need (Section 14).
+- **Exporting to Crystal Commerce:** see `docs/EXPORT_FUNCTION.md` (Section 14).
 - **Phones and tablets.** The target is desktop and laptop screens at 1080p and up (Section 7.10).
 - **Offline use.** The app requires a connection (Section 7.9).
 - **Undo or rewind from the changelog.** The changelog is view-only (Section 12).
@@ -1495,16 +1495,12 @@ The data isn't folded, only the drawing. Pagination counts drawn panels.
 
 ---
 
-## 14. Export: placeholders only
+## 14. Export
 
-Export is the other half of the app's purpose, and it gets **its own design document**. In this build:
+**The export has its own design document: `docs/EXPORT_FUNCTION.md`** (built 2026-10-01, Phases E1–E5). It covers the Crystal Commerce **Mass Create** file, matching our cards to the store's CC products through the Master Crystal Inventory, the **Sell Price** and the **Custom SKU**, the **Can't upload cards** collection, and EXPORT on day pages and collections. Its decisions are in its own Appendix C; the main ones are summarised below (decisions 173–180).
 
-- **EXPORT buttons** appear in:
-  - a collection's pricing screen, where CONFIRM BUY would be (blue);
-  - each day page, on the header row right-aligned opposite < BACK (large, bold; owner, 2026-09-29).
-- Clicking EXPORT opens a modal: **"EXPORT COMING SOON"** with an **[OK]** button. **On a day page with Paid/Ours buys, EXPORT first warns and marks them Completed** (owner's decision, 2026-09-30; Section 10.2), so the status side of exporting works before the file does.
-- The Master Crystal Inventory upload (Section 11.1) is fully built. The future export **must refuse to run without a current Master Crystal Inventory**. That rule belongs to the export doc, and the banner already warns.
-- The data model keeps what the export is likely to need: set names, source IDs, finishes, treatments, conditions, prices and snapshots.
+- **EXPORT buttons** stay where they were: a collection's sidebar foot, and each day page's header row opposite < BACK.
+- The placeholder ("EXPORT COMING SOON") is gone: EXPORT runs the export everywhere.
 
 ---
 
@@ -2091,6 +2087,14 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 170 | Old confirm_buy dropped (2026-09-30) | With v0.9.1-final live, the 9-argument `confirm_buy` kept for the older build is dropped (migration 0022): every buy is confirmed with a name, phone and price paid (Section 6.2) |
 | 171 | Master Crystal Inventory at real size (2026-09-30) | The real Crystal Commerce export is 40 MB+: it's checked in chunks with progress, stored gzipped (Free plan: 50 MB per file, 1 GB in all), and downloads are unpacked back to CSV (Section 11.1) |
 | 172 | Only the current inventory file (2026-09-30) | The Master Crystal Inventory keeps no previous copies: an upload replaces the current file (migration 0024) (Section 11.1) |
+| 173 | Export: Crystal Commerce Mass Create (2026-09-30) | EXPORT makes a Mass Create CSV for CC's "Only Update Products" mode, Add Qty, Magic only; the design is `docs/EXPORT_FUNCTION.md` (Section 14) |
+| 174 | Export: matching (2026-09-30) | Cards are matched to the store's own CC products through the Master Crystal Inventory (loaded into the database at upload); unclear ones are picked by staff in a review, and every choice is remembered (export spec 7) |
+| 175 | Export: Can't upload (2026-09-30) | A card with no CC product must be pulled from the batch (a required checkbox), gets a Can't upload chip, and is copied into a permanent **Can't upload cards** collection; undoing the export takes it back out (export spec 9) |
+| 176 | Export: Sell Price (2026-10-01) | Each card's Sell Price is today's full market price for its condition, worked out as at the buy, rounded up, at least $0.40 (a manual price: the higher of the two); after the export the app shows Sell Prices in place of buy prices, and totals follow (export spec 5) |
+| 177 | Export: Custom SKU (2026-10-01) | Every row carries the export's date as a number (`61726` for 06/17/26), shown in a Custom SKU chip on the exported day or collection (export spec 4.4) |
+| 178 | Export: collections (2026-09-30) | Exporting a Paid/Ours collection exports its Magic cards and marks it Completed; its Pokémon cards are ignored; Reopen undoes the export (export spec 8) |
+| 179 | Export: Pokémon (2026-09-30) | Pokémon EXPORT is greyed out on day pages for now (export spec 1.3) |
+| 180 | Export built (2026-10-01) | Phases E1–E5 built in one unattended run, committed locally, migrations 0025–0029 on dev; the owner's questions are in `docs/EXPORT_BUILD_REPORT.md` |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

@@ -12,12 +12,34 @@ The export function (`docs/EXPORT_FUNCTION.md`, Phases E1–E5), built in one ru
 4. **How fresh "fresh" is.** The export's Sell Prices accept JustTCG prices fetched in the last 15 minutes (not 6 hours), so a Back-and-export-again or a retry doesn't spend another request. Say if it should always fetch.
 5. **A day where nothing matched** (every card Can't upload): it still becomes Completed, with no file. Say if it should stay Paid/Ours instead.
 6. **Can't upload cards and the live site.** The live build (v0.9.1-final) shows the new collection in its Collections table like any other (no System chip, a blank phone); editing it there is refused by the server with a plain error. Nothing breaks, but it looks rough until the new build goes live.
-7. **The older live site and the inventory.** The live GitHub Pages build (v0.9.1-final) still uploads inventories the old way, without loading products for the export. If someone uploads from the live site, Settings will say "Products not loaded for export: upload it again" until it's uploaded from the new build.
+7. **Mark as Completed by hand.** A Paid/Ours collection can still be marked Completed from its status controls without exporting (kept, since cards sometimes move on another way). EXPORT on it then says to reopen and export. Should Completed only come from EXPORT now?
+8. **Searching remembered products** in Settings is by CC's product name (the remembered links don't store Scryfall's card name). Fine for finding a card, but a two-faced card is found by CC's spelling of it.
+9. **The older live site and the inventory.** The live GitHub Pages build (v0.9.1-final) still uploads inventories the old way, without loading products for the export. If someone uploads from the live site, Settings will say "Products not loaded for export: upload it again" until it's uploaded from the new build.
 
 ## Owner tasks
 
 - **Upload the real inventory** (`playersuniongames-inventory-search-31.csv`) in Settings from the local app, so its 152,115 products load for matching (Phase E1). Dev has no products loaded yet: the check and the export both say to upload it first.
 - **A test upload in Crystal Commerce** before the first real batch (spec Appendix D #1): export a day with one or two cards whose stock and price are easy to put back by hand, run the file through Mass Create in "Only Update Products" mode, and check CC took the Custom SKU column, the condition words and the Sell Prices, and that Add Qty added.
+
+## Phase E5: Exporting collections, and the matching panel
+
+**Built**
+- Migration **0029** (applied to dev after a rolled-back test with a made-up collection of dev's September 30 Magic cards plus a Pokémon card): `export_lines` for collections (Paid/Ours only, the editing lock, Magic only, then **Completed**; only Pokémon → Completed with no file) and `collection_set_status` undoing the export when a collection leaves Completed.
+- **The collection screen:** EXPORT exports (Paid/Ours), downloads the same file again (Completed) or says "Mark it Paid/Ours first" (Processing / Priced); the **Custom SKU** chip in the details' header bar; **SELL** prices in the sidebar, with the totals following; the Reopen dialog explains the undo.
+- **Settings → Crystal Commerce matching:** set choices and remembered products, each with Forget.
+- `DESIGN_SPEC.md` Section 14 is now a pointer to the export spec, and decisions 173–180 record the export.
+- The old "EXPORT COMING SOON" placeholder is gone.
+
+**Checks:** build OK · 109 tests pass · lint clean · migration tested in a rolled-back transaction, then applied.
+
+**Where to look**
+- [ ] A Paid/Ours collection with Magic and Pokémon cards: EXPORT matches only the Magic ones; afterwards it's Completed and the file has no Pokémon.
+- [ ] That collection's screen: the **Custom SKU** chip in the details' header bar, **SELL** prices on its Magic cards, totals from them; the Paid figure unchanged.
+- [ ] EXPORT on it again downloads the same file.
+- [ ] Reopen it: the chip and the Sell prices go; a can't-upload card's copy leaves Can't upload cards.
+- [ ] A Priced collection: EXPORT says to mark it Paid/Ours first.
+- [ ] A collection with only Pokémon cards: EXPORT asks, then it's Completed and "No Magic cards to export" shows.
+- [ ] Settings → **Crystal Commerce matching** lists set choices and remembered products; Forget one, and the next dry run asks about that card again.
 
 ## Phase E4: The Can't upload cards collection
 

@@ -5,6 +5,7 @@ import UsagePanel from './settings/UsagePanel.jsx';
 import FallbackPanel from './settings/FallbackPanel.jsx';
 import ThisComputerPanel from './settings/ThisComputerPanel.jsx';
 import BackupsPanel from './settings/BackupsPanel.jsx';
+import CcMatchingPanel from './settings/CcMatchingPanel.jsx';
 import { formatDate } from '../lib/time.js';
 
 /* global __APP_VERSION__, __BUILD_DATE__ */
@@ -24,7 +25,8 @@ const CREDITS = [
 // Settings (spec 11), each section in a panel, two columns across the page
 // with related panels side by side (owner, 2026-09-29): the required CSV
 // with this computer, the JustTCG key with its usage, and the two sets of
-// percentages; Backups take a row of their own (Phase 10). Staff users are
+// percentages; Crystal Commerce matching and Backups take a row each
+// (export spec 11.2, Phase 10). Staff users are
 // managed in the header dropdown, not here.
 export default function SettingsPage() {
   return (
@@ -39,6 +41,7 @@ export default function SettingsPage() {
         <UsagePanel />
         <PercentagesPanel />
         <FallbackPanel />
+        <CcMatchingPanel />
         <BackupsPanel />
         <footer className="settings-footer">
           {/* Where everything comes from, one line each (owner, 2026-09-29). */}

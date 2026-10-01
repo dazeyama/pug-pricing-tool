@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Modal from '../components/Modal.jsx';
 import ExportDialog from './export/ExportDialog.jsx';
 import { fileStamp } from '../lib/time.js';
+import { fileSafe } from '../lib/massCreate.js';
+import { downloadMassCreate, saveExport } from '../lib/ccExport.js';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import PricingScreen from './price/PricingScreen.jsx';
 import CollectionDetails from './collections/CollectionDetails.jsx';
@@ -52,7 +54,7 @@ function CollectionScreen({ id }) {
 
   const buy = col.buy;
   const system = Boolean(buy?.system_key);   // Can't upload cards (export spec 9)
-  const [exportStep, setExportStep] = useState(null);   // 'warn' | 'dialog'
+  const [exportStep, setExportStep] = useState(null);   // 'warn' | 'dialog' | 'pokemon'
   const back = () => navigate('/collections');
 
   // Deleted on another computer while open: say so and go back to the table.
@@ -91,12 +93,33 @@ function CollectionScreen({ id }) {
   // one (owner, 2026-09-29); adding and editing stay locked.
   const removeLocked = buy?.status === 'paid' && lock.status === 'held' ? null : locked;
 
+  // What the export wrote (export spec 4.4, 5.5): its Custom SKU, for the details' chip.
+  const skus = [...new Set(col.lines.map((l) => l.cc_custom_sku).filter(Boolean))];
+  const exportedAt = col.lines.find((l) => l.cc_exported_at)?.cc_exported_at ?? null;
+
   /**
-   * EXPORT. Can't upload cards (export spec 9.3): a warning first, then the
-   * export dialog for its Magic cards. Other collections: still the
-   * placeholder until Phase E5.
+   * EXPORT (export spec 8.2). Paid/Ours: the export dialog for its Magic
+   * cards, then Completed (only Pokémon cards: Completed with no file, after
+   * asking). Completed: the same file again from the stamps. Processing or
+   * Priced: blocked. Can't upload cards (9.3): a warning, then the dialog.
    */
   function startExport() {
+    if (buy && !system && buy.status === 'completed') {
+      const stamped = col.lines.filter((l) => l.cc_status === 'exported');
+      if (!stamped.length) {
+        toast(col.lines.some((l) => l.cc_status === 'cant_upload')
+          ? "Nothing here could be uploaded: there's no file."
+          : 'This collection was marked Completed without an export: reopen it (back to Paid/Ours), then EXPORT.', 'err');
+        return;
+      }
+      const rows = downloadMassCreate(stamped, `cc-mass-create-${fileSafe(buy.customer_name)}-${fileStamp(new Date(exportedAt))}.csv`);
+      toast(`Downloaded the same file again: ${rows} row${rows === 1 ? '' : 's'}, Custom SKU ${skus.join(', ')}.`, 'ok');
+      return;
+    }
+    if (buy && !system && buy.status !== 'paid') {
+      toast('Mark it Paid/Ours first.', 'err');
+      return;
+    }
     if (!user) {
       staff.pulse();
       return;
@@ -109,19 +132,50 @@ function CollectionScreen({ id }) {
       toast(viewOnly ? `${holderLabel} is editing this collection: take over to export.` : 'Checking who is editing this collection.', 'err');
       return;
     }
-    if (!col.lines.some((l) => l.game === 'mtg')) {
-      toast('No Magic cards here to export.', 'err');
+    const magic = col.lines.some((l) => l.game === 'mtg');
+    if (system) {
+      if (!magic) toast('No cards here to export.', 'err');
+      else setExportStep('warn');
       return;
     }
-    setExportStep('warn');
+    // Pokémon cards are left out entirely (owner, 2026-09-30).
+    setExportStep(magic ? 'dialog' : 'pokemon');
   }
 
   async function exported(result) {
     setExportStep(null);
-    const stay = result.cant > 0 ? ` ${result.cant} still can't upload and stay here.` : '';
-    toast(result.cards > 0
-      ? `Exported ${result.cards} card${result.cards === 1 ? '' : 's'} (${result.rows} row${result.rows === 1 ? '' : 's'}), Custom SKU ${result.sku}: they've left this collection.${stay}`
-      : `Nothing matched: every card stays here.`, 'ok');
+    const rows = `${result.rows} row${result.rows === 1 ? '' : 's'}`;
+    const cards = `${result.cards} card${result.cards === 1 ? '' : 's'}`;
+    if (system) {
+      const stay = result.cant > 0 ? ` ${result.cant} still can't upload and stay here.` : '';
+      toast(result.cards > 0
+        ? `Exported ${cards} (${rows}), Custom SKU ${result.sku}: they've left this collection.${stay}`
+        : 'Nothing matched: every card stays here.', 'ok');
+    } else {
+      const cant = result.cant > 0 ? ` ${result.cant} can't upload: copied to Can't upload cards.` : '';
+      toast(result.cards > 0
+        ? `Exported ${cards} (${rows}), Custom SKU ${result.sku}. Marked Completed.${cant}`
+        : `Nothing matched, so there's no file. Marked Completed.${cant}`, 'ok');
+    }
+    await col.reload();
+  }
+
+  /** Only Pokémon cards: Completed with nothing exported (export spec 8.5). */
+  async function completePokemonOnly() {
+    try {
+      await saveExport({
+        target: { kind: 'collection', buy_id: buy.id, version: buy.version },
+        matches: [],
+        cant: [],
+        setMaps: [],
+        userId: user.id,
+        deviceId,
+      });
+      toast('No Magic cards to export: marked Completed.', 'ok');
+    } catch (e) {
+      toast(e.message, 'err');
+    }
+    setExportStep(null);
     await col.reload();
   }
 
@@ -199,6 +253,7 @@ function CollectionScreen({ id }) {
             <CollectionDetails
               key={buy.id}
               buy={buy}
+              sku={buy.status === 'completed' && skus.length ? skus.join(', ') : null}
               byId={staff.byId}
               api={api}
               canChangeStatus={canChangeStatus}
@@ -292,6 +347,13 @@ function CollectionScreen({ id }) {
               }}
             >
               <p>It will go back to Paid/Ours, still locked, with the price paid kept.</p>
+              {col.lines.some((l) => l.cc_status) && (
+                <p>
+                  Its export is undone: the Sell Prices go (the buy prices show again), and any cards copied to
+                  Can't upload cards come back out. The downloaded file isn't undone: if it was uploaded to Crystal
+                  Commerce, fix the stock there by hand.
+                </p>
+              )}
             </ConfirmModal>
           )}
           {asking === 'unlock' && (
@@ -354,7 +416,39 @@ function CollectionScreen({ id }) {
       )}
       renderListFooter={({ focusSearch }) => (
         <div className="list-buttons">
-          <ExportButton onDone={focusSearch} onClick={system ? startExport : undefined} />
+          <ExportButton onClick={startExport} />
+          {exportStep === 'pokemon' && (
+            <Modal
+              title="No Magic cards to export"
+              onClose={() => setExportStep(null)}
+              footer={(
+                <>
+                  <button type="button" className="btn ghost" onClick={() => setExportStep(null)}>Cancel</button>
+                  <button type="button" className="btn primary" autoFocus onClick={completePokemonOnly}>Mark Completed</button>
+                </>
+              )}
+            >
+              <p>
+                This collection only has Pokémon cards, which can't be exported yet. Exporting it just marks it
+                <strong> Completed</strong>, with no file.
+              </p>
+            </Modal>
+          )}
+          {exportStep === 'dialog' && !system && (
+            <ExportDialog
+              mode="export"
+              title={`Export ${buy.customer_name} to Crystal Commerce`}
+              items={col.lines.filter((l) => l.game === 'mtg').map((line) => ({ line, where: '' }))}
+              target={{ kind: 'collection', buy_id: buy.id, version: buy.version }}
+              fileName={`cc-mass-create-${fileSafe(buy.customer_name)}-${fileStamp(new Date())}.csv`}
+              onExported={exported}
+              onClose={() => {
+                setExportStep(null);
+                col.reload();
+                focusSearch();
+              }}
+            />
+          )}
           {exportStep === 'warn' && (
             <Modal
               title="Export Can't upload cards?"
@@ -372,7 +466,7 @@ function CollectionScreen({ id }) {
               </p>
             </Modal>
           )}
-          {exportStep === 'dialog' && (
+          {exportStep === 'dialog' && system && (
             <ExportDialog
               mode="export"
               pullOut={false}
