@@ -113,7 +113,8 @@ button.cal-day.exported:hover { background: color-mix(in srgb, var(--game) 14%, 
 .cal-count { font-size: 12px; font-weight: 600; color: var(--game-text); }
 /* Exactly two rows of six dot spots (owner, 2026-09-30), at any width (a
    narrow window shrinks the dots rather than wrapping them); with more than
-   12 buys, "…" takes the 12th spot. */
+   12 buys, a heavy plus (✚, as text: the emoji pluses draw dark on Windows)
+   takes the 12th spot. */
 .cal-dots {
   display: grid;
   align-self: stretch;   /* the cell's width, so a narrow cell shrinks the dots */
@@ -133,11 +134,11 @@ button.cal-day.exported:hover { background: color-mix(in srgb, var(--game) 14%, 
   max-width: 9px;
   aspect-ratio: 1;
   overflow: visible;
+  font-family: "Segoe UI Symbol", "Segoe UI", sans-serif;
   font-size: 11px;
-  font-weight: 800;
+  font-variant-emoji: text;
   line-height: 1;
-  letter-spacing: -.05em;
-  color: var(--text);
+  color: #fff;
 }
 .cal-game-head { display: flex; align-items: center; gap: 10px; }
 .cal-loading { font-size: 12px; font-weight: 400; color: var(--muted); }

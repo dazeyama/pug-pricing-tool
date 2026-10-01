@@ -12,7 +12,7 @@ const GAMES = [
 ];
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 // Two rows of six dot spots (owner, 2026-09-30): up to 12 buys, a dot each;
-// more, 11 dots and "…" in the 12th spot.
+// more, 11 dots and a heavy plus, ✚, in the 12th spot.
 const DOT_SLOTS = 12;
 
 /**
@@ -103,7 +103,7 @@ function CalendarMonth({ month }) {
                           style={{ '--c': colorVar(byId(b.confirmed_by)?.color ?? 'pal-slate') }}
                         />
                       ))}
-                      {n > DOT_SLOTS && <span className="cal-more">…</span>}
+                      {n > DOT_SLOTS && <span className="cal-more">{'✚'}</span>}
                     </span>
                   )}
                   {/* At the cell's foot, under up to two rows of dots (owner, 2026-09-30). */}
