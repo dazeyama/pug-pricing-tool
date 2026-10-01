@@ -1188,7 +1188,7 @@ Owner's decision: double confirmation, and not easy to press.
 - **A day cell shows:**
   - the date number;
   - "**N buys**" (singular "1 buy");
-  - **one dot per buy**, colored by the confirming user's color. More than 8 buys shows 8 dots and "+N".
+  - **one dot per buy**, colored by the confirming user's color. More than 8 buys shows 8 dots and "+N". **As built (owner's decision, 2026-09-30):** two rows of six dot spots, always (a narrow window shrinks the dots rather than wrapping them): up to 12 buys show a dot each; more show 11 dots and **"…" in the 12th spot**. The count above says how many.
   - Today's cell has an accent outline. Empty days aren't clickable.
 - **What counts:** confirmed **walk-in buys only**. Collections don't appear on the Calendar (owner's decision). A buy is counted on the day of `confirmed_at` in `STORE_TZ`.
 - **Mixed buys:** a buy with both games counts as a buy on **both** calendars that day, and each side sees only its own lines.

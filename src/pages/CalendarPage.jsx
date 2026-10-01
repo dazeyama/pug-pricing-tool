@@ -11,7 +11,9 @@ const GAMES = [
   { game: 'pokemon', name: 'Pokémon' },
 ];
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const MAX_DOTS = 8;
+// Two rows of six dot spots (owner, 2026-09-30): up to 12 buys, a dot each;
+// more, 11 dots and "…" in the 12th spot.
+const DOT_SLOTS = 12;
 
 /**
  * The Calendar tab (spec 10.1): Magic and Pokémon month grids side by side,
@@ -94,14 +96,14 @@ function CalendarMonth({ month }) {
                   {n > 0 && <span className="cal-count">{n} buy{n === 1 ? '' : 's'}</span>}
                   {n > 0 && (
                     <span className="cal-dots" aria-hidden="true">
-                      {buys.slice(0, MAX_DOTS).map((b) => (
+                      {buys.slice(0, n > DOT_SLOTS ? DOT_SLOTS - 1 : DOT_SLOTS).map((b) => (
                         <span
                           key={b.id}
                           className="cal-dot"
                           style={{ '--c': colorVar(byId(b.confirmed_by)?.color ?? 'pal-slate') }}
                         />
                       ))}
-                      {n > MAX_DOTS && <span className="cal-more">+{n - MAX_DOTS}</span>}
+                      {n > DOT_SLOTS && <span className="cal-more">…</span>}
                     </span>
                   )}
                   {/* At the cell's foot, under up to two rows of dots (owner, 2026-09-30). */}
