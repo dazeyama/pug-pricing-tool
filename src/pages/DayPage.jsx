@@ -486,12 +486,14 @@ function BuyPanel({ buy, number, game, other, day, byId, busy, offline, hits, fl
           <span className="is-cash">Cash ({Number(buy.cash_pct)}%) <strong>{formatMoney(t.cash)}</strong></span>
           <span className="is-credit">Credit ({Number(buy.credit_pct)}%) <strong>{formatMoney(t.credit)}</strong></span>
         </div>
-        {/* What was paid (owner, 2026-09-30): for the whole buy, both games. */}
+        {/* What was paid (owner, 2026-09-30): a chip in the Cash / Credit colour, right-aligned; for the whole buy, both games. */}
         {buy.paid_price != null && (
-          <p className={`buy-paid is-${buy.paid_method}`}>
-            Paid <strong>{formatMoney(buy.paid_price)}</strong> {buy.paid_method}
-            {others > 0 && <span className="buy-paid-note"> (the whole buy, both games)</span>}
-          </p>
+          <div className="buy-paid">
+            {others > 0 && <span className="buy-paid-note">the whole buy, both games</span>}
+            <span className={`paid-chip ${buy.paid_method}`}>
+              Paid <strong>{formatMoney(buy.paid_price)}</strong> {buy.paid_method}
+            </span>
+          </div>
         )}
         {others > 0 && (
           <Link className="buy-other" to={`/calendar/${other}/${day}`}>
