@@ -223,8 +223,8 @@ header h1 { margin: 0; font-size: 20px; font-weight: 600; }
   text-align: left;
   font-size: 13.5px;
 }
-/* One day (a buy's confirmation day, a collection's creation day), then its
-   buys and collections (owner, 2026-09-30). */
+/* Collections pinned at the top (they're kept in their own place in the
+   store), then one section per day of buys (owner, 2026-09-30). */
 .search-group { margin-bottom: 16px; }
 .search-group:last-child { margin-bottom: 0; }
 .search-group.stale { opacity: .55; }
@@ -236,6 +236,7 @@ header h1 { margin: 0; font-size: 20px; font-weight: 600; }
   font-weight: 700;
   color: var(--text);
 }
+.search-group.pinned .search-day { color: var(--accent); border-bottom-color: color-mix(in srgb, var(--accent) 50%, var(--border)); }
 .search-none { margin: 0; color: var(--muted); font-size: 13px; font-style: italic; }
 .search-error { margin: 0; color: var(--bad); font-size: 13.5px; }
 .search-hint { margin: 12px 0 0; color: var(--muted); font-size: 12px; font-style: italic; }

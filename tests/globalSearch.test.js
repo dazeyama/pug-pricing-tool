@@ -42,7 +42,7 @@ const line = (over) => ({
   ...over,
 });
 
-test('results file under dates: buys by confirmation day, collections by creation day, newest first', () => {
+test('collections pinned at the top; buys under their confirmation day, newest first', () => {
   const sections = groupResults([
     line({ line_id: 'l1', buy_id: 'b6', buy_number: 6, confirmed_at: '2026-10-01T04:48:00Z', quantity: 1, condition: 'MP' }),
     line({ line_id: 'l2', buy_id: 'b6', buy_number: 6, confirmed_at: '2026-10-01T04:48:00Z', quantity: 1 }),
@@ -53,14 +53,15 @@ test('results file under dates: buys by confirmation day, collections by creatio
     line({ line_id: 'l7', buy_id: 'c1', kind: 'collection', status: 'processing', buy_number: null,
       confirmed_at: null, created_at: '2026-09-30T04:04:00Z', customer_name: 'Jordan Reyes' }),
   ]);
-  // 04:48 UTC Oct 1 is 9:48 PM Sep 30 in the store; 04:04 UTC Sep 30 is 9:04 PM Sep 29.
-  assert.deepEqual(sections.map((s) => [s.day, s.panels.map((p) => p.key.split('|')[0])]),
-    [['2026-09-30', ['b6', 'b2']], ['2026-09-29', ['c1']]]);
-  const b6 = sections[0].panels[0];
+  // 04:48 UTC Oct 1 is 9:48 PM Sep 30 in the store.
+  assert.deepEqual(sections.map((s) => [s.title ?? s.day, s.panels.map((p) => p.key.split('|')[0])]),
+    [['Collections', ['c1']], ['2026-09-30', ['b6', 'b2']]]);
+  const b6 = sections[1].panels[0];
   assert.deepEqual(b6.entries.map((e) => [e.line.set_code, e.condition, e.qty]),
     [['2X2', 'NM', 2], ['2X2', 'LP', 2], ['2X2', 'MP', 1], ['JGP', 'MP', 1]]);
   assert.deepEqual(b6.lineIds, ['l1', 'l2', 'l3', 'l4', 'l5']);
-  assert.deepEqual(flatRows(sections).map((p) => p.key.split('|')[0]), ['b6', 'b2', 'c1']);
+  assert.deepEqual(flatRows(sections).map((p) => p.key.split('|')[0]), ['c1', 'b6', 'b2']);
+  assert.equal(groupResults([line({})])[0].title, undefined);   // no collections, no pinned section
 });
 
 test('a buy with matches in both games is a panel per game', () => {

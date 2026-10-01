@@ -15,8 +15,9 @@ import LinePreview, { previewFor } from './LinePreview.jsx';
 
 // The header's global search (spec 13), in CM's pill style: every stored line
 // in a confirmed buy or an open collection (not Completed) matching what's
-// typed, filed under dates, a panel per buy or collection listing its matching
-// cards in full (owner, 2026-09-30). ↓/↑ move, Enter opens, Esc closes.
+// typed: collections pinned at the top, then buys filed under dates, a panel
+// per buy or collection listing its matching cards in full (owner,
+// 2026-09-30). ↓/↑ move, Enter opens, Esc closes.
 // Opening a result jumps to it and flashes it.
 // Much larger on every tab but the pricing screens (owner, 2026-09-29), where
 // the main search bar is the focus.
@@ -218,8 +219,11 @@ export default function SearchBox({ wide }) {
               <p className="search-none">No buys or collections contain that card.</p>
             )}
             {found.sections.map((sec) => (
-              <section key={sec.day} className={`search-group${found.status === 'loading' ? ' stale' : ''}`}>
-                <h4 className="search-day">{dayHeading(sec.at)}</h4>
+              <section
+                key={sec.key}
+                className={`search-group${sec.title ? ' pinned' : ''}${found.status === 'loading' ? ' stale' : ''}`}
+              >
+                <h4 className="search-day">{sec.title ?? dayHeading(sec.at)}</h4>
                 <div className="result-buttons">{sec.panels.map(renderRow)}</div>
               </section>
             ))}

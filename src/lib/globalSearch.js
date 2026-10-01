@@ -45,14 +45,15 @@ export function printingKey(line) {
 }
 
 /**
- * Lines from `global_search` as results, filed under dates (owner,
- * 2026-09-30): a buy under the day it was confirmed, a collection under the
- * day it was created, newest day first. Each day holds a panel per buy or
+ * Lines from `global_search` as results (owner, 2026-09-30): collections
+ * pinned in a section of their own at the top (they sit in their own place
+ * in the store), newest first; then buys filed under the day they were
+ * confirmed, newest day first. Each section holds a panel per buy or
  * collection (per game, since a buy's day page is per game), newest first,
  * listing every matching card: one entry per printing and condition,
  * quantities added, in the order they were added, a printing's conditions
  * best first.
- * @returns {{ day: string, at: string, panels: object[] }[]}
+ * @returns {{ key: string, title?: string, day?: string, at?: string, panels: object[] }[]}
  */
 export function groupResults(lines) {
   const panels = new Map();
@@ -92,6 +93,7 @@ export function groupResults(lines) {
   }
 
   const rank = (c) => (CONDITIONS.indexOf(c) + 1) || CONDITIONS.length + 1;
+  const collections = [];
   const days = new Map();
   for (const p of panels.values()) {
     // A printing's place is where it first came; its conditions best first.
@@ -100,17 +102,23 @@ export function groupResults(lines) {
     const entries = [...p.entries.values()].sort((a, b) =>
       firstOf.get(a.printing) - firstOf.get(b.printing) || rank(a.condition) - rank(b.condition));
     const panel = { ...p, entries };
-    if (!days.has(p.day)) days.set(p.day, { day: p.day, at: p.at, panels: [] });
+    if (p.kind === 'collection') {
+      collections.push(panel);
+      continue;
+    }
+    if (!days.has(p.day)) days.set(p.day, { key: p.day, day: p.day, at: p.at, panels: [] });
     days.get(p.day).panels.push(panel);
   }
   const newest = (a, b) => (a < b ? 1 : a > b ? -1 : 0);
-  return [...days.values()]
+  const dated = [...days.values()]
     .map((d) => ({ ...d, panels: d.panels.sort((a, b) => newest(a.at, b.at)) }))
     .sort((a, b) => newest(a.day, b.day))
     .map((d) => ({ ...d, at: d.panels[0].at }));
+  if (!collections.length) return dated;
+  return [{ key: 'collections', title: 'Collections', panels: collections.sort((a, b) => newest(a.at, b.at)) }, ...dated];
 }
 
-/** Every panel in display order (day by day), for ↑/↓. */
+/** Every panel in display order (collections, then day by day), for ↑/↓. */
 export function flatRows(sections) {
   return sections.flatMap((s) => s.panels);
 }
