@@ -137,12 +137,11 @@
 .line-source { display: block; font-size: 11px; color: var(--muted); }
 .buy-list .cant-chip { margin-left: 6px; }
 .line-price.is-sell { color: var(--good); }
-.list-sell { margin-left: 8px; letter-spacing: .06em; vertical-align: 1px; }
 /* The export dialog: wide, for long CC product names and the Bought → Sell prices. */
 .xd-modal .modal-box.wide { width: min(1180px, 96vw); max-height: 88vh; }
 .sku-chip.compact { flex: none; padding: 1px 9px; border-width: 1.5px; font-size: 11px; white-space: nowrap; }
-/* On its own line under the collection's header bar, so the name keeps its room. */
-.cd-sku { padding: 6px 10px 0; }
+/* In the collection list's heading, between its title and the card count. */
+.list-head .list-sku { align-self: center; }
 .sku-chip.compact strong { font-size: 13px; }
 
 /* Settings → Crystal Commerce matching (export spec 11.2): split like Backups. */

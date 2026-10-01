@@ -196,7 +196,7 @@ function Totals({
 export default function BuyList({
   title = 'Buy list', lines, loaded, rates, master, ratesTitle, flashId, hits = null, editingId,
   canEdit, locked = null, editBlocked, canRemove = canEdit, removeLocked = locked, removeBlocked = editBlocked,
-  onEdit, onRemove, onSaveRates, onDone, details, footer,
+  onEdit, onRemove, onSaveRates, onDone, details, footer, badge = null,
 }) {
   const [removing, setRemoving] = useState(null);
   const [preview, setPreview] = useState(null);   // { src, top, left } while a line is hovered
@@ -207,9 +207,6 @@ export default function BuyList({
 
   const count = lines.reduce((n, l) => n + l.quantity, 0);
   const market = marketTotal(lines);
-  // An exported collection: its prices are Sell prices, said once in the list's
-  // heading so the rows keep the same layout as before the export (owner, 2026-10-01).
-  const anySell = lines.some((l) => l.cc_sell_price != null);
 
   // A new or updated line scrolls into view and flashes (spec 8.8).
   useEffect(() => {
@@ -234,14 +231,8 @@ export default function BuyList({
       ref={aside}
     >
       <div className="list-head">
-        <span className="list-title">
-          {title}
-          {anySell && (
-            <span className="sell-tag list-sell" title="Prices in green are the Sell prices written to the export file">
-              Sell prices
-            </span>
-          )}
-        </span>
+        <span className="list-title">{title}</span>
+        {badge}
         <span className="list-count">{count} card{count === 1 ? '' : 's'}</span>
       </div>
 

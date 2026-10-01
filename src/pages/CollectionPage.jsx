@@ -241,6 +241,12 @@ function CollectionScreen({ id }) {
       listTitle="Collection list"
       ratesTitle="Rates for this collection"
       searchBlocked={system ? "Cards arrive here from exports: they can't be added by hand" : null}
+      // The export's code, labelled very clearly (export spec 4.4), in the list's heading (owner, 2026-10-01).
+      listBadge={buy?.status === 'completed' && skus.length > 0 ? (
+        <span className="sku-chip compact list-sku" title="The Custom SKU written on every row of this collection's Mass Create file">
+          Custom SKU <strong>{skus.join(', ')}</strong>
+        </span>
+      ) : null}
       // Back to the table: big and bold, top left, before the search bar (owner, 2026-09-29).
       searchLead={(
         <button type="button" className="btn search-back" title="Back to Collections" onClick={back}>
@@ -253,7 +259,6 @@ function CollectionScreen({ id }) {
             <CollectionDetails
               key={buy.id}
               buy={buy}
-              sku={buy.status === 'completed' && skus.length ? skus.join(', ') : null}
               byId={staff.byId}
               api={api}
               canChangeStatus={canChangeStatus}

@@ -120,11 +120,12 @@ const BOTH_GAMES = { mtg: true, pokemon: true };
  * @param {string} [p.className]  on the screen (a collection's: flipped background, amber accent)
  * @param {{ ids: string[], key: string }|null} [p.hits]  list lines a header search matched, to flash
  * @param {string|null} [p.searchBlocked]  why the search bar is off (Can't upload cards), or null
+ * @param {any} [p.listBadge]  in the list's heading, beside its title (an exported collection's Custom SKU)
  */
 export default function PricingScreen({
   list, rates, master, locked = null, removeLocked = locked, listTitle, ratesTitle,
   renderListDetails, renderListFooter, resetKey = 0, searchLead = null, className = '', hits = null,
-  searchBlocked = null,
+  searchBlocked = null, listBadge = null,
 }) {
   const [text, setText] = useState('');
   const [lang, setLang] = usePokemonLang();
@@ -683,6 +684,7 @@ export default function PricingScreen({
           onDone={focusSearch}
           details={renderListDetails?.(api)}
           footer={renderListFooter?.(api)}
+          badge={listBadge}
         />
 
         {showAll && (

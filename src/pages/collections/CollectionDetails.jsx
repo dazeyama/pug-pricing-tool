@@ -113,7 +113,7 @@ export function PaidText({ buy, withMethod = false }) {
  * lasts until it's closed.
  */
 export default function CollectionDetails({
-  buy, sku = null, byId, api, canChangeStatus, statusBlocked, deleteBlocked,
+  buy, byId, api, canChangeStatus, statusBlocked, deleteBlocked,
   viewOnly, holder, onTakeOver, onUnlock, onReopen, onInfo, onStatus, onDelete,
 }) {
   const [open, setOpen] = useState(true);
@@ -172,14 +172,6 @@ export default function CollectionDetails({
         </button>
       </div>
 
-      {/* The export's code, labelled very clearly (export spec 4.4), on its own line. */}
-      {sku && (
-        <div className="cd-sku">
-          <span className="sku-chip compact" title="The Custom SKU written on every row of this collection's Mass Create file">
-            Custom SKU <strong>{sku}</strong>
-          </span>
-        </div>
-      )}
       {hasBody && (
         <div className="cd-body">
           {viewOnly && (
