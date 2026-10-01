@@ -3,7 +3,8 @@ import { supabase } from '../lib/supabase.js';
 import { useLiveTable } from '../lib/useLiveTable.js';
 
 // Master Crystal Inventory files (spec 11.1): the current Crystal Commerce CSV
-// and up to 4 previous copies. Drives the "required" banner on every tab.
+// and the copy before it (owner, 2026-09-30: the files are 40 MB+, so no more
+// than that are kept). Drives the "required" banner on every tab.
 
 /**
  * @typedef {{ id: string, storage_path: string, original_filename: string,
@@ -24,7 +25,7 @@ export function InventoryProvider({ children }) {
       loaded,
       reload,
       current: files.find((f) => f.is_current) ?? null,
-      previous: files.filter((f) => !f.is_current).slice(0, 4),
+      previous: files.filter((f) => !f.is_current).slice(0, 1),
     };
   }, [data, loaded, reload]);
 

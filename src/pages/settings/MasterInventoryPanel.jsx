@@ -19,6 +19,8 @@ export default function MasterInventoryPanel() {
   const picker = useRef(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  // Where a big upload is (owner, 2026-09-30: the real file is 40 MB+).
+  const [stage, setStage] = useState(null);   // null | { step: 'check', pct } | { step: 'compress'|'upload'|'save' }
 
   async function onPicked(e) {
     const file = e.target.files?.[0];
@@ -26,15 +28,17 @@ export default function MasterInventoryPanel() {
     if (!file || !staff.current) return;
     setError('');
     setBusy(true);
+    setStage({ step: 'check', pct: 0 });
     try {
-      const summary = await withLoading(() => checkCsv(file));
-      await withLoading(() => uploadCsv(file, summary, staff.current.id));
+      const summary = await withLoading(() => checkCsv(file, (f) => setStage({ step: 'check', pct: Math.round(f * 100) })));
+      await withLoading(() => uploadCsv(file, summary, staff.current.id, (step) => setStage({ step })));
       await reload();
       toast(`Uploaded ${file.name}: ${summary.rowCount.toLocaleString()} rows.`, 'ok');
     } catch (err) {
       setError(err.message);
     } finally {
       setBusy(false);
+      setStage(null);
     }
   }
 
@@ -57,7 +61,8 @@ export default function MasterInventoryPanel() {
       <div className="cardpanel-body">
         <p className="hint">
           The full inventory CSV exported from Crystal Commerce. Exports will use it to match
-          set names. Every computer shares the same file; the latest five uploads are kept.
+          set names. Every computer shares the same file, stored compressed; it and the one before it
+          are kept.
         </p>
 
         <GuardButton
@@ -69,6 +74,14 @@ export default function MasterInventoryPanel() {
           Upload Crystal Commerce Database
         </GuardButton>
         <input ref={picker} type="file" accept=".csv" hidden onChange={onPicked} />
+        {stage && (
+          <p className="inv-progress loading-note">
+            {stage.step === 'check' && `Checking the file… ${stage.pct}%`}
+            {stage.step === 'compress' && 'Compressing…'}
+            {stage.step === 'upload' && 'Uploading…'}
+            {stage.step === 'save' && 'Saving…'}
+          </p>
+        )}
 
         {error && <div className="banner err inv-error">{error}</div>}
 
@@ -104,7 +117,7 @@ export default function MasterInventoryPanel() {
 
         {previous.length > 0 && (
           <>
-            <h4 className="settings-sub">Previous copies</h4>
+            <h4 className="settings-sub">Previous copy</h4>
             <table className="inv-previous">
               <tbody>
                 {previous.map((f) => (
