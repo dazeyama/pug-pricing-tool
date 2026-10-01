@@ -382,6 +382,7 @@ export default function ExportDialog({
                         current={s.product}
                         detected={r.status === 'auto' ? r.product : null}
                         onDone={() => edit(r, false)}
+                        onCancel={() => edit(r, false)}
                       />
                     );
                   }
@@ -479,13 +480,19 @@ export default function ExportDialog({
 
 /**
  * One card's choices: its candidates, "None of these", a search and (when
- * exporting) a Sell price box. In Needs a choice nothing is selected yet; a
- * matched card opened with Change has its product (`current`) selected and
- * the app's own match (`detected`) marked, and a Done button.
+ * exporting) a Sell price box. In Needs a choice nothing is selected yet and
+ * a pick applies at once. A matched card opened with Change has its product
+ * (`current`) selected and the app's own match (`detected`) marked, and works
+ * as a draft: Done applies the pick and the price, Cancel drops them (owner,
+ * 2026-10-01).
  */
 function ChooseRow({
-  r, label, price, current = null, detected = null, sell, manual, onManual, always, onAlways, onPick, onNone, onDone,
+  r, label, price, current = null, detected = null, sell, manual, onManual, always, onAlways, onPick, onNone,
+  onDone, onCancel,
 }) {
+  const draft = Boolean(onDone);
+  const [draftPick, setDraftPick] = useState(null);     // a product, or 'none' (Change, until Done)
+  const [draftPrice, setDraftPrice] = useState(null);   // { value } typed (Change, until Done)
   const [text, setText] = useState('');
   const [typed, setTyped] = useState(manual != null ? manual.toFixed(2) : '');
   const [typedError, setTypedError] = useState(null);
@@ -511,19 +518,24 @@ function ChooseRow({
   function typePrice(value) {
     setTyped(value);
     const clean = value.replace(/[$,\s]/g, '');
-    if (!clean) {
-      setTypedError(null);
-      onManual(null, true);
-      return;
-    }
     const n = Number(clean);
-    if (!Number.isFinite(n) || n < 0.4 || n >= 100000) {
-      setTypedError('At least $0.40, or leave it empty');
-      onManual(null, false);
-      return;
+    const ok = !clean || (Number.isFinite(n) && n >= 0.4 && n < 100000);
+    const price = clean && ok ? Math.round(n * 100) / 100 : null;
+    setTypedError(ok ? null : 'At least $0.40, or leave it empty');
+    if (draft) {
+      if (ok) setDraftPrice({ value: price });
+    } else {
+      onManual(price, ok);
     }
-    setTypedError(null);
-    onManual(Math.round(n * 100) / 100, true);
+  }
+
+  /** Change's Done: apply the draft (a different product, None, the price). */
+  function done() {
+    if (typedError) return;
+    if (draftPrice) onManual(draftPrice.value, true);
+    if (draftPick === 'none') onNone();
+    else if (draftPick && draftPick.product_id !== current?.product_id) onPick(draftPick);
+    onDone();
   }
 
   const fits = r.ranked.filter((x) => x.score != null).map((x) => x.product);
@@ -540,7 +552,8 @@ function ChooseRow({
         checked={chosen === p.product_id}
         onChange={() => {
           setChosen(p.product_id);
-          onPick(p);
+          if (draft) setDraftPick(p);
+          else onPick(p);
         }}
       />
       <span className="xd-product">
@@ -558,16 +571,21 @@ function ChooseRow({
     <div className={`xd-choose${onDone ? ' editing' : ''}`}>
       <div className="xd-row">
         {label}{price}
-        {onDone && (
-          <button
-            type="button"
-            className="btn small xd-change"
-            disabled={Boolean(typedError)}
-            title={typedError ? 'Fix the Sell price first' : 'Close this card'}
-            onClick={onDone}
-          >
-            Done
-          </button>
+        {draft && (
+          <span className="xd-edit-buttons">
+            <button type="button" className="btn small ghost" title="Leave this card as it was" onClick={onCancel}>
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="btn small primary"
+              disabled={Boolean(typedError)}
+              title={typedError ? 'Fix the Sell price first' : 'Keep these changes'}
+              onClick={done}
+            >
+              Done
+            </button>
+          </span>
         )}
       </div>
       {r.wasLinked && (
@@ -587,7 +605,8 @@ function ChooseRow({
             checked={chosen === 'none'}
             onChange={() => {
               setChosen('none');
-              onNone();
+              if (draft) setDraftPick('none');
+              else onNone();
             }}
           />
           <span>None of these (can't upload)</span>
