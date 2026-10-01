@@ -1751,7 +1751,7 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
   - Settings panels one fixed height, and Backups split on the page's centre line (Section 11); collection details with a clear header bar and fold button (9.4); the Changelog opens on Buys, with day pills that match the search's dates (12); card pictures on day pages (10.2); the computer is saved before anything can use it (7.4).
 - **Launch:**
   - apply migrations **0001–0022** to **prod** (0022 drops the old 9-argument `confirm_buy`, done on dev 2026-09-30), and put the Edge Functions on prod;
-  - **set the GitHub Actions variables back to prod** (since 2026-09-30 they point the live site at **dev**, for testing 0.9.0-dev, then 0.9.1-final, at the store; see `docs/SETUP.md` → Deploying);
+  - **set the GitHub Actions variables back to prod** (since 2026-09-30 they point the live site at **dev**, for testing 0.9.0-dev, then 0.9.1-final and 0.9.9-export, at the store; see `docs/SETUP.md` → Deploying);
   - finish `docs/SETUP.md`: run, deploy, the store password and backups are written; **restoring a paused project** is still to write;
   - the public `README.md` stays a very short description of the tool's purpose (owner's decision, 2026-09-29);
   - **push to `main` only when the owner says go**, then confirm the Pages deploy succeeded.
@@ -2095,6 +2095,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 178 | Export: collections (2026-09-30) | Exporting a Paid/Ours collection exports its Magic cards and marks it Completed; its Pokémon cards are ignored; Reopen undoes the export (export spec 8) |
 | 179 | Export: Pokémon (2026-09-30) | Pokémon EXPORT is greyed out on day pages for now (export spec 1.3) |
 | 180 | Export built (2026-10-01) | Phases E1–E5 built in one unattended run, committed locally, migrations 0025–0029 on dev; the owner's questions are in `docs/EXPORT_BUILD_REPORT.md` |
+| 181 | v0.9.9-export pushed (2026-10-01) | The export (E1–E5) goes live as 0.9.9-export (tagged `v0.9.9-export`), still built against the **dev** project, before the owner's QA and answers; prod launch still waits (Section 15, Phase 10) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

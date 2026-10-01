@@ -1,6 +1,6 @@
 # Export build report
 
-The export function (`docs/EXPORT_FUNCTION.md`, Phases E1–E5), built in one run on 2026-10-01 at the owner's request, without stopping between phases for QA. **All five phases are built.** Everything is committed locally and **not pushed**. Migrations **0025–0029** went to the **dev** database only, each tested in a rolled-back transaction first; the `prices` Edge Function (its `fresh` option) is deployed to **dev**. The rollback point before the build is the local tag `pre-export-build` (and the copy in `C:\ClaudeProjects\pug-pricing-tool-backups\backup-20261001-011023-pre-export-build`).
+The export function (`docs/EXPORT_FUNCTION.md`, Phases E1–E5), built in one run on 2026-10-01 at the owner's request, without stopping between phases for QA. **All five phases are built.** Everything was committed locally, then **pushed on 2026-10-01 as `v0.9.9-export`** at the owner's request (the live site still runs on dev). Migrations **0025–0029** went to the **dev** database only, each tested in a rolled-back transaction first; the `prices` Edge Function (its `fresh` option) is deployed to **dev**. The rollback point before the build is the local tag `pre-export-build` (and the copy in `C:\ClaudeProjects\pug-pricing-tool-backups\backup-20261001-011023-pre-export-build`).
 
 **Commits:** `8e51453` E1 · `7a783b1` E2 · `00c3fb6` E3 · `a5befcd` E4 · `28ef93d` E5 · then this report's final update.
 
