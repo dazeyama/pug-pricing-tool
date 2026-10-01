@@ -1750,7 +1750,7 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 - **Launch:**
   - a migration that **drops the old 9-argument `confirm_buy`** (kept by 0020 so the dev-backed live site's older build can still confirm buys), once the new build is pushed;
   - apply migrations **0001–0021** (and that drop) to **prod**, and put the Edge Functions on prod;
-  - **set the GitHub Actions variables back to prod** (since 2026-09-30 they point the live site at **dev**, for testing 0.9.0-dev at the store; see `docs/SETUP.md` → Deploying);
+  - **set the GitHub Actions variables back to prod** (since 2026-09-30 they point the live site at **dev**, for testing 0.9.0-dev, then 0.9.1-final, at the store; see `docs/SETUP.md` → Deploying);
   - finish `docs/SETUP.md`: run, deploy, the store password and backups are written; **restoring a paused project** is still to write;
   - the public `README.md` stays a very short description of the tool's purpose (owner's decision, 2026-09-29);
   - **push to `main` only when the owner says go**, then confirm the Pages deploy succeeded.
@@ -2082,6 +2082,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 166 | Today can't be exported (2026-09-30) | EXPORT is blocked on the current day (and refused by the server), so an export is always a whole, finished day; the "Part exported" state and everything for it are removed (Section 10) |
 | 167 | Walk-in purchase price (2026-09-30) | Confirm buy asks for the purchase price (Cash / Credit chips and the amount); customer name, phone and price are all required; the buy's Paid/Ours chip is green or blue by how it was paid (Section 8.10) |
 | 168 | Search Paid/Ours only, with Show all (2026-09-30) | The header search shows Paid/Ours buys and collections only; a Show all toggle in the results adds Processing, Priced and Completed ones (Section 13) |
+| 169 | v0.9.1-final pushed (2026-09-30) | Phase 10 and the owner's additions go live as 0.9.1-final (tagged `v0.9.1-final`), still built against the **dev** project; prod launch still waits (Section 15, Phase 10) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |
