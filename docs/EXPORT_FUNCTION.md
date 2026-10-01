@@ -5,7 +5,7 @@
 | **Product** | PUG Pricing Tool: the EXPORT function (Crystal Commerce Mass Create) |
 | **Owner** | Players' Union Games (PUG) |
 | **Spec version** | 1.0 — 2026-10-01 |
-| **Status** | Approved for build, Phases E1–E5. Open (Appendix D): the Custom SKU's content, and four details of the Sell Price rule (Section 5). |
+| **Status** | Approved for build, Phases E1–E5. Open (Appendix D): four details of the Sell Price rule (Section 5) and two of the Custom SKU (Section 4.4). |
 | **Extends** | `docs/DESIGN_SPEC.md` (Section 14, "Export: placeholders only", is replaced by this document) |
 | **Project folder** | `C:\ClaudeProjects\pug-pricing-tool` |
 
@@ -142,7 +142,7 @@ The 26 distinct Magic printings in dev's buys on 2026-09-30, looked up in the in
 | 4 | `Condition` | `Near Mint`, `Light Play`, `Moderate Play`, `Heavy Play` or `Damaged`, from the line's NM / LP / MP / HP / DMG |
 | 5 | `Language` | `English`, always |
 | 6 | `Sell Price` | **The card's Sell Price** (Section 5): today's full market price for its condition, worked out as at the buy, rounded up, at least $0.40 |
-| 7 | `Custom SKU` | **Open** (Appendix D #5): it will hold a date. Until decided: empty. **It must always be the last column** (owner's decision) |
+| 7 | `Custom SKU` | **The export's code** (Section 4.4): the export's date as a number, `61726` for 06/17/26, the same on every row. **It must always be the last column** (owner's decision) |
 
 The header row is exactly `Add Qty,Product Name,Category,Condition,Language,Sell Price,Custom SKU`.
 
@@ -161,6 +161,17 @@ The header row is exactly `Add Qty,Product Name,Category,Condition,Language,Sell
   - a collection: `cc-mass-create-<name>-20261001-154210.csv` (the name made file-safe, the stamp from `fileStamp`);
   - the Can't upload collection: `cc-mass-create-cant-upload-20261001-154210.csv`.
 - The file is built in the browser and downloaded (`URL.createObjectURL`), like a backup (`DESIGN_SPEC.md` 11.5).
+
+### 4.4 Custom SKU: the export's code
+
+Owner's decision, 2026-10-01. **Every row of an export carries the same Custom SKU: a number-only code made from the export's date**, so the batch can be tracked in CC.
+
+- **The format:** the date as `MM/DD/YY` with the slashes taken out and **no leading zero**: 06/17/26 → **`61726`**. Digits only.
+- **The date is the day the export is made**, in store time (`STORE_TZ`), not the day of the buys: exporting September 30's buys on October 1 gives October 1's code. *(To confirm: Appendix D #5.)*
+- **Two dates can give the same code** with no leading zeros anywhere: 1/11/26 and 11/1/26 are both `11126`, as are 1/12/26 and 11/2/26. One fix is to drop the month's leading zero only and always write the day as two digits (6/17/26 → `61726`, 1/11/26 → `11126`, 11/1/26 → `110126`), which gives every date its own code. *(Owner to choose: Appendix D #6.)* Until chosen, build the format in one function, `customSkuFor(date)`, with tests for both readings' examples.
+- **Stamped** on every exported line (`cc_custom_sku`, Section 6.4). A re-download of a Completed day or collection uses the stamp, so the code never changes after the export. An undone and repeated export gets the new day's code.
+- **Exports from Can't upload cards** get the code of the day they're made.
+- **Shown on the day page** once it's exported: a chip in the header, labelled very clearly, **`Custom SKU 61726`** (Section 10). The same chip on an exported collection's screen. *(To confirm: Appendix D #7.)*
 
 ---
 
@@ -293,6 +304,7 @@ Primary key `(scryfall_id, finish)`. Linking by **Product ID** means a later inv
 | cc_condition | text null | The Condition word written (`Near Mint`…) |
 | cc_sell_price | numeric(10,2) null | The Sell Price written (Section 5) |
 | cc_sell_basis | jsonb null | How it was reached (Section 5.5) |
+| cc_custom_sku | text null | The export's code written in the Custom SKU column (Section 4.4) |
 | cc_exported_at | timestamptz null | |
 | source_line_id | uuid null → buy_lines on delete set null | Only on lines in the Can't upload collection: the card's line in its original buy or collection |
 
@@ -477,7 +489,7 @@ A wide modal with three steps. It can't be closed while it's saving.
 On **Export**, the app calls **`export_lines`** once. In one transaction it:
 
 1. checks the target is still exportable (the day's buys Paid/Ours and not today; the collection Paid/Ours; nothing changed since the dialog opened: the buys' or collection's `version`), else refuses (`stale_version`) and nothing changes;
-2. stamps every matched line: `cc_status = 'exported'`, `cc_product_id / name / category`, `cc_condition`, `cc_sell_price`, `cc_sell_basis`, `cc_exported_at`;
+2. stamps every matched line: `cc_status = 'exported'`, `cc_product_id / name / category`, `cc_condition`, `cc_sell_price`, `cc_sell_basis`, `cc_custom_sku`, `cc_exported_at`;
 3. stamps every can't-upload line `cc_status = 'cant_upload'`, and **copies it into the Can't upload collection** (Section 9.2);
 4. saves staff's links and set maps from the review (and `auto` links for automatic matches);
 5. **a day:** marks the day's Magic cards Completed (what `day_mark` did); **a collection:** marks it Completed (`collection_set_status`, from Paid/Ours, keeping its price);
@@ -541,6 +553,7 @@ During `export_lines` (Section 8.4), each can't-upload line is **copied** into t
 - **Can't upload chip** on a card row whose line is `cc_status = 'cant_upload'`, after the export: a red chip, `Can't upload`, after the card text. Its tooltip: "Not matched to Crystal Commerce: pulled from the upload. It's in Can't upload cards."
 - **The exported note** (`DESIGN_SPEC.md` 10.2) adds the counts: "Exported … by ● Daisy: 31 cards, 3 can't upload."
 - **Sell prices** replace the buy prices on exported card rows, marked "Sell" (Section 5.5).
+- **The Custom SKU chip** in the header of an exported day, beside the date and game, labelled very clearly: **`Custom SKU 61726`** (Section 4.4).
 - **Calendar:** unchanged. An exported Magic day is still tagged Exported.
 
 ---
@@ -640,16 +653,18 @@ Each phase ends with the owner checking it on `localhost`. Apply migrations to *
 - Migration: the `buy_lines` export columns (6.4), `export_lines` for days, `export_undo_day`.
 - The full dialog (8.3) with the Confirm step and its red pull-out list and required checkbox.
 - The Mass Create file (Section 4) from stamped lines, downloaded; re-download on a Completed day.
+- **The Custom SKU** (Section 4.4): `customSkuFor(date)` with tests, the `cc_custom_sku` stamp, and the header chip.
 - **The Sell Price** (Section 5): `roundUpPrice` and `src/lib/sellPrice.js` (pure: a line plus today's data → the Sell Price and its basis), with tests for every row of 5.2 and 5.3; the `prices` function's `fresh` option, deployed to dev; the stamps; sell prices shown in place of buy prices on exported rows.
 - The **Can't upload** chip on day rows (10).
 - Changelog: `day_exported` / `day_unexported` with the counts.
-- *The Can't upload collection arrives in E4; until then can't-upload lines are stamped and chipped but not copied anywhere. Don't do real uploads with E3's file until the test upload (Appendix D #6) has worked.*
+- *The Can't upload collection arrives in E4; until then can't-upload lines are stamped and chipped but not copied anywhere. Don't do real uploads with E3's file until the test upload (Appendix D #8) has worked.*
 
 **Where to look**
 - [ ] Export a past Magic day: the file downloads; open it in a text editor. The header is `Add Qty,Product Name,Category,Condition,Language,Sell Price,Custom SKU`; names and categories are exactly the inventory's; conditions read `Near Mint`, `Light Play`…; same-product rows are merged.
 - [ ] Set one card to "None of these": the red pull-out list appears and Export waits for the checkbox; afterwards that card is not in the file, and its row on the day page has a **Can't upload** chip.
 - [ ] Sell Prices in the file: a $1.01 card reads `1.25`, a $0.12 card `0.40`, a $10.01 card `11.00`; a manual-priced card shows the higher of its manual price and today's price, rounded up.
 - [ ] After the export the day page shows each card's Sell price ("Sell" on the price, the buy price in its tooltip).
+- [ ] Every row's last column is the export's code (today 06/17/26 would be `61726`), and the day page's header shows the **Custom SKU** chip with the same number.
 - [ ] EXPORT on the now-Completed day downloads the same file again (same prices), and nothing else changes.
 - [ ] ⋯ → Mark Paid/Ours again: the chips go, and the buys are Paid/Ours.
 
@@ -760,6 +775,7 @@ Categories with no rule yet (from Section 3.3's 138 unmatched): `Mystery Booster
 | E14 | Record of cards exported from Can't upload | The changelog only |
 | E15 | Sell Price | Today's full market price for the card's condition, worked out the same way as at the buy (same source and override, fetched fresh), **rounded up** by the buy steps, **never below $0.40**; a manual price gets the higher of it and today's price, rounded (owner, 2026-10-01) |
 | E16 | Prices after export | The app shows each exported card's Sell Price in place of its buy price (owner, 2026-10-01) |
+| E17 | Custom SKU | A number-only code from the export's date, `61726` for 06/17/26, on every row; shown in a clearly labelled chip on the exported day page's header (owner, 2026-10-01) |
 
 ## Appendix D: Open items
 
@@ -767,6 +783,8 @@ Categories with no rule yet (from Section 3.3's 138 unmatched): `Mystery Booster
 2. **Sell Price, a manual price with nothing to compare** (no JustTCG price and no fallback today): use the manual price alone, rounded up (the spec's assumption)?
 3. **Sell Price, today's prices can't be fetched** (JustTCG's daily limit or an outage): stop the export (the spec's assumption), or use the last saved prices (up to 6 hours old) with a warning?
 4. **The panels' totals after an export:** with Sell Prices shown on the cards, should a day page's or collection's Market / Cash / Credit totals switch to Sell values, or keep showing the deal as it was bought?
-5. **Custom SKU:** a date (which date, and its format: the buy's day, the export's day?). Until decided, empty.
-6. **A test upload** of a small E3 file in CC (one or two cards the store has) to confirm Mass Create accepts the columns, the Custom SKU column, the condition words and the Sell Prices, before the first real batch.
-7. **Pokémon:** none of this applies yet (owner, 2026-09-30).
+5. **Custom SKU, which date:** the day the export is made (the spec's assumption), or the day of the buys?
+6. **Custom SKU, codes that collide:** with no leading zeros anywhere, 1/11/26 and 11/1/26 are both `11126`. Keep that, or drop only the month's leading zero and always write the day as two digits (1/11/26 → `11126`, 11/1/26 → `110126`)?
+7. **The Custom SKU chip on an exported collection's screen** as well as on day pages?
+8. **A test upload** of a small E3 file in CC (one or two cards the store has) to confirm Mass Create accepts the columns, the Custom SKU column, the condition words and the Sell Prices, before the first real batch.
+9. **Pokémon:** none of this applies yet (owner, 2026-09-30).
