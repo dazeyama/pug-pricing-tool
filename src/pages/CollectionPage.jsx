@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import PricingScreen from './price/PricingScreen.jsx';
 import CollectionDetails from './collections/CollectionDetails.jsx';
 import { isClosed, statusLabel } from './collections/status.js';
@@ -29,6 +29,10 @@ export default function CollectionPage() {
 
 function CollectionScreen({ id }) {
   const navigate = useNavigate();
+  const location = useLocation();
+  // Opened from a header search result (spec 13): the lines it matched, flashed in the list.
+  const hitIds = location.state?.hits;
+  const hits = useMemo(() => (hitIds?.length ? { ids: hitIds, key: location.key } : null), [hitIds, location.key]);
   const { deviceId } = useDevice();
   const staff = useStaff();
   const user = staff.current;
@@ -139,6 +143,7 @@ function CollectionScreen({ id }) {
       locked={locked}
       removeLocked={removeLocked}
       className="collection-screen"
+      hits={hits}
       listTitle="Collection list"
       ratesTitle="Rates for this collection"
       // Back to the table: big and bold, top left, before the search bar (owner, 2026-09-29).

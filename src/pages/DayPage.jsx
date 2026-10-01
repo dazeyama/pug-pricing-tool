@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
 import { dayRange, dayTitle, parseDay } from '../lib/calendar.js';
 import { lineBody, lineText } from '../lib/lineFormat.js';
@@ -56,6 +56,10 @@ export default function DayPage() {
 
 function DayScreen({ game, day }) {
   const navigate = useNavigate();
+  const location = useLocation();
+  // Opened from a header search result (spec 13): that buy and its matching lines.
+  const focus = location.state?.focus ?? null;
+  const [flashBuy, setFlashBuy] = useState(null);
   const { epoch, offline } = useConnection();
   const { deviceId } = useDevice();
   const staff = useStaff();
@@ -113,6 +117,18 @@ function DayScreen({ game, day }) {
   // This game's buys, numbered in confirmed order: "Buy 1", "Buy 2"… (as the
   // confirm toast and changelog number them).
   const mine = state.buys.filter((b) => b.buy_lines.some((l) => l.game === game));
+
+  // A search result lands here: scroll its buy into view and flash it, once
+  // the day has loaded (again for each new result, even on the same day).
+  const focusBuy = focus?.buyId ?? null;
+  useEffect(() => {
+    if (!state.loaded || !focusBuy) return undefined;
+    document.querySelector(`[data-buy="${focusBuy}"]`)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    setFlashBuy(focusBuy);
+    const t = setTimeout(() => setFlashBuy(null), 1900);
+    return () => clearTimeout(t);
+  }, [state.loaded, focusBuy, location.key]);
+  const hits = new Set(focus?.lineIds ?? []);
 
   // Everything here needs a picked user and a connection.
   const guard = () => {
@@ -214,6 +230,8 @@ function DayScreen({ game, day }) {
               byId={staff.byId}
               busy={busy}
               offline={offline}
+              hits={hits}
+              flash={flashBuy === buy.id}
               onRemove={startRemove}
               onDelete={(b, n) => guard() && setDeleting({ buy: b, number: n, lastCard: false })}
             />
@@ -255,7 +273,7 @@ function totalsFor(lines, buy) {
 }
 
 /** One buy on a day page (spec 10.2). */
-function BuyPanel({ buy, number, game, other, day, byId, busy, offline, onRemove, onDelete }) {
+function BuyPanel({ buy, number, game, other, day, byId, busy, offline, hits, flash, onRemove, onDelete }) {
   const [preview, setPreview] = useState(null);   // { src, top, left } while a line is hovered
   const hidePreview = useCallback(() => setPreview(null), []);
   const panel = useRef(null);
@@ -264,7 +282,12 @@ function BuyPanel({ buy, number, game, other, day, byId, busy, offline, onRemove
   const others = buy.buy_lines.filter((l) => l.game === other).reduce((n, l) => n + l.quantity, 0);
   const t = totalsFor(lines, buy);
   return (
-    <article className="cardpanel buy-panel" ref={panel} style={{ '--c': colorVar(user?.color ?? 'pal-slate') }}>
+    <article
+      className={`cardpanel buy-panel${flash ? ' flash-target' : ''}`}
+      ref={panel}
+      data-buy={buy.id}
+      style={{ '--c': colorVar(user?.color ?? 'pal-slate') }}
+    >
       <header className="cardpanel-head buy-panel-head">
         <strong className="buy-number">Buy {number}</strong>
         <UserTag user={user} />
@@ -299,7 +322,7 @@ function BuyPanel({ buy, number, game, other, day, byId, busy, offline, onRemove
             {lines.map((l) => (
               <tr
                 key={l.id}
-                className="drow"
+                className={`drow${hits.has(l.id) ? ' search-hit' : ''}`}
                 // The card's picture beside the panel, level with the row, as on the
                 // Price sidebar (owner, 2026-09-30).
                 onMouseEnter={(e) => setPreview(previewFor(l.image_url, e.currentTarget, panel.current, 'right'))}

@@ -61,6 +61,21 @@ separately. Every computer then needs the new password at its next sign-in.
 Public sign-ups must stay **off** in both projects (Authentication → Sign In /
 Providers → "Allow new users to sign up"), or anyone could create an account.
 
+## Backups
+
+On Supabase's Free plan there are no automatic backups, so download one at least weekly:
+**Settings → Backups → Download backup** (or the yellow reminder banner, which appears once the
+last one is over 7 days old). The file is `pug-pricing-backup-<date>-<time>.json`. Keep copies
+off the store computers, and never put one in the repo (`.gitignore` blocks the name).
+
+**To restore:** Settings → Backups → **Restore from backup…**, pick the file, check the counts,
+type `RESTORE`. A backup of what's there now downloads first (`…-before-restore.json`), then
+everything is replaced in one step and the page reloads. Computers' names, the Crystal Commerce
+CSVs and the API keys stay as they are. Try it on **dev** first.
+
+If prod moves to the Pro plan (daily backups), set `CLOUD_BACKUPS` to `true` in
+`src/lib/backup.js`; the reminder banner then stops.
+
 ## Deploying
 
 Pushing to `main` runs `.github/workflows/deploy.yml`: it builds with the repository's

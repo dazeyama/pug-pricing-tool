@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
 import {
-  CATEGORIES, DEFAULT_CATEGORIES, GONE, HEADLINES, MADE, actionsFor, categoryOf, dayHeading, entryDay,
+  CATEGORIES, DEFAULT_CATEGORIES, GONE, HEADLINES, MADE, MILESTONES, actionsFor, categoryOf, dayHeading, entryDay,
   entryWhen, foldEvents, panelView,
 } from '../lib/changelog.js';
 import { storeDay } from '../lib/calendar.js';
@@ -42,11 +42,16 @@ async function fetchBatch({ categories, game, query, target }, offset) {
     .in('action', actionsFor(categories))
     .order('seq', { ascending: false })
     .range(offset, offset + CHUNK - 1);
-  if (game !== 'all') q = q.contains('games', [game]);
+  const digits = query ? query.replace(/\D/g, '') : '';
+  const phone = digits.length >= 3 && !/\p{L}/u.test(query);
+  if (game !== 'all') {
+    // Milestones (a backup restored) show under either game too (spec 12:
+    // always shown); a phone search can't also use .or() for this.
+    q = phone ? q.contains('games', [game]) : q.or(`games.cs.{${game}},action.in.(${MILESTONES.join(',')})`);
+  }
   if (target) q = q.eq('target_id', target.id);
   if (query) {
-    const digits = query.replace(/\D/g, '');
-    if (digits.length >= 3 && !/\p{L}/u.test(query)) {
+    if (phone) {
       // A phone number: its digits in an entry, or any entry for a buy or
       // collection with that phone (a collection's whole history).
       const { data: owners } = await supabase.from('buys').select('id').like('phone', `%${digits}%`).limit(200);

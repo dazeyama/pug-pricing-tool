@@ -117,7 +117,7 @@ body.loading { cursor: progress; }
 .loading-note { animation: pulse 1.2s ease-in-out infinite; }
 @keyframes pulse { 0%, 100% { opacity: .45; } 50% { opacity: .9; } }
 
-/* ---- The jump-and-flash a search result lands on (Phase 10) ---- */
+/* ---- The jump-and-flash a header search result lands on (spec 13) ---- */
 .flash-target { animation: flashTarget 1.8s ease forwards; }
 @keyframes flashTarget {
   0%, 55% { box-shadow: 0 0 0 3px var(--accent), 0 0 24px 3px rgba(108, 140, 255, .45); }

@@ -193,7 +193,7 @@ function Totals({
  * × is hidden too; a Paid/Ours collection keeps it (owner, 2026-09-29).
  */
 export default function BuyList({
-  title = 'Buy list', lines, loaded, rates, master, ratesTitle, flashId, editingId,
+  title = 'Buy list', lines, loaded, rates, master, ratesTitle, flashId, hits = null, editingId,
   canEdit, locked = null, editBlocked, canRemove = canEdit, removeLocked = locked, removeBlocked = editBlocked,
   onEdit, onRemove, onSaveRates, onDone, details, footer,
 }) {
@@ -212,6 +212,16 @@ export default function BuyList({
     if (!flashId) return;
     list.current?.querySelector(`[data-line="${flashId}"]`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }, [flashId, lines]);
+
+  // Lines a header search matched (spec 13): the first scrolls into view once
+  // the list has loaded, and all of them stay tinted.
+  const hitSet = new Set(hits?.ids ?? []);
+  const hitKey = hits?.key ?? null;
+  const firstHit = hits?.ids?.[0] ?? null;
+  useEffect(() => {
+    if (!hitKey || !firstHit || !loaded) return;
+    list.current?.querySelector(`[data-line="${firstHit}"]`)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }, [hitKey, firstHit, loaded]);
 
   return (
     <aside className={`buy-list${locked ? ' locked' : ''}${removeLocked ? ' no-remove' : ''}`} ref={aside}>
@@ -234,7 +244,7 @@ export default function BuyList({
                 <div
                   key={l.id}
                   data-line={l.id}
-                  className={`buy-line-row${l.id === flashId ? ' flash' : ''}${l.id === editingId ? ' editing' : ''}`}
+                  className={`buy-line-row${l.id === flashId ? ' flash' : ''}${l.id === editingId ? ' editing' : ''}${hitSet.has(l.id) ? ' search-hit' : ''}`}
                   // A small card picture left of the sidebar, level with the line (owner, 2026-09-29).
                   onMouseEnter={(e) => setPreview(previewFor(l.image_url, e.currentTarget, aside.current, 'left'))}
                   onMouseLeave={hidePreview}

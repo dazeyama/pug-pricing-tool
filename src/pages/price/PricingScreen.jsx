@@ -118,10 +118,11 @@ const BOTH_GAMES = { mtg: true, pokemon: true };
  * @param {number} [p.resetKey]  changing it clears the stage and resets MTG | PKM and the sort
  * @param {any} [p.searchLead]  before the search field, top left (a collection's < BACK)
  * @param {string} [p.className]  on the screen (a collection's: flipped background, amber accent)
+ * @param {{ ids: string[], key: string }|null} [p.hits]  list lines a header search matched, to flash
  */
 export default function PricingScreen({
   list, rates, master, locked = null, removeLocked = locked, listTitle, ratesTitle,
-  renderListDetails, renderListFooter, resetKey = 0, searchLead = null, className = '',
+  renderListDetails, renderListFooter, resetKey = 0, searchLead = null, className = '', hits = null,
 }) {
   const [text, setText] = useState('');
   const [lang, setLang] = usePokemonLang();
@@ -665,6 +666,7 @@ export default function PricingScreen({
           master={master}
           ratesTitle={ratesTitle}
           flashId={flashId}
+          hits={hits}
           editingId={editing?.line.id ?? null}
           canEdit={canEdit}
           locked={locked}

@@ -127,6 +127,13 @@ button.cal-day:hover { border-color: var(--game); background: color-mix(in srgb,
 .day-page .cardpanel-head { background: color-mix(in srgb, var(--game) 16%, var(--panel-2)); }
 
 .buy-panel-head .buy-number { font-size: 15px; }
+/* The rows a header search matched (spec 13): tinted, flashing on arrival. */
+.day-page .deck-table tr.search-hit td { background: color-mix(in srgb, var(--accent) 16%, transparent); }
+.day-page .deck-table tr.search-hit td { animation: searchHit 2.4s ease; }
+@keyframes searchHit {
+  0%, 45% { background: color-mix(in srgb, var(--accent) 42%, transparent); }
+  100% { background: color-mix(in srgb, var(--accent) 16%, transparent); }
+}
 .buy-time { color: var(--muted); font-size: 13px; }
 .buy-panel-head .more-menu { margin-left: auto; }
 .buy-customer { margin: 0 0 4px; font-weight: 600; }

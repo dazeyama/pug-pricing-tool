@@ -556,7 +556,7 @@ Every change that affects buy contents, or anything the changelog records, goes 
 | `collection_set_status(buy_id, status, user, device, cash_pct, credit_pct, expected_version, offer_cash, offer_credit, paid_price, paid_method)` | Moving to `paid` snapshots percentages (custom rate where set, else master) and `paid_at`; leaving `paid` clears the snapshot but **keeps** the custom rates. **As of migration 0011 (owner, 2026-09-29):** Processing → Priced needs `offer_cash` (`offer_needed`; `offer_credit` is worked out from the rates when not given); → Paid/Ours needs `paid_price` and `paid_method` (`paid_price_needed`, `paid_method_needed`), except reopening from Completed, which keeps them; → Completed only from Paid/Ours (`complete_after_paid`). Unlocking to Priced or Processing clears the price paid; the offer stays. Completed refuses content writes like Paid/Ours (`collection_completed`). | `collection_status_changed`, with `offer` / `paid` field rows and the collection's totals when an offer or price is set |
 | `collection_delete(buy_id, user, typed_name)` | Server checks `typed_name` matches | `collection_deleted` with the full line list and totals |
 | `lock_acquire(buy_id, device, user, force)` / `lock_heartbeat` / `lock_release` | Section 9.6 | none |
-| `restore_backup(payload)` | Section 11.5 | `backup_restored` (milestone) |
+| `restore_backup(payload, file, user, device, typed)` | Section 11.5 (as built, migration 0015) | `backup_restored` (milestone) |
 
 Staff users, devices, settings and CSV metadata are written directly (RLS permits it) and aren't logged, except where noted.
 
@@ -569,6 +569,11 @@ Staff users, devices, settings and CSV metadata are written directly (RLS permit
 - **Entries.** An entry's `target_name` is the customer's name at the time. Totals use the Paid/Ours snapshot, else the custom rates, else the master ones. Field rows show phones formatted.
 - **Helpers:** `collection_for_write` (the checks every write shares), `collection_event`, `collection_totals`, `master_pct`, `format_phone`, `status_label`, `sentence` and `pct_text`.
 - **Lock functions.** `lock_acquire` returns `{ held, device_id, device_label, staff_user_id, acquired_at }`. `lock_heartbeat(buy_id, device, user)` also moves the lock to the currently picked user.
+
+**As built (Phase 10, migration 0015):**
+- `global_search(name, number, size, set)` (Section 13): lines in confirmed walk-in buys and in Processing / Priced / Paid/Ours collections, matching part of `name_key` or of `name_en`, the collector number via `norm_number` (no case, no leading zeros), the printed size and the set code; newest first, at most 200, each walk-in line with its buy's day-and-game number. `search_set_codes()` lists the set codes stored lines use.
+- `backup_export()` returns the whole backup as one JSON value; `backup_counts()` counts what's here as the restore dialog counts a file.
+- `restore_backup(payload, file, user, device, typed)` is **security definer** (the changelog is append-only for the store's role, Section 6.1, and a restore has to replace it): it refuses unless signed in, `typed` is `RESTORE` and the payload is format version 1, then replaces everything in one transaction through `restore_rows` (an internal helper that inserts every non-generated column, so later columns round-trip; nobody can call it directly), resets the changelog's sequence, and logs the milestone. Refusal codes: `not_signed_in`, `not_confirmed`, `bad_backup`.
 
 **As built (Phase 8, migration 0013):** `buy_target_name(buy_id)` gives a confirmed buy's name as things stand ("Buy N · Tue Sep 29, 2026", numbered like `confirm_buy`), so a removal or deletion entry names the buy as it was then; deleting a buy renumbers the rest of that day, while earlier entries keep their names. `buys_in_range(from, to)` returns each confirmed walk-in buy between two instants with its confirming user and games, for the Calendar. Entries are written by `buy_event` with the buy's snapshotted rates. Error codes: `buy_gone`, `line_gone`, `stale_version`, `last_card`, `no_user`.
 
@@ -638,7 +643,7 @@ After the store password: if this browser has no device ID, create one and ask *
 |---|---|---|
 | **Master Crystal Inventory required**: "Upload your Crystal Commerce inventory CSV in Settings before exporting." with an **Open Settings** link | No current Master Crystal Inventory file | `.banner.err`, always visible, on every tab |
 | **Offline**: "No connection — changes are paused." | `navigator.onLine` is false, or Supabase Realtime is disconnected for over 10s | `.banner.warn` |
-| **Backup reminder**: "Last backup downloaded N days ago." with a **Download backup** link | More than 7 days since `last_backup_at` (Section 11.5) | `.banner.warn`, dismissible for the session |
+| **Backup reminder**: "Last backup downloaded N days ago." with a **Download backup** link | More than 7 days since `last_backup_at` (Section 11.5) | `.banner.warn`, dismissible for the session. **As built (Phase 10):** only while cloud backups are off (the Free plan); with no backup yet it reads "No backup has been downloaded yet."; **Download backup** is a button that saves one right there; **×** hides it until the browser is closed |
 | **Price limit**: "JustTCG daily limit reached — enter prices manually until <local reset time>." | `prices` returns a quota-exhausted error | `.banner.warn` until reset |
 
 ### 7.6 Modals, toasts, loading
@@ -1245,7 +1250,7 @@ Sections, each in a CM panel, laid out in **two columns across the page, with re
 | API keys (11.2) | JustTCG usage (11.3) |
 | Master Buy Percentages (11.4) | Master Fallback Percentages (11.4) |
 
-Backups (11.5, Phase 10) will take a row of their own. The credits footer (11.7) spans both columns.
+Backups (11.5) take a row of their own, spanning both columns at the same fixed height (as built, Phase 10): download on the left, restore on the right. The credits footer (11.7) spans both columns.
 
 ### 11.1 Master Crystal Inventory (required)
 
@@ -1304,6 +1309,11 @@ The most prominent panel, with a **red border and a "Required" badge** until a f
   5. The app **automatically downloads a pre-restore backup first**.
   6. It calls `restore_backup` (one transaction) and reloads.
 - **Cloud backups:** show the prod project's plan status as static text: "Supabase daily backups: **on (Pro plan)**", or "**not included on the Free plan** — download a backup at least weekly". The value is in a config constant the owner updates if they upgrade. The weekly reminder banner (Section 7.5) applies when on Free.
+- **As built (Phase 10, 2026-09-30; migration 0015, `src/lib/backup.js`, `backupIO.js`, `settings/BackupsPanel.jsx`):**
+  - **What a backup holds:** staff users, computers, buys and collections (drafts too) with their lines, the changelog and settings, as `{ format: "pug-pricing-backup", version: 1, exported_at, app_version, tables }`. Besides the four tables the spec leaves out, two more stay out: **`api_usage`** (JustTCG's own live counters, rewritten on the next lookup) and **`master_inventory_files`** (the CSVs aren't in a backup, so their list stays with them in storage).
+  - **What a restore keeps:** this computer and every other one (their names stay; the backup's are added), the Crystal Commerce CSVs, the API keys, and `last_backup_at`. Staff users **not in the backup are hidden**, like a deleted user, so anything they did keeps its name. Every collection lock is dropped.
+  - **The dialog** shows when the file was made and by which version, a table of Buys / Collections / Card lines / Changelog entries / Staff users **in the backup** next to **here now**, the red warning, and the RESTORE field. Restore needs a picked user (it's in the milestone) and a connection. The automatic backup first is `pug-pricing-backup-<stamp>-before-restore.json`; if it can't be made, nothing is restored. Then the page reloads.
+  - **The config constant** is `CLOUD_BACKUPS` in `src/lib/backup.js` (false: the Free plan).
 
 ### 11.6 This computer
 
@@ -1400,7 +1410,7 @@ Then "Not affiliated with Wizards of the Coast or The Pokémon Company." and the
 | `collection_info_edited` | Collection details edited | Actions / slate | Field rows (name, phone, notes, cash %, credit %). A custom rate reads `cash %: 33 → 40`; clearing one reads `cash %: 40 → master (33)`. |
 | `collection_status_changed` | Status changed | **Collections / blue** (owner's decision, 2026-09-29: it carries the offer and the price paid, so it shows by default; was Actions / slate) | `status: Priced → Paid/Ours`; "unlocked" when leaving Paid/Ours. **As of migration 0011:** marking Priced adds `offer: $120 cash / $240 credit` and marking Paid/Ours `paid: $262.50 credit`, each with the collection's totals then; summaries read "Marked Priced: offered $120 cash / $240 credit.", "Marked Paid/Ours: paid $262.50 in credit, locked.", "Marked Completed: its cards have moved on.", "Reopened: back to Paid/Ours, still locked." |
 | `collection_deleted` | Collection deleted | Collections / red cross | All lines (−) at deletion, totals, name and phone |
-| `backup_restored` | — | milestone (always shown) | Drawn as CM's green milestone pill across the line: "Backup restored — <file name>" |
+| `backup_restored` | — | milestone (always shown) | Drawn as CM's green milestone pill across the line: "Backup restored — <file name>". As built (Phase 10): shown under the Magic and Pokémon filters too (not under a phone-number filter or a funnel) |
 
 **Not recorded** (owner's decision):
 - activity on draft walk-in buys (adds, removes, cancel), since only the confirmation is recorded;
@@ -1452,6 +1462,13 @@ The data isn't folded, only the drawing. Pagination counts drawn panels.
 
   The dropdown then closes.
 - **Keys:** ↓/↑ move through the results, Enter opens the highlighted one, Esc closes the dropdown.
+- **As built (Phase 10, 2026-09-30; migration 0015, `src/components/SearchBox.jsx`, `src/lib/globalSearch.js`):**
+  - It searches from **2 characters**, a quarter second after typing stops; the newest search wins.
+  - The line is read with the main search's parser. A trailing word counts as a **set code only if a stored line uses it**; if that reading finds nothing, it searches again without the set code ("Ancient Mew"). A size like `TG30` doesn't narrow (only plain counts do).
+  - A printing is game + language + set + number + finish + 1st Edition + treatments; **conditions don't split it** (an NM and an LP Lightning Bolt are one heading, quantities added). The heading is the buy-list line without its condition, with the game badge.
+  - The first result is highlighted, so Enter opens it. With 200 lines found, a note says to add a number or set code.
+  - **Landing:** a buy's day page scrolls its panel into view, flashes it (`.flash-target`) and **tints the matching rows**; a collection's screen tints the matching list lines and scrolls the first into view. Opening another result on the same page lands again.
+  - On every tab but the pricing screens, the dropdown is as wide as the large search box.
 
 ---
 
@@ -1703,6 +1720,8 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 
 ### Phase 10: Global search, backups and launch
 
+**As built (2026-09-30):** the owner split the phase: the search, backups and polish were **built locally and on dev** (migration 0015 applied to dev, committed, **not pushed**). **The launch waits for the owner's go:** prod migrations 0001–0015, the Edge Functions on prod, the Actions variables back to prod, then the push.
+
 **Build**
 - Header global search (Section 13) with grouped results, keyboard, and jump + flash. **Completed collections are left out of the query** (owner, 2026-09-29).
 - Backup download/restore (11.5), the `restore_backup` function, the pre-restore auto-download, the backup reminder banner, and the plan-status text.
@@ -1716,10 +1735,12 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 
 **Where to look**
 - [ ] Header search `bolt`: every buy and collection containing any Lightning Bolt printing, grouped by printing. Clicking one jumps there and flashes it.
+- [ ] ↓/↑ move the highlight, Enter opens it, Esc closes; a collection result opens the collection with its matching lines tinted.
 - [ ] Search `Charizard 125/197`: narrows to that printing.
 - [ ] A card in a Completed collection doesn't come up; mark that collection back to Paid/Ours (Reopen) and it does.
 - [ ] Download backup: a JSON file saves, and the reminder banner goes away.
 - [ ] Restore (on **dev only**): type RESTORE, a pre-restore file downloads first, then the data matches the backup, and a "Backup restored" milestone is in the changelog.
+- [ ] The milestone also shows with the Changelog filtered to Magic or Pokémon.
 - [ ] Everything still works on a 1366×768 laptop.
 - [ ] The live URL `https://dazeyama.github.io/pug-pricing-tool/` loads, signs in, and shows **prod** data (not your dev tests).
 
@@ -2017,6 +2038,10 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 151 | Quiet retries for the computer's row (2026-09-30) | A failed save of this computer is retried three times (1, 2, 3 seconds) before the error and Retry show (Section 7.4) |
 | 152 | Changelog opens on Buys (2026-09-30) | The Changelog opens (and resets) with only Buys selected (Section 12.5) |
 | 153 | Card pictures on day pages (2026-09-30) | Hovering a card row on a Calendar day page shows its picture beside the panel, like the Price sidebar (Section 10.2) |
+| 154 | Phase 10 built locally, launch later (2026-09-30) | Search, backups and polish built on dev and committed, not pushed; the launch steps wait for the owner's go (Section 15) |
+| 155 | Header search reading (2026-09-30) | From 2 characters after a short pause; a trailing set code only if stored lines use it, else retried without; conditions don't split a printing; Enter opens the first result (Section 13) |
+| 156 | What a backup holds and a restore keeps (2026-09-30) | Backups also leave out JustTCG's live usage and the CSV list (it stays with the CSVs); a restore keeps every computer, the CSVs, the keys and the last-backup time, and hides staff users not in the backup (Section 11.5) |
+| 157 | Milestones under a game filter (2026-09-30) | "Backup restored" shows under the Magic and Pokémon filters too (Section 12) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

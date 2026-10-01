@@ -178,7 +178,7 @@ header h1 { margin: 0; font-size: 20px; font-weight: 600; }
 .swatch:hover { border-color: var(--text); }
 .swatch.active { border-color: var(--text); box-shadow: 0 0 0 2px var(--panel), 0 0 0 3px var(--s); }
 
-/* ---- Global search (spec 13). Phase 1: visual only. ---- */
+/* ---- Global search (spec 13) ---- */
 .search-col { flex: 0 1 340px; min-width: 200px; transition: flex-basis .12s ease; }
 .search-wrap { position: relative; }
 .search-icon {
@@ -205,12 +205,13 @@ header h1 { margin: 0; font-size: 20px; font-weight: 600; }
 .search-col.wide .search-icon { left: 17px; transform: translateY(-50%) scale(1.25); }
 .search-col.wide .search-input { padding: 13px 20px 13px 50px; font-size: 16px; }
 
-/* Results drop under the search box, over whatever tab you are on (Phase 10). */
+/* Results drop under the search box, over whatever tab you are on; as wide
+   as the box when it's the large one. */
 .search-results {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  width: min(460px, 92vw);
+  width: max(100%, min(460px, 92vw));
   max-height: 70vh;
   overflow: auto;
   z-index: 320;
@@ -220,7 +221,44 @@ header h1 { margin: 0; font-size: 20px; font-weight: 600; }
   box-shadow: 0 14px 40px rgba(0, 0, 0, .55);
   padding: 14px 16px;
   text-align: left;
+  font-size: 13.5px;
 }
+/* One printing: its line as a heading, then its buys and collections (CM). */
+.search-group { margin-bottom: 16px; }
+.search-group:last-child { margin-bottom: 0; }
+.search-group.stale { opacity: .55; }
+.search-card { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 15px; font-weight: 700; }
+.search-card-name { min-width: 0; overflow-wrap: anywhere; }
+.search-group h4 {
+  margin: 8px 0 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.search-none { margin: 0; color: var(--muted); font-size: 13px; font-style: italic; }
+.search-error { margin: 0; color: var(--bad); font-size: 13.5px; }
+.search-hint { margin: 12px 0 0; color: var(--muted); font-size: 12px; font-style: italic; }
+/* A result: the left edge in the buy's user's colour, or the collection's
+   status colour (CM .result-btn). */
+.result-buttons { display: flex; flex-direction: column; gap: 6px; }
+.result-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--c, var(--border));
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+.result-btn[class*="tone-"] { --c: var(--tone); }
+.result-btn .result-status { color: var(--tone, var(--muted)); font-weight: 600; }
+.result-btn.active, .result-btn:hover { border-color: var(--accent); border-left-color: var(--c, var(--accent)); background: var(--bg); }
 
 /* ---- Tabs: equal-width, outlined; an idle tab lifts on hover. ---- */
 nav#tabs { display: flex; gap: 8px; justify-content: flex-start; }

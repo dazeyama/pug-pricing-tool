@@ -11,7 +11,8 @@
   gap: 16px;
   align-items: stretch;
 }
-.settings-grid > .settings-footer { grid-column: 1 / -1; }
+.settings-grid > .settings-footer,
+.settings-grid > .settings-wide { grid-column: 1 / -1; }
 .settings-panel {
   display: flex;
   flex-direction: column;
@@ -109,6 +110,26 @@
 .pct-input input { margin-top: 0; font-size: 15px; }
 .pct-sign { color: var(--muted); }
 .field-error { color: var(--bad); font-size: 12px; margin: 6px 0 0; width: 320px; }
+
+/* Backups (spec 11.5): a row of its own; download on the left, restore on the right. */
+.backups { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 28px; }
+.backups .restore-col { padding-left: 28px; border-left: 1px solid var(--border); }
+.backups .restore-col .settings-sub { margin-top: 0; }
+.backup-last { margin: 14px 0 6px; font-size: 13.5px; }
+.backup-cloud { margin: 0; font-size: 12.5px; }
+.backup-cloud.on { color: var(--good); }
+.backup-cloud.off { color: var(--muted); }
+.backup-cloud.off.due { color: var(--warn); }
+.restore-table { border-collapse: collapse; margin: 4px 0 14px; font-size: 13.5px; }
+.restore-table th, .restore-table td { padding: 4px 18px 4px 0; text-align: left; }
+.restore-table thead th { font-size: 12px; font-weight: 700; color: var(--muted); }
+.restore-table tbody th { font-weight: 500; color: var(--muted); }
+.restore-table td { font-variant-numeric: tabular-nums; font-weight: 600; }
+.restore-warning { margin: 0 0 14px; }
+.restore-typed { max-width: 220px; font-family: ui-monospace, Consolas, monospace; letter-spacing: .1em; }
+.restore-step { margin: 12px 0 0; }
+.restore-step.ok { color: var(--good); }
+.restore-error { margin: 12px 0 0; }
 
 /* This computer */
 .device-name { max-width: 320px; font-size: 14px; }
