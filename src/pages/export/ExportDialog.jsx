@@ -49,6 +49,9 @@ export default function ExportDialog({
   const [picks, setPicks] = useState(new Map());      // line id → { product } | { none: true }
   const [reopened, setReopened] = useState(new Set()); // matched or can't-upload lines sent back to choose
   const [always, setAlways] = useState(new Map());    // line id → remember its set's category (unknown categories)
+  const [was, setWas] = useState(new Map());          // line id → its product before Change
+  const [manual, setManual] = useState(new Map());    // line id → a Sell Price typed by staff (export mode)
+  const [badManual, setBadManual] = useState(new Set()); // lines whose typed Sell Price isn't valid
   const [pulled, setPulled] = useState(false);
   const [preview, setPreview] = useState(null);
   const hidePreview = useCallback(() => setPreview(null), []);
@@ -72,6 +75,9 @@ export default function ExportDialog({
       setSells(s);
       setPicks(new Map());
       setReopened(new Set());
+      setWas(new Map());
+      setManual(new Map());
+      setBadManual(new Set());
       setPhase('review');
     })().catch((e) => {
       if (!alive) return;
@@ -92,6 +98,13 @@ export default function ExportDialog({
     if (r.status === 'auto') return { group: 'matched', product: r.product, by: r.via };
     if (r.status === 'choose') return { group: 'choose' };
     return { group: 'cant', reason: 'nothing' };
+  };
+  /** A line's Sell Price: typed by staff in Change, else worked out (export spec 5). */
+  const sellOf = (id) => {
+    const s = sells.get(id);
+    const typed = manual.get(id);
+    if (!s || typed == null) return s ?? null;
+    return { price: typed, basis: { ...s.basis, used: 'staff', staff: typed, worked: s.price } };
   };
   const groups = { choose: [], matched: [], cant: [] };
   for (const r of results) groups[stateOf(r).group].push(r);
@@ -122,6 +135,8 @@ export default function ExportDialog({
   }
 
   function reopen(r) {
+    const s = stateOf(r);
+    if (s.product) setWas((m) => new Map(m).set(r.line.id, s.product));
     setPicks((m) => {
       const next = new Map(m);
       next.delete(r.line.id);
@@ -137,7 +152,7 @@ export default function ExportDialog({
     cc_product_name: stateOf(r).product.product_name,
     cc_category: stateOf(r).product.category,
     cc_condition: CONDITION_WORDS[r.line.condition],
-    cc_sell_price: sells.get(r.line.id)?.price,
+    cc_sell_price: sellOf(r.line.id)?.price,
   })));
 
   async function save() {
@@ -149,7 +164,7 @@ export default function ExportDialog({
     setSaveError(null);
     const matches = groups.matched.map((r) => {
       const s = stateOf(r);
-      const sell = sells.get(r.line.id);
+      const sell = sellOf(r.line.id);
       return {
         line_id: r.line.id,
         product_id: s.product.product_id,
@@ -184,17 +199,19 @@ export default function ExportDialog({
   }
 
   const sellNote = (r) => {
-    const sell = sells.get(r.line.id);
+    const sell = sellOf(r.line.id);
     if (!sell) return null;
     const why = {
-      manual: 'the manual price (higher than today’s)',
-      today: 'today’s price',
-      at_buy: 'no price today: the market price at the buy',
+      manual: 'the manual price (higher than today’s), rounded up',
+      today: 'today’s price, rounded up',
+      at_buy: 'no price today: the market price at the buy, rounded up',
+      staff: `typed here (worked out: ${formatMoney(sell.basis.worked)})`,
     }[sell.basis.used];
     return (
-      <span className="xd-price" title={`Sell Price from ${why}, rounded up${sell.basis.floored ? ', raised to the $0.40 floor' : ''}`}>
+      <span className="xd-price" title={`Sell Price from ${why}${sell.basis.floored && sell.basis.used !== 'staff' ? ', raised to the $0.40 floor' : ''}`}>
         Bought {formatMoney(r.line.unit_price)} → Sell <strong>{formatMoney(sell.price)}</strong>
         {sell.basis.used === 'at_buy' && <span className="xd-note">no price today</span>}
+        {sell.basis.used === 'staff' && <span className="xd-note">set by hand</span>}
       </span>
     );
   };
@@ -221,7 +238,9 @@ export default function ExportDialog({
       </button>
     );
   } else if (phase === 'review') {
-    const waiting = groups.choose.length > 0;
+    // A bad typed price only matters while its box is showing (Needs a choice).
+    const badTyped = groups.choose.some((r) => badManual.has(r.line.id));
+    const waiting = groups.choose.length > 0 || badTyped;
     footer = (
       <>
         <button type="button" className="btn ghost" onClick={onClose}>Cancel</button>
@@ -229,7 +248,8 @@ export default function ExportDialog({
           type="button"
           className="btn primary"
           disabled={waiting}
-          title={waiting ? 'Pick a product (or None of these) for every card in Needs a choice first' : undefined}
+          title={badTyped ? 'Fix the Sell price typed in Needs a choice first (at least $0.40, or leave it empty)'
+            : waiting ? 'Pick a product (or None of these) for every card in Needs a choice first' : undefined}
           onClick={() => {
             setPulled(false);
             setSaveError(null);
@@ -280,6 +300,23 @@ export default function ExportDialog({
                     r={r}
                     label={lineLabel(r)}
                     price={sellNote(r)}
+                    current={was.get(r.line.id) ?? null}
+                    sell={exporting ? sells.get(r.line.id) ?? null : null}
+                    manual={manual.get(r.line.id) ?? null}
+                    onManual={(value, ok) => {
+                      setManual((m) => {
+                        const next = new Map(m);
+                        if (ok && value != null) next.set(r.line.id, value);
+                        else next.delete(r.line.id);
+                        return next;
+                      });
+                      setBadManual((s) => {
+                        const next = new Set(s);
+                        if (ok) next.delete(r.line.id);
+                        else next.add(r.line.id);
+                        return next;
+                      });
+                    }}
                     always={always.get(r.line.id) ?? true}
                     onAlways={(v) => setAlways((m) => new Map(m).set(r.line.id, v))}
                     onPick={(product) => pick(r, product)}
@@ -381,8 +418,10 @@ export default function ExportDialog({
 }
 
 /** One card in Needs a choice: its candidates, "None of these", and a search. */
-function ChooseRow({ r, label, price, always, onAlways, onPick, onNone }) {
+function ChooseRow({ r, label, price, current, sell, manual, onManual, always, onAlways, onPick, onNone }) {
   const [text, setText] = useState('');
+  const [typed, setTyped] = useState(manual != null ? manual.toFixed(2) : '');
+  const [typedError, setTypedError] = useState(null);
   const [found, setFound] = useState([]);
   const [chosen, setChosen] = useState(null);
   useEffect(() => {
@@ -401,8 +440,29 @@ function ChooseRow({ r, label, price, always, onAlways, onPick, onNone }) {
     };
   }, [text]);
 
+  /** The Sell price box (export mode): empty uses the worked-out price. */
+  function typePrice(value) {
+    setTyped(value);
+    const clean = value.replace(/[$,\s]/g, '');
+    if (!clean) {
+      setTypedError(null);
+      onManual(null, true);
+      return;
+    }
+    const n = Number(clean);
+    if (!Number.isFinite(n) || n < 0.4 || n >= 100000) {
+      setTypedError('At least $0.40, or leave it empty');
+      onManual(null, false);
+      return;
+    }
+    setTypedError(null);
+    onManual(Math.round(n * 100) / 100, true);
+  }
+
   const fits = r.ranked.filter((x) => x.score != null).map((x) => x.product);
   const others = r.ranked.filter((x) => x.score == null).map((x) => x.product);
+  // The product it had before Change, so keeping it (with a new price) is one click.
+  const listed = (p) => r.ranked.some((x) => x.product.product_id === p.product_id);
   const option = (p, note) => (
     <label key={`${p.product_id}`} className={`xd-option${note ? ' off' : ''}`}>
       <input
@@ -418,6 +478,7 @@ function ChooseRow({ r, label, price, always, onAlways, onPick, onNone }) {
         {p.product_name}
         <span className="xd-cat">{p.category}</span>
         {note && <span className="xd-note">{note}</span>}
+        {current?.product_id === p.product_id && <span className="xd-tag">current</span>}
       </span>
     </label>
   );
@@ -431,6 +492,7 @@ function ChooseRow({ r, label, price, always, onAlways, onPick, onNone }) {
         </p>
       )}
       <div className="xd-options">
+        {current && !listed(current) && option(current, null)}
         {fits.map((p) => option(p, null))}
         {others.map((p) => option(p, 'a different finish or number'))}
         {found.filter((p) => !r.ranked.some((x) => x.product.product_id === p.product_id)).map((p) => option(p, 'found by search'))}
@@ -454,6 +516,23 @@ function ChooseRow({ r, label, price, always, onAlways, onPick, onNone }) {
         value={text}
         onChange={(e) => setText(e.target.value)}
       />
+      {sell && (
+        <label className="xd-manual">
+          Sell price $
+          <input
+            type="text"
+            inputMode="decimal"
+            className={typedError ? 'bad' : undefined}
+            placeholder={sell.price.toFixed(2)}
+            aria-label="Sell price, optional"
+            value={typed}
+            onChange={(e) => typePrice(e.target.value)}
+          />
+          <span className={typedError ? 'xd-reason' : 'hint'}>
+            {typedError ?? `Optional: leave it empty to use ${formatMoney(sell.price)}`}
+          </span>
+        </label>
+      )}
       {!r.category && (
         <label className="inline xd-always">
           <input type="checkbox" checked={always} onChange={(e) => onAlways(e.target.checked)} />
