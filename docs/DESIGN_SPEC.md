@@ -1538,13 +1538,13 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 5. Enable GitHub Pages with source "GitHub Actions" when asked.
 
 **Where to look**
-- [ ] Double-click `start.bat`: the browser opens `localhost:5180`, and SPACE stops it. `stop.bat` frees the port.
-- [ ] The login screen shows the logo. A wrong password shows an error; the right one gets in, and a refresh stays signed in.
-- [ ] First sign-in asks "Name this computer".
-- [ ] The header matches Collection Manager: logo, title, sub-line, search on the right, tabs below with Changelog on the right.
-- [ ] Tabs hover-lift and underline exactly like CM, and content fades in on switch.
-- [ ] The header search is much larger on every tab but the Price tab (owner's change, 2026-09-29).
-- [ ] Narrowing the window below 1200px shows the notice.
+- [x] Double-click `start.bat`: the browser opens `localhost:5180`, and SPACE stops it. `stop.bat` frees the port.
+- [x] The login screen shows the logo. A wrong password shows an error; the right one gets in, and a refresh stays signed in.
+- [x] First sign-in asks "Name this computer".
+- [x] The header matches Collection Manager: logo, title, sub-line, search on the right, tabs below with Changelog on the right.
+- [x] Tabs hover-lift and underline exactly like CM, and content fades in on switch.
+- [x] The header search is much larger on every tab but the Price tab (owner's change, 2026-09-29).
+- [x] Narrowing the window below 1200px shows the notice.
 
 ---
 
@@ -1558,14 +1558,14 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 - Realtime subscriptions for `staff_users`, `settings` and `master_inventory_files`.
 
 **Where to look**
-- [ ] Add three users: each gets a different color. Change a color. Delete one: it leaves the dropdown.
-- [ ] The picked user is still picked after a refresh, and a second computer or browser can pick a different one.
-- [ ] The red "Master Crystal Inventory required" banner shows on every tab until a CSV is uploaded.
-- [ ] Upload your CC export: file name, date, you as uploader, row count and columns appear, and the banner disappears.
-- [ ] Upload a `.txt` renamed badly, or an empty CSV: a clear error, nothing changes.
-- [ ] Upload six times: only the latest five remain, and previous copies download.
-- [ ] Cash/Credit % save and survive a refresh.
-- [ ] Turn off Wi-Fi: the offline banner appears.
+- [x] Add three users: each gets a different color. Change a color. Delete one: it leaves the dropdown.
+- [x] The picked user is still picked after a refresh, and a second computer or browser can pick a different one.
+- [x] The red "Master Crystal Inventory required" banner shows on every tab until a CSV is uploaded.
+- [x] Upload your CC export: file name, date, you as uploader, row count and columns appear, and the banner disappears.
+- [x] Upload a `.txt` renamed badly, or an empty CSV: a clear error, nothing changes.
+- [x] Upload six times: only the latest five remain, and previous copies download.
+- [x] Cash/Credit % save and survive a refresh.
+- [x] Turn off Wi-Fi: the offline banner appears.
 
 ---
 
@@ -1579,14 +1579,14 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 - Fuzzy name correction with the "Showing results for…" note.
 
 **Where to look**
-- [ ] `Lightning Bolt 161/295` or a card from your case: the exact printing is auto-selected.
-- [ ] `Sol Ring`: 10 thumbnails in 2 rows of 5 + "… show all (N)", and picking from the modal selects the card and closes it.
-- [ ] `Charizard ex 125/197 OBF`: the Pokémon printing shows, with the PKM badge and set code OBF.
-- [ ] A typo (`lightnig bolt`) still finds it, with the "Showing results for" note.
-- [ ] Try a promo/secret number (`TG05/TG30`, `263s`) and a set with no printed size (SLD).
-- [ ] ↓/↑ walk through suggestions; Esc clears.
-- [ ] JP: switch to JP and try a Japanese card by set code + number.
-- [ ] The search bar never moves, and results never cover it.
+- [x] `Lightning Bolt 161/295` or a card from your case: the exact printing is auto-selected.
+- [x] `Sol Ring`: 10 thumbnails in 2 rows of 5 + "… show all (N)", and picking from the modal selects the card and closes it.
+- [x] `Charizard ex 125/197 OBF`: the Pokémon printing shows, with the PKM badge and set code OBF.
+- [x] A typo (`lightnig bolt`) still finds it, with the "Showing results for" note.
+- [x] Try a promo/secret number (`TG05/TG30`, `263s`) and a set with no printed size (SLD).
+- [x] ↓/↑ walk through suggestions; Esc clears.
+- [x] JP: switch to JP and try a Japanese card by set code + number.
+- [x] The search bar never moves, and results never cover it.
 
 ---
 
@@ -1598,13 +1598,13 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 - The big **FOIL** switch (green ON / red OFF, locking, etched) and the Pokémon **NORMAL | HOLO | REVERSE** selector, plus 1st Edition (Section 8.5). Alt+F.
 
 **Where to look**
-- [ ] A card with a showcase or borderless version in the same set: unchecking Showcase jumps to the regular printing, and checking it goes back.
-- [ ] A trait with no alternative in the set is greyed out with a tooltip.
-- [ ] A foil-only card (e.g. a Secret Lair foil) locks the switch ON; a non-foil-only card locks it OFF.
-- [ ] A card with an etched version: Etched shows and the switch reads ETCHED.
-- [ ] A Pokémon card with normal + reverse: the selector allows those two, and HOLO is disabled.
-- [ ] A 1st Edition-capable WotC-era card shows the 1st Edition toggle.
-- [ ] Base Set Charizard, HOLO: the Version list reads Unlimited, 1st Edition, Shadowless, 1999–2000 Copyright (4th print). Jungle Clefable: Unlimited, 1st Edition, ….
+- [x] A card with a showcase or borderless version in the same set: unchecking Showcase jumps to the regular printing, and checking it goes back.
+- [x] A trait with no alternative in the set is greyed out with a tooltip.
+- [x] A foil-only card (e.g. a Secret Lair foil) locks the switch ON; a non-foil-only card locks it OFF.
+- [x] A card with an etched version: Etched shows and the switch reads ETCHED.
+- [x] A Pokémon card with normal + reverse: the selector allows those two, and HOLO is disabled.
+- [x] A 1st Edition-capable WotC-era card shows the 1st Edition toggle.
+- [x] Base Set Charizard, HOLO: the Version list reads Unlimited, 1st Edition, Shadowless, 1999–2000 Copyright (4th print). Jungle Clefable: Unlimited, 1st Edition, ….
 
 ---
 
@@ -1737,13 +1737,23 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 
 ### Phase 10: Global search, backups and launch
 
-**As built (2026-09-30):** the owner split the phase: the search, backups and polish were **built locally and on dev** (migration 0015 applied to dev, committed, **not pushed**). **The launch waits for the owner's go:** prod migrations 0001–0015, the Edge Functions on prod, the Actions variables back to prod, then the push.
+**As built (2026-09-30):** the owner split the phase: the search, backups and polish were **built locally and on dev** (committed, **not pushed**), along with the owner's additions below. Migrations **0015–0021 are applied to dev**. **The launch waits for the owner's go.**
 
 **Build**
-- Header global search (Section 13) with grouped results, keyboard, and jump + flash. **Completed collections are left out of the query** (owner, 2026-09-29).
-- Backup download/restore (11.5), the `restore_backup` function, the pre-restore auto-download, the backup reminder banner, and the plan-status text.
+- Header global search (Section 13): **Paid/Ours only by default, with a Show all toggle** (forgotten when the results close) for the other statuses, Completed results partly faded; **collections pinned at the top, then buys under dates** ("Today · September 30, 2026"); a panel per buy or collection listing each matching card as entered with its condition ("1 Gaea's Cradle (USG) 321 [NM]"); card pictures on hover; keyboard, and jump + flash. Migrations 0015–0017, 0021.
+- Backup download/restore (11.5), the `restore_backup` function, the pre-restore auto-download, the backup reminder banner, and the plan-status text. Migration 0015.
 - Polish pass: empty states, loading states, error toasts, tooltips, the 1366×768 check.
-- **Launch:** drop the old 9-argument `confirm_buy` (kept by migration 0020 so the dev-backed live site's older build can still confirm buys) in a migration once the new build is pushed; apply all migrations to **prod**, deploy the Edge Functions to prod, **set the GitHub Actions variables back to prod** (since 2026-09-30 they point the live site at **dev**, for testing 0.9.0-dev at the store; see `docs/SETUP.md` → Deploying), and finish `docs/SETUP.md` (run, deploy, change the store password, restore a pause). The public `README.md` stays a very short description of the tool's purpose (owner's decision, 2026-09-29). **Push to `main` only when the owner says go**, then confirm the Pages deploy succeeded.
+- **Added by the owner (2026-09-30):**
+  - **Walk-in buys: Paid/Ours, then Completed on EXPORT** (Section 10): EXPORT on a past day's page warns, then marks its buys Completed (locked, out of the search) game by game; a ⋯ menu beside EXPORT puts the day back; exported days are greyed and tagged on the Calendar; **today can't be exported**. Migrations 0018–0019.
+  - **Purchase price on CONFIRM BUY** (Section 8.10): Cash / Credit chips and the amount typed in by hand; customer name, phone and price all required; the Paid/Ours chip is green or blue by how it was paid. Migration 0020.
+  - Settings panels one fixed height, and Backups split on the page's centre line (Section 11); collection details with a clear header bar and fold button (9.4); the Changelog opens on Buys, with day pills that match the search's dates (12); card pictures on day pages (10.2); the computer is saved before anything can use it (7.4).
+- **Launch:**
+  - a migration that **drops the old 9-argument `confirm_buy`** (kept by 0020 so the dev-backed live site's older build can still confirm buys), once the new build is pushed;
+  - apply migrations **0001–0021** (and that drop) to **prod**, and put the Edge Functions on prod;
+  - **set the GitHub Actions variables back to prod** (since 2026-09-30 they point the live site at **dev**, for testing 0.9.0-dev at the store; see `docs/SETUP.md` → Deploying);
+  - finish `docs/SETUP.md`: run, deploy, the store password and backups are written; **restoring a paused project** is still to write;
+  - the public `README.md` stays a very short description of the tool's purpose (owner's decision, 2026-09-29);
+  - **push to `main` only when the owner says go**, then confirm the Pages deploy succeeded.
 
 **Owner tasks**
 - Say "push" when ready.
@@ -1751,10 +1761,12 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 - Decide on Supabase Pro for prod (daily backups, no pausing).
 
 **Where to look**
-- [ ] Header search `bolt`: every buy and collection containing any Lightning Bolt printing, grouped by printing. Clicking one jumps there and flashes it.
+- [ ] Header search `bolt`: Paid/Ours collections pinned under **Collections**, then buys under their dates, each panel listing its Lightning Bolts in full with their conditions; hovering a card line shows its picture. Opening one jumps there and flashes it.
 - [ ] ↓/↑ move the highlight, Enter opens it, Esc closes; a collection result opens the collection with its matching lines tinted.
 - [ ] Search `Charizard 125/197`: narrows to that printing.
-- [ ] A card in a Completed collection doesn't come up; mark that collection back to Paid/Ours (Reopen) and it does.
+- [ ] A card in a Processing, Priced or Completed collection, or on an exported day, doesn't come up until **Show all** is ticked; Completed ones then show partly faded. Close the results and open them again: back to Paid/Ours only.
+- [ ] CONFIRM BUY needs a name, a phone number and a purchase price (Cash or Credit, typed in); the buy's day page shows its Paid/Ours chip in green or blue and a "Paid $… cash" chip.
+- [ ] EXPORT on a past day: the warning, then the buys are Completed (× gone, Delete buy blocked, out of the search), the page greyed with EXPORTED, the Calendar day tagged "Exported". ⋯ → Mark Paid/Ours again undoes it. EXPORT on today's page is blocked.
 - [ ] Download backup: a JSON file saves, and the reminder banner goes away.
 - [ ] Restore (on **dev only**): type RESTORE, a pre-restore file downloads first, then the data matches the backup, and a "Backup restored" milestone is in the changelog.
 - [ ] The milestone also shows with the Changelog filtered to Magic or Pokémon.
