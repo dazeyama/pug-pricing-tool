@@ -126,14 +126,14 @@ export function relativeDay(at, now = new Date()) {
 }
 
 /**
- * A day's pill: "Today · September 30, 2026", "Yesterday · September 29,
- * 2026" (owner, 2026-09-30: with the date, as in the header search), else
- * "Monday, August 17, 2026".
+ * A day's pill, as the header search writes its days (owner, 2026-09-30):
+ * "Today · September 30, 2026", "Yesterday · September 29, 2026", else just
+ * "August 17, 2026". No weekdays; Today and Yesterday are the only markers.
  */
 export function dayHeading(at, now = new Date()) {
   const relative = relativeDay(at, now);
-  if (relative) return `${relative} · ${formatInTimeZone(at, STORE_TZ, 'MMMM d, yyyy')}`;
-  return formatInTimeZone(at, STORE_TZ, 'EEEE, MMMM d, yyyy');
+  const date = formatInTimeZone(at, STORE_TZ, 'MMMM d, yyyy');
+  return relative ? `${relative} · ${date}` : date;
 }
 
 /** The day an entry is filed under (store time), for the day pills. */
