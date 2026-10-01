@@ -165,6 +165,8 @@ export default function SearchBox({ wide }) {
     const buy = row.kind === 'walk_in';
     const user = buy ? staff.byId(row.confirmedBy) : null;
     const tone = buy ? '' : ` ${statusTone({ status: row.status, paid_method: row.paidMethod })}`;
+    // Completed (an exported buy, a Completed collection; Show all only): partly faded (owner, 2026-09-30).
+    const done = buy ? row.completed : row.status === 'completed';
     return (
       <button
         key={row.key}
@@ -172,7 +174,7 @@ export default function SearchBox({ wide }) {
         role="option"
         aria-selected={i === active}
         data-idx={i}
-        className={`result-btn${i === active ? ' active' : ''}${tone}`}
+        className={`result-btn${i === active ? ' active' : ''}${tone}${done ? ' done' : ''}`}
         style={buy && user ? { '--c': colorVar(user.color) } : undefined}
         onMouseEnter={(e) => {
           setActive(i);

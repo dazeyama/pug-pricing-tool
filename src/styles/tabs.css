@@ -283,6 +283,9 @@ header h1 { margin: 0; font-size: 20px; font-weight: 600; }
 }
 .scope-toggle.on .scope-box { border-color: var(--accent); background: var(--accent); color: #fff; }
 .result-btn .result-chip { margin-left: 8px; padding: 0 8px; font-size: 11px; vertical-align: 1px; }
+/* Completed results (Show all): partly faded, clearer when pointed at (owner, 2026-09-30). */
+.result-btn.done { opacity: .5; }
+.result-btn.done.active, .result-btn.done:hover { opacity: .8; }
 .search-error { margin: 0; color: var(--bad); font-size: 13.5px; }
 .search-hint { margin: 12px 0 0; color: var(--muted); font-size: 12px; font-style: italic; }
 /* A result: the left edge in the buy's user's colour, or the collection's
