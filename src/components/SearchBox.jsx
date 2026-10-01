@@ -14,8 +14,9 @@ import UserTag from './UserTag.jsx';
 import LinePreview, { previewFor } from './LinePreview.jsx';
 
 // The header's global search (spec 13), in CM's pill style: every stored line
-// in a confirmed buy or an open collection (not Completed) matching what's
-// typed: collections pinned at the top, then buys filed under dates, a panel
+// in a Paid/Ours walk-in buy or collection matching what's typed, or with
+// "Show all" every status but drafts (owner, 2026-09-30): collections pinned
+// at the top, then buys filed under dates, a panel
 // per buy or collection listing its matching cards in full (owner,
 // 2026-09-30). ↓/↑ move, Enter opens, Esc closes.
 // Opening a result jumps to it and flashes it.
@@ -58,6 +59,8 @@ export default function SearchBox({ wide }) {
   const [open, setOpen] = useState(false);
   const [found, setFound] = useState({ status: 'idle', sections: [], capped: false, error: null });
   const [active, setActive] = useState(0);
+  // Paid/Ours only, or every status (owner, 2026-09-30); kept while the app is open.
+  const [showAll, setShowAll] = useState(false);
   const wrap = useRef(null);
   const input = useRef(null);
   const results = useRef(null);
@@ -78,8 +81,8 @@ export default function SearchBox({ wide }) {
     const timer = setTimeout(async () => {
       try {
         const plan = searchArgs(query, await knownCodes());
-        let lines = plan ? await lookUp(plan.args) : [];
-        if (plan && !lines.length && plan.retry) lines = await lookUp(plan.retry);
+        let lines = plan ? await lookUp({ ...plan.args, p_all: showAll }) : [];
+        if (plan && !lines.length && plan.retry) lines = await lookUp({ ...plan.retry, p_all: showAll });
         if (mine !== run.current) return;
         setFound({ status: 'done', sections: groupResults(lines), capped: lines.length >= LINE_LIMIT, error: null });
         setActive(0);
@@ -90,7 +93,7 @@ export default function SearchBox({ wide }) {
       }
     }, WAIT_MS);
     return () => clearTimeout(timer);
-  }, [text]);
+  }, [text, showAll]);
 
   // A click anywhere else closes the results.
   useEffect(() => {
@@ -179,7 +182,10 @@ export default function SearchBox({ wide }) {
         <span className="result-where">
           <GameBadge game={row.game} />
           {buy ? (
-            <>Buy {row.number} · <UserTag user={user} /> · {formatTime(row.at)}</>
+            <>
+              Buy {row.number} · <UserTag user={user} /> · {formatTime(row.at)}
+              {row.completed && <span className="status-chip tone-completed result-chip">Completed</span>}
+            </>
           ) : (
             <><strong>{row.customerName}</strong> · <span className="result-status">{statusLabel(row.status)}</span></>
           )}
@@ -224,10 +230,29 @@ export default function SearchBox({ wide }) {
         />
         {showing && (
           <div className="search-results" ref={results} role="listbox" aria-label="Search results">
+            {/* Paid/Ours only, or every status (owner, 2026-09-30). */}
+            <div className="search-scope">
+              <span>{showAll ? 'Every status' : 'Paid/Ours only'}</span>
+              <button
+                type="button"
+                className={`scope-toggle${showAll ? ' on' : ''}`}
+                aria-pressed={showAll}
+                title={showAll ? 'Show Paid/Ours only' : 'Also show Processing, Priced and Completed'}
+                onMouseDown={(e) => e.preventDefault()}   // keep the typing in the box
+                onClick={() => setShowAll((v) => !v)}
+              >
+                <span className="scope-box" aria-hidden="true">{showAll ? '✓' : ''}</span>
+                Show all
+              </button>
+            </div>
             {found.status === 'error' && <p className="search-error">Search failed: {found.error}</p>}
             {found.status === 'loading' && !found.sections.length && <p className="search-none loading-note">Searching…</p>}
             {found.status === 'done' && !found.sections.length && (
-              <p className="search-none">No buys or collections contain that card.</p>
+              <p className="search-none">
+                {showAll
+                  ? 'No buys or collections contain that card.'
+                  : 'No Paid/Ours buys or collections contain that card. Show all includes the other statuses.'}
+              </p>
             )}
             {found.sections.map((sec) => (
               <section key={sec.key} className={`search-group${found.status === 'loading' ? ' stale' : ''}`}>

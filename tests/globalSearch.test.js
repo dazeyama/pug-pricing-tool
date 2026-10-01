@@ -64,6 +64,11 @@ test('collections pinned at the top; buys under their confirmation day, newest f
   assert.equal(groupResults([line({})])[0].title, undefined);   // no collections, no pinned section
 });
 
+test('a walk-in panel is Completed only when its cards are', () => {
+  const [sec] = groupResults([line({ line_id: 'a', completed: true }), line({ line_id: 'b', buy_id: 'b2', completed: false })]);
+  assert.deepEqual(sec.panels.map((p) => [p.buyId, p.completed]), [['b1', true], ['b2', false]]);
+});
+
 test('a buy with matches in both games is a panel per game', () => {
   const sections = groupResults([line({ line_id: 'a' }), line({ line_id: 'b', game: 'pokemon', set_code: 'SV2a' })]);
   assert.deepEqual(sections[0].panels.map((p) => p.game), ['mtg', 'pokemon']);

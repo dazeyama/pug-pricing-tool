@@ -76,6 +76,8 @@ export function groupResults(lines) {
         day: storeDay(at),
         entries: new Map(),
         lineIds: [],
+        // An exported walk-in buy (shown with Show all): its cards in this game are Completed.
+        completed: true,
       };
       panels.set(panelKey, p);
     }
@@ -90,6 +92,7 @@ export function groupResults(lines) {
     e.qty += l.quantity;
     e.lineIds.push(l.line_id);
     p.lineIds.push(l.line_id);
+    if (!l.completed) p.completed = false;
   }
 
   const rank = (c) => (CONDITIONS.indexOf(c) + 1) || CONDITIONS.length + 1;
