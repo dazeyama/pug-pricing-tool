@@ -133,7 +133,10 @@
   vertical-align: 2px;
   white-space: nowrap;
 }
-.cd-system-note { margin: 0 0 6px; font-size: 13px; }
+/* Can't upload cards' details: room around its note (owner, 2026-10-01). */
+.col-details.system .cd-body { padding: 12px 14px 14px; }
+.cd-system-note { margin: 0 0 10px; font-size: 13px; line-height: 1.5; }
+.col-details.system .cd-body .hint { margin: 0; line-height: 1.5; }
 .line-source { display: block; font-size: 11px; color: var(--muted); }
 .buy-list .cant-chip { margin-left: 6px; }
 .line-price.is-sell { color: var(--good); }
