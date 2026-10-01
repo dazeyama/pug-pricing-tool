@@ -45,6 +45,12 @@ export function dayTitle(day) {
   return formatInTimeZone(new Date(Date.UTC(y, m - 1, d, 12)), 'UTC', 'EEEE, MMMM d, yyyy');
 }
 
+/** "August 17, 2026": the date without its weekday (the header search's days). */
+export function dayDate(day) {
+  const [y, m, d] = day.split('-').map(Number);
+  return formatInTimeZone(new Date(Date.UTC(y, m - 1, d, 12)), 'UTC', 'MMMM d, yyyy');
+}
+
 /**
  * A month's weeks, Sunday first (owner's decision): each week 7 cells, a day
  * ("2026-08-01") or null for the days of the months either side. Always 6

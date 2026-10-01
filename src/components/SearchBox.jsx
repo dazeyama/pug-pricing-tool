@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
-import { dayTitle, storeDay } from '../lib/calendar.js';
+import { dayDate, storeDay } from '../lib/calendar.js';
 import { formatTime } from '../lib/time.js';
 import { dayHeading } from '../lib/changelog.js';
 import { colorVar } from '../lib/palette.js';
@@ -24,10 +24,14 @@ import LinePreview, { previewFor } from './LinePreview.jsx';
 
 const WAIT_MS = 250;
 
-/** "Today · Wednesday, September 30, 2026", "Yesterday · …", else the full date (owner, 2026-09-30). */
+/**
+ * "Today · September 30, 2026", "Yesterday · September 29, 2026", else just
+ * "August 17, 2026": no weekdays, Today and Yesterday the only day markers
+ * (owner, 2026-09-30).
+ */
 function dayLabel(section) {
   const relative = dayHeading(section.at);
-  const full = dayTitle(section.day);
+  const full = dayDate(section.day);
   return relative === 'Today' || relative === 'Yesterday' ? `${relative} · ${full}` : full;
 }
 

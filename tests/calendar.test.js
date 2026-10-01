@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  dayRange, dayTitle, monthGrid, monthRange, monthTitle, parseDay, parseMonth, shiftMonth, storeDay,
+  dayDate, dayRange, dayTitle, monthGrid, monthRange, monthTitle, parseDay, parseMonth, shiftMonth, storeDay,
 } from '../src/lib/calendar.js';
 
 // Spec 10: Sunday-first months on the store's (Pacific) calendar.
@@ -52,4 +52,9 @@ test('a month and a day as instants in store time', () => {
   const d = dayRange('2026-11-01');
   assert.equal(d.from.toISOString(), '2026-11-01T07:00:00.000Z');
   assert.equal(d.to.toISOString(), '2026-11-02T08:00:00.000Z');
+});
+
+test('dates in the header search have no weekday', () => {
+  assert.equal(dayDate('2026-08-17'), 'August 17, 2026');
+  assert.equal(dayDate('2026-08-07'), 'August 7, 2026');
 });
