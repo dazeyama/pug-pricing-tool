@@ -22,7 +22,9 @@ export const CATEGORIES = [
     key: 'collections',
     label: 'Collections',
     actions: ['collection_created', 'collection_cards_added', 'collection_line_edited',
-      'collection_cards_removed', 'collection_status_changed', 'collection_deleted'],
+      'collection_cards_removed', 'collection_status_changed', 'collection_deleted',
+      // Can't upload cards (export spec 9, 12).
+      'cant_upload_added', 'cant_upload_exported', 'cant_upload_returned'],
   },
   { key: 'actions', label: 'Actions', actions: ['collection_info_edited'] },
 ];
@@ -51,6 +53,9 @@ export const HEADLINES = {
   collection_info_edited: 'Collection details edited',
   collection_status_changed: 'Status changed',
   collection_deleted: 'Collection deleted',
+  cant_upload_added: "Cards can't upload",
+  cant_upload_exported: "Exported from Can't upload",
+  cant_upload_returned: 'Cards returned',
   backup_restored: 'Backup restored',
 };
 /** Entries about a whole day (EXPORT on a day page), not one buy. */

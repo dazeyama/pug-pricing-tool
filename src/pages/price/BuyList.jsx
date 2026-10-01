@@ -13,7 +13,8 @@ const VALID_PCT = /^\d{1,3}(\.\d{1,2})?$/;
 
 /** Σ unit price × quantity, to the cent. */
 export function marketTotal(lines) {
-  return Math.round(lines.reduce((sum, l) => sum + Number(l.unit_price) * l.quantity, 0) * 100) / 100;
+  // An exported card counts at its Sell Price (export spec 5.5; owner, 2026-10-01).
+  return Math.round(lines.reduce((sum, l) => sum + Number(l.cc_sell_price ?? l.unit_price) * l.quantity, 0) * 100) / 100;
 }
 
 /**
@@ -249,7 +250,13 @@ export default function BuyList({
                   onMouseEnter={(e) => setPreview(previewFor(l.image_url, e.currentTarget, aside.current, 'left'))}
                   onMouseLeave={hidePreview}
                 >
-                  <span className="line-price" title="Price per card">{formatMoney(l.unit_price)}</span>
+                  {l.cc_sell_price != null ? (
+                    <span className="line-price is-sell" title={`Bought at ${formatMoney(l.unit_price)} · sell price from the export`}>
+                      <span className="sell-tag">Sell</span>{formatMoney(l.cc_sell_price)}
+                    </span>
+                  ) : (
+                    <span className="line-price" title="Price per card">{formatMoney(l.unit_price)}</span>
+                  )}
                   <button
                     type="button"
                     className="buy-line"
@@ -259,6 +266,13 @@ export default function BuyList({
                     onClick={() => (canEdit ? onEdit(l) : editBlocked())}
                   >
                     {lineText(l)}
+                    {l.cc_status === 'cant_upload' && (
+                      <span className="cant-chip" title="Not matched to Crystal Commerce: pulled from the upload. It's in Can't upload cards.">
+                        Can't upload
+                      </span>
+                    )}
+                    {/* A copy in Can't upload cards: where it came from (export spec 9.2). */}
+                    {l.source_note && <span className="line-source">{l.source_note}</span>}
                   </button>
                   <button
                     type="button"

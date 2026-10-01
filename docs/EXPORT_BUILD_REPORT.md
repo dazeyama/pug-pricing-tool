@@ -11,12 +11,35 @@ The export function (`docs/EXPORT_FUNCTION.md`, Phases E1–E5), built in one ru
 3. **The older live site's EXPORT.** The live build (v0.9.1-final) still has the old EXPORT, which marks a day Completed without a file. Kept working for compatibility; a day it marks has no export stamps, and the new build's EXPORT on it says to mark the day Paid/Ours again and export. Should the old EXPORT be refused from now on instead?
 4. **How fresh "fresh" is.** The export's Sell Prices accept JustTCG prices fetched in the last 15 minutes (not 6 hours), so a Back-and-export-again or a retry doesn't spend another request. Say if it should always fetch.
 5. **A day where nothing matched** (every card Can't upload): it still becomes Completed, with no file. Say if it should stay Paid/Ours instead.
-6. **The older live site and the inventory.** The live GitHub Pages build (v0.9.1-final) still uploads inventories the old way, without loading products for the export. If someone uploads from the live site, Settings will say "Products not loaded for export: upload it again" until it's uploaded from the new build.
+6. **Can't upload cards and the live site.** The live build (v0.9.1-final) shows the new collection in its Collections table like any other (no System chip, a blank phone); editing it there is refused by the server with a plain error. Nothing breaks, but it looks rough until the new build goes live.
+7. **The older live site and the inventory.** The live GitHub Pages build (v0.9.1-final) still uploads inventories the old way, without loading products for the export. If someone uploads from the live site, Settings will say "Products not loaded for export: upload it again" until it's uploaded from the new build.
 
 ## Owner tasks
 
 - **Upload the real inventory** (`playersuniongames-inventory-search-31.csv`) in Settings from the local app, so its 152,115 products load for matching (Phase E1). Dev has no products loaded yet: the check and the export both say to upload it first.
 - **A test upload in Crystal Commerce** before the first real batch (spec Appendix D #1): export a day with one or two cards whose stock and price are easy to put back by hand, run the file through Mass Create in "Only Update Products" mode, and check CC took the Custom SKU column, the condition words and the Sell Prices, and that Add Qty added.
+
+## Phase E4: The Can't upload cards collection
+
+**Built**
+- Migration **0028** (applied to dev after a rolled-back test): `buys.system_key`, the collection itself (always Paid/Ours, no phone, the fixed note), `buy_lines.source_note`, the `system_collection` refusals (rename, details, rates, status, delete, adding or editing cards; removing stays allowed), copies made by the day export and taken back by its undo, and exporting from the collection itself.
+- **Collections table:** Can't upload cards is always the first row, with a red **System** chip.
+- **Its screen:** fixed name and note, no status controls, no Delete, the search bar off ("Cards arrive here from exports"), cards removable with ×, each copy showing where it came from.
+- **Its EXPORT:** a warning first ("unlikely to work, unless…" → Try anyway), then the export dialog without the pull-out list; matched cards are exported and leave, their original rows lose the chip; the rest stay.
+- **Changelog:** "Cards can't upload", "Exported from Can't upload", "Cards returned" (in Collections).
+- **Restore:** a backup from before this phase gets the collection made again after the restore.
+
+**Checks:** build OK · 109 tests pass · lint clean · migration tested in a rolled-back transaction, then applied.
+
+**Where to look**
+- [ ] The Collections table's first row is **Can't upload cards** with a System chip, whatever the sort or status filter.
+- [ ] Its screen: no rename, no status changes, no ⋯ / Delete; the note can't be edited; the search bar says cards arrive from exports.
+- [ ] Export a day with a "None of these" card: the card appears in Can't upload cards ("from Buy N · date"), and stays on its day page with the chip.
+- [ ] Remove a card from Can't upload cards with its ×: it goes, as in any Paid/Ours collection.
+- [ ] Mark that day Paid/Ours again: the copies leave Can't upload cards.
+- [ ] EXPORT on Can't upload cards: the warning first; pick a product for a card, Export: the file downloads, the card leaves the collection, and its day row loses the chip. Cards set to "None of these" stay.
+- [ ] The header search finds a card in Can't upload cards, under Collections.
+- [ ] The changelog (Collections) shows "Cards can't upload", "Exported from Can't upload" and "Cards returned".
 
 ## Phase E3: Exporting a day
 

@@ -27,9 +27,13 @@ import {
  * @param {object} [p.target]  export_lines' target (export mode)
  * @param {string} [p.fileName]  the Mass Create file's name (export mode)
  * @param {(result: object) => void} [p.onExported]  after the export is saved and the file handed over
+ * @param {boolean} [p.pullOut]  can't-upload cards must be pulled from the batch (false: Can't upload
+ *   cards itself, whose cards are already out of it; spec 9.3)
  * @param {() => void} p.onClose
  */
-export default function ExportDialog({ items, mode = 'check', title, target, fileName, onExported, onClose }) {
+export default function ExportDialog({
+  items, mode = 'check', title, target, fileName, onExported, onClose, pullOut = true,
+}) {
   const staff = useStaff();
   const toast = useToast();
   const { deviceId } = useDevice();
@@ -237,7 +241,7 @@ export default function ExportDialog({ items, mode = 'check', title, target, fil
       </>
     );
   } else {
-    const blocked = (cantCards > 0 && !pulled) || saving;
+    const blocked = (pullOut && cantCards > 0 && !pulled) || (!pullOut && toExport === 0) || saving;
     footer = (
       <>
         <button type="button" className="btn ghost" disabled={saving} onClick={() => setPhase('review')}>Back</button>
@@ -245,7 +249,8 @@ export default function ExportDialog({ items, mode = 'check', title, target, fil
           type="button"
           className={`btn primary${saving ? ' busy' : ''}`}
           disabled={blocked}
-          title={cantCards > 0 && !pulled ? 'Tick “I’ve pulled these cards out of the batch” first' : undefined}
+          title={pullOut && cantCards > 0 && !pulled ? 'Tick “I’ve pulled these cards out of the batch” first'
+            : !pullOut && toExport === 0 ? 'Nothing matched: there’s nothing to export' : undefined}
           onClick={save}
         >
           {toExport > 0 ? `Export ${toExport} card${toExport === 1 ? '' : 's'}` : 'Mark them Can’t upload'}
@@ -333,13 +338,21 @@ export default function ExportDialog({ items, mode = 'check', title, target, fil
                 <>
                   Export <strong>{toExport} card{toExport === 1 ? '' : 's'}</strong> ({previewRows().length} row
                   {previewRows().length === 1 ? '' : 's'}) to a Crystal Commerce Mass Create file, Custom SKU{' '}
-                  <strong>{customSkuFor(new Date())}</strong>. The cards here become <strong>Completed</strong>.
+                  <strong>{customSkuFor(new Date())}</strong>.{' '}
+                  {pullOut ? <>The cards here become <strong>Completed</strong>.</> : <>They leave Can't upload cards.</>}
                 </>
-              ) : (
+              ) : pullOut ? (
                 <>Nothing here matched a Crystal Commerce product, so there's no file. The cards become <strong>Completed</strong>.</>
+              ) : (
+                <>Nothing here matched a Crystal Commerce product, so there's nothing to export.</>
               )}
             </p>
-            {cantCards > 0 && (
+            {!pullOut && cantCards > 0 && (
+              <p className="xd-summary">
+                <strong>{cantCards}</strong> still can't upload and stay{cantCards === 1 ? 's' : ''} in Can't upload cards.
+              </p>
+            )}
+            {pullOut && cantCards > 0 && (
               <div className="xd-pull" role="alert">
                 <h3>Pull {cantCards === 1 ? 'this card' : `these ${cantCards} cards`} out of the batch before uploading.</h3>
                 <ul>
@@ -350,7 +363,8 @@ export default function ExportDialog({ items, mode = 'check', title, target, fil
                   ))}
                 </ul>
                 <p className="hint">
-                  They won't be in the file. They'll be marked <strong>Can't upload</strong> here.
+                  They won't be in the file. They'll be marked <strong>Can't upload</strong> here and copied to the{' '}
+                  <strong>Can't upload cards</strong> collection.
                 </p>
                 <label className="xd-pulled">
                   <input type="checkbox" checked={pulled} disabled={saving} onChange={(e) => setPulled(e.target.checked)} />

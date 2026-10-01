@@ -31,7 +31,7 @@ const MESSAGES = {
   day_not_over: "Today can't be exported until it's over.",
   no_user: 'Pick a user first.',
 };
-const CANT_UPLOAD_TIP = 'Not matched to Crystal Commerce: pulled from the upload, and not in the export file.';
+const CANT_UPLOAD_TIP = "Not matched to Crystal Commerce: pulled from the upload. It's in Can't upload cards.";
 const COMPLETED_LOCK = 'Completed (exported): mark the day Paid/Ours again (⋯ next to EXPORT) to change it';
 // The current day can't be exported (owner, 2026-09-30): buys confirmed later would miss it.
 const NOT_OVER = "Today can't be exported until it's over: buys confirmed later would miss the export";
@@ -286,7 +286,7 @@ function DayScreen({ game, day }) {
     setExporting(false);
     const cards = `${result.cards} card${result.cards === 1 ? '' : 's'}`;
     const cant = result.cant > 0
-      ? ` ${result.cant} can't upload: make sure ${result.cant === 1 ? "it's" : "they're"} out of the batch.`
+      ? ` ${result.cant} can't upload: copied to Can't upload cards.`
       : '';
     toast(result.cards > 0
       ? `Exported ${cards} (${result.rows} row${result.rows === 1 ? '' : 's'}), Custom SKU ${result.sku}.${cant}`

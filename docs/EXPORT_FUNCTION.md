@@ -581,6 +581,15 @@ During `export_lines` (Section 8.4), each can't-upload line is **copied** into t
 
 **Mark Paid/Ours again** on a day page (`DESIGN_SPEC.md` 10.2) now calls `export_undo_day`, which also **removes that day's copies from this collection** (owner's decision: "undo the move") and clears the day's export stamps. **Reopen** on an exported collection does the same for its copies. If a copy was already deleted from the collection, there's nothing to remove.
 
+### 9.4a As built (Phase E4)
+
+- **Migration 0028:** `buys.system_key` (unique), the relaxed name/phone constraint, `buy_lines.source_note` (the copy's "from Buy 2 · September 30, 2026", kept as text so it survives its buy being deleted), the collection itself (`cant_upload_ensure()`, which also remakes it if it's ever missing), and the export's steps split into `export_check`, `export_stamp`, `export_learn`, `cant_upload_copy` and `cant_upload_return`, shared by `export_lines` and `export_undo_day`. Tested in a rolled-back transaction against dev's September 30 buys, then applied.
+- **The refusals** (`system_collection`): adding, editing, details and rates through `collection_for_write` (when it changes contents or details), and `collection_set_status` and `collection_delete` in their own checks. Removing cards stays allowed.
+- **Exporting from it** (`export_lines` with `{ kind: 'cant_upload', version }`) needs this computer to hold the collection's editing lock, like any collection write. Matched copies are stamped, give the file its rows, restamp their original lines `exported` (the chip goes; the originals' buys reload), and are deleted. Copies whose original was since deleted just leave. If nothing matches, nothing changes (Export stays disabled).
+- **Its screen:** the details panel is a fixed version (name, System chip, the note, a line on how it works), no ⋯ menu, no status controls; the search bar is switched off and reads "Cards arrive here from exports…"; ADD CARD says the same; each card shows where it came from under its name. EXPORT warns first ("Try anyway"), then the export dialog without the pull-out list.
+- **Restore:** a backup made before the collection existed is restored as it was, then the collection is made again (`cant_upload_ensure`), empty.
+- **Collections table:** first row whatever the sort or status filter, with a red **System** chip; Phone, Offer and Paid read `—`.
+
 ### 9.5 Where it shows
 
 - **Collections table:** pinned as the **first row**, with a red **System** chip beside the name, whatever the sort or filter (it hides only when the text filter excludes it). Its Phone cell is `—`.

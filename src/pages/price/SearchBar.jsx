@@ -1,13 +1,17 @@
 // The main search bar (spec 8.2): large, fixed at the top of the stage, never
 // an overlay. At its right edge, MTG | PKM picks the games searched (either
 // or both, never neither), and EN | JP switches Pokémon's language only.
-// `lead` goes before the field (a collection's < BACK).
+// `lead` goes before the field (a collection's < BACK). `blocked` switches
+// the field off and says why in it (Can't upload cards: cards only arrive
+// from exports).
 const GAMES = [
   { key: 'mtg', label: 'MTG', name: 'Magic' },
   { key: 'pokemon', label: 'PKM', name: 'Pokémon' },
 ];
 
-export default function SearchBar({ inputRef, value, onChange, onKeyDown, lang, onLang, games, onGames, note, lead }) {
+export default function SearchBar({
+  inputRef, value, onChange, onKeyDown, lang, onLang, games, onGames, note, lead, blocked = null,
+}) {
   return (
     <div className="main-search">
       <div className="main-search-row">
@@ -20,11 +24,13 @@ export default function SearchBar({ inputRef, value, onChange, onKeyDown, lang, 
           <input
             ref={inputRef}
             type="text"
-            autoFocus
+            autoFocus={!blocked}
             autoComplete="off"
             spellCheck="false"
-            placeholder="Type what's printed on the card: Lightning Bolt 161/295 2X2"
+            placeholder={blocked ?? "Type what's printed on the card: Lightning Bolt 161/295 2X2"}
             aria-label="Search for a card"
+            disabled={Boolean(blocked)}
+            title={blocked ?? undefined}
             value={value}
             onChange={(e) => onChange(e.target.value)}
             onKeyDown={onKeyDown}

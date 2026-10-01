@@ -31,13 +31,14 @@ const columns = (by) => [
     cell: (c, elsewhere) => (
       <td key="name" className="col-name">
         {c.customer_name}
+        {c.system_key && <span className="system-chip" title="Made by the app: holds the cards exports couldn't upload">System</span>}
         {elsewhere && <span className="lock-line">{elsewhere}</span>}
       </td>
     ),
   },
   {
     key: 'phone', label: 'Phone', value: (c) => c.phone,
-    cell: (c) => <td key="phone" className="col-phone">{formatPhone(c.phone)}</td>,
+    cell: (c) => <td key="phone" className="col-phone">{c.system_key ? '—' : formatPhone(c.phone)}</td>,
   },
   {
     key: 'status', label: 'Status', value: (c) => STATUS_ORDER[c.status],
@@ -65,13 +66,13 @@ const columns = (by) => [
     key: 'offer',
     label: 'Offer',
     value: (c) => (c.status === 'processing' || c.offer_cash == null ? -1 : Number(c.offer_cash)),
-    cell: (c) => <td key="offer" className="col-money"><OfferText buy={c} /></td>,
+    cell: (c) => <td key="offer" className="col-money">{c.system_key ? '—' : <OfferText buy={c} />}</td>,
   },
   {
     key: 'paid',
     label: 'Paid',
     value: (c) => (isClosed(c.status) && c.paid_price != null ? Number(c.paid_price) : -1),
-    cell: (c) => <td key="paid" className="col-money"><PaidText buy={c} /></td>,
+    cell: (c) => <td key="paid" className="col-money">{c.system_key ? '—' : <PaidText buy={c} />}</td>,
   },
 ];
 
@@ -88,7 +89,7 @@ export default function CollectionsPage() {
   const { data, loaded } = useLiveTable('buys', () => supabase
     .from('buys')
     .select('id, customer_name, phone, status, notes, created_at, updated_at, last_edited_by, '
-      + 'offer_cash, offer_credit, paid_price, paid_method')
+      + 'offer_cash, offer_credit, paid_price, paid_method, system_key')
     .eq('kind', 'collection'));
   const locks = useLiveTable('collection_locks', () => supabase
     .from('collection_locks')
@@ -115,12 +116,15 @@ export default function CollectionsPage() {
     const column = COLUMNS.find((c) => c.key === sort.key);
     const filter = FILTERS.find((f) => f.value === status) ?? FILTERS[0];
     const dir = sort.dir === 'asc' ? 1 : -1;
+    // Can't upload cards is the first row whatever the sort or status filter;
+    // only the text search hides it (export spec 9.5).
     return all
-      .filter(filter.match)
+      .filter((c) => c.system_key || filter.match(c))
       .filter((c) => !words
         || nameKey(c.customer_name).includes(words)
         || (digits && c.phone?.includes(digits)))
       .sort((a, b) => {
+        if (Boolean(a.system_key) !== Boolean(b.system_key)) return a.system_key ? -1 : 1;
         const x = column.value(a) ?? '';
         const y = column.value(b) ?? '';
         return (x < y ? -1 : x > y ? 1 : 0) * dir || (b.updated_at < a.updated_at ? -1 : 1);

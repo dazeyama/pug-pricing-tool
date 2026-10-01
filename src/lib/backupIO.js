@@ -68,5 +68,8 @@ export async function restoreBackup(data, fileName, userId, deviceId) {
     p_typed: 'RESTORE',
   }));
   if (error) throw new Error(RESTORE_ERRORS[error.message] ?? `The restore failed, and nothing was changed: ${error.message}`);
+  // A backup made before Can't upload cards existed (export spec 9.5): make it again.
+  const { error: ensureError } = await supabase.rpc('cant_upload_ensure');
+  if (ensureError) console.error("Couldn't make Can't upload cards again", ensureError);
   return counts;
 }

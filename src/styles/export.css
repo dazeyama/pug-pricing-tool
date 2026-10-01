@@ -101,3 +101,24 @@
   white-space: nowrap;
 }
 .cant-text { color: var(--bad); font-weight: 700; }
+
+/* Can't upload cards (export spec 9.5): the System chip, its fixed note, and
+   where each copy came from. */
+.system-chip {
+  margin-left: 8px;
+  padding: 0 8px;
+  border: 1.5px solid var(--bad);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bad) 14%, transparent);
+  color: var(--bad);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  vertical-align: 2px;
+  white-space: nowrap;
+}
+.cd-system-note { margin: 0 0 6px; font-size: 13px; }
+.line-source { display: block; font-size: 11px; color: var(--muted); }
+.buy-list .cant-chip { margin-left: 6px; }
+.line-price.is-sell { color: var(--text); }

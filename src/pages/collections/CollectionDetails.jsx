@@ -9,6 +9,71 @@ import { PHONE_ERROR, formatPhone, phoneDigits, validPhone } from '../../lib/pho
 import { formatRecent, formatShortDate, formatTime } from '../../lib/time.js';
 import { cleanLast4, cleanName, nameError } from './CollectionModals.jsx';
 
+/** The fold button: the details down to their header bar, or back up. */
+function FoldButton({ open, onToggle }) {
+  return (
+    <button
+      type="button"
+      className="cd-fold"
+      aria-expanded={open}
+      aria-label={open ? 'Minimize the details' : 'Expand the details'}
+      title={open ? 'Minimize the details' : 'Expand the details'}
+      onClick={onToggle}
+    >
+      <svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true">
+        <path
+          d={open ? 'M3.5 6 8 10.5 12.5 6' : 'M3.5 10 8 5.5 12.5 10'}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </button>
+  );
+}
+
+/**
+ * Can't upload cards (export spec 9.1): always Paid/Ours, its name and note
+ * fixed, no phone, no status controls and no Delete. Cards only arrive from
+ * exports; they can be removed as from any Paid/Ours collection.
+ */
+function SystemDetails({ buy, open, onToggle, viewOnly, holder, onTakeOver }) {
+  return (
+    <section className={`col-details system${open ? ' open' : ''} has-body`} aria-label="Collection details">
+      <div className="cd-head">
+        <button type="button" className="cd-toggle" aria-expanded={open} onClick={onToggle}>
+          <span className="cd-name">{buy.customer_name}</span>
+          <span className="system-chip">System</span>
+        </button>
+        <FoldButton open={open} onToggle={onToggle} />
+      </div>
+      <div className="cd-body">
+        {viewOnly && (
+          <div className="cd-banner view-only">
+            <span>
+              ✎ Being edited on <strong>{holder.label}</strong>
+              {holder.user && <> by <UserTag user={holder.user} /></>}
+              {holder.since && <> since {formatTime(holder.since)}</>}.
+            </span>
+            <GuardButton className="btn small" onClick={onTakeOver}>Take over</GuardButton>
+          </div>
+        )}
+        {open && (
+          <>
+            <p className="cd-system-note">{buy.notes}</p>
+            <p className="hint">
+              Always Paid/Ours. Cards arrive here from exports, each saying where it came from; remove one with its ×
+              once it's dealt with. EXPORT tries them again.
+            </p>
+          </>
+        )}
+      </div>
+    </section>
+  );
+}
+
 /** "today 3:12 PM" in a sentence. */
 const recent = (when) => formatRecent(when).replace(/^(Today|Yesterday)/, (m) => m.toLowerCase());
 
@@ -53,6 +118,7 @@ export default function CollectionDetails({
 }) {
   const [open, setOpen] = useState(true);
   const toggle = () => setOpen((o) => !o);
+  if (buy.system_key) return <SystemDetails buy={buy} open={open} onToggle={toggle} viewOnly={viewOnly} holder={holder} onTakeOver={onTakeOver} />;
   const hasBody = open || viewOnly || buy.status === 'paid' || buy.status === 'completed';
   const tone = statusTone(buy);
   const step = {

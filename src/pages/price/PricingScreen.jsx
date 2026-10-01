@@ -119,10 +119,12 @@ const BOTH_GAMES = { mtg: true, pokemon: true };
  * @param {any} [p.searchLead]  before the search field, top left (a collection's < BACK)
  * @param {string} [p.className]  on the screen (a collection's: flipped background, amber accent)
  * @param {{ ids: string[], key: string }|null} [p.hits]  list lines a header search matched, to flash
+ * @param {string|null} [p.searchBlocked]  why the search bar is off (Can't upload cards), or null
  */
 export default function PricingScreen({
   list, rates, master, locked = null, removeLocked = locked, listTitle, ratesTitle,
   renderListDetails, renderListFooter, resetKey = 0, searchLead = null, className = '', hits = null,
+  searchBlocked = null,
 }) {
   const [text, setText] = useState('');
   const [lang, setLang] = usePokemonLang();
@@ -556,6 +558,7 @@ export default function PricingScreen({
             }}
             note={note}
             lead={searchLead}
+            blocked={searchBlocked}
           />
 
           {/* Owner's layout (2026-09-29): card left with prices under it; info

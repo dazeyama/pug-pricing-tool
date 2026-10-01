@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import Modal from '../components/Modal.jsx';
+import ExportDialog from './export/ExportDialog.jsx';
+import { fileStamp } from '../lib/time.js';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import PricingScreen from './price/PricingScreen.jsx';
 import CollectionDetails from './collections/CollectionDetails.jsx';
@@ -48,6 +51,8 @@ function CollectionScreen({ id }) {
   const deleting = useRef(false);   // our own delete: no "deleted on another computer"
 
   const buy = col.buy;
+  const system = Boolean(buy?.system_key);   // Can't upload cards (export spec 9)
+  const [exportStep, setExportStep] = useState(null);   // 'warn' | 'dialog'
   const back = () => navigate('/collections');
 
   // Deleted on another computer while open: say so and go back to the table.
@@ -79,11 +84,46 @@ function CollectionScreen({ id }) {
   if (!buy) locked = 'Loading the collection';
   else if (lock.status === 'checking') locked = 'Checking who is editing this collection';
   else if (viewOnly) locked = `View only: ${holderLabel} is editing this collection. Take over to edit`;
+  else if (system) locked = 'Cards arrive here from exports';
   else if (buy.status === 'paid') locked = 'Paid/Ours: unlock it to edit';
   else if (buy.status === 'completed') locked = 'Completed: reopen it to edit';
   // Cards can still be removed from a Paid/Ours collection, not a Completed
   // one (owner, 2026-09-29); adding and editing stay locked.
   const removeLocked = buy?.status === 'paid' && lock.status === 'held' ? null : locked;
+
+  /**
+   * EXPORT. Can't upload cards (export spec 9.3): a warning first, then the
+   * export dialog for its Magic cards. Other collections: still the
+   * placeholder until Phase E5.
+   */
+  function startExport() {
+    if (!user) {
+      staff.pulse();
+      return;
+    }
+    if (offline) {
+      toast('No connection: nothing can change until it comes back.', 'err');
+      return;
+    }
+    if (viewOnly || lock.status !== 'held') {
+      toast(viewOnly ? `${holderLabel} is editing this collection: take over to export.` : 'Checking who is editing this collection.', 'err');
+      return;
+    }
+    if (!col.lines.some((l) => l.game === 'mtg')) {
+      toast('No Magic cards here to export.', 'err');
+      return;
+    }
+    setExportStep('warn');
+  }
+
+  async function exported(result) {
+    setExportStep(null);
+    const stay = result.cant > 0 ? ` ${result.cant} still can't upload and stay here.` : '';
+    toast(result.cards > 0
+      ? `Exported ${result.cards} card${result.cards === 1 ? '' : 's'} (${result.rows} row${result.rows === 1 ? '' : 's'}), Custom SKU ${result.sku}: they've left this collection.${stay}`
+      : `Nothing matched: every card stays here.`, 'ok');
+    await col.reload();
+  }
 
   // The status can change while locked (that's how it unlocks), not while view-only.
   const canChangeStatus = Boolean(user) && !offline && lock.status === 'held' && Boolean(buy);
@@ -146,6 +186,7 @@ function CollectionScreen({ id }) {
       hits={hits}
       listTitle="Collection list"
       ratesTitle="Rates for this collection"
+      searchBlocked={system ? "Cards arrive here from exports: they can't be added by hand" : null}
       // Back to the table: big and bold, top left, before the search bar (owner, 2026-09-29).
       searchLead={(
         <button type="button" className="btn search-back" title="Back to Collections" onClick={back}>
@@ -313,7 +354,40 @@ function CollectionScreen({ id }) {
       )}
       renderListFooter={({ focusSearch }) => (
         <div className="list-buttons">
-          <ExportButton onDone={focusSearch} />
+          <ExportButton onDone={focusSearch} onClick={system ? startExport : undefined} />
+          {exportStep === 'warn' && (
+            <Modal
+              title="Export Can't upload cards?"
+              onClose={() => setExportStep(null)}
+              footer={(
+                <>
+                  <button type="button" className="btn ghost" onClick={() => setExportStep(null)}>Cancel</button>
+                  <button type="button" className="btn primary" autoFocus onClick={() => setExportStep('dialog')}>Try anyway</button>
+                </>
+              )}
+            >
+              <p>
+                These cards couldn't be matched before. Exporting them again is unlikely to work, unless the Master
+                Crystal Inventory has changed or you can pick their products by hand.
+              </p>
+            </Modal>
+          )}
+          {exportStep === 'dialog' && (
+            <ExportDialog
+              mode="export"
+              pullOut={false}
+              title="Export Can't upload cards to Crystal Commerce"
+              items={col.lines.filter((l) => l.game === 'mtg').map((line) => ({ line, where: line.source_note ?? '' }))}
+              target={{ kind: 'cant_upload', version: buy.version }}
+              fileName={`cc-mass-create-cant-upload-${fileStamp(new Date())}.csv`}
+              onExported={exported}
+              onClose={() => {
+                setExportStep(null);
+                col.reload();
+                focusSearch();
+              }}
+            />
+          )}
         </div>
       )}
     />
