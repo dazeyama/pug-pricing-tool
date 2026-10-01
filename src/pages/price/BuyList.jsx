@@ -225,7 +225,11 @@ export default function BuyList({
   }, [hitKey, firstHit, loaded]);
 
   return (
-    <aside className={`buy-list${locked ? ' locked' : ''}${removeLocked ? ' no-remove' : ''}`} ref={aside}>
+    // Any Sell price (an exported collection): the price column widens for its SELL tag.
+    <aside
+      className={`buy-list${locked ? ' locked' : ''}${removeLocked ? ' no-remove' : ''}${lines.some((l) => l.cc_sell_price != null) ? ' has-sell' : ''}`}
+      ref={aside}
+    >
       <div className="list-head">
         <span className="list-title">{title}</span>
         <span className="list-count">{count} card{count === 1 ? '' : 's'}</span>

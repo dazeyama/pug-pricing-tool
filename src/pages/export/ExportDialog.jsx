@@ -260,7 +260,7 @@ export default function ExportDialog({
   }
 
   return (
-    <Modal wide title={title} onClose={saving ? undefined : onClose} footer={footer}>
+    <Modal wide className="xd-modal" title={title} onClose={saving ? undefined : onClose} footer={footer}>
       <div className="xd" ref={box}>
         {phase === 'matching' && <p className="loading-note xd-step">{stepText || 'Matching…'}</p>}
         {phase === 'error' && <div className="banner err">{error}</div>}
