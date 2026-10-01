@@ -207,6 +207,8 @@ export default function BuyList({
 
   const count = lines.reduce((n, l) => n + l.quantity, 0);
   const market = marketTotal(lines);
+  // An exported collection: prices get a SELL tag, in a wider, left-aligned column.
+  const anySell = lines.some((l) => l.cc_sell_price != null);
 
   // A new or updated line scrolls into view and flashes (spec 8.8).
   useEffect(() => {
@@ -227,7 +229,7 @@ export default function BuyList({
   return (
     // Any Sell price (an exported collection): the price column widens for its SELL tag.
     <aside
-      className={`buy-list${locked ? ' locked' : ''}${removeLocked ? ' no-remove' : ''}${lines.some((l) => l.cc_sell_price != null) ? ' has-sell' : ''}`}
+      className={`buy-list${locked ? ' locked' : ''}${removeLocked ? ' no-remove' : ''}${anySell ? ' has-sell' : ''}`}
       ref={aside}
     >
       <div className="list-head">
@@ -259,7 +261,11 @@ export default function BuyList({
                       <span className="sell-tag">Sell</span>{formatMoney(l.cc_sell_price)}
                     </span>
                   ) : (
-                    <span className="line-price" title="Price per card">{formatMoney(l.unit_price)}</span>
+                    <span className="line-price" title="Price per card">
+                      {/* Room for the tag, so every price starts level. */}
+                      {anySell && <span className="sell-tag blank" aria-hidden="true">Sell</span>}
+                      {formatMoney(l.unit_price)}
+                    </span>
                   )}
                   <button
                     type="button"

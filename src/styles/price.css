@@ -979,7 +979,10 @@
 .list-title { font-size: .78rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
 .list-count { font-size: 13px; color: var(--muted); }
 .list-empty { margin: 18px 16px; color: var(--muted); font-size: 13px; }
-.list-body { flex: 1; min-height: 0; overflow-y: auto; padding: 6px 0 10px; }
+/* No top padding on the scroller itself: the sticky game headers would stop
+   that far down, and rows scrolling past would show above them. */
+.list-body { flex: 1; min-height: 0; overflow-y: auto; padding: 0 0 10px; }
+.list-group:first-child { padding-top: 6px; }
 .list-group + .list-group { margin-top: 8px; }
 .group-head {
   position: sticky;

@@ -122,9 +122,11 @@
 .line-source { display: block; font-size: 11px; color: var(--muted); }
 .buy-list .cant-chip { margin-left: 6px; }
 .line-price.is-sell { color: var(--text); }
-/* The SELL tag needs room: the whole column widens so the lines stay level. */
-.buy-list.has-sell .line-price { width: 7.4em; white-space: nowrap; }
-.buy-list .sell-tag { margin-right: 4px; }
+/* The SELL tag needs room: the whole column widens and reads from the left,
+   so the tags, the prices and the lines all start level. */
+.buy-list.has-sell .line-price { width: 8.6em; white-space: nowrap; text-align: left; }
+.buy-list .sell-tag { margin-right: 6px; }
+.sell-tag.blank { visibility: hidden; }
 /* The export dialog: wide, for long CC product names and the Bought → Sell prices. */
 .xd-modal .modal-box.wide { width: min(1180px, 96vw); max-height: 88vh; }
 .sku-chip.compact { flex: none; padding: 1px 9px; border-width: 1.5px; font-size: 11px; white-space: nowrap; }
