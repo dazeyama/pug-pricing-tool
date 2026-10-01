@@ -152,12 +152,12 @@ export default function SearchBox({ wide }) {
         {buy ? (
           <>
             {formatDate(row.confirmedAt)} · {GAME_NAMES[row.game]} · Buy {row.number} · <UserTag user={user} />
-            {' · '}qty {row.qty}
+            {' · '}qty {row.qty} <span className="result-cond">[{row.condition}]</span>
           </>
         ) : (
           <>
             <strong>{row.customerName}</strong> · <span className="result-status">{statusLabel(row.status)}</span>
-            {' · '}qty {row.qty}
+            {' · '}qty {row.qty} <span className="result-cond">[{row.condition}]</span>
           </>
         )}
       </button>

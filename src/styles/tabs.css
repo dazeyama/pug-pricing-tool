@@ -258,6 +258,7 @@ header h1 { margin: 0; font-size: 20px; font-weight: 600; }
 }
 .result-btn[class*="tone-"] { --c: var(--tone); }
 .result-btn .result-status { color: var(--tone, var(--muted)); font-weight: 600; }
+.result-btn .result-cond { font-weight: 700; letter-spacing: .02em; }
 .result-btn.active, .result-btn:hover { border-color: var(--accent); border-left-color: var(--c, var(--accent)); background: var(--bg); }
 
 /* ---- Tabs: equal-width, outlined; an idle tab lifts on hover. ---- */

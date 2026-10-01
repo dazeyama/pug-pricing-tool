@@ -9,6 +9,8 @@ import { normNumber, numericSize, parseQuery, withoutGuessedSetCode } from './qu
 export const MIN_CHARS = 2;
 /** The database returns at most this many lines. */
 export const LINE_LIMIT = 200;
+/** Conditions in their usual order, best first. */
+const CONDITIONS = ['NM', 'LP', 'MP', 'HP', 'DMG'];
 
 /**
  * The query as `global_search` arguments, read like the main search (spec
@@ -45,7 +47,8 @@ export function printingKey(line) {
 /**
  * Lines from `global_search` as results: one group per printing, in the
  * order they first appear (newest first), each with a row per buy and per
- * collection holding it, quantities summed.
+ * collection holding it **in each condition** (owner, 2026-09-30: a row ends
+ * "[NM]", "[LP]"…), quantities summed; a buy's conditions go best first.
  * @returns {{ key: string, game: string, heading: string, buys: object[], collections: object[] }[]}
  */
 export function groupResults(lines) {
@@ -58,11 +61,15 @@ export function groupResults(lines) {
       g = { key, game: l.game, heading: lineBody({ ...l, condition: 'NM' }), image: l.image_url, rows: new Map() };
       groups.set(key, g);
     }
-    let row = g.rows.get(l.buy_id);
+    const condition = l.condition ?? 'NM';
+    const rowKey = `${l.buy_id}|${condition}`;
+    let row = g.rows.get(rowKey);
     if (!row) {
       row = {
-        key: `${key}|${l.buy_id}`,
+        key: `${key}|${rowKey}`,
+        order: g.rows.size,
         buyId: l.buy_id,
+        condition,
         kind: l.kind,
         status: l.status,
         paidMethod: l.paid_method,
@@ -74,14 +81,19 @@ export function groupResults(lines) {
         qty: 0,
         lineIds: [],
       };
-      g.rows.set(l.buy_id, row);
+      g.rows.set(rowKey, row);
     }
     row.qty += l.quantity;
     row.lineIds.push(l.line_id);
     if (!g.image && l.image_url) g.image = l.image_url;
   }
   return [...groups.values()].map(({ rows, ...g }) => {
-    const all = [...rows.values()];
+    // Buys and collections in the order they first appear; one's conditions best first.
+    const first = new Map();
+    for (const r of rows.values()) if (!first.has(r.buyId)) first.set(r.buyId, r.order);
+    const rank = (c) => (CONDITIONS.indexOf(c) + 1) || CONDITIONS.length + 1;
+    const all = [...rows.values()].sort((a, b) =>
+      first.get(a.buyId) - first.get(b.buyId) || rank(a.condition) - rank(b.condition));
     return { ...g, buys: all.filter((r) => r.kind === 'walk_in'), collections: all.filter((r) => r.kind === 'collection') };
   });
 }

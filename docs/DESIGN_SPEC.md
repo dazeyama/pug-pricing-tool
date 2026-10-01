@@ -1465,7 +1465,7 @@ The data isn't folded, only the drawing. Pagination counts drawn panels.
 - **As built (Phase 10, 2026-09-30; migration 0015, `src/components/SearchBox.jsx`, `src/lib/globalSearch.js`):**
   - It searches from **2 characters**, a quarter second after typing stops; the newest search wins.
   - The line is read with the main search's parser. A trailing word counts as a **set code only if a stored line uses it**; if that reading finds nothing, it searches again without the set code ("Ancient Mew"). A size like `TG30` doesn't narrow (only plain counts do).
-  - A printing is game + language + set + number + finish + 1st Edition + treatments; **conditions don't split it** (an NM and an LP Lightning Bolt are one heading, quantities added). The heading is the buy-list line without its condition, with the game badge.
+  - A printing is game + language + set + number + finish + 1st Edition + treatments; conditions don't split a heading (the heading is the buy-list line without its condition, with the game badge). Under it, **each buy or collection has a row per condition, ending in brackets: "qty 3 [NM]", "qty 1 [LP]"** (owner's decision, 2026-09-30), a buy's conditions best first. `global_search` returns each line's condition (migration 0016).
   - The first result is highlighted, so Enter opens it. With 200 lines found, a note says to add a number or set code.
   - **Landing:** a buy's day page scrolls its panel into view, flashes it (`.flash-target`) and **tints the matching rows**; a collection's screen tints the matching list lines and scrolls the first into view. Opening another result on the same page lands again.
   - On every tab but the pricing screens, the dropdown is as wide as the large search box.
@@ -2042,6 +2042,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 155 | Header search reading (2026-09-30) | From 2 characters after a short pause; a trailing set code only if stored lines use it, else retried without; conditions don't split a printing; Enter opens the first result (Section 13) |
 | 156 | What a backup holds and a restore keeps (2026-09-30) | Backups also leave out JustTCG's live usage and the CSV list (it stays with the CSVs); a restore keeps every computer, the CSVs, the keys and the last-backup time, and hides staff users not in the backup (Section 11.5) |
 | 157 | Milestones under a game filter (2026-09-30) | "Backup restored" shows under the Magic and Pokémon filters too (Section 12) |
+| 158 | Conditions in search results (2026-09-30) | Each header search result row ends with its condition in brackets ([NM], [LP]…); a buy with two conditions of one printing gets a row for each (Section 13) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

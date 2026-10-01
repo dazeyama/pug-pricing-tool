@@ -42,20 +42,23 @@ const line = (over) => ({
   ...over,
 });
 
-test('lines group by printing; a buy\'s lines add up; conditions don\'t split a printing', () => {
+test('lines group by printing; a row per buy and condition, quantities added, best condition first', () => {
   const groups = groupResults([
+    line({ line_id: 'l0', quantity: 1, condition: 'LP' }),
     line({ line_id: 'l1', quantity: 3 }),
-    line({ line_id: 'l2', quantity: 1, condition: 'LP' }),
+    line({ line_id: 'l2', quantity: 2, condition: 'LP' }),
     line({ line_id: 'l3', buy_id: 'c1', kind: 'collection', status: 'processing', buy_number: null, customer_name: 'Jordan Reyes', quantity: 2 }),
     line({ line_id: 'l4', finish: 'nonfoil' }),
     line({ line_id: 'l5', collector_number: '0161' }),
   ]);
   assert.equal(groups.length, 2);
   assert.equal(groups[0].heading, 'Lightning Bolt (2X2) 161 *F*');
-  assert.deepEqual(groups[0].buys.map((r) => [r.buyId, r.qty, r.lineIds.length]), [['b1', 5, 3]]);
-  assert.deepEqual(groups[0].collections.map((r) => [r.customerName, r.qty]), [['Jordan Reyes', 2]]);
+  assert.deepEqual(groups[0].buys.map((r) => [r.buyId, r.condition, r.qty, r.lineIds.length]),
+    [['b1', 'NM', 4, 2], ['b1', 'LP', 3, 2]]);
+  assert.deepEqual(groups[0].collections.map((r) => [r.customerName, r.condition, r.qty]), [['Jordan Reyes', 'NM', 2]]);
   assert.equal(groups[1].heading, 'Lightning Bolt (2X2) 161');
-  assert.deepEqual(flatRows(groups).map((r) => r.key.split('|').pop()), ['b1', 'c1', 'b1']);
+  assert.deepEqual(flatRows(groups).map((r) => r.key.split('|').slice(-2).join(' ')),
+    ['b1 NM', 'b1 LP', 'c1 NM', 'b1 NM']);
 });
 
 test('a Japanese card heads its group with its English name and a JP tag', () => {
