@@ -54,22 +54,24 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 3px;
+  gap: 2px;
   /* A fixed height: every week the same, however many buys a day has
-     (the dots stop at 8 and "+N"), so no month is taller than another. Room
-     for the date, the count, two rows of dots and the "Exported" tag at the
-     foot (owner, 2026-09-30), with tight lines so it stays 84px. */
+     (the dots stop at 8 and "+N"), so no month is taller than another. Every
+     row has a set size, so the date, the count, a two-row dot area and the
+     "Exported" tag at the foot always fit, the tag in the same place with one
+     row of dots or two (owner, 2026-09-30): 84px. */
   height: 84px;
   overflow: hidden;
   padding: 4px 6px;
-  line-height: 1.2;
   border: 1px solid color-mix(in srgb, var(--game) 18%, var(--border));
   border-radius: 7px;
   background: var(--panel-2);
   color: var(--text);
   font: inherit;
+  line-height: 1.2;   /* after `font`, which would reset it */
   text-align: left;
 }
+.cal-day > * { flex-shrink: 0; }
 .cal-day.blank { background: transparent; border-color: transparent; }
 .cal-day:not(.has):not(.blank) { color: var(--muted); }
 /* A day with buys: tinted in the game's colour. */
@@ -86,12 +88,13 @@ button.cal-day:hover { border-color: var(--game); background: color-mix(in srgb,
 .cal-exported {
   margin-top: auto;
   align-self: stretch;
+  height: 14px;
   padding: 0 4px;
   border: 1px solid currentColor;
   border-radius: 999px;
   font-size: 9.5px;
   font-weight: 800;
-  line-height: 1.25;
+  line-height: 12px;
   letter-spacing: .06em;
   text-align: center;
   text-transform: uppercase;
@@ -108,7 +111,16 @@ button.cal-day:hover { border-color: var(--game); background: color-mix(in srgb,
 .cal-day.has.exported .cal-count { color: var(--muted); }
 button.cal-day.exported:hover { background: color-mix(in srgb, var(--game) 14%, var(--panel-2)); }
 .cal-count { font-size: 12px; font-weight: 600; color: var(--game-text); }
-.cal-dots { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; }
+/* Room for exactly two rows of dots (the second may end in "+N"). */
+.cal-dots {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  align-items: center;
+  gap: 3px;
+  height: 23px;
+  overflow: hidden;
+}
 .cal-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--c); }
 .cal-more { font-size: 11px; line-height: 1; color: var(--muted); }
 .cal-game-head { display: flex; align-items: center; gap: 10px; }
