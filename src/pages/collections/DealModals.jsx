@@ -106,8 +106,8 @@ export function OfferModal({ market, rates, current, busy, onSave, onClose }) {
 
 /**
  * Mark as Paid/Ours → "Set a final purchase price": what was actually paid,
- * and whether it was cash or credit. Choosing one fills in its offer when
- * nothing's typed yet.
+ * and whether it was cash or credit, always typed in by hand: choosing one
+ * fills nothing in (owner, 2026-09-30).
  */
 export function PaidModal({ market, rates, offer, busy, onSave, onClose }) {
   const [text, setText] = useState('');
@@ -116,11 +116,6 @@ export function PaidModal({ market, rates, offer, busy, onSave, onClose }) {
   const ready = price != null && method != null && !busy;
   const save = () => {
     if (ready) onSave({ price, method });
-  };
-  const choose = (m) => {
-    setMethod(m);
-    const fill = m === 'cash' ? offer.cash : offer.credit;
-    if (!text.trim() && fill != null) setText(String(Number(fill)));
   };
   return (
     <Modal
@@ -144,7 +139,7 @@ export function PaidModal({ market, rates, offer, busy, onSave, onClose }) {
           {offer.credit != null && <span className="is-credit">{formatMoney(offer.credit)} credit</span>}
         </p>
       )}
-      <PayMethod method={method} onChoose={choose} />
+      <PayMethod method={method} onChoose={setMethod} />
       <MoneyInput label="Set a final purchase price" value={text} onChange={setText} onEnter={save} autoFocus />
       <p className="hint">The collection will be locked.</p>
     </Modal>

@@ -11,8 +11,8 @@ import { MoneyInput, PayMethod } from '../collections/DealModals.jsx';
  * and who's confirming. The phone works as on a collection (spec 9.3):
  * formatted as it's typed, 10 digits. The purchase price is asked for as a
  * collection's is before Paid/Ours (owner, 2026-09-30): Cash or Credit as
- * chips in their colours, then what was paid; choosing one fills in its total
- * when nothing's typed yet. Name, phone and price are all required.
+ * chips in their colours, then what was paid, always typed in by hand (nothing
+ * is filled in). Name, phone and price are all required.
  */
 export default function ConfirmBuyModal({ count, market, rates, user, busy, onConfirm, onClose }) {
   const [customer, setCustomer] = useState('');
@@ -37,10 +37,6 @@ export default function ConfirmBuyModal({ count, market, rates, user, busy, onCo
     setTried(true);
     if (missing.length || busy) return;
     onConfirm({ customerName: customer.trim(), phone: phoneDigits(phone), notes, paidPrice: price, paidMethod: method });
-  };
-  const choose = (m) => {
-    setMethod(m);
-    if (!priceText.trim()) setPriceText(String(payout(market, rates[m])));
   };
   const rate = (label, which, custom) => (
     <div className={`total-row ${which}`}>
@@ -104,7 +100,7 @@ export default function ConfirmBuyModal({ count, market, rates, user, busy, onCo
       </label>
       <div className="confirm-field confirm-paid">
         <span>Purchase price</span>
-        <PayMethod method={method} onChoose={choose} />
+        <PayMethod method={method} onChoose={setMethod} />
         <MoneyInput label="Paid" value={priceText} onChange={setPriceText} onEnter={submit} />
         {show('method') && <span className="field-error">{problems.method}</span>}
         {!show('method') && show('price') && <span className="field-error">{problems.price}</span>}
