@@ -547,7 +547,7 @@ Every change that affects buy contents, or anything the changelog records, goes 
 | `draft_remove_line(line_id, qty, user)` | Decrements the quantity or deletes the line | none |
 | `draft_cancel(buy_id)` | Deletes the draft and its lines | none |
 | `draft_set_custom_rates(device, custom_cash_pct, custom_credit_pct, user)` | Sets or clears this device's draft custom rates (Section 8.9.1). Creates the draft if none exists. | none |
-| `confirm_buy(buy_id, user, customer_name, notes, cash_pct, credit_pct, expected_version, paid_price, paid_method, line_texts, phone)` (migration 0020: name, phone and the price paid required; the 9-argument version from 0009 is kept until launch for the live site's older build) | draft → confirmed; stamps `confirmed_*`; snapshots percentages (custom rate where set, else the master rate the screen showed). `line_texts` maps each line ID to its buy-list text (`lineFormat.js`) for the entry's card rows. Returns `{ number, games, target_name }`. | `buy_confirmed` with all lines and totals |
+| `confirm_buy(buy_id, user, customer_name, notes, cash_pct, credit_pct, expected_version, paid_price, paid_method, line_texts, phone)` (migration 0020: name, phone and the price paid required; the old 9-argument version was dropped by 0022 once v0.9.1-final was live) | draft → confirmed; stamps `confirmed_*`; snapshots percentages (custom rate where set, else the master rate the screen showed). `line_texts` maps each line ID to its buy-list text (`lineFormat.js`) for the entry's card rows. Returns `{ number, games, target_name }`. | `buy_confirmed` with all lines and totals |
 | `buy_remove_line(line_id, qty, user, device, expected_version, text)` | For confirmed buys (day page). **Refuses to remove a buy's last card** (`last_card`): the day page deletes the buy instead (owner, 2026-09-29). Migration 0013. | `buy_cards_removed` |
 | `day_mark(day, game, user, device, complete)` | EXPORT on a day page (`complete` true) marks that game's Paid/Ours cards in the day's confirmed buys Completed; the ⋯ menu's undo (`false`) puts them back. Returns how many buys changed (0 if none: exporting a Completed day again changes nothing). Migration 0018. | `day_exported` / `day_unexported` |
 | `buy_delete(buy_id, user, device, expected_version, line_texts)` | Deletes a confirmed buy, both games. Migration 0013; refuses (`buy_completed`) if any of its cards is Completed (0018, which also makes `buy_remove_line` refuse a Completed card). | `buy_deleted` with the full line list and totals |
@@ -1737,7 +1737,7 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 
 ### Phase 10: Global search, backups and launch
 
-**As built (2026-09-30):** the owner split the phase: the search, backups and polish were **built locally and on dev** (committed, **not pushed**), along with the owner's additions below. Migrations **0015–0021 are applied to dev**. **The launch waits for the owner's go.**
+**As built (2026-09-30):** the owner split the phase: the search, backups and polish were **built locally and on dev** (committed, **not pushed**), along with the owner's additions below. Migrations **0015–0022 are applied to dev**. **The launch waits for the owner's go.**
 
 **Build**
 - Header global search (Section 13): **Paid/Ours only by default, with a Show all toggle** (forgotten when the results close) for the other statuses, Completed results partly faded; **collections pinned at the top, then buys under dates** ("Today · September 30, 2026"); a panel per buy or collection listing each matching card as entered with its condition ("1 Gaea's Cradle (USG) 321 [NM]"); card pictures on hover; keyboard, and jump + flash. Migrations 0015–0017, 0021.
@@ -1748,8 +1748,7 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
   - **Purchase price on CONFIRM BUY** (Section 8.10): Cash / Credit chips and the amount typed in by hand; customer name, phone and price all required; the Paid/Ours chip is green or blue by how it was paid. Migration 0020.
   - Settings panels one fixed height, and Backups split on the page's centre line (Section 11); collection details with a clear header bar and fold button (9.4); the Changelog opens on Buys, with day pills that match the search's dates (12); card pictures on day pages (10.2); the computer is saved before anything can use it (7.4).
 - **Launch:**
-  - a migration that **drops the old 9-argument `confirm_buy`** (kept by 0020 so the dev-backed live site's older build can still confirm buys), once the new build is pushed;
-  - apply migrations **0001–0021** (and that drop) to **prod**, and put the Edge Functions on prod;
+  - apply migrations **0001–0022** to **prod** (0022 drops the old 9-argument `confirm_buy`, done on dev 2026-09-30), and put the Edge Functions on prod;
   - **set the GitHub Actions variables back to prod** (since 2026-09-30 they point the live site at **dev**, for testing 0.9.0-dev, then 0.9.1-final, at the store; see `docs/SETUP.md` → Deploying);
   - finish `docs/SETUP.md`: run, deploy, the store password and backups are written; **restoring a paused project** is still to write;
   - the public `README.md` stays a very short description of the tool's purpose (owner's decision, 2026-09-29);
@@ -2083,6 +2082,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 167 | Walk-in purchase price (2026-09-30) | Confirm buy asks for the purchase price (Cash / Credit chips and the amount); customer name, phone and price are all required; the buy's Paid/Ours chip is green or blue by how it was paid (Section 8.10) |
 | 168 | Search Paid/Ours only, with Show all (2026-09-30) | The header search shows Paid/Ours buys and collections only; a Show all toggle in the results adds Processing, Priced and Completed ones (Section 13) |
 | 169 | v0.9.1-final pushed (2026-09-30) | Phase 10 and the owner's additions go live as 0.9.1-final (tagged `v0.9.1-final`), still built against the **dev** project; prod launch still waits (Section 15, Phase 10) |
+| 170 | Old confirm_buy dropped (2026-09-30) | With v0.9.1-final live, the 9-argument `confirm_buy` kept for the older build is dropped (migration 0022): every buy is confirmed with a name, phone and price paid (Section 6.2) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |
