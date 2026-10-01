@@ -124,7 +124,7 @@ export default function CollectionDetails({
   const step = {
     processing: { to: 'priced', label: 'Mark as Priced →' },
     priced: { to: 'paid', label: 'Mark as Paid/Ours →' },
-    paid: { to: 'completed', label: 'Mark as Completed →' },
+    // Paid/Ours → Completed is EXPORT's job (owner, 2026-10-01): no step here.
   }[buy.status] ?? null;
 
   return (
@@ -186,7 +186,7 @@ export default function CollectionDetails({
           )}
           {buy.status === 'paid' && (
             <div className={`cd-banner ${tone}`}>
-              <span>Paid/Ours — <PaidText buy={buy} withMethod />. Locked.</span>
+              <span>Paid/Ours — <PaidText buy={buy} withMethod />. Locked. EXPORT marks it Completed.</span>
               <GuardButton
                 className="btn small ghost"
                 disabled={!canChangeStatus}
@@ -277,8 +277,8 @@ export default function CollectionDetails({
                   onChange={(e) => onStatus(e.target.value)}
                 >
                   {STATUSES.map((s) => (
-                    // Completed only follows Paid/Ours.
-                    <option key={s.value} value={s.value} disabled={s.value === 'completed' && !isClosed(buy.status)}>
+                    // Completed only comes from EXPORT (owner, 2026-10-01).
+                    <option key={s.value} value={s.value} disabled={s.value === 'completed'}>
                       {s.label}
                     </option>
                   ))}

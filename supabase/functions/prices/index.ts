@@ -2,9 +2,9 @@
 // shared by every store computer through a 6-hour cache.
 //
 // POST { lookups: Lookup[], fresh?: true } → { results: { [key]: { card, fetchedAt } } }
-//   fresh  = the export's Sell Prices (docs/EXPORT_FUNCTION.md 5.4): only
-//            prices fetched in the last 15 minutes count; older ones are
-//            fetched again (and the cache refreshed).
+//   fresh  = the export's Sell Prices (docs/EXPORT_FUNCTION.md 5.4): prices
+//            fetched in the last 12 hours count (owner, 2026-10-01); older
+//            ones are fetched again (and the cache refreshed).
 //   Lookup = { key, game: 'mtg'|'pokemon', lang: 'en'|'ja',
 //              scryfallId? | tcgplayerId? | (name + number [+ setName]) }
 //   key    = the source key, also the price_map key:
@@ -18,7 +18,7 @@ import { adminClient, corsHeaders, json, readSecret, requireStoreSession } from 
 import { BATCH_MAX, call, QuotaError } from '../_shared/justtcg.ts';
 
 const FRESH_MS = 6 * 3600_000;          // price_cache freshness
-const EXPORT_FRESH_MS = 15 * 60_000;    // with fresh: true (an export's Sell Prices)
+const EXPORT_FRESH_MS = 12 * 3600_000; // with fresh: true (an export's Sell Prices; owner, 2026-10-01)
 const RETRY_UNMATCHED_MS = 7 * 86400_000; // price_map "no match" is retried after this
 const GAMES = { mtg: 'magic-the-gathering', pokemon: 'pokemon' } as const;
 

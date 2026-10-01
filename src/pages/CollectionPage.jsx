@@ -46,7 +46,7 @@ function CollectionScreen({ id }) {
   const { values } = useSettings();
   const lock = useCollectionLock(id, { deviceId, userId: user?.id });
   const col = useCollection(id, { deviceId, onLockLost: lock.recheck });
-  // 'offer' | 'paid' | 'complete' | 'reopen' | 'unlock' | 'takeover' | 'delete'
+  // 'offer' | 'paid' | 'reopen' | 'unlock' | 'takeover' | 'delete'
   const [asking, setAsking] = useState(null);
   const [unlockTo, setUnlockTo] = useState('priced');
   const seen = useRef(false);
@@ -109,7 +109,7 @@ function CollectionScreen({ id }) {
       if (!stamped.length) {
         toast(col.lines.some((l) => l.cc_status === 'cant_upload')
           ? "Nothing here could be uploaded: there's no file."
-          : 'This collection was marked Completed without an export: reopen it (back to Paid/Ours), then EXPORT.', 'err');
+          : 'This collection was marked Completed before EXPORT did that: reopen it (back to Paid/Ours), then EXPORT.', 'err');
         return;
       }
       const rows = downloadMassCreate(stamped, `cc-mass-create-${fileSafe(buy.customer_name)}-${fileStamp(new Date(exportedAt))}.csv`);
@@ -199,7 +199,7 @@ function CollectionScreen({ id }) {
     if (next === 'priced' && buy.status === 'processing') setAsking('offer');
     else if (next === 'paid' && buy.status === 'completed') setAsking('reopen');
     else if (next === 'paid') setAsking('paid');
-    else if (next === 'completed') setAsking('complete');
+    else if (next === 'completed') return;   // only EXPORT completes it (owner, 2026-10-01)
     else if (closed) {
       setUnlockTo(next);
       setAsking('unlock');
@@ -322,23 +322,6 @@ function CollectionScreen({ id }) {
                 }
               }}
             />
-          )}
-          {asking === 'complete' && (
-            <ConfirmModal
-              title="Mark as Completed?"
-              yes="Mark Completed"
-              onClose={() => setAsking(null)}
-              onYes={async () => {
-                setAsking(null);
-                await col.setStatus('completed', user?.id, master);
-                api.focusSearch();
-              }}
-            >
-              <p>
-                Its cards have moved on: split up, sorted away or put into inventory. A Completed
-                collection stays locked and is left out of search.
-              </p>
-            </ConfirmModal>
           )}
           {asking === 'reopen' && (
             <ConfirmModal

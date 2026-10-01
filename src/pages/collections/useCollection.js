@@ -20,6 +20,7 @@ const MESSAGES = {
   paid_price_needed: 'Set the final purchase price to mark it Paid/Ours.',
   paid_method_needed: 'Choose Cash or Credit to mark it Paid/Ours.',
   complete_after_paid: 'Only a Paid/Ours collection can be marked Completed.',
+  complete_by_export: 'EXPORT marks a collection Completed: it can’t be set by hand.',
   collection_gone: 'This collection was deleted.',
   line_gone: 'That card was already removed.',
   locked_elsewhere: 'Another computer is editing this collection: take over first.',

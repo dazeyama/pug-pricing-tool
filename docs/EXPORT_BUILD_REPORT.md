@@ -6,20 +6,20 @@ The export function (`docs/EXPORT_FUNCTION.md`, Phases E1–E5), built in one ru
 
 **Checks after every phase:** `npm run build` OK · `npm test` 109 pass · eslint clean. Nothing was tried in a browser (you're QA): the "Where to look" lists below are the first things to try. **Upload the real inventory first** (Owner tasks): dev has no products loaded, so the check and the export both stop and say so until then.
 
-## Needs your answer
+## Your answers (2026-10-01)
 
-*(Most important first. Each says what was chosen so the build could go on.)*
+All ten questions are answered; the decisions are in `EXPORT_FUNCTION.md` Appendix C (E24).
 
-1. **The older live site's EXPORT.** The live build (v0.9.1-final) still has the old EXPORT, which marks a day Completed without making a file. *Chosen:* kept working, for compatibility. A day it marks has no export stamps; the new build's EXPORT on it says to mark the day Paid/Ours again and export. Should the old EXPORT be refused by the server from now on instead?
-2. **A day where nothing matched** (every card Can't upload). *Chosen:* it still becomes Completed, with no file (the cards are copied to Can't upload cards). Say if it should stay Paid/Ours instead.
-3. **Mark as Completed by hand.** *Chosen:* a Paid/Ours collection can still be marked Completed from its status controls without exporting, since cards sometimes move on another way. EXPORT on such a collection says to reopen it and export. Should Completed only come from EXPORT now?
-4. **Remembered matches and set choices aren't in backup files.** *Chosen:* left out for now, because adding them changes the backup format and older backup files would fail the restore check. Should they be backed up (a format version 2 that still restores version 1)?
-5. **Re-downloading a day after Can't upload cards exported one of its cards.** *Chosen:* when a card exported later from Can't upload cards, its original row is restamped as exported, so EXPORT on its Completed day re-downloads a file that now includes it (with that later export's Custom SKU; the chip then shows both codes). Say if a day's re-download should stay exactly the first file.
-6. **Matching thresholds.** *Chosen:* a product is picked automatically when it's the only one that fits, or leads the next by 2 points or more. On the real inventory that matched all 26 of dev's printings and 190 of 200 random ones, with no wrong picks seen. If a wrong automatic pick ever shows up, the fix is a bigger lead or a new rule.
-7. **How fresh "fresh" is.** *Chosen:* the export's Sell Prices accept JustTCG prices fetched in the last 15 minutes (not 6 hours), so going Back and exporting again, or a retry, doesn't spend another request. Say if it should always fetch.
-8. **The older live site and the inventory.** The live build still uploads inventories the old way, without loading products for the export. If someone uploads from the live site, the new build's Settings says "Products not loaded for export: upload it again" until it's uploaded from the new build.
-9. **Can't upload cards on the live site.** The live build shows the new collection in its Collections table like any other (no System chip, a blank phone); editing it there is refused by the server with a plain error. Nothing breaks, but it looks rough until the new build goes live.
-10. **Searching remembered products** in Settings is by CC's product name (the remembered links don't store Scryfall's card name). Fine for finding a card, but a two-faced card is found by CC's spelling of it.
+1. **The older live site's EXPORT** (marks a day Completed with no file): fine as it is. It goes away when the new build is pushed.
+2. **A day where nothing matched** still becomes Completed, with no file: fine.
+3. **Completed only comes from EXPORT now.** Built: migration **0030** (applied to dev) refuses a Completed set by hand (`complete_by_export`); the status dropdown greys Completed out, the "Mark as Completed →" step is gone, and the Paid/Ours banner says "EXPORT marks it Completed."
+4. **Remembered matches and set choices stay out of backups:** they're easy to re-create.
+5. **Re-downloads include new matches:** a card exported later from Can't upload cards is in its day's re-download, with that later Custom SKU. As built.
+6. **Matching thresholds:** OK as they are.
+7. **"Fresh" prices are 12 hours** (was 15 minutes). The `prices` function is redeployed to dev with it. Note: that's more lenient than the 6 hours the Price screen's shared cache uses, so an export reuses any price looked up in the last 12 hours.
+8. **Inventory uploads from the live site:** fixed once the new build is pushed.
+9. **Can't upload cards on the live site:** fixed once the new build is pushed.
+10. **Settings search by CC product name:** OK.
 
 ## Owner tasks
 
