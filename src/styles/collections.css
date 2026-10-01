@@ -303,13 +303,16 @@
   border: 0;
   border-radius: 6px;
   background: none;
+  color: var(--text);   /* a button's own default is near-black, unreadable here */
   font: inherit;
   font-size: 13px;
   text-align: left;
   cursor: pointer;
 }
 .more-item.danger { color: var(--bad); }
-.more-item:hover:not(.is-disabled) { background: rgba(255, 107, 107, .12); }
+/* Hover: a plain item lifts in the page's accent; a danger item tints red. */
+.more-item:hover:not(.is-disabled) { background: color-mix(in srgb, var(--accent) 16%, transparent); }
+.more-item.danger:hover:not(.is-disabled) { background: rgba(255, 107, 107, .12); }
 .more-item.is-disabled { opacity: .5; cursor: not-allowed; }
 
 /* ---- Edited in place (name, phone, notes) ---- */
