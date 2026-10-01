@@ -90,13 +90,7 @@ function CalendarMonth({ month }) {
               const allExported = n > 0 && exported === n;
               const inner = (
                 <>
-                  <span className="cal-date-row">
-                    <span className="cal-date">{Number(day.slice(8))}</span>
-                    {allExported && <span className="cal-exported">Exported</span>}
-                    {exported > 0 && !allExported && (
-                      <span className="cal-exported partial" title={`${n - exported} of ${n} not exported yet`}>Part exported</span>
-                    )}
-                  </span>
+                  <span className="cal-date">{Number(day.slice(8))}</span>
                   {n > 0 && <span className="cal-count">{n} buy{n === 1 ? '' : 's'}</span>}
                   {n > 0 && (
                     <span className="cal-dots" aria-hidden="true">
@@ -109,6 +103,11 @@ function CalendarMonth({ month }) {
                       ))}
                       {n > MAX_DOTS && <span className="cal-more">+{n - MAX_DOTS}</span>}
                     </span>
+                  )}
+                  {/* At the cell's foot, under up to two rows of dots (owner, 2026-09-30). */}
+                  {allExported && <span className="cal-exported">Exported</span>}
+                  {exported > 0 && !allExported && (
+                    <span className="cal-exported partial" title={`${n - exported} of ${n} not exported yet`}>Part exported</span>
                   )}
                 </>
               );
