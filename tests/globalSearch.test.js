@@ -42,28 +42,32 @@ const line = (over) => ({
   ...over,
 });
 
-test('lines group by printing; a row per buy and condition, quantities added, best condition first', () => {
-  const groups = groupResults([
-    line({ line_id: 'l0', quantity: 1, condition: 'LP' }),
-    line({ line_id: 'l1', quantity: 3 }),
-    line({ line_id: 'l2', quantity: 2, condition: 'LP' }),
-    line({ line_id: 'l3', buy_id: 'c1', kind: 'collection', status: 'processing', buy_number: null, customer_name: 'Jordan Reyes', quantity: 2 }),
-    line({ line_id: 'l4', finish: 'nonfoil' }),
-    line({ line_id: 'l5', collector_number: '0161' }),
+test('results file under dates: buys by confirmation day, collections by creation day, newest first', () => {
+  const sections = groupResults([
+    line({ line_id: 'l1', buy_id: 'b6', buy_number: 6, confirmed_at: '2026-10-01T04:48:00Z', quantity: 1, condition: 'MP' }),
+    line({ line_id: 'l2', buy_id: 'b6', buy_number: 6, confirmed_at: '2026-10-01T04:48:00Z', quantity: 1 }),
+    line({ line_id: 'l3', buy_id: 'b6', buy_number: 6, confirmed_at: '2026-10-01T04:48:00Z', quantity: 2, condition: 'LP' }),
+    line({ line_id: 'l4', buy_id: 'b6', buy_number: 6, confirmed_at: '2026-10-01T04:48:00Z', set_code: 'JGP', collector_number: '3', condition: 'MP' }),
+    line({ line_id: 'l5', buy_id: 'b6', buy_number: 6, confirmed_at: '2026-10-01T04:48:00Z', quantity: 1 }),
+    line({ line_id: 'l6', buy_id: 'b2', buy_number: 2, confirmed_at: '2026-09-30T23:03:00Z' }),
+    line({ line_id: 'l7', buy_id: 'c1', kind: 'collection', status: 'processing', buy_number: null,
+      confirmed_at: null, created_at: '2026-09-30T04:04:00Z', customer_name: 'Jordan Reyes' }),
   ]);
-  assert.equal(groups.length, 2);
-  assert.equal(groups[0].heading, 'Lightning Bolt (2X2) 161 *F*');
-  assert.deepEqual(groups[0].buys.map((r) => [r.buyId, r.condition, r.qty, r.lineIds.length]),
-    [['b1', 'NM', 4, 2], ['b1', 'LP', 3, 2]]);
-  assert.deepEqual(groups[0].collections.map((r) => [r.customerName, r.condition, r.qty]), [['Jordan Reyes', 'NM', 2]]);
-  assert.equal(groups[1].heading, 'Lightning Bolt (2X2) 161');
-  assert.deepEqual(flatRows(groups).map((r) => r.key.split('|').slice(-2).join(' ')),
-    ['b1 NM', 'b1 LP', 'c1 NM', 'b1 NM']);
-  assert.equal(groups[0].buys[1].line.condition, 'LP');
+  // 04:48 UTC Oct 1 is 9:48 PM Sep 30 in the store; 04:04 UTC Sep 30 is 9:04 PM Sep 29.
+  assert.deepEqual(sections.map((s) => [s.day, s.panels.map((p) => p.key.split('|')[0])]),
+    [['2026-09-30', ['b6', 'b2']], ['2026-09-29', ['c1']]]);
+  const b6 = sections[0].panels[0];
+  assert.deepEqual(b6.entries.map((e) => [e.line.set_code, e.condition, e.qty]),
+    [['2X2', 'NM', 2], ['2X2', 'LP', 2], ['2X2', 'MP', 1], ['JGP', 'MP', 1]]);
+  assert.deepEqual(b6.lineIds, ['l1', 'l2', 'l3', 'l4', 'l5']);
+  assert.deepEqual(flatRows(sections).map((p) => p.key.split('|')[0]), ['b6', 'b2', 'c1']);
 });
 
-test('a Japanese card heads its group with its English name and a JP tag', () => {
-  const [g] = groupResults([line({ game: 'pokemon', lang: 'ja', name: 'ピカチュウ', name_en: 'Pikachu', set_code: 'SV2a', collector_number: '025', finish: 'normal' })]);
-  assert.equal(g.heading, 'Pikachu (SV2a) 025 [JP]');
+test('a buy with matches in both games is a panel per game', () => {
+  const sections = groupResults([line({ line_id: 'a' }), line({ line_id: 'b', game: 'pokemon', set_code: 'SV2a' })]);
+  assert.deepEqual(sections[0].panels.map((p) => p.game), ['mtg', 'pokemon']);
+});
+
+test('a Japanese printing is its own entry', () => {
   assert.notEqual(printingKey(line({ lang: 'ja' })), printingKey(line({ lang: 'en' })));
 });

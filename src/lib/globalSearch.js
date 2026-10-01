@@ -1,7 +1,7 @@
 // The header's global search (spec 13): what to ask the database, and how
 // its lines group into results. Pure functions, so the tests run under Node.
 
-import { lineBody } from './lineFormat.js';
+import { storeDay } from './calendar.js';
 import { nameKey } from './normalize.js';
 import { normNumber, numericSize, parseQuery, withoutGuessedSetCode } from './query.js';
 
@@ -45,61 +45,72 @@ export function printingKey(line) {
 }
 
 /**
- * Lines from `global_search` as results: one group per printing, in the
- * order they first appear (newest first), each with a row per buy and per
- * collection holding it **in each condition** (owner, 2026-09-30: a row ends
- * "[NM]", "[LP]"…), quantities summed; a buy's conditions go best first.
- * @returns {{ key: string, game: string, heading: string, buys: object[], collections: object[] }[]}
+ * Lines from `global_search` as results, filed under dates (owner,
+ * 2026-09-30): a buy under the day it was confirmed, a collection under the
+ * day it was created, newest day first. Each day holds a panel per buy or
+ * collection (per game, since a buy's day page is per game), newest first,
+ * listing every matching card: one entry per printing and condition,
+ * quantities added, in the order they were added, a printing's conditions
+ * best first.
+ * @returns {{ day: string, at: string, panels: object[] }[]}
  */
 export function groupResults(lines) {
-  const groups = new Map();
+  const panels = new Map();
   for (const l of lines ?? []) {
-    const key = printingKey(l);
-    let g = groups.get(key);
-    if (!g) {
-      // The printing without its condition: "Lightning Bolt (2X2) 161 *F*".
-      g = { key, game: l.game, heading: lineBody({ ...l, condition: 'NM' }), image: l.image_url, rows: new Map() };
-      groups.set(key, g);
-    }
-    const condition = l.condition ?? 'NM';
-    const rowKey = `${l.buy_id}|${condition}`;
-    let row = g.rows.get(rowKey);
-    if (!row) {
-      row = {
-        key: `${key}|${rowKey}`,
-        order: g.rows.size,
+    const panelKey = `${l.buy_id}|${l.game}`;
+    let p = panels.get(panelKey);
+    if (!p) {
+      const at = l.kind === 'walk_in' ? l.confirmed_at : l.created_at;
+      p = {
+        key: panelKey,
         buyId: l.buy_id,
-        condition,
         kind: l.kind,
+        game: l.game,
         status: l.status,
         paidMethod: l.paid_method,
         customerName: l.customer_name,
-        confirmedAt: l.confirmed_at,
         confirmedBy: l.confirmed_by,
         number: l.buy_number,
-        game: l.game,
-        line: l,          // for its full entry: "1 Fabricate (SLD) 123 [NM]"
-        qty: 0,
+        at,
+        day: storeDay(at),
+        entries: new Map(),
         lineIds: [],
       };
-      g.rows.set(rowKey, row);
+      panels.set(panelKey, p);
     }
-    row.qty += l.quantity;
-    row.lineIds.push(l.line_id);
-    if (!g.image && l.image_url) g.image = l.image_url;
+    const printing = printingKey(l);
+    const condition = l.condition ?? 'NM';
+    const entryKey = `${printing}|${condition}`;
+    let e = p.entries.get(entryKey);
+    if (!e) {
+      e = { key: entryKey, printing, condition, line: l, qty: 0, lineIds: [], order: p.entries.size };
+      p.entries.set(entryKey, e);
+    }
+    e.qty += l.quantity;
+    e.lineIds.push(l.line_id);
+    p.lineIds.push(l.line_id);
   }
-  return [...groups.values()].map(({ rows, ...g }) => {
-    // Buys and collections in the order they first appear; one's conditions best first.
-    const first = new Map();
-    for (const r of rows.values()) if (!first.has(r.buyId)) first.set(r.buyId, r.order);
-    const rank = (c) => (CONDITIONS.indexOf(c) + 1) || CONDITIONS.length + 1;
-    const all = [...rows.values()].sort((a, b) =>
-      first.get(a.buyId) - first.get(b.buyId) || rank(a.condition) - rank(b.condition));
-    return { ...g, buys: all.filter((r) => r.kind === 'walk_in'), collections: all.filter((r) => r.kind === 'collection') };
-  });
+
+  const rank = (c) => (CONDITIONS.indexOf(c) + 1) || CONDITIONS.length + 1;
+  const days = new Map();
+  for (const p of panels.values()) {
+    // A printing's place is where it first came; its conditions best first.
+    const firstOf = new Map();
+    for (const e of p.entries.values()) if (!firstOf.has(e.printing)) firstOf.set(e.printing, e.order);
+    const entries = [...p.entries.values()].sort((a, b) =>
+      firstOf.get(a.printing) - firstOf.get(b.printing) || rank(a.condition) - rank(b.condition));
+    const panel = { ...p, entries };
+    if (!days.has(p.day)) days.set(p.day, { day: p.day, at: p.at, panels: [] });
+    days.get(p.day).panels.push(panel);
+  }
+  const newest = (a, b) => (a < b ? 1 : a > b ? -1 : 0);
+  return [...days.values()]
+    .map((d) => ({ ...d, panels: d.panels.sort((a, b) => newest(a.at, b.at)) }))
+    .sort((a, b) => newest(a.day, b.day))
+    .map((d) => ({ ...d, at: d.panels[0].at }));
 }
 
-/** Every row in display order (a group's buys, then its collections), for ↑/↓. */
-export function flatRows(groups) {
-  return groups.flatMap((g) => [...g.buys, ...g.collections]);
+/** Every panel in display order (day by day), for ↑/↓. */
+export function flatRows(sections) {
+  return sections.flatMap((s) => s.panels);
 }

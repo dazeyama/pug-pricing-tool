@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
 import { storeDay } from '../lib/calendar.js';
-import { formatDate } from '../lib/time.js';
+import { formatTime } from '../lib/time.js';
+import { dayHeading } from '../lib/changelog.js';
 import { colorVar } from '../lib/palette.js';
 import { lineTextWithCondition } from '../lib/lineFormat.js';
 import { LINE_LIMIT, MIN_CHARS, flatRows, groupResults, searchArgs } from '../lib/globalSearch.js';
@@ -14,12 +15,12 @@ import LinePreview, { previewFor } from './LinePreview.jsx';
 
 // The header's global search (spec 13), in CM's pill style: every stored line
 // in a confirmed buy or an open collection (not Completed) matching what's
-// typed, grouped by printing. ↓/↑ move, Enter opens, Esc closes. Opening a
-// result jumps to it and flashes it.
+// typed, filed under dates, a panel per buy or collection listing its matching
+// cards in full (owner, 2026-09-30). ↓/↑ move, Enter opens, Esc closes.
+// Opening a result jumps to it and flashes it.
 // Much larger on every tab but the pricing screens (owner, 2026-09-29), where
 // the main search bar is the focus.
 
-const GAME_NAMES = { mtg: 'Magic', pokemon: 'Pokémon' };
 const WAIT_MS = 250;
 
 // The set codes stored lines use, fetched at most every five minutes.
@@ -43,7 +44,7 @@ export default function SearchBox({ wide }) {
   const staff = useStaff();
   const [text, setText] = useState('');
   const [open, setOpen] = useState(false);
-  const [found, setFound] = useState({ status: 'idle', groups: [], capped: false, error: null });
+  const [found, setFound] = useState({ status: 'idle', sections: [], capped: false, error: null });
   const [active, setActive] = useState(0);
   const wrap = useRef(null);
   const input = useRef(null);
@@ -58,7 +59,7 @@ export default function SearchBox({ wide }) {
     const query = text.trim();
     const mine = ++run.current;
     if (query.length < MIN_CHARS) {
-      setFound({ status: 'idle', groups: [], capped: false, error: null });
+      setFound({ status: 'idle', sections: [], capped: false, error: null });
       return undefined;
     }
     setFound((f) => ({ ...f, status: 'loading', error: null }));
@@ -68,12 +69,12 @@ export default function SearchBox({ wide }) {
         let lines = plan ? await lookUp(plan.args) : [];
         if (plan && !lines.length && plan.retry) lines = await lookUp(plan.retry);
         if (mine !== run.current) return;
-        setFound({ status: 'done', groups: groupResults(lines), capped: lines.length >= LINE_LIMIT, error: null });
+        setFound({ status: 'done', sections: groupResults(lines), capped: lines.length >= LINE_LIMIT, error: null });
         setActive(0);
       } catch (e) {
         if (mine !== run.current) return;
         console.error('Global search failed', e);
-        setFound({ status: 'error', groups: [], capped: false, error: e.message });
+        setFound({ status: 'error', sections: [], capped: false, error: e.message });
       }
     }, WAIT_MS);
     return () => clearTimeout(timer);
@@ -89,7 +90,7 @@ export default function SearchBox({ wide }) {
     return () => document.removeEventListener('mousedown', onDown);
   }, [open]);
 
-  const rows = useMemo(() => flatRows(found.groups), [found.groups]);
+  const rows = useMemo(() => flatRows(found.sections), [found.sections]);
   const index = useMemo(() => new Map(rows.map((r, i) => [r.key, i])), [rows]);
 
   // Keep the highlighted row in view as ↓/↑ move it.
@@ -104,7 +105,7 @@ export default function SearchBox({ wide }) {
     setOpen(false);
     input.current?.blur();
     if (row.kind === 'walk_in') {
-      navigate(`/calendar/${row.game}/${storeDay(row.confirmedAt)}`,
+      navigate(`/calendar/${row.game}/${storeDay(row.at)}`,
         { state: { focus: { buyId: row.buyId, lineIds: row.lineIds } } });
     } else {
       navigate(`/collections/${row.buyId}`, { state: { hits: row.lineIds } });
@@ -139,7 +140,7 @@ export default function SearchBox({ wide }) {
     if (!showing) setPreview(null);
   }, [showing]);
 
-  /** One buy or collection holding the printing. */
+  /** One buy or collection: where it is, then each matching card as entered. */
   function renderRow(row) {
     const i = index.get(row.key);
     const buy = row.kind === 'walk_in';
@@ -156,21 +157,30 @@ export default function SearchBox({ wide }) {
         style={buy && user ? { '--c': colorVar(user.color) } : undefined}
         onMouseEnter={(e) => {
           setActive(i);
-          setPreview(previewFor(row.line.image_url, e.currentTarget, results.current, 'left'));
+          setPreview(previewFor(row.entries[0].line.image_url, e.currentTarget, results.current, 'left'));
         }}
         onMouseLeave={hidePreview}
         onMouseDown={(e) => e.preventDefault()}   // keep the typing in the box
         onClick={() => go(row)}
       >
-        {/* Two lines (owner, 2026-09-30): where it is, then the card as entered. */}
+        {/* Where it is (owner, 2026-09-30), then each card as entered. */}
         <span className="result-where">
+          <GameBadge game={row.game} />
           {buy ? (
-            <>{formatDate(row.confirmedAt)} · {GAME_NAMES[row.game]} · Buy {row.number} · <UserTag user={user} /></>
+            <>Buy {row.number} · <UserTag user={user} /> · {formatTime(row.at)}</>
           ) : (
             <><strong>{row.customerName}</strong> · <span className="result-status">{statusLabel(row.status)}</span></>
           )}
         </span>
-        <span className="result-entry">{lineTextWithCondition(row.line, row.qty)}</span>
+        {row.entries.map((entry) => (
+          <span
+            key={entry.key}
+            className="result-entry"
+            onMouseEnter={(e) => setPreview(previewFor(entry.line.image_url, e.currentTarget, results.current, 'left'))}
+          >
+            {lineTextWithCondition(entry.line, entry.qty)}
+          </span>
+        ))}
       </button>
     );
   }
@@ -203,28 +213,14 @@ export default function SearchBox({ wide }) {
         {showing && (
           <div className="search-results" ref={results} role="listbox" aria-label="Search results">
             {found.status === 'error' && <p className="search-error">Search failed: {found.error}</p>}
-            {found.status === 'loading' && !found.groups.length && <p className="search-none loading-note">Searching…</p>}
-            {found.status === 'done' && !found.groups.length && (
+            {found.status === 'loading' && !found.sections.length && <p className="search-none loading-note">Searching…</p>}
+            {found.status === 'done' && !found.sections.length && (
               <p className="search-none">No buys or collections contain that card.</p>
             )}
-            {found.groups.map((g) => (
-              <section key={g.key} className={`search-group${found.status === 'loading' ? ' stale' : ''}`}>
-                <div className="search-card">
-                  <GameBadge game={g.game} />
-                  <span className="search-card-name">{g.heading}</span>
-                </div>
-                {g.buys.length > 0 && (
-                  <>
-                    <h4>Buys</h4>
-                    <div className="result-buttons">{g.buys.map(renderRow)}</div>
-                  </>
-                )}
-                {g.collections.length > 0 && (
-                  <>
-                    <h4>Collections</h4>
-                    <div className="result-buttons">{g.collections.map(renderRow)}</div>
-                  </>
-                )}
+            {found.sections.map((sec) => (
+              <section key={sec.day} className={`search-group${found.status === 'loading' ? ' stale' : ''}`}>
+                <h4 className="search-day">{dayHeading(sec.at)}</h4>
+                <div className="result-buttons">{sec.panels.map(renderRow)}</div>
               </section>
             ))}
             {found.capped && (

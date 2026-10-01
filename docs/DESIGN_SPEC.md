@@ -1454,7 +1454,7 @@ The data isn't folded, only the drawing. Pagination counts drawn panels.
   - Grouped by **printing**: a heading line such as "Lightning Bolt (2X2) 161 *F*", with a game badge. Then two sub-groups:
     - **Buys:** one row per buy: "Sat, Aug 17, 2026 · Magic · Buy 2 · ● Sam · qty 4".
     - **Collections:** one row per collection: "Jordan Reyes · Processing · qty 2".
-    - *(As built, 2026-09-30: each row is two lines, the second the card as entered with its condition; see below.)*
+    - *(As built, 2026-09-30: filed under dates, a panel per buy or collection listing its cards in full; see below.)*
   - Rows are CM `.result-btn`s with the left border in the relevant user's color (buys) or the status color (collections).
   - **"No buys or collections contain that card."** when there are no results.
 - **Clicking a result:**
@@ -1466,11 +1466,11 @@ The data isn't folded, only the drawing. Pagination counts drawn panels.
 - **As built (Phase 10, 2026-09-30; migration 0015, `src/components/SearchBox.jsx`, `src/lib/globalSearch.js`):**
   - It searches from **2 characters**, a quarter second after typing stops; the newest search wins.
   - The line is read with the main search's parser. A trailing word counts as a **set code only if a stored line uses it**; if that reading finds nothing, it searches again without the set code ("Ancient Mew"). A size like `TG30` doesn't narrow (only plain counts do).
-  - A printing is game + language + set + number + finish + 1st Edition + treatments; conditions don't split a heading (the heading is the buy-list line without its condition, with the game badge). Under it, **each buy or collection has a row per condition** (owner's decision, 2026-09-30), a buy's conditions best first, **on two lines**: where it is ("Sat, Aug 17, 2026 · Magic · Buy 2 · ● Sam", or "Jordan Reyes · Processing"), then **the card as entered, its condition always in the brackets: "1 Fabricate (SLD) 123 [NM]"**, "2 Pikachu (SV2a) 025 [LP, JP]" (`lineTextWithCondition`). `global_search` returns each line's condition (migration 0016).
-  - The first result is highlighted, so Enter opens it. With 200 lines found, a note says to add a number or set code.
+  - **Results are filed under dates, not printings** (owner's decision, 2026-09-30, replacing the printing headings): a buy under the day it was confirmed, a collection under the day it was created, newest day first ("Today", "Yesterday", "Wednesday, September 30, 2026"). Each day holds **one panel per buy or collection** (per game: a buy's day page is per game), newest first. A panel's first line says where it is, with the game badge ("MTG Buy 6 · ● Daisy · 9:48 PM", or "MTG Jordan Reyes · Processing"); then **every matching card in it, one line each, as entered with its condition always in the brackets: "1 Gaea's Cradle (USG) 321 [NM]"**, "2 Pikachu (SV2a) 025 [LP, JP]" (`lineTextWithCondition`). A card's printings and conditions each get a line (quantities added), in the order they were added, a printing's conditions best first. `global_search` returns each line's condition and the buy's `created_at` (migrations 0016, 0017).
+  - ↓/↑ move panel to panel; the first is highlighted, so Enter opens it. Opening a panel lands on all its matching cards. With 200 lines found, a note says to add a number or set code.
   - **Landing:** a buy's day page scrolls its panel into view, flashes it (`.flash-target`) and **tints the matching rows**; a collection's screen tints the matching list lines and scrolls the first into view. Opening another result on the same page lands again.
   - On every tab but the pricing screens, the dropdown is as wide as the large search box.
-  - **Hovering a result shows its card's picture** just left of the dropdown, level with the row, the same preview as the Price sidebar and day pages (owner's decision, 2026-09-30); it goes away when the results scroll or close.
+  - **Hovering a result shows its card's picture** just left of the dropdown, level with the card's line (a panel's first card when on its top line), the same preview as the Price sidebar and day pages (owner's decision, 2026-09-30); it goes away when the results scroll or close.
 
 ---
 
@@ -2048,6 +2048,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 159 | Search results on two lines (2026-09-30) | Each header search result shows where it is, then the full card entry with its condition, "1 Fabricate (SLD) 123 [NM]" (replacing the bare [NM] of decision 158) (Section 13) |
 | 160 | Backups panel split on the grid (2026-09-30) | The Backups panel's two halves are equal, its separator on the page's centre line in line with the settings grid (Section 11) |
 | 161 | Card pictures on search results (2026-09-30) | Hovering a header search result shows its card's picture beside the dropdown, like the Price sidebar (Section 13) |
+| 162 | Search results by date (2026-09-30) | Header search results are filed under dates (a buy's confirmation day, a collection's creation day), a panel per buy or collection listing each matching card in full, replacing the printing headings (Section 13) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |
