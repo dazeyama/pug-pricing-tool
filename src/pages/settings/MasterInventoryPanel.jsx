@@ -20,7 +20,7 @@ export default function MasterInventoryPanel() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   // Where a big upload is (owner, 2026-09-30: the real file is 40 MB+).
-  const [stage, setStage] = useState(null);   // null | { step: 'check', pct } | { step: 'compress'|'upload'|'save' }
+  const [stage, setStage] = useState(null);   // null | { step, pct? }: check, compress, upload, load, save
 
   async function onPicked(e) {
     const file = e.target.files?.[0];
@@ -31,7 +31,8 @@ export default function MasterInventoryPanel() {
     setStage({ step: 'check', pct: 0 });
     try {
       const summary = await withLoading(() => checkCsv(file, (f) => setStage({ step: 'check', pct: Math.round(f * 100) })));
-      await withLoading(() => uploadCsv(file, summary, staff.current.id, (step) => setStage({ step })));
+      await withLoading(() => uploadCsv(file, summary, staff.current.id,
+        (step, f) => setStage({ step, pct: f == null ? null : Math.round(f * 100) })));
       await reload();
       toast(`Uploaded ${file.name}: ${summary.rowCount.toLocaleString()} rows.`, 'ok');
     } catch (err) {
@@ -79,6 +80,7 @@ export default function MasterInventoryPanel() {
             {stage.step === 'check' && `Checking the file… ${stage.pct}%`}
             {stage.step === 'compress' && 'Compressing…'}
             {stage.step === 'upload' && 'Uploading…'}
+            {stage.step === 'load' && `Loading products… ${stage.pct ?? 0}%`}
             {stage.step === 'save' && 'Saving…'}
           </p>
         )}
@@ -99,7 +101,15 @@ export default function MasterInventoryPanel() {
             <dt>By</dt>
             <dd><UserTag user={staff.byId(current.uploaded_by)} /></dd>
             <dt>Rows</dt>
-            <dd>{current.row_count.toLocaleString()}</dd>
+            <dd>
+              {current.row_count.toLocaleString()}
+              {/* The export's matcher reads these (export spec 6.7). */}
+              <span className="inv-products">
+                {current.products_loaded != null
+                  ? `${current.products_loaded.toLocaleString()} products loaded for export`
+                  : 'Products not loaded for export: upload it again'}
+              </span>
+            </dd>
             <dt>Columns</dt>
             <dd>
               <details className="inv-columns">

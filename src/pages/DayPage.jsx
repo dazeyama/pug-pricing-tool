@@ -32,6 +32,8 @@ const MESSAGES = {
 const COMPLETED_LOCK = 'Completed (exported): mark the day Paid/Ours again (⋯ next to EXPORT) to change it';
 // The current day can't be exported (owner, 2026-09-30): buys confirmed later would miss it.
 const NOT_OVER = "Today can't be exported until it's over: buys confirmed later would miss the export";
+// Magic only for now (owner, 2026-09-30; export spec 1.3).
+const NO_POKEMON = "Pokémon export isn't available yet";
 const messageFor = (error, failure) => {
   const code = Object.keys(MESSAGES).find((c) => error?.message?.includes(c));
   return code ? MESSAGES[code] : `${failure}: ${error.message}`;
@@ -143,6 +145,7 @@ function DayScreen({ game, day }) {
   const done = mine.filter((b) => walkInStatus(b, game) === 'completed');
   const allDone = mine.length > 0 && !pending.length;
   const notOver = day >= storeDay();
+  const exportBlocked = game === 'pokemon' ? NO_POKEMON : notOver ? NOT_OVER : null;
   // When and by whom: the latest export of this game's cards here.
   const lastExport = mine.flatMap((b) => b.buy_lines)
     .filter((l) => l.game === game && l.completed_at)
@@ -251,8 +254,8 @@ function DayScreen({ game, day }) {
    * 2026-09-30). The export itself is still the placeholder.
    */
   function startExport() {
-    if (notOver) {
-      toast(`${NOT_OVER}.`, 'err');
+    if (exportBlocked) {
+      toast(`${exportBlocked}.`, 'err');
       return false;
     }
     if (!pending.length) return true;
@@ -279,7 +282,7 @@ function DayScreen({ game, day }) {
               }]}
             />
           )}
-          <ExportButton className="top" intercept={startExport} blocked={notOver ? NOT_OVER : null} />
+          <ExportButton className="top" intercept={startExport} blocked={exportBlocked} />
         </span>
       </div>
       <h2 className="day-title">

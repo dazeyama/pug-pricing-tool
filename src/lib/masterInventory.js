@@ -2,6 +2,7 @@ import Papa from 'papaparse';
 import { supabase } from './supabase.js';
 import { fileStamp } from './time.js';
 import { gunzip, gzip, isGzipPath } from './gzip.js';
+import { productRow } from './ccNames.js';
 
 // Master Crystal Inventory (spec 11.1): check a Crystal Commerce CSV and store
 // it in the private `master-inventory` bucket, replacing the one before: only
@@ -20,6 +21,10 @@ export const MAX_BYTES = 300 * 1024 * 1024;
 export const MAX_STORED_BYTES = 50 * 1024 * 1024;
 
 const mb = (bytes) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+/** The columns the export needs from every row (export spec 6.1). */
+export const REQUIRED_COLUMNS = ['Product ID', 'Product Name', 'Category'];
+/** Products sent to the database per request while loading (export spec 6.7). */
+const LOAD_BATCH = 2000;
 
 /**
  * @typedef {{ rowCount: number, columns: string[] }} CsvSummary
@@ -88,7 +93,54 @@ export async function checkCsv(file, onProgress) {
   if (rows === 0) {
     throw new Error(`"${file.name}" has a header row but no data rows.`);
   }
+  const missing = REQUIRED_COLUMNS.filter((c) => !columns.includes(c));
+  if (missing.length) {
+    throw new Error(`"${file.name}" has no ${missing.join(', ')} column. It doesn't look like the Crystal Commerce inventory export.`);
+  }
   return { rowCount: rows, columns };
+}
+
+/**
+ * Read the CSV again in chunks and load its products for the export's
+ * matcher (export spec 6.7), in batches, into the upload's row.
+ * @param {File} file
+ * @param {string} fileId  the master_inventory_files row (not yet current)
+ * @param {(fraction: number) => void} [onProgress]
+ */
+async function loadProducts(file, fileId, onProgress) {
+  let failure = null;
+  let pending = [];
+  const send = async (rows) => {
+    const { error } = await supabase.rpc('cc_products_load', { p_file_id: fileId, p_rows: rows });
+    if (error) throw new Error(`Loading products failed: ${error.message}`);
+  };
+  await new Promise((resolve, reject) => {
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: 'greedy',
+      chunkSize: 2 * 1024 * 1024,
+      chunk: (results, parser) => {
+        for (const row of results.data) {
+          const product = productRow(row);
+          if (product) pending.push(product);
+        }
+        const cursor = results.meta.cursor ?? 0;
+        parser.pause();
+        (async () => {
+          while (pending.length >= LOAD_BATCH) await send(pending.splice(0, LOAD_BATCH));
+          onProgress?.(Math.min(1, cursor / file.size));
+        })().then(() => parser.resume(), (e) => {
+          failure = e;
+          parser.abort();
+        });
+      },
+      complete: () => (failure ? reject(failure) : resolve()),
+      error: reject,
+    });
+  });
+  if (failure) throw failure;
+  while (pending.length) await send(pending.splice(0, LOAD_BATCH));
+  onProgress?.(1);
 }
 
 /** Storage keys allow a limited character set; the real name is kept in the table. */
@@ -97,12 +149,14 @@ function safeKeyName(name) {
 }
 
 /**
- * Compress and upload a checked file, and make it the current Master Crystal
- * Inventory; the file before it goes (once this one is safely stored).
+ * Compress and upload a checked file, load its products for the export, and
+ * make it the current Master Crystal Inventory; the file before it goes (once
+ * this one is safely stored and loaded). If anything fails, the new file is
+ * removed and the current one stays.
  * @param {File} file
  * @param {CsvSummary} summary
  * @param {string} userId  the picked staff user
- * @param {(step: 'compress'|'upload'|'save') => void} [onStep]
+ * @param {(step: 'compress'|'upload'|'load'|'save', fraction?: number) => void} [onStep]
  */
 export async function uploadCsv(file, summary, userId, onStep) {
   onStep?.('compress');
@@ -119,8 +173,8 @@ export async function uploadCsv(file, summary, userId, onStep) {
   });
   if (up.error) throw new Error(`Upload failed: ${up.error.message}`);
 
-  onStep?.('save');
-  const { data: pruned, error } = await supabase.rpc('master_inventory_add', {
+  // The upload's row first (not yet current), so its products have one.
+  const { data: fileId, error: startError } = await supabase.rpc('master_inventory_start', {
     p_storage_path: path,
     p_original_filename: file.name,
     p_size_bytes: file.size,
@@ -128,10 +182,25 @@ export async function uploadCsv(file, summary, userId, onStep) {
     p_columns: summary.columns,
     p_uploaded_by: userId,
   });
-  if (error) {
+  if (startError) {
     // Nothing was recorded, so don't leave the file behind either.
     await supabase.storage.from(BUCKET).remove([path]);
-    throw new Error(`Saving the upload failed: ${error.message}`);
+    throw new Error(`Saving the upload failed: ${startError.message}`);
+  }
+
+  let pruned;
+  try {
+    onStep?.('load', 0);
+    await loadProducts(file, fileId, (f) => onStep?.('load', f));
+    onStep?.('save');
+    const { data, error } = await supabase.rpc('master_inventory_finish', { p_file_id: fileId });
+    if (error) throw new Error(`Saving the upload failed: ${error.message}`);
+    pruned = data;
+  } catch (e) {
+    // Half-loaded: the new file and its products go; the current one stays.
+    await supabase.rpc('master_inventory_abort', { p_file_id: fileId });
+    await supabase.storage.from(BUCKET).remove([path]);
+    throw e;
   }
 
   // The file this one replaces: its row is gone; remove the file too.

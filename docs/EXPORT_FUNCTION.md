@@ -333,7 +333,7 @@ All security invoker unless noted, granted to `authenticated` only, refusals as 
 | Function | Phase | Does |
 |---|---|---|
 | `cc_products_load(file_id, rows jsonb)` | E1 | Inserts a batch of parsed products for an upload (Section 6.7) |
-| `cc_products_activate(file_id)` | E1 | After the last batch: deletes every other file's products. Runs inside `master_inventory_add`'s lock |
+| `master_inventory_start` / `master_inventory_finish` / `master_inventory_abort` | E1 | The upload in steps (as built, Section 6.7): replaces the planned `cc_products_activate` |
 | `cc_candidates(wants jsonb)` | E2 | For a list of `{ key, category, base_key }`, every product with that category and base key; with no category, every product with that base key (any category). One call for a whole export |
 | `cc_set_map_save(set, promo_kind, category, user)` / `cc_set_map_forget(…)` | E2 | Staff's set choices |
 | `cc_link_save(scryfall_id, finish, product_id, user, source)` / `cc_link_forget(…)` | E2 | Remembered product matches |
@@ -350,6 +350,12 @@ The upload (`DESIGN_SPEC.md` 11.1, as built: chunked check, gzip, current file o
 4. The Master Crystal Inventory panel shows **"152,115 products loaded for export"** under Rows.
 
 An Edge Function isn't used for this: parsing 40 MB takes far longer than an Edge Function's CPU limit on the Free plan.
+
+**As built (Phase E1, migration 0025):**
+- The products belong to their upload's `master_inventory_files` row, so the upload runs in steps: **`master_inventory_start`** creates the row, not yet current → **`cc_products_load`** in batches of 2,000 (security definer; the store's role can only read `cc_products`) → **`master_inventory_finish`** makes it current, sets `master_inventory_files.products_loaded`, and deletes every other file's row (their products go with it, `on delete cascade`), returning their storage paths for the app to delete. On any failure, **`master_inventory_abort`** removes the new row and its products, and the app removes its stored file. These replace the spec's `cc_products_activate`. `master_inventory_add` (0024) stays for the older live build; a file it uploads has no products loaded.
+- The check now also requires the **Product ID, Product Name and Category** columns.
+- Loading re-reads the CSV in 2 MB chunks (PapaParse, pausing while each batch is sent).
+- `scripts/cc-report.mjs` on the real inventory matched Appendix A (the parser counts multi-word foils like `First-Place Foil` as foil kinds and splits `Foil DCI Judge Promo` into `Foil` + `DCI Judge Promo`, so its shape counts differ by a few hundred).
 
 ---
 
