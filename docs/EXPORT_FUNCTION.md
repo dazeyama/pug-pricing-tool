@@ -334,9 +334,8 @@ All security invoker unless noted, granted to `authenticated` only, refusals as 
 |---|---|---|
 | `cc_products_load(file_id, rows jsonb)` | E1 | Inserts a batch of parsed products for an upload (Section 6.7) |
 | `master_inventory_start` / `master_inventory_finish` / `master_inventory_abort` | E1 | The upload in steps (as built, Section 6.7): replaces the planned `cc_products_activate` |
-| `cc_candidates(wants jsonb)` | E2 | For a list of `{ key, category, base_key }`, every product with that category and base key; with no category, every product with that base key (any category). One call for a whole export |
-| `cc_set_map_save(set, promo_kind, category, user)` / `cc_set_map_forget(…)` | E2 | Staff's set choices |
-| `cc_link_save(scryfall_id, finish, product_id, user, source)` / `cc_link_forget(…)` | E2 | Remembered product matches |
+| `cc_candidates(wants jsonb)` | E2 | For a list of `{ key, category, base_keys }`, every product with that category and one of those base keys; with no category, any category. One call for a whole export (as built: `base_keys` is a list, the card name and its flavor name) |
+| `cc_categories()`, `cc_products_by_id(ids)`, `cc_products_search(text)` | E2 | The current inventory's categories; products by Product ID (are remembered links still there?); the review's search. As built, `cc_set_map` and `cc_product_links` are written directly (RLS) instead of through save / forget functions |
 | `export_lines(target jsonb, matches jsonb, cant_upload uuid[], user, device)` | E3 | **The export itself, in one transaction** (Section 8.4) |
 | `export_undo_day(day, game, user, device)` | E3 | Replaces `day_mark(…, false)`: back to Paid/Ours, clears the stamps, takes the day's copies out of Can't upload (Section 9.4) |
 
@@ -439,6 +438,18 @@ Each line brings what the app saved (`name`, `collector_number`, `finish`, `trea
 - **Automatic matches that were exported are links too** (`source = 'auto'`), so a later inventory can't change a card's match without a review.
 - **"None of these" is not remembered.** The next export tries again; CC may have added the product.
 - A Settings panel lists them (Section 11.2).
+
+### 7.5a As built (Phase E2)
+
+- **`src/lib/ccMatch.js`** holds the rules (pure, tested): `categoryFor` (steps 1–4 of 7.3), `expectedName` (7.4 step 2, CC's order), `scoreCandidate` and `chooseProduct` (7.4 step 3). Most printing evidence comes from the line's own `treatments` (borderless, showcase, extended art, full art, retro frame, serialized, special foils, prerelease / promo pack / buy-a-box / bundle stamps, saved at the buy); Scryfall is fetched only for the `flavor_name`.
+- **Scores:** a numbered bracket that matches +5 (required to match when the bracket is a number); a set-code bracket matching the card number's prefix +3; the expected special foil +2 (another foil kind −1); each of our variants found +3, missing −1; each of the product's variants we can't explain −2 (another word −1); the exact expected name +100. **When CC lists a product with our collector number, products with no number lose 4** (an older Secret Lair drop of the same card is another printing). One passing candidate, or a lead of **2 or more**, is matched automatically.
+- **With no category**, candidates come from every category and always go to the review.
+- **Results on the real inventory (2026-10-01, `scripts/cc-report.mjs <inventory> <printings.json>`):** all **26** distinct Magic printings in dev's buys matched automatically; of **200 random English paper printings** from Scryfall (half foil where possible), **190 matched automatically**, 2 went to a choice (Unfinity attraction cards, rightly), and 8 found no category: 5 from *Reality Fracture* (not in the store's inventory at all: they'd be can't upload), Unfinity sticker sheets, *Mystery Booster Commander Edition* and *Game Night* (since added as a rename).
+- **Rules added while testing** (Appendix B): a set's Commander decks use its **main set's full name** (`New Capenna Commander` → `Commander: Streets of New Capenna`, from Scryfall's `parent_set_code`); `Conspiracy: Take the Crown` → `Conspiracy 2: Take the Crown`; `Game Night` → `Game Night 2018`; a two-part card CC lists **by its front only** (a Kamigawa flip card, `Homura, Human Ascendant`) is found by its front name when nothing has the full name.
+- **The dry run** is **⋯ → Check Crystal Commerce matches** on a Magic day page (it needs a picked user, since picks are saved with who made them). A pick applies to every line of the same printing and finish in the dialog.
+- **Database (migration 0026):** `cc_set_map` and `cc_product_links` are written straight from the browser (store-role RLS, like settings) rather than through save / forget functions; reads go through `cc_categories`, `cc_candidates`, `cc_products_by_id` and `cc_products_search` (all on the current file, `cc_current_file()`).
+- **Scryfall cards** are fetched fresh for each dialog (`/cards/collection`, 75 at a time), not cached for 7 days: the Sell Price needs today's prices anyway (Section 5.4).
+- `loadSets` now keeps each set's `parent_set_code` (its cache key moved to `.v3`), for promo pack categories.
 
 ### 7.6 A new inventory
 
@@ -769,6 +780,9 @@ Tried in order after staff's choices and promo kinds (Section 7.3). Each rule's 
 | `Limited Edition Alpha` / `Beta`, `Unlimited Edition` | `Alpha`, `Beta`, `Unlimited` | |
 | `Classic Sixth Edition` | `Sixth Edition` | |
 | `Ravnica: City of Guilds` | `Ravnica` | |
+| `Conspiracy: Take the Crown` | `Conspiracy 2: Take the Crown` | (as built, E2) |
+| `Game Night` (`gnt`) | `Game Night 2018` | (as built, E2) |
+| A Commander deck set with a parent (`parent_set_code`) | `Commander: <main set name>` first | `New Capenna Commander` → `Commander: Streets of New Capenna` (as built, E2) |
 | Promo type `prerelease` | `Prerelease Promo: <set>`, else `Pre-Release Promos` | |
 | Promo type `promopack` | `Promo Pack: <set>` | `Promo Pack: Core Set 2020` |
 

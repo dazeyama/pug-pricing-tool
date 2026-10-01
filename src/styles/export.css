@@ -1,0 +1,66 @@
+/* The export dialog (docs/EXPORT_FUNCTION.md 8.3): Needs a choice (amber),
+   Matched (green), Can't upload (red). */
+.xd { display: flex; flex-direction: column; gap: 14px; font-size: 13px; }
+.xd-step { margin: 8px 0; font-size: 14px; }
+.xd-intro { margin: 0; }
+.xd-group { border: 1px solid var(--border); border-left: 4px solid var(--g); border-radius: 8px; padding: 10px 12px; }
+.xd-group.choose { --g: var(--warn); }
+.xd-group.matched { --g: var(--good); }
+.xd-group.cant { --g: var(--bad); background: color-mix(in srgb, var(--bad) 6%, transparent); }
+.xd-group h4 { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 8px; font-size: 13.5px; color: var(--g); }
+.xd-group summary { cursor: pointer; list-style: none; }
+.xd-group summary::-webkit-details-marker { display: none; }
+.xd-group summary h4::after { content: "▾"; color: var(--muted); font-size: 11px; }
+.xd-group details:not([open]) summary h4 { margin-bottom: 0; }
+.xd-group details:not([open]) summary h4::after { content: "▸"; }
+.xd-count {
+  padding: 0 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--g) 18%, transparent);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+.xd-row { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 8px; padding: 4px 0; }
+.xd-row + .xd-row { border-top: 1px solid color-mix(in srgb, var(--border) 60%, transparent); }
+.xd-line { font-weight: 600; }
+.xd-where { margin-left: 6px; font-weight: 400; font-size: 12px; color: var(--muted); }
+.xd-arrow { color: var(--muted); }
+.xd-product { overflow-wrap: anywhere; }
+.xd-cat { margin-left: 6px; font-size: 12px; color: var(--muted); }
+.xd-cat::before { content: "· "; }
+.xd-tag, .xd-note {
+  margin-left: 6px;
+  padding: 0 6px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.xd-change { margin-left: auto; }
+.xd-reason { color: var(--bad); font-size: 12px; }
+.xd-choose { padding: 8px 0; }
+.xd-choose + .xd-choose { border-top: 1px solid color-mix(in srgb, var(--border) 60%, transparent); }
+.xd-options { display: flex; flex-direction: column; gap: 2px; margin: 4px 0 6px 6px; }
+.xd-option { display: flex; align-items: baseline; gap: 8px; margin: 0; font-size: 13px; color: var(--text); cursor: pointer; }
+.xd-option input { width: auto; margin: 0; }
+.xd-option.off { opacity: .7; }
+.xd-option.none { color: var(--bad); font-weight: 600; }
+.xd-search { max-width: 340px; margin: 2px 0 0 6px; padding: 5px 9px; font-size: 12.5px; }
+.xd-always { margin: 6px 0 0 6px; font-size: 12.5px; }
+.xd-was { margin: 0 0 4px 6px; }
+
+/* Confirm (Phase E3): the cards to pull out of the batch, impossible to miss. */
+.xd-pull {
+  padding: 14px 16px;
+  border: 2px solid var(--bad);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--bad) 12%, transparent);
+}
+.xd-pull h3 { margin: 0 0 8px; font-size: 19px; color: var(--bad); }
+.xd-pull ul { margin: 0 0 10px; padding-left: 18px; }
+.xd-pull li { margin: 2px 0; }
+.xd-pull .xd-pulled { display: flex; align-items: center; gap: 8px; margin: 10px 0 0; font-size: 14px; font-weight: 700; color: var(--text); }
+.xd-pull .xd-pulled input { width: auto; margin: 0; }
+.xd-summary { margin: 0; font-size: 14px; }
+.xd-price { margin-left: 6px; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.xd-price strong { color: var(--cash); }

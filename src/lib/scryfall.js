@@ -20,13 +20,16 @@ let setsByCode = null;
  * @returns {Promise<Map<string, ScryfallSet>>}  keyed by lower-case code
  */
 export function loadSets() {
-  // .v2: adds `digital`, so Arena-only set codes aren't treated as sets.
+  // .v3: adds `parent_set_code` (a promo set's main set, for the export's
+  // categories, export spec 7.3); .v2 added `digital`, so Arena-only set codes
+  // aren't treated as sets.
   try {
-    localStorage.removeItem('pug.scryfall.sets');   // the old copy, without it
+    localStorage.removeItem('pug.scryfall.sets');   // the older copies
+    localStorage.removeItem('pug.scryfall.sets.v2');
   } catch {
     // storage blocked: nothing to clean up
   }
-  setsPromise ??= storedOrDownload('pug.scryfall.sets.v2', DAY, async () => {
+  setsPromise ??= storedOrDownload('pug.scryfall.sets.v3', DAY, async () => {
     const data = await transport.getJson(`${API}/sets`);
     return data.data.map((s) => ({
       code: s.code,
@@ -34,6 +37,7 @@ export function loadSets() {
       printed_size: s.printed_size ?? null,
       released_at: s.released_at ?? null,
       set_type: s.set_type,
+      parent_set_code: s.parent_set_code ?? null,
       digital: Boolean(s.digital),
       icon_svg_uri: s.icon_svg_uri ?? null,
     }));

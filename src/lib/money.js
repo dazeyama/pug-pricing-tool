@@ -37,6 +37,25 @@ export function roundDownPrice(price) {
 }
 
 /**
+ * The Sell Price's rounding (docs/EXPORT_FUNCTION.md 5.3): the same steps as
+ * roundDownPrice, upward: under $1 to the cent; $1–$10 to the quarter; $10–
+ * $100 to the dollar; $100–$1,000 to the $5; $1,000 and up to the $10. The
+ * step comes from the unrounded price's band; a price on a step stays. Whole
+ * cents, trimmed to 6 places first, so float error can't add a cent.
+ * @returns {number|null}
+ */
+export function roundUpPrice(price) {
+  if (price == null || Number.isNaN(Number(price))) return null;
+  const exact = Number((Number(price) * 100).toFixed(6));
+  const cents = Math.ceil(exact);
+  const step = exact >= 100_000 ? 1000 : exact >= 10_000 ? 500 : exact >= 1000 ? 100 : exact >= 100 ? 25 : 1;
+  return (Math.ceil(cents / step) * step) / 100;
+}
+
+/** The lowest Sell Price for one card (owner, 2026-10-01; spec 5.3). */
+export const SELL_FLOOR = 0.4;
+
+/**
  * What the store pays for one card in Cash or Credit: price × pct%, rounded
  * down by the same steps as prices (owner, 2026-09-29).
  * @returns {number|null}

@@ -13,6 +13,7 @@ import MoreMenu from '../components/MoreMenu.jsx';
 import UserTag from '../components/UserTag.jsx';
 import ExportButton from '../components/ExportButton.jsx';
 import LinePreview, { previewFor } from '../components/LinePreview.jsx';
+import ExportDialog from './export/ExportDialog.jsx';
 import { RemoveModal } from './price/BuyList.jsx';
 import { statusLabel, statusTone, walkInStatus } from './collections/status.js';
 import { useConnection } from '../state/connection.jsx';
@@ -78,6 +79,7 @@ function DayScreen({ game, day }) {
   const [deleting, setDeleting] = useState(null);   // { buy, number, lastCard }
   const [exporting, setExporting] = useState(false);     // the "mark Completed?" warning
   const [unexporting, setUnexporting] = useState(false); // ⋯ → Mark Paid/Ours again
+  const [checking, setChecking] = useState(false);       // ⋯ → Check Crystal Commerce matches (export spec E2)
   const [busy, setBusy] = useState(false);
   const ticket = useRef(0);
   const other = game === 'mtg' ? 'pokemon' : 'mtg';
@@ -271,15 +273,24 @@ function DayScreen({ game, day }) {
       <div className="day-top">
         <button type="button" className="btn page-back" title="Back to the Calendar" onClick={back}>&lt; BACK</button>
         <span className="day-actions">
-          {/* After an export: undo it, if it was done too early (owner, 2026-09-30). */}
-          {done.length > 0 && (
+          {/* ⋯: on Magic days, a dry run of the export's matching (export spec E2);
+              after an export, undo it if it was done too early (owner, 2026-09-30). */}
+          {(game === 'mtg' || done.length > 0) && (
             <MoreMenu
-              items={[{
-                label: 'Mark Paid/Ours again…',
-                blocked: offline ? 'No connection' : busy ? 'Saving…' : null,
-                title: `Undo the export: this day's Completed ${GAME_NAMES[game]} buys become Paid/Ours again`,
-                onClick: () => guard() && setUnexporting(true),
-              }]}
+              items={[
+                ...(game === 'mtg' ? [{
+                  label: 'Check Crystal Commerce matches',
+                  blocked: offline ? 'No connection' : !mine.length ? 'No Magic buys that day' : null,
+                  title: 'See how each card matches a Crystal Commerce product, without exporting',
+                  onClick: () => setChecking(true),
+                }] : []),
+                ...(done.length > 0 ? [{
+                  label: 'Mark Paid/Ours again…',
+                  blocked: offline ? 'No connection' : busy ? 'Saving…' : null,
+                  title: `Undo the export: this day's Completed ${GAME_NAMES[game]} buys become Paid/Ours again`,
+                  onClick: () => guard() && setUnexporting(true),
+                }] : []),
+              ]}
             />
           )}
           <ExportButton className="top" intercept={startExport} blocked={exportBlocked} />
@@ -331,6 +342,14 @@ function DayScreen({ game, day }) {
           note="This buy was already confirmed."
           onClose={() => setRemoving(null)}
           onRemove={remove}
+        />
+      )}
+      {checking && (
+        <ExportDialog
+          mode="check"
+          title={`Crystal Commerce matches: ${GAME_NAMES[game]}, ${dayDate(day)}`}
+          items={mine.flatMap((b, i) => b.buy_lines.filter((l) => l.game === 'mtg').map((line) => ({ line, where: `Buy ${i + 1}` })))}
+          onClose={() => setChecking(false)}
         />
       )}
       {exporting && (
