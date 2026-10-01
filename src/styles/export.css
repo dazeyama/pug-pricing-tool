@@ -165,3 +165,17 @@
 .ccm-who { color: var(--muted); font-size: 12px; white-space: nowrap; }
 .ccm-forget { margin-left: auto; }
 .ccm-source.staff { border-color: var(--accent); color: var(--accent); }
+
+/* The Collections table's pinned Can't upload cards row (owner, 2026-10-01):
+   tinted red, a red bar down its left edge, a pin before the name, and a
+   firmer line under it, so it's plainly set apart from the collections below. */
+.col-table tr.system-row td {
+  background: color-mix(in srgb, var(--bad) 9%, transparent);
+  border-bottom: 2px solid color-mix(in srgb, var(--bad) 45%, var(--border));
+}
+.col-table tr.system-row td:first-child { box-shadow: inset 4px 0 0 var(--bad); }
+.col-table tr.system-row:hover td, .col-table tr.system-row:focus-visible td {
+  background: color-mix(in srgb, var(--bad) 15%, var(--panel-2));
+}
+.pin-mark { margin-right: 6px; font-size: 13px; }
+.col-phone .system-chip { margin-left: 0; }

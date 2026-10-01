@@ -30,15 +30,23 @@ const columns = (by) => [
     value: (c) => nameKey(c.customer_name),
     cell: (c, elsewhere) => (
       <td key="name" className="col-name">
+        {/* Can't upload cards: pinned as the first row (export spec 9.5), and says so. */}
+        {c.system_key && <span className="pin-mark" title="Pinned: always the first row" aria-label="Pinned">📌</span>}
         {c.customer_name}
-        {c.system_key && <span className="system-chip" title="Made by the app: holds the cards exports couldn't upload">System</span>}
         {elsewhere && <span className="lock-line">{elsewhere}</span>}
       </td>
     ),
   },
   {
     key: 'phone', label: 'Phone', value: (c) => c.phone,
-    cell: (c) => <td key="phone" className="col-phone">{c.system_key ? '—' : formatPhone(c.phone)}</td>,
+    cell: (c) => (
+      <td key="phone" className="col-phone">
+        {/* It has no phone: its System chip sits here, where there's room (owner, 2026-10-01). */}
+        {c.system_key
+          ? <span className="system-chip" title="Made by the app: holds the cards exports couldn't upload">System</span>
+          : formatPhone(c.phone)}
+      </td>
+    ),
   },
   {
     key: 'status', label: 'Status', value: (c) => STATUS_ORDER[c.status],
@@ -233,7 +241,7 @@ export default function CollectionsPage() {
             return (
               <tr
                 key={c.id}
-                className="col-row"
+                className={`col-row${c.system_key ? ' system-row' : ''}`}
                 tabIndex={0}
                 onClick={() => navigate(`/collections/${c.id}`)}
                 onKeyDown={(e) => {
