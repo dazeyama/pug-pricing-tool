@@ -1,20 +1,25 @@
 # Export build report
 
-The export function (`docs/EXPORT_FUNCTION.md`, Phases E1–E5), built in one run on 2026-10-01 at the owner's request, without stopping between phases for QA. Everything is committed locally and **not pushed**. Migrations went to the **dev** database only. The rollback point before the build is the local tag `pre-export-build` (and the copy in `C:\ClaudeProjects\pug-pricing-tool-backups\backup-20261001-011023-pre-export-build`).
+The export function (`docs/EXPORT_FUNCTION.md`, Phases E1–E5), built in one run on 2026-10-01 at the owner's request, without stopping between phases for QA. **All five phases are built.** Everything is committed locally and **not pushed**. Migrations **0025–0029** went to the **dev** database only, each tested in a rolled-back transaction first; the `prices` Edge Function (its `fresh` option) is deployed to **dev**. The rollback point before the build is the local tag `pre-export-build` (and the copy in `C:\ClaudeProjects\pug-pricing-tool-backups\backup-20261001-011023-pre-export-build`).
+
+**Commits:** `8e51453` E1 · `7a783b1` E2 · `00c3fb6` E3 · `a5befcd` E4 · `28ef93d` E5 · then this report's final update.
+
+**Checks after every phase:** `npm run build` OK · `npm test` 109 pass · eslint clean. Nothing was tried in a browser (you're QA): the "Where to look" lists below are the first things to try. **Upload the real inventory first** (Owner tasks): dev has no products loaded, so the check and the export both stop and say so until then.
 
 ## Needs your answer
 
 *(Most important first. Each says what was chosen so the build could go on.)*
 
-1. **Remembered matches and set choices aren't in backup files yet.** Adding them changes the backup format, and older backup files would then fail the restore check. Should they be backed up (a format version 2 that still restores version 1)?
-2. **Matching thresholds.** A product is picked automatically when it's the only one that fits, or leads the next by 2 points or more. On the real inventory that matched all 26 of dev's printings and 190 of 200 random ones, with no wrong picks seen in the samples. If a wrong automatic pick ever shows up, the fix is a bigger lead or a new rule.
-3. **The older live site's EXPORT.** The live build (v0.9.1-final) still has the old EXPORT, which marks a day Completed without a file. Kept working for compatibility; a day it marks has no export stamps, and the new build's EXPORT on it says to mark the day Paid/Ours again and export. Should the old EXPORT be refused from now on instead?
-4. **How fresh "fresh" is.** The export's Sell Prices accept JustTCG prices fetched in the last 15 minutes (not 6 hours), so a Back-and-export-again or a retry doesn't spend another request. Say if it should always fetch.
-5. **A day where nothing matched** (every card Can't upload): it still becomes Completed, with no file. Say if it should stay Paid/Ours instead.
-6. **Can't upload cards and the live site.** The live build (v0.9.1-final) shows the new collection in its Collections table like any other (no System chip, a blank phone); editing it there is refused by the server with a plain error. Nothing breaks, but it looks rough until the new build goes live.
-7. **Mark as Completed by hand.** A Paid/Ours collection can still be marked Completed from its status controls without exporting (kept, since cards sometimes move on another way). EXPORT on it then says to reopen and export. Should Completed only come from EXPORT now?
-8. **Searching remembered products** in Settings is by CC's product name (the remembered links don't store Scryfall's card name). Fine for finding a card, but a two-faced card is found by CC's spelling of it.
-9. **The older live site and the inventory.** The live GitHub Pages build (v0.9.1-final) still uploads inventories the old way, without loading products for the export. If someone uploads from the live site, Settings will say "Products not loaded for export: upload it again" until it's uploaded from the new build.
+1. **The older live site's EXPORT.** The live build (v0.9.1-final) still has the old EXPORT, which marks a day Completed without making a file. *Chosen:* kept working, for compatibility. A day it marks has no export stamps; the new build's EXPORT on it says to mark the day Paid/Ours again and export. Should the old EXPORT be refused by the server from now on instead?
+2. **A day where nothing matched** (every card Can't upload). *Chosen:* it still becomes Completed, with no file (the cards are copied to Can't upload cards). Say if it should stay Paid/Ours instead.
+3. **Mark as Completed by hand.** *Chosen:* a Paid/Ours collection can still be marked Completed from its status controls without exporting, since cards sometimes move on another way. EXPORT on such a collection says to reopen it and export. Should Completed only come from EXPORT now?
+4. **Remembered matches and set choices aren't in backup files.** *Chosen:* left out for now, because adding them changes the backup format and older backup files would fail the restore check. Should they be backed up (a format version 2 that still restores version 1)?
+5. **Re-downloading a day after Can't upload cards exported one of its cards.** *Chosen:* when a card exported later from Can't upload cards, its original row is restamped as exported, so EXPORT on its Completed day re-downloads a file that now includes it (with that later export's Custom SKU; the chip then shows both codes). Say if a day's re-download should stay exactly the first file.
+6. **Matching thresholds.** *Chosen:* a product is picked automatically when it's the only one that fits, or leads the next by 2 points or more. On the real inventory that matched all 26 of dev's printings and 190 of 200 random ones, with no wrong picks seen. If a wrong automatic pick ever shows up, the fix is a bigger lead or a new rule.
+7. **How fresh "fresh" is.** *Chosen:* the export's Sell Prices accept JustTCG prices fetched in the last 15 minutes (not 6 hours), so going Back and exporting again, or a retry, doesn't spend another request. Say if it should always fetch.
+8. **The older live site and the inventory.** The live build still uploads inventories the old way, without loading products for the export. If someone uploads from the live site, the new build's Settings says "Products not loaded for export: upload it again" until it's uploaded from the new build.
+9. **Can't upload cards on the live site.** The live build shows the new collection in its Collections table like any other (no System chip, a blank phone); editing it there is refused by the server with a plain error. Nothing breaks, but it looks rough until the new build goes live.
+10. **Searching remembered products** in Settings is by CC's product name (the remembered links don't store Scryfall's card name). Fine for finding a card, but a two-faced card is found by CC's spelling of it.
 
 ## Owner tasks
 

@@ -843,6 +843,9 @@ Categories with no rule yet (from Section 3.3's 138 unmatched): `Mystery Booster
 | E17 | Custom SKU | A number-only code from **the export's date**: month without a leading zero, day always two digits, two-digit year (`61726` for 06/17/26, `110126` for 11/01/26), on every row; shown in a clearly labelled chip on an exported day page's header and an exported collection's screen (owner, 2026-10-01) |
 | E18 | Sell Price details | A fallback-priced card gets JustTCG's price if it has one today; a manual price with nothing to compare is used alone (rounded up, floored); if today's prices can't be fetched, nothing is exported (owner, 2026-10-01) |
 | E19 | Totals after export | Market / Cash / Credit totals follow the Sell Prices; the price paid stays the record of the deal (owner, 2026-10-01) |
+| E20 | Build choices (2026-10-01) | Made during the unattended build so it could go on, each waiting for the owner in `docs/EXPORT_BUILD_REPORT.md` → Needs your answer: the older live build's EXPORT keeps working (no file, no stamps); a day where nothing matched still becomes Completed; a collection can still be marked Completed by hand; links and set choices stay out of backups; a later export from Can't upload cards restamps the original row (a day's re-download then includes it); automatic picks need a 2-point lead; "fresh" prices are at most 15 minutes old |
+| E21 | Picks in the export dialog | Saved with the export, not as they're made: Cancel saves nothing (the dry run still saves as it goes) (build, 2026-10-01) |
+| E22 | Product names and categories | Copied from the inventory on the server when the export is saved, never from the browser (build, 2026-10-01) |
 
 ## Appendix D: Open items
 
