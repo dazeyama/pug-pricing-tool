@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
 import { storeDay } from '../lib/calendar.js';
@@ -10,6 +10,7 @@ import { statusLabel, statusTone } from '../pages/collections/status.js';
 import { useStaff } from '../state/staff.jsx';
 import GameBadge from './GameBadge.jsx';
 import UserTag from './UserTag.jsx';
+import LinePreview, { previewFor } from './LinePreview.jsx';
 
 // The header's global search (spec 13), in CM's pill style: every stored line
 // in a confirmed buy or an open collection (not Completed) matching what's
@@ -46,7 +47,11 @@ export default function SearchBox({ wide }) {
   const [active, setActive] = useState(0);
   const wrap = useRef(null);
   const input = useRef(null);
+  const results = useRef(null);
   const run = useRef(0);
+  // The hovered result's card picture, beside the dropdown (owner, 2026-09-30).
+  const [preview, setPreview] = useState(null);
+  const hidePreview = useCallback(() => setPreview(null), []);
 
   // Search after a pause in typing; a newer search wins.
   useEffect(() => {
@@ -130,6 +135,9 @@ export default function SearchBox({ wide }) {
   }
 
   const showing = open && text.trim().length >= MIN_CHARS;
+  useEffect(() => {
+    if (!showing) setPreview(null);
+  }, [showing]);
 
   /** One buy or collection holding the printing. */
   function renderRow(row) {
@@ -146,7 +154,11 @@ export default function SearchBox({ wide }) {
         data-idx={i}
         className={`result-btn${i === active ? ' active' : ''}${tone}`}
         style={buy && user ? { '--c': colorVar(user.color) } : undefined}
-        onMouseEnter={() => setActive(i)}
+        onMouseEnter={(e) => {
+          setActive(i);
+          setPreview(previewFor(row.line.image_url, e.currentTarget, results.current, 'left'));
+        }}
+        onMouseLeave={hidePreview}
         onMouseDown={(e) => e.preventDefault()}   // keep the typing in the box
         onClick={() => go(row)}
       >
@@ -189,7 +201,7 @@ export default function SearchBox({ wide }) {
           onKeyDown={onKeyDown}
         />
         {showing && (
-          <div className="search-results" role="listbox" aria-label="Search results">
+          <div className="search-results" ref={results} role="listbox" aria-label="Search results">
             {found.status === 'error' && <p className="search-error">Search failed: {found.error}</p>}
             {found.status === 'loading' && !found.groups.length && <p className="search-none loading-note">Searching…</p>}
             {found.status === 'done' && !found.groups.length && (
@@ -222,6 +234,7 @@ export default function SearchBox({ wide }) {
             )}
           </div>
         )}
+        {showing && <LinePreview preview={preview} onHide={hidePreview} />}
       </div>
     </div>
   );

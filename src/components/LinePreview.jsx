@@ -3,8 +3,8 @@ import { createPortal } from 'react-dom';
 
 // A hovered card line's picture, at a search suggestion's size, level with the
 // line and just outside its list: left of the Price sidebar (owner,
-// 2026-09-29), beside a day page's buy panel (owner, 2026-09-30). A plain
-// picture, no foil effects.
+// 2026-09-29), beside a day page's buy panel and left of the header search's
+// results (owner, 2026-09-30). A plain picture, no foil effects.
 
 const WIDTH = 146;
 const HEIGHT = 204;

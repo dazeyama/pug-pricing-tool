@@ -1470,6 +1470,7 @@ The data isn't folded, only the drawing. Pagination counts drawn panels.
   - The first result is highlighted, so Enter opens it. With 200 lines found, a note says to add a number or set code.
   - **Landing:** a buy's day page scrolls its panel into view, flashes it (`.flash-target`) and **tints the matching rows**; a collection's screen tints the matching list lines and scrolls the first into view. Opening another result on the same page lands again.
   - On every tab but the pricing screens, the dropdown is as wide as the large search box.
+  - **Hovering a result shows its card's picture** just left of the dropdown, level with the row, the same preview as the Price sidebar and day pages (owner's decision, 2026-09-30); it goes away when the results scroll or close.
 
 ---
 
@@ -2046,6 +2047,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 158 | Conditions in search results (2026-09-30) | Each header search result row ends with its condition in brackets ([NM], [LP]…); a buy with two conditions of one printing gets a row for each (Section 13) |
 | 159 | Search results on two lines (2026-09-30) | Each header search result shows where it is, then the full card entry with its condition, "1 Fabricate (SLD) 123 [NM]" (replacing the bare [NM] of decision 158) (Section 13) |
 | 160 | Backups panel split on the grid (2026-09-30) | The Backups panel's two halves are equal, its separator on the page's centre line in line with the settings grid (Section 11) |
+| 161 | Card pictures on search results (2026-09-30) | Hovering a header search result shows its card's picture beside the dropdown, like the Price sidebar (Section 13) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

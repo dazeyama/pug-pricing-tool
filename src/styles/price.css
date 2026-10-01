@@ -1052,7 +1052,7 @@
    suggestion (Scryfall's small image, 146 × 204). No foil effects. */
 .line-preview {
   position: fixed;
-  z-index: 40;
+  z-index: 330;   /* above the header search's dropdown (320), which it can sit beside */
   width: 146px;
   aspect-ratio: 488 / 680;
   border-radius: 7px;
