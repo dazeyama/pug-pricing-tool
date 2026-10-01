@@ -236,7 +236,6 @@ header h1 { margin: 0; font-size: 20px; font-weight: 600; }
   font-weight: 700;
   color: var(--text);
 }
-.search-group.pinned .search-day { color: var(--accent); border-bottom-color: color-mix(in srgb, var(--accent) 50%, var(--border)); }
 .search-none { margin: 0; color: var(--muted); font-size: 13px; font-style: italic; }
 .search-error { margin: 0; color: var(--bad); font-size: 13.5px; }
 .search-hint { margin: 12px 0 0; color: var(--muted); font-size: 12px; font-style: italic; }

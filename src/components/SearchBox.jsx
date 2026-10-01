@@ -219,10 +219,7 @@ export default function SearchBox({ wide }) {
               <p className="search-none">No buys or collections contain that card.</p>
             )}
             {found.sections.map((sec) => (
-              <section
-                key={sec.key}
-                className={`search-group${sec.title ? ' pinned' : ''}${found.status === 'loading' ? ' stale' : ''}`}
-              >
+              <section key={sec.key} className={`search-group${found.status === 'loading' ? ' stale' : ''}`}>
                 <h4 className="search-day">{sec.title ?? dayHeading(sec.at)}</h4>
                 <div className="result-buttons">{sec.panels.map(renderRow)}</div>
               </section>
