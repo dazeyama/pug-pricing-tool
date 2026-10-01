@@ -20,8 +20,9 @@ const DOT_SLOTS = 12;
  * one month picker for both (kept in the URL, ?month=2026-08), weeks from
  * Sunday. Each day shows its confirmed walk-in buys: a count and a dot per
  * buy in the confirming user's colour. A buy with both games counts on both.
- * A day whose buys in that game are all exported (Completed) is greyed and
- * marked "Exported"; some of them, "Part exported" (owner, 2026-09-30).
+ * A day whose buys in that game are exported (Completed) is greyed and marked
+ * "Exported" (owner, 2026-09-30). Only a finished day can be exported, so a
+ * day's buys are all exported or none are.
  */
 export default function CalendarPage() {
   const [params, setParams] = useSearchParams();
@@ -108,9 +109,6 @@ function CalendarMonth({ month }) {
                   )}
                   {/* At the cell's foot, under up to two rows of dots (owner, 2026-09-30). */}
                   {allExported && <span className="cal-exported">Exported</span>}
-                  {exported > 0 && !allExported && (
-                    <span className="cal-exported partial" title={`${n - exported} of ${n} not exported yet`}>Part exported</span>
-                  )}
                 </>
               );
               const cls = `cal-day${day === today ? ' today' : ''}${n ? ' has' : ''}${allExported ? ' exported' : ''}`;
@@ -120,7 +118,7 @@ function CalendarMonth({ month }) {
                   key={day}
                   type="button"
                   className={cls}
-                  title={`${n} ${name} buy${n === 1 ? '' : 's'}${allExported ? ', exported' : exported ? `, ${exported} exported` : ''}`}
+                  title={`${n} ${name} buy${n === 1 ? '' : 's'}${allExported ? ', exported' : ''}`}
                   onClick={() => navigate(`/calendar/${game}/${day}`)}
                 >
                   {inner}

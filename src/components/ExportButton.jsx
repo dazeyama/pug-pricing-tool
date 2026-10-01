@@ -7,7 +7,7 @@ import Modal from './Modal.jsx';
  * `intercept` runs first (a day page's "mark Completed?" warning, owner
  * 2026-09-30): the placeholder opens only if it returns true.
  */
-export default function ExportButton({ className = '', onDone, intercept }) {
+export default function ExportButton({ className = '', onDone, intercept, blocked = null }) {
   const [open, setOpen] = useState(false);
   const close = () => {
     setOpen(false);
@@ -15,7 +15,14 @@ export default function ExportButton({ className = '', onDone, intercept }) {
   };
   return (
     <>
-      <button type="button" className={`btn export-btn ${className}`} onClick={() => (!intercept || intercept()) && setOpen(true)}>
+      {/* `blocked`: why it can't run now (today on a day page); it looks disabled, and `intercept` says why. */}
+      <button
+        type="button"
+        className={`btn export-btn ${className}${blocked ? ' is-disabled' : ''}`}
+        aria-disabled={blocked ? true : undefined}
+        title={blocked ?? undefined}
+        onClick={() => (!intercept || intercept()) && !blocked && setOpen(true)}
+      >
         EXPORT
       </button>
       {open && (

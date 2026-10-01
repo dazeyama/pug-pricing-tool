@@ -103,7 +103,6 @@ button.cal-day:hover { border-color: var(--game); background: color-mix(in srgb,
   text-overflow: ellipsis;
   color: var(--muted);
 }
-.cal-exported.partial { color: var(--warn); }
 .cal-day.has.exported {
   border-color: color-mix(in srgb, var(--muted) 45%, var(--border));
   background: color-mix(in srgb, var(--game) 5%, var(--panel-2));
@@ -177,7 +176,6 @@ button.cal-day.exported:hover { background: color-mix(in srgb, var(--game) 14%, 
 }
 .day-export-note { margin: -6px 0 16px; font-size: 13px; color: var(--muted); }
 .day-export-note .user-tag { color: var(--text); }
-.day-export-note.partial { color: var(--warn); }
 /* A Completed buy: locked, so its × is gone and the panel is quieter. */
 .buy-panel.completed .line-x { visibility: hidden; }
 .buy-panel-head .status-chip { margin-left: auto; font-size: 11px; padding: 1px 9px; }

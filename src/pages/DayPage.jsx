@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
-import { dayDate, dayRange, dayTitle, parseDay } from '../lib/calendar.js';
+import { dayDate, dayRange, dayTitle, parseDay, storeDay } from '../lib/calendar.js';
 import { lineBody, lineText } from '../lib/lineFormat.js';
 import { formatMoney, payout } from '../lib/money.js';
 import { formatPhone } from '../lib/phone.js';
@@ -26,9 +26,12 @@ const MESSAGES = {
   line_gone: 'That card was already removed.',
   buy_gone: 'That buy was already deleted.',
   buy_completed: 'That buy is Completed (exported): mark the day Paid/Ours again (⋯ next to EXPORT) to change it.',
+  day_not_over: "Today can't be exported until it's over.",
   no_user: 'Pick a user first.',
 };
 const COMPLETED_LOCK = 'Completed (exported): mark the day Paid/Ours again (⋯ next to EXPORT) to change it';
+// The current day can't be exported (owner, 2026-09-30): buys confirmed later would miss it.
+const NOT_OVER = "Today can't be exported until it's over: buys confirmed later would miss the export";
 const messageFor = (error, failure) => {
   const code = Object.keys(MESSAGES).find((c) => error?.message?.includes(c));
   return code ? MESSAGES[code] : `${failure}: ${error.message}`;
@@ -139,6 +142,7 @@ function DayScreen({ game, day }) {
   const pending = mine.filter((b) => walkInStatus(b, game) === 'paid');
   const done = mine.filter((b) => walkInStatus(b, game) === 'completed');
   const allDone = mine.length > 0 && !pending.length;
+  const notOver = day >= storeDay();
   // When and by whom: the latest export of this game's cards here.
   const lastExport = mine.flatMap((b) => b.buy_lines)
     .filter((l) => l.game === game && l.completed_at)
@@ -247,6 +251,10 @@ function DayScreen({ game, day }) {
    * 2026-09-30). The export itself is still the placeholder.
    */
   function startExport() {
+    if (notOver) {
+      toast(`${NOT_OVER}.`, 'err');
+      return false;
+    }
     if (!pending.length) return true;
     if (guard()) setExporting(true);
     return false;
@@ -271,7 +279,7 @@ function DayScreen({ game, day }) {
               }]}
             />
           )}
-          <ExportButton className="top" intercept={startExport} />
+          <ExportButton className="top" intercept={startExport} blocked={notOver ? NOT_OVER : null} />
         </span>
       </div>
       <h2 className="day-title">
@@ -280,13 +288,11 @@ function DayScreen({ game, day }) {
         {allDone && <span className="day-exported-chip">Exported</span>}
       </h2>
       <hr className="day-rule" />
-      {done.length > 0 && lastExport && (
-        <p className={`day-export-note${allDone ? '' : ' partial'}`}>
+      {allDone && lastExport && (
+        <p className="day-export-note">
           Exported {formatDateTime(lastExport.completed_at)}
-          {lastExport.completed_by && <> by <UserTag user={staff.byId(lastExport.completed_by)} /></>}.{' '}
-          {allDone
-            ? 'These buys are Completed: locked, and left out of the header search.'
-            : `${pending.length} buy${pending.length === 1 ? ' is' : 's are'} still Paid/Ours (confirmed after the export); EXPORT again to mark ${pending.length === 1 ? 'it' : 'them'} Completed.`}
+          {lastExport.completed_by && <> by <UserTag user={staff.byId(lastExport.completed_by)} /></>}.
+          {' '}These buys are Completed: locked, and left out of the header search.
         </p>
       )}
 
@@ -341,7 +347,6 @@ function DayScreen({ game, day }) {
             Exporting marks this day's <strong>{pending.length} {GAME_NAMES[game]} buy{pending.length === 1 ? '' : 's'}</strong>{' '}
             <strong>Completed</strong>: locked (cards can't be removed, buys can't be deleted) and left out of the
             header search, like a Completed collection.
-            {done.length > 0 && <> The {done.length} already exported stay as they are.</>}
           </p>
           <p className="hint">
             The export file itself isn't built yet, so for now this only marks them Completed. Exported too early?
