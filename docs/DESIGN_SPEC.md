@@ -1250,7 +1250,7 @@ Sections, each in a CM panel, laid out in **two columns across the page, with re
 | API keys (11.2) | JustTCG usage (11.3) |
 | Master Buy Percentages (11.4) | Master Fallback Percentages (11.4) |
 
-Backups (11.5) take a row of their own, spanning both columns at the same fixed height (as built, Phase 10): download on the left, restore on the right. The credits footer (11.7) spans both columns.
+Backups (11.5) take a row of their own, spanning both columns at the same fixed height (as built, Phase 10): download on the left, restore on the right, **split exactly in half with the separator on the page's centre line**, in line with the gap between the panels above, and each half's text in line with the panel above it (owner's decision, 2026-09-30). The credits footer (11.7) spans both columns.
 
 ### 11.1 Master Crystal Inventory (required)
 
@@ -2045,6 +2045,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 157 | Milestones under a game filter (2026-09-30) | "Backup restored" shows under the Magic and Pokémon filters too (Section 12) |
 | 158 | Conditions in search results (2026-09-30) | Each header search result row ends with its condition in brackets ([NM], [LP]…); a buy with two conditions of one printing gets a row for each (Section 13) |
 | 159 | Search results on two lines (2026-09-30) | Each header search result shows where it is, then the full card entry with its condition, "1 Fabricate (SLD) 123 [NM]" (replacing the bare [NM] of decision 158) (Section 13) |
+| 160 | Backups panel split on the grid (2026-09-30) | The Backups panel's two halves are equal, its separator on the page's centre line in line with the settings grid (Section 11) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

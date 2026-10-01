@@ -6,9 +6,10 @@
 
 .settings-grid {
   --settings-panel-h: 332px;
+  --settings-gap: 16px;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  gap: var(--settings-gap);
   align-items: stretch;
 }
 .settings-grid > .settings-footer,
@@ -111,9 +112,14 @@
 .pct-sign { color: var(--muted); }
 .field-error { color: var(--bad); font-size: 12px; margin: 6px 0 0; width: 320px; }
 
-/* Backups (spec 11.5): a row of its own; download on the left, restore on the right. */
-.backups { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 28px; }
-.backups .restore-col { padding-left: 28px; border-left: 1px solid var(--border); }
+/* Backups (spec 11.5): a row of its own; download on the left, restore on the
+   right. Split exactly in half (owner, 2026-09-30): the separator sits on the
+   page's centre line, in the gap between the panels above, and each half's
+   text lines up with the text of the panel above it (half the gap, plus a
+   panel's 1px border and 16px padding). */
+.backups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; }
+.backups > .backups-col:first-child { padding-right: calc(var(--settings-gap) / 2 + 17px); }
+.backups .restore-col { padding-left: calc(var(--settings-gap) / 2 + 16px); border-left: 1px solid var(--border); }
 .backups .restore-col .settings-sub { margin-top: 0; }
 .backup-last { margin: 14px 0 6px; font-size: 13.5px; }
 .backup-cloud { margin: 0; font-size: 12.5px; }
