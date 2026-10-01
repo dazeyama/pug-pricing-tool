@@ -17,13 +17,14 @@ export const isClosed = (s) => s === 'paid' || s === 'completed';
 /**
  * A collection's colour (owner, 2026-09-29): Processing amber, Priced red,
  * Paid/Ours green for cash or blue for credit (the Cash/Credit colours),
- * Completed grey. A walk-in buy is Paid/Ours (a neutral light grey: it has no
- * cash or credit recorded) until exported, then Completed (owner,
- * 2026-09-30). A CSS class: tone-processing, tone-paid-cash, tone-paid-walkin…
+ * Completed grey. A walk-in buy is Paid/Ours until exported, then Completed
+ * (owner, 2026-09-30); its Paid/Ours is green or blue by how it was paid, or
+ * a neutral light grey for one confirmed before the price was asked for. A CSS
+ * class: tone-processing, tone-paid-cash, tone-paid-walkin…
  */
 export function statusTone(buy) {
   if (buy.status === 'paid') {
-    if (buy.kind === 'walk_in') return 'tone-paid-walkin';
+    if (buy.kind === 'walk_in' && !buy.paid_method) return 'tone-paid-walkin';
     return `tone-paid-${buy.paid_method === 'credit' ? 'credit' : 'cash'}`;
   }
   return `tone-${buy.status}`;

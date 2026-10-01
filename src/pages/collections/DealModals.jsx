@@ -22,8 +22,8 @@ function Quote({ market, rates }) {
   );
 }
 
-/** A money field: "$" and the typed amount; Enter submits. */
-function MoneyInput({ label, value, onChange, onEnter, autoFocus }) {
+/** A money field: "$" and the typed amount; Enter submits. Also CONFIRM BUY's purchase price. */
+export function MoneyInput({ label, value, onChange, onEnter, autoFocus }) {
   return (
     <label className="confirm-field deal-field">
       <span>{label}</span>
@@ -42,6 +42,26 @@ function MoneyInput({ label, value, onChange, onEnter, autoFocus }) {
         />
       </span>
     </label>
+  );
+}
+
+/** Cash or Credit, as chips in their colours (green / blue). Also CONFIRM BUY's. */
+export function PayMethod({ method, onChoose }) {
+  return (
+    <div className="pay-method" role="radiogroup" aria-label="Paid in">
+      {['cash', 'credit'].map((m) => (
+        <button
+          key={m}
+          type="button"
+          role="radio"
+          aria-checked={method === m}
+          className={`pay-choice ${m}${method === m ? ' on' : ''}`}
+          onClick={() => onChoose(m)}
+        >
+          {m === 'cash' ? 'Cash' : 'Credit'}
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -124,20 +144,7 @@ export function PaidModal({ market, rates, offer, busy, onSave, onClose }) {
           {offer.credit != null && <span className="is-credit">{formatMoney(offer.credit)} credit</span>}
         </p>
       )}
-      <div className="pay-method" role="radiogroup" aria-label="Paid in">
-        {['cash', 'credit'].map((m) => (
-          <button
-            key={m}
-            type="button"
-            role="radio"
-            aria-checked={method === m}
-            className={`pay-choice ${m}${method === m ? ' on' : ''}`}
-            onClick={() => choose(m)}
-          >
-            {m === 'cash' ? 'Cash' : 'Credit'}
-          </button>
-        ))}
-      </div>
+      <PayMethod method={method} onChoose={choose} />
       <MoneyInput label="Set a final purchase price" value={text} onChange={setText} onEnter={save} autoFocus />
       <p className="hint">The collection will be locked.</p>
     </Modal>

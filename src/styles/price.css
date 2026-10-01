@@ -1179,6 +1179,10 @@
 .confirm-field em { font-style: normal; opacity: .75; }
 .confirm-field input, .confirm-field textarea { width: 100%; margin: 0; }
 .confirm-field .field-error { width: auto; margin: 4px 0 0; font-size: 12px; color: var(--bad); }
+/* Purchase price: the Cash / Credit chips, then the amount (owner, 2026-09-30). */
+.confirm-paid .pay-method { margin: 0 0 8px; }
+.confirm-paid .deal-field { margin-bottom: 0; }
+.confirm-paid .deal-field > span:first-child { display: none; }
 .confirm-user { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
 
 /* Short windows (1366×768 laptops): tighter spacing; the card and thumbnails

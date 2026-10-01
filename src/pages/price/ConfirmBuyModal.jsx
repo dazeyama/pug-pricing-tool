@@ -1,27 +1,46 @@
 import { useState } from 'react';
 import Modal from '../../components/Modal.jsx';
 import UserTag from '../../components/UserTag.jsx';
-import { formatMoney, payout } from '../../lib/money.js';
+import { formatMoney, parseMoney, payout } from '../../lib/money.js';
 import { PHONE_ERROR, formatPhone, phoneDigits, validPhone } from '../../lib/phone.js';
+import { MoneyInput, PayMethod } from '../collections/DealModals.jsx';
 
 /**
  * CONFIRM BUY's dialog (spec 8.10): the count and totals (custom rates
- * marked ✎), an optional customer name, phone number and notes, and who's
- * confirming. The phone works as on a collection (spec 9.3): formatted as
- * it's typed, 10 digits or left blank.
+ * marked ✎), the customer's name and phone number, the purchase price, notes,
+ * and who's confirming. The phone works as on a collection (spec 9.3):
+ * formatted as it's typed, 10 digits. The purchase price is asked for as a
+ * collection's is before Paid/Ours (owner, 2026-09-30): Cash or Credit as
+ * chips in their colours, then what was paid; choosing one fills in its total
+ * when nothing's typed yet. Name, phone and price are all required.
  */
 export default function ConfirmBuyModal({ count, market, rates, user, busy, onConfirm, onClose }) {
   const [customer, setCustomer] = useState('');
   const [notes, setNotes] = useState('');
   const [phone, setPhone] = useState('');
+  const [method, setMethod] = useState(null);
+  const [priceText, setPriceText] = useState('');
+  const [tried, setTried] = useState(false);        // Confirm pressed: show what's missing
   const [phoneTouched, setPhoneTouched] = useState(false);
-  const phoneProblem = phone && !validPhone(phone) ? PHONE_ERROR : null;
+
+  const price = parseMoney(priceText);
+  const problems = {
+    name: !customer.trim() ? "Enter the customer's name." : null,
+    phone: !phone.trim() ? 'Enter a phone number.' : !validPhone(phone) ? PHONE_ERROR : null,
+    method: !method ? 'Choose Cash or Credit.' : null,
+    price: price == null ? 'Enter the purchase price.' : null,
+  };
+  const missing = Object.values(problems).filter(Boolean);
+  const show = (key) => (tried || (key === 'phone' && phoneTouched)) && problems[key];
+
   const submit = () => {
-    if (phoneProblem) {
-      setPhoneTouched(true);
-      return;
-    }
-    if (!busy) onConfirm({ customerName: customer, phone: phoneDigits(phone), notes });
+    setTried(true);
+    if (missing.length || busy) return;
+    onConfirm({ customerName: customer.trim(), phone: phoneDigits(phone), notes, paidPrice: price, paidMethod: method });
+  };
+  const choose = (m) => {
+    setMethod(m);
+    if (!priceText.trim()) setPriceText(String(payout(market, rates[m])));
   };
   const rate = (label, which, custom) => (
     <div className={`total-row ${which}`}>
@@ -29,6 +48,9 @@ export default function ConfirmBuyModal({ count, market, rates, user, busy, onCo
       <strong>{formatMoney(payout(market, rates[which]))}</strong>
     </div>
   );
+  const enter = (e) => {
+    if (e.key === 'Enter') submit();
+  };
 
   return (
     <Modal
@@ -39,9 +61,10 @@ export default function ConfirmBuyModal({ count, market, rates, user, busy, onCo
           <button type="button" className="btn ghost" onClick={onClose}>Cancel</button>
           <button
             type="button"
-            className="btn confirm-btn small-confirm"
-            disabled={busy || Boolean(phoneProblem)}
-            title={phoneProblem ?? undefined}
+            className={`btn confirm-btn small-confirm${missing.length ? ' is-disabled' : ''}`}
+            disabled={busy}
+            aria-disabled={missing.length ? true : undefined}
+            title={missing.length ? missing.join(' ') : undefined}
             onClick={submit}
           >
             {busy ? 'Confirming…' : 'Confirm buy'}
@@ -55,20 +78,19 @@ export default function ConfirmBuyModal({ count, market, rates, user, busy, onCo
         {rate('Credit', 'credit', rates.customCredit)}
       </div>
       <label className="confirm-field">
-        <span>Customer name <em>(optional)</em></span>
+        <span>Customer name</span>
         <input
           type="text"
           value={customer}
           autoFocus
           maxLength={120}
           onChange={(e) => setCustomer(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') submit();
-          }}
+          onKeyDown={enter}
         />
+        {show('name') && <span className="field-error">{problems.name}</span>}
       </label>
       <label className="confirm-field">
-        <span>Phone number <em>(optional)</em></span>
+        <span>Phone number</span>
         <input
           type="text"
           inputMode="tel"
@@ -76,12 +98,17 @@ export default function ConfirmBuyModal({ count, market, rates, user, busy, onCo
           value={phone}
           onChange={(e) => setPhone(formatPhone(e.target.value))}
           onBlur={() => setPhoneTouched(true)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') submit();
-          }}
+          onKeyDown={enter}
         />
-        {phoneTouched && phoneProblem && <span className="field-error">{phoneProblem}</span>}
+        {show('phone') && <span className="field-error">{problems.phone}</span>}
       </label>
+      <div className="confirm-field confirm-paid">
+        <span>Purchase price</span>
+        <PayMethod method={method} onChoose={choose} />
+        <MoneyInput label="Paid" value={priceText} onChange={setPriceText} onEnter={submit} />
+        {show('method') && <span className="field-error">{problems.method}</span>}
+        {!show('method') && show('price') && <span className="field-error">{problems.price}</span>}
+      </div>
       <label className="confirm-field">
         <span>Notes <em>(optional)</em></span>
         <textarea rows={2} value={notes} maxLength={1000} onChange={(e) => setNotes(e.target.value)} />

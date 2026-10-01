@@ -122,6 +122,10 @@
 .money-input { display: flex; align-items: center; gap: 6px; }
 .money-sign { font-size: 20px; font-weight: 700; color: var(--muted); }
 .money-input input { font-size: 20px; font-weight: 700; padding: 8px 10px; font-variant-numeric: tabular-nums; }
+/* Inside a dialog field, the field's own "span: a block label" rule mustn't
+   break the "$ amount" row (it did on Mark as Paid/Ours, too). */
+.confirm-field .money-input { display: flex; margin: 0; font-size: inherit; color: inherit; }
+.confirm-field .money-sign { display: inline; margin: 0; font-size: 20px; font-weight: 700; color: var(--muted); }
 .deal-result { display: flex; gap: 18px; margin: 4px 0 8px; font-size: 14px; }
 .deal-result strong { margin-left: 4px; font-size: 16px; }
 .deal-offer { font-size: 14px; }

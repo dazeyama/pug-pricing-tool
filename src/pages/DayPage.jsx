@@ -423,7 +423,9 @@ function BuyPanel({ buy, number, game, other, day, byId, busy, offline, hits, fl
         <strong className="buy-number">Buy {number}</strong>
         <UserTag user={user} />
         <span className="buy-time">{formatTime(buy.confirmed_at)}</span>
-        <span className={`status-chip ${statusTone({ kind: 'walk_in', status })}`}>{statusLabel(status)}</span>
+        <span className={`status-chip ${statusTone({ kind: 'walk_in', status, paid_method: buy.paid_method })}`}>
+          {statusLabel(status)}
+        </span>
         <MoreMenu
           items={[{
             label: 'Delete buy…',
@@ -484,6 +486,13 @@ function BuyPanel({ buy, number, game, other, day, byId, busy, offline, hits, fl
           <span className="is-cash">Cash ({Number(buy.cash_pct)}%) <strong>{formatMoney(t.cash)}</strong></span>
           <span className="is-credit">Credit ({Number(buy.credit_pct)}%) <strong>{formatMoney(t.credit)}</strong></span>
         </div>
+        {/* What was paid (owner, 2026-09-30): for the whole buy, both games. */}
+        {buy.paid_price != null && (
+          <p className={`buy-paid is-${buy.paid_method}`}>
+            Paid <strong>{formatMoney(buy.paid_price)}</strong> {buy.paid_method}
+            {others > 0 && <span className="buy-paid-note"> (the whole buy, both games)</span>}
+          </p>
+        )}
         {others > 0 && (
           <Link className="buy-other" to={`/calendar/${other}/${day}`}>
             Also has {others} {GAME_NAMES[other]} card{others === 1 ? '' : 's'} →

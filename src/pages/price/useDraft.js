@@ -10,6 +10,14 @@ import { useToast } from '../../components/Toast.jsx';
 // refused ('stale_version') and reloads.
 
 const STALE = 'This buy changed on another computer — reloaded.';
+// CONFIRM BUY's refusals (migration 0020), should the dialog's own checks be bypassed.
+const CODES = {
+  name_needed: "Enter the customer's name.",
+  phone_needed: 'Enter a phone number.',
+  bad_phone: 'Enter a 10-digit phone number.',
+  paid_price_needed: 'Enter the purchase price.',
+  paid_method_needed: 'Choose Cash or Credit.',
+};
 
 /**
  * @returns {{ buy: object|null, lines: object[], loaded: boolean, busy: boolean,
@@ -61,7 +69,9 @@ export function useDraft(deviceId) {
     try {
       const { data, error } = await supabase.rpc(fn, args);
       if (error) {
+        const code = Object.keys(CODES).find((c) => error.message?.includes(c));
         if (/stale_version/.test(error.message)) toast(STALE, 'err');
+        else if (code) toast(`${failure}: ${CODES[code]}`, 'err');
         else {
           console.error(`${fn} failed`, error);
           toast(`${failure}: ${error.message}`, 'err');
@@ -104,7 +114,9 @@ export function useDraft(deviceId) {
   }, [run, state.buy]);
 
   /** @returns {Promise<{ number: number, games: string[], target_name: string }|null>} */
-  const confirm = useCallback(async ({ userId, customerName, phone, notes, cashPct, creditPct, lineTexts }) => {
+  const confirm = useCallback(async ({
+    userId, customerName, phone, notes, paidPrice, paidMethod, cashPct, creditPct, lineTexts,
+  }) => {
     if (!state.buy) return null;
     const r = await run('confirm_buy', {
       p_buy_id: state.buy.id,
@@ -115,6 +127,8 @@ export function useDraft(deviceId) {
       p_cash_pct: cashPct,
       p_credit_pct: creditPct,
       p_expected_version: state.buy.version,
+      p_paid_price: paidPrice,
+      p_paid_method: paidMethod,
       p_line_texts: lineTexts,
     }, "Couldn't confirm the buy");
     return r.ok ? r.data : null;

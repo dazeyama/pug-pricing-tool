@@ -41,7 +41,7 @@ export default function PricePage() {
   const count = draft.lines.reduce((n, l) => n + l.quantity, 0);
 
   /** CONFIRM BUY's dialog confirmed (spec 8.10). */
-  async function confirmBuy({ customerName, phone, notes }) {
+  async function confirmBuy({ customerName, phone, notes, paidPrice, paidMethod }) {
     if (!user) {
       pulse();
       return;
@@ -51,6 +51,8 @@ export default function PricePage() {
       customerName,
       phone,
       notes,
+      paidPrice,
+      paidMethod,
       cashPct: master.cash,
       creditPct: master.credit,
       lineTexts: Object.fromEntries(draft.lines.map((l) => [l.id, lineText(l)])),
