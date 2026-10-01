@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
-import { storeDay } from '../lib/calendar.js';
+import { dayTitle, storeDay } from '../lib/calendar.js';
 import { formatTime } from '../lib/time.js';
 import { dayHeading } from '../lib/changelog.js';
 import { colorVar } from '../lib/palette.js';
@@ -23,6 +23,13 @@ import LinePreview, { previewFor } from './LinePreview.jsx';
 // the main search bar is the focus.
 
 const WAIT_MS = 250;
+
+/** "Today · Wednesday, September 30, 2026", "Yesterday · …", else the full date (owner, 2026-09-30). */
+function dayLabel(section) {
+  const relative = dayHeading(section.at);
+  const full = dayTitle(section.day);
+  return relative === 'Today' || relative === 'Yesterday' ? `${relative} · ${full}` : full;
+}
 
 // The set codes stored lines use, fetched at most every five minutes.
 let codes = { at: 0, set: null };
@@ -220,7 +227,7 @@ export default function SearchBox({ wide }) {
             )}
             {found.sections.map((sec) => (
               <section key={sec.key} className={`search-group${found.status === 'loading' ? ' stale' : ''}`}>
-                <h4 className="search-day">{sec.title ?? dayHeading(sec.at)}</h4>
+                <h4 className="search-day">{sec.title ?? dayLabel(sec)}</h4>
                 <div className="result-buttons">{sec.panels.map(renderRow)}</div>
               </section>
             ))}
