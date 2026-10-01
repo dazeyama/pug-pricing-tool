@@ -207,7 +207,8 @@ export default function BuyList({
 
   const count = lines.reduce((n, l) => n + l.quantity, 0);
   const market = marketTotal(lines);
-  // An exported collection: prices get a SELL tag, in a wider, left-aligned column.
+  // An exported collection: its prices are Sell prices, said once in the list's
+  // heading so the rows keep the same layout as before the export (owner, 2026-10-01).
   const anySell = lines.some((l) => l.cc_sell_price != null);
 
   // A new or updated line scrolls into view and flashes (spec 8.8).
@@ -229,11 +230,18 @@ export default function BuyList({
   return (
     // Any Sell price (an exported collection): the price column widens for its SELL tag.
     <aside
-      className={`buy-list${locked ? ' locked' : ''}${removeLocked ? ' no-remove' : ''}${anySell ? ' has-sell' : ''}`}
+      className={`buy-list${locked ? ' locked' : ''}${removeLocked ? ' no-remove' : ''}`}
       ref={aside}
     >
       <div className="list-head">
-        <span className="list-title">{title}</span>
+        <span className="list-title">
+          {title}
+          {anySell && (
+            <span className="sell-tag list-sell" title="Prices in green are the Sell prices written to the export file">
+              Sell prices
+            </span>
+          )}
+        </span>
         <span className="list-count">{count} card{count === 1 ? '' : 's'}</span>
       </div>
 
@@ -256,17 +264,13 @@ export default function BuyList({
                   onMouseEnter={(e) => setPreview(previewFor(l.image_url, e.currentTarget, aside.current, 'left'))}
                   onMouseLeave={hidePreview}
                 >
-                  {l.cc_sell_price != null ? (
-                    <span className="line-price is-sell" title={`Bought at ${formatMoney(l.unit_price)} · sell price from the export`}>
-                      <span className="sell-tag">Sell</span>{formatMoney(l.cc_sell_price)}
-                    </span>
-                  ) : (
-                    <span className="line-price" title="Price per card">
-                      {/* Room for the tag, so every price starts level. */}
-                      {anySell && <span className="sell-tag blank" aria-hidden="true">Sell</span>}
-                      {formatMoney(l.unit_price)}
-                    </span>
-                  )}
+                  {/* The same column before and after an export: a Sell price is green. */}
+                  <span
+                    className={`line-price${l.cc_sell_price != null ? ' is-sell' : ''}`}
+                    title={l.cc_sell_price != null ? `Sell price from the export · bought at ${formatMoney(l.unit_price)}` : 'Price per card'}
+                  >
+                    {formatMoney(l.cc_sell_price ?? l.unit_price)}
+                  </span>
                   <button
                     type="button"
                     className="buy-line"

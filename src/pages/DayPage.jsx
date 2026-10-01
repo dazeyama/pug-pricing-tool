@@ -344,8 +344,8 @@ function DayScreen({ game, day }) {
           {(exportedCards > 0 || cantCards > 0) && (
             <>: {exportedCards} card{exportedCards === 1 ? '' : 's'}{cantCards > 0 && <>, <span className="cant-text">{cantCards} can't upload</span></>}</>
           )}
-          .{' '}These buys are Completed: locked, and left out of the header search. Prices shown are the Sell Prices
-          {' '}written to the file.
+          .{' '}These buys are Completed: locked, and left out of the header search. Prices in green are the Sell
+          {' '}Prices written to the file.
         </p>
       )}
 
@@ -532,13 +532,13 @@ function BuyPanel({ buy, number, game, other, day, byId, busy, offline, hits, fl
                 onMouseEnter={(e) => setPreview(previewFor(l.image_url, e.currentTarget, panel.current, 'right'))}
                 onMouseLeave={hidePreview}
               >
-                {l.cc_sell_price != null ? (
-                  <td className="cell-price is-sell" title={`Bought at ${formatMoney(l.unit_price)} · sell price from the export`}>
-                    <span className="sell-tag">Sell</span>{formatMoney(l.cc_sell_price)}
-                  </td>
-                ) : (
-                  <td className="cell-price" title="Price per card">{formatMoney(l.unit_price)}</td>
-                )}
+                {/* The same column before and after an export (owner, 2026-10-01): a Sell price is green. */}
+                <td
+                  className={`cell-price${l.cc_sell_price != null ? ' is-sell' : ''}`}
+                  title={l.cc_sell_price != null ? `Sell price from the export · bought at ${formatMoney(l.unit_price)}` : 'Price per card'}
+                >
+                  {formatMoney(shownPrice(l))}
+                </td>
                 <td className="cell-qty">{l.quantity}</td>
                 <td className="cell-name" title={l.name_en ? l.name : undefined}>
                   {lineBody(l)}
