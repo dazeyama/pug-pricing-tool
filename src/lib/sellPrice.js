@@ -4,7 +4,7 @@
 // by the store's steps, never below $0.40. A manual price gets the higher of
 // it and today's price. Pure: today's data comes in.
 
-import { priceLadder } from './ladder.js';
+import { CONDITIONS, priceLadder } from './ladder.js';
 import { SELL_FLOOR, roundUpPrice } from './money.js';
 
 /**
@@ -23,9 +23,15 @@ import { SELL_FLOOR, roundUpPrice } from './money.js';
  * @returns {{ price: number, basis: object }}
  */
 export function sellPriceFor(line, today) {
-  const override = line.price_snapshot?.override ?? null;
   // The ladder as the Price screen builds it (spec 8.7), with today's data and
   // the buy's override: Use Fallback / Use Cardmarket drop JustTCG's prices.
+  // As on the Price screen, an override only applies when it can: Use
+  // Fallback needs a fallback and JustTCG prices to replace, Use Cardmarket a
+  // Cardmarket price in dollars.
+  const wanted = line.price_snapshot?.override ?? null;
+  const usable = (wanted === 'fallback' && today.fallback != null && CONDITIONS.some((c) => today.market?.[c] != null))
+    || (wanted === 'cardmarket' && today.cardmarketUsd != null);
+  const override = usable ? wanted : null;
   const base = override === 'cardmarket'
     ? (today.cardmarketUsd != null ? { price: today.cardmarketUsd, source: 'cardmarket' } : null)
     : today.fallback;
@@ -54,7 +60,8 @@ export function sellPriceFor(line, today) {
     price,
     basis: {
       source: line.price_source,
-      override,
+      override: wanted,
+      overrideApplied: wanted ? usable : null,
       today: raw != null ? Math.round(raw * 10000) / 10000 : null,
       todayFrom: ladder[line.condition]?.source ?? null,
       manual,

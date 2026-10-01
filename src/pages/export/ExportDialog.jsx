@@ -2,56 +2,82 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Modal from '../../components/Modal.jsx';
 import LinePreview, { previewFor } from '../../components/LinePreview.jsx';
 import { useStaff } from '../../state/staff.jsx';
+import { useSettings } from '../../state/settings.jsx';
+import { useDevice } from '../../state/device.jsx';
 import { useToast } from '../../components/Toast.jsx';
 import { lineTextWithCondition } from '../../lib/lineFormat.js';
-import { linkKey, matchLines, saveLink, saveSetMap, searchProducts } from '../../lib/ccExport.js';
+import { formatMoney } from '../../lib/money.js';
+import { CONDITION_WORDS, customSkuFor, massCreateRows } from '../../lib/massCreate.js';
+import {
+  downloadMassCreate, linkKey, matchLines, saveExport, saveLink, saveSetMap, searchProducts, sellPrices,
+} from '../../lib/ccExport.js';
 
 // The export dialog (docs/EXPORT_FUNCTION.md 8.3): Matching, then Review in
 // three groups (Needs a choice, Matched, Can't upload). In 'check' mode (the
 // dry run, Phase E2) staff's picks are saved as they're made and nothing is
-// exported. 'export' mode (Phase E3) adds the Confirm step and the export.
+// exported. In 'export' mode (Phase E3) Matching also fetches today's prices
+// for the Sell Prices, and Review leads to Confirm (the red pull-out list)
+// and the export itself; picks are saved with the export.
 
 /**
  * @param {object} p
  * @param {{ line: object, where: string }[]} p.items  the Magic lines, each with where it's from ("Buy 4")
  * @param {'check'|'export'} [p.mode]
  * @param {string} p.title
+ * @param {object} [p.target]  export_lines' target (export mode)
+ * @param {string} [p.fileName]  the Mass Create file's name (export mode)
+ * @param {(result: object) => void} [p.onExported]  after the export is saved and the file handed over
  * @param {() => void} p.onClose
  */
-export default function ExportDialog({ items, mode = 'check', title, onClose }) {
+export default function ExportDialog({ items, mode = 'check', title, target, fileName, onExported, onClose }) {
   const staff = useStaff();
   const toast = useToast();
-  const [phase, setPhase] = useState('matching');   // matching | review | error
+  const { deviceId } = useDevice();
+  const { values: settings } = useSettings();
+  const exporting = mode === 'export';
+  const [phase, setPhase] = useState('matching');   // matching | review | confirm | saving | error
+  const [run, setRun] = useState(0);                // bumped to match again (the inventory changed)
   const [stepText, setStepText] = useState('');
   const [error, setError] = useState(null);
+  const [saveError, setSaveError] = useState(null);
   const [results, setResults] = useState([]);
+  const [sells, setSells] = useState(new Map());    // line id → { price, basis } (export mode)
   const [picks, setPicks] = useState(new Map());      // line id → { product } | { none: true }
   const [reopened, setReopened] = useState(new Set()); // matched or can't-upload lines sent back to choose
   const [always, setAlways] = useState(new Map());    // line id → remember its set's category (unknown categories)
+  const [pulled, setPulled] = useState(false);
   const [preview, setPreview] = useState(null);
   const hidePreview = useCallback(() => setPreview(null), []);
   const box = useRef(null);
 
   const lines = useMemo(() => items.map((i) => i.line), [items]);
   const whereOf = useMemo(() => new Map(items.map((i) => [i.line.id, i.where])), [items]);
+  const pct = settings.fallback_pct_mtg;
+  const pctRef = useRef(pct);
+  pctRef.current = pct;
 
   useEffect(() => {
     let alive = true;
-    matchLines(lines, (t) => alive && setStepText(t))
-      .then(({ results: r }) => {
-        if (!alive) return;
-        setResults(r);
-        setPhase('review');
-      })
-      .catch((e) => {
-        if (!alive) return;
-        setError(e.message);
-        setPhase('error');
-      });
+    setPhase('matching');
+    (async () => {
+      const step = (t) => alive && setStepText(t);
+      const { results: r, cards } = await matchLines(lines, step);
+      const s = exporting ? await sellPrices(lines, cards, pctRef.current, step) : new Map();
+      if (!alive) return;
+      setResults(r);
+      setSells(s);
+      setPicks(new Map());
+      setReopened(new Set());
+      setPhase('review');
+    })().catch((e) => {
+      if (!alive) return;
+      setError(e.message);
+      setPhase('error');
+    });
     return () => {
       alive = false;
     };
-  }, [lines]);
+  }, [lines, exporting, run]);
 
   /** Where a line stands now: matched (with its product), choose, or cant. */
   const stateOf = (r) => {
@@ -65,6 +91,7 @@ export default function ExportDialog({ items, mode = 'check', title, onClose }) 
   };
   const groups = { choose: [], matched: [], cant: [] };
   for (const r of results) groups[stateOf(r).group].push(r);
+  const cardsIn = (rs) => rs.reduce((n, r) => n + r.line.quantity, 0);
 
   /** Staff pick a product: for every line of the same printing and finish. */
   async function pick(r, product) {
@@ -99,6 +126,75 @@ export default function ExportDialog({ items, mode = 'check', title, onClose }) 
     setReopened((s) => new Set(s).add(r.line.id));
   }
 
+  /** The file's rows as they'll be, for the Confirm step's count. */
+  const previewRows = () => massCreateRows(groups.matched.map((r) => ({
+    cc_status: 'exported',
+    quantity: r.line.quantity,
+    cc_product_name: stateOf(r).product.product_name,
+    cc_category: stateOf(r).product.category,
+    cc_condition: CONDITION_WORDS[r.line.condition],
+    cc_sell_price: sells.get(r.line.id)?.price,
+  })));
+
+  async function save() {
+    if (!staff.current) {
+      staff.pulse();
+      return;
+    }
+    setPhase('saving');
+    setSaveError(null);
+    const matches = groups.matched.map((r) => {
+      const s = stateOf(r);
+      const sell = sells.get(r.line.id);
+      return {
+        line_id: r.line.id,
+        product_id: s.product.product_id,
+        sell_price: sell.price,
+        sell_basis: sell.basis,
+        link: s.by === 'staff' ? 'staff' : s.by === 'match' ? 'auto' : null,
+      };
+    });
+    const setMaps = groups.matched
+      .filter((r) => stateOf(r).by === 'staff' && !r.category && (always.get(r.line.id) ?? true))
+      .map((r) => ({ scryfall_set: r.set.code, promo_kind: r.promo ?? '', category: stateOf(r).product.category }));
+    try {
+      const result = await saveExport({
+        target,
+        matches,
+        cant: groups.cant.map((r) => r.line.id),
+        setMaps,
+        userId: staff.current.id,
+        deviceId,
+      });
+      const rows = result.cards > 0 ? downloadMassCreate(result.lines, fileName) : 0;
+      onExported?.({ ...result, rows });
+    } catch (e) {
+      if (e.code === 'stale_inventory') {
+        toast(e.message, 'err');
+        setRun((n) => n + 1);
+        return;
+      }
+      setSaveError(e.message);
+      setPhase('confirm');
+    }
+  }
+
+  const sellNote = (r) => {
+    const sell = sells.get(r.line.id);
+    if (!sell) return null;
+    const why = {
+      manual: 'the manual price (higher than today’s)',
+      today: 'today’s price',
+      at_buy: 'no price today: the market price at the buy',
+    }[sell.basis.used];
+    return (
+      <span className="xd-price" title={`Sell Price from ${why}, rounded up${sell.basis.floored ? ', raised to the $0.40 floor' : ''}`}>
+        Bought {formatMoney(r.line.unit_price)} → Sell <strong>{formatMoney(sell.price)}</strong>
+        {sell.basis.used === 'at_buy' && <span className="xd-note">no price today</span>}
+      </span>
+    );
+  };
+
   const lineLabel = (r) => (
     <span
       className="xd-line"
@@ -110,14 +206,56 @@ export default function ExportDialog({ items, mode = 'check', title, onClose }) 
     </span>
   );
 
-  const footer = (
-    <button type="button" className="btn primary" onClick={onClose} autoFocus>
-      {mode === 'check' ? 'Close' : 'Cancel'}
-    </button>
-  );
+  const toExport = cardsIn(groups.matched);
+  const cantCards = cardsIn(groups.cant);
+  const saving = phase === 'saving';
+  let footer;
+  if (!exporting || phase === 'matching' || phase === 'error') {
+    footer = (
+      <button type="button" className="btn primary" onClick={onClose} autoFocus>
+        {exporting ? 'Cancel' : 'Close'}
+      </button>
+    );
+  } else if (phase === 'review') {
+    const waiting = groups.choose.length > 0;
+    footer = (
+      <>
+        <button type="button" className="btn ghost" onClick={onClose}>Cancel</button>
+        <button
+          type="button"
+          className="btn primary"
+          disabled={waiting}
+          title={waiting ? 'Pick a product (or None of these) for every card in Needs a choice first' : undefined}
+          onClick={() => {
+            setPulled(false);
+            setSaveError(null);
+            setPhase('confirm');
+          }}
+        >
+          Continue
+        </button>
+      </>
+    );
+  } else {
+    const blocked = (cantCards > 0 && !pulled) || saving;
+    footer = (
+      <>
+        <button type="button" className="btn ghost" disabled={saving} onClick={() => setPhase('review')}>Back</button>
+        <button
+          type="button"
+          className={`btn primary${saving ? ' busy' : ''}`}
+          disabled={blocked}
+          title={cantCards > 0 && !pulled ? 'Tick “I’ve pulled these cards out of the batch” first' : undefined}
+          onClick={save}
+        >
+          {toExport > 0 ? `Export ${toExport} card${toExport === 1 ? '' : 's'}` : 'Mark them Can’t upload'}
+        </button>
+      </>
+    );
+  }
 
   return (
-    <Modal wide title={title} onClose={onClose} footer={footer}>
+    <Modal wide title={title} onClose={saving ? undefined : onClose} footer={footer}>
       <div className="xd" ref={box}>
         {phase === 'matching' && <p className="loading-note xd-step">{stepText || 'Matching…'}</p>}
         {phase === 'error' && <div className="banner err">{error}</div>}
@@ -136,6 +274,7 @@ export default function ExportDialog({ items, mode = 'check', title, onClose }) 
                     key={r.line.id}
                     r={r}
                     label={lineLabel(r)}
+                    price={sellNote(r)}
                     always={always.get(r.line.id) ?? true}
                     onAlways={(v) => setAlways((m) => new Map(m).set(r.line.id, v))}
                     onPick={(product) => pick(r, product)}
@@ -161,6 +300,7 @@ export default function ExportDialog({ items, mode = 'check', title, onClose }) 
                         {s.by === 'link' && <span className="xd-tag" title="Remembered from before">remembered</span>}
                         {s.by === 'staff' && <span className="xd-tag">picked</span>}
                       </span>
+                      {sellNote(r)}
                       <button type="button" className="btn small ghost xd-change" onClick={() => reopen(r)}>Change</button>
                     </div>
                   );
@@ -185,6 +325,41 @@ export default function ExportDialog({ items, mode = 'check', title, onClose }) 
             )}
           </>
         )}
+        {(phase === 'confirm' || phase === 'saving') && (
+          <>
+            {saveError && <div className="banner err">{saveError}</div>}
+            <p className="xd-summary">
+              {toExport > 0 ? (
+                <>
+                  Export <strong>{toExport} card{toExport === 1 ? '' : 's'}</strong> ({previewRows().length} row
+                  {previewRows().length === 1 ? '' : 's'}) to a Crystal Commerce Mass Create file, Custom SKU{' '}
+                  <strong>{customSkuFor(new Date())}</strong>. The cards here become <strong>Completed</strong>.
+                </>
+              ) : (
+                <>Nothing here matched a Crystal Commerce product, so there's no file. The cards become <strong>Completed</strong>.</>
+              )}
+            </p>
+            {cantCards > 0 && (
+              <div className="xd-pull" role="alert">
+                <h3>Pull {cantCards === 1 ? 'this card' : `these ${cantCards} cards`} out of the batch before uploading.</h3>
+                <ul>
+                  {groups.cant.map((r) => (
+                    <li key={r.line.id}>
+                      {lineTextWithCondition(r.line)} <span className="xd-where">{whereOf.get(r.line.id)}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="hint">
+                  They won't be in the file. They'll be marked <strong>Can't upload</strong> here.
+                </p>
+                <label className="xd-pulled">
+                  <input type="checkbox" checked={pulled} disabled={saving} onChange={(e) => setPulled(e.target.checked)} />
+                  I've pulled {cantCards === 1 ? 'this card' : 'these cards'} out of the batch
+                </label>
+              </div>
+            )}
+          </>
+        )}
       </div>
       <LinePreview preview={preview} onHide={hidePreview} />
     </Modal>
@@ -192,7 +367,7 @@ export default function ExportDialog({ items, mode = 'check', title, onClose }) 
 }
 
 /** One card in Needs a choice: its candidates, "None of these", and a search. */
-function ChooseRow({ r, label, always, onAlways, onPick, onNone }) {
+function ChooseRow({ r, label, price, always, onAlways, onPick, onNone }) {
   const [text, setText] = useState('');
   const [found, setFound] = useState([]);
   const [chosen, setChosen] = useState(null);
@@ -235,7 +410,7 @@ function ChooseRow({ r, label, always, onAlways, onPick, onNone }) {
 
   return (
     <div className="xd-choose">
-      <div className="xd-row">{label}</div>
+      <div className="xd-row">{label}{price}</div>
       {r.wasLinked && (
         <p className="hint xd-was">
           Used to be {r.wasLinked.product_name} ({r.wasLinked.category}), which isn't in the current inventory.

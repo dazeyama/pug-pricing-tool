@@ -64,3 +64,40 @@
 .xd-summary { margin: 0; font-size: 14px; }
 .xd-price { margin-left: 6px; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .xd-price strong { color: var(--cash); }
+
+/* Day pages and collections after an export (export spec 4.4, 5.5, 10). */
+.sku-chip {
+  padding: 5px 14px;
+  border: 2px solid var(--accent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  font-size: 15px;
+  font-weight: 700;
+}
+.sku-chip strong { margin-left: 4px; font-size: 17px; font-weight: 800; letter-spacing: .03em; font-variant-numeric: tabular-nums; }
+.deck-table .cell-price.is-sell { color: var(--text); }
+.sell-tag {
+  margin-right: 5px;
+  padding: 0 5px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--good) 18%, transparent);
+  color: var(--good);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  vertical-align: 1px;
+}
+.cant-chip {
+  margin-left: 8px;
+  padding: 0 8px;
+  border: 1.5px solid var(--bad);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bad) 14%, transparent);
+  color: var(--bad);
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.cant-text { color: var(--bad); font-weight: 700; }

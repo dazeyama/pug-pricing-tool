@@ -241,6 +241,7 @@ A line's `price_source` (`DESIGN_SPEC.md` 6.1; migration 0004) says how its buy 
 - **Cardmarket and the euro rate:** fetched as the Price screen does (`DESIGN_SPEC.md` 8.7).
 - **If today's prices can't be fetched** (the daily limit, an outage), the export stops before anything is saved: "Today's prices couldn't be fetched: <reason>. Nothing was exported." (owner's decision: never export on stale prices).
 - Prices are fetched during the dialog's Matching step (Section 8.3), so the Review step can show every card's Sell Price before anything is saved.
+- **As built (E3):** `fresh: true` makes the `prices` function accept only prices fetched in the **last 15 minutes** (instead of 6 hours), so going Back and exporting again, or a retry, doesn't spend another request. Lookups are sent 100 at a time. An override that can't apply today is dropped as the Price screen drops it (Use Cardmarket with no Cardmarket price today → the normal ladder; recorded in the basis as `overrideApplied: false`). If a Cardmarket-priced card needs today's euro rate and it can't be fetched, the export stops like any other missing price.
 
 ### 5.5 Where it's kept, and shown
 
@@ -336,8 +337,9 @@ All security invoker unless noted, granted to `authenticated` only, refusals as 
 | `master_inventory_start` / `master_inventory_finish` / `master_inventory_abort` | E1 | The upload in steps (as built, Section 6.7): replaces the planned `cc_products_activate` |
 | `cc_candidates(wants jsonb)` | E2 | For a list of `{ key, category, base_keys }`, every product with that category and one of those base keys; with no category, any category. One call for a whole export (as built: `base_keys` is a list, the card name and its flavor name) |
 | `cc_categories()`, `cc_products_by_id(ids)`, `cc_products_search(text)` | E2 | The current inventory's categories; products by Product ID (are remembered links still there?); the review's search. As built, `cc_set_map` and `cc_product_links` are written directly (RLS) instead of through save / forget functions |
-| `export_lines(target jsonb, matches jsonb, cant_upload uuid[], user, device)` | E3 | **The export itself, in one transaction** (Section 8.4) |
+| `export_lines(target jsonb, matches jsonb, cant_upload uuid[], user, device)` | E3 | **The export itself, in one transaction** (Section 8.4). As built: `export_lines(p_target, p_matches, p_cant, p_set_maps, p_user, p_device)`, with staff's set choices as their own argument; it returns the counts, the Custom SKU and the stamped lines, so the file is built without reading them back |
 | `export_undo_day(day, game, user, device)` | E3 | Replaces `day_mark(…, false)`: back to Paid/Ours, clears the stamps, takes the day's copies out of Can't upload (Section 9.4) |
+| `cc_custom_sku(at)`, `cc_condition_word(condition)` | E3 | As built: the Custom SKU (`to_char(…, 'FMMMDDYY')` in store time) and CC's condition words, in SQL, so the stamps never depend on the browser's clock |
 
 ### 6.7 Loading the inventory at upload (Phase E1)
 
@@ -523,6 +525,19 @@ On **Export**, the app calls **`export_lines`** once. In one transaction it:
 6. logs the changelog entries (Section 12).
 
 Then the browser builds the Mass Create file from the stamped lines (Section 4) and downloads it, and a toast says what happened: "Exported 31 cards (28 rows). 3 can't upload: they're in Can't upload cards." If the download fails, EXPORT on the now-Completed day or collection downloads it again.
+
+### 8.4a As built (Phase E3)
+
+- **Migration 0027:** the `buy_lines` columns of 6.4, `cc_custom_sku`, `cc_condition_word`, `export_lines` (days only until E4/E5), `export_undo_day`. Tested in a rolled-back transaction against dev's real September 30 buys (every refusal, the stamps with CC's double spaces kept, links, set choices, the changelog line), then applied to dev.
+- **`export_lines` checks, in order:** a user; a day target; Magic (`pokemon_export_unavailable`); not today (`day_not_over`); **products loaded** (`no_inventory`); the day's buys locked and **their versions as the dialog saw them** (`stale_version`); **every Paid/Ours Magic line given exactly once**, matched or can't upload (`stale_version`); every product still in the current inventory (`stale_inventory`, and the dialog matches again); every Sell Price at least $0.40 (`bad_price`). Nothing left to export: `nothing_to_export`.
+- **The product's name and category are copied from `cc_products` on the server**, never from the browser, so the file always has CC's exact text.
+- **Links saved with the export:** `staff` for picks, `auto` for automatic matches; matches that came from a remembered link aren't saved again. Set choices are saved only when their category exists.
+- **Picks in the export dialog are saved with the export**, not as they're made: Cancel saves nothing (the dry run still saves as it goes).
+- **`day_mark` stays** for the older live build (v0.9.1), whose EXPORT only marks a day Completed; its "back to Paid/Ours" now goes through `export_undo_day`, so the stamps are cleared whichever build does it. A day marked Completed by the older build has no stamps: EXPORT on it says to mark the day Paid/Ours again and export.
+- **Every card can't upload:** no file is made; the cards are still stamped and Completed (the toast says there's no file).
+- **The changelog's `day_exported` summary** carries the counts and the Custom SKU: "2 Magic cards exported (Custom SKU 100126); 1 can't upload."
+- **The Mark Paid/Ours again dialog** now also says the downloaded file isn't undone: if it was uploaded, fix CC by hand.
+- **The day page after an export:** each exported row shows its Sell Price with a green **SELL** tag (the buy price in the tooltip); a can't-upload row shows the red **Can't upload** chip; the panel's first total reads **Sell** (the sum of Sell Prices) and Cash / Credit follow it; the header has the **Custom SKU** chip; the note under the title gives the counts.
 
 ### 8.5 Pokémon cards
 

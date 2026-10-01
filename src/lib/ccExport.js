@@ -6,6 +6,11 @@ import { supabase } from './supabase.js';
 import { loadSets } from './scryfall.js';
 import { nameKey } from './normalize.js';
 import { categoryFor, chooseProduct, fold, frontFace, promoKind } from './ccMatch.js';
+import { callFunction } from './functions.js';
+import { cardmarketPrice, conditionPrices, fallbackPrice, lookupsFor, resultFor } from './prices.js';
+import { loadEurUsd } from './useEurUsd.js';
+import { sellPriceFor } from './sellPrice.js';
+import { massCreateCsv, massCreateRows } from './massCreate.js';
 
 const SCRYFALL_BATCH = 75;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -170,4 +175,112 @@ export async function searchProducts(text) {
   const { data, error } = await supabase.rpc('cc_products_search', { p_text: text, p_limit: 30 });
   fail(error, "Couldn't search the inventory");
   return data ?? [];
+}
+
+// ------------------------------------------------------------ the Sell Price
+
+const PRICE_BATCH = 100;   // JustTCG's batch size: one request per 100 cards
+
+/**
+ * Today's Sell Price for each line (export spec 5.4): JustTCG fetched fresh
+ * (the `prices` function's `fresh` option), Scryfall's prices from the cards
+ * the matching already fetched, Cardmarket × today's euro rate. Throws if
+ * any of it can't be had: an export never uses stale prices.
+ * @param {object[]} lines
+ * @param {Map<string, object>} cards  Scryfall cards by id (matchLines)
+ * @param {Record<string, number>} pct  the Master Fallback Percentages (Magic)
+ * @param {(text: string) => void} [onStep]
+ * @returns {Promise<Map<string, { price: number, basis: object }>>} by line id
+ */
+export async function sellPrices(lines, cards, pct, onStep) {
+  const byCard = new Map();
+  const lookups = [];
+  for (const line of lines) {
+    const card = cards.get(line.scryfall_id);
+    if (!card || byCard.has(card.id)) continue;
+    const c = { game: 'mtg', scryfall: card };
+    byCard.set(card.id, c);
+    lookups.push(...lookupsFor(c, {}));
+  }
+  const requests = Math.ceil(lookups.length / PRICE_BATCH);
+  onStep?.(`Fetching today's prices (${requests || 'no'} JustTCG request${requests === 1 ? '' : 's'})…`);
+  const results = {};
+  try {
+    for (let i = 0; i < lookups.length; i += PRICE_BATCH) {
+      Object.assign(results, await callFunction('prices', { lookups: lookups.slice(i, i + PRICE_BATCH), fresh: true })
+        .then((d) => d?.results ?? {}));
+    }
+  } catch (e) {
+    const why = e.code === 'DAILY_LIMIT_EXCEEDED' ? "JustTCG's daily limit is used up" : e.message;
+    throw new Error(`Today's prices couldn't be fetched: ${why}. Nothing was exported.`);
+  }
+  const needsRate = lines.some((l) => l.price_snapshot?.override === 'cardmarket' || l.price_source === 'cardmarket');
+  const rate = needsRate ? await loadEurUsd() : null;
+  if (needsRate && rate == null) {
+    throw new Error("Today's euro rate couldn't be fetched (for the cards priced from Cardmarket). Nothing was exported.");
+  }
+  const out = new Map();
+  for (const line of lines) {
+    const c = byCard.get(line.scryfall_id) ?? null;
+    const result = c ? resultFor(c, results, { finish: line.finish }) : null;
+    const eur = c ? cardmarketPrice(c, { finish: line.finish }) : null;
+    out.set(line.id, sellPriceFor(line, {
+      market: conditionPrices(result?.card, { game: 'mtg', lang: 'en', finish: line.finish }),
+      fallback: c ? fallbackPrice(c, { finish: line.finish }) : null,
+      cardmarketUsd: eur != null && rate != null ? eur * rate : null,
+      pct,
+      fetchedAt: result?.fetchedAt ?? null,
+    }));
+  }
+  return out;
+}
+
+// ------------------------------------------------------------ the export
+
+const EXPORT_ERRORS = {
+  stale_version: 'Something changed on another computer since this opened: nothing was exported. Try again.',
+  stale_inventory: 'The Master Crystal Inventory was replaced while this was open: matching again.',
+  no_inventory: 'Upload the Master Crystal Inventory in Settings first: no products are loaded for export.',
+  day_not_over: "Today can't be exported until it's over.",
+  pokemon_export_unavailable: "Pokémon export isn't available yet.",
+  nothing_to_export: 'Nothing is left to export here: it was already exported.',
+  bad_price: 'A Sell Price was missing: nothing was exported.',
+  no_user: 'Pick a user first.',
+};
+
+/**
+ * Save the export (export spec 8.4): `export_lines` in one transaction.
+ * Rejects with .code for the refusals above.
+ * @returns {Promise<{ buys: number, cards: number, cant: number, sku: string, lines: object[] }>}
+ */
+export async function saveExport({ target, matches, cant, setMaps, userId, deviceId }) {
+  const { data, error } = await supabase.rpc('export_lines', {
+    p_target: target,
+    p_matches: matches,
+    p_cant: cant,
+    p_set_maps: setMaps,
+    p_user: userId,
+    p_device: deviceId,
+  });
+  if (error) {
+    const code = Object.keys(EXPORT_ERRORS).find((c) => error.message?.includes(c)) ?? null;
+    const e = new Error(code ? EXPORT_ERRORS[code] : `Couldn't export: ${error.message}`);
+    e.code = code;
+    throw e;
+  }
+  return data;
+}
+
+/** Hand the browser the Mass Create file (export spec 4.3). */
+export function downloadMassCreate(lines, name) {
+  const rows = massCreateRows(lines);
+  const url = URL.createObjectURL(new Blob([massCreateCsv(rows)], { type: 'text/csv;charset=utf-8' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  return rows.length;
 }

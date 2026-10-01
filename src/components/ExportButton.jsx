@@ -2,12 +2,11 @@ import { useState } from 'react';
 import Modal from './Modal.jsx';
 
 /**
- * The blue EXPORT button (spec 14): a placeholder until the export has its
- * own design. Clicking it says so. On a collection's screen and the day pages.
- * `intercept` runs first (a day page's "mark Completed?" warning, owner
- * 2026-09-30): the placeholder opens only if it returns true.
+ * The blue EXPORT button: on the day pages and a collection's screen. With
+ * `onClick` it runs the page's export (docs/EXPORT_FUNCTION.md 8); without,
+ * it's still the placeholder that says the export is coming.
  */
-export default function ExportButton({ className = '', onDone, intercept, blocked = null }) {
+export default function ExportButton({ className = '', onDone, onClick, blocked = null }) {
   const [open, setOpen] = useState(false);
   const close = () => {
     setOpen(false);
@@ -15,13 +14,13 @@ export default function ExportButton({ className = '', onDone, intercept, blocke
   };
   return (
     <>
-      {/* `blocked`: why it can't run now (today on a day page); it looks disabled, and `intercept` says why. */}
+      {/* `blocked`: why it can't run now (today on a day page); it looks disabled, and `onClick` says why. */}
       <button
         type="button"
         className={`btn export-btn ${className}${blocked ? ' is-disabled' : ''}`}
         aria-disabled={blocked ? true : undefined}
         title={blocked ?? undefined}
-        onClick={() => (!intercept || intercept()) && !blocked && setOpen(true)}
+        onClick={() => (onClick ? onClick() : !blocked && setOpen(true))}
       >
         EXPORT
       </button>

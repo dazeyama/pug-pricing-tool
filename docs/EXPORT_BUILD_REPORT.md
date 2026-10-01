@@ -8,11 +8,36 @@ The export function (`docs/EXPORT_FUNCTION.md`, Phases E1–E5), built in one ru
 
 1. **Remembered matches and set choices aren't in backup files yet.** Adding them changes the backup format, and older backup files would then fail the restore check. Should they be backed up (a format version 2 that still restores version 1)?
 2. **Matching thresholds.** A product is picked automatically when it's the only one that fits, or leads the next by 2 points or more. On the real inventory that matched all 26 of dev's printings and 190 of 200 random ones, with no wrong picks seen in the samples. If a wrong automatic pick ever shows up, the fix is a bigger lead or a new rule.
-3. **The older live site and the inventory.** The live GitHub Pages build (v0.9.1-final) still uploads inventories the old way, without loading products for the export. If someone uploads from the live site, Settings will say "Products not loaded for export: upload it again" until it's uploaded from the new build.
+3. **The older live site's EXPORT.** The live build (v0.9.1-final) still has the old EXPORT, which marks a day Completed without a file. Kept working for compatibility; a day it marks has no export stamps, and the new build's EXPORT on it says to mark the day Paid/Ours again and export. Should the old EXPORT be refused from now on instead?
+4. **How fresh "fresh" is.** The export's Sell Prices accept JustTCG prices fetched in the last 15 minutes (not 6 hours), so a Back-and-export-again or a retry doesn't spend another request. Say if it should always fetch.
+5. **A day where nothing matched** (every card Can't upload): it still becomes Completed, with no file. Say if it should stay Paid/Ours instead.
+6. **The older live site and the inventory.** The live GitHub Pages build (v0.9.1-final) still uploads inventories the old way, without loading products for the export. If someone uploads from the live site, Settings will say "Products not loaded for export: upload it again" until it's uploaded from the new build.
 
 ## Owner tasks
 
-- **Upload the real inventory** (`playersuniongames-inventory-search-31.csv`) in Settings from the local app, so its 152,115 products load for matching (Phase E1).
+- **Upload the real inventory** (`playersuniongames-inventory-search-31.csv`) in Settings from the local app, so its 152,115 products load for matching (Phase E1). Dev has no products loaded yet: the check and the export both say to upload it first.
+- **A test upload in Crystal Commerce** before the first real batch (spec Appendix D #1): export a day with one or two cards whose stock and price are easy to put back by hand, run the file through Mass Create in "Only Update Products" mode, and check CC took the Custom SKU column, the condition words and the Sell Prices, and that Add Qty added.
+
+## Phase E3: Exporting a day
+
+**Built**
+- Migration **0027** (applied to dev after a rolled-back test against dev's September 30 buys): the `buy_lines` export stamps, `export_lines` (one transaction: checks, stamps, Completed, links, set choices, changelog), `export_undo_day`, `cc_custom_sku`, `cc_condition_word`; `day_mark` kept for the live build, its undo now clearing stamps too.
+- The `prices` Edge Function's **`fresh`** option, **deployed to dev**.
+- **Sell Prices** (`sellPrice.js`, `roundUpPrice`): today's JustTCG prices fetched fresh, Scryfall's from the matching, Cardmarket × today's euro rate; tests for every row of spec 5.2 and 5.3. The export stops if prices can't be fetched.
+- **The dialog's export mode:** Matching → "Fetching today's prices (1 JustTCG request)…" → Review with "Bought $1.00 → Sell $1.25" → **Continue** → Confirm (the file's card and row count and Custom SKU, the red **pull-out list** with its required checkbox) → **Export** saves and downloads `cc-mass-create-magic-<day>.csv`.
+- **The day page:** EXPORT opens the export; on a Completed day it downloads the same file again from the stamps; ⋯ → Mark Paid/Ours again uses `export_undo_day`; Sell prices on exported rows with the totals following; the **Can't upload** chip; the **Custom SKU** chip in the header; counts in the exported note.
+
+**Checks:** build OK · 109 tests pass · lint clean · migration tested in a rolled-back transaction, then applied.
+
+**Where to look** (needs the real inventory uploaded first)
+- [ ] Export a past Magic day: Matching, then today's prices, then Review shows "Bought → Sell" on each matched card. Continue → Export: the file downloads.
+- [ ] Open the file in a text editor: the header is `Add Qty,Product Name,Category,Condition,Language,Sell Price,Custom SKU`; names and categories exactly as in the inventory; conditions `Near Mint`, `Light Play`…; same-product rows merged; the last column today's code (`100126` on October 1).
+- [ ] Set one card to "None of these": the red **pull-out list** appears and Export waits for the checkbox; afterwards that card isn't in the file and its row has the **Can't upload** chip.
+- [ ] Sell Prices: a $1.01 card reads `1.25`, a $0.12 card `0.40`, a $10.01 card `11.00`; a manual-priced card the higher of its manual price and today's, rounded up.
+- [ ] After the export the rows show **SELL** prices (the buy price in the tooltip), the first total reads **Sell**, the **Paid** chip is unchanged, and the header has the **Custom SKU** chip.
+- [ ] EXPORT again on the Completed day downloads the same file; nothing else changes.
+- [ ] ⋯ → Mark Paid/Ours again: the chips go, the buy prices come back, and the buys are Paid/Ours.
+- [ ] The changelog shows "Day exported" with the counts and the Custom SKU, and "Export undone".
 
 ## Phase E2: Sets and products, the matcher
 

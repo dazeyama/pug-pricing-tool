@@ -1,7 +1,10 @@
 // `prices` Edge Function (spec 5.3): condition-specific prices from JustTCG,
 // shared by every store computer through a 6-hour cache.
 //
-// POST { lookups: Lookup[] } → { results: { [key]: { card, fetchedAt } } }
+// POST { lookups: Lookup[], fresh?: true } → { results: { [key]: { card, fetchedAt } } }
+//   fresh  = the export's Sell Prices (docs/EXPORT_FUNCTION.md 5.4): only
+//            prices fetched in the last 15 minutes count; older ones are
+//            fetched again (and the cache refreshed).
 //   Lookup = { key, game: 'mtg'|'pokemon', lang: 'en'|'ja',
 //              scryfallId? | tcgplayerId? | (name + number [+ setName]) }
 //   key    = the source key, also the price_map key:
@@ -15,6 +18,7 @@ import { adminClient, corsHeaders, json, readSecret, requireStoreSession } from 
 import { BATCH_MAX, call, QuotaError } from '../_shared/justtcg.ts';
 
 const FRESH_MS = 6 * 3600_000;          // price_cache freshness
+const EXPORT_FRESH_MS = 15 * 60_000;    // with fresh: true (an export's Sell Prices)
 const RETRY_UNMATCHED_MS = 7 * 86400_000; // price_map "no match" is retried after this
 const GAMES = { mtg: 'magic-the-gathering', pokemon: 'pokemon' } as const;
 
@@ -76,8 +80,11 @@ Deno.serve(async (req) => {
   if (denied) return denied;
 
   let lookups: Lookup[];
+  let maxAge = FRESH_MS;
   try {
-    lookups = ((await req.json())?.lookups ?? []).filter((l: Lookup) => l?.key && GAMES[l.game]);
+    const body = await req.json();
+    lookups = (body?.lookups ?? []).filter((l: Lookup) => l?.key && GAMES[l.game]);
+    if (body?.fresh === true) maxAge = EXPORT_FRESH_MS;
   } catch {
     return json({ error: 'Expected { lookups: [...] }', code: 'BAD_REQUEST' }, 400);
   }
@@ -112,7 +119,7 @@ Deno.serve(async (req) => {
       }
       if (m?.justtcg_card_id) {
         const c = cacheBy.get(m.justtcg_card_id);
-        if (c && now - Date.parse(c.fetched_at) < FRESH_MS) {
+        if (c && now - Date.parse(c.fetched_at) < maxAge) {
           results[l.key] = { card: c.payload, fetchedAt: c.fetched_at };     // fresh in the shared cache
           continue;
         }

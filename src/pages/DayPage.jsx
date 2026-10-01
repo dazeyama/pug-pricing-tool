@@ -14,6 +14,7 @@ import UserTag from '../components/UserTag.jsx';
 import ExportButton from '../components/ExportButton.jsx';
 import LinePreview, { previewFor } from '../components/LinePreview.jsx';
 import ExportDialog from './export/ExportDialog.jsx';
+import { downloadMassCreate } from '../lib/ccExport.js';
 import { RemoveModal } from './price/BuyList.jsx';
 import { statusLabel, statusTone, walkInStatus } from './collections/status.js';
 import { useConnection } from '../state/connection.jsx';
@@ -30,6 +31,7 @@ const MESSAGES = {
   day_not_over: "Today can't be exported until it's over.",
   no_user: 'Pick a user first.',
 };
+const CANT_UPLOAD_TIP = 'Not matched to Crystal Commerce: pulled from the upload, and not in the export file.';
 const COMPLETED_LOCK = 'Completed (exported): mark the day Paid/Ours again (⋯ next to EXPORT) to change it';
 // The current day can't be exported (owner, 2026-09-30): buys confirmed later would miss it.
 const NOT_OVER = "Today can't be exported until it's over: buys confirmed later would miss the export";
@@ -77,7 +79,7 @@ function DayScreen({ game, day }) {
   const [state, setState] = useState({ buys: [], loaded: false });
   const [removing, setRemoving] = useState(null);   // { buy, line }
   const [deleting, setDeleting] = useState(null);   // { buy, number, lastCard }
-  const [exporting, setExporting] = useState(false);     // the "mark Completed?" warning
+  const [exporting, setExporting] = useState(false);     // the export dialog (export spec 8.3)
   const [unexporting, setUnexporting] = useState(false); // ⋯ → Mark Paid/Ours again
   const [checking, setChecking] = useState(false);       // ⋯ → Check Crystal Commerce matches (export spec E2)
   const [busy, setBusy] = useState(false);
@@ -149,9 +151,13 @@ function DayScreen({ game, day }) {
   const notOver = day >= storeDay();
   const exportBlocked = game === 'pokemon' ? NO_POKEMON : notOver ? NOT_OVER : null;
   // When and by whom: the latest export of this game's cards here.
-  const lastExport = mine.flatMap((b) => b.buy_lines)
-    .filter((l) => l.game === game && l.completed_at)
-    .reduce((a, l) => (!a || l.completed_at > a.completed_at ? l : a), null);
+  const doneLines = mine.flatMap((b) => b.buy_lines).filter((l) => l.game === game && l.completed_at);
+  const lastExport = doneLines.reduce((a, l) => (!a || l.completed_at > a.completed_at ? l : a), null);
+  // What the export wrote (export spec 4.4, 10): its Custom SKU, and the counts.
+  const skus = [...new Set(doneLines.map((l) => l.cc_custom_sku).filter(Boolean))];
+  const exportedCards = doneLines.filter((l) => l.cc_status === 'exported').reduce((n, l) => n + l.quantity, 0);
+  const cantCards = doneLines.filter((l) => l.cc_status === 'cant_upload').reduce((n, l) => n + l.quantity, 0);
+  const fileName = `cc-mass-create-${game === 'mtg' ? 'magic' : game}-${day}.csv`;
 
   // Everything here needs a picked user and a connection.
   const guard = () => {
@@ -226,43 +232,66 @@ function DayScreen({ game, day }) {
     await reload();
   }
 
-  /** EXPORT's warning confirmed (owner, 2026-09-30), or ⋯ → Mark Paid/Ours again. */
-  async function mark(complete) {
+  /** ⋯ → Mark Paid/Ours again: undo the export (export spec 9.4), stamps and all. */
+  async function unexport() {
     setBusy(true);
-    const { data, error } = await withLoading(() => supabase.rpc('day_mark', {
+    const { data, error } = await withLoading(() => supabase.rpc('export_undo_day', {
       p_day: day,
       p_game: game,
       p_user: user.id,
       p_device: deviceId,
-      p_complete: complete,
     }));
     setBusy(false);
-    setExporting(false);
     setUnexporting(false);
     if (error) {
-      toast(messageFor(error, complete ? "Couldn't mark the buys Completed" : "Couldn't mark the buys Paid/Ours"), 'err');
+      toast(messageFor(error, "Couldn't mark the buys Paid/Ours"), 'err');
     } else {
       const n = Number(data ?? 0);
-      const buys = `${n} ${GAME_NAMES[game]} buy${n === 1 ? '' : 's'}`;
-      toast(complete ? `Exported: ${buys} marked Completed. (The export file itself is coming soon.)`
-        : `${buys} marked Paid/Ours again.`, 'ok');
+      toast(`${n} ${GAME_NAMES[game]} buy${n === 1 ? '' : 's'} marked Paid/Ours again.`, 'ok');
     }
     await reload();
   }
 
   /**
-   * EXPORT: with Paid/Ours buys here, warn and mark them Completed; once
-   * they're all Completed it exports as usual and changes nothing (owner,
-   * 2026-09-30). The export itself is still the placeholder.
+   * EXPORT (export spec 8.2): with Paid/Ours buys here, the export dialog;
+   * once they're all Completed, the same file again from the stamps, and
+   * nothing changes.
    */
   function startExport() {
     if (exportBlocked) {
       toast(`${exportBlocked}.`, 'err');
-      return false;
+      return;
     }
-    if (!pending.length) return true;
-    if (guard()) setExporting(true);
-    return false;
+    if (!mine.length) {
+      toast(`No ${GAME_NAMES[game]} buys that day.`, 'err');
+      return;
+    }
+    if (pending.length) {
+      if (guard()) setExporting(true);
+      return;
+    }
+    const stamped = doneLines.filter((l) => l.cc_status === 'exported');
+    if (!stamped.length) {
+      toast(cantCards
+        ? "Nothing here could be uploaded: there's no file. Every card is Can't upload."
+        : 'These buys were marked Completed before the export file existed: mark the day Paid/Ours again (⋯), then EXPORT.', 'err');
+      return;
+    }
+    const rows = downloadMassCreate(stamped, fileName);
+    toast(`Downloaded the same file again: ${rows} row${rows === 1 ? '' : 's'}, Custom SKU ${skus.join(', ')}.`, 'ok');
+  }
+
+  /** The export saved and its file handed over (export spec 8.4). */
+  async function exported(result) {
+    setExporting(false);
+    const cards = `${result.cards} card${result.cards === 1 ? '' : 's'}`;
+    const cant = result.cant > 0
+      ? ` ${result.cant} can't upload: make sure ${result.cant === 1 ? "it's" : "they're"} out of the batch.`
+      : '';
+    toast(result.cards > 0
+      ? `Exported ${cards} (${result.rows} row${result.rows === 1 ? '' : 's'}), Custom SKU ${result.sku}.${cant}`
+      : `Nothing matched, so there's no file.${cant}`, 'ok');
+    await reload();
   }
 
   return (
@@ -293,20 +322,30 @@ function DayScreen({ game, day }) {
               ]}
             />
           )}
-          <ExportButton className="top" intercept={startExport} blocked={exportBlocked} />
+          <ExportButton className="top" onClick={startExport} blocked={exportBlocked} />
         </span>
       </div>
       <h2 className="day-title">
         {dayTitle(day)}
         <span className={`group-chip day-chip ${game}`}>{GAME_NAMES[game]}</span>
         {allDone && <span className="day-exported-chip">Exported</span>}
+        {/* The export's code, labelled very clearly (owner, 2026-10-01; export spec 4.4). */}
+        {skus.length > 0 && (
+          <span className="sku-chip" title="The Custom SKU written on every row of this day's Mass Create file">
+            Custom SKU <strong>{skus.join(', ')}</strong>
+          </span>
+        )}
       </h2>
       <hr className="day-rule" />
       {allDone && lastExport && (
         <p className="day-export-note">
           Exported {formatDateTime(lastExport.completed_at)}
-          {lastExport.completed_by && <> by <UserTag user={staff.byId(lastExport.completed_by)} /></>}.
-          {' '}These buys are Completed: locked, and left out of the header search.
+          {lastExport.completed_by && <> by <UserTag user={staff.byId(lastExport.completed_by)} /></>}
+          {(exportedCards > 0 || cantCards > 0) && (
+            <>: {exportedCards} card{exportedCards === 1 ? '' : 's'}{cantCards > 0 && <>, <span className="cant-text">{cantCards} can't upload</span></>}</>
+          )}
+          .{' '}These buys are Completed: locked, and left out of the header search. Prices shown are the Sell Prices
+          {' '}written to the file.
         </p>
       )}
 
@@ -353,28 +392,27 @@ function DayScreen({ game, day }) {
         />
       )}
       {exporting && (
-        <Modal
-          title={`Export ${GAME_NAMES[game]} for ${dayDate(day)}?`}
-          onClose={busy ? undefined : () => setExporting(false)}
-          footer={(
-            <>
-              <button type="button" className="btn ghost" disabled={busy} onClick={() => setExporting(false)}>Cancel</button>
-              <button type="button" className={`btn primary${busy ? ' busy' : ''}`} disabled={busy} autoFocus onClick={() => mark(true)}>
-                Export
-              </button>
-            </>
-          )}
-        >
-          <p>
-            Exporting marks this day's <strong>{pending.length} {GAME_NAMES[game]} buy{pending.length === 1 ? '' : 's'}</strong>{' '}
-            <strong>Completed</strong>: locked (cards can't be removed, buys can't be deleted) and left out of the
-            header search, like a Completed collection.
-          </p>
-          <p className="hint">
-            The export file itself isn't built yet, so for now this only marks them Completed. Exported too early?
-            ⋯ next to EXPORT → Mark Paid/Ours again.
-          </p>
-        </Modal>
+        <ExportDialog
+          mode="export"
+          title={`Export ${GAME_NAMES[game]} for ${dayDate(day)} to Crystal Commerce`}
+          items={mine.flatMap((b, i) => b.buy_lines
+            .filter((l) => l.game === game && !l.completed_at)
+            .map((line) => ({ line, where: `Buy ${i + 1}` })))}
+          target={{
+            kind: 'day',
+            day,
+            game,
+            versions: Object.fromEntries(mine
+              .filter((b) => b.buy_lines.some((l) => l.game === game && !l.completed_at))
+              .map((b) => [b.id, b.version])),
+          }}
+          fileName={fileName}
+          onExported={exported}
+          onClose={() => {
+            setExporting(false);
+            reload();
+          }}
+        />
       )}
       {unexporting && (
         <Modal
@@ -383,7 +421,7 @@ function DayScreen({ game, day }) {
           footer={(
             <>
               <button type="button" className="btn ghost" disabled={busy} onClick={() => setUnexporting(false)}>Cancel</button>
-              <button type="button" className={`btn primary${busy ? ' busy' : ''}`} disabled={busy} onClick={() => mark(false)}>
+              <button type="button" className={`btn primary${busy ? ' busy' : ''}`} disabled={busy} onClick={unexport}>
                 Mark Paid/Ours again
               </button>
             </>
@@ -391,8 +429,12 @@ function DayScreen({ game, day }) {
         >
           <p>
             This day's <strong>{done.length} Completed {GAME_NAMES[game]} buy{done.length === 1 ? '' : 's'}</strong> go
-            back to <strong>Paid/Ours</strong>: unlocked, and back in the header search. Use this if the day was
-            exported too early.
+            back to <strong>Paid/Ours</strong>: unlocked, and back in the header search, showing their buy prices
+            again. Use this if the day was exported too early.
+          </p>
+          <p className="hint">
+            The file already downloaded isn't undone: if it was uploaded to Crystal Commerce, fix the stock there by
+            hand.
           </p>
         </Modal>
       )}
@@ -411,9 +453,15 @@ function DayScreen({ game, day }) {
   );
 }
 
-/** Market, Cash and Credit for some of a buy's lines, at the buy's own rates. */
+/** The price a row shows: its Sell Price once exported (export spec 5.5), else the buy price. */
+const shownPrice = (l) => Number(l.cc_sell_price ?? l.unit_price);
+
+/**
+ * Market, Cash and Credit for some of a buy's lines, at the buy's own rates;
+ * from the Sell Prices once exported (owner, 2026-10-01).
+ */
 function totalsFor(lines, buy) {
-  const market = Math.round(lines.reduce((s, l) => s + Number(l.unit_price) * l.quantity, 0) * 100) / 100;
+  const market = Math.round(lines.reduce((s, l) => s + shownPrice(l) * l.quantity, 0) * 100) / 100;
   return {
     market,
     cash: payout(market, buy.cash_pct),
@@ -484,9 +532,18 @@ function BuyPanel({ buy, number, game, other, day, byId, busy, offline, hits, fl
                 onMouseEnter={(e) => setPreview(previewFor(l.image_url, e.currentTarget, panel.current, 'right'))}
                 onMouseLeave={hidePreview}
               >
-                <td className="cell-price" title="Price per card">{formatMoney(l.unit_price)}</td>
+                {l.cc_sell_price != null ? (
+                  <td className="cell-price is-sell" title={`Bought at ${formatMoney(l.unit_price)} · sell price from the export`}>
+                    <span className="sell-tag">Sell</span>{formatMoney(l.cc_sell_price)}
+                  </td>
+                ) : (
+                  <td className="cell-price" title="Price per card">{formatMoney(l.unit_price)}</td>
+                )}
                 <td className="cell-qty">{l.quantity}</td>
-                <td className="cell-name" title={l.name_en ? l.name : undefined}>{lineBody(l)}</td>
+                <td className="cell-name" title={l.name_en ? l.name : undefined}>
+                  {lineBody(l)}
+                  {l.cc_status === 'cant_upload' && <span className="cant-chip" title={CANT_UPLOAD_TIP}>Can't upload</span>}
+                </td>
                 <td className="cell-x">
                   <button
                     type="button"
@@ -504,7 +561,9 @@ function BuyPanel({ buy, number, game, other, day, byId, busy, offline, hits, fl
           </tbody>
         </table>
         <div className="buy-totals">
-          <span>Market <strong>{formatMoney(t.market)}</strong></span>
+          <span title={completed ? 'From the Sell Prices written to the export file' : undefined}>
+            {completed && lines.some((l) => l.cc_sell_price != null) ? 'Sell' : 'Market'} <strong>{formatMoney(t.market)}</strong>
+          </span>
           <span className="is-cash">Cash ({Number(buy.cash_pct)}%) <strong>{formatMoney(t.cash)}</strong></span>
           <span className="is-credit">Credit ({Number(buy.credit_pct)}%) <strong>{formatMoney(t.credit)}</strong></span>
         </div>

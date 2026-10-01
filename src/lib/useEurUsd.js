@@ -9,7 +9,7 @@ const RATE_URL = 'https://api.frankfurter.dev/v1/latest?base=EUR&symbols=USD';
 let rate = null;
 let pending = null;
 
-function loadEurUsd() {
+export function loadEurUsd() {
   pending ??= fetch(RATE_URL)
     .then((res) => (res.ok ? res.json() : null))
     .then((data) => {

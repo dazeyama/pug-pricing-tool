@@ -37,6 +37,10 @@ test('Use Fallback and Use Cardmarket stay on', () => {
   const today = { market: { NM: 50, LP: 45, MP: null, HP: null, DMG: null }, fallback: { price: 20.2, source: 'scryfall_fallback' }, cardmarketUsd: 30.5, pct };
   assert.equal(sellPriceFor(line({ price_source: 'scryfall_fallback', price_snapshot: { override: 'fallback' } }), today).price, 21.00);
   assert.equal(sellPriceFor(line({ price_source: 'cardmarket', price_snapshot: { override: 'cardmarket' } }), today).price, 31.00);
+  // No Cardmarket price today: the ladder runs as the Price screen would, without it.
+  const noEur = sellPriceFor(line({ price_source: 'cardmarket', price_snapshot: { override: 'cardmarket' } }), { ...today, cardmarketUsd: null });
+  assert.equal(noEur.price, 50.00);
+  assert.equal(noEur.basis.overrideApplied, false);
 });
 
 test('a manual price: the higher of it and today\'s, rounded up; alone when there\'s nothing to compare', () => {
