@@ -144,8 +144,17 @@
 .list-head .list-sku { align-self: center; }
 .sku-chip.compact strong { font-size: 13px; }
 
-/* Settings → Crystal Commerce matching (export spec 11.2): split like Backups. */
+/* Settings → Crystal Commerce matching (export spec 11.2): split like Backups.
+   Each half scrolls on its own, so a long list never brings a scrollbar that
+   would push the divider off the page's centre line. */
+.ccm { overflow: hidden; grid-template-rows: minmax(0, 1fr); }
+.ccm > .backups-col { min-height: 0; overflow-y: auto; }
 .ccm .settings-sub { margin-top: 0; }
+.ccm-counts { margin-top: 2px; }
+.ccm-modal .modal-box.wide { width: min(980px, 94vw); height: min(720px, 86vh); }
+.ccm-modal .ccm-search { display: block; }
+.ccm-caption { margin: 0 0 4px; }
+.ccm-more { margin-top: 10px; }
 .ccm-search { max-width: 320px; margin: 0 0 8px; padding: 5px 9px; font-size: 13px; }
 .ccm-list { margin: 0; padding: 0; list-style: none; font-size: 13px; }
 .ccm-list li { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 10px; padding: 4px 0; }

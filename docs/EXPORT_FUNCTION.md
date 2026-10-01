@@ -629,6 +629,7 @@ A wide panel, like Backups, at the same fixed height (`DESIGN_SPEC.md` 11):
 
 - **Sets** (left): every staff set choice, `Scryfall set → CC Category`, with who and when, and **Forget** on each.
 - **Products** (right): how many cards have remembered products (staff and automatic), a search by card name showing each link (`Brazen Borrower // Petty Theft (ELD) foil → Brazen Borrower // Petty Theft - Foil - Showcase · Throne of Eldraine`), and **Forget** on each.
+  - *As built (owner, 2026-10-01):* there will be thousands, so the panel only shows the counts (picked by staff, matched by the app, in all) and a **Browse remembered products…** button. It opens a window of its own: the latest first, a search by CC product name, 50 at a time with **Show 50 more**, and **Forget** on each. Each half of the panel scrolls on its own, so its divider stays on the page's centre line like Backups'.
 - Forgetting is immediate and logged nowhere (settings changes aren't logged, `DESIGN_SPEC.md` 12).
 
 ---
