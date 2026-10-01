@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { lineTags, lineText } from '../src/lib/lineFormat.js';
+import { lineTags, lineText, lineTextWithCondition } from '../src/lib/lineFormat.js';
 
 const line = (over) => ({
   quantity: 1, name: 'Sol Ring', set_code: 'CMR', collector_number: '472', finish: 'nonfoil',
@@ -63,4 +63,15 @@ test('another quantity can be shown (removing some)', () => {
 test('double-faced names stay whole', () => {
   assert.equal(lineText(line({ name: 'Delver of Secrets // Insectile Aberration', set_code: 'ISD', collector_number: '51' })),
     '1 Delver of Secrets // Insectile Aberration (ISD) 51');
+});
+
+// The header search's second line (owner, 2026-09-30): the condition always shows, NM too.
+test('with its condition: NM in brackets, other tags after it', () => {
+  assert.equal(lineTextWithCondition(line({ name: 'Fabricate', set_code: 'SLD', collector_number: '123' })),
+    '1 Fabricate (SLD) 123 [NM]');
+  assert.equal(lineTextWithCondition(line({ finish: 'foil', condition: 'LP' }), 3), '3 Sol Ring (CMR) 472 *F* [LP]');
+  assert.equal(lineTextWithCondition(line({
+    name: 'ピカチュウ', name_en: 'Pikachu', set_code: 'SV2a', collector_number: '025', finish: 'reverse',
+    lang: 'ja', condition: 'MP', treatments: ['pokeball-pattern'],
+  })), '1 Pikachu (SV2a) 025 *RH* [MP, JP, Poké Ball]');
 });

@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase.js';
 import { storeDay } from '../lib/calendar.js';
 import { formatDate } from '../lib/time.js';
 import { colorVar } from '../lib/palette.js';
+import { lineTextWithCondition } from '../lib/lineFormat.js';
 import { LINE_LIMIT, MIN_CHARS, flatRows, groupResults, searchArgs } from '../lib/globalSearch.js';
 import { statusLabel, statusTone } from '../pages/collections/status.js';
 import { useStaff } from '../state/staff.jsx';
@@ -149,17 +150,15 @@ export default function SearchBox({ wide }) {
         onMouseDown={(e) => e.preventDefault()}   // keep the typing in the box
         onClick={() => go(row)}
       >
-        {buy ? (
-          <>
-            {formatDate(row.confirmedAt)} · {GAME_NAMES[row.game]} · Buy {row.number} · <UserTag user={user} />
-            {' · '}qty {row.qty} <span className="result-cond">[{row.condition}]</span>
-          </>
-        ) : (
-          <>
-            <strong>{row.customerName}</strong> · <span className="result-status">{statusLabel(row.status)}</span>
-            {' · '}qty {row.qty} <span className="result-cond">[{row.condition}]</span>
-          </>
-        )}
+        {/* Two lines (owner, 2026-09-30): where it is, then the card as entered. */}
+        <span className="result-where">
+          {buy ? (
+            <>{formatDate(row.confirmedAt)} · {GAME_NAMES[row.game]} · Buy {row.number} · <UserTag user={user} /></>
+          ) : (
+            <><strong>{row.customerName}</strong> · <span className="result-status">{statusLabel(row.status)}</span></>
+          )}
+        </span>
+        <span className="result-entry">{lineTextWithCondition(row.line, row.qty)}</span>
       </button>
     );
   }

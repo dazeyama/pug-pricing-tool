@@ -59,6 +59,7 @@ test('lines group by printing; a row per buy and condition, quantities added, be
   assert.equal(groups[1].heading, 'Lightning Bolt (2X2) 161');
   assert.deepEqual(flatRows(groups).map((r) => r.key.split('|').slice(-2).join(' ')),
     ['b1 NM', 'b1 LP', 'c1 NM', 'b1 NM']);
+  assert.equal(groups[0].buys[1].line.condition, 'LP');
 });
 
 test('a Japanese card heads its group with its English name and a JP tag', () => {

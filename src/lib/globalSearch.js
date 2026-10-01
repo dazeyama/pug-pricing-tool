@@ -78,6 +78,7 @@ export function groupResults(lines) {
         confirmedBy: l.confirmed_by,
         number: l.buy_number,
         game: l.game,
+        line: l,          // for its full entry: "1 Fabricate (SLD) 123 [NM]"
         qty: 0,
         lineIds: [],
       };

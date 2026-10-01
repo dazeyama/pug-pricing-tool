@@ -57,3 +57,18 @@ export function lineBody(line) {
 export function lineText(line, quantity = line.quantity) {
   return `${quantity} ${lineBody(line)}`;
 }
+
+/**
+ * The line with its condition always in the brackets, NM too, first:
+ * "1 Fabricate (SLD) 123 [NM]", "2 Pikachu (SV2a) 025 [LP, JP]". The header
+ * search's results show cards this way (owner, 2026-09-30).
+ * @param {Parameters<typeof lineText>[0]} line
+ * @param {number} [quantity]
+ */
+export function lineTextWithCondition(line, quantity = line.quantity) {
+  const parts = [`${quantity} ${line.name_en || line.name} (${line.set_code}) ${line.collector_number}`];
+  const marker = FINISH_MARKERS[line.finish];
+  if (marker) parts.push(marker);
+  parts.push(`[${[line.condition || 'NM', ...lineTags({ ...line, condition: 'NM' })].join(', ')}]`);
+  return parts.join(' ');
+}
