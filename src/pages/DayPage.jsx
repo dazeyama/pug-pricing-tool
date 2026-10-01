@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
-import { dayRange, dayTitle, parseDay } from '../lib/calendar.js';
+import { dayDate, dayRange, dayTitle, parseDay } from '../lib/calendar.js';
 import { lineBody, lineText } from '../lib/lineFormat.js';
 import { formatMoney, payout } from '../lib/money.js';
 import { formatPhone } from '../lib/phone.js';
-import { formatTime } from '../lib/time.js';
+import { formatDateTime, formatTime } from '../lib/time.js';
 import { colorVar } from '../lib/palette.js';
 import { withLoading } from '../lib/loading.js';
 import Modal from '../components/Modal.jsx';
@@ -14,6 +14,7 @@ import UserTag from '../components/UserTag.jsx';
 import ExportButton from '../components/ExportButton.jsx';
 import LinePreview, { previewFor } from '../components/LinePreview.jsx';
 import { RemoveModal } from './price/BuyList.jsx';
+import { statusLabel, statusTone, walkInStatus } from './collections/status.js';
 import { useConnection } from '../state/connection.jsx';
 import { useDevice } from '../state/device.jsx';
 import { useStaff } from '../state/staff.jsx';
@@ -24,8 +25,10 @@ const MESSAGES = {
   stale_version: 'This buy changed on another computer — reloaded.',
   line_gone: 'That card was already removed.',
   buy_gone: 'That buy was already deleted.',
+  buy_completed: 'That buy is Completed (exported): mark the day Paid/Ours again (⋯ next to EXPORT) to change it.',
   no_user: 'Pick a user first.',
 };
+const COMPLETED_LOCK = 'Completed (exported): mark the day Paid/Ours again (⋯ next to EXPORT) to change it';
 const messageFor = (error, failure) => {
   const code = Object.keys(MESSAGES).find((c) => error?.message?.includes(c));
   return code ? MESSAGES[code] : `${failure}: ${error.message}`;
@@ -68,6 +71,8 @@ function DayScreen({ game, day }) {
   const [state, setState] = useState({ buys: [], loaded: false });
   const [removing, setRemoving] = useState(null);   // { buy, line }
   const [deleting, setDeleting] = useState(null);   // { buy, number, lastCard }
+  const [exporting, setExporting] = useState(false);     // the "mark Completed?" warning
+  const [unexporting, setUnexporting] = useState(false); // ⋯ → Mark Paid/Ours again
   const [busy, setBusy] = useState(false);
   const ticket = useRef(0);
   const other = game === 'mtg' ? 'pokemon' : 'mtg';
@@ -130,6 +135,15 @@ function DayScreen({ game, day }) {
   }, [state.loaded, focusBuy, location.key]);
   const hits = new Set(focus?.lineIds ?? []);
 
+  // Paid/Ours until exported, then Completed (owner, 2026-09-30), game by game.
+  const pending = mine.filter((b) => walkInStatus(b, game) === 'paid');
+  const done = mine.filter((b) => walkInStatus(b, game) === 'completed');
+  const allDone = mine.length > 0 && !pending.length;
+  // When and by whom: the latest export of this game's cards here.
+  const lastExport = mine.flatMap((b) => b.buy_lines)
+    .filter((l) => l.game === game && l.completed_at)
+    .reduce((a, l) => (!a || l.completed_at > a.completed_at ? l : a), null);
+
   // Everything here needs a picked user and a connection.
   const guard = () => {
     if (!user) {
@@ -145,6 +159,10 @@ function DayScreen({ game, day }) {
 
   /** × on a row: remove copies, or delete the buy if that's its last card (owner, 2026-09-29). */
   function startRemove(buy, number, line) {
+    if (line.completed_at) {
+      toast(`${COMPLETED_LOCK}.`, 'err');
+      return;
+    }
     if (!guard()) return;
     if (buy.buy_lines.length === 1 && line.quantity === 1) setDeleting({ buy, number, lastCard: true });
     else setRemoving({ buy, number, line });
@@ -199,19 +217,78 @@ function DayScreen({ game, day }) {
     await reload();
   }
 
+  /** EXPORT's warning confirmed (owner, 2026-09-30), or ⋯ → Mark Paid/Ours again. */
+  async function mark(complete) {
+    setBusy(true);
+    const { data, error } = await withLoading(() => supabase.rpc('day_mark', {
+      p_day: day,
+      p_game: game,
+      p_user: user.id,
+      p_device: deviceId,
+      p_complete: complete,
+    }));
+    setBusy(false);
+    setExporting(false);
+    setUnexporting(false);
+    if (error) {
+      toast(messageFor(error, complete ? "Couldn't mark the buys Completed" : "Couldn't mark the buys Paid/Ours"), 'err');
+    } else {
+      const n = Number(data ?? 0);
+      const buys = `${n} ${GAME_NAMES[game]} buy${n === 1 ? '' : 's'}`;
+      toast(complete ? `Exported: ${buys} marked Completed. (The export file itself is coming soon.)`
+        : `${buys} marked Paid/Ours again.`, 'ok');
+    }
+    await reload();
+  }
+
+  /**
+   * EXPORT: with Paid/Ours buys here, warn and mark them Completed; once
+   * they're all Completed it exports as usual and changes nothing (owner,
+   * 2026-09-30). The export itself is still the placeholder.
+   */
+  function startExport() {
+    if (!pending.length) return true;
+    if (guard()) setExporting(true);
+    return false;
+  }
+
   return (
-    // Themed in the game's colour: indigo for Magic, amber for Pokémon (calendar.css).
-    <div className={`day-page ${game}`}>
+    // Themed in the game's colour: indigo for Magic, amber for Pokémon (calendar.css);
+    // greyed once exported (owner, 2026-09-30).
+    <div className={`day-page ${game}${allDone ? ' exported' : ''}`}>
       {/* < BACK on the left, EXPORT on the right, one row (owner, 2026-09-29). */}
       <div className="day-top">
         <button type="button" className="btn page-back" title="Back to the Calendar" onClick={back}>&lt; BACK</button>
-        <ExportButton className="top" />
+        <span className="day-actions">
+          {/* After an export: undo it, if it was done too early (owner, 2026-09-30). */}
+          {done.length > 0 && (
+            <MoreMenu
+              items={[{
+                label: 'Mark Paid/Ours again…',
+                blocked: offline ? 'No connection' : busy ? 'Saving…' : null,
+                title: `Undo the export: this day's Completed ${GAME_NAMES[game]} buys become Paid/Ours again`,
+                onClick: () => guard() && setUnexporting(true),
+              }]}
+            />
+          )}
+          <ExportButton className="top" intercept={startExport} />
+        </span>
       </div>
       <h2 className="day-title">
         {dayTitle(day)}
         <span className={`group-chip day-chip ${game}`}>{GAME_NAMES[game]}</span>
+        {allDone && <span className="day-exported-chip">Exported</span>}
       </h2>
       <hr className="day-rule" />
+      {done.length > 0 && lastExport && (
+        <p className={`day-export-note${allDone ? '' : ' partial'}`}>
+          Exported {formatDateTime(lastExport.completed_at)}
+          {lastExport.completed_by && <> by <UserTag user={staff.byId(lastExport.completed_by)} /></>}.{' '}
+          {allDone
+            ? 'These buys are Completed: locked, and left out of the header search.'
+            : `${pending.length} buy${pending.length === 1 ? ' is' : 's are'} still Paid/Ours (confirmed after the export); EXPORT again to mark ${pending.length === 1 ? 'it' : 'them'} Completed.`}
+        </p>
+      )}
 
       {!state.loaded ? (
         <p className="empty">Loading…</p>
@@ -247,6 +324,51 @@ function DayScreen({ game, day }) {
           onRemove={remove}
         />
       )}
+      {exporting && (
+        <Modal
+          title={`Export ${GAME_NAMES[game]} for ${dayDate(day)}?`}
+          onClose={busy ? undefined : () => setExporting(false)}
+          footer={(
+            <>
+              <button type="button" className="btn ghost" disabled={busy} onClick={() => setExporting(false)}>Cancel</button>
+              <button type="button" className={`btn primary${busy ? ' busy' : ''}`} disabled={busy} autoFocus onClick={() => mark(true)}>
+                Export
+              </button>
+            </>
+          )}
+        >
+          <p>
+            Exporting marks this day's <strong>{pending.length} {GAME_NAMES[game]} buy{pending.length === 1 ? '' : 's'}</strong>{' '}
+            <strong>Completed</strong>: locked (cards can't be removed, buys can't be deleted) and left out of the
+            header search, like a Completed collection.
+            {done.length > 0 && <> The {done.length} already exported stay as they are.</>}
+          </p>
+          <p className="hint">
+            The export file itself isn't built yet, so for now this only marks them Completed. Exported too early?
+            ⋯ next to EXPORT → Mark Paid/Ours again.
+          </p>
+        </Modal>
+      )}
+      {unexporting && (
+        <Modal
+          title={`Mark ${GAME_NAMES[game]} for ${dayDate(day)} Paid/Ours again?`}
+          onClose={busy ? undefined : () => setUnexporting(false)}
+          footer={(
+            <>
+              <button type="button" className="btn ghost" disabled={busy} onClick={() => setUnexporting(false)}>Cancel</button>
+              <button type="button" className={`btn primary${busy ? ' busy' : ''}`} disabled={busy} onClick={() => mark(false)}>
+                Mark Paid/Ours again
+              </button>
+            </>
+          )}
+        >
+          <p>
+            This day's <strong>{done.length} Completed {GAME_NAMES[game]} buy{done.length === 1 ? '' : 's'}</strong> go
+            back to <strong>Paid/Ours</strong>: unlocked, and back in the header search. Use this if the day was
+            exported too early.
+          </p>
+        </Modal>
+      )}
       {deleting && (
         <DeleteBuyModal
           buy={deleting.buy}
@@ -281,9 +403,13 @@ function BuyPanel({ buy, number, game, other, day, byId, busy, offline, hits, fl
   const lines = buy.buy_lines.filter((l) => l.game === game);
   const others = buy.buy_lines.filter((l) => l.game === other).reduce((n, l) => n + l.quantity, 0);
   const t = totalsFor(lines, buy);
+  // Paid/Ours, or Completed once exported (owner, 2026-09-30): locked like a Completed collection.
+  const status = walkInStatus(buy, game);
+  const completed = status === 'completed';
+  const anyCompleted = buy.buy_lines.some((l) => l.completed_at);
   return (
     <article
-      className={`cardpanel buy-panel${flash ? ' flash-target' : ''}`}
+      className={`cardpanel buy-panel${completed ? ' completed' : ''}${flash ? ' flash-target' : ''}`}
       ref={panel}
       data-buy={buy.id}
       style={{ '--c': colorVar(user?.color ?? 'pal-slate') }}
@@ -292,11 +418,12 @@ function BuyPanel({ buy, number, game, other, day, byId, busy, offline, hits, fl
         <strong className="buy-number">Buy {number}</strong>
         <UserTag user={user} />
         <span className="buy-time">{formatTime(buy.confirmed_at)}</span>
+        <span className={`status-chip ${statusTone({ kind: 'walk_in', status })}`}>{statusLabel(status)}</span>
         <MoreMenu
           items={[{
             label: 'Delete buy…',
             danger: true,
-            blocked: offline ? 'No connection' : busy ? 'Saving…' : null,
+            blocked: offline ? 'No connection' : busy ? 'Saving…' : anyCompleted ? COMPLETED_LOCK : null,
             title: 'Delete this buy and every card in it, both games',
             onClick: () => onDelete(buy, number),
           }]}
@@ -335,9 +462,9 @@ function BuyPanel({ buy, number, game, other, day, byId, busy, offline, hits, fl
                   <button
                     type="button"
                     className="line-x"
-                    title="Remove"
+                    title={l.completed_at ? COMPLETED_LOCK : 'Remove'}
                     aria-label={`Remove ${lineText(l)}`}
-                    disabled={busy}
+                    disabled={busy || Boolean(l.completed_at)}
                     onClick={() => onRemove(buy, number, l)}
                   >
                     ×

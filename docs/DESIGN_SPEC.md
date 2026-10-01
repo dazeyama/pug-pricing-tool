@@ -475,6 +475,7 @@ All IDs are `uuid default gen_random_uuid()` unless noted, and all timestamps ar
 | priced_at | timestamptz | When the price was fetched |
 | scryfall_id, oracle_id, tcgdex_id, tcgplayer_id, justtcg_card_id, justtcg_variant_id | text null | Source identifiers for the future export |
 | image_url | text | Thumbnail URL |
+| completed_at / completed_by | timestamptz null / uuid null → staff_users | Walk-in buys (migration 0018, owner's decision 2026-09-30): when this card was exported on its day page and by whom; set means **Completed**, null means **Paid/Ours** |
 | created_at | timestamptz | |
 
 **Line identity for merging** (owner's decision): two adds merge into one line, with the quantity increased, when all of these match: `game, lang, scryfall_id/tcgdex_id, finish, first_edition, treatments, condition, unit_price, price_source`.
@@ -498,6 +499,7 @@ All IDs are `uuid default gen_random_uuid()` unless noted, and all timestamps ar
 | lines | jsonb default '[]' | `[{ sign, qty, text, game, unit_price }]` (sign is `+` or `-`), where `text` is the Moxfield line (Section 8.9) |
 | fields | jsonb default '[]' | `[{ field, before, after }]` for info and status edits |
 | summary | text default '' | One plain sentence |
+| day | date null | The store day a day-level entry is about (a day exported or put back; migration 0018) |
 
 **`settings`**: key/value (`key text PK`, `value jsonb`, `updated_at`, `updated_by`)
 - `cash_pct` (default `33`), `credit_pct` (default `66`), `last_backup_at` (timestamp of the last downloaded backup), `fallback_pct_mtg` (default `{NM:100, LP:90, MP:80, HP:70, DMG:60}`) and `fallback_pct_pokemon` (default `{NM:100, LP:85, MP:70, HP:55, DMG:40}`), the Master Fallback Percentages.
@@ -547,7 +549,8 @@ Every change that affects buy contents, or anything the changelog records, goes 
 | `draft_set_custom_rates(device, custom_cash_pct, custom_credit_pct, user)` | Sets or clears this device's draft custom rates (Section 8.9.1). Creates the draft if none exists. | none |
 | `confirm_buy(buy_id, user, customer_name, notes, cash_pct, credit_pct, expected_version, line_texts, phone)` | draft → confirmed; stamps `confirmed_*`; snapshots percentages (custom rate where set, else the master rate the screen showed). `line_texts` maps each line ID to its buy-list text (`lineFormat.js`) for the entry's card rows. Returns `{ number, games, target_name }`. | `buy_confirmed` with all lines and totals |
 | `buy_remove_line(line_id, qty, user, device, expected_version, text)` | For confirmed buys (day page). **Refuses to remove a buy's last card** (`last_card`): the day page deletes the buy instead (owner, 2026-09-29). Migration 0013. | `buy_cards_removed` |
-| `buy_delete(buy_id, user, device, expected_version, line_texts)` | Deletes a confirmed buy, both games. Migration 0013. | `buy_deleted` with the full line list and totals |
+| `day_mark(day, game, user, device, complete)` | EXPORT on a day page (`complete` true) marks that game's Paid/Ours cards in the day's confirmed buys Completed; the ⋯ menu's undo (`false`) puts them back. Returns how many buys changed (0 if none: exporting a Completed day again changes nothing). Migration 0018. | `day_exported` / `day_unexported` |
+| `buy_delete(buy_id, user, device, expected_version, line_texts)` | Deletes a confirmed buy, both games. Migration 0013; refuses (`buy_completed`) if any of its cards is Completed (0018, which also makes `buy_remove_line` refuse a Completed card). | `buy_deleted` with the full line list and totals |
 | `collection_create(name, phone, notes, user, device, id_last4)` | `id_last4` optional (migration 0010); `collection_update_info` takes `id_last4` too | `collection_created` |
 | `collection_add_line(buy_id, line, merge, user, device, expected_version)` | Requires this device to hold the lock and status ≠ paid | `collection_cards_added` |
 | `collection_update_line(line_id, line, user, device, expected_version, old_text, new_text)` | EDIT CARD on a collection (as built, Phase 7): saves the edited line over the old one at **today's price** (owner's decision, 2026-09-29: edits always re-price, collections included), merging with an identical line like `draft_update_line`. Same requirements as adding. | `collection_line_edited`: the old line (−) and the new one (+) |
@@ -1165,6 +1168,8 @@ Owner's decision: double confirmation, and not easy to press.
 
 ### 10.1 Month view
 
+**Walk-in statuses (owner's decision, 2026-09-30):** a confirmed walk-in buy is **Paid/Ours** (a neutral light-grey chip: no cash or credit is recorded for it). **EXPORT** on its day page makes it **Completed**, mirroring a collection's last status: locked (no removing cards, no deleting the buy) and left out of the header search. Since EXPORT is per game and a buy can hold both games, a buy is Completed **game by game** (each card records its export, `buy_lines.completed_at`). On the Calendar, a day whose buys in that game are all exported is **greyed and marked "Exported"** beside its date; some of them, **"Part exported"** (amber). Undo: the ⋯ menu beside EXPORT (Section 10.2).
+
 ```
    ◀  August 2026  ▶   [Today]
 ┌─────────────── Magic ────────────────┬────────────── Pokémon ───────────────┐
@@ -1225,6 +1230,12 @@ Saturday, August 17, 2026 · Magic
 - **Card pictures on hover** (owner's decision, 2026-09-30): hovering a card row shows its picture beside the panel, level with the row, the same as the Price sidebar's preview (Section 8.8): 146 × 204, right of the panel, or left when the window has no room there.
 - **Removing cards** (owner's decision): row hover turns red. Click → the same "Remove card?" dialog with quantity as Section 8.9, then `buy_remove_line`, which is logged. The confirmation text notes: "This buy was already confirmed."
 - **Deleting a buy:** ⋯ → Delete buy… → "Delete **Buy 2** (Dana, 2:37 PM)? All **N cards** in this buy — including any from the other game — will be permanently removed." [Cancel] [Delete buy] (red). Calls `buy_delete`, which is logged.
+- **Status and EXPORT (owner's decision, 2026-09-30):**
+  - Each buy panel's header shows its status for this game: **Paid/Ours** or **Completed**. A Completed panel's × buttons are gone and **Delete buy…** is blocked ("Completed (exported): mark the day Paid/Ours again…"); the server refuses too (`buy_completed`).
+  - **EXPORT with Paid/Ours buys on the page** warns first: "Export Magic for September 30, 2026?" — it marks the day's N buys **Completed** (locked, out of the search), notes that ones already exported stay as they are, that the export file itself isn't built yet, and how to undo it. **[Cancel] [Export]**. Confirming calls `day_mark` and toasts "Exported: N Magic buys marked Completed."
+  - **EXPORT when they're all Completed** exports as usual (still the placeholder) and changes nothing.
+  - **After an export, a ⋯ menu sits beside EXPORT** with **Mark Paid/Ours again…**, for a day exported too early: a confirmation, then they're Paid/Ours again (unlocked, back in the search). Both are logged in the Changelog (Buys).
+  - **An exported day looks different:** its game colour fades to grey, an **EXPORTED** chip sits beside the title, and a note under the rule says when and by whom ("Exported Sat, Sep 30, 2026 · 5:12 PM by ● Daisy. These buys are Completed…"). If buys were confirmed after the export, the note turns amber and says how many are still Paid/Ours (EXPORT again to include them).
 - **EXPORT** is a large, bold button (Section 14). **As built (owner's decision, 2026-09-29):** on the header row, level with **< BACK** and as tall, **right-aligned**, on Magic and Pokémon day pages alike; it takes the page's game colour (below).
 - If the last buy of the day is deleted, go back to the Calendar with a toast.
 - **As built (Phase 8, owner's decisions, 2026-09-29):**
@@ -1403,6 +1414,8 @@ Then "Not affiliated with Wizards of the Coast or The Pokémon Company." and the
 | `buy_confirmed` | Buy confirmed | Buys / large green | All lines (+), totals, customer name |
 | `buy_cards_removed` | Cards removed from buy | Buys / green | Removed lines (−), totals of the removed lines |
 | `buy_deleted` | Buy deleted | Buys / red cross | All lines (−) at deletion, totals |
+| `day_exported` | Day exported | Buys | "Day" + "Magic · September 30, 2026" (links to that day page), `status: Paid/Ours → Completed` as chips, "N Magic buys exported and marked Completed." (owner's decision, 2026-09-30; migration 0018) |
+| `day_unexported` | Export undone | Buys | The same, `status: Completed → Paid/Ours`, "N Magic buys marked Paid/Ours again." |
 | `collection_created` | Collection created | Collections / large blue | Name, phone, notes as fields |
 | `collection_cards_added` | Cards added to collection | Collections / blue | Added lines (+), totals |
 | `collection_cards_removed` | Cards removed from collection | Collections / blue | Removed lines (−), totals |
@@ -1449,7 +1462,7 @@ The data isn't folded, only the drawing. Pagination counts drawn panels.
 
 - **Where:** in the header on every tab. **Much larger (about 640px wide, taller, 16px text) everywhere except the pricing screens**, where it keeps its normal size (owner's decision, 2026-09-29, replacing "smaller on pricing screens"): there the main search bar is the focus (Section 7.2).
 - **Input:** the same syntax as the main search (Section 8.2). **Partial names work.** `bolt` finds every stored line whose name contains "bolt", across every printing and number. Adding `/size`, a number or a set code narrows the results. Both games are searched.
-- **Scope** (owner's decision): lines in **confirmed walk-in buys** and **collections**, but not drafts. **Completed collections are skipped completely** (owner's decision, 2026-09-29): their cards have moved on, so they can't be found where they were. Paid/Ours collections are searched (their cards are in the store), as are Processing and Priced ones. The query runs in Postgres (`name_key` trigram/ILIKE, plus number, size and set equality), limited to 200 lines. Japanese lines should also match on `name_en` (the English name staff will type).
+- **Scope** (owner's decision): lines in **confirmed walk-in buys** and **collections**, but not drafts. **Completed walk-in cards (exported, Section 10.1) are left out too** (owner's decision, 2026-09-30), like Completed collections. **Completed collections are skipped completely** (owner's decision, 2026-09-29): their cards have moved on, so they can't be found where they were. Paid/Ours collections are searched (their cards are in the store), as are Processing and Priced ones. The query runs in Postgres (`name_key` trigram/ILIKE, plus number, size and set equality), limited to 200 lines. Japanese lines should also match on `name_en` (the English name staff will type).
 - **Results dropdown** (CM `.search-results`, opening under the box):
   - Grouped by **printing**: a heading line such as "Lightning Bolt (2X2) 161 *F*", with a game badge. Then two sub-groups:
     - **Buys:** one row per buy: "Sat, Aug 17, 2026 · Magic · Buy 2 · ● Sam · qty 4".
@@ -1481,7 +1494,7 @@ Export is the other half of the app's purpose, and it gets **its own design docu
 - **EXPORT buttons** appear in:
   - a collection's pricing screen, where CONFIRM BUY would be (blue);
   - each day page, on the header row right-aligned opposite < BACK (large, bold; owner, 2026-09-29).
-- Clicking EXPORT opens a modal: **"EXPORT COMING SOON"** with an **[OK]** button.
+- Clicking EXPORT opens a modal: **"EXPORT COMING SOON"** with an **[OK]** button. **On a day page with Paid/Ours buys, EXPORT first warns and marks them Completed** (owner's decision, 2026-09-30; Section 10.2), so the status side of exporting works before the file does.
 - The Master Crystal Inventory upload (Section 11.1) is fully built. The future export **must refuse to run without a current Master Crystal Inventory**. That rule belongs to the export doc, and the banner already warns.
 - The data model keeps what the export is likely to need: set names, source IDs, finishes, treatments, conditions, prices and snapshots.
 
@@ -2050,6 +2063,8 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 161 | Card pictures on search results (2026-09-30) | Hovering a header search result shows its card's picture beside the dropdown, like the Price sidebar (Section 13) |
 | 162 | Search results by date (2026-09-30) | Header search results are filed under dates (a buy's confirmation day, a collection's creation day), a panel per buy or collection listing each matching card in full, replacing the printing headings (Section 13) |
 | 163 | Collections pinned in search (2026-09-30) | Header search results show matching collections in a Collections section at the top, then buys by date, since collections are kept in their own place (Section 13) |
+| 164 | Walk-in buys: Paid/Ours, then Completed (2026-09-30) | A confirmed walk-in buy is Paid/Ours; EXPORT on its day page makes it Completed (locked, out of the search), game by game, after a warning; a ⋯ menu beside EXPORT puts the day back to Paid/Ours; once Completed, EXPORT changes nothing (Sections 10, 13, 14) |
+| 165 | Exported days look different (2026-09-30) | Exported days are greyed and marked "Exported" (or "Part exported") on the Calendar; their day pages fade to grey with an EXPORTED chip and a note on who exported them when (Section 10) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

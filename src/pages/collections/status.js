@@ -17,11 +17,25 @@ export const isClosed = (s) => s === 'paid' || s === 'completed';
 /**
  * A collection's colour (owner, 2026-09-29): Processing amber, Priced red,
  * Paid/Ours green for cash or blue for credit (the Cash/Credit colours),
- * Completed grey. A CSS class: tone-processing, tone-paid-cash…
+ * Completed grey. A walk-in buy is Paid/Ours (a neutral light grey: it has no
+ * cash or credit recorded) until exported, then Completed (owner,
+ * 2026-09-30). A CSS class: tone-processing, tone-paid-cash, tone-paid-walkin…
  */
 export function statusTone(buy) {
-  if (buy.status === 'paid') return `tone-paid-${buy.paid_method === 'credit' ? 'credit' : 'cash'}`;
+  if (buy.status === 'paid') {
+    if (buy.kind === 'walk_in') return 'tone-paid-walkin';
+    return `tone-paid-${buy.paid_method === 'credit' ? 'credit' : 'cash'}`;
+  }
   return `tone-${buy.status}`;
+}
+
+/**
+ * A walk-in buy's status for one game's part (owner, 2026-09-30): 'completed'
+ * once all its cards in that game are exported, else 'paid' (Paid/Ours).
+ */
+export function walkInStatus(buy, game) {
+  const lines = (buy.buy_lines ?? []).filter((l) => l.game === game);
+  return lines.length && lines.every((l) => l.completed_at) ? 'completed' : 'paid';
 }
 
 /** The table's filter chips (spec 9.1), Completed last. */

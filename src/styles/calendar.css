@@ -75,6 +75,26 @@ button.cal-day { cursor: pointer; }
 button.cal-day:hover { border-color: var(--game); background: color-mix(in srgb, var(--game) 28%, var(--panel-2)); }
 .cal-day.today { outline: 2px solid var(--game-text); outline-offset: -1px; }
 .cal-date { font-size: 13px; font-weight: 700; }
+/* The date, and "Exported" when the day's buys in this game are (owner, 2026-09-30). */
+.cal-date-row { display: flex; align-items: center; justify-content: space-between; gap: 4px; align-self: stretch; }
+.cal-exported {
+  padding: 0 6px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--muted);
+}
+.cal-exported.partial { color: var(--warn); }
+.cal-day.has.exported {
+  border-color: color-mix(in srgb, var(--muted) 45%, var(--border));
+  background: color-mix(in srgb, var(--game) 5%, var(--panel-2));
+}
+.cal-day.has.exported .cal-count { color: var(--muted); }
+button.cal-day.exported:hover { background: color-mix(in srgb, var(--game) 14%, var(--panel-2)); }
 .cal-count { font-size: 12px; font-weight: 600; color: var(--game-text); }
 .cal-dots { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; }
 .cal-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--c); }
@@ -96,6 +116,32 @@ button.cal-day:hover { border-color: var(--game); background: color-mix(in srgb,
   background: linear-gradient(to bottom, color-mix(in srgb, var(--game) 14%, transparent), transparent 260px);
 }
 .day-top { display: flex; align-items: stretch; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+/* ⋯ (after an export) beside EXPORT, on the right; both as tall as < BACK. */
+.day-actions { display: flex; align-items: stretch; gap: 10px; }
+.day-actions .more-menu { display: flex; }
+.day-actions .more-btn { padding: 0 14px; font-size: 22px; }
+
+/* ---- Exported (owner, 2026-09-30): the day greyed, its game's colour only
+   a hint, "Exported" beside the title, and a note on who exported it when. */
+.day-page.mtg.exported { --game: color-mix(in srgb, var(--pal-indigo) 30%, #7d8299); }
+.day-page.pokemon.exported { --game: color-mix(in srgb, var(--pal-amber) 30%, #7d8299); }
+.day-exported-chip {
+  padding: 5px 16px;
+  border: 2px solid var(--muted);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.day-export-note { margin: -6px 0 16px; font-size: 13px; color: var(--muted); }
+.day-export-note .user-tag { color: var(--text); }
+.day-export-note.partial { color: var(--warn); }
+/* A Completed buy: locked, so its × is gone and the panel is quieter. */
+.buy-panel.completed .line-x { visibility: hidden; }
+.buy-panel-head .status-chip { margin-left: auto; font-size: 11px; padding: 1px 9px; }
+.buy-panel-head .status-chip + .more-menu { margin-left: 0; }
 /* < BACK, big and bold, like a collection's (owner, 2026-09-29). */
 .page-back {
   padding: 10px 22px;

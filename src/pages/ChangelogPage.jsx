@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
 import {
-  CATEGORIES, DEFAULT_CATEGORIES, GONE, HEADLINES, MADE, MILESTONES, actionsFor, categoryOf, dayHeading, entryDay,
+  CATEGORIES, DAY_ACTIONS, DEFAULT_CATEGORIES, GONE, HEADLINES, MADE, MILESTONES, actionsFor, categoryOf, dayHeading, entryDay,
   entryWhen, foldEvents, panelView,
 } from '../lib/changelog.js';
 import { storeDay } from '../lib/calendar.js';
@@ -17,7 +17,7 @@ const PAGE = 20;      // panels per page (CM's CHANGE_PAGE)
 const CHUNK = 200;    // entries fetched at a time
 // What a panel needs (not the search columns, which only the filter uses).
 const COLUMNS = 'seq, at, staff_user_id, staff_user_name, staff_user_color, kind, action, target_id, '
-  + 'target_name, games, added, removed, totals, lines, fields, summary';
+  + 'target_name, games, day, added, removed, totals, lines, fields, summary';
 const GAMES = [
   { value: 'all', label: 'All' },
   { value: 'mtg', label: 'Magic' },
@@ -315,6 +315,8 @@ function DayBlock({ items, targets, game, onFunnel }) {
 
 /** Where an entry's name leads: its buy's day page or its collection; null once deleted. */
 function linkFor(first, view, targets, game) {
+  // A day exported or put back: that game's day page (owner, 2026-09-30).
+  if (DAY_ACTIONS.has(first.action)) return first.day ? `/calendar/${first.games?.[0] ?? 'mtg'}/${first.day}` : null;
   const row = targets.get(first.target_id);
   if (!row) return null;
   if (first.kind === 'buy' && row.kind === 'walk_in' && row.status === 'confirmed') {
@@ -348,17 +350,20 @@ function MoneyText({ text }) {
 
 const STATUS_VALUES = { Processing: 'processing', Priced: 'priced', 'Paid/Ours': 'paid', Completed: 'completed' };
 
-/** A status as the chip it is on the Collections tab: Paid/Ours green or blue by how it was paid. */
-function StatusChip({ label, method }) {
+/**
+ * A status as the chip it is elsewhere: a collection's Paid/Ours green or blue
+ * by how it was paid; a walk-in buy's (a day exported or put back) neutral.
+ */
+function StatusChip({ label, method, kind }) {
   const status = STATUS_VALUES[label];
   if (!status) return <>{label}</>;
-  return <span className={`status-chip ${statusTone({ status, paid_method: method })}`}>{label}</span>;
+  return <span className={`status-chip ${statusTone({ status, paid_method: method, kind })}`}>{label}</span>;
 }
 
 /** A field row's value: statuses as chips, rates and money in the Cash / Credit colours. */
-function FieldValue({ field, value, method }) {
+function FieldValue({ field, value, method, kind }) {
   if (value == null) return null;
-  if (field === 'status') return <StatusChip label={String(value)} method={method} />;
+  if (field === 'status') return <StatusChip label={String(value)} method={method} kind={kind} />;
   if (field === 'cash %') return <span className="is-cash">{String(value)}</span>;
   if (field === 'credit %') return <span className="is-credit">{String(value)}</span>;
   return <MoneyText text={String(value)} />;
@@ -379,6 +384,8 @@ function Entry({ panel, view, side, targets, game, onFunnel }) {
   const user = first.staff_user_name ? { name: first.staff_user_name, color: first.staff_user_color } : null;
   // Magic indigo, Pokémon amber, both for a mixed buy; no cards: the category's colour.
   const tint = view.games.length > 1 ? 'g-mixed' : view.games.length ? `g-${view.games[0]}` : 'g-none';
+  // A day's buys are walk-ins: their Paid/Ours chip is neutral (owner, 2026-09-30).
+  const fieldKind = DAY_ACTIONS.has(first.action) ? 'walk_in' : 'collection';
   // How a Paid/Ours in this entry was paid, for its status chip's colour.
   const method = /\b(cash|credit)\b/.exec(view.fields.find((f) => f.field === 'paid')?.after ?? first.summary ?? '')?.[1];
   return (
@@ -408,7 +415,9 @@ function Entry({ panel, view, side, targets, game, onFunnel }) {
         </header>
         <div className="tl-body">
           <div className="tl-title">
-            <span className={`ch-kind ${first.kind}`}>{first.kind === 'buy' ? 'Buy' : 'Collection'}</span>
+            <span className={`ch-kind ${first.kind}`}>
+              {DAY_ACTIONS.has(first.action) ? 'Day' : first.kind === 'buy' ? 'Buy' : 'Collection'}
+            </span>
             <strong>
               {to ? <Link to={to}>{first.target_name}</Link>
                 : <span title={known ? 'Deleted' : undefined}>{first.target_name}</span>}
@@ -446,12 +455,12 @@ function Entry({ panel, view, side, targets, game, onFunnel }) {
                     <span className="ch-field">{f.field}</span>
                     {f.before != null && f.after != null ? (
                       <>
-                        <FieldValue field={f.field} value={f.before} method={method} />
+                        <FieldValue field={f.field} value={f.before} method={method} kind={fieldKind} />
                         <span className="ch-arrow">→</span>
-                        <FieldValue field={f.field} value={f.after} method={method} />
+                        <FieldValue field={f.field} value={f.after} method={method} kind={fieldKind} />
                       </>
                     ) : (
-                      <FieldValue field={f.field} value={f.after ?? f.before} method={method} />
+                      <FieldValue field={f.field} value={f.after ?? f.before} method={method} kind={fieldKind} />
                     )}
                   </span>
                 </div>

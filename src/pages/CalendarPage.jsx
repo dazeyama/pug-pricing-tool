@@ -18,6 +18,8 @@ const MAX_DOTS = 8;
  * one month picker for both (kept in the URL, ?month=2026-08), weeks from
  * Sunday. Each day shows its confirmed walk-in buys: a count and a dot per
  * buy in the confirming user's colour. A buy with both games counts on both.
+ * A day whose buys in that game are all exported (Completed) is greyed and
+ * marked "Exported"; some of them, "Part exported" (owner, 2026-09-30).
  */
 export default function CalendarPage() {
   const [params, setParams] = useSearchParams();
@@ -83,9 +85,18 @@ function CalendarMonth({ month }) {
               if (!day) return <span key={`blank-${i}`} className="cal-day blank" />;
               const buys = days[game].get(day) ?? [];
               const n = buys.length;
+              // Exported: every buy's cards in this game Completed (owner, 2026-09-30).
+              const exported = buys.filter((b) => (b.completed_games ?? []).includes(game)).length;
+              const allExported = n > 0 && exported === n;
               const inner = (
                 <>
-                  <span className="cal-date">{Number(day.slice(8))}</span>
+                  <span className="cal-date-row">
+                    <span className="cal-date">{Number(day.slice(8))}</span>
+                    {allExported && <span className="cal-exported">Exported</span>}
+                    {exported > 0 && !allExported && (
+                      <span className="cal-exported partial" title={`${n - exported} of ${n} not exported yet`}>Part exported</span>
+                    )}
+                  </span>
                   {n > 0 && <span className="cal-count">{n} buy{n === 1 ? '' : 's'}</span>}
                   {n > 0 && (
                     <span className="cal-dots" aria-hidden="true">
@@ -101,14 +112,14 @@ function CalendarMonth({ month }) {
                   )}
                 </>
               );
-              const cls = `cal-day${day === today ? ' today' : ''}${n ? ' has' : ''}`;
+              const cls = `cal-day${day === today ? ' today' : ''}${n ? ' has' : ''}${allExported ? ' exported' : ''}`;
               // Only days with buys open a day page.
               return n ? (
                 <button
                   key={day}
                   type="button"
                   className={cls}
-                  title={`${n} ${name} buy${n === 1 ? '' : 's'}`}
+                  title={`${n} ${name} buy${n === 1 ? '' : 's'}${allExported ? ', exported' : exported ? `, ${exported} exported` : ''}`}
                   onClick={() => navigate(`/calendar/${game}/${day}`)}
                 >
                   {inner}

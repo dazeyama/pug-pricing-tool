@@ -3,10 +3,11 @@ import Modal from './Modal.jsx';
 
 /**
  * The blue EXPORT button (spec 14): a placeholder until the export has its
- * own design. Clicking it says so. On a collection's screen now; on the day
- * pages in Phase 8.
+ * own design. Clicking it says so. On a collection's screen and the day pages.
+ * `intercept` runs first (a day page's "mark Completed?" warning, owner
+ * 2026-09-30): the placeholder opens only if it returns true.
  */
-export default function ExportButton({ className = '', onDone }) {
+export default function ExportButton({ className = '', onDone, intercept }) {
   const [open, setOpen] = useState(false);
   const close = () => {
     setOpen(false);
@@ -14,7 +15,7 @@ export default function ExportButton({ className = '', onDone }) {
   };
   return (
     <>
-      <button type="button" className={`btn export-btn ${className}`} onClick={() => setOpen(true)}>
+      <button type="button" className={`btn export-btn ${className}`} onClick={() => (!intercept || intercept()) && setOpen(true)}>
         EXPORT
       </button>
       {open && (

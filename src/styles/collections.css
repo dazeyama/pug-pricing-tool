@@ -98,6 +98,7 @@
 .tone-paid-cash { --tone: var(--cash); }
 .tone-paid-credit { --tone: var(--credit); }
 .tone-completed { --tone: var(--muted); }
+.tone-paid-walkin { --tone: #d3d8ea; }
 .status-chip, .status-select { color: var(--tone, var(--text)); }
 .filter-pill.active { color: var(--tone, var(--text)); border-color: var(--tone, var(--accent)); }
 .filter-pill.active.tone-all { background: rgba(108, 140, 255, .14); }

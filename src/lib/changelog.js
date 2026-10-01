@@ -12,7 +12,12 @@ import { roundDownPrice } from './money.js';
  * default); only detail edits are Actions.
  */
 export const CATEGORIES = [
-  { key: 'buys', label: 'Buys', actions: ['buy_confirmed', 'buy_cards_removed', 'buy_deleted'] },
+  {
+    key: 'buys',
+    label: 'Buys',
+    // A day exported (its buys Completed), or put back to Paid/Ours (owner, 2026-09-30).
+    actions: ['buy_confirmed', 'buy_cards_removed', 'buy_deleted', 'day_exported', 'day_unexported'],
+  },
   {
     key: 'collections',
     label: 'Collections',
@@ -37,6 +42,8 @@ export const HEADLINES = {
   buy_confirmed: 'Buy confirmed',
   buy_cards_removed: 'Cards removed from buy',
   buy_deleted: 'Buy deleted',
+  day_exported: 'Day exported',
+  day_unexported: 'Export undone',
   collection_created: 'Collection created',
   collection_cards_added: 'Cards added to collection',
   collection_line_edited: 'Card edited in collection',
@@ -46,6 +53,8 @@ export const HEADLINES = {
   collection_deleted: 'Collection deleted',
   backup_restored: 'Backup restored',
 };
+/** Entries about a whole day (EXPORT on a day page), not one buy. */
+export const DAY_ACTIONS = new Set(['day_exported', 'day_unexported']);
 /** Landmarks: something made (big dot, green headline) or gone (red cross). */
 export const MADE = new Set(['buy_confirmed', 'collection_created']);
 export const GONE = new Set(['buy_deleted', 'collection_deleted']);
