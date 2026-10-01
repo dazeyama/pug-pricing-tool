@@ -1,8 +1,8 @@
 /* Settings tab (spec 11): one panel per section, two columns across the
    page, related panels side by side (owner, 2026-09-29). Every panel is the
    same fixed height (owner, 2026-09-30): the Master Crystal Inventory's with
-   a current file and no previous copies. Anything more (previous copies, the
-   column list opened, an error) scrolls inside the panel. */
+   a current file. Anything more (the column list opened, an error) scrolls
+   inside the panel. */
 
 .settings-grid {
   --settings-panel-h: 332px;
@@ -61,11 +61,6 @@
   background: var(--panel-2);
 }
 
-.inv-previous { width: 100%; border-collapse: collapse; font-size: 13px; }
-.inv-previous td { padding: 5px 8px; border-bottom: 1px solid var(--border); }
-.inv-previous tr:last-child td { border-bottom: none; }
-.inv-previous .inv-name { overflow-wrap: anywhere; }
-.inv-previous .inv-action { text-align: right; width: 1%; white-space: nowrap; }
 
 /* API keys (spec 11.2) */
 .key-row { padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel-2); }

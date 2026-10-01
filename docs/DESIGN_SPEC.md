@@ -1255,7 +1255,7 @@ Saturday, August 17, 2026 · Magic
 
 ## 11. Settings tab
 
-Sections, each in a CM panel, laid out in **two columns across the page, with related panels side by side** (owner's decision, 2026-09-29). **Every panel is the same fixed height** (owner's decision, 2026-09-30): 332px, the Master Crystal Inventory's with a current file and no previous copies (the owner's pick from a screenshot, replacing a first 540px); anything more, like previous copies or its opened column list, scrolls inside the panel:
+Sections, each in a CM panel, laid out in **two columns across the page, with related panels side by side** (owner's decision, 2026-09-29). **Every panel is the same fixed height** (owner's decision, 2026-09-30): 332px, the Master Crystal Inventory's with a current file (the owner's pick from a screenshot, replacing a first 540px); anything more, like its opened column list, scrolls inside the panel:
 
 | Left | Right |
 |---|---|
@@ -1283,11 +1283,11 @@ The most prominent panel, with a **red border and a "Required" badge** until a f
   **As built for the real file's size (owner's decision, 2026-09-30; migration 0023):**
   - The check **reads the file in 2 MB chunks** (PapaParse's chunk mode), counting rows and keeping only the header, so a 40 MB+ file never sits in memory whole; the panel shows **"Checking the file… 45%"**, then **Compressing…**, **Uploading…**, **Saving…**.
   - The file is **stored gzipped** (the browser's CompressionStream) as `<stamp>__<name>.csv.gz`: a CSV packs down to a fraction of its size, well under the Free plan's **50 MB per-file limit** (the bucket's limit, raised from 20 MB). If it's still over 50 MB compressed, it's refused. `size_bytes` records the CSV's own size.
-  - **Only the current file and the one before it are kept** (was five): `master_inventory_add` keeps two, and the app deletes the older files.
-  - **Download** gives back the CSV under its original name: a gzipped copy is unpacked in the browser first; older plain uploads download as they were.
+  - **Only the current file is kept** (owner's decision, 2026-09-30; was five, then briefly two): an upload **replaces** it. `master_inventory_add` (migration 0024) removes every other row once the new one is in, and the app deletes their files. There's no Previous copies list.
+  - **Download** (the current file) gives back the CSV under its original name: a gzipped copy is unpacked in the browser first; an older plain upload downloads as it was.
 - **Shows:**
   - the current file: name, uploaded date/time, uploader (color dot), row count, and the detected columns (collapsed list);
-  - **Previous copies** (up to 4): name, date and uploader, each with a **Download** link. As built (2026-09-30): **the previous copy**, just one.
+  - **Previous copies** (up to 4): name, date and uploader, each with a **Download** link. As built (2026-09-30): **none: only the current file is kept.**
 - When a current file exists, the panel border turns green and the global banner (Section 7.5) disappears.
 - **Parsing the CSV for export is out of scope.** This phase stores and validates it. The export design doc will define how columns are used, once the owner supplies a sample file.
 
@@ -1569,7 +1569,7 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 - [x] The red "Master Crystal Inventory required" banner shows on every tab until a CSV is uploaded.
 - [x] Upload your CC export: file name, date, you as uploader, row count and columns appear, and the banner disappears.
 - [x] Upload a `.txt` renamed badly, or an empty CSV: a clear error, nothing changes.
-- [x] Upload six times: only the latest five remain, and previous copies download. *(Since 2026-09-30: only the current file and one previous copy remain.)*
+- [x] Upload six times: only the latest five remain, and previous copies download. *(Since 2026-09-30: only the current file is kept; an upload replaces it.)*
 - [x] Cash/Credit % save and survive a refresh.
 - [x] Turn off Wi-Fi: the offline banner appears.
 
@@ -2089,7 +2089,8 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 168 | Search Paid/Ours only, with Show all (2026-09-30) | The header search shows Paid/Ours buys and collections only; a Show all toggle in the results adds Processing, Priced and Completed ones (Section 13) |
 | 169 | v0.9.1-final pushed (2026-09-30) | Phase 10 and the owner's additions go live as 0.9.1-final (tagged `v0.9.1-final`), still built against the **dev** project; prod launch still waits (Section 15, Phase 10) |
 | 170 | Old confirm_buy dropped (2026-09-30) | With v0.9.1-final live, the 9-argument `confirm_buy` kept for the older build is dropped (migration 0022): every buy is confirmed with a name, phone and price paid (Section 6.2) |
-| 171 | Master Crystal Inventory at real size (2026-09-30) | The real Crystal Commerce export is 40 MB+: it's checked in chunks with progress, stored gzipped (Free plan: 50 MB per file, 1 GB in all), only the current file and one previous copy are kept, and downloads are unpacked back to CSV (Section 11.1) |
+| 171 | Master Crystal Inventory at real size (2026-09-30) | The real Crystal Commerce export is 40 MB+: it's checked in chunks with progress, stored gzipped (Free plan: 50 MB per file, 1 GB in all), and downloads are unpacked back to CSV (Section 11.1) |
+| 172 | Only the current inventory file (2026-09-30) | The Master Crystal Inventory keeps no previous copies: an upload replaces the current file (migration 0024) (Section 11.1) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

@@ -12,7 +12,7 @@ import { formatDateTime } from '../../lib/time.js';
 // Settings → Master Crystal Inventory (spec 11.1). Red with a "Required"
 // badge until a file is uploaded, green once there's a current one.
 export default function MasterInventoryPanel() {
-  const { loaded, current, previous, reload } = useInventory();
+  const { loaded, current, reload } = useInventory();
   const staff = useStaff();
   const { offline } = useConnection();
   const toast = useToast();
@@ -61,8 +61,8 @@ export default function MasterInventoryPanel() {
       <div className="cardpanel-body">
         <p className="hint">
           The full inventory CSV exported from Crystal Commerce. Exports will use it to match
-          set names. Every computer shares the same file, stored compressed; it and the one before it
-          are kept.
+          set names. Every computer shares the same file, stored compressed; uploading a new one
+          replaces it.
         </p>
 
         <GuardButton
@@ -115,27 +115,6 @@ export default function MasterInventoryPanel() {
         )}
         {loaded && !current && <p className="muted-text">No file uploaded yet.</p>}
 
-        {previous.length > 0 && (
-          <>
-            <h4 className="settings-sub">Previous copy</h4>
-            <table className="inv-previous">
-              <tbody>
-                {previous.map((f) => (
-                  <tr key={f.id}>
-                    <td className="inv-name">{f.original_filename}</td>
-                    <td>{formatDateTime(f.uploaded_at)}</td>
-                    <td><UserTag user={staff.byId(f.uploaded_by)} /></td>
-                    <td className="inv-action">
-                      <button type="button" className="btn small ghost" onClick={() => download(f)}>
-                        Download
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </>
-        )}
       </div>
     </section>
   );

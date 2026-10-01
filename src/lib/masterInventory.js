@@ -3,8 +3,9 @@ import { supabase } from './supabase.js';
 import { fileStamp } from './time.js';
 import { gunzip, gzip, isGzipPath } from './gzip.js';
 
-// Master Crystal Inventory (spec 11.1): check a Crystal Commerce CSV, store it
-// in the private `master-inventory` bucket, and keep it and the one before.
+// Master Crystal Inventory (spec 11.1): check a Crystal Commerce CSV and store
+// it in the private `master-inventory` bucket, replacing the one before: only
+// the current file is kept (owner, 2026-09-30).
 // Reading its columns for export is out of scope until the export spec exists.
 //
 // The real export is 40 MB and more (owner, 2026-09-30), so the check reads it
@@ -97,7 +98,7 @@ function safeKeyName(name) {
 
 /**
  * Compress and upload a checked file, and make it the current Master Crystal
- * Inventory; the copy before it stays, any older one goes.
+ * Inventory; the file before it goes (once this one is safely stored).
  * @param {File} file
  * @param {CsvSummary} summary
  * @param {string} userId  the picked staff user
@@ -133,7 +134,7 @@ export async function uploadCsv(file, summary, userId, onStep) {
     throw new Error(`Saving the upload failed: ${error.message}`);
   }
 
-  // Older than the copy before this one: the rows are gone; remove their files.
+  // The file this one replaces: its row is gone; remove the file too.
   if (pruned?.length) {
     const { error: rmError } = await supabase.storage.from(BUCKET).remove(pruned);
     if (rmError) console.error('Removing old inventory files failed', rmError);
