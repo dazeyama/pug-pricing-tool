@@ -9,7 +9,7 @@ import { lineTextWithCondition } from '../../lib/lineFormat.js';
 import { formatMoney } from '../../lib/money.js';
 import { CONDITION_WORDS, customSkuFor, massCreateRows } from '../../lib/massCreate.js';
 import {
-  downloadMassCreate, linkKey, matchLines, saveExport, saveLink, saveSetMap, searchProducts, sellPrices,
+  downloadMassCreate, forgetLink, linkKey, matchLines, saveExport, saveLink, saveSetMap, searchProducts, sellPrices,
 } from '../../lib/ccExport.js';
 
 // The export dialog (docs/EXPORT_FUNCTION.md 8.3): Matching, then Review in
@@ -49,7 +49,7 @@ export default function ExportDialog({
   const [picks, setPicks] = useState(new Map());      // line id → { product } | { none: true }
   const [reopened, setReopened] = useState(new Set()); // matched or can't-upload lines sent back to choose
   const [always, setAlways] = useState(new Map());    // line id → remember its set's category (unknown categories)
-  const [was, setWas] = useState(new Map());          // line id → its product before Change
+  const [editing, setEditing] = useState(new Set());  // matched lines opened with Change
   const [manual, setManual] = useState(new Map());    // line id → a Sell Price typed by staff (export mode)
   const [badManual, setBadManual] = useState(new Set()); // lines whose typed Sell Price isn't valid
   const [pulled, setPulled] = useState(false);
@@ -75,7 +75,7 @@ export default function ExportDialog({
       setSells(s);
       setPicks(new Map());
       setReopened(new Set());
-      setWas(new Map());
+      setEditing(new Set());
       setManual(new Map());
       setBadManual(new Set());
       setPhase('review');
@@ -110,16 +110,37 @@ export default function ExportDialog({
   for (const r of results) groups[stateOf(r).group].push(r);
   const cardsIn = (rs) => rs.reduce((n, r) => n + r.line.quantity, 0);
 
-  /** Staff pick a product: for every line of the same printing and finish. */
+  /**
+   * Staff pick a product: for every line of the same printing and finish.
+   * Picking the product the app found itself is no choice at all: the lines
+   * go back to their automatic match, and nothing is remembered as staff's
+   * (owner, 2026-10-01: Change is mostly for typing Sell prices).
+   */
   async function pick(r, product) {
     const key = linkKey(r.line);
     const same = results.filter((x) => linkKey(x.line) === key);
+    const detected = r.status === 'auto' && r.product?.product_id === product.product_id;
+    const hadPick = Boolean(picks.get(r.line.id)?.product);
     setPicks((m) => {
       const next = new Map(m);
-      for (const x of same) next.set(x.line.id, { product });
+      for (const x of same) {
+        if (detected && x.status === 'auto' && x.product?.product_id === product.product_id) next.delete(x.line.id);
+        else next.set(x.line.id, { product });
+      }
       return next;
     });
     if (mode !== 'check') return;
+    if (detected) {
+      // The dry run saved the other pick: put the remembered product back as it was.
+      if (!hadPick) return;
+      try {
+        if (r.via === 'link') await saveLink(r.line, product, r.link?.linked_by ?? staff.current?.id, r.link?.source ?? 'staff');
+        else await forgetLink(r.line);
+      } catch (e) {
+        toast(e.message, 'err');
+      }
+      return;
+    }
     try {
       await saveLink(r.line, product, staff.current?.id);
       if (!r.category && (always.get(r.line.id) ?? true)) {
@@ -132,11 +153,25 @@ export default function ExportDialog({
 
   function chooseNone(r) {
     setPicks((m) => new Map(m).set(r.line.id, { none: true }));
+    setEditing((s) => {
+      const next = new Set(s);
+      next.delete(r.line.id);
+      return next;
+    });
   }
 
+  /** Change on a matched card: its editor opens in place, its product still selected. */
+  function edit(r, open) {
+    setEditing((s) => {
+      const next = new Set(s);
+      if (open) next.add(r.line.id);
+      else next.delete(r.line.id);
+      return next;
+    });
+  }
+
+  /** "Find a product…" on a can't-upload card: back to Needs a choice. */
   function reopen(r) {
-    const s = stateOf(r);
-    if (s.product) setWas((m) => new Map(m).set(r.line.id, s.product));
     setPicks((m) => {
       const next = new Map(m);
       next.delete(r.line.id);
@@ -216,6 +251,33 @@ export default function ExportDialog({
     );
   };
 
+  /** What every ChooseRow gets: its line, prices, and the pick / price handlers. */
+  const rowProps = (r) => ({
+    r,
+    label: lineLabel(r),
+    price: sellNote(r),
+    sell: exporting ? sells.get(r.line.id) ?? null : null,
+    manual: manual.get(r.line.id) ?? null,
+    onManual: (value, ok) => {
+      setManual((m) => {
+        const next = new Map(m);
+        if (ok && value != null) next.set(r.line.id, value);
+        else next.delete(r.line.id);
+        return next;
+      });
+      setBadManual((s) => {
+        const next = new Set(s);
+        if (ok) next.delete(r.line.id);
+        else next.add(r.line.id);
+        return next;
+      });
+    },
+    always: always.get(r.line.id) ?? true,
+    onAlways: (v) => setAlways((m) => new Map(m).set(r.line.id, v)),
+    onPick: (product) => pick(r, product),
+    onNone: () => chooseNone(r),
+  });
+
   const lineLabel = (r) => (
     <span
       className="xd-line"
@@ -238,8 +300,9 @@ export default function ExportDialog({
       </button>
     );
   } else if (phase === 'review') {
-    // A bad typed price only matters while its box is showing (Needs a choice).
-    const badTyped = groups.choose.some((r) => badManual.has(r.line.id));
+    // A bad typed price only matters while its box is showing (Needs a choice, or Change).
+    const badTyped = [...groups.choose, ...groups.matched.filter((r) => editing.has(r.line.id))]
+      .some((r) => badManual.has(r.line.id));
     const waiting = groups.choose.length > 0 || badTyped;
     footer = (
       <>
@@ -248,7 +311,7 @@ export default function ExportDialog({
           type="button"
           className="btn primary"
           disabled={waiting}
-          title={badTyped ? 'Fix the Sell price typed in Needs a choice first (at least $0.40, or leave it empty)'
+          title={badTyped ? 'Fix the Sell price you typed first (at least $0.40, or leave it empty)'
             : waiting ? 'Pick a product (or None of these) for every card in Needs a choice first' : undefined}
           onClick={() => {
             setPulled(false);
@@ -299,28 +362,7 @@ export default function ExportDialog({
                     key={r.line.id}
                     r={r}
                     label={lineLabel(r)}
-                    price={sellNote(r)}
-                    current={was.get(r.line.id) ?? null}
-                    sell={exporting ? sells.get(r.line.id) ?? null : null}
-                    manual={manual.get(r.line.id) ?? null}
-                    onManual={(value, ok) => {
-                      setManual((m) => {
-                        const next = new Map(m);
-                        if (ok && value != null) next.set(r.line.id, value);
-                        else next.delete(r.line.id);
-                        return next;
-                      });
-                      setBadManual((s) => {
-                        const next = new Set(s);
-                        if (ok) next.delete(r.line.id);
-                        else next.add(r.line.id);
-                        return next;
-                      });
-                    }}
-                    always={always.get(r.line.id) ?? true}
-                    onAlways={(v) => setAlways((m) => new Map(m).set(r.line.id, v))}
-                    onPick={(product) => pick(r, product)}
-                    onNone={() => chooseNone(r)}
+                    {...rowProps(r)}
                   />
                 ))}
               </section>
@@ -332,6 +374,17 @@ export default function ExportDialog({
                 </summary>
                 {groups.matched.map((r) => {
                   const s = stateOf(r);
+                  if (editing.has(r.line.id)) {
+                    return (
+                      <ChooseRow
+                        key={r.line.id}
+                        {...rowProps(r)}
+                        current={s.product}
+                        detected={r.status === 'auto' ? r.product : null}
+                        onDone={() => edit(r, false)}
+                      />
+                    );
+                  }
                   return (
                     <div key={r.line.id} className="xd-row">
                       {lineLabel(r)}
@@ -343,7 +396,14 @@ export default function ExportDialog({
                         {s.by === 'staff' && <span className="xd-tag">picked</span>}
                       </span>
                       {sellNote(r)}
-                      <button type="button" className="btn small ghost xd-change" onClick={() => reopen(r)}>Change</button>
+                      <button
+                        type="button"
+                        className="btn small ghost xd-change"
+                        title={exporting ? 'Set its Sell price by hand, or pick another product' : 'Pick another product'}
+                        onClick={() => edit(r, true)}
+                      >
+                        Change
+                      </button>
                     </div>
                   );
                 })}
@@ -417,13 +477,20 @@ export default function ExportDialog({
   );
 }
 
-/** One card in Needs a choice: its candidates, "None of these", and a search. */
-function ChooseRow({ r, label, price, current, sell, manual, onManual, always, onAlways, onPick, onNone }) {
+/**
+ * One card's choices: its candidates, "None of these", a search and (when
+ * exporting) a Sell price box. In Needs a choice nothing is selected yet; a
+ * matched card opened with Change has its product (`current`) selected and
+ * the app's own match (`detected`) marked, and a Done button.
+ */
+function ChooseRow({
+  r, label, price, current = null, detected = null, sell, manual, onManual, always, onAlways, onPick, onNone, onDone,
+}) {
   const [text, setText] = useState('');
   const [typed, setTyped] = useState(manual != null ? manual.toFixed(2) : '');
   const [typedError, setTypedError] = useState(null);
   const [found, setFound] = useState([]);
-  const [chosen, setChosen] = useState(null);
+  const [chosen, setChosen] = useState(current?.product_id ?? null);
   useEffect(() => {
     const q = text.trim();
     if (q.length < 2) {
@@ -461,8 +528,10 @@ function ChooseRow({ r, label, price, current, sell, manual, onManual, always, o
 
   const fits = r.ranked.filter((x) => x.score != null).map((x) => x.product);
   const others = r.ranked.filter((x) => x.score == null).map((x) => x.product);
-  // The product it had before Change, so keeping it (with a new price) is one click.
+  // Its product now and the app's own match, listed first if they aren't candidates.
   const listed = (p) => r.ranked.some((x) => x.product.product_id === p.product_id);
+  const extra = [current, detected].filter((p, i, all) => p && !listed(p)
+    && all.findIndex((q) => q?.product_id === p.product_id) === i);
   const option = (p, note) => (
     <label key={`${p.product_id}`} className={`xd-option${note ? ' off' : ''}`}>
       <input
@@ -478,21 +547,36 @@ function ChooseRow({ r, label, price, current, sell, manual, onManual, always, o
         {p.product_name}
         <span className="xd-cat">{p.category}</span>
         {note && <span className="xd-note">{note}</span>}
-        {current?.product_id === p.product_id && <span className="xd-tag">current</span>}
+        {detected?.product_id === p.product_id && (
+          <span className="xd-tag" title="The product the app matched by itself">detected</span>
+        )}
       </span>
     </label>
   );
 
   return (
-    <div className="xd-choose">
-      <div className="xd-row">{label}{price}</div>
+    <div className={`xd-choose${onDone ? ' editing' : ''}`}>
+      <div className="xd-row">
+        {label}{price}
+        {onDone && (
+          <button
+            type="button"
+            className="btn small xd-change"
+            disabled={Boolean(typedError)}
+            title={typedError ? 'Fix the Sell price first' : 'Close this card'}
+            onClick={onDone}
+          >
+            Done
+          </button>
+        )}
+      </div>
       {r.wasLinked && (
         <p className="hint xd-was">
           Used to be {r.wasLinked.product_name} ({r.wasLinked.category}), which isn't in the current inventory.
         </p>
       )}
       <div className="xd-options">
-        {current && !listed(current) && option(current, null)}
+        {extra.map((p) => option(p, null))}
         {fits.map((p) => option(p, null))}
         {others.map((p) => option(p, 'a different finish or number'))}
         {found.filter((p) => !r.ranked.some((x) => x.product.product_id === p.product_id)).map((p) => option(p, 'found by search'))}

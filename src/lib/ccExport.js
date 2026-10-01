@@ -123,10 +123,11 @@ export async function matchLines(lines, onStep) {
     const linkedProduct = link ? productById.get(link.product_id) ?? null : null;
     const candidates = byKey.get(line.id) ?? [];
     const base = { line, set, promo, card, flavor, category: where?.category ?? null, how: where?.how ?? null, candidates };
-    if (linkedProduct) {
-      return { ...base, status: 'auto', product: linkedProduct, ranked: [], expected: null, via: 'link', link };
-    }
     const pick = chooseProduct(line, candidates, { flavor });
+    if (linkedProduct) {
+      // Its candidates still ranked, so Change can offer them.
+      return { ...base, status: 'auto', product: linkedProduct, ranked: pick.ranked, expected: pick.expected, via: 'link', link };
+    }
     // With no category, the candidates come from every category: staff decide (spec 7.3 step 5).
     const status = !where && pick.status === 'auto' ? 'choose' : pick.status;
     return {
@@ -155,6 +156,13 @@ export async function saveLink(line, product, userId, source = 'staff') {
     linked_by: userId ?? null,
   });
   fail(error, "Couldn't remember that product");
+}
+
+/** Forget a printing and finish's remembered product (the dry run, put back to what the app found). */
+export async function forgetLink(line) {
+  const { error } = await supabase.from('cc_product_links').delete()
+    .eq('scryfall_id', line.scryfall_id).eq('finish', line.finish);
+  fail(error, "Couldn't forget that product");
 }
 
 /** Remember a set's category (the review's "Always use … for …"). */
