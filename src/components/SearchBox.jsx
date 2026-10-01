@@ -59,8 +59,12 @@ export default function SearchBox({ wide }) {
   const [open, setOpen] = useState(false);
   const [found, setFound] = useState({ status: 'idle', sections: [], capped: false, error: null });
   const [active, setActive] = useState(0);
-  // Paid/Ours only, or every status (owner, 2026-09-30); kept while the app is open.
+  // Paid/Ours only, or every status (owner, 2026-09-30). Forgotten whenever the
+  // results close (a click away, Esc, opening a result): back to Paid/Ours only.
   const [showAll, setShowAll] = useState(false);
+  useEffect(() => {
+    if (!open) setShowAll(false);
+  }, [open]);
   const wrap = useRef(null);
   const input = useRef(null);
   const results = useRef(null);
