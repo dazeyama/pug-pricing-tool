@@ -100,12 +100,13 @@
 .search-note strong { color: var(--text); }
 
 /* ---- Below the search bar (owner's layout, 2026-09-29) -------------------
-     left    | info    | quote     (the selected price, Credit, Cash)
-     left    | thumbs  | side      (finish & details)
-     left    | thumbs  | actions   (Qty · CLEAR · ADD CARD)
-   "left" is the card over its condition prices, one column (owner,
-   2026-10-01), so the bottom row is only as tall as the action row and
-   Finish & Details keep their room on smaller screens.                     */
+     card    | info    | quote     (the selected price, Credit, Cash)
+     card    | thumbs  | side      (finish & details)
+     prices  | thumbs  | side
+     prices  | thumbs  | actions   (Qty · CLEAR · ADD CARD)
+   The condition prices span the last two rows and Finish & Details the
+   middle two (owner, 2026-10-01): the action row is only its own height,
+   so the prices never take room from Finish & Details on smaller screens. */
 .stage-body {
   /* The info box's row is a fixed height, drawn with or without a card, so
      the suggestions under it never move. */
@@ -114,16 +115,15 @@
   min-height: 0;
   display: grid;
   grid-template-columns: 336px minmax(0, 1fr) clamp(260px, 21vw, 380px);
-  grid-template-rows: var(--info-h) minmax(0, 1fr) auto;
+  --actions-h: 64px;
+  grid-template-rows: var(--info-h) minmax(0, 1fr) auto var(--actions-h);
   grid-template-areas:
-    "left info   quote"
-    "left thumbs side"
-    "left thumbs actions";
+    "card   info   quote"
+    "card   thumbs side"
+    "prices thumbs side"
+    "prices thumbs actions";
   gap: 16px 32px;
 }
-.area-left { grid-area: left; min-height: 0; display: flex; flex-direction: column; gap: 16px; }
-.area-left > .area-card { flex: 1; }
-.area-left > .area-prices { flex: none; }
 /* The card and thumbnail areas are size containers: their contents are sized
    from the space the grid gives them (cqw/cqh), never the other way round. */
 .area-card { grid-area: card; min-height: 0; display: flex; flex-direction: column; container-type: size; }
@@ -1172,7 +1172,7 @@
 .add-btn.editing, .add-btn.editing:hover { border-color: var(--accent-2); background: var(--accent-2); color: #fff; }
 .add-btn.is-disabled, .confirm-btn.is-disabled { filter: saturate(.4); }
 .confirm-btn.small-confirm { flex: none; min-height: 0; font-size: 14px; padding: 8px 16px; }
-.action-row { display: flex; align-items: stretch; gap: 10px; height: 64px; }
+.action-row { display: flex; align-items: stretch; gap: 10px; height: var(--actions-h, 64px); }
 .qty-box {
   flex: none;
   display: flex;
@@ -1212,15 +1212,13 @@
   .area-prices .stage-slot, .area-actions .stage-slot { height: 80px; }
   /* Smaller windows (owner, 2026-10-01): a shorter info row, a lower finish
      control and action row, tighter gaps, so Finish & Details fit. */
-  .stage-body { --info-h: 150px; gap: 12px 24px; }
-  .area-left { gap: 12px; }
+  .stage-body { --info-h: 150px; --actions-h: 52px; gap: 12px 24px; }
   .finish-panel { padding: 10px 12px 12px; }
   .details-label { margin-top: 10px; }
   .finish-segments { height: 48px; }
   .finish-segments button { font-size: 15px; }
   .foil-switch { height: 40px; }
   .foil-knob { width: 30px; height: 30px; }
-  .action-row { height: 52px; }
 }
 /* One row of 5 suggestions on a shorter window (Suggestions.jsx): each sized
    from the full height (36px for the line above, 22px for its label). */

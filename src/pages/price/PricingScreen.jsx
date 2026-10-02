@@ -576,9 +576,6 @@ export default function PricingScreen({
               beside it with the suggestions below; finish & details beside the
               suggestions with the action row under them. Grid areas in price.css. */}
           <div className="stage-body">
-            {/* The card over its condition prices, one column (owner, 2026-10-01): the
-                prices no longer make the QTY / ADD CARD row as tall as themselves. */}
-            <div className="area-left">
             <SelectedCard
               candidate={selected}
               typedName={search.parsed?.name}
@@ -587,30 +584,6 @@ export default function PricingScreen({
               finish={finish}
               pokemonVersion={version}
             />
-            <div className="area-prices">
-              <PriceTable
-                candidate={selected}
-                prices={prices}
-                ladder={ladder}
-                pct={fallbackPct}
-                market={market}
-                fallback={fallback}
-                warnings={warnings}
-                cardmarket={{ eur: cardmarketEur, usd: cardmarketUsd, rate: eurUsd }}
-                override={activeOverride}
-                autoCardmarket={autoCardmarket}
-                onOverride={setOverride}
-                fetchedAt={result?.card ? result.fetchedAt : null /* a "no match" has a date too */}
-                condition={condition}
-                onCondition={setCondition}
-                manual={manual}
-                onManual={setManual}
-                manualOpen={manualOpen}
-                setManualOpen={setManualOpen}
-                onDone={focusSearch}
-              />
-            </div>
-            </div>
             <Suggestions
               search={search}
               lang={lang}
@@ -656,6 +629,29 @@ export default function PricingScreen({
                   setPrinting({ key: selected.key, finish: null, version: id });
                   focusSearch();
                 }}
+              />
+            </div>
+            <div className="area-prices">
+              <PriceTable
+                candidate={selected}
+                prices={prices}
+                ladder={ladder}
+                pct={fallbackPct}
+                market={market}
+                fallback={fallback}
+                warnings={warnings}
+                cardmarket={{ eur: cardmarketEur, usd: cardmarketUsd, rate: eurUsd }}
+                override={activeOverride}
+                autoCardmarket={autoCardmarket}
+                onOverride={setOverride}
+                fetchedAt={result?.card ? result.fetchedAt : null /* a "no match" has a date too */}
+                condition={condition}
+                onCondition={setCondition}
+                manual={manual}
+                onManual={setManual}
+                manualOpen={manualOpen}
+                setManualOpen={setManualOpen}
+                onDone={focusSearch}
               />
             </div>
             <div className="area-actions">
