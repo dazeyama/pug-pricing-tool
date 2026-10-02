@@ -30,9 +30,14 @@ const MESSAGES = {
   buy_completed: 'That buy is Completed (exported): mark the day Paid/Ours again (⋯ next to EXPORT) to change it.',
   day_not_over: "Today can't be exported until it's over.",
   no_user: 'Pick a user first.',
+  bad_name: 'Type a name for the project (up to 80 characters).',
 };
 const CANT_UPLOAD_TIP = "Not matched to Crystal Commerce: pulled from the upload. It's in Can't upload cards.";
 const COMPLETED_LOCK = 'Completed (exported): mark the day Paid/Ours again (⋯ next to EXPORT) to change it';
+// A buy marked Completed from its own ⋯, not exported (owner, 2026-10-02).
+const MARKED_LOCK = 'Completed (marked by hand, not exported): its ⋯ → Mark Paid/Ours again to change it';
+/** Was this line Completed by hand (Mark as completed), not by an export? */
+const markedByHand = (l) => Boolean(l.completed_at) && l.cc_status == null;
 // The current day can't be exported (owner, 2026-09-30): buys confirmed later would miss it.
 const NOT_OVER = "Today can't be exported until it's over: buys confirmed later would miss the export";
 // Magic only for now (owner, 2026-09-30; export spec 1.3).
@@ -79,6 +84,7 @@ function DayScreen({ game, day }) {
   const [state, setState] = useState({ buys: [], loaded: false });
   const [removing, setRemoving] = useState(null);   // { buy, line }
   const [deleting, setDeleting] = useState(null);   // { buy, number, lastCard }
+  const [converting, setConverting] = useState(null); // { buy, number }: ⋯ → Convert to project
   const [exporting, setExporting] = useState(false);     // the export dialog (export spec 8.3)
   const [unexporting, setUnexporting] = useState(false); // ⋯ → Mark Paid/Ours again
   const [checking, setChecking] = useState(false);       // ⋯ → Check Crystal Commerce matches (export spec E2)
@@ -152,7 +158,9 @@ function DayScreen({ game, day }) {
   const exportBlocked = game === 'pokemon' ? NO_POKEMON : notOver ? NOT_OVER : null;
   // When and by whom: the latest export of this game's cards here.
   const doneLines = mine.flatMap((b) => b.buy_lines).filter((l) => l.game === game && l.completed_at);
-  const lastExport = doneLines.reduce((a, l) => (!a || l.completed_at > a.completed_at ? l : a), null);
+  // Cards marked Completed by hand (owner, 2026-10-02) weren't exported: not counted.
+  const lastExport = doneLines.filter((l) => !markedByHand(l))
+    .reduce((a, l) => (!a || l.completed_at > a.completed_at ? l : a), null);
   // What the export wrote (export spec 4.4, 10): its Custom SKU, and the counts.
   const skus = [...new Set(doneLines.map((l) => l.cc_custom_sku).filter(Boolean))];
   const exportedCards = doneLines.filter((l) => l.cc_status === 'exported').reduce((n, l) => n + l.quantity, 0);
@@ -232,6 +240,53 @@ function DayScreen({ game, day }) {
     await reload();
   }
 
+  /**
+   * A buy's ⋯ → Mark as completed (owner, 2026-10-02): this game's cards
+   * Completed without exporting them, so they leave the header search and the
+   * day's export; or, marked that way, Paid/Ours again.
+   */
+  async function markCompleted(buy, number, complete) {
+    setBusy(true);
+    const { error } = await withLoading(() => supabase.rpc('buy_mark_completed', {
+      p_buy_id: buy.id,
+      p_game: game,
+      p_user: user.id,
+      p_device: deviceId,
+      p_complete: complete,
+      p_expected_version: buy.version,
+    }));
+    setBusy(false);
+    if (error) toast(messageFor(error, complete ? "Couldn't mark the buy Completed" : "Couldn't mark the buy Paid/Ours"), 'err');
+    else toast(complete
+      ? `Buy ${number} marked Completed: left out of the search and of this day's export.`
+      : `Buy ${number} marked Paid/Ours again.`, 'ok');
+    await reload();
+  }
+
+  /** A buy's ⋯ → Convert to project (owner, 2026-10-02): its cards go to a new project, the buy is deleted. */
+  async function convert(name) {
+    const { buy, number } = converting;
+    setBusy(true);
+    const { data, error } = await withLoading(() => supabase.rpc('buy_to_project', {
+      p_buy_id: buy.id,
+      p_name: name,
+      p_user: user.id,
+      p_device: deviceId,
+      p_expected_version: buy.version,
+      p_line_texts: Object.fromEntries(buy.buy_lines.map((l) => [l.id, lineText(l)])),
+    }));
+    setBusy(false);
+    if (error) {
+      toast(messageFor(error, "Couldn't convert the buy"), 'err');
+      if (!error.message?.includes('bad_name')) setConverting(null);
+      await reload();
+      return;
+    }
+    setConverting(null);
+    toast(`Buy ${number} is now the project ${name.trim()}.`, 'ok');
+    navigate(`/collections/${data}`);
+  }
+
   /** ⋯ → Mark Paid/Ours again: undo the export (export spec 9.4), stamps and all. */
   async function unexport() {
     setBusy(true);
@@ -274,7 +329,7 @@ function DayScreen({ game, day }) {
     if (!stamped.length) {
       toast(cantCards
         ? "Nothing here could be uploaded: there's no file. Every card is Can't upload."
-        : 'These buys were marked Completed before the export file existed: mark the day Paid/Ours again (⋯), then EXPORT.', 'err');
+        : "These buys were marked Completed without being exported, so there's no file: mark them Paid/Ours again (⋯), then EXPORT.", 'err');
       return;
     }
     const rows = downloadMassCreate(stamped, fileName);
@@ -328,7 +383,7 @@ function DayScreen({ game, day }) {
       <h2 className="day-title">
         {dayTitle(day)}
         <span className={`group-chip day-chip ${game}`}>{GAME_NAMES[game]}</span>
-        {allDone && <span className="day-exported-chip">Exported</span>}
+        {allDone && <span className="day-exported-chip">{lastExport ? 'Exported' : 'Completed'}</span>}
         {/* The export's code, labelled very clearly (owner, 2026-10-01; export spec 4.4). */}
         {skus.length > 0 && (
           <span className="sku-chip" title="The Custom SKU written on every row of this day's Mass Create file">
@@ -370,6 +425,8 @@ function DayScreen({ game, day }) {
               flash={flashBuy === buy.id}
               onRemove={startRemove}
               onDelete={(b, n) => guard() && setDeleting({ buy: b, number: n, lastCard: false })}
+              onComplete={(b, n, complete) => guard() && markCompleted(b, n, complete)}
+              onConvert={(b, n) => guard() && setConverting({ buy: b, number: n })}
             />
           ))}
         </div>
@@ -438,6 +495,17 @@ function DayScreen({ game, day }) {
           </p>
         </Modal>
       )}
+      {converting && (
+        <ConvertBuyModal
+          buy={converting.buy}
+          number={converting.number}
+          day={day}
+          byId={staff.byId}
+          busy={busy}
+          onClose={() => setConverting(null)}
+          onConvert={convert}
+        />
+      )}
       {deleting && (
         <DeleteBuyModal
           buy={deleting.buy}
@@ -470,7 +538,9 @@ function totalsFor(lines, buy) {
 }
 
 /** One buy on a day page (spec 10.2). */
-function BuyPanel({ buy, number, game, other, day, byId, busy, offline, hits, flash, onRemove, onDelete }) {
+function BuyPanel({
+  buy, number, game, other, day, byId, busy, offline, hits, flash, onRemove, onDelete, onComplete, onConvert,
+}) {
   const [preview, setPreview] = useState(null);   // { src, top, left } while a line is hovered
   const hidePreview = useCallback(() => setPreview(null), []);
   const panel = useRef(null);
@@ -482,6 +552,11 @@ function BuyPanel({ buy, number, game, other, day, byId, busy, offline, hits, fl
   const status = walkInStatus(buy, game);
   const completed = status === 'completed';
   const anyCompleted = buy.buy_lines.some((l) => l.completed_at);
+  // Completed from this ⋯ rather than by an export (owner, 2026-10-02): it can go back on its own.
+  const byHand = completed && lines.every(markedByHand);
+  const lockedWhy = (l) => (markedByHand(l) ? MARKED_LOCK : COMPLETED_LOCK);
+  const locked = buy.buy_lines.find((l) => l.completed_at);
+  const offOrBusy = offline ? 'No connection' : busy ? 'Saving…' : null;
   return (
     <article
       className={`cardpanel buy-panel${completed ? ' completed' : ''}${flash ? ' flash-target' : ''}`}
@@ -497,13 +572,33 @@ function BuyPanel({ buy, number, game, other, day, byId, busy, offline, hits, fl
           {statusLabel(status)}
         </span>
         <MoreMenu
-          items={[{
-            label: 'Delete buy…',
-            danger: true,
-            blocked: offline ? 'No connection' : busy ? 'Saving…' : anyCompleted ? COMPLETED_LOCK : null,
-            title: 'Delete this buy and every card in it, both games',
-            onClick: () => onDelete(buy, number),
-          }]}
+          items={[
+            // Owner, 2026-10-02: one buy Completed without exporting it, and back.
+            completed ? {
+              label: 'Mark Paid/Ours again',
+              blocked: offOrBusy ?? (byHand ? null : COMPLETED_LOCK),
+              title: `Unlock this buy's ${GAME_NAMES[game]} cards: back in the header search and this day's export`,
+              onClick: () => onComplete(buy, number, false),
+            } : {
+              label: 'Mark as completed',
+              blocked: offOrBusy ?? (lines.length ? null : `No ${GAME_NAMES[game]} cards in this buy`),
+              title: `Mark this buy's ${GAME_NAMES[game]} cards Completed without exporting them: locked, left out of the header search and of this day's export`,
+              onClick: () => onComplete(buy, number, true),
+            },
+            {
+              label: 'Convert to project…',
+              blocked: offOrBusy ?? (anyCompleted ? lockedWhy(locked) : null),
+              title: 'Move every card in this buy, both games, into a new project, and delete the buy',
+              onClick: () => onConvert(buy, number),
+            },
+            {
+              label: 'Delete buy…',
+              danger: true,
+              blocked: offOrBusy ?? (anyCompleted ? lockedWhy(locked) : null),
+              title: 'Delete this buy and every card in it, both games',
+              onClick: () => onDelete(buy, number),
+            },
+          ]}
         />
       </header>
       <div className="cardpanel-body">
@@ -548,7 +643,7 @@ function BuyPanel({ buy, number, game, other, day, byId, busy, offline, hits, fl
                   <button
                     type="button"
                     className="line-x"
-                    title={l.completed_at ? COMPLETED_LOCK : 'Remove'}
+                    title={l.completed_at ? lockedWhy(l) : 'Remove'}
                     aria-label={`Remove ${lineText(l)}`}
                     disabled={busy || Boolean(l.completed_at)}
                     onClick={() => onRemove(buy, number, l)}
@@ -584,6 +679,56 @@ function BuyPanel({ buy, number, game, other, day, byId, busy, offline, hits, fl
       </div>
       <LinePreview preview={preview} onHide={hidePreview} />
     </article>
+  );
+}
+
+/**
+ * Convert to project (owner, 2026-10-02): a name (the customer's, else the
+ * buy's number and day), then every card moves to a new Paid/Ours project and
+ * the buy is deleted.
+ */
+function ConvertBuyModal({ buy, number, day, byId, busy, onClose, onConvert }) {
+  const [name, setName] = useState(() => (buy.customer_name || `Buy ${number} · ${dayDate(day)}`).slice(0, 80));
+  const count = buy.buy_lines.reduce((n, l) => n + l.quantity, 0);
+  const who = byId(buy.confirmed_by)?.name ?? 'someone';
+  const ready = name.trim().length > 0;
+  return (
+    <Modal
+      title="Convert to project?"
+      onClose={busy ? undefined : onClose}
+      footer={(
+        <>
+          <button type="button" className="btn ghost" disabled={busy} onClick={onClose}>Cancel</button>
+          <button
+            type="button"
+            className={`btn primary${busy ? ' busy' : ''}`}
+            disabled={busy || !ready}
+            onClick={() => onConvert(name)}
+          >
+            Convert to project
+          </button>
+        </>
+      )}
+    >
+      <p>
+        <strong>Buy {number}</strong> ({who}, {formatTime(buy.confirmed_at)}) becomes a new <strong>project</strong>:
+        all <strong>{count} card{count === 1 ? '' : 's'}</strong>, both games, move there as they are, with the buy's
+        notes and rates, and the buy is deleted from this day.
+      </p>
+      <label className="field">
+        <span>Project name</span>
+        <input
+          type="text"
+          value={name}
+          maxLength={80}
+          autoFocus
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && ready && !busy) onConvert(name);
+          }}
+        />
+      </label>
+    </Modal>
   );
 }
 
