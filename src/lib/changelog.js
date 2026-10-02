@@ -17,14 +17,14 @@ export const CATEGORIES = [
   {
     key: 'buys',
     label: 'Buys',
-    // A buy confirmed (cards in); cards removed, or the buy deleted (cards out).
-    actions: ['buy_confirmed', 'buy_cards_removed', 'buy_deleted'],
+    // A buy confirmed (cards in); cards removed, or the buy deleted (cards out);
+    // a buy converted to a project, its cards added there (owner, 2026-10-02).
+    actions: ['buy_confirmed', 'buy_cards_removed', 'buy_deleted', 'buy_converted'],
   },
   {
     key: 'collections',
     label: 'Collections',
-    // A buy converted to a project: the cards added to the project (owner, 2026-10-02).
-    actions: ['collection_created', 'buy_converted', 'collection_cards_added', 'collection_cards_removed',
+    actions: ['collection_created', 'collection_cards_added', 'collection_cards_removed',
       'collection_deleted',
       // Can't upload cards (export spec 9, 12): copied in, exported out, taken back.
       'cant_upload_added', 'cant_upload_exported', 'cant_upload_returned'],
