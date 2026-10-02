@@ -30,8 +30,14 @@
 .home-export { min-height: 0; }
 .home-days { flex: 1; min-height: 0; overflow: hidden; }
 /* Every row the same height, so the count that fits is exact. */
-.home-days .home-item, .home-days .home-more { flex: none; height: 32px; align-items: center; }
-.home-days .home-more { display: flex; }
+.home-days .home-item, .home-days .home-more, .home-days .home-row-line { flex: none; height: 32px; align-items: center; }
+.home-days .home-more, .home-days .home-row-line { display: flex; margin: 0; }
+/* Today: not exportable yet; Recently exported: done, dimmed, with their Custom SKU. */
+.home-item.is-today { border-left-style: dashed; }
+.home-item.is-done { opacity: .6; }
+.home-item.is-done:hover { opacity: 1; }
+.home-subhead { color: var(--muted); font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; align-items: flex-end !important; padding-bottom: 2px; }
+.home-sku { margin-left: auto; }
 .home-side { display: flex; flex-direction: column; gap: 12px; }
 .home-card {
   display: flex;
@@ -79,20 +85,30 @@
 .home-label { color: var(--muted); font-size: 12.5px; }
 .home-big { font-size: 34px; font-weight: 800; line-height: 1.05; }
 .home-big small { display: block; font-size: 13px; font-weight: 400; color: var(--muted); }
-/* Can't upload cards takes the column's height left over by the quick
-   actions, its lines centered (owner, 2026-10-01). */
+/* Can't upload cards: its heading like the other panels', then its count
+   and the cards waiting, centered in the space left (owner, 2026-10-01). */
 .home-side { min-height: 0; }
 .home-cant {
   flex: 1;
   min-height: 0;
+  border-left: 4px solid var(--kind);
+  border-radius: 0 10px 10px 0;
+  cursor: pointer;
+  overflow: hidden;
+}
+.home-h { font-size: 15px; font-weight: 700; }
+.home-cant-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 4px;
   text-align: center;
-  border-left: 4px solid var(--kind);
-  border-radius: 0 10px 10px 0;
-  cursor: pointer;
 }
+.home-cant-lines { display: flex; flex-direction: column; gap: 2px; max-width: 100%; margin-top: 6px; font-size: 12.5px; }
+.home-cant-line { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
 /* The right-hand column is split evenly between the two (owner, 2026-10-01):
    Can't upload cards centered in its half, the quick actions growing into
    large buttons that fill theirs. */

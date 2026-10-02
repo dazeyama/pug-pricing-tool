@@ -7,6 +7,7 @@ import { formatMoney } from '../lib/money.js';
 import { STORE_TZ, formatTime } from '../lib/time.js';
 import { HEADLINES } from '../lib/changelog.js';
 import { colorVar } from '../lib/palette.js';
+import { lineText } from '../lib/lineFormat.js';
 import { formatInTimeZone } from 'date-fns-tz';
 
 // Home (owner, 2026-10-01): the first tab, and where the logo goes. What
@@ -24,6 +25,8 @@ const SHOW = { rows: 4, events: 5 };   // what fits without scrolling
 // Days to export takes the panel's spare height (owner, 2026-10-01): as many
 // rows as fit (each row 32px and a 6px gap, home.css).
 const DAY_ROW_PX = 38;
+const CANT_SHOWN = 3;     // Can't upload cards' lines listed under its count
+const RECENT_DAYS = 6;    // exported days kept for "Recently exported"
 
 /** How many 38px rows fit in an element, kept up to date as it resizes. */
 function useRowsThatFit() {
@@ -77,6 +80,22 @@ export default function HomePage() {
     .select('seq, at, action, target_name, staff_user_name, staff_user_color, summary')
     .order('seq', { ascending: false })
     .limit(SHOW.events));
+  // Magic days already exported, newest first, for "Recently exported".
+  const exported = useLiveTable('buys', () => supabase
+    .from('buy_lines')
+    .select('quantity, completed_at, cc_custom_sku, buy_id, buys!inner(kind, status, confirmed_at)')
+    .eq('game', 'mtg')
+    .not('completed_at', 'is', null)
+    .eq('buys.kind', 'walk_in')
+    .eq('buys.status', 'confirmed')
+    .order('completed_at', { ascending: false })
+    .limit(400));
+  // Can't upload cards' lines, to list what's waiting.
+  const cant = useLiveTable('buys', () => supabase
+    .from('buys')
+    .select('id, buy_lines(*)')
+    .eq('system_key', 'cant_upload')
+    .maybeSingle());
   const usage = useLiveTable('api_usage', () => supabase.from('api_usage').select('*').eq('id', 1).maybeSingle());
 
   // ---- days to export: past days with Magic cards still Paid/Ours, oldest first
@@ -90,13 +109,33 @@ export default function HomePage() {
     days.set(day, d);
   }
   const toExport = [...days.values()].sort((a, b) => a.day.localeCompare(b.day));
-  // All of them if they fit; else as many as fit with "+N more" on the last row.
-  const daysShown = toExport.length > daysFit ? Math.max(0, daysFit - 1) : toExport.length;
+  const recent = new Map();
+  for (const l of exported.data ?? []) {
+    const day = dayOf(l.buys.confirmed_at);
+    const d = recent.get(day) ?? { day, cards: 0, skus: new Set() };
+    d.cards += l.quantity;
+    if (l.cc_custom_sku) d.skus.add(l.cc_custom_sku);
+    recent.set(day, d);
+  }
+  const recentDays = [...recent.values()].sort((a, b) => b.day.localeCompare(a.day)).slice(0, RECENT_DAYS);
+  // The panel's rows, filled in order (owner, 2026-10-01): every waiting day
+  // (or "+N more" for the rest), today's row, then as many recently exported
+  // days as fit under their own heading row.
+  const waitingRows = Math.max(1, toExport.length);           // the empty message is a row too
+  let daysShown = toExport.length;
+  let recentShown = 0;
+  if (waitingRows + 1 > daysFit) {
+    daysShown = Math.max(0, daysFit - 2);                     // room for "+N more" and today
+  } else {
+    const left = daysFit - waitingRows - 1;
+    recentShown = left >= 2 ? Math.min(recentDays.length, left - 1) : 0;
+  }
 
   // ---- collections and projects
   const collections = open.data ?? [];
   const cantUpload = collections.find((c) => c.system_key);
-  const cantLines = cantUpload?.buy_lines ?? [];
+  const cantLines = [...(cant.data?.buy_lines ?? cantUpload?.buy_lines ?? [])]
+    .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
   const oldestCant = cantLines.reduce((a, l) => (!a || l.created_at < a ? l.created_at : a), null);
   const customer = collections.filter((c) => !c.system_key && !c.project);
   const projects = collections.filter((c) => c.project);
@@ -117,6 +156,7 @@ export default function HomePage() {
   const cash = paid('cash');
   const credit = paid('credit');
   const byGame = (game) => cardsIn(todayCards.filter((l) => l.game === game));
+  const magicBuysToday = buys.filter((b) => (b.buy_lines ?? []).some((l) => l.game === 'mtg')).length;
 
   const u = usage.data;
   const usageHigh = u?.daily_limit && u.daily_used >= u.daily_limit * USAGE_WARN;
@@ -141,10 +181,9 @@ export default function HomePage() {
           </div>
           {!pending.loaded ? (
             <p className="hint">Loading…</p>
-          ) : !toExport.length ? (
-            <p className="home-empty">Every past Magic day is exported.</p>
           ) : (
             <div className="home-list home-days" ref={daysRef}>
+              {!toExport.length && <p className="home-empty home-row-line">Every past Magic day is exported.</p>}
               {toExport.slice(0, daysShown).map((d) => {
                 const age = daysBetween(d.day, today);
                 return (
@@ -160,6 +199,26 @@ export default function HomePage() {
                   +{toExport.length - daysShown} more on the Calendar
                 </button>
               )}
+              {/* Today: it can't be exported until it's over. */}
+              <button type="button" className="home-item game-mtg is-today" onClick={() => go(`/calendar/mtg/${today}`)}>
+                <strong>Today</strong>
+                <span className="home-muted">
+                  {magicBuysToday ? `Magic · ${plural(magicBuysToday, 'buy')} · ${plural(byGame('mtg'), 'card')} so far` : 'No Magic buys yet'}
+                </span>
+                <span className="home-age">exports tomorrow</span>
+              </button>
+              {recentShown > 0 && (
+                <>
+                  <span className="home-subhead home-row-line">Recently exported</span>
+                  {recentDays.slice(0, recentShown).map((d) => (
+                    <button key={d.day} type="button" className="home-item game-mtg is-done" onClick={() => go(`/calendar/mtg/${d.day}`)}>
+                      <strong>{dayDate(d.day)}</strong>
+                      <span className="home-muted">Magic · {plural(d.cards, 'card')}</span>
+                      {d.skus.size > 0 && <span className="sku-chip compact home-sku">SKU <strong>{[...d.skus].join(', ')}</strong></span>}
+                    </button>
+                  ))}
+                </>
+              )}
             </div>
           )}
         </section>
@@ -171,13 +230,21 @@ export default function HomePage() {
             disabled={!cantUpload}
             onClick={() => cantUpload && go(`/collections/${cantUpload.id}`)}
           >
-            <span className="home-label">Can't upload cards</span>
-            <span className="home-big">{cardsIn(cantLines)}<small>{cardsIn(cantLines) === 1 ? 'card' : 'cards'} waiting</small></span>
-            <span className="home-muted">{oldestCant ? `Oldest from ${dayDate(dayOf(oldestCant))}` : 'Nothing waiting'}</span>
+            <span className="home-card-head"><span className="home-h">Can't upload cards</span></span>
+            <span className="home-cant-body">
+              <span className="home-big">{cardsIn(cantLines)}<small>{cardsIn(cantLines) === 1 ? 'card' : 'cards'} waiting</small></span>
+              <span className="home-muted">{oldestCant ? `Oldest from ${dayDate(dayOf(oldestCant))}` : 'Nothing waiting'}</span>
+              {cantLines.length > 0 && (
+                <span className="home-cant-lines">
+                  {cantLines.slice(0, CANT_SHOWN).map((l) => <span key={l.id} className="home-cant-line">{lineText(l)}</span>)}
+                  {cantLines.length > CANT_SHOWN && <span className="home-muted">+{cantLines.length - CANT_SHOWN} more</span>}
+                </span>
+              )}
+            </span>
           </button>
           {/* Quick actions, 2×2, sharing the column with Can't upload cards (owner, 2026-10-01). */}
           <section className="home-card home-quick">
-            <span className="home-label">Quick actions</span>
+            <div className="home-card-head"><h3>Quick actions</h3></div>
             <div className="home-actions" role="group" aria-label="Quick actions">
               <button type="button" className="btn" onClick={() => go('/price')}>Buy cards</button>
               <button type="button" className="btn" onClick={() => go(`/calendar/mtg/${today}`)}>Today's day</button>
