@@ -596,7 +596,7 @@ During `export_lines` (Section 8.4), each can't-upload line is **copied** into t
 - **Exporting from it** (`export_lines` with `{ kind: 'cant_upload', version }`) needs this computer to hold the collection's editing lock, like any collection write. Matched copies are stamped, give the file its rows, restamp their original lines `exported` (the chip goes; the originals' buys reload), and are deleted. Copies whose original was since deleted just leave. If nothing matches, nothing changes (Export stays disabled).
 - **Its screen:** the details panel is a fixed version (name, System chip, the note, a line on how it works), no ⋯ menu, no status controls; the search bar is switched off and reads "Cards arrive here from exports…"; ADD CARD says the same; each card shows where it came from under its name. EXPORT warns first ("Try anyway"), then the export dialog without the pull-out list.
 - **Restore:** a backup made before the collection existed is restored as it was, then the collection is made again (`cant_upload_ensure`), empty.
-- **Collections table:** first row whatever the sort or status filter, tinted blue with a blue bar down its left edge, a 📌 before its name and a firmer line under it (owner, 2026-10-01: plainly pinned, blue since red was a lot); its blue **System** chip sits in the Phone cell, since it has no phone; Offer and Paid read `—`.
+- **Collections table:** it has a table of its own, **System**, first on the tab (owner, 2026-10-01; it was a pinned, highlighted first row before the tab split into three tables); its blue **System** chip sits in the Phone cell, since it has no phone; Offer and Paid read `—`.
 
 ### 9.5 Where it shows
 

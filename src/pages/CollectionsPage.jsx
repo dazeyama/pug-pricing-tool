@@ -30,8 +30,6 @@ const columns = (by) => [
     value: (c) => nameKey(c.customer_name),
     cell: (c, elsewhere) => (
       <td key="name" className="col-name">
-        {/* Can't upload cards: pinned as the first row (export spec 9.5), and says so. */}
-        {c.system_key && <span className="pin-mark" title="Pinned: always the first row" aria-label="Pinned">📌</span>}
         {c.customer_name}
         {elsewhere && <span className="lock-line">{elsewhere}</span>}
       </td>
@@ -253,7 +251,7 @@ export default function CollectionsPage() {
               return (
                 <tr
                   key={c.id}
-                  className={`col-row${c.system_key ? ' system-row' : ''}`}
+                  className="col-row"
                   tabIndex={0}
                   onClick={() => navigate(`/collections/${c.id}`)}
                   onKeyDown={(e) => {
