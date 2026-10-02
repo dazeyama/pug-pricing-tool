@@ -150,7 +150,7 @@ export const POKEMON_FINISHES = ['normal', 'holo', 'reverse'];
 
 const STAMP_NAMES = {
   '1st-edition': '1st Edition', 'set-logo': 'Set logo stamp', 'pokemon-together': 'Pokémon Together stamp',
-  snowflake: 'Snowflake stamp', 'poketour-99': "Poké Tour '99 stamp", 'w-promo': 'W Promo stamp',
+  'pre-release': 'Prerelease stamp', snowflake: 'Snowflake stamp', 'poketour-99': "Poké Tour '99 stamp", 'w-promo': 'W Promo stamp',
 };
 const FOIL_NAMES = { pokeball: 'Poké Ball pattern', masterball: 'Master Ball pattern', cosmos: 'Cosmos foil' };
 const SUBTYPE_NAMES = {
@@ -183,6 +183,20 @@ function cardmarketIn(cardmarket, finish) {
   return null;
 }
 
+// TCGdex's foil-pattern mistakes (checked 2026-10-01). A plain (non-holo)
+// version can't have a foil pattern at all, and TCGdex tags every Fossil
+// printing, plain and holo, "galaxy": Fossil never had galaxy foils, so its
+// versions read "Galaxy foil" instead of Unlimited / 1st Edition (owner,
+// 2026-10-01). Its real oddities (the prerelease Aerodactyl's cosmos and
+// starlight, the 4th-print Zapdos) are other patterns, and stay.
+const WRONG_FOILS = { base3: ['galaxy'] };
+
+/** A version's foil pattern, unless it's one of TCGdex's mistakes. */
+function foilOf(card, v) {
+  if (!v.foil || v.type === 'normal') return null;
+  return (WRONG_FOILS[card?.set?.id] ?? []).includes(v.foil) ? null : v.foil;
+}
+
 // TCGdex's card-level TCGplayer pricing keys, by finish (older data).
 const PRICING_KEYS = { normal: ['normal', 'unlimited'], holo: ['holofoil', 'unlimited-holofoil'], reverse: ['reverse-holofoil'] };
 
@@ -209,7 +223,9 @@ export function pokemonVersions(card) {
     && POKEMON_FINISHES.includes(v.type));
   if (detailed.length) {
     const hasFirst = detailed.some((v) => (v.stamp ?? []).includes('1st-edition'));
+    const seen = new Set();
     return detailed.map((v) => {
+      const foil = foilOf(card, v);
       const stamps = v.stamp ?? [];
       const first = stamps.includes('1st-edition');
       const parts = [];
@@ -220,15 +236,15 @@ export function pokemonVersions(card) {
           : SUBTYPE_NAMES[v.subtype] ?? titleCase(v.subtype);
         if (name) parts.push(name);
       }
-      if (v.foil) parts.push(FOIL_NAMES[v.foil] ?? `${titleCase(v.foil)} foil`);
+      if (foil) parts.push(FOIL_NAMES[foil] ?? `${titleCase(foil)} foil`);
       for (const s of stamps) if (s !== '1st-edition') parts.push(STAMP_NAMES[s] ?? `${titleCase(s)} stamp`);
       const treatments = [
         ...(v.subtype && v.subtype !== 'unlimited' ? [v.subtype] : []),
-        ...(v.foil ? [`${v.foil}-pattern`] : []),
+        ...(foil ? [`${foil}-pattern`] : []),
         ...stamps.filter((s) => s !== '1st-edition'),
       ];
       return {
-        id: [v.type, v.subtype ?? '', v.foil ?? '', stamps.join('+')].join('|'),
+        id: [v.type, v.subtype ?? '', foil ?? '', stamps.join('+')].join('|'),
         finish: v.type,
         label: parts.join(' · ') || (v.subtype === 'unlimited' || hasFirst ? 'Unlimited' : 'Standard'),
         firstEdition: first,
@@ -237,6 +253,11 @@ export function pokemonVersions(card) {
         marketPrice: marketPriceIn(v.pricing?.tcgplayer),
         cardmarketPrice: cardmarketIn(v.pricing?.cardmarket, v.type),
       };
+    }).filter((v) => {
+      // A mistaken pattern dropped can leave two versions the same: keep the first.
+      if (seen.has(v.id)) return false;
+      seen.add(v.id);
+      return true;
     });
   }
   const v = card?.variants ?? {};
