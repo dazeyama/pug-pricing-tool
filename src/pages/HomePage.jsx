@@ -21,7 +21,7 @@ import { formatInTimeZone } from 'date-fns-tz';
 const DAY_MS = 86_400_000;
 const STALE_PRICES_DAYS = 14;   // a project's oldest price this old is worth a REPRICE?
 const USAGE_WARN = 0.8;         // JustTCG's day this used: say so
-const SHOW = { rows: 4, events: 20 };  // collections rows shown; events fetched (as many as fit are shown)
+const SHOW = { rows: 3, events: 20 };  // collections rows shown; events fetched (as many as fit are shown)
 // Days to export takes the panel's spare height (owner, 2026-10-01): as many
 // rows as fit (each row 32px and a 6px gap, home.css).
 const DAY_ROW_PX = 38;
