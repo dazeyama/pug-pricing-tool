@@ -172,6 +172,46 @@ export default function HomePage() {
         </div>
       )}
 
+      {/* Today and Recent activity first (owner, 2026-10-01). */}
+      <div className="home-row">
+        <section className="home-card">
+          <div className="home-card-head"><h3>Today</h3></div>
+          <div className="home-stats two">
+            <div className="home-stat"><span className="home-label">Buys</span><strong>{buys.length}</strong><span className="home-muted">{plural(cardsIn(todayCards), 'card')}</span></div>
+            <div className="home-stat">
+              <span className="home-label">Paid out</span>
+              <strong>{formatMoney(cash + credit)}</strong>
+              <span className="home-muted"><span className="is-cash">{formatMoney(cash)} cash</span> · <span className="is-credit">{formatMoney(credit)} credit</span></span>
+            </div>
+          </div>
+          <div className="home-games">
+            <span className="home-dot game-mtg">Magic {byGame('mtg')}</span>
+            <span className="home-dot game-pokemon">Pokémon {byGame('pokemon')}</span>
+          </div>
+        </section>
+
+        <section className="home-card">
+          <div className="home-card-head">
+            <h3>Recent activity</h3>
+            <button type="button" className="home-link" onClick={() => go('/changelog')}>Changelog →</button>
+          </div>
+          <div className="home-activity">
+            {(events.data ?? []).map((e) => (
+              <div key={e.seq} className="home-event">
+                <span className="home-time">{formatTime(e.at)}</span>
+                <span>
+                  {HEADLINES[e.action] ?? e.action}{e.target_name ? `: ${e.target_name}` : ''}
+                  {e.staff_user_name && (
+                    <span className="home-who" style={{ '--c': colorVar(e.staff_user_color ?? 'pal-slate') }}> · {e.staff_user_name}</span>
+                  )}
+                </span>
+              </div>
+            ))}
+            {events.loaded && !(events.data ?? []).length && <p className="home-empty">Nothing yet.</p>}
+          </div>
+        </section>
+      </div>
+
       <div className="home-row home-top">
         <section className="home-card home-export">
           <div className="home-card-head">
@@ -278,44 +318,6 @@ export default function HomePage() {
         )}
       </section>
 
-      <div className="home-row">
-        <section className="home-card">
-          <div className="home-card-head"><h3>Today</h3></div>
-          <div className="home-stats two">
-            <div className="home-stat"><span className="home-label">Buys</span><strong>{buys.length}</strong><span className="home-muted">{plural(cardsIn(todayCards), 'card')}</span></div>
-            <div className="home-stat">
-              <span className="home-label">Paid out</span>
-              <strong>{formatMoney(cash + credit)}</strong>
-              <span className="home-muted"><span className="is-cash">{formatMoney(cash)} cash</span> · <span className="is-credit">{formatMoney(credit)} credit</span></span>
-            </div>
-          </div>
-          <div className="home-games">
-            <span className="home-dot game-mtg">Magic {byGame('mtg')}</span>
-            <span className="home-dot game-pokemon">Pokémon {byGame('pokemon')}</span>
-          </div>
-        </section>
-
-        <section className="home-card">
-          <div className="home-card-head">
-            <h3>Recent activity</h3>
-            <button type="button" className="home-link" onClick={() => go('/changelog')}>Changelog →</button>
-          </div>
-          <div className="home-activity">
-            {(events.data ?? []).map((e) => (
-              <div key={e.seq} className="home-event">
-                <span className="home-time">{formatTime(e.at)}</span>
-                <span>
-                  {HEADLINES[e.action] ?? e.action}{e.target_name ? `: ${e.target_name}` : ''}
-                  {e.staff_user_name && (
-                    <span className="home-who" style={{ '--c': colorVar(e.staff_user_color ?? 'pal-slate') }}> · {e.staff_user_name}</span>
-                  )}
-                </span>
-              </div>
-            ))}
-            {events.loaded && !(events.data ?? []).length && <p className="home-empty">Nothing yet.</p>}
-          </div>
-        </section>
-      </div>
     </div>
     </div>
   );
