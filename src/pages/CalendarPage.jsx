@@ -46,21 +46,16 @@ export default function CalendarPage() {
   );
 }
 
-const nothing = () => Promise.resolve({ data: [], error: null });
-
 /**
  * A month's cash buys, live, and whether its file was ever downloaded
- * (null when that couldn't be read). `month` null: nothing.
+ * (null when that couldn't be read).
  */
 function useCashBuys(month) {
-  const rows = useLiveTable('buys', () => (month ? loadCashBuys(month) : nothing()));
-  const seen = useLiveTable('events', () => (month
-    ? supabase.from('events').select('at, staff_user_name')
-      .eq('action', CASH_DOWNLOADED).eq('day', `${month}-01`)
-      .order('at', { ascending: false }).limit(1)
-    : nothing()));
+  const rows = useLiveTable('buys', () => loadCashBuys(month));
+  const seen = useLiveTable('events', () => supabase.from('events').select('at, staff_user_name')
+    .eq('action', CASH_DOWNLOADED).eq('day', `${month}-01`)
+    .order('at', { ascending: false }).limit(1));
   return {
-    month,
     rows: rows.data ?? [],
     loaded: rows.loaded && seen.loaded,
     last: seen.error ? null : seen.data?.[0] ?? null,
@@ -71,13 +66,12 @@ function useCashBuys(month) {
 /**
  * The heading row: Calendar, the month picker, and Export Cash Buys (owner,
  * 2026-10-02): the month's buys paid in cash as a CSV, for records and taxes.
- * Under it, a reminder for a finished month whose file was never downloaded:
- * the month shown, or, on the current month, last month.
+ * Under it, on a finished month whose file was never downloaded, a reminder
+ * (only on that month: owner, 2026-10-02).
  */
 function CalendarTop({ month, go }) {
   const current = storeDay().slice(0, 7);
   const cash = useCashBuys(month);
-  const lastMonth = useCashBuys(month === current ? shiftMonth(current, -1) : null);
   const staff = useStaff();
   const { deviceId } = useDevice();
   const { offline } = useConnection();
@@ -106,9 +100,8 @@ function CalendarTop({ month, go }) {
   const lastNote = cash.last
     ? ` Last downloaded ${formatDateTime(cash.last.at)}${cash.last.staff_user_name ? ` by ${cash.last.staff_user_name}` : ''}.`
     : cash.downloaded === false ? ' Never downloaded.' : '';
-  // Finished months with cash buys whose file was never downloaded.
-  const due = [month < current ? cash : null, lastMonth.month ? lastMonth : null]
-    .filter((c) => c && c.loaded && c.rows.length > 0 && c.downloaded === false);
+  // A finished month with cash buys whose file was never downloaded.
+  const due = month < current && cash.loaded && n > 0 && cash.downloaded === false;
 
   return (
     <>
@@ -129,22 +122,22 @@ function CalendarTop({ month, go }) {
           Export Cash Buys ({cash.loaded ? n : '…'})
         </GuardButton>
       </div>
-      {due.map((c) => (
-        <div key={c.month} className="banner warn banner-row cash-reminder" role="status">
+      {due && (
+        <div className="banner warn banner-row cash-reminder" role="status">
           <span>
-            <strong>{monthTitle(c.month)}</strong>'s cash buys file ({c.rows.length} buy{c.rows.length === 1 ? '' : 's'}) has
-            never been downloaded. Download it for the store's records and taxes.
+            <strong>{monthTitle(month)}</strong>'s cash buys file ({n} buy{n === 1 ? '' : 's'}) has never been
+            downloaded. Download it for the store's records and taxes.
           </span>
           <GuardButton
             className="btn small cash-export"
             disabled={offline || busy}
             title={offline ? 'No connection' : busy ? 'Downloading…' : undefined}
-            onClick={() => download(c.month)}
+            onClick={() => download(month)}
           >
-            Download {monthTitle(c.month)}
+            Download {monthTitle(month)}
           </GuardButton>
         </div>
-      ))}
+      )}
     </>
   );
 }
