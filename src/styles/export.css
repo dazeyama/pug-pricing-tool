@@ -121,14 +121,13 @@
    where each copy came from. */
 /* Can't upload cards is marked in blue, not red (owner, 2026-10-01: red was
    a lot); the red Can't upload chip on a card row still flags the card. */
-:root { --system-blue: #5aa9ff; }
 .system-chip {
   margin-left: 8px;
   padding: 0 8px;
-  border: 1.5px solid var(--system-blue);
+  border: 1.5px solid var(--kind-system);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--system-blue) 14%, transparent);
-  color: var(--system-blue);
+  background: color-mix(in srgb, var(--kind-system) 14%, transparent);
+  color: var(--kind-system);
   font-size: 11px;
   font-weight: 800;
   letter-spacing: .03em;
@@ -193,15 +192,14 @@
 .col-w-offer { width: 9%; }
 .col-w-paid { width: 9%; }
 .col-section .col-table td { overflow-wrap: anywhere; }
-/* A project's chip, like Can't upload cards' System chip, in violet. */
-:root { --project-violet: #b493ff; }
+/* A project's chip, like Can't upload cards' System chip, in the Projects colour. */
 .project-chip {
   margin-left: 8px;
   padding: 0 8px;
-  border: 1.5px solid var(--project-violet);
+  border: 1.5px solid var(--kind-project);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--project-violet) 14%, transparent);
-  color: var(--project-violet);
+  background: color-mix(in srgb, var(--kind-project) 14%, transparent);
+  color: var(--kind-project);
   font-size: 11px;
   font-weight: 800;
   letter-spacing: .03em;
@@ -210,3 +208,40 @@
   white-space: nowrap;
 }
 .col-phone .project-chip { margin-left: 0; }
+
+/* The three kinds of collection have a colour each (owner, 2026-10-01),
+   chosen to mean nothing else here (not cash green, Priced red,
+   Pokémon/Processing amber or the indigo/credit blue): System violet,
+   Projects pink, Collections cyan. The deeper shade is for filled buttons
+   with white text. */
+:root {
+  --kind-system: #a78bfa;
+  --kind-system-deep: #6d4fd1;
+  --kind-project: #f472b6;
+  --kind-project-deep: #b8337a;
+  --kind-collection: #22d3ee;
+  --kind-collection-deep: #0e7f95;
+}
+.col-section, .kind-collection { --kind: var(--kind-collection); --kind-deep: var(--kind-collection-deep); }
+.col-section.system, .kind-system { --kind: var(--kind-system); --kind-deep: var(--kind-system-deep); }
+.col-section.project, .kind-project { --kind: var(--kind-project); --kind-deep: var(--kind-project-deep); }
+
+/* The Collections tab: each table's title big in its colour, the table tinted. */
+.col-section-head h3 { font-size: 22px; font-weight: 800; color: var(--kind); }
+.col-section-head .count-badge {
+  border-color: color-mix(in srgb, var(--kind) 50%, var(--border));
+  color: var(--kind);
+}
+.col-section .col-table {
+  background: color-mix(in srgb, var(--kind) 6%, var(--panel));
+  border-color: color-mix(in srgb, var(--kind) 40%, var(--border));
+}
+.col-section .col-table th { background: color-mix(in srgb, var(--kind) 14%, var(--panel-2)); }
+.col-section .col-table td { border-top-color: color-mix(in srgb, var(--kind) 18%, var(--border)); }
+.col-section .col-row:hover, .col-section .col-row:focus-visible { background: color-mix(in srgb, var(--kind) 14%, var(--panel-2)); }
+.col-section .col-row:hover .col-name { color: var(--kind); }
+
+/* Inside one, its colour is the screen's highlight instead of the amber. */
+.price-screen.collection-screen.kind-system,
+.price-screen.collection-screen.kind-project,
+.price-screen.collection-screen.kind-collection { --accent: var(--kind); --accent-2: var(--kind-deep); }

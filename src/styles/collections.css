@@ -157,6 +157,7 @@
    deeper amber for filled buttons, dark enough for their white text. Cash
    green and Credit blue don't change. */
 .price-screen.collection-screen {
+  /* The fallback: each kind of collection sets its own colour (export.css, owner 2026-10-01). */
   --accent: #f2b53a;
   --accent-2: #a86f12;
 }

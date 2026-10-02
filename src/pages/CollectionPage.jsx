@@ -237,7 +237,8 @@ function CollectionScreen({ id }) {
       master={master}
       locked={locked}
       removeLocked={removeLocked}
-      className="collection-screen"
+      // Highlighted in its kind's colour (owner, 2026-10-01): System, Projects or Collections.
+      className={`collection-screen kind-${system ? 'system' : buy?.project ? 'project' : 'collection'}`}
       hits={hits}
       listTitle="Collection list"
       ratesTitle="Rates for this collection"
