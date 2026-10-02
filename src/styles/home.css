@@ -9,7 +9,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px 24px;
+  /* A band of colour behind the panels, the page's full width inside its
+     margins (owner, 2026-10-02: fills the page better); the margins keep
+     the page colour. */
+  margin: 16px 24px;
+  padding: 20px 24px;
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--accent) 9%, var(--bg));
   overflow: hidden;
 }
 .home {
