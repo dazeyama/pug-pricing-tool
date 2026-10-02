@@ -9,7 +9,7 @@ import { withLoading } from '../lib/loading.js';
 import GuardButton from '../components/GuardButton.jsx';
 import UserTag from '../components/UserTag.jsx';
 import { NewCollectionModal, NewProjectModal } from './collections/CollectionModals.jsx';
-import { FILTERS, isClosed, statusLabel, statusTone } from './collections/status.js';
+import { FILTERS, isClosed, statusText, statusTone } from './collections/status.js';
 import { OfferText, PaidText } from './collections/CollectionDetails.jsx';
 import { errorMessage } from './collections/useCollection.js';
 import { useDevice } from '../state/device.jsx';
@@ -50,7 +50,7 @@ const columns = (by) => [
   },
   {
     key: 'status', label: 'Status', value: (c) => STATUS_ORDER[c.status],
-    cell: (c) => <td key="status"><span className={`status-chip ${statusTone(c)}`}>{statusLabel(c.status)}</span></td>,
+    cell: (c) => <td key="status"><span className={`status-chip ${statusTone(c)}`}>{statusText(c)}</span></td>,
   },
   {
     key: 'created', label: 'Created', value: (c) => c.created_at,

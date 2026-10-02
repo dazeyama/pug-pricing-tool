@@ -2119,6 +2119,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 184 | Pokellector pictures for the oldest Japanese sets (2026-10-01) | The first ten Japanese sets' card pictures come from Pokellector, through a list read once from its set pages (Section 5.2) |
 | 185 | Projects, and three tables (2026-10-01) | **+ Start Project**: a collection of the store's own cards, just a name and notes, Paid/Ours (and editable) until EXPORT; the Collections tab splits into System, Projects and Collections tables (Section 9.1a; migration 0031) |
 | 186 | Search results coloured by what they are (2026-10-01) | In the header search, a buy's panel takes its game's colour (Magic indigo, Pokémon amber) instead of its user's, and a collection's its kind's (System violet, Projects pink, Collections cyan) instead of its status's (migration 0032: `global_search` returns `collection_kind`) (Section 13) |
+| 187 | "Ours" for System and Projects (2026-10-01) | Can't upload cards' and a project's Paid/Ours chip reads **Ours**, in white (tables, details, search results); the status is still `paid` and behaves as Paid/Ours everywhere (Section 9.1a) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

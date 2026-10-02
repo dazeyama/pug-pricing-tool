@@ -6,7 +6,7 @@ import { formatTime } from '../lib/time.js';
 import { relativeDay } from '../lib/changelog.js';
 import { lineTextWithCondition } from '../lib/lineFormat.js';
 import { LINE_LIMIT, MIN_CHARS, flatRows, groupResults, searchArgs } from '../lib/globalSearch.js';
-import { statusLabel } from '../pages/collections/status.js';
+import { statusText } from '../pages/collections/status.js';
 import { useStaff } from '../state/staff.jsx';
 import GameBadge from './GameBadge.jsx';
 import UserTag from './UserTag.jsx';
@@ -193,7 +193,10 @@ export default function SearchBox({ wide }) {
               {row.completed && <span className="status-chip tone-completed result-chip">Completed</span>}
             </>
           ) : (
-            <><strong>{row.customerName}</strong> · <span className="result-status">{statusLabel(row.status)}</span></>
+            <><strong>{row.customerName}</strong> · <span className="result-status">
+              {statusText({ status: row.status, system_key: row.collectionKind === 'system' ? 'cant_upload' : null,
+                project: row.collectionKind === 'project' })}
+            </span></>
           )}
         </span>
         {row.entries.map((entry) => (

@@ -11,6 +11,17 @@ export const STATUSES = [
 /** "Paid/Ours" for 'paid', and so on. */
 export const statusLabel = (s) => STATUSES.find((x) => x.value === s)?.label ?? s;
 
+/**
+ * Can't upload cards and projects hold the store's own cards: their
+ * Paid/Ours reads just "Ours", in white (owner, 2026-10-01). Only the words
+ * and colour differ: the status is the same 'paid', and it searches and
+ * behaves as Paid/Ours everywhere.
+ */
+const ownCards = (buy) => Boolean(buy?.system_key || buy?.project);
+
+/** The words on a collection's status chip: "Ours" for System and Projects, else its label. */
+export const statusText = (buy) => (buy.status === 'paid' && ownCards(buy) ? 'Ours' : statusLabel(buy.status));
+
 /** Paid/Ours or Completed: locked, with the rates snapshotted. */
 export const isClosed = (s) => s === 'paid' || s === 'completed';
 
@@ -24,9 +35,9 @@ export const isClosed = (s) => s === 'paid' || s === 'completed';
  */
 export function statusTone(buy) {
   if (buy.status === 'paid') {
-    // Nothing was paid: a walk-in confirmed before the price was asked for,
-    // or a project (the store's own cards, owner 2026-10-01).
-    if ((buy.kind === 'walk_in' && !buy.paid_method) || buy.project) return 'tone-paid-walkin';
+    if (ownCards(buy)) return 'tone-ours';
+    // Nothing was paid: a walk-in confirmed before the price was asked for.
+    if (buy.kind === 'walk_in' && !buy.paid_method) return 'tone-paid-walkin';
     return `tone-paid-${buy.paid_method === 'credit' ? 'credit' : 'cash'}`;
   }
   return `tone-${buy.status}`;

@@ -3,7 +3,7 @@ import UserTag from '../../components/UserTag.jsx';
 import GuardButton from '../../components/GuardButton.jsx';
 import MoreMenu from '../../components/MoreMenu.jsx';
 import InlineEdit from './InlineEdit.jsx';
-import { STATUSES, isClosed, statusLabel, statusTone } from './status.js';
+import { STATUSES, isClosed, statusText, statusTone } from './status.js';
 import { formatMoney } from '../../lib/money.js';
 import { PHONE_ERROR, formatPhone, phoneDigits, validPhone } from '../../lib/phone.js';
 import { formatRecent, formatShortDate, formatTime } from '../../lib/time.js';
@@ -45,6 +45,7 @@ function SystemDetails({ buy, open, onToggle, viewOnly, holder, onTakeOver }) {
       <div className="cd-head">
         <button type="button" className="cd-toggle" aria-expanded={open} onClick={onToggle}>
           <span className="cd-name">{buy.customer_name}</span>
+          <span className={`status-chip ${statusTone(buy)}`}>{statusText(buy)}</span>
           <span className="system-chip">System</span>
         </button>
         <FoldButton open={open} onToggle={onToggle} />
@@ -141,7 +142,7 @@ export default function CollectionDetails({
           onClick={toggle}
         >
           <span className="cd-name">{buy.customer_name}</span>
-          <span className={`status-chip ${tone}`}>{statusLabel(buy.status)}</span>
+          <span className={`status-chip ${tone}`}>{statusText(buy)}</span>
           {project && <span className="project-chip">Project</span>}
         </button>
         <MoreMenu
@@ -280,7 +281,7 @@ export default function CollectionDetails({
               <dt>Status</dt>
               {project ? (
                 <dd className="cd-status">
-                  <span className={`status-chip ${tone}`}>{statusLabel(buy.status)}</span>
+                  <span className={`status-chip ${tone}`}>{statusText(buy)}</span>
                 </dd>
               ) : (
               <dd className="cd-status">
