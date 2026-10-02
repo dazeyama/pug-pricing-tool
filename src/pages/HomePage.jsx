@@ -9,6 +9,7 @@ import { HEADLINES } from '../lib/changelog.js';
 import { colorVar } from '../lib/palette.js';
 import { lineText } from '../lib/lineFormat.js';
 import { formatInTimeZone } from 'date-fns-tz';
+import { useStaff } from '../state/staff.jsx';
 
 // Home (owner, 2026-10-01): the first tab, and where the logo goes. What
 // needs doing (days to export, Can't upload cards, collections and projects
@@ -53,6 +54,7 @@ const cardsIn = (lines) => lines.reduce((n, l) => n + l.quantity, 0);
 
 export default function HomePage() {
   const navigate = useNavigate();
+  const user = useStaff().current;
   const [daysRef, daysFit] = useRowsThatFit();
   const [eventsRef, eventsFit] = useRowsThatFit(EVENT_ROW_PX, 4);
   const today = storeDay();
@@ -166,7 +168,9 @@ export default function HomePage() {
   const go = (path, state) => navigate(path, state ? { state } : undefined);
 
   return (
-    <div className="home-screen">
+    // The band behind the panels takes the picked user's colour, faintly
+    // (owner, 2026-10-02; home.css); the accent with no one picked.
+    <div className="home-screen" style={user ? { '--home-tint': colorVar(user.color) } : undefined}>
     <div className="home">
       {usageHigh && (
         <div className="banner warn home-warn">

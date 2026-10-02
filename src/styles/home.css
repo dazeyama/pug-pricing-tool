@@ -16,10 +16,11 @@
   max-width: calc(1400px - 48px);
   margin: 16px auto;
   padding: 20px 24px;
-  /* Faint red (owner, 2026-10-02), the logo's crimson. */
-  border: 1px solid color-mix(in srgb, var(--pal-crimson) 30%, var(--border));
+  /* A faint version of the picked user's colour (owner, 2026-10-02), set by
+     HomePage.jsx; the accent with no one picked. */
+  border: 1px solid color-mix(in srgb, var(--home-tint, var(--accent)) 30%, var(--border));
   border-radius: 14px;
-  background: color-mix(in srgb, var(--pal-crimson) 10%, var(--bg));
+  background: color-mix(in srgb, var(--home-tint, var(--accent)) 10%, var(--bg));
   overflow: hidden;
 }
 .home {
