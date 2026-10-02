@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Modal from '../components/Modal.jsx';
 import ExportDialog from './export/ExportDialog.jsx';
+import RepriceModal from './collections/RepriceModal.jsx';
+import { formatMoney } from '../lib/money.js';
 import { fileStamp } from '../lib/time.js';
 import { fileSafe } from '../lib/massCreate.js';
 import { downloadMassCreate, saveExport } from '../lib/ccExport.js';
@@ -55,6 +57,7 @@ function CollectionScreen({ id }) {
   const buy = col.buy;
   const system = Boolean(buy?.system_key);   // Can't upload cards (export spec 9)
   const [exportStep, setExportStep] = useState(null);   // 'warn' | 'dialog' | 'pokemon'
+  const [repricing, setRepricing] = useState(false);    // REPRICE? (owner, 2026-10-01)
   const back = () => navigate('/collections');
 
   // Deleted on another computer while open: say so and go back to the table.
@@ -93,6 +96,24 @@ function CollectionScreen({ id }) {
   // Cards can still be removed from a Paid/Ours collection, not a Completed
   // one (owner, 2026-09-29); adding and editing stay locked.
   const removeLocked = buy?.status === 'paid' && lock.status === 'held' ? null : locked;
+
+  // REPRICE? works where cards could be edited anyway (a project, Processing,
+  // Priced): why not now, or null.
+  let repriceBlocked = null;
+  if (!user) repriceBlocked = 'Pick a user first';
+  else if (offline) repriceBlocked = 'No connection';
+  else if (locked) repriceBlocked = locked;
+  else if (!col.lines.length) repriceBlocked = 'No cards to reprice';
+
+  async function reprice(updates, counts) {
+    const result = await col.reprice(updates, user.id);
+    if (!result) return false;
+    const bits = [`${counts.changed} price${counts.changed === 1 ? '' : 's'} changed`];
+    if (counts.manual) bits.push(`${counts.manual} manual kept`);
+    if (counts.noPrice) bits.push(`${counts.noPrice} with no price today kept`);
+    toast(`Repriced: ${bits.join(', ')}. Market ${formatMoney(Number(result.before))} → ${formatMoney(Number(result.after))}.`, 'ok');
+    return true;
+  }
 
   // What the export wrote (export spec 4.4, 5.5): its Custom SKU, for the details' chip.
   const skus = [...new Set(col.lines.map((l) => l.cc_custom_sku).filter(Boolean))];
@@ -406,7 +427,33 @@ function CollectionScreen({ id }) {
       )}
       renderListFooter={({ focusSearch }) => (
         <div className="list-buttons">
+          {/* REPRICE?: today's buy prices for every card (owner, 2026-10-01); smaller, beside EXPORT. */}
+          {!system && (
+            <button
+              type="button"
+              className={`btn reprice-btn${repriceBlocked ? ' is-disabled' : ''}`}
+              aria-disabled={repriceBlocked ? true : undefined}
+              title={repriceBlocked ?? 'Bring every card’s buy price up to today’s prices'}
+              onClick={() => {
+                if (!user) staff.pulse();
+                else if (repriceBlocked) toast(`${repriceBlocked}.`, 'err');
+                else setRepricing(true);
+              }}
+            >
+              REPRICE?
+            </button>
+          )}
           <ExportButton onClick={startExport} />
+          {repricing && (
+            <RepriceModal
+              lines={col.lines}
+              onReprice={reprice}
+              onClose={() => {
+                setRepricing(false);
+                focusSearch();
+              }}
+            />
+          )}
           {exportStep === 'pokemon' && (
             <Modal
               title="No Magic cards to export"

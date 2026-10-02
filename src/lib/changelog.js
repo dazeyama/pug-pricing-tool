@@ -22,7 +22,7 @@ export const CATEGORIES = [
     key: 'collections',
     label: 'Collections',
     actions: ['collection_created', 'collection_cards_added', 'collection_line_edited',
-      'collection_cards_removed', 'collection_status_changed', 'collection_deleted',
+      'collection_cards_removed', 'collection_status_changed', 'collection_deleted', 'collection_repriced',
       // Can't upload cards (export spec 9, 12).
       'cant_upload_added', 'cant_upload_exported', 'cant_upload_returned'],
   },
@@ -53,6 +53,7 @@ export const HEADLINES = {
   collection_info_edited: 'Collection details edited',
   collection_status_changed: 'Status changed',
   collection_deleted: 'Collection deleted',
+  collection_repriced: 'Collection repriced',
   cant_upload_added: "Cards can't upload",
   cant_upload_exported: "Exported from Can't upload",
   cant_upload_returned: 'Cards returned',

@@ -6,46 +6,12 @@ import { supabase } from './supabase.js';
 import { loadSets } from './scryfall.js';
 import { nameKey } from './normalize.js';
 import { categoryFor, chooseProduct, fold, frontFace, promoKind } from './ccMatch.js';
-import { callFunction } from './functions.js';
-import { cardmarketPrice, conditionPrices, fallbackPrice, lookupsFor, resultFor } from './prices.js';
-import { loadEurUsd } from './useEurUsd.js';
+import { scryfallCards, todaysPrices } from './todaysPrices.js';
 import { sellPriceFor } from './sellPrice.js';
 import { massCreateCsv, massCreateRows } from './massCreate.js';
 
-const SCRYFALL_BATCH = 75;
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-/**
- * Full Scryfall cards by id (POST /cards/collection, 75 at a time), today's
- * data: flavor names for matching, prices for the Sell Price (export spec 5.4).
- * @param {string[]} ids
- * @returns {Promise<Map<string, object>>}
- */
-export async function scryfallCards(ids) {
-  const unique = [...new Set(ids.filter(Boolean))];
-  const out = new Map();
-  for (let i = 0; i < unique.length; i += SCRYFALL_BATCH) {
-    const body = JSON.stringify({ identifiers: unique.slice(i, i + SCRYFALL_BATCH).map((id) => ({ id })) });
-    let data = null;
-    for (let attempt = 0; attempt < 4 && !data; attempt++) {
-      if (i || attempt) await sleep(150 * (attempt + 1));
-      try {
-        const res = await fetch('https://api.scryfall.com/cards/collection', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-          body,
-        });
-        if (res.ok) data = await res.json();
-        else if (res.status !== 429 && res.status !== 503) throw new Error(`Scryfall answered ${res.status}`);
-      } catch (e) {
-        if (attempt === 3) throw new Error(`Scryfall couldn't be reached: ${e.message}`);
-      }
-    }
-    if (!data) throw new Error("Scryfall couldn't be reached.");
-    for (const card of data.data ?? []) out.set(card.id, card);
-  }
-  return out;
-}
+// Full Scryfall cards by id now live with today's prices (todaysPrices.js).
+export { scryfallCards };
 
 const fail = (error, what) => {
   if (error) throw new Error(`${what}: ${error.message}`);
@@ -187,13 +153,10 @@ export async function searchProducts(text) {
 
 // ------------------------------------------------------------ the Sell Price
 
-const PRICE_BATCH = 100;   // JustTCG's batch size: one request per 100 cards
-
 /**
- * Today's Sell Price for each line (export spec 5.4): JustTCG fetched fresh
- * (the `prices` function's `fresh` option), Scryfall's prices from the cards
- * the matching already fetched, Cardmarket × today's euro rate. Throws if
- * any of it can't be had: an export never uses stale prices.
+ * Today's Sell Price for each line (export spec 5.4), from todaysPrices.js
+ * (the Scryfall cards the matching fetched are reused). Throws if today's
+ * prices can't be had: an export never uses stale prices.
  * @param {object[]} lines
  * @param {Map<string, object>} cards  Scryfall cards by id (matchLines)
  * @param {Record<string, number>} pct  the Master Fallback Percentages (Magic)
@@ -201,46 +164,13 @@ const PRICE_BATCH = 100;   // JustTCG's batch size: one request per 100 cards
  * @returns {Promise<Map<string, { price: number, basis: object }>>} by line id
  */
 export async function sellPrices(lines, cards, pct, onStep) {
-  const byCard = new Map();
-  const lookups = [];
-  for (const line of lines) {
-    const card = cards.get(line.scryfall_id);
-    if (!card || byCard.has(card.id)) continue;
-    const c = { game: 'mtg', scryfall: card };
-    byCard.set(card.id, c);
-    lookups.push(...lookupsFor(c, {}));
-  }
-  const requests = Math.ceil(lookups.length / PRICE_BATCH);
-  onStep?.(`Fetching today's prices (${requests || 'no'} JustTCG request${requests === 1 ? '' : 's'})…`);
-  const results = {};
+  let today;
   try {
-    for (let i = 0; i < lookups.length; i += PRICE_BATCH) {
-      Object.assign(results, await callFunction('prices', { lookups: lookups.slice(i, i + PRICE_BATCH), fresh: true })
-        .then((d) => d?.results ?? {}));
-    }
+    today = await todaysPrices(lines, { cards, onStep });
   } catch (e) {
-    const why = e.code === 'DAILY_LIMIT_EXCEEDED' ? "JustTCG's daily limit is used up" : e.message;
-    throw new Error(`Today's prices couldn't be fetched: ${why}. Nothing was exported.`);
+    throw new Error(`${e.message} Nothing was exported.`);
   }
-  const needsRate = lines.some((l) => l.price_snapshot?.override === 'cardmarket' || l.price_source === 'cardmarket');
-  const rate = needsRate ? await loadEurUsd() : null;
-  if (needsRate && rate == null) {
-    throw new Error("Today's euro rate couldn't be fetched (for the cards priced from Cardmarket). Nothing was exported.");
-  }
-  const out = new Map();
-  for (const line of lines) {
-    const c = byCard.get(line.scryfall_id) ?? null;
-    const result = c ? resultFor(c, results, { finish: line.finish }) : null;
-    const eur = c ? cardmarketPrice(c, { finish: line.finish }) : null;
-    out.set(line.id, sellPriceFor(line, {
-      market: conditionPrices(result?.card, { game: 'mtg', lang: 'en', finish: line.finish }),
-      fallback: c ? fallbackPrice(c, { finish: line.finish }) : null,
-      cardmarketUsd: eur != null && rate != null ? eur * rate : null,
-      pct,
-      fetchedAt: result?.fetchedAt ?? null,
-    }));
-  }
-  return out;
+  return new Map(lines.map((line) => [line.id, sellPriceFor(line, { ...today.get(line.id), pct })]));
 }
 
 // ------------------------------------------------------------ the export

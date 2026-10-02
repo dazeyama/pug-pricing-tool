@@ -361,3 +361,17 @@
 .buy-list.no-remove .line-x { display: none; }
 
 .col-missing { padding: 40px 24px; text-align: center; }
+
+/* REPRICE? beside EXPORT (owner, 2026-10-01): smaller, outlined in the screen's colour. */
+.reprice-btn {
+  flex: none;
+  padding: 0 16px;
+  border: 2px solid var(--accent-2);
+  background: var(--panel-2);
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: .04em;
+}
+.reprice-btn:hover { border-color: var(--accent); }
+.reprice-btn.is-disabled { opacity: .45; cursor: default; }

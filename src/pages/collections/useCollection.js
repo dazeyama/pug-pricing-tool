@@ -177,6 +177,13 @@ export function useCollection(id, { deviceId, onLockLost }) {
     return r.ok;
   }, [id, run, deviceId]);
 
+  /** REPRICE?: today's buy prices for many lines at once (reprice.js); { lines, before, after } or null. */
+  const reprice = useCallback(async (updates, userId) => {
+    const r = await run('collection_reprice', { p_buy_id: id, p_lines: updates, ...mine(userId) },
+      "Couldn't reprice the collection");
+    return r.ok ? r.data : null;
+  }, [id, run, deviceId]);
+
   /** Delete forever (spec 9.7); the server checks the typed name. */
   const destroy = useCallback(async (typedName, userId) => {
     setBusy(true);
@@ -199,5 +206,5 @@ export function useCollection(id, { deviceId, onLockLost }) {
     }
   }, [id, deviceId, state.lines, toast]);
 
-  return { ...state, busy, reload, add, update, remove, updateInfo, setRates, setStatus, destroy };
+  return { ...state, busy, reload, add, update, remove, updateInfo, setRates, setStatus, reprice, destroy };
 }

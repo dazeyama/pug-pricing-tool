@@ -72,3 +72,26 @@ export function priceLadder(market, fallback, pct, game) {
   return out;
 }
 
+
+/**
+ * A saved line's ladder from today's data, as the Price screen would build it
+ * now (spec 8.7): the buy's override (Use Fallback / Use Cardmarket) when it
+ * can apply today, and Cardmarket on its own for a Japanese Pokémon card
+ * with no JustTCG price. Used by the export's Sell Price and REPRICE?.
+ * @param {{ game?: string, lang?: string, price_snapshot?: { override?: string|null } }} line
+ * @param {{ market?: Record<string, number|null>, fallback?: object|null, cardmarketUsd?: number|null }} today
+ * @param {Record<string, number>} pct  Master Fallback Percentages for the line's game
+ */
+export function ladderFor(line, today, pct) {
+  const market = today.market ?? {};
+  const anyMarket = CONDITIONS.some((c) => market[c] != null);
+  const wanted = line.price_snapshot?.override ?? null;
+  const usable = (wanted === 'fallback' && today.fallback != null && anyMarket)
+    || (wanted === 'cardmarket' && today.cardmarketUsd != null);
+  const override = usable ? wanted : null;
+  const auto = !override && line.game === 'pokemon' && line.lang === 'ja' && today.cardmarketUsd != null && !anyMarket;
+  const base = override === 'cardmarket' || auto
+    ? { price: today.cardmarketUsd, source: 'cardmarket' }
+    : today.fallback ?? null;
+  return { ladder: priceLadder(override ? {} : market, base, pct, line.game ?? 'mtg'), wanted, override, auto };
+}

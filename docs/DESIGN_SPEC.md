@@ -1072,6 +1072,10 @@ A **project** is a collection of cards **the store already owns** (a box from th
 - Its details panel shows the name and notes (editable), its status as a chip with no dropdown or step button, a "Project: the store's own cards…" banner, and Created / Edited; Delete works as for any collection.
 - Everything else (pricing, the one-computer lock, the changelog, EXPORT, Sell prices, Can't upload cards, search) is a collection's.
 
+### 9.1b REPRICE? (owner's decision, 2026-10-01)
+
+A smaller **REPRICE?** button beside EXPORT on a collection's screen brings **every card's buy price** up to today's prices, for a project worked on over weeks. It asks first, then fetches today's prices the way EXPORT's Sell Prices do (`src/lib/todaysPrices.js`, shared: JustTCG fresh, Scryfall / TCGdex fallbacks, Cardmarket × today's rate; Magic and Pokémon), and works out each card's new **buy** price exactly as the Price screen would now: the same ladder, its Use Fallback / Use Cardmarket where it can apply, **rounded down** as always (`src/lib/reprice.js`). Sell prices aren't touched. **Manual prices stay as typed** (their market figures are refreshed); a card with no price today keeps its price. All the lines are saved at once (`collection_reprice`, migration 0033), logged as one "Collection repriced" entry with the market before and after, and a toast says how many changed. It works where cards can be edited anyway: a project (Paid/Ours), or a Processing or Priced collection; a customer's Paid/Ours, Completed, Can't upload cards (no button) and view-only are refused.
+
 ### 9.2 + Price Collection
 
 A big primary button top-right, styled like CM's `.btn.primary`, larger. It needs a picked user. It opens a modal:
@@ -2121,6 +2125,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 186 | Search results coloured by what they are (2026-10-01) | In the header search, a buy's panel takes its game's colour (Magic indigo, Pokémon amber) instead of its user's, and a collection's its kind's (System violet, Projects pink, Collections cyan) instead of its status's (migration 0032: `global_search` returns `collection_kind`) (Section 13) |
 | 187 | "Ours" for System and Projects (2026-10-01) | Can't upload cards' and a project's Paid/Ours chip reads **Ours**, in white (tables, details, search results); the status is still `paid` and behaves as Paid/Ours everywhere (Section 9.1a) |
 | 188 | JP is Pokémon only (2026-10-01) | With JP on, the MTG \| PKM toggle shows PKM only and MTG is greyed out ("Japanese is Pokémon only: switch to EN to search Magic"); switching back to EN restores the games as they were; editing a Magic line from the list switches to EN (Section 8.2) |
+| 189 | REPRICE? (2026-10-01) | A smaller button beside a collection's EXPORT reprices every card's buy price at today's prices, worked out as it was priced and rounded down; manual prices stay (Section 9.1b; migration 0033) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |
