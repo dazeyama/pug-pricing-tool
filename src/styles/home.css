@@ -116,7 +116,9 @@
    takes its height, Can't upload cards a compact tile under it, the count
    beside its lines. */
 .home-side { min-height: 0; }
-.home-recent { flex: 1; min-height: 0; }
+/* Never squeezed away (BUGS.md 2): room for its heading and two entries;
+   on a short window Can't upload cards gives up its card lines instead. */
+.home-recent { flex: 1; min-height: 98px; }
 .home-recent .home-activity { flex: 1; min-height: 0; overflow: hidden; }
 .home-recent .home-event { flex: none; height: 18px; align-items: center; }
 .home-cant {
@@ -127,10 +129,21 @@
   overflow: hidden;
 }
 .home-h { font-size: 15px; font-weight: 700; }
+.home-cant-count { display: none; margin-left: auto; color: var(--kind); background: color-mix(in srgb, var(--kind) 16%, transparent); }
 .home-cant-body { display: flex; align-items: center; gap: 14px; min-width: 0; }
 .home-cant-body .home-big { flex: none; min-width: 1.4ch; text-align: center; }
 .home-cant-info { display: flex; flex-direction: column; gap: 1px; min-width: 0; font-size: 13px; }
 .home-cant-line { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); font-size: 12.5px; }
+/* Shorter windows (the 1366×768 laptop; BUGS.md 1–2): a slimmer band and
+   gaps, and Can't upload cards as a single line, so Days to export and
+   Recent activity keep their rows. */
+@media (max-height: 820px) {
+  .home-screen { --home-gap: 14px; margin: 10px auto; padding: 12px 24px; }
+  .home-card { gap: 8px; padding: 10px 14px; }
+  /* Can't upload cards as one line, its heading and "N waiting". */
+  .home-cant-body { display: none; }
+  .home-cant-count { display: inline-block; }
+}
 /* The quick actions beside Today: four buttons filling the panel (owner, 2026-10-01). */
 .home-quick { min-height: 0; }
 .home-quick .home-actions { flex: 1; min-height: 0; grid-auto-rows: minmax(0, 1fr); }

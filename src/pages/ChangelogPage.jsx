@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
 import {
-  CATEGORIES, DAY_ACTIONS, DEFAULT_CATEGORIES, GONE, HEADLINES, MADE, MILESTONES, actionsFor, categoryOf, dayHeading, entryDay,
+  CATEGORIES, DAY_ACTIONS, MONTH_ACTIONS, DEFAULT_CATEGORIES, GONE, HEADLINES, MADE, MILESTONES, actionsFor, categoryOf, dayHeading, entryDay,
   entryWhen, foldEvents, panelView,
 } from '../lib/changelog.js';
 import { storeDay } from '../lib/calendar.js';
@@ -416,7 +416,8 @@ function Entry({ panel, view, side, targets, game, onFunnel }) {
         <div className="tl-body">
           <div className="tl-title">
             <span className={`ch-kind ${first.kind}`}>
-              {DAY_ACTIONS.has(first.action) ? 'Day' : first.kind === 'buy' ? 'Buy' : 'Collection'}
+              {DAY_ACTIONS.has(first.action) ? 'Day' : MONTH_ACTIONS.has(first.action) ? 'Month'
+                : first.kind === 'buy' ? 'Buy' : 'Collection'}
             </span>
             <strong>
               {to ? <Link to={to}>{first.target_name}</Link>

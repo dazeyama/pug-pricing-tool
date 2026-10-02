@@ -6,7 +6,8 @@
 // from exports).
 // The field's sample text; with JP on, how Japanese cards are found instead
 // (owner, 2026-10-02): by number and set code, or "No. 32" for the oldest sets.
-const HINT = { en: "Type what's printed on the card: Lightning Bolt 161/295 2X2", ja: 'Type the number and set code: 025/165 SV2a · oldest sets: No. 32' };
+// A real printing (BUGS.md 4): Double Masters 2022's Lightning Bolt is #117 of 331.
+const HINT = { en: "Type what's printed on the card: Lightning Bolt 117/331 2X2", ja: 'Type the number and set code: 025/165 SV2a · oldest sets: No. 32' };
 
 const GAMES = [
   { key: 'mtg', label: 'MTG', name: 'Magic' },

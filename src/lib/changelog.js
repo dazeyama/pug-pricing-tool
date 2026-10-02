@@ -81,6 +81,8 @@ export const HEADLINES = {
 };
 /** Entries about a whole day (EXPORT on a day page), not one buy. */
 export const DAY_ACTIONS = new Set(['day_exported', 'day_unexported', 'day_completed']);
+/** Entries about a whole month (the Cash buys file; BUGS.md 10), not one buy. */
+export const MONTH_ACTIONS = new Set(['cash_buys_downloaded']);
 /** Landmarks: something made (big dot, green headline) or gone (red cross). */
 export const MADE = new Set(['buy_confirmed', 'collection_created', 'buy_converted']);
 export const GONE = new Set(['buy_deleted', 'collection_deleted']);

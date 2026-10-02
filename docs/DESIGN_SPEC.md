@@ -699,7 +699,7 @@ The Price screen fills the viewport below the header with **no page scroll**. It
 ```
 ┌──────────────────────────────────── STAGE ────────────────────────────────────┬──── BUY LIST ────┐
 │ ┌─────────────────────────────────────────────────────────────────┐ [EN|JP]   │ BUY LIST 12 cards│
-│ │ 🔍  Lightning Bolt 161/295 2X2                                   │           │ ── Magic (9) ──  │
+│ │ 🔍  Lightning Bolt 117/331 2X2                                   │           │ ── Magic (9) ──  │
 │ └─────────────────────────────────────────────────────────────────┘           │ 1 Abrade (SOA) 37│
 │  SELECTED CARD                                                                 │ 1 Adarkar Wastes │
 │ ┌──────────────┐  ┌─ CARD INFO ───────────┐  ┌─ PRICE ───────────────────┐    │   (DMU) 243 *F*  │
@@ -741,7 +741,7 @@ Card image sizes follow Scryfall's as the reference: the selected card is 336×4
 <card name> <collector number>/<printed size> [<set code>]
 ```
 
-Examples: `Lightning Bolt 161/295`, `Abrade 37/291 SOA`, `Charizard ex 125/197 OBF`, `Pikachu TG05/TG30`, `Sol Ring`.
+Examples: `Lightning Bolt 117/331 2X2`, `Abrade 37/291 SOA`, `Charizard ex 125/197 OBF`, `Pikachu TG05/TG30`, `Sol Ring`.
 
 Parsing rules (`src/lib/query.js`), applied to the trimmed input:
 
@@ -1788,13 +1788,14 @@ By launch dev will have had many migrations, each a small step, several rewritin
 
 1. **Freeze.** No new migrations from here until prod is set up. `npx supabase migration list` on dev shows every file applied, none pending. Check `supabase/.temp/project-ref` is dev (`psucrzljraxeootwnltf`) before every `--linked` command, and prod (`zvxquzcfffmxwizonxuo`) when working on prod.
 2. **Safety copies.** A git tag `pre-squash`; a backup file from dev (Settings → Download backup); and dev's schema as it stands, `npx supabase db dump --linked -f <scratch>/dev-schema-before.sql` (kept outside the repo).
-3. **Write the baseline** from dev: `npx supabase db dump --linked -f supabase/migrations/<N+1>_baseline.sql` (the public schema: tables, constraints, indexes, functions, triggers, RLS policies, grants). It replaces 0001–N.
+3. **Write the baseline** from dev: `npx supabase db dump --linked -f supabase/migrations/<N+1>_baseline.sql` (the `public` and `internal` schemas: tables, constraints, indexes, functions, triggers, RLS policies, grants; pass `--schema public,internal` if the dump leaves `internal` out). It replaces 0001–N.
 4. **Add by hand what a dump leaves out**, each with a comment saying which old migration it came from. These were found by reading 0001–0035 on 2026-10-02; **read every migration added since the same way** and add anything of these kinds it brings (an extension, a storage bucket or policy, a table joining Realtime, a starting row, a grant):
    - `create extension if not exists pg_trgm with schema extensions;` at the top: the trigram indexes and the card and product searches need it (0001);
    - the private storage bucket `master-inventory` (50 MB per file) and its four `storage.objects` policies for the store's role (0002, 0023);
    - Realtime: `alter publication supabase_realtime add table` for `buys`, `buy_lines`, `collection_locks`, `staff_users`, `settings`, `master_inventory_files`, `api_usage` (0002) and `events` (0035), and `buy_lines` replica identity full if the dump didn't keep it;
    - the starting rows: `settings` `cash_pct` 33 and `credit_pct` 66 (0001), and `select public.cant_upload_ensure();` for the Can't upload cards collection (0028);
    - the grants: every function `revoke`d from `public, anon` and `grant`ed to `authenticated` as in the old files (a dump can drop or add Supabase's default grants);
+   - the `internal` schema (0040, BUGS.md 3): `create schema internal`, `revoke all on schema internal from public`, `grant usage on schema internal to authenticated, service_role`, its 13 helper functions, and every function's `search_path = public, internal` (security-definer ones `public, internal, pg_temp`);
    - remove anything in the dump that belongs to Supabase itself rather than this app, if applying it errors.
 5. **Archive the old files.** Move 0001–N to `supabase/migrations-archive/` (the CLI doesn't read it), with a short README saying they're history only: never edited, never run.
 6. **Apply the baseline to prod.** Link prod (`npx supabase link --project-ref zvxquzcfffmxwizonxuo`); confirm prod has no tables of its own; `npx supabase db push --dry-run` must list only `<N+1>_baseline.sql`; then `npx supabase db push`.
@@ -2167,6 +2168,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 200 | COMPLETE on Pokémon days (2026-10-02) | Pokémon can't be exported yet, so a Pokémon day page has **COMPLETE (n)** where EXPORT was: after a confirm, `day_complete` (migration 0038) marks the day's Paid/Ours Pokémon buys Completed with no export (locked, out of the header search), only once the day is over, like EXPORT; ⋯ → Mark Paid/Ours again undoes it. The day shows "Completed … , not exported", and the Calendar marks such a day **Completed** in the Exported chip's place and colour (`buys_in_range` now also returns `exported_games`). Logged as "Day completed" |
 | 201 | Changelog categories: cards in or out (2026-10-02) | **Buys** and **Collections** show only entries that bring cards in or take them out (a buy confirmed, cards removed, a buy deleted or converted to a project; cards added to or removed from a collection, a collection deleted, Can't upload cards in and out). A collection made is **Collections** too (it shows the cards it starts with). A buy converted to a project is **Buys** (owner, 2026-10-02): one entry on the project, the cards added (migration 0039). Everything else is **Actions**: status changes, card edits, repricing, days exported / put back / completed, a buy marked Completed or back, Cash buys downloads (Section 12.4; replaces "status changes are Collections") |
 | 202 | 📞 calls on Priced collections (2026-10-02) | A Priced collection's details show **📞 (n)** after the phone: clicking it after calling the customer adds a Changelog entry (Actions, "Customer called": "Called Jordan Reyes about their collection (offer $120 cash / $160 credit)."), and n is that collection's calls; hovering lists when and by whom. Nothing is stored on the collection: the entries are the record, and the chip shows only while Priced |
+| 203 | Smoke-test fixes (2026-10-02) | The pre-launch smoke test's 13 findings (BUGS.md, BUG_FIX_REPORT.md): on short windows Home keeps a waiting day and Recent activity (a slimmer band, Can't upload cards as one line); Recently exported counts only exported days; Home reloads when the store's day changes; the search bar's sample card is a real printing (Lightning Bolt 117/331 2X2); clearer Convert wording; one-line ⋯ menus; a MONTH chip for Cash buys downloads. Database (migration 0040): the 13 internal helpers move to an `internal` schema the API doesn't serve, every function gets `search_path = public, internal`, `buys_in_range` is signed-in only, `day_mark` is dropped |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

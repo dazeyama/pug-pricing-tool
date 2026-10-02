@@ -52,12 +52,31 @@ const dayOf = (when) => formatInTimeZone(new Date(when), STORE_TZ, 'yyyy-MM-dd')
 const marketOf = (lines) => lines.reduce((s, l) => s + Number(l.cc_sell_price ?? l.unit_price) * l.quantity, 0);
 const cardsIn = (lines) => lines.reduce((n, l) => n + l.quantity, 0);
 
+/** The store's date, kept current while the page stays open: checked each minute. */
+function useStoreDay() {
+  const [day, setDay] = useState(storeDay);
+  useEffect(() => {
+    const timer = setInterval(() => setDay(storeDay()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
+  return day;
+}
+
+/**
+ * Home, loaded afresh when the store's day changes (BUGS.md 6): Today and
+ * Days to export were worked out for the day the page opened, so a page left
+ * open overnight kept yesterday's numbers until the next buy.
+ */
 export default function HomePage() {
+  const today = useStoreDay();
+  return <HomeScreen key={today} today={today} />;
+}
+
+function HomeScreen({ today }) {
   const navigate = useNavigate();
   const user = useStaff().current;
   const [daysRef, daysFit] = useRowsThatFit();
   const [eventsRef, eventsFit] = useRowsThatFit(EVENT_ROW_PX, 4);
-  const today = storeDay();
   const { from, to } = dayRange(today);
 
   // Magic cards in confirmed buys not exported yet (Pokémon can't be exported yet).
@@ -85,12 +104,14 @@ export default function HomePage() {
     .select('seq, at, action, target_name, staff_user_name, staff_user_color, summary')
     .order('seq', { ascending: false })
     .limit(SHOW.events));
-  // Magic days already exported, newest first, for "Recently exported".
+  // Magic days already exported, newest first, for "Recently exported": cards
+  // with export stamps, not ones only marked Completed by hand (BUGS.md 5).
   const exported = useLiveTable('buys', () => supabase
     .from('buy_lines')
     .select('quantity, completed_at, cc_custom_sku, buy_id, buys!inner(kind, status, confirmed_at)')
     .eq('game', 'mtg')
     .not('completed_at', 'is', null)
+    .not('cc_status', 'is', null)
     .eq('buys.kind', 'walk_in')
     .eq('buys.status', 'confirmed')
     .order('completed_at', { ascending: false })
@@ -130,7 +151,9 @@ export default function HomePage() {
   let daysShown = toExport.length;
   let recentShown = 0;
   if (waitingRows > daysFit) {
-    daysShown = Math.max(0, daysFit - 1);                     // room for "+N more"
+    // Room for "+N more" under the days, unless only one row fits: then the
+    // oldest day itself (BUGS.md 1), and the heading's "N waiting" says the rest.
+    daysShown = Math.max(1, daysFit - 1);
   } else {
     const left = daysFit - waitingRows;
     recentShown = left >= 2 ? Math.min(recentDays.length, left - 1) : 0;
@@ -139,7 +162,9 @@ export default function HomePage() {
   // ---- collections and projects
   const collections = open.data ?? [];
   const cantUpload = collections.find((c) => c.system_key);
-  const cantLines = [...(cant.data?.buy_lines ?? cantUpload?.buy_lines ?? [])]
+  // Only from the query that has whole lines: the collections query's lines
+  // have no id or name (a React key warning, and blank card lines).
+  const cantLines = [...(cant.data?.buy_lines ?? [])]
     .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
   const oldestCant = cantLines.reduce((a, l) => (!a || l.created_at < a ? l.created_at : a), null);
   const customer = collections.filter((c) => !c.system_key && !c.project);
@@ -262,7 +287,7 @@ export default function HomePage() {
                   </button>
                 );
               })}
-              {toExport.length > daysShown && (
+              {toExport.length > daysShown && daysFit > 1 && (
                 <button type="button" className="home-more" onClick={() => go('/calendar')}>
                   +{toExport.length - daysShown} more on the Calendar
                 </button>
@@ -290,7 +315,11 @@ export default function HomePage() {
             disabled={!cantUpload}
             onClick={() => cantUpload && go(`/collections/${cantUpload.id}`)}
           >
-            <span className="home-card-head"><span className="home-h">Can't upload cards</span></span>
+            <span className="home-card-head">
+              <span className="home-h">Can't upload cards</span>
+              {/* Shorter windows show just this line (home.css; BUGS.md 2). */}
+              <span className="home-count home-cant-count">{cardsIn(cantLines)} waiting</span>
+            </span>
             <span className="home-cant-body">
               <span className="home-big">{cardsIn(cantLines)}</span>
               <span className="home-cant-info">

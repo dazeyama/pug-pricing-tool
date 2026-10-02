@@ -330,6 +330,10 @@
   box-shadow: 0 10px 30px rgba(0, 0, 0, .45);
 }
 .more-list.up { top: auto; bottom: calc(100% + 6px); }
+/* As wide as its longest item, on one line (BUGS.md 9): a ⋯ beside a narrow
+   button otherwise wrapped "Check Crystal Commerce matches". */
+.more-list { width: max-content; max-width: min(360px, 90vw); }
+.more-list .more-item { white-space: nowrap; }
 .more-item {
   width: 100%;
   padding: 7px 10px;

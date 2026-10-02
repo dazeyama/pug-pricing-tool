@@ -12,6 +12,9 @@
 - Never put API keys, the Supabase secret key (sb_secret_…), customer data or CSV files in the repo,
   code, docs or commit messages. Never commit "PUG Pricing Tool.txt" (contains a live key).
 - Database changes are new migration files; apply to the dev project only unless told otherwise.
+- Helpers only the database's own functions call live in the `internal` schema (migration 0040), which
+  the API doesn't serve. A function that calls one must `set search_path = public, internal`
+  (security-definer: `public, internal, pg_temp`); a plain `= public` can't find them.
 - The owner is QA — see memory `user-is-qa`.
 - The export's spec is docs/EXPORT_FUNCTION.md; docs/EXPORT_BUILD_REPORT.md holds the owner's open questions.
 - Current phase: export E1–E5 built locally 2026-10-01 (migrations 0025–0029 on dev, not pushed),
