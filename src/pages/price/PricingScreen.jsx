@@ -93,6 +93,10 @@ function editQuery(line) {
 // changes (a walk-in buy confirmed or cancelled). The suggestions' sort
 // toggle (newest / oldest first) is kept and reset the same way.
 const BOTH_GAMES = { mtg: true, pokemon: true };
+// JP is Pokémon only (owner, 2026-10-01): while it's on, only PKM is
+// searched and MTG can't be picked; back on EN, the games are as they were.
+const PKM_ONLY = { mtg: false, pokemon: true };
+const JP_NO_MTG = 'Japanese is Pokémon only: switch to EN to search Magic';
 
 /**
  * The pricing screen (spec 8): search, suggestions, the selected card with
@@ -131,7 +135,8 @@ export default function PricingScreen({
   const [lang, setLang] = usePokemonLang();
   const [games, setGames] = useState(BOTH_GAMES);
   const [oldest, setOldest] = useState(false);
-  const search = useCardSearch(text, lang, games, oldest);
+  const searchGames = lang === 'ja' ? PKM_ONLY : games;
+  const search = useCardSearch(text, lang, searchGames, oldest);
   const [selected, setSelected] = useState(null);
   const [highlight, setHighlight] = useState(-1);
   const [showAll, setShowAll] = useState(false);
@@ -403,6 +408,8 @@ export default function PricingScreen({
   /** Clicking a list line: load its card back to edit it (owner, 2026-09-29). */
   function startEdit(line) {
     if (line.game === 'pokemon' && line.lang !== lang) setLang(line.lang);
+    // A Magic card can't be searched in JP: back to EN for it.
+    if (line.game === 'mtg' && lang === 'ja') setLang('en');
     if (!games[line.game]) setGames({ ...games, [line.game]: true });
     const query = editQuery(line);
     setEditing({ line, key: lineKey(line), query, found: false, restored: false });
@@ -552,7 +559,8 @@ export default function PricingScreen({
               setLang(l);
               focusSearch();
             }}
-            games={games}
+            games={searchGames}
+            gameBlocked={lang === 'ja' ? { mtg: JP_NO_MTG } : {}}
             onGames={(g) => {
               setGames(g);
               focusSearch();

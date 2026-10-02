@@ -10,7 +10,7 @@ const GAMES = [
 ];
 
 export default function SearchBar({
-  inputRef, value, onChange, onKeyDown, lang, onLang, games, onGames, note, lead, blocked = null,
+  inputRef, value, onChange, onKeyDown, lang, onLang, games, onGames, note, lead, blocked = null, gameBlocked = {},
 }) {
   return (
     <div className="main-search">
@@ -40,9 +40,14 @@ export default function SearchBar({
         <div className="lang-toggle game-toggle" role="group" aria-label="Games to search">
           {GAMES.map((g) => {
             const on = games[g.key];
+            // A game that can't be picked now (MTG in JP mode): greyed out, saying why.
+            const why = gameBlocked[g.key] ?? null;
             const last = on && GAMES.every((o) => o.key === g.key || !games[o.key]);
             let title = on ? `Searching ${g.name}: click to leave it out` : `Not searching ${g.name}: click to include it`;
-            if (last) title = `Searching ${g.name} only: at least one game stays on`;
+            if (last) title = why || Object.keys(gameBlocked).length
+              ? `Searching ${g.name} only (Japanese is Pokémon only)`
+              : `Searching ${g.name} only: at least one game stays on`;
+            if (why) title = why;
             return (
               <button
                 key={g.key}
@@ -50,8 +55,9 @@ export default function SearchBar({
                 aria-pressed={on}
                 className={`${g.key}${on ? ' on' : ''}${last ? ' last' : ''}`}
                 title={title}
+                disabled={Boolean(why)}
                 onClick={() => {
-                  if (!last) onGames({ ...games, [g.key]: !on });
+                  if (!last && !why) onGames({ ...games, [g.key]: !on });
                 }}
               >
                 {g.label}
