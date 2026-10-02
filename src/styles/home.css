@@ -118,7 +118,7 @@
 .home-side { min-height: 0; }
 /* Never squeezed away (BUGS.md 2): room for its heading and two entries;
    on a short window Can't upload cards gives up its card lines instead. */
-.home-recent { flex: 1; min-height: 98px; }
+.home-recent { flex: 1; min-height: 0; }
 .home-recent .home-activity { flex: 1; min-height: 0; overflow: hidden; }
 .home-recent .home-event { flex: none; height: 18px; align-items: center; }
 .home-cant {
@@ -134,10 +134,13 @@
 .home-cant-body .home-big { flex: none; min-width: 1.4ch; text-align: center; }
 .home-cant-info { display: flex; flex-direction: column; gap: 1px; min-width: 0; font-size: 13px; }
 .home-cant-line { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); font-size: 12.5px; }
-/* Shorter windows (the 1366×768 laptop; BUGS.md 1–2): a slimmer band and
-   gaps, and Can't upload cards as a single line, so Days to export and
-   Recent activity keep their rows. */
-@media (max-height: 820px) {
+/* The laptop (1366×768; BUGS.md 1–2): a slimmer band and gaps, Can't upload
+   cards as a single line, and room kept for Recent activity, so Days to export
+   and Recent activity keep their rows. Laptop-sized screens only, short AND
+   narrow (owner, 2026-10-02): a 1080p screen keeps the full-size Home even in
+   a shorter window. */
+@media (max-height: 820px) and (max-width: 1440px) {
+  .home-recent { min-height: 98px; }
   .home-screen { --home-gap: 14px; margin: 10px auto; padding: 12px 24px; }
   .home-card { gap: 8px; padding: 10px 14px; }
   /* Can't upload cards as one line, its heading and "N waiting". */

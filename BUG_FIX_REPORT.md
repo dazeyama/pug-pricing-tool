@@ -55,6 +55,8 @@ Everything is committed locally and **not pushed**. The database change (migrati
   - slightly tighter gaps and card padding;
   - the **Can't upload cards tile as a single line**: its heading and an "N waiting" chip in the system colour. It's still clickable, and the full tile comes back on taller screens.
 
+**Update (owner, same day): laptop-sized screens only.** The compact layout first switched on for any window 820px tall or less. That also caught 1080p screens in a shorter browser window (125% scaling or zoom), where the elements looked too small. It now needs the window to be **820px tall or less and 1440px wide or less**. Wider screens keep the original full-size Home: normal spacing, the full Can't upload tile, and Recent activity as before. On those screens a very short window can still crowd the bottom row, as it did before the fixes; the item 1 fix still keeps at least one waiting day visible there.
+
 **How I checked it** (measured in the browser):
 
 | Size | Can't upload | Recent activity | Overflow |
@@ -63,6 +65,11 @@ Everything is committed locally and **not pushed**. The database change (migrati
 | 1920×1080 | full tile, with the waiting card's line | 11 entries | none |
 
 At 1920×1080, Recently exported is also back.
+
+After the laptop-only update:
+- **1366×768:** compact, as above.
+- **1536×740** (a 1080p screen at 125%): full-size, with 20px gaps and the full tile.
+- **1919×912:** full-size and unchanged.
 
 ---
 
