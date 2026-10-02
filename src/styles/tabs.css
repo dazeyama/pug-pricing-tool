@@ -288,8 +288,8 @@ header h1 { margin: 0; font-size: 20px; font-weight: 600; }
 .result-btn.done.active, .result-btn.done:hover { opacity: .8; }
 .search-error { margin: 0; color: var(--bad); font-size: 13.5px; }
 .search-hint { margin: 12px 0 0; color: var(--muted); font-size: 12px; font-style: italic; }
-/* A result: the left edge in the buy's user's colour, or the collection's
-   status colour (CM .result-btn). */
+/* A result: the left edge in the buy's game colour, or the collection's
+   kind colour (owner, 2026-10-01; CM .result-btn). */
 .result-buttons { display: flex; flex-direction: column; gap: 6px; }
 .result-btn {
   display: block;
@@ -304,8 +304,10 @@ header h1 { margin: 0; font-size: 20px; font-weight: 600; }
   font: inherit;
   cursor: pointer;
 }
-.result-btn[class*="tone-"] { --c: var(--tone); }
-.result-btn .result-status { color: var(--tone, var(--muted)); font-weight: 600; }
+.result-btn.game-mtg { --c: var(--pal-indigo); }
+.result-btn.game-pokemon { --c: var(--pal-amber); }
+.result-btn.kind-system, .result-btn.kind-project, .result-btn.kind-collection { --c: var(--kind); }
+.result-btn .result-status { color: var(--c, var(--muted)); font-weight: 600; }
 /* Two lines: where it is, then the card as entered, "1 Fabricate (SLD) 123 [NM]". */
 .result-btn .result-where { display: block; margin-bottom: 2px; font-size: 12.5px; color: var(--muted); }
 .result-btn .result-where .game-badge { margin-right: 6px; vertical-align: 1px; }

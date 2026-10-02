@@ -4,10 +4,9 @@ import { supabase } from '../lib/supabase.js';
 import { dayDate, storeDay } from '../lib/calendar.js';
 import { formatTime } from '../lib/time.js';
 import { relativeDay } from '../lib/changelog.js';
-import { colorVar } from '../lib/palette.js';
 import { lineTextWithCondition } from '../lib/lineFormat.js';
 import { LINE_LIMIT, MIN_CHARS, flatRows, groupResults, searchArgs } from '../lib/globalSearch.js';
-import { statusLabel, statusTone } from '../pages/collections/status.js';
+import { statusLabel } from '../pages/collections/status.js';
 import { useStaff } from '../state/staff.jsx';
 import GameBadge from './GameBadge.jsx';
 import UserTag from './UserTag.jsx';
@@ -164,7 +163,9 @@ export default function SearchBox({ wide }) {
     const i = index.get(row.key);
     const buy = row.kind === 'walk_in';
     const user = buy ? staff.byId(row.confirmedBy) : null;
-    const tone = buy ? '' : ` ${statusTone({ status: row.status, paid_method: row.paidMethod })}`;
+    // Coloured by what it is (owner, 2026-10-01): a buy by its game, a
+    // collection by its kind (System, Projects, Collections).
+    const tint = buy ? ` game-${row.game}` : ` kind-${row.collectionKind ?? 'collection'}`;
     // Completed (an exported buy, a Completed collection; Show all only): partly faded (owner, 2026-09-30).
     const done = buy ? row.completed : row.status === 'completed';
     return (
@@ -174,8 +175,7 @@ export default function SearchBox({ wide }) {
         role="option"
         aria-selected={i === active}
         data-idx={i}
-        className={`result-btn${i === active ? ' active' : ''}${tone}${done ? ' done' : ''}`}
-        style={buy && user ? { '--c': colorVar(user.color) } : undefined}
+        className={`result-btn${i === active ? ' active' : ''}${tint}${done ? ' done' : ''}`}
         onMouseEnter={(e) => {
           setActive(i);
           setPreview(previewFor(row.entries[0].line.image_url, e.currentTarget, results.current, 'left'));

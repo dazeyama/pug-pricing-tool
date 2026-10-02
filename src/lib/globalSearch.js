@@ -69,6 +69,8 @@ export function groupResults(lines) {
         game: l.game,
         status: l.status,
         paidMethod: l.paid_method,
+        // A collection's kind, for its colour: system, project or collection.
+        collectionKind: l.collection_kind ?? (l.kind === 'collection' ? 'collection' : null),
         customerName: l.customer_name,
         confirmedBy: l.confirmed_by,
         number: l.buy_number,
