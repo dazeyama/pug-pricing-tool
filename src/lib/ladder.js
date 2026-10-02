@@ -95,3 +95,21 @@ export function ladderFor(line, today, pct) {
     : today.fallback ?? null;
   return { ladder: priceLadder(override ? {} : market, base, pct, line.game ?? 'mtg'), wanted, override, auto };
 }
+
+/** The fallback bases that are TCGplayer's Market Price (Scryfall's usd, TCGdex's marketPrice). */
+const TCGPLAYER_BASES = new Set(['Scryfall', 'TCGdex']);
+
+/** Is a fallback's base TCGplayer's Market Price (through Scryfall or TCGdex)? */
+export const isTcgplayerBase = (entry) => TCGPLAYER_BASES.has(entry?.base?.from);
+
+/**
+ * A ladder price that is TCGplayer's Market Price itself, not a ratio of it
+ * (owner, 2026-10-02): from Scryfall / TCGdex, at the condition's 100%, not
+ * capped below a better condition. Shown as "TCGplayer"; every other
+ * fallback stays "fallback".
+ * @param {object} entry  a priceLadder entry
+ * @param {number|string} conditionPct  the condition's Master Fallback Percentage
+ */
+export function isTcgplayerPrice(entry, conditionPct) {
+  return entry?.source === 'fallback' && !entry.cap && isTcgplayerBase(entry) && Number(conditionPct) === 100;
+}

@@ -740,7 +740,7 @@
 .pc-price.manual b { font-weight: 800; }
 .pc-price.manual s { font-size: 11px; font-weight: 500; color: var(--muted); }
 .price-btn.on .pc-price.manual s, .price-btn.on .pc-price.muted { color: rgba(255, 255, 255, .7); }
-.fb-tag { font-size: 9.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--warn); }
+.fb-tag { font-size: 9.5px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; color: var(--warn); white-space: nowrap; }
 .pc-price.shimmer {
   width: 70%;
   height: 16px;

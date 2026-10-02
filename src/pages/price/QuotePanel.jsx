@@ -12,7 +12,7 @@ import PriceWarnings from './PriceWarnings.jsx';
  * hovering it shows the reasons in a box floating over Finish & Details, and
  * clicking keeps the box open until the next click anywhere (owner: nothing
  * else may lose room to it).
- * @param {{ source: 'justtcg'|'fallback'|'cardmarket'|'manual'|null, warnings: string[] }} props
+ * @param {{ source: 'justtcg'|'fallback'|'tcgplayer'|'cardmarket'|'manual'|null, warnings: string[] }} props
  */
 export default function QuotePanel({
   candidate, loading, condition, price, source, cashPct, creditPct, warnings, onDone,
@@ -45,7 +45,8 @@ export default function QuotePanel({
     );
   }
 
-  const tag = { manual: '✎ manual', fallback: 'fallback', cardmarket: 'cardmarket' }[source] ?? null;
+  // 'tcgplayer': the price is TCGplayer's Market Price itself (owner, 2026-10-02).
+  const tag = { manual: '✎ manual', fallback: 'fallback', cardmarket: 'cardmarket', tcgplayer: 'TCGplayer' }[source] ?? null;
   const chip = (label, pct) => {
     const amount = price != null ? payout(price, pct) : null;
     const raw = price != null ? (price * pct) / 100 : null;

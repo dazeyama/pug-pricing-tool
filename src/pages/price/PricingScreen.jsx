@@ -22,6 +22,7 @@ import {
 } from '../../lib/prices.js';
 import { useSettings } from '../../state/settings.jsx';
 import { useEurUsd } from '../../lib/useEurUsd.js';
+import { isTcgplayerPrice } from '../../lib/ladder.js';
 import { useEnglishPokemonName } from '../../lib/pokemonNames.js';
 import { readLocal, writeLocal } from '../../lib/local.js';
 import { buildLine } from '../../lib/buyLine.js';
@@ -606,7 +607,8 @@ export default function PricingScreen({
               price={manual ?? ladder[condition].price}
               source={manual != null ? 'manual'
                 : ladder[condition].base?.from === 'Cardmarket' && ladder[condition].source === 'fallback' ? 'cardmarket'
-                  : ladder[condition].source}
+                  : isTcgplayerPrice(ladder[condition], fallbackPct?.[condition]) ? 'tcgplayer'
+                    : ladder[condition].source}
               cashPct={rates.cash}
               creditPct={rates.credit}
               warnings={warnings}
