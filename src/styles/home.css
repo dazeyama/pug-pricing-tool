@@ -9,10 +9,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  /* A band of colour behind the panels, the page's full width inside its
-     margins (owner, 2026-10-02: fills the page better); the margins keep
-     the page colour. */
-  margin: 16px 24px;
+  /* A band of colour behind the panels (owner, 2026-10-02: fills the page
+     better), edge to edge with the tabs above: the header's 1400px less its
+     24px padding (tabs.css); outside it, the page colour. */
+  width: calc(100% - 48px);
+  max-width: calc(1400px - 48px);
+  margin: 16px auto;
   padding: 20px 24px;
   border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
   border-radius: 14px;
