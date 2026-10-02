@@ -3,7 +3,7 @@
    scrolls (the fixed shell), and the lists are short enough to fit. */
 /* The space between Home's panels, everywhere (owner, 2026-10-01: a little more room). */
 .home-screen {
-  --home-gap: 16px;
+  --home-gap: 20px;
   flex: 1;
   min-height: 0;
   display: flex;
