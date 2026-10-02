@@ -1059,7 +1059,7 @@ Collections  14                                     [ Search name or phone… ] 
 - **Click a row** to open the collection's pricing screen (`#/collections/:id`).
 - **Empty state:** "No collections yet. Press + Price Collection to start one." It shows as the table's only row, under the column headings; a search or filter with no results reads "No collections match." the same way. The table and the page stay full width whatever they show, and the heading row is one line: **Collections (count)** on the left, **+ Price Collection** and the search box on the right (owner's decisions, 2026-09-29), so nothing moves between views.
 
-**As of 2026-10-01 (owner's decision): three tables**, in this order, each with its own heading, count and button: **System** (Can't upload cards, `docs/EXPORT_FUNCTION.md` 9), **Projects** (**+ Start Project**, 9.1a) and **Collections** (**+ Price Collection**, with the status filter chips). One search box and one sort serve all three; the three share column widths so they line up.
+**As of 2026-10-01 (owner's decision): three tables**, in this order, each with its own heading and count: **System** (Can't upload cards, `docs/EXPORT_FUNCTION.md` 9), **Projects** (9.1a) and **Collections** (with the status filter chips). **+ Start Project** and **+ Price Collection** sit in the header row beside the search box, the same width. One search box and one sort serve all three; the three share column widths so they line up.
 
 ### 9.1a Projects (owner's decision, 2026-10-01)
 

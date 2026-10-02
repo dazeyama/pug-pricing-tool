@@ -192,15 +192,14 @@ export default function CollectionsPage() {
     navigate(`/collections/${id}`);
   }
 
-  /** One of the three tables: its heading (name, count, button), then the table. */
-  const section = (kind, title, { button = null, filters = false, empty, noMatch }) => {
+  /** One of the three tables: its heading (name, count), then the table. */
+  const section = (kind, title, { filters = false, empty, noMatch }) => {
     const rows = tables[kind];
     return (
       <section className={`col-section ${kind}`} aria-label={title}>
         <div className="col-section-head">
           <h3>{title}</h3>
           <span className="count-badge">{totals[kind]}</span>
-          {button}
         </div>
         {filters && (
           <div className="status-filter" role="group" aria-label="Status">
@@ -278,6 +277,13 @@ export default function CollectionsPage() {
           <h2>Collections</h2>
           <span className="count-badge">{all.length}</span>
         </div>
+        {/* Both buttons up here with the search, the same width (owner, 2026-10-01). */}
+        <GuardButton className="btn primary big new-col-btn" onClick={() => setCreating('project')}>
+          + Start Project
+        </GuardButton>
+        <GuardButton className="btn primary big new-col-btn" onClick={() => setCreating('collection')}>
+          + Price Collection
+        </GuardButton>
         <input
           type="search"
           className="col-search"
@@ -293,20 +299,10 @@ export default function CollectionsPage() {
         noMatch: 'Nothing here matches.',
       })}
       {section('project', 'Projects', {
-        button: (
-          <GuardButton className="btn primary big new-col-btn" onClick={() => setCreating('project')}>
-            + Start Project
-          </GuardButton>
-        ),
         empty: 'No projects yet. Press + Start Project to price a box of the store’s own cards.',
         noMatch: 'No projects match.',
       })}
       {section('collection', 'Collections', {
-        button: (
-          <GuardButton className="btn primary big new-col-btn" onClick={() => setCreating('collection')}>
-            + Price Collection
-          </GuardButton>
-        ),
         filters: true,
         empty: 'No collections yet. Press + Price Collection to start one.',
         noMatch: 'No collections match.',
