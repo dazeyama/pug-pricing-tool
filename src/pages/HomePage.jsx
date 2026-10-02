@@ -175,14 +175,17 @@ export default function HomePage() {
             <span className="home-big">{cardsIn(cantLines)}<small> {cardsIn(cantLines) === 1 ? 'card' : 'cards'} waiting</small></span>
             <span className="home-muted">{oldestCant ? `Oldest from ${dayDate(dayOf(oldestCant))}` : 'Nothing waiting'}</span>
           </button>
+          {/* Quick actions, 2×2, sharing the column with Can't upload cards (owner, 2026-10-01). */}
+          <section className="home-card home-quick">
+            <span className="home-label">Quick actions</span>
+            <div className="home-actions" role="group" aria-label="Quick actions">
+              <button type="button" className="btn" onClick={() => go('/price')}>Buy cards</button>
+              <button type="button" className="btn" onClick={() => go(`/calendar/mtg/${today}`)}>Today's day</button>
+              <button type="button" className="btn" onClick={() => go('/collections', { create: 'project' })}>+ Start Project</button>
+              <button type="button" className="btn" onClick={() => go('/collections', { create: 'collection' })}>+ Price Collection</button>
+            </div>
+          </section>
         </div>
-      </div>
-
-      <div className="home-actions" role="group" aria-label="Quick actions">
-        <button type="button" className="btn" onClick={() => go('/price')}>Buy cards</button>
-        <button type="button" className="btn" onClick={() => go(`/calendar/mtg/${today}`)}>Today's day</button>
-        <button type="button" className="btn" onClick={() => go('/collections', { create: 'project' })}>+ Start Project</button>
-        <button type="button" className="btn" onClick={() => go('/collections', { create: 'collection' })}>+ Price Collection</button>
       </div>
 
       <section className="home-card">

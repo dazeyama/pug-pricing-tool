@@ -82,11 +82,25 @@
 .home-label { color: var(--muted); font-size: 12.5px; }
 .home-big { font-size: 26px; font-weight: 800; line-height: 1.1; }
 .home-big small { font-size: 13px; font-weight: 400; color: var(--muted); }
-.home-cant { flex: 1; justify-content: center; gap: 4px; border-left: 4px solid var(--kind); border-radius: 0 10px 10px 0; cursor: pointer; }
+/* Can't upload cards takes the column's height left over by the quick
+   actions, its lines centered (owner, 2026-10-01). */
+.home-side { min-height: 0; }
+.home-cant {
+  flex: 1;
+  min-height: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  text-align: center;
+  border-left: 4px solid var(--kind);
+  border-radius: 0 10px 10px 0;
+  cursor: pointer;
+}
+.home-quick { flex: none; }
 .home-cant:hover:not(:disabled) { background: color-mix(in srgb, var(--kind) 8%, var(--panel)); }
 .home-cant:disabled { cursor: default; }
-.home-actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
-.home-actions .btn { padding: 8px 6px; font-weight: 700; white-space: nowrap; }
+.home-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.home-actions .btn { padding: 8px 6px; font-size: 13px; font-weight: 700; line-height: 1.25; }
 .home-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 .home-stats.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .home-stat { display: flex; flex-direction: column; gap: 1px; padding: 7px 10px; border-radius: 8px; background: var(--panel-2); }
