@@ -100,9 +100,12 @@
 .search-note strong { color: var(--text); }
 
 /* ---- Below the search bar (owner's layout, 2026-09-29) -------------------
-     card    | info    | quote     (the selected price, Credit, Cash)
-     card    | thumbs  | side      (finish & details)
-     prices  | thumbs  | actions   (Qty · CLEAR · ADD CARD)                 */
+     left    | info    | quote     (the selected price, Credit, Cash)
+     left    | thumbs  | side      (finish & details)
+     left    | thumbs  | actions   (Qty · CLEAR · ADD CARD)
+   "left" is the card over its condition prices, one column (owner,
+   2026-10-01), so the bottom row is only as tall as the action row and
+   Finish & Details keep their room on smaller screens.                     */
 .stage-body {
   /* The info box's row is a fixed height, drawn with or without a card, so
      the suggestions under it never move. */
@@ -113,11 +116,14 @@
   grid-template-columns: 336px minmax(0, 1fr) clamp(260px, 21vw, 380px);
   grid-template-rows: var(--info-h) minmax(0, 1fr) auto;
   grid-template-areas:
-    "card   info   quote"
-    "card   thumbs side"
-    "prices thumbs actions";
+    "left info   quote"
+    "left thumbs side"
+    "left thumbs actions";
   gap: 16px 32px;
 }
+.area-left { grid-area: left; min-height: 0; display: flex; flex-direction: column; gap: 16px; }
+.area-left > .area-card { flex: 1; }
+.area-left > .area-prices { flex: none; }
 /* The card and thumbnail areas are size containers: their contents are sized
    from the space the grid gives them (cqw/cqh), never the other way round. */
 .area-card { grid-area: card; min-height: 0; display: flex; flex-direction: column; container-type: size; }
@@ -562,7 +568,15 @@
   background: rgba(0, 0, 0, .32);
   border: 1px solid rgba(154, 161, 189, .45);
   border-radius: 12px;
+  /* Never let Details spill out unseen (owner, 2026-10-01): too short for
+     even a little of it, the whole panel scrolls, with a clear scrollbar. */
+  overflow-y: auto;
 }
+.finish-panel > * { flex: none; }
+.finish-panel > .details { flex: 1 1 auto; min-height: 64px; }
+.finish-panel::-webkit-scrollbar { width: 10px; }
+.finish-panel::-webkit-scrollbar-track { background: rgba(255, 255, 255, .07); border-radius: 999px; }
+.finish-panel::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 999px; }
 .details-label { margin-top: 14px; }
 
 /* The FOIL switch: green with the knob right when on, red with the knob left
@@ -1196,4 +1210,25 @@
   .card-info { padding: 12px 14px; }
   .info-name { font-size: 19px; }
   .area-prices .stage-slot, .area-actions .stage-slot { height: 80px; }
+  /* Smaller windows (owner, 2026-10-01): a shorter info row, a lower finish
+     control and action row, tighter gaps, so Finish & Details fit. */
+  .stage-body { --info-h: 150px; gap: 12px 24px; }
+  .area-left { gap: 12px; }
+  .finish-panel { padding: 10px 12px 12px; }
+  .details-label { margin-top: 10px; }
+  .finish-segments { height: 48px; }
+  .finish-segments button { font-size: 15px; }
+  .foil-switch { height: 40px; }
+  .foil-knob { width: 30px; height: 30px; }
+  .action-row { height: 52px; }
+}
+/* One row of 5 suggestions on a shorter window (Suggestions.jsx): each sized
+   from the full height (36px for the line above, 22px for its label). */
+.thumbs.one-row {
+  --thumb-w: min(146px, calc((100cqw - 4 * 14px) / 5), calc((100cqh - 36px - 22px) * 0.7176));
+}
+/* Narrower windows: a slimmer card column and side column, smaller gaps. */
+@media (max-width: 1500px) {
+  .stage-body { grid-template-columns: 300px minmax(0, 1fr) clamp(240px, 21vw, 340px); column-gap: 24px; }
+  .finish-segments button { font-size: 15px; letter-spacing: .02em; }
 }

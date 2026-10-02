@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import SearchBar from './SearchBar.jsx';
 import SelectedCard from './SelectedCard.jsx';
-import Suggestions, { ROW } from './Suggestions.jsx';
+import Suggestions, { useSuggestionCount } from './Suggestions.jsx';
 import ShowAllModal from './ShowAllModal.jsx';
 import FinishPanel from './FinishPanel.jsx';
 import PriceTable from './PriceTable.jsx';
@@ -137,6 +137,8 @@ export default function PricingScreen({
   const [oldest, setOldest] = useState(false);
   const searchGames = lang === 'ja' ? PKM_ONLY : games;
   const search = useCardSearch(text, lang, searchGames, oldest);
+  // 10 suggestions, or 5 on a shorter window (owner, 2026-10-01).
+  const shownCount = useSuggestionCount();
   const [selected, setSelected] = useState(null);
   const [highlight, setHighlight] = useState(-1);
   const [showAll, setShowAll] = useState(false);
@@ -271,8 +273,8 @@ export default function PricingScreen({
   const canRemove = Boolean(user) && !offline && !removeLocked;
   const removeBlocked = blockedBy(removeLocked);
 
-  const visible = search.candidates.slice(0, ROW);
-  const hasShowAll = search.candidates.length > ROW;
+  const visible = search.candidates.slice(0, shownCount);
+  const hasShowAll = search.candidates.length > shownCount;
 
   // When a search settles: a lone printing is selected automatically; a
   // selection the new results don't include is dropped (spec 8.3, 8.12).
@@ -285,7 +287,7 @@ export default function PricingScreen({
       const index = found.findIndex((c) => c.key === editing.key);
       if (index >= 0) {
         setSelected(found[index]);
-        setHighlight(index < ROW ? index : -1);
+        setHighlight(index < shownCount ? index : -1);
         setEditing((e) => e && { ...e, found: true });
       } else {
         toast("Couldn't find that card again, so it can't be edited here. Remove it with × and add it again.", 'err');
@@ -301,7 +303,7 @@ export default function PricingScreen({
     const cur = selectedRef.current;
     const index = cur ? found.findIndex((c) => c.key === cur.key) : -1;
     setSelected(index >= 0 ? found[index] : null);
-    setHighlight(index >= 0 && index < ROW ? index : -1);
+    setHighlight(index >= 0 && index < shownCount ? index : -1);
     // Runs once per finished search, not on every re-render of the same results.
   }, [search.runId, search.settled, editing?.key, editing?.found]);
 
@@ -574,6 +576,9 @@ export default function PricingScreen({
               beside it with the suggestions below; finish & details beside the
               suggestions with the action row under them. Grid areas in price.css. */}
           <div className="stage-body">
+            {/* The card over its condition prices, one column (owner, 2026-10-01): the
+                prices no longer make the QTY / ADD CARD row as tall as themselves. */}
+            <div className="area-left">
             <SelectedCard
               candidate={selected}
               typedName={search.parsed?.name}
@@ -582,6 +587,30 @@ export default function PricingScreen({
               finish={finish}
               pokemonVersion={version}
             />
+            <div className="area-prices">
+              <PriceTable
+                candidate={selected}
+                prices={prices}
+                ladder={ladder}
+                pct={fallbackPct}
+                market={market}
+                fallback={fallback}
+                warnings={warnings}
+                cardmarket={{ eur: cardmarketEur, usd: cardmarketUsd, rate: eurUsd }}
+                override={activeOverride}
+                autoCardmarket={autoCardmarket}
+                onOverride={setOverride}
+                fetchedAt={result?.card ? result.fetchedAt : null /* a "no match" has a date too */}
+                condition={condition}
+                onCondition={setCondition}
+                manual={manual}
+                onManual={setManual}
+                manualOpen={manualOpen}
+                setManualOpen={setManualOpen}
+                onDone={focusSearch}
+              />
+            </div>
+            </div>
             <Suggestions
               search={search}
               lang={lang}
@@ -591,6 +620,7 @@ export default function PricingScreen({
               onSearchName={searchName}
               onShowAll={() => setShowAll(true)}
               oldest={oldest}
+              count={shownCount}
               onOldest={(o) => {
                 setOldest(o);
                 focusSearch();
@@ -626,29 +656,6 @@ export default function PricingScreen({
                   setPrinting({ key: selected.key, finish: null, version: id });
                   focusSearch();
                 }}
-              />
-            </div>
-            <div className="area-prices">
-              <PriceTable
-                candidate={selected}
-                prices={prices}
-                ladder={ladder}
-                pct={fallbackPct}
-                market={market}
-                fallback={fallback}
-                warnings={warnings}
-                cardmarket={{ eur: cardmarketEur, usd: cardmarketUsd, rate: eurUsd }}
-                override={activeOverride}
-                autoCardmarket={autoCardmarket}
-                onOverride={setOverride}
-                fetchedAt={result?.card ? result.fetchedAt : null /* a "no match" has a date too */}
-                condition={condition}
-                onCondition={setCondition}
-                manual={manual}
-                onManual={setManual}
-                manualOpen={manualOpen}
-                setManualOpen={setManualOpen}
-                onDone={focusSearch}
               />
             </div>
             <div className="area-actions">

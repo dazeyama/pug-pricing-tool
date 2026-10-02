@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import GameBadge from '../../components/GameBadge.jsx';
 import CardLoading from '../../components/CardLoading.jsx';
 import { useCardImages } from './useCardImages.js';
@@ -6,6 +6,23 @@ import { POKEMON_CARD_BACK } from '../../lib/pokemonImages.js';
 
 /** Suggestions shown at once: 2 rows of 5 (owner's layout, 2026-09-29). */
 export const ROW = 10;
+// Shorter windows show one row of 5, bigger (owner, 2026-10-01: room for
+// Finish and Details). The same height as the stage's compact layout.
+const SHORT = '(max-height: 820px)';
+
+/** How many suggestions show: ROW, or 5 on a shorter window; follows resizing. */
+export function useSuggestionCount() {
+  const query = typeof window !== 'undefined' && window.matchMedia ? window.matchMedia(SHORT) : null;
+  const [short, setShort] = useState(() => Boolean(query?.matches));
+  useEffect(() => {
+    if (!query) return undefined;
+    const onChange = (e) => setShort(e.matches);
+    query.addEventListener('change', onChange);
+    setShort(query.matches);
+    return () => query.removeEventListener('change', onChange);
+  }, []);
+  return short ? 5 : ROW;
+}
 
 const RARITIES = new Set(['common', 'uncommon', 'rare', 'mythic', 'special', 'bonus']);
 
@@ -139,10 +156,10 @@ function Status({ search, lang }) {
  * on the right when there are more.
  */
 export default function Suggestions({
-  search, lang, highlight, selectedKey, onPick, onSearchName, onShowAll, oldest, onOldest,
+  search, lang, highlight, selectedKey, onPick, onSearchName, onShowAll, oldest, onOldest, count: shown = ROW,
 }) {
-  const visible = search.candidates.slice(0, ROW);
-  const more = search.candidates.length > ROW;
+  const visible = search.candidates.slice(0, shown);
+  const more = search.candidates.length > shown;
   const count = search.hasMore ? `${search.candidates.length}+` : search.candidates.length;
 
   return (
@@ -170,7 +187,7 @@ export default function Suggestions({
           </button>
         )}
       </div>
-      <div className="thumbs">
+      <div className={`thumbs${shown <= 5 ? ' one-row' : ''}`}>
         {visible.map((c, i) => (
           <Thumb
             key={c.key}
@@ -182,7 +199,7 @@ export default function Suggestions({
           />
         ))}
         {/* The rest of the 10 slots as faded card shapes, so the grid never looks empty. */}
-        {Array.from({ length: ROW - visible.length }, (_, i) => (
+        {Array.from({ length: shown - visible.length }, (_, i) => (
           <span key={`slot-${i}`} className="thumb thumb-slot" aria-hidden="true">
             <span className="thumb-img" />
             <span className="thumb-label">&nbsp;</span>
