@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
 import { useLiveTable } from '../lib/useLiveTable.js';
@@ -19,7 +20,25 @@ import { formatInTimeZone } from 'date-fns-tz';
 const DAY_MS = 86_400_000;
 const STALE_PRICES_DAYS = 14;   // a project's oldest price this old is worth a REPRICE?
 const USAGE_WARN = 0.8;         // JustTCG's day this used: say so
-const SHOW = { days: 3, rows: 4, events: 5 };   // what fits without scrolling
+const SHOW = { rows: 4, events: 5 };   // what fits without scrolling
+// Days to export takes the panel's spare height (owner, 2026-10-01): as many
+// rows as fit (each row 32px and a 6px gap, home.css).
+const DAY_ROW_PX = 38;
+
+/** How many 38px rows fit in an element, kept up to date as it resizes. */
+function useRowsThatFit() {
+  const [el, setEl] = useState(null);
+  const [fit, setFit] = useState(3);
+  useEffect(() => {
+    if (!el) return undefined;
+    const observer = new ResizeObserver(([entry]) => {
+      setFit(Math.max(1, Math.floor((entry.contentRect.height + 6) / DAY_ROW_PX)));
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [el]);
+  return [setEl, fit];
+}
 
 const plural = (n, word) => `${n.toLocaleString()} ${word}${n === 1 ? '' : 's'}`;
 const daysBetween = (from, to) => Math.round((Date.parse(`${to}T12:00:00Z`) - Date.parse(`${from}T12:00:00Z`)) / DAY_MS);
@@ -29,6 +48,7 @@ const cardsIn = (lines) => lines.reduce((n, l) => n + l.quantity, 0);
 
 export default function HomePage() {
   const navigate = useNavigate();
+  const [daysRef, daysFit] = useRowsThatFit();
   const today = storeDay();
   const { from, to } = dayRange(today);
 
@@ -70,6 +90,8 @@ export default function HomePage() {
     days.set(day, d);
   }
   const toExport = [...days.values()].sort((a, b) => a.day.localeCompare(b.day));
+  // All of them if they fit; else as many as fit with "+N more" on the last row.
+  const daysShown = toExport.length > daysFit ? Math.max(0, daysFit - 1) : toExport.length;
 
   // ---- collections and projects
   const collections = open.data ?? [];
@@ -122,8 +144,8 @@ export default function HomePage() {
           ) : !toExport.length ? (
             <p className="home-empty">Every past Magic day is exported.</p>
           ) : (
-            <div className="home-list">
-              {toExport.slice(0, SHOW.days).map((d) => {
+            <div className="home-list home-days" ref={daysRef}>
+              {toExport.slice(0, daysShown).map((d) => {
                 const age = daysBetween(d.day, today);
                 return (
                   <button key={d.day} type="button" className="home-item game-mtg" onClick={() => go(`/calendar/mtg/${d.day}`)}>
@@ -133,9 +155,9 @@ export default function HomePage() {
                   </button>
                 );
               })}
-              {toExport.length > SHOW.days && (
+              {toExport.length > daysShown && (
                 <button type="button" className="home-more" onClick={() => go('/calendar')}>
-                  +{toExport.length - SHOW.days} more on the Calendar
+                  +{toExport.length - daysShown} more on the Calendar
                 </button>
               )}
             </div>

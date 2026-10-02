@@ -13,7 +13,10 @@
 .home {
   width: 50%;
   min-width: 640px;
-  max-height: 100%;
+  /* As tall as the space below the header allows, up to 900px; the spare
+     height goes to Days to export (owner, 2026-10-01). */
+  height: 100%;
+  max-height: 900px;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -25,7 +28,13 @@
 }
 .home-warn { margin: 0; padding: 8px 12px; font-size: 13px; }
 .home-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.home-row.home-top { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); }
+.home-row.home-top { flex: 1; min-height: 0; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); }
+.home > :not(.home-top) { flex: none; }
+.home-export { min-height: 0; }
+.home-days { flex: 1; min-height: 0; overflow: hidden; }
+/* Every row the same height, so the count that fits is exact. */
+.home-days .home-item, .home-days .home-more { flex: none; height: 32px; align-items: center; }
+.home-days .home-more { display: flex; }
 .home-side { display: flex; flex-direction: column; gap: 10px; }
 .home-card {
   display: flex;
