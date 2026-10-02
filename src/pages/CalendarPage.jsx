@@ -1,9 +1,18 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
 import { useLiveTable } from '../lib/useLiveTable.js';
 import { monthGrid, monthRange, monthTitle, parseMonth, shiftMonth, storeDay } from '../lib/calendar.js';
 import { colorVar } from '../lib/palette.js';
+import { formatDateTime } from '../lib/time.js';
+import { withLoading } from '../lib/loading.js';
+import {
+  CASH_DOWNLOADED, cashBuysCsv, loadCashBuys, recordCashDownload, saveCashBuys,
+} from '../lib/cashBuys.js';
+import GuardButton from '../components/GuardButton.jsx';
+import { useToast } from '../components/Toast.jsx';
+import { useConnection } from '../state/connection.jsx';
+import { useDevice } from '../state/device.jsx';
 import { useStaff } from '../state/staff.jsx';
 
 const GAMES = [
@@ -30,17 +39,112 @@ export default function CalendarPage() {
   const go = (m) => setParams(m === storeDay().slice(0, 7) ? {} : { month: m });
   return (
     <>
+      {/* Keyed by month: each month loads (and listens) afresh. */}
+      <CalendarTop key={`top:${month}`} month={month} go={go} />
+      <CalendarMonth key={month} month={month} />
+    </>
+  );
+}
+
+const nothing = () => Promise.resolve({ data: [], error: null });
+
+/**
+ * A month's cash buys, live, and whether its file was ever downloaded
+ * (null when that couldn't be read). `month` null: nothing.
+ */
+function useCashBuys(month) {
+  const rows = useLiveTable('buys', () => (month ? loadCashBuys(month) : nothing()));
+  const seen = useLiveTable('events', () => (month
+    ? supabase.from('events').select('at, staff_user_name')
+      .eq('action', CASH_DOWNLOADED).eq('day', `${month}-01`)
+      .order('at', { ascending: false }).limit(1)
+    : nothing()));
+  return {
+    month,
+    rows: rows.data ?? [],
+    loaded: rows.loaded && seen.loaded,
+    last: seen.error ? null : seen.data?.[0] ?? null,
+    downloaded: seen.error ? null : (seen.data ?? []).length > 0,
+  };
+}
+
+/**
+ * The heading row: Calendar, the month picker, and Export Cash Buys (owner,
+ * 2026-10-02): the month's buys paid in cash as a CSV, for records and taxes.
+ * Under it, a reminder for a finished month whose file was never downloaded:
+ * the month shown, or, on the current month, last month.
+ */
+function CalendarTop({ month, go }) {
+  const current = storeDay().slice(0, 7);
+  const cash = useCashBuys(month);
+  const lastMonth = useCashBuys(month === current ? shiftMonth(current, -1) : null);
+  const staff = useStaff();
+  const { deviceId } = useDevice();
+  const { offline } = useConnection();
+  const toast = useToast();
+  const [busy, setBusy] = useState(false);
+
+  /** Fetch the month afresh, hand over the file, and log it. */
+  async function download(m) {
+    setBusy(true);
+    const { data, error } = await withLoading(() => loadCashBuys(m));
+    if (error || !data.length) {
+      setBusy(false);
+      toast(error ? `Couldn't load the cash buys: ${error.message}` : `No cash buys in ${monthTitle(m)}.`, 'err');
+      return;
+    }
+    saveCashBuys(cashBuysCsv(data, staff.byId), m);
+    const { error: logError } = await recordCashDownload(m, data, staff.current, deviceId);
+    setBusy(false);
+    if (logError) toast(`Downloaded, but the download couldn't be logged: ${logError.message}`, 'err');
+    else toast(`Downloaded ${data.length} cash buy${data.length === 1 ? '' : 's'} for ${monthTitle(m)}.`, 'ok');
+  }
+
+  const n = cash.rows.length;
+  const why = offline ? 'No connection' : busy ? 'Downloading…' : !cash.loaded ? 'Loading…'
+    : !n ? `No cash buys in ${monthTitle(month)}` : null;
+  const lastNote = cash.last
+    ? ` Last downloaded ${formatDateTime(cash.last.at)}${cash.last.staff_user_name ? ` by ${cash.last.staff_user_name}` : ''}.`
+    : cash.downloaded === false ? ' Never downloaded.' : '';
+  // Finished months with cash buys whose file was never downloaded.
+  const due = [month < current ? cash : null, lastMonth.month ? lastMonth : null]
+    .filter((c) => c && c.loaded && c.rows.length > 0 && c.downloaded === false);
+
+  return (
+    <>
       <div className="panel-head cal-head">
         <div className="panel-title"><h2>Calendar</h2></div>
         <div className="cal-picker">
           <button type="button" className="btn cal-step" aria-label="Previous month" onClick={() => go(shiftMonth(month, -1))}>◀</button>
           <span className="cal-month">{monthTitle(month)}</span>
           <button type="button" className="btn cal-step" aria-label="Next month" onClick={() => go(shiftMonth(month, 1))}>▶</button>
-          <button type="button" className="btn small cal-today" onClick={() => go(storeDay().slice(0, 7))}>Today</button>
+          <button type="button" className="btn small cal-today" onClick={() => go(current)}>Today</button>
         </div>
+        <GuardButton
+          className="btn cash-export"
+          disabled={Boolean(why)}
+          title={why ?? `Download ${monthTitle(month)}'s cash buys as a CSV: walk-in buys and collections paid in cash, for records and taxes.${lastNote}`}
+          onClick={() => download(month)}
+        >
+          Export Cash Buys ({cash.loaded ? n : '…'})
+        </GuardButton>
       </div>
-      {/* Keyed by month: each month loads (and listens) afresh. */}
-      <CalendarMonth key={month} month={month} />
+      {due.map((c) => (
+        <div key={c.month} className="banner warn banner-row cash-reminder" role="status">
+          <span>
+            <strong>{monthTitle(c.month)}</strong>'s cash buys file ({c.rows.length} buy{c.rows.length === 1 ? '' : 's'}) has
+            never been downloaded. Download it for the store's records and taxes.
+          </span>
+          <GuardButton
+            className="btn small cash-export"
+            disabled={offline || busy}
+            title={offline ? 'No connection' : busy ? 'Downloading…' : undefined}
+            onClick={() => download(c.month)}
+          >
+            Download {monthTitle(c.month)}
+          </GuardButton>
+        </div>
+      ))}
     </>
   );
 }

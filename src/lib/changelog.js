@@ -18,7 +18,9 @@ export const CATEGORIES = [
     // A day exported (its buys Completed), or put back to Paid/Ours (owner, 2026-09-30);
     // one buy marked Completed by hand, or back, or turned into a project (owner, 2026-10-02).
     actions: ['buy_confirmed', 'buy_cards_removed', 'buy_deleted', 'day_exported', 'day_unexported',
-      'buy_completed', 'buy_uncompleted', 'buy_converted'],
+      'buy_completed', 'buy_uncompleted', 'buy_converted',
+      // A month's Cash buys file downloaded (owner, 2026-10-02).
+      'cash_buys_downloaded'],
   },
   {
     key: 'collections',
@@ -49,6 +51,7 @@ export const HEADLINES = {
   buy_completed: 'Buy marked Completed',
   buy_uncompleted: 'Buy marked Paid/Ours again',
   buy_converted: 'Buy converted to project',
+  cash_buys_downloaded: 'Cash buys downloaded',
   day_exported: 'Day exported',
   day_unexported: 'Export undone',
   collection_created: 'Collection created',

@@ -6,6 +6,11 @@
    without scrolling, the Exported tag included. */
 .cal-head { display: grid; grid-template-columns: 1fr auto 1fr; margin-bottom: 12px; }
 .cal-picker { grid-column: 2; display: flex; align-items: center; gap: 10px; }
+/* Export Cash Buys (owner, 2026-10-02): green, at the row's right end. */
+.cal-head .cash-export { grid-column: 3; justify-self: end; align-self: center; }
+.btn.cash-export { background: var(--good); border-color: var(--good); color: #0d2418; font-weight: 700; }
+.btn.cash-export:hover:not(.is-disabled) { filter: brightness(1.1); }
+.cash-reminder > span { flex: 1; }
 .cal-step { padding: 5px 11px; }
 .cal-month { min-width: 150px; text-align: center; font-size: 17px; font-weight: 700; }
 
