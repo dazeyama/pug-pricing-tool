@@ -274,7 +274,8 @@ export default function CollectionsPage() {
     <>
       <div className="panel-head col-table-head">
         <div className="panel-title">
-          <h2>Collections</h2>
+          {/* "Total": the Collections table below has its own heading (owner, 2026-10-01). */}
+          <h2>Total</h2>
           <span className="count-badge">{all.length}</span>
         </div>
         {/* Both buttons up here with the search, the same width (owner, 2026-10-01). */}
