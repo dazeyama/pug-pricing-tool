@@ -21,25 +21,27 @@ import { formatInTimeZone } from 'date-fns-tz';
 const DAY_MS = 86_400_000;
 const STALE_PRICES_DAYS = 14;   // a project's oldest price this old is worth a REPRICE?
 const USAGE_WARN = 0.8;         // JustTCG's day this used: say so
-const SHOW = { rows: 4, events: 5 };   // what fits without scrolling
+const SHOW = { rows: 4, events: 20 };  // collections rows shown; events fetched (as many as fit are shown)
 // Days to export takes the panel's spare height (owner, 2026-10-01): as many
 // rows as fit (each row 32px and a 6px gap, home.css).
 const DAY_ROW_PX = 38;
-const CANT_SHOWN = 3;     // Can't upload cards' lines listed under its count
+const CANT_SHOWN = 2;     // Can't upload cards' lines listed beside its count
 const RECENT_DAYS = 6;    // exported days kept for "Recently exported"
 
-/** How many 38px rows fit in an element, kept up to date as it resizes. */
-function useRowsThatFit() {
+const EVENT_ROW_PX = 22;   // Recent activity: 18px rows, a 4px gap
+
+/** How many rows (rowPx each, gap included) fit in an element, kept up to date as it resizes. */
+function useRowsThatFit(rowPx = DAY_ROW_PX, gap = 6) {
   const [el, setEl] = useState(null);
   const [fit, setFit] = useState(3);
   useEffect(() => {
     if (!el) return undefined;
     const observer = new ResizeObserver(([entry]) => {
-      setFit(Math.max(1, Math.floor((entry.contentRect.height + 6) / DAY_ROW_PX)));
+      setFit(Math.max(1, Math.floor((entry.contentRect.height + gap) / rowPx)));
     });
     observer.observe(el);
     return () => observer.disconnect();
-  }, [el]);
+  }, [el, rowPx, gap]);
   return [setEl, fit];
 }
 
@@ -52,6 +54,7 @@ const cardsIn = (lines) => lines.reduce((n, l) => n + l.quantity, 0);
 export default function HomePage() {
   const navigate = useNavigate();
   const [daysRef, daysFit] = useRowsThatFit();
+  const [eventsRef, eventsFit] = useRowsThatFit(EVENT_ROW_PX, 4);
   const today = storeDay();
   const { from, to } = dayRange(today);
 
@@ -172,8 +175,10 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Today and Recent activity first (owner, 2026-10-01). */}
-      <div className="home-row">
+      {/* Today and the quick actions first, Collections and projects in the middle,
+          then Days to export beside Recent activity and Can't upload cards, taking
+          the spare height (owner, 2026-10-01). */}
+      <div className="home-row home-first">
         <section className="home-card">
           <div className="home-card-head"><h3>Today</h3></div>
           <div className="home-stats two">
@@ -189,28 +194,47 @@ export default function HomePage() {
             <span className="home-dot game-pokemon">Pokémon {byGame('pokemon')}</span>
           </div>
         </section>
-
-        <section className="home-card">
-          <div className="home-card-head">
-            <h3>Recent activity</h3>
-            <button type="button" className="home-link" onClick={() => go('/changelog')}>Changelog →</button>
-          </div>
-          <div className="home-activity">
-            {(events.data ?? []).map((e) => (
-              <div key={e.seq} className="home-event">
-                <span className="home-time">{formatTime(e.at)}</span>
-                <span>
-                  {HEADLINES[e.action] ?? e.action}{e.target_name ? `: ${e.target_name}` : ''}
-                  {e.staff_user_name && (
-                    <span className="home-who" style={{ '--c': colorVar(e.staff_user_color ?? 'pal-slate') }}> · {e.staff_user_name}</span>
-                  )}
-                </span>
-              </div>
-            ))}
-            {events.loaded && !(events.data ?? []).length && <p className="home-empty">Nothing yet.</p>}
+        <section className="home-card home-quick">
+          <div className="home-card-head"><h3>Quick actions</h3></div>
+          <div className="home-actions" role="group" aria-label="Quick actions">
+            <button type="button" className="btn" onClick={() => go('/price')}>Buy cards</button>
+            <button type="button" className="btn" onClick={() => go(`/calendar/mtg/${today}`)}>Today's day</button>
+            <button type="button" className="btn" onClick={() => go('/collections', { create: 'project' })}>+ Start Project</button>
+            <button type="button" className="btn" onClick={() => go('/collections', { create: 'collection' })}>+ Price Collection</button>
           </div>
         </section>
       </div>
+
+      <section className="home-card">
+        <div className="home-card-head">
+          <h3>Collections and projects</h3>
+          <button type="button" className="home-link" onClick={() => go('/collections')}>Collections →</button>
+        </div>
+        <div className="home-stats">
+          <div className="home-stat"><span className="home-label">To price</span><strong>{count('processing')}</strong><span className="home-muted">Processing</span></div>
+          <div className="home-stat"><span className="home-label">Offer out</span><strong>{count('priced')}</strong><span className="home-muted">Priced</span></div>
+          <div className="home-stat"><span className="home-label">To export</span><strong>{count('paid')}</strong><span className="home-muted">Paid/Ours</span></div>
+          <div className="home-stat"><span className="home-label">Projects open</span><strong>{projects.length}</strong><span className="home-muted">Ours</span></div>
+        </div>
+        {rows.length > 0 && (
+          <div className="home-list">
+            {rows.slice(0, SHOW.rows).map(({ c, kind, note, warn }) => (
+              <button key={c.id} type="button" className={`home-item kind-${kind}`} onClick={() => go(`/collections/${c.id}`)}>
+                <strong>{c.customer_name}</strong>
+                <span className="home-muted">
+                  {kind === 'project' ? 'Project' : 'Paid/Ours'} · {plural(cardsIn(c.buy_lines), 'card')} · {formatMoney(marketOf(c.buy_lines))}
+                </span>
+                <span className={`home-age${warn ? ' stale' : ''}`}>{note}</span>
+              </button>
+            ))}
+            {rows.length > SHOW.rows && (
+              <button type="button" className="home-more" onClick={() => go('/collections')}>
+                +{rows.length - SHOW.rows} more on Collections
+              </button>
+            )}
+          </div>
+        )}
+      </section>
 
       <div className="home-row home-top">
         <section className="home-card home-export">
@@ -256,6 +280,26 @@ export default function HomePage() {
         </section>
 
         <div className="home-side">
+          <section className="home-card home-recent">
+            <div className="home-card-head">
+              <h3>Recent activity</h3>
+              <button type="button" className="home-link" onClick={() => go('/changelog')}>Changelog →</button>
+            </div>
+            <div className="home-activity" ref={eventsRef}>
+              {(events.data ?? []).slice(0, eventsFit).map((e) => (
+                <div key={e.seq} className="home-event">
+                  <span className="home-time">{formatTime(e.at)}</span>
+                  <span>
+                    {HEADLINES[e.action] ?? e.action}{e.target_name ? `: ${e.target_name}` : ''}
+                    {e.staff_user_name && (
+                      <span className="home-who" style={{ '--c': colorVar(e.staff_user_color ?? 'pal-slate') }}> · {e.staff_user_name}</span>
+                    )}
+                  </span>
+                </div>
+              ))}
+              {events.loaded && !(events.data ?? []).length && <p className="home-empty">Nothing yet.</p>}
+            </div>
+          </section>
           <button
             type="button"
             className="home-card home-cant kind-system"
@@ -264,60 +308,17 @@ export default function HomePage() {
           >
             <span className="home-card-head"><span className="home-h">Can't upload cards</span></span>
             <span className="home-cant-body">
-              <span className="home-big">{cardsIn(cantLines)}<small>{cardsIn(cantLines) === 1 ? 'card' : 'cards'} waiting</small></span>
-              <span className="home-muted">{oldestCant ? `Oldest from ${dayDate(dayOf(oldestCant))}` : 'Nothing waiting'}</span>
-              {cantLines.length > 0 && (
-                <span className="home-cant-lines">
-                  {cantLines.slice(0, CANT_SHOWN).map((l) => <span key={l.id} className="home-cant-line">{lineText(l)}</span>)}
-                  {cantLines.length > CANT_SHOWN && <span className="home-muted">+{cantLines.length - CANT_SHOWN} more</span>}
-                </span>
-              )}
+              <span className="home-big">{cardsIn(cantLines)}</span>
+              <span className="home-cant-info">
+                <span>{cardsIn(cantLines) === 1 ? 'card' : 'cards'} waiting</span>
+                <span className="home-muted">{oldestCant ? `Oldest from ${dayDate(dayOf(oldestCant))}` : 'Nothing waiting'}</span>
+                {cantLines.slice(0, CANT_SHOWN).map((l) => <span key={l.id} className="home-cant-line">{lineText(l)}</span>)}
+                {cantLines.length > CANT_SHOWN && <span className="home-muted">+{cantLines.length - CANT_SHOWN} more</span>}
+              </span>
             </span>
           </button>
-          {/* Quick actions, 2×2, sharing the column with Can't upload cards (owner, 2026-10-01). */}
-          <section className="home-card home-quick">
-            <div className="home-card-head"><h3>Quick actions</h3></div>
-            <div className="home-actions" role="group" aria-label="Quick actions">
-              <button type="button" className="btn" onClick={() => go('/price')}>Buy cards</button>
-              <button type="button" className="btn" onClick={() => go(`/calendar/mtg/${today}`)}>Today's day</button>
-              <button type="button" className="btn" onClick={() => go('/collections', { create: 'project' })}>+ Start Project</button>
-              <button type="button" className="btn" onClick={() => go('/collections', { create: 'collection' })}>+ Price Collection</button>
-            </div>
-          </section>
         </div>
       </div>
-
-      <section className="home-card">
-        <div className="home-card-head">
-          <h3>Collections and projects</h3>
-          <button type="button" className="home-link" onClick={() => go('/collections')}>Collections →</button>
-        </div>
-        <div className="home-stats">
-          <div className="home-stat"><span className="home-label">To price</span><strong>{count('processing')}</strong><span className="home-muted">Processing</span></div>
-          <div className="home-stat"><span className="home-label">Offer out</span><strong>{count('priced')}</strong><span className="home-muted">Priced</span></div>
-          <div className="home-stat"><span className="home-label">To export</span><strong>{count('paid')}</strong><span className="home-muted">Paid/Ours</span></div>
-          <div className="home-stat"><span className="home-label">Projects open</span><strong>{projects.length}</strong><span className="home-muted">Ours</span></div>
-        </div>
-        {rows.length > 0 && (
-          <div className="home-list">
-            {rows.slice(0, SHOW.rows).map(({ c, kind, note, warn }) => (
-              <button key={c.id} type="button" className={`home-item kind-${kind}`} onClick={() => go(`/collections/${c.id}`)}>
-                <strong>{c.customer_name}</strong>
-                <span className="home-muted">
-                  {kind === 'project' ? 'Project' : 'Paid/Ours'} · {plural(cardsIn(c.buy_lines), 'card')} · {formatMoney(marketOf(c.buy_lines))}
-                </span>
-                <span className={`home-age${warn ? ' stale' : ''}`}>{note}</span>
-              </button>
-            ))}
-            {rows.length > SHOW.rows && (
-              <button type="button" className="home-more" onClick={() => go('/collections')}>
-                +{rows.length - SHOW.rows} more on Collections
-              </button>
-            )}
-          </div>
-        )}
-      </section>
-
     </div>
     </div>
   );

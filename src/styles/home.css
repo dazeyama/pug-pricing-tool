@@ -95,34 +95,27 @@
 .home-label { color: var(--muted); font-size: 12.5px; }
 .home-big { font-size: 34px; font-weight: 800; line-height: 1.05; }
 .home-big small { display: block; font-size: 13px; font-weight: 400; color: var(--muted); }
-/* Can't upload cards: its heading like the other panels', then its count
-   and the cards waiting, centered in the space left (owner, 2026-10-01). */
+/* The bottom row's right-hand column (owner, 2026-10-01): Recent activity
+   takes its height, Can't upload cards a compact tile under it, the count
+   beside its lines. */
 .home-side { min-height: 0; }
+.home-recent { flex: 1; min-height: 0; }
+.home-recent .home-activity { flex: 1; min-height: 0; overflow: hidden; }
+.home-recent .home-event { flex: none; height: 18px; align-items: center; }
 .home-cant {
-  flex: 1;
-  min-height: 0;
+  flex: none;
   border-left: 4px solid var(--kind);
   border-radius: 0 10px 10px 0;
   cursor: pointer;
   overflow: hidden;
 }
 .home-h { font-size: 15px; font-weight: 700; }
-.home-cant-body {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  text-align: center;
-}
-.home-cant-lines { display: flex; flex-direction: column; gap: 2px; max-width: 100%; margin-top: 6px; font-size: 12.5px; }
-.home-cant-line { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
-/* The right-hand column is split evenly between the two (owner, 2026-10-01):
-   Can't upload cards centered in its half, the quick actions growing into
-   large buttons that fill theirs. */
-.home-quick { flex: 1; min-height: 0; }
+.home-cant-body { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.home-cant-body .home-big { flex: none; min-width: 1.4ch; text-align: center; }
+.home-cant-info { display: flex; flex-direction: column; gap: 1px; min-width: 0; font-size: 13px; }
+.home-cant-line { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); font-size: 12.5px; }
+/* The quick actions beside Today: four buttons filling the panel (owner, 2026-10-01). */
+.home-quick { min-height: 0; }
 .home-quick .home-actions { flex: 1; min-height: 0; grid-auto-rows: minmax(0, 1fr); }
 .home-quick .home-actions .btn { height: 100%; font-size: 14px; }
 .home-cant:hover:not(:disabled) { background: color-mix(in srgb, var(--kind) 8%, var(--panel)); }
