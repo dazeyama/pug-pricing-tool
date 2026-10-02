@@ -12,11 +12,14 @@ import { formatInTimeZone } from 'date-fns-tz';
 // needs doing (days to export, Can't upload cards, collections and projects
 // by step), quick actions, today's buys and the latest changelog lines, all
 // live from data the other tabs already read. A warning bar shows only when
-// JustTCG's daily allowance is running low.
+// JustTCG's daily allowance is running low. One panel, half the page wide and
+// centered, that never scrolls (owner, 2026-10-01): each list shows its first
+// few and "+N more" for the rest.
 
 const DAY_MS = 86_400_000;
 const STALE_PRICES_DAYS = 14;   // a project's oldest price this old is worth a REPRICE?
 const USAGE_WARN = 0.8;         // JustTCG's day this used: say so
+const SHOW = { days: 3, rows: 4, events: 5 };   // what fits without scrolling
 
 const plural = (n, word) => `${n.toLocaleString()} ${word}${n === 1 ? '' : 's'}`;
 const daysBetween = (from, to) => Math.round((Date.parse(`${to}T12:00:00Z`) - Date.parse(`${from}T12:00:00Z`)) / DAY_MS);
@@ -53,7 +56,7 @@ export default function HomePage() {
     .from('events')
     .select('seq, at, action, target_name, staff_user_name, staff_user_color, summary')
     .order('seq', { ascending: false })
-    .limit(7));
+    .limit(SHOW.events));
   const usage = useLiveTable('api_usage', () => supabase.from('api_usage').select('*').eq('id', 1).maybeSingle());
 
   // ---- days to export: past days with Magic cards still Paid/Ours, oldest first
@@ -83,7 +86,7 @@ export default function HomePage() {
       return { c, kind: 'project', note: age == null ? 'no cards yet' : age < 1 ? 'prices from today' : `oldest price ${plural(age, 'day')} old`, warn: age != null && age >= STALE_PRICES_DAYS };
     }),
     ...customer.filter((c) => c.status === 'paid').map((c) => ({ c, kind: 'collection', note: 'ready to export', warn: false })),
-  ].slice(0, 8);
+  ];
 
   // ---- today
   const buys = todays.data ?? [];
@@ -99,6 +102,7 @@ export default function HomePage() {
   const go = (path, state) => navigate(path, state ? { state } : undefined);
 
   return (
+    <div className="home-screen">
     <div className="home">
       {usageHigh && (
         <div className="banner warn home-warn">
@@ -119,7 +123,7 @@ export default function HomePage() {
             <p className="home-empty">Every past Magic day is exported.</p>
           ) : (
             <div className="home-list">
-              {toExport.map((d) => {
+              {toExport.slice(0, SHOW.days).map((d) => {
                 const age = daysBetween(d.day, today);
                 return (
                   <button key={d.day} type="button" className="home-item game-mtg" onClick={() => go(`/calendar/mtg/${d.day}`)}>
@@ -129,6 +133,11 @@ export default function HomePage() {
                   </button>
                 );
               })}
+              {toExport.length > SHOW.days && (
+                <button type="button" className="home-more" onClick={() => go('/calendar')}>
+                  +{toExport.length - SHOW.days} more on the Calendar
+                </button>
+              )}
             </div>
           )}
         </section>
@@ -144,16 +153,14 @@ export default function HomePage() {
             <span className="home-big">{cardsIn(cantLines)}<small> {cardsIn(cantLines) === 1 ? 'card' : 'cards'} waiting</small></span>
             <span className="home-muted">{oldestCant ? `Oldest from ${dayDate(dayOf(oldestCant))}` : 'Nothing waiting'}</span>
           </button>
-          <section className="home-card">
-            <span className="home-label">Quick actions</span>
-            <div className="home-actions">
-              <button type="button" className="btn" onClick={() => go('/price')}>Buy cards</button>
-              <button type="button" className="btn" onClick={() => go(`/calendar/mtg/${today}`)}>Today's day</button>
-              <button type="button" className="btn" onClick={() => go('/collections', { create: 'project' })}>+ Start Project</button>
-              <button type="button" className="btn" onClick={() => go('/collections', { create: 'collection' })}>+ Price Collection</button>
-            </div>
-          </section>
         </div>
+      </div>
+
+      <div className="home-actions" role="group" aria-label="Quick actions">
+        <button type="button" className="btn" onClick={() => go('/price')}>Buy cards</button>
+        <button type="button" className="btn" onClick={() => go(`/calendar/mtg/${today}`)}>Today's day</button>
+        <button type="button" className="btn" onClick={() => go('/collections', { create: 'project' })}>+ Start Project</button>
+        <button type="button" className="btn" onClick={() => go('/collections', { create: 'collection' })}>+ Price Collection</button>
       </div>
 
       <section className="home-card">
@@ -169,7 +176,7 @@ export default function HomePage() {
         </div>
         {rows.length > 0 && (
           <div className="home-list">
-            {rows.map(({ c, kind, note, warn }) => (
+            {rows.slice(0, SHOW.rows).map(({ c, kind, note, warn }) => (
               <button key={c.id} type="button" className={`home-item kind-${kind}`} onClick={() => go(`/collections/${c.id}`)}>
                 <strong>{c.customer_name}</strong>
                 <span className="home-muted">
@@ -178,6 +185,11 @@ export default function HomePage() {
                 <span className={`home-age${warn ? ' stale' : ''}`}>{note}</span>
               </button>
             ))}
+            {rows.length > SHOW.rows && (
+              <button type="button" className="home-more" onClick={() => go('/collections')}>
+                +{rows.length - SHOW.rows} more on Collections
+              </button>
+            )}
           </div>
         )}
       </section>
@@ -220,6 +232,7 @@ export default function HomePage() {
           </div>
         </section>
       </div>
+    </div>
     </div>
   );
 }

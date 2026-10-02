@@ -32,7 +32,8 @@ import ChangelogPage from './pages/ChangelogPage.jsx';
 function Layout() {
   const { pathname } = useLocation();
   const { label, saved } = useDevice();
-  const fullScreen = isPricingScreen(pathname);
+  // Home is one centered panel that never scrolls (owner, 2026-10-01).
+  const fullScreen = isPricingScreen(pathname) || pathname === '/home';
   return (
     <div className={`shell${fullScreen ? ' shell-fixed' : ''}`}>
       <Header />
