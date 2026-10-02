@@ -25,7 +25,11 @@
 }
 .home-warn { margin: 0; padding: 8px 12px; font-size: 13px; }
 .home-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.home-row.home-top { flex: 1; min-height: 0; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); }
+/* Split down the middle like the top row, so the two rows line up (owner, 2026-10-01). */
+.home-row.home-top { flex: 1; min-height: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.home-days .home-item { overflow: hidden; }
+.home-days .home-item > * { flex: none; white-space: nowrap; }
+.home-days .home-item > .home-muted { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .home > :not(.home-top) { flex: none; }
 .home-export { min-height: 0; }
 .home-days { flex: 1; min-height: 0; overflow: hidden; }
