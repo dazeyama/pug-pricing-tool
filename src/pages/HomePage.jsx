@@ -172,7 +172,7 @@ export default function HomePage() {
             onClick={() => cantUpload && go(`/collections/${cantUpload.id}`)}
           >
             <span className="home-label">Can't upload cards</span>
-            <span className="home-big">{cardsIn(cantLines)}<small> {cardsIn(cantLines) === 1 ? 'card' : 'cards'} waiting</small></span>
+            <span className="home-big">{cardsIn(cantLines)}<small>{cardsIn(cantLines) === 1 ? 'card' : 'cards'} waiting</small></span>
             <span className="home-muted">{oldestCant ? `Oldest from ${dayDate(dayOf(oldestCant))}` : 'Nothing waiting'}</span>
           </button>
           {/* Quick actions, 2×2, sharing the column with Can't upload cards (owner, 2026-10-01). */}
