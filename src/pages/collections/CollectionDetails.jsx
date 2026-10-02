@@ -119,6 +119,9 @@ export default function CollectionDetails({
   const [open, setOpen] = useState(true);
   const toggle = () => setOpen((o) => !o);
   if (buy.system_key) return <SystemDetails buy={buy} open={open} onToggle={toggle} viewOnly={viewOnly} holder={holder} onTakeOver={onTakeOver} />;
+  // A project (owner, 2026-10-01): no phone, ID, offer or price paid, and
+  // no status controls; Paid/Ours until EXPORT, Reopen after.
+  const project = Boolean(buy.project);
   const hasBody = open || viewOnly || buy.status === 'paid' || buy.status === 'completed';
   const tone = statusTone(buy);
   const step = {
@@ -139,6 +142,7 @@ export default function CollectionDetails({
         >
           <span className="cd-name">{buy.customer_name}</span>
           <span className={`status-chip ${tone}`}>{statusLabel(buy.status)}</span>
+          {project && <span className="project-chip">Project</span>}
         </button>
         <MoreMenu
           up
@@ -184,7 +188,12 @@ export default function CollectionDetails({
               <GuardButton className="btn small" onClick={onTakeOver}>Take over</GuardButton>
             </div>
           )}
-          {buy.status === 'paid' && (
+          {buy.status === 'paid' && project && (
+            <div className={`cd-banner ${tone}`}>
+              <span>Project: the store's own cards. Add, price and remove them; EXPORT marks it Completed.</span>
+            </div>
+          )}
+          {buy.status === 'paid' && !project && (
             <div className={`cd-banner ${tone}`}>
               <span>Paid/Ours — <PaidText buy={buy} withMethod />. Locked. EXPORT marks it Completed.</span>
               <GuardButton
@@ -226,6 +235,7 @@ export default function CollectionDetails({
                   editBlocked={api.editBlocked}
                 />
               </dd>
+              {!project && <>
               <dt>Phone</dt>
               <dd>
                 <InlineEdit
@@ -253,6 +263,7 @@ export default function CollectionDetails({
                   editBlocked={api.editBlocked}
                 />
               </dd>
+              </>}
               <dt>Notes</dt>
               <dd>
                 <InlineEdit
@@ -267,6 +278,11 @@ export default function CollectionDetails({
                 />
               </dd>
               <dt>Status</dt>
+              {project ? (
+                <dd className="cd-status">
+                  <span className={`status-chip ${tone}`}>{statusLabel(buy.status)}</span>
+                </dd>
+              ) : (
               <dd className="cd-status">
                 <select
                   className={`status-select ${tone}`}
@@ -294,10 +310,13 @@ export default function CollectionDetails({
                   </GuardButton>
                 )}
               </dd>
+              )}
+              {!project && <>
               <dt>Offer</dt>
               <dd><OfferText buy={buy} /></dd>
               <dt>Paid</dt>
               <dd><PaidText buy={buy} withMethod /></dd>
+              </>}
               <dt>Created</dt>
               <dd>{formatShortDate(buy.created_at)} by <UserTag user={byId(buy.created_by)} /></dd>
               <dt>Edited</dt>

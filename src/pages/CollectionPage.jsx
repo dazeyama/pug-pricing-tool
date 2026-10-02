@@ -87,7 +87,8 @@ function CollectionScreen({ id }) {
   else if (lock.status === 'checking') locked = 'Checking who is editing this collection';
   else if (viewOnly) locked = `View only: ${holderLabel} is editing this collection. Take over to edit`;
   else if (system) locked = 'Cards arrive here from exports';
-  else if (buy.status === 'paid') locked = 'Paid/Ours: unlock it to edit';
+  // A project stays editable while Paid/Ours (owner, 2026-10-01).
+  else if (buy.status === 'paid' && !buy.project) locked = 'Paid/Ours: unlock it to edit';
   else if (buy.status === 'completed') locked = 'Completed: reopen it to edit';
   // Cards can still be removed from a Paid/Ours collection, not a Completed
   // one (owner, 2026-09-29); adding and editing stay locked.

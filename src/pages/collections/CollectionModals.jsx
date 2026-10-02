@@ -22,6 +22,76 @@ export function nameError(text) {
  * optional Last 4 ID (owner, 2026-09-29), notes. Create stays disabled until
  * the name and a 10-digit phone number are in.
  */
+/**
+ * + Start Project (owner, 2026-10-01): a box of cards the store already
+ * owns, priced for an export. Just a name and notes: no phone, no ID.
+ */
+export function NewProjectModal({ busy, onCreate, onClose }) {
+  const [name, setName] = useState('');
+  const [notes, setNotes] = useState('');
+  const [touched, setTouched] = useState(false);
+  const nameProblem = nameError(name);
+  const ready = !nameProblem && !busy;
+  const submit = () => {
+    setTouched(true);
+    if (ready) onCreate({ name: cleanName(name), notes: notes.trim() });
+  };
+
+  return (
+    <Modal
+      title="Start a project"
+      onClose={onClose}
+      footer={(
+        <>
+          <button type="button" className="btn ghost" onClick={onClose}>Cancel</button>
+          <button type="button" className="btn primary" disabled={!ready} onClick={submit}>Start</button>
+        </>
+      )}
+    >
+      <form
+        className="form-stack"
+        onSubmit={(e) => {
+          e.preventDefault();
+          submit();
+        }}
+      >
+        <p className="hint">
+          For pricing cards the store already owns (a box from the back, not from any buy). It starts as
+          Paid/Ours, and EXPORT marks it Completed.
+        </p>
+        <label className="field">
+          <span>Name</span>
+          <input
+            type="text"
+            autoFocus
+            value={name}
+            maxLength={120}
+            placeholder="Back room binder box"
+            onChange={(e) => setName(e.target.value)}
+            onBlur={() => setTouched(true)}
+          />
+          {touched && nameProblem && <span className="field-error">{nameProblem}</span>}
+        </label>
+        <label className="field">
+          <span>Notes <em>(optional)</em></span>
+          <textarea
+            rows={3}
+            value={notes}
+            placeholder="Shelf 3, unsorted 2000s rares"
+            onChange={(e) => setNotes(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                submit();
+              }
+            }}
+          />
+        </label>
+      </form>
+    </Modal>
+  );
+}
+
 export function NewCollectionModal({ busy, onCreate, onClose }) {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');

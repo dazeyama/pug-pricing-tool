@@ -185,3 +185,39 @@
 }
 .pin-mark { margin-right: 6px; font-size: 13px; }
 .col-phone .system-chip { margin-left: 0; }
+
+/* Collections tab in three tables (owner, 2026-10-01): System, Projects,
+   Collections, each with its heading, count and button; fixed column widths
+   so the three line up. */
+.col-section + .col-section { margin-top: 26px; }
+.col-section-head { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; }
+.col-section-head h3 { margin: 0; font-size: 15px; }
+.col-section-head .new-col-btn { margin-left: auto; padding: 8px 18px; font-size: 14px; font-weight: 700; }
+.col-section .col-table { table-layout: fixed; }
+.col-w-name { width: 19%; }
+.col-w-phone { width: 11%; }
+.col-w-status { width: 10%; }
+.col-w-created { width: 9%; }
+.col-w-edited { width: 10%; }
+.col-w-editor { width: 10%; }
+.col-w-notes { width: 13%; }
+.col-w-offer { width: 9%; }
+.col-w-paid { width: 9%; }
+.col-section .col-table td { overflow-wrap: anywhere; }
+/* A project's chip, like Can't upload cards' System chip, in violet. */
+:root { --project-violet: #b493ff; }
+.project-chip {
+  margin-left: 8px;
+  padding: 0 8px;
+  border: 1.5px solid var(--project-violet);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--project-violet) 14%, transparent);
+  color: var(--project-violet);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  vertical-align: 2px;
+  white-space: nowrap;
+}
+.col-phone .project-chip { margin-left: 0; }

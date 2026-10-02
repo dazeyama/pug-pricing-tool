@@ -1059,6 +1059,19 @@ Collections  14                                     [ Search name or phone… ] 
 - **Click a row** to open the collection's pricing screen (`#/collections/:id`).
 - **Empty state:** "No collections yet. Press + Price Collection to start one." It shows as the table's only row, under the column headings; a search or filter with no results reads "No collections match." the same way. The table and the page stay full width whatever they show, and the heading row is one line: **Collections (count)** on the left, **+ Price Collection** and the search box on the right (owner's decisions, 2026-09-29), so nothing moves between views.
 
+**As of 2026-10-01 (owner's decision): three tables**, in this order, each with its own heading, count and button: **System** (Can't upload cards, `docs/EXPORT_FUNCTION.md` 9), **Projects** (**+ Start Project**, 9.1a) and **Collections** (**+ Price Collection**, with the status filter chips). One search box and one sort serve all three; the three share column widths so they line up.
+
+### 9.1a Projects (owner's decision, 2026-10-01)
+
+A **project** is a collection of cards **the store already owns** (a box from the back that isn't part of any buy), priced so it can be exported.
+
+- **+ Start Project** asks only for a **name** and optional **notes**: no phone, no Last 4 ID (`project_create`, migration 0031; `buys.project`).
+- It **starts Paid/Ours, and that's its only state** until **EXPORT** marks it Completed; Reopen brings it back. It never goes to Processing or Priced (the server refuses with `project_status`), and it has no offer and no price paid.
+- **Unlike a customer's Paid/Ours collection, a project stays editable**: cards can be added, edited and removed while it's Paid/Ours.
+- In the table its Phone cell shows a violet **Project** chip (as Can't upload cards shows **System**); Offer and Paid read `—`. Its Paid/Ours chip is the neutral grey (nothing was paid).
+- Its details panel shows the name and notes (editable), its status as a chip with no dropdown or step button, a "Project: the store's own cards…" banner, and Created / Edited; Delete works as for any collection.
+- Everything else (pricing, the one-computer lock, the changelog, EXPORT, Sell prices, Can't upload cards, search) is a collection's.
+
 ### 9.2 + Price Collection
 
 A big primary button top-right, styled like CM's `.btn.primary`, larger. It needs a picked user. It opens a modal:
@@ -2104,6 +2117,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 182 | Completed only from EXPORT (2026-10-01) | A collection becomes Completed only by EXPORT; it can't be set by hand any more (migration 0030; Section 9.5; export spec E24) |
 | 183 | "No. 32" for the oldest Japanese cards (2026-10-01) | With JP on, a search that is just "No." and a number finds that Pokédex number in the first ten Japanese sets, which print no collector number (Section 5.2) |
 | 184 | Pokellector pictures for the oldest Japanese sets (2026-10-01) | The first ten Japanese sets' card pictures come from Pokellector, through a list read once from its set pages (Section 5.2) |
+| 185 | Projects, and three tables (2026-10-01) | **+ Start Project**: a collection of the store's own cards, just a name and notes, Paid/Ours (and editable) until EXPORT; the Collections tab splits into System, Projects and Collections tables (Section 9.1a; migration 0031) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |

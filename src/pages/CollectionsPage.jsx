@@ -8,7 +8,7 @@ import { formatRecent, formatShortDate } from '../lib/time.js';
 import { withLoading } from '../lib/loading.js';
 import GuardButton from '../components/GuardButton.jsx';
 import UserTag from '../components/UserTag.jsx';
-import { NewCollectionModal } from './collections/CollectionModals.jsx';
+import { NewCollectionModal, NewProjectModal } from './collections/CollectionModals.jsx';
 import { FILTERS, isClosed, statusLabel, statusTone } from './collections/status.js';
 import { OfferText, PaidText } from './collections/CollectionDetails.jsx';
 import { errorMessage } from './collections/useCollection.js';
@@ -44,7 +44,9 @@ const columns = (by) => [
         {/* It has no phone: its System chip sits here, where there's room (owner, 2026-10-01). */}
         {c.system_key
           ? <span className="system-chip" title="Made by the app: holds the cards exports couldn't upload">System</span>
-          : formatPhone(c.phone)}
+          : c.project
+            ? <span className="project-chip" title="The store's own cards, priced for an export">Project</span>
+            : formatPhone(c.phone)}
       </td>
     ),
   },
@@ -74,20 +76,22 @@ const columns = (by) => [
     key: 'offer',
     label: 'Offer',
     value: (c) => (c.status === 'processing' || c.offer_cash == null ? -1 : Number(c.offer_cash)),
-    cell: (c) => <td key="offer" className="col-money">{c.system_key ? '—' : <OfferText buy={c} />}</td>,
+    cell: (c) => <td key="offer" className="col-money">{c.system_key || c.project ? '—' : <OfferText buy={c} />}</td>,
   },
   {
     key: 'paid',
     label: 'Paid',
     value: (c) => (isClosed(c.status) && c.paid_price != null ? Number(c.paid_price) : -1),
-    cell: (c) => <td key="paid" className="col-money">{c.system_key ? '—' : <PaidText buy={c} />}</td>,
+    cell: (c) => <td key="paid" className="col-money">{c.system_key || c.project ? '—' : <PaidText buy={c} />}</td>,
   },
 ];
 
 /**
- * The Collections tab (spec 9.1): every collection, live, with sort, a
- * status filter, a name/phone search and a line on the ones open on another
- * computer. + Price Collection starts a new one (9.2).
+ * The Collections tab (spec 9.1): every collection, live, in three tables
+ * (owner, 2026-10-01): System (Can't upload cards), Projects (the store's own
+ * cards, + Start Project) and Collections (+ Price Collection, with the
+ * status filter). One name/phone search and one sort for all three, and a
+ * line on the ones open on another computer.
  */
 export default function CollectionsPage() {
   const navigate = useNavigate();
@@ -97,7 +101,7 @@ export default function CollectionsPage() {
   const { data, loaded } = useLiveTable('buys', () => supabase
     .from('buys')
     .select('id, customer_name, phone, status, notes, created_at, updated_at, last_edited_by, '
-      + 'offer_cash, offer_credit, paid_price, paid_method, system_key')
+      + 'offer_cash, offer_credit, paid_price, paid_method, system_key, project')
     .eq('kind', 'collection'));
   const locks = useLiveTable('collection_locks', () => supabase
     .from('collection_locks')
@@ -106,7 +110,7 @@ export default function CollectionsPage() {
   const [sort, setSort] = useState({ key: 'created', dir: 'desc' });
   const [status, setStatus] = useState('all');
   const [query, setQuery] = useState('');
-  const [creating, setCreating] = useState(false);
+  const [creating, setCreating] = useState(null);   // 'collection' | 'project'
   const [busy, setBusy] = useState(false);
 
   // Locks go stale without an event, so look again now and then.
@@ -118,26 +122,34 @@ export default function CollectionsPage() {
 
   const all = data ?? [];
   const COLUMNS = columns(staff.byId);
-  const rows = useMemo(() => {
+  const kindOf = (c) => (c.system_key ? 'system' : c.project ? 'project' : 'collection');
+  const tables = useMemo(() => {
     const words = nameKey(query);
     const digits = query.replace(/\D/g, '');
     const column = COLUMNS.find((c) => c.key === sort.key);
     const filter = FILTERS.find((f) => f.value === status) ?? FILTERS[0];
     const dir = sort.dir === 'asc' ? 1 : -1;
-    // Can't upload cards is the first row whatever the sort or status filter;
-    // only the text search hides it (export spec 9.5).
-    return all
-      .filter((c) => c.system_key || filter.match(c))
+    const rows = all
       .filter((c) => !words
         || nameKey(c.customer_name).includes(words)
         || (digits && c.phone?.includes(digits)))
       .sort((a, b) => {
-        if (Boolean(a.system_key) !== Boolean(b.system_key)) return a.system_key ? -1 : 1;
         const x = column.value(a) ?? '';
         const y = column.value(b) ?? '';
         return (x < y ? -1 : x > y ? 1 : 0) * dir || (b.updated_at < a.updated_at ? -1 : 1);
       });
+    return {
+      system: rows.filter((c) => kindOf(c) === 'system'),
+      project: rows.filter((c) => kindOf(c) === 'project'),
+      // The status filter is the customer collections' own.
+      collection: rows.filter((c) => kindOf(c) === 'collection' && filter.match(c)),
+    };
   }, [all, status, query, sort, staff.byId]);
+  const totals = {
+    system: all.filter((c) => kindOf(c) === 'system').length,
+    project: all.filter((c) => kindOf(c) === 'project').length,
+    collection: all.filter((c) => kindOf(c) === 'collection').length,
+  };
 
   /** Open on another computer: "✎ open on Front Counter (Dana)". */
   function openElsewhere(id) {
@@ -152,24 +164,112 @@ export default function CollectionsPage() {
     setSort((s) => (s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' }));
   }
 
+  /** + Price Collection, or + Start Project (just a name and notes). */
   async function create({ name, phone, idLast4, notes }) {
+    const project = creating === 'project';
     setBusy(true);
-    const { data: id, error } = await withLoading(() => supabase.rpc('collection_create', {
-      p_name: name,
-      p_phone: phone,
-      p_notes: notes,
-      p_user: staff.current?.id ?? null,
-      p_device: deviceId,
-      p_id_last4: idLast4 || null,
-    }));
+    const { data: id, error } = await withLoading(() => (project
+      ? supabase.rpc('project_create', {
+        p_name: name,
+        p_notes: notes,
+        p_user: staff.current?.id ?? null,
+        p_device: deviceId,
+      })
+      : supabase.rpc('collection_create', {
+        p_name: name,
+        p_phone: phone,
+        p_notes: notes,
+        p_user: staff.current?.id ?? null,
+        p_device: deviceId,
+        p_id_last4: idLast4 || null,
+      })));
     setBusy(false);
     if (error) {
-      toast(errorMessage(error, "Couldn't create the collection"), 'err');
+      toast(errorMessage(error, project ? "Couldn't start the project" : "Couldn't create the collection"), 'err');
       return;
     }
-    setCreating(false);
+    setCreating(null);
     navigate(`/collections/${id}`);
   }
+
+  /** One of the three tables: its heading (name, count, button), then the table. */
+  const section = (kind, title, { button = null, filters = false, empty, noMatch }) => {
+    const rows = tables[kind];
+    return (
+      <section className={`col-section ${kind}`} aria-label={title}>
+        <div className="col-section-head">
+          <h3>{title}</h3>
+          <span className="count-badge">{totals[kind]}</span>
+          {button}
+        </div>
+        {filters && (
+          <div className="status-filter" role="group" aria-label="Status">
+            {FILTERS.map((s) => (
+              <button
+                key={s.value}
+                type="button"
+                className={`filter-pill tone-${s.value}${status === s.value ? ' active' : ''}`}
+                aria-pressed={status === s.value}
+                onClick={() => setStatus(s.value)}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        )}
+        {/* Always drawn, headings too, so nothing moves when it's empty (owner,
+            2026-09-29); the three share column widths so they line up. */}
+        <table className="col-table">
+          <colgroup>
+            {COLUMNS.map((c) => <col key={c.key} className={`col-w-${c.key}`} />)}
+          </colgroup>
+          <thead>
+            <tr>
+              {COLUMNS.map((c) => (
+                <th
+                  key={c.key}
+                  className={`col-${c.key}`}
+                  aria-sort={sort.key === c.key ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}
+                >
+                  <button type="button" className="sort-btn" onClick={() => sortBy(c.key)}>
+                    {c.label}
+                    <span className="sort-mark" aria-hidden="true">
+                      {sort.key === c.key ? (sort.dir === 'asc' ? ' ▲' : ' ▼') : ''}
+                    </span>
+                  </button>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {!rows.length && (
+              <tr className="col-empty-row">
+                <td colSpan={COLUMNS.length} className="empty">
+                  {!loaded ? 'Loading…' : !totals[kind] ? empty : noMatch}
+                </td>
+              </tr>
+            )}
+            {rows.map((c) => {
+              const elsewhere = openElsewhere(c.id);
+              return (
+                <tr
+                  key={c.id}
+                  className={`col-row${c.system_key ? ' system-row' : ''}`}
+                  tabIndex={0}
+                  onClick={() => navigate(`/collections/${c.id}`)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') navigate(`/collections/${c.id}`);
+                  }}
+                >
+                  {COLUMNS.map((col) => col.cell(c, elsewhere))}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </section>
+    );
+  };
 
   return (
     <>
@@ -178,9 +278,6 @@ export default function CollectionsPage() {
           <h2>Collections</h2>
           <span className="count-badge">{all.length}</span>
         </div>
-        <GuardButton className="btn primary big new-col-btn" onClick={() => setCreating(true)}>
-          + Price Collection
-        </GuardButton>
         <input
           type="search"
           className="col-search"
@@ -191,72 +288,35 @@ export default function CollectionsPage() {
         />
       </div>
 
-      <div className="status-filter" role="group" aria-label="Status">
-        {FILTERS.map((s) => (
-          <button
-            key={s.value}
-            type="button"
-            className={`filter-pill tone-${s.value}${status === s.value ? ' active' : ''}`}
-            aria-pressed={status === s.value}
-            onClick={() => setStatus(s.value)}
-          >
-            {s.label}
-          </button>
-        ))}
-      </div>
+      {section('system', 'System', {
+        empty: "Can't upload cards appears here after the first export.",
+        noMatch: 'Nothing here matches.',
+      })}
+      {section('project', 'Projects', {
+        button: (
+          <GuardButton className="btn primary big new-col-btn" onClick={() => setCreating('project')}>
+            + Start Project
+          </GuardButton>
+        ),
+        empty: 'No projects yet. Press + Start Project to price a box of the store’s own cards.',
+        noMatch: 'No projects match.',
+      })}
+      {section('collection', 'Collections', {
+        button: (
+          <GuardButton className="btn primary big new-col-btn" onClick={() => setCreating('collection')}>
+            + Price Collection
+          </GuardButton>
+        ),
+        filters: true,
+        empty: 'No collections yet. Press + Price Collection to start one.',
+        noMatch: 'No collections match.',
+      })}
 
-      {/* The table is always drawn, its headings too, so nothing moves when
-          it's empty (owner, 2026-09-29): the message is its only row. */}
-      <table className="col-table">
-        <thead>
-          <tr>
-            {COLUMNS.map((c) => (
-              <th
-                key={c.key}
-                className={`col-${c.key}`}
-                aria-sort={sort.key === c.key ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}
-              >
-                <button type="button" className="sort-btn" onClick={() => sortBy(c.key)}>
-                  {c.label}
-                  <span className="sort-mark" aria-hidden="true">
-                    {sort.key === c.key ? (sort.dir === 'asc' ? ' ▲' : ' ▼') : ''}
-                  </span>
-                </button>
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {!rows.length && (
-            <tr className="col-empty-row">
-              <td colSpan={COLUMNS.length} className="empty">
-                {!loaded ? 'Loading…'
-                  : !all.length ? 'No collections yet. Press + Price Collection to start one.'
-                    : 'No collections match.'}
-              </td>
-            </tr>
-          )}
-          {rows.map((c) => {
-            const elsewhere = openElsewhere(c.id);
-            return (
-              <tr
-                key={c.id}
-                className={`col-row${c.system_key ? ' system-row' : ''}`}
-                tabIndex={0}
-                onClick={() => navigate(`/collections/${c.id}`)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') navigate(`/collections/${c.id}`);
-                }}
-              >
-                {COLUMNS.map((col) => col.cell(c, elsewhere))}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-
-      {creating && (
-        <NewCollectionModal busy={busy} onCreate={create} onClose={() => setCreating(false)} />
+      {creating === 'collection' && (
+        <NewCollectionModal busy={busy} onCreate={create} onClose={() => setCreating(null)} />
+      )}
+      {creating === 'project' && (
+        <NewProjectModal busy={busy} onCreate={create} onClose={() => setCreating(null)} />
       )}
     </>
   );

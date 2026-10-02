@@ -24,7 +24,9 @@ export const isClosed = (s) => s === 'paid' || s === 'completed';
  */
 export function statusTone(buy) {
   if (buy.status === 'paid') {
-    if (buy.kind === 'walk_in' && !buy.paid_method) return 'tone-paid-walkin';
+    // Nothing was paid: a walk-in confirmed before the price was asked for,
+    // or a project (the store's own cards, owner 2026-10-01).
+    if ((buy.kind === 'walk_in' && !buy.paid_method) || buy.project) return 'tone-paid-walkin';
     return `tone-paid-${buy.paid_method === 'credit' ? 'credit' : 'cash'}`;
   }
   return `tone-${buy.status}`;
