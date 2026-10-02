@@ -32,6 +32,17 @@
 /* Every row the same height, so the count that fits is exact. */
 .home-days .home-item, .home-days .home-more, .home-days .home-row-line { flex: none; height: 32px; align-items: center; }
 .home-days .home-more, .home-days .home-row-line { display: flex; margin: 0; }
+/* Nothing waiting: an all-clear row in green (owner, 2026-10-01). */
+.home-clear {
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--good) 45%, var(--border));
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--good) 12%, var(--panel-2));
+  color: var(--good);
+  font-size: 13.5px;
+  font-weight: 700;
+}
 /* Recently exported: done, dimmed, with their Custom SKU. */
 .home-item.is-done { opacity: .6; }
 .home-item.is-done:hover { opacity: 1; }

@@ -182,7 +182,8 @@ export default function HomePage() {
             <p className="hint">Loading…</p>
           ) : (
             <div className="home-list home-days" ref={daysRef}>
-              {!toExport.length && <p className="home-empty home-row-line">Every past Magic day is exported.</p>}
+              {/* All clear (owner, 2026-10-01): green, not grey. */}
+              {!toExport.length && <p className="home-clear home-row-line">✓ Everything's exported</p>}
               {toExport.slice(0, daysShown).map((d) => {
                 const age = daysBetween(d.day, today);
                 return (
