@@ -1,8 +1,10 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 
-// The five tabs (spec 7.2). Changelog sits apart on the right.
+// The tabs (spec 7.2). Changelog sits apart on the right. Home first, and
+// "Buy" for the Price tab (owner, 2026-10-01; its address stays /price).
 export const TABS = [
-  { key: 'price', label: 'Price', path: '/price' },
+  { key: 'home', label: 'Home', path: '/home' },
+  { key: 'price', label: 'Buy', path: '/price' },
   { key: 'collections', label: 'Collections', path: '/collections' },
   { key: 'calendar', label: 'Calendar', path: '/calendar' },
   { key: 'settings', label: 'Settings', path: '/settings' },
@@ -11,8 +13,8 @@ export const TABS = [
 
 /** Which tab a route belongs to: the first path segment. */
 export function tabKeyFor(pathname) {
-  const first = pathname.split('/')[1] || 'price';
-  return TABS.some((t) => t.key === first) ? first : 'price';
+  const first = pathname.split('/')[1] || 'home';
+  return TABS.some((t) => t.key === first) ? first : 'home';
 }
 
 export default function Tabs() {

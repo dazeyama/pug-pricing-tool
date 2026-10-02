@@ -14,6 +14,7 @@ import { tabKeyFor } from './components/Tabs.jsx';
 import DeviceNameModal from './components/DeviceNameModal.jsx';
 import DeviceSaveModal from './components/DeviceSaveModal.jsx';
 import LoginPage from './pages/LoginPage.jsx';
+import HomePage from './pages/HomePage.jsx';
 import PricePage from './pages/PricePage.jsx';
 import CollectionsPage from './pages/CollectionsPage.jsx';
 import CollectionPage from './pages/CollectionPage.jsx';
@@ -61,6 +62,7 @@ function AuthGate() {
             <PriceLimitProvider>
               <Routes>
                 <Route element={<Layout />}>
+                  <Route path="/home" element={<HomePage />} />
                   <Route path="/price" element={<PricePage />} />
                   <Route path="/collections" element={<CollectionsPage />} />
                   <Route path="/collections/:id" element={<CollectionPage />} />
@@ -68,7 +70,8 @@ function AuthGate() {
                   <Route path="/calendar/:game/:date" element={<DayPage />} />
                   <Route path="/settings" element={<SettingsPage />} />
                   <Route path="/changelog" element={<ChangelogPage />} />
-                  <Route path="*" element={<Navigate to="/price" replace />} />
+                  {/* Home is the first tab and where the app opens (owner, 2026-10-01). */}
+                  <Route path="*" element={<Navigate to="/home" replace />} />
                 </Route>
               </Routes>
             </PriceLimitProvider>

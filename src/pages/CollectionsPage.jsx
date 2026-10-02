@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
 import { useLiveTable } from '../lib/useLiveTable.js';
 import { nameKey } from '../lib/normalize.js';
@@ -108,7 +108,12 @@ export default function CollectionsPage() {
   const [sort, setSort] = useState({ key: 'created', dir: 'desc' });
   const [status, setStatus] = useState('all');
   const [query, setQuery] = useState('');
-  const [creating, setCreating] = useState(null);   // 'collection' | 'project'
+  const location = useLocation();
+  // Home's + Start Project / + Price Collection arrive with the window to open.
+  const [creating, setCreating] = useState(() => {
+    const want = location.state?.create;
+    return want === 'project' || want === 'collection' ? want : null;
+  });
   const [busy, setBusy] = useState(false);
 
   // Locks go stale without an event, so look again now and then.
