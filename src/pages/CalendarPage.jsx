@@ -185,9 +185,12 @@ function CalendarMonth({ month }) {
               if (!day) return <span key={`blank-${i}`} className="cal-day blank" />;
               const buys = days[game].get(day) ?? [];
               const n = buys.length;
-              // Exported: every buy's cards in this game Completed (owner, 2026-09-30).
+              // Exported: every buy's cards in this game Completed (owner, 2026-09-30);
+              // "Completed" when none were exported (COMPLETE on Pokémon days, or
+              // marked by hand; owner, 2026-10-02), in the same chip.
               const exported = buys.filter((b) => (b.completed_games ?? []).includes(game)).length;
               const allExported = n > 0 && exported === n;
+              const doneWord = buys.some((b) => (b.exported_games ?? []).includes(game)) ? 'Exported' : 'Completed';
               const inner = (
                 <>
                   <span className="cal-date">{Number(day.slice(8))}</span>
@@ -205,7 +208,7 @@ function CalendarMonth({ month }) {
                     </span>
                   )}
                   {/* At the cell's foot, under up to two rows of dots (owner, 2026-09-30). */}
-                  {allExported && <span className="cal-exported">Exported</span>}
+                  {allExported && <span className="cal-exported">{doneWord}</span>}
                 </>
               );
               const cls = `cal-day${day === today ? ' today' : ''}${n ? ' has' : ''}${allExported ? ' exported' : ''}`;
@@ -215,7 +218,7 @@ function CalendarMonth({ month }) {
                   key={day}
                   type="button"
                   className={cls}
-                  title={`${n} ${name} buy${n === 1 ? '' : 's'}${allExported ? ', exported' : ''}`}
+                  title={`${n} ${name} buy${n === 1 ? '' : 's'}${allExported ? `, ${doneWord.toLowerCase()}` : ''}`}
                   onClick={() => navigate(`/calendar/${game}/${day}`)}
                 >
                   {inner}

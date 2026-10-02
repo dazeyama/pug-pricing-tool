@@ -19,8 +19,8 @@ export const CATEGORIES = [
     // one buy marked Completed by hand, or back, or turned into a project (owner, 2026-10-02).
     actions: ['buy_confirmed', 'buy_cards_removed', 'buy_deleted', 'day_exported', 'day_unexported',
       'buy_completed', 'buy_uncompleted', 'buy_converted',
-      // A month's Cash buys file downloaded (owner, 2026-10-02).
-      'cash_buys_downloaded'],
+      // A month's Cash buys file downloaded; a day marked Completed with COMPLETE (owner, 2026-10-02).
+      'cash_buys_downloaded', 'day_completed'],
   },
   {
     key: 'collections',
@@ -54,6 +54,7 @@ export const HEADLINES = {
   cash_buys_downloaded: 'Cash buys downloaded',
   day_exported: 'Day exported',
   day_unexported: 'Export undone',
+  day_completed: 'Day completed',
   collection_created: 'Collection created',
   collection_cards_added: 'Cards added to collection',
   collection_line_edited: 'Card edited in collection',
@@ -68,7 +69,7 @@ export const HEADLINES = {
   backup_restored: 'Backup restored',
 };
 /** Entries about a whole day (EXPORT on a day page), not one buy. */
-export const DAY_ACTIONS = new Set(['day_exported', 'day_unexported']);
+export const DAY_ACTIONS = new Set(['day_exported', 'day_unexported', 'day_completed']);
 /** Landmarks: something made (big dot, green headline) or gone (red cross). */
 export const MADE = new Set(['buy_confirmed', 'collection_created']);
 export const GONE = new Set(['buy_deleted', 'collection_deleted']);

@@ -40,8 +40,9 @@ const MARKED_LOCK = 'Completed (marked by hand, not exported): its ⋯ → Mark 
 const markedByHand = (l) => Boolean(l.completed_at) && l.cc_status == null;
 // The current day can't be exported (owner, 2026-09-30): buys confirmed later would miss it.
 const NOT_OVER = "Today can't be exported until it's over: buys confirmed later would miss the export";
-// Magic only for now (owner, 2026-09-30; export spec 1.3).
-const NO_POKEMON = "Pokémon export isn't available yet";
+// Pokémon can't be exported yet (export spec 1.3): its days are marked Completed
+// instead, with COMPLETE (owner, 2026-10-02), only once over, like EXPORT.
+const NOT_OVER_COMPLETE = "Today can't be marked Completed until it's over: buys confirmed later would be missed";
 const messageFor = (error, failure) => {
   const code = Object.keys(MESSAGES).find((c) => error?.message?.includes(c));
   return code ? MESSAGES[code] : `${failure}: ${error.message}`;
@@ -87,6 +88,7 @@ function DayScreen({ game, day }) {
   const [converting, setConverting] = useState(null); // { buy, number }: ⋯ → Convert to project
   const [exporting, setExporting] = useState(false);     // the export dialog (export spec 8.3)
   const [unexporting, setUnexporting] = useState(false); // ⋯ → Mark Paid/Ours again
+  const [completing, setCompleting] = useState(false);   // COMPLETE (Pokémon days)
   const [checking, setChecking] = useState(false);       // ⋯ → Check Crystal Commerce matches (export spec E2)
   const [busy, setBusy] = useState(false);
   const ticket = useRef(0);
@@ -155,7 +157,9 @@ function DayScreen({ game, day }) {
   const done = mine.filter((b) => walkInStatus(b, game) === 'completed');
   const allDone = mine.length > 0 && !pending.length;
   const notOver = day >= storeDay();
-  const exportBlocked = game === 'pokemon' ? NO_POKEMON : notOver ? NOT_OVER : null;
+  // Pokémon days: COMPLETE in EXPORT's place (owner, 2026-10-02).
+  const completeOnly = game === 'pokemon';
+  const exportBlocked = notOver ? (completeOnly ? NOT_OVER_COMPLETE : NOT_OVER) : null;
   // When and by whom: the latest export of this game's cards here.
   const doneLines = mine.flatMap((b) => b.buy_lines).filter((l) => l.game === game && l.completed_at);
   // Cards marked Completed by hand (owner, 2026-10-02) weren't exported: not counted.
@@ -172,6 +176,8 @@ function DayScreen({ game, day }) {
   const dayLines = mine.flatMap((b) => b.buy_lines).filter((l) => l.game === game);
   const toExport = dayLines.filter((l) => !l.completed_at);
   const pileCards = (toExport.length ? toExport : dayLines).reduce((n, l) => n + l.quantity, 0);
+  // When and by whom the day was marked Completed, when it wasn't exported.
+  const lastDone = doneLines.reduce((a, l) => (!a || l.completed_at > a.completed_at ? l : a), null);
 
   // Everything here needs a picked user and a connection.
   const guard = () => {
@@ -293,6 +299,43 @@ function DayScreen({ game, day }) {
     navigate(`/collections/${data}`);
   }
 
+  /** COMPLETE (Pokémon days): ask first, unless there's nothing to do. */
+  function startComplete() {
+    if (exportBlocked) {
+      toast(`${exportBlocked}.`, 'err');
+      return;
+    }
+    if (!mine.length) {
+      toast(`No ${GAME_NAMES[game]} buys that day.`, 'err');
+      return;
+    }
+    if (!pending.length) {
+      toast(`Every ${GAME_NAMES[game]} buy here is already Completed.`, 'ok');
+      return;
+    }
+    if (guard()) setCompleting(true);
+  }
+
+  /** The day's Paid/Ours buys in this game marked Completed, nothing exported (`day_complete`). */
+  async function complete() {
+    setBusy(true);
+    const { data, error } = await withLoading(() => supabase.rpc('day_complete', {
+      p_day: day,
+      p_game: game,
+      p_user: user.id,
+      p_device: deviceId,
+    }));
+    setBusy(false);
+    setCompleting(false);
+    if (error) {
+      toast(messageFor(error, "Couldn't mark the buys Completed"), 'err');
+    } else {
+      const n = Number(data ?? 0);
+      toast(`${n} ${GAME_NAMES[game]} buy${n === 1 ? '' : 's'} marked Completed: out of the header search.`, 'ok');
+    }
+    await reload();
+  }
+
   /** ⋯ → Mark Paid/Ours again: undo the export (export spec 9.4), stamps and all. */
   async function unexport() {
     setBusy(true);
@@ -377,7 +420,7 @@ function DayScreen({ game, day }) {
                 ...(done.length > 0 ? [{
                   label: 'Mark Paid/Ours again…',
                   blocked: offline ? 'No connection' : busy ? 'Saving…' : null,
-                  title: `Undo the export: this day's Completed ${GAME_NAMES[game]} buys become Paid/Ours again`,
+                  title: `${lastExport ? 'Undo the export: t' : 'T'}his day's Completed ${GAME_NAMES[game]} buys become Paid/Ours again`,
                   onClick: () => guard() && setUnexporting(true),
                 }] : []),
               ]}
@@ -385,11 +428,12 @@ function DayScreen({ game, day }) {
           )}
           <ExportButton
             className="top"
-            onClick={startExport}
+            label={completeOnly ? 'COMPLETE' : 'EXPORT'}
+            onClick={completeOnly ? startComplete : startExport}
             blocked={exportBlocked}
-            count={game === 'mtg' && state.loaded ? pileCards : null}
+            count={state.loaded ? pileCards : null}
             countTitle={toExport.length
-              ? `${pileCards} card${pileCards === 1 ? '' : 's'} to export: count the pile first`
+              ? `${pileCards} card${pileCards === 1 ? '' : 's'} to ${completeOnly ? 'mark Completed' : 'export'}: count the pile first`
               : `${pileCards} card${pileCards === 1 ? '' : 's'} that day`}
           />
         </span>
@@ -415,6 +459,13 @@ function DayScreen({ game, day }) {
           )}
           .{' '}These buys are Completed: locked, and left out of the header search. Prices in green are the Sell
           {' '}Prices written to the file.
+        </p>
+      )}
+      {allDone && !lastExport && lastDone && (
+        <p className="day-export-note">
+          Completed {formatDateTime(lastDone.completed_at)}
+          {lastDone.completed_by && <> by <UserTag user={staff.byId(lastDone.completed_by)} /></>}
+          , not exported. These buys are locked, and left out of the header search.
         </p>
       )}
 
@@ -501,12 +552,35 @@ function DayScreen({ game, day }) {
           <p>
             This day's <strong>{done.length} Completed {GAME_NAMES[game]} buy{done.length === 1 ? '' : 's'}</strong> go
             back to <strong>Paid/Ours</strong>: unlocked, and back in the header search, showing their buy prices
-            again. Use this if the day was exported too early.
+            again. Use this if the day was {lastExport ? 'exported' : 'marked Completed'} too early.
           </p>
-          <p className="hint">
-            The file already downloaded isn't undone: if it was uploaded to Crystal Commerce, fix the stock there by
-            hand.
+          {lastExport && (
+            <p className="hint">
+              The file already downloaded isn't undone: if it was uploaded to Crystal Commerce, fix the stock there by
+              hand.
+            </p>
+          )}
+        </Modal>
+      )}
+      {completing && (
+        <Modal
+          title={`Mark ${GAME_NAMES[game]} for ${dayDate(day)} Completed?`}
+          onClose={busy ? undefined : () => setCompleting(false)}
+          footer={(
+            <>
+              <button type="button" className="btn ghost" disabled={busy} onClick={() => setCompleting(false)}>Cancel</button>
+              <button type="button" className={`btn primary${busy ? ' busy' : ''}`} disabled={busy} autoFocus onClick={complete}>
+                Complete
+              </button>
+            </>
+          )}
+        >
+          <p>
+            This day's <strong>{pending.length} Paid/Ours {GAME_NAMES[game]} buy{pending.length === 1 ? '' : 's'}</strong>{' '}
+            ({pileCards} card{pileCards === 1 ? '' : 's'}) become <strong>Completed</strong>: locked, and left out of the
+            header search, like an exported day. Nothing is exported.
           </p>
+          <p className="hint">⋯ → Mark Paid/Ours again undoes it.</p>
         </Modal>
       )}
       {converting && (
