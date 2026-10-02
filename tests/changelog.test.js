@@ -28,6 +28,8 @@ test('categories', () => {
   assert.equal(categoryOf('collection_info_edited'), 'actions');
   assert.equal(categoryOf('buy_cards_removed'), 'buys');
   assert.equal(categoryOf('collection_cards_added'), 'collections');
+  assert.equal(categoryOf('collection_created'), 'collections');
+  assert.equal(categoryOf('buy_converted'), 'collections');
   assert.ok(actionsFor(['buys']).includes('backup_restored'));
   assert.ok(!actionsFor(['buys', 'collections']).includes('collection_info_edited'));
 });

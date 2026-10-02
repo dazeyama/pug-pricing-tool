@@ -10,26 +10,29 @@ import { roundDownPrice } from './money.js';
  * The category buttons (spec 12.4). Buys and Collections are only cards
  * coming in or going out (owner, 2026-10-02, replacing "status changes are
  * Collections"); everything else (status changes, exports and completions,
- * edits, repricing, a collection made) is Actions.
+ * edits, repricing) is Actions. A collection made counts as Collections: it
+ * shows the cards it starts with.
  */
 export const CATEGORIES = [
   {
     key: 'buys',
     label: 'Buys',
-    // A buy confirmed (cards in); cards removed, the buy deleted or moved to a project (cards out).
-    actions: ['buy_confirmed', 'buy_cards_removed', 'buy_deleted', 'buy_converted'],
+    // A buy confirmed (cards in); cards removed, or the buy deleted (cards out).
+    actions: ['buy_confirmed', 'buy_cards_removed', 'buy_deleted'],
   },
   {
     key: 'collections',
     label: 'Collections',
-    actions: ['collection_cards_added', 'collection_cards_removed', 'collection_deleted',
+    // A buy converted to a project: the cards added to the project (owner, 2026-10-02).
+    actions: ['collection_created', 'buy_converted', 'collection_cards_added', 'collection_cards_removed',
+      'collection_deleted',
       // Can't upload cards (export spec 9, 12): copied in, exported out, taken back.
       'cant_upload_added', 'cant_upload_exported', 'cant_upload_returned'],
   },
   {
     key: 'actions',
     label: 'Actions',
-    actions: ['collection_info_edited', 'collection_created', 'collection_status_changed',
+    actions: ['collection_info_edited', 'collection_status_changed',
       'collection_line_edited', 'collection_repriced',
       // A day exported, put back, or marked Completed; one buy marked Completed or back;
       // a month's Cash buys file downloaded (owner, 2026-09-30 – 10-02).
@@ -76,7 +79,7 @@ export const HEADLINES = {
 /** Entries about a whole day (EXPORT on a day page), not one buy. */
 export const DAY_ACTIONS = new Set(['day_exported', 'day_unexported', 'day_completed']);
 /** Landmarks: something made (big dot, green headline) or gone (red cross). */
-export const MADE = new Set(['buy_confirmed', 'collection_created']);
+export const MADE = new Set(['buy_confirmed', 'collection_created', 'buy_converted']);
 export const GONE = new Set(['buy_deleted', 'collection_deleted']);
 
 const FOLDS = new Set(['collection_cards_added', 'collection_cards_removed']);
