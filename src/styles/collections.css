@@ -264,6 +264,29 @@
 .cd-phone-row { display: flex; align-items: center; gap: 8px; }
 .cd-phone-row > :first-child { min-width: 0; }
 .btn.call-chip { flex: none; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+/* Its hover card: the calls, numbered, with when and who (owner, 2026-10-02). */
+.call-pop {
+  position: fixed;
+  z-index: 400;
+  width: max-content;
+  min-width: 220px;
+  max-width: 308px;
+  padding: 10px 12px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .5);
+  font-size: 13px;
+  pointer-events: none;
+}
+.call-pop-head { margin-bottom: 8px; font-weight: 700; }
+.call-pop-list { display: grid; gap: 5px; margin: 0; padding: 0; list-style: none; }
+.call-pop-list li { display: flex; align-items: center; gap: 8px; }
+.call-pop-n { width: 1.6em; color: var(--muted); font-size: 12px; text-align: right; font-variant-numeric: tabular-nums; }
+.call-pop-when { font-variant-numeric: tabular-nums; }
+.call-pop-list .user-tag, .call-pop-list .muted-text { margin-left: auto; padding-left: 10px; }
+.call-pop-none { margin: 0; color: var(--muted); }
+.call-pop-foot { margin: 8px 0 0; padding-top: 7px; border-top: 1px solid var(--border); color: var(--muted); font-size: 12px; }
 .cd-last4 .ie-value, .last4-input { font-family: ui-monospace, Consolas, monospace; letter-spacing: .12em; }
 .last4-input { max-width: 120px; }
 .cd-notes .ie-value { white-space: pre-wrap; overflow-wrap: anywhere; }
