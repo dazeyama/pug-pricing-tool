@@ -45,7 +45,8 @@ export default function QuotePanel({
     );
   }
 
-  const tag = { manual: '✎ manual', fallback: 'fallback', cardmarket: 'cardmarket' }[source] ?? null;
+  // A fallback price is TCGplayer's (owner, 2026-10-02: say so).
+  const tag = { manual: '✎ manual', fallback: 'TCGplayer', cardmarket: 'cardmarket' }[source] ?? null;
   const chip = (label, pct) => {
     const amount = price != null ? payout(price, pct) : null;
     const raw = price != null ? (price * pct) / 100 : null;

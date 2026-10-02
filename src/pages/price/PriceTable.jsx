@@ -53,16 +53,20 @@ export default function PriceTable({
     let about = 'no price: enter a manual price';
     if (e.source === 'justtcg') about = `JustTCG ${formatMoney(e.price)}${rounded}`;
     else if (e.source === 'fallback') {
+      // Shown as "TCGplayer" (owner, 2026-10-02): Scryfall's and TCGdex's
+      // prices are TCGplayer's Market Price, and JustTCG's are TCGplayer's
+      // too; Cardmarket's say so.
+      const from = e.base?.from === 'Cardmarket' ? 'Cardmarket' : 'TCGplayer';
       about = e.cap
-        ? `fallback ${formatMoney(e.price)}: `
+        ? `${from} ${formatMoney(e.price)}: `
           + (e.cap.quarter
             ? `a quarter below ${e.cap.code}'s ${formatMoney(ladder[e.cap.code].price)} (${e.cap.pct}% below would show the same price)`
             : `${e.cap.pct}% below ${e.cap.code}'s ${formatMoney(e.cap.from)}`)
           + ` (${e.base.from}'s ${formatMoney(e.base.price)} × ${pct[code]}% = ${formatMoney(e.cap.was)} wasn't below ${e.cap.code})`
-        : `fallback ${formatMoney(e.price)}: ${e.base.from}'s ${formatMoney(e.base.price)} × ${pct[code]}%`;
+        : `${from} ${formatMoney(e.price)}: ${e.base.from}'s ${formatMoney(e.base.price)} × ${pct[code]}%`;
       about += rounded;
       if (e.thrownOut != null) about += ` (JustTCG's ${formatMoney(e.thrownOut)} was higher than a better condition, so it was thrown out)`;
-      if (override) about += ` (Use ${override === 'cardmarket' ? 'Cardmarket' : 'Fallback'} is on)`;
+      if (override) about += ` (Use ${override === 'cardmarket' ? 'Cardmarket' : 'TCGplayer'} is on)`;
       else if (autoCardmarket) about += ' (JustTCG has no price for this Japanese card)';
     }
     if (manual != null && code === condition) about = `manual ${formatMoney(manual)} (market: ${about})`;
@@ -70,20 +74,21 @@ export default function PriceTable({
     return `${code} · ${about}${warn} · ${key}`;
   };
 
-  // Use Fallback: every price from Scryfall/TCGdex (NM) and the fallback
-  // percentages, as if JustTCG had no prices at all.
+  // Use TCGplayer (was "Use Fallback"): every price from TCGplayer's Market
+  // Price, through Scryfall / TCGdex (NM), and the percentages, as if JustTCG
+  // had no prices at all.
   const fbFrom = candidate?.game === 'mtg' ? 'Scryfall' : 'TCGdex';
   const fbNM = fallback && pct?.NM != null ? roundDownPrice((fallback.price * Number(pct.NM)) / 100) : null;
-  let fbTitle = 'Price every condition from the fallback instead of JustTCG';
+  let fbTitle = "Price every condition from TCGplayer's Market Price instead of JustTCG";
   let fbUsable = false;
   if (candidate && !loading) {
-    if (!CONDITIONS.some((c) => market?.[c] != null)) fbTitle = 'Prices already come from the fallback: JustTCG has none for this printing';
-    else if (fbNM == null) fbTitle = `No ${fbFrom} price for this printing`;
+    if (!CONDITIONS.some((c) => market?.[c] != null)) fbTitle = 'Prices already come from TCGplayer: JustTCG has none for this printing';
+    else if (fbNM == null) fbTitle = `No TCGplayer price (via ${fbFrom}) for this printing`;
     else {
       fbUsable = true;
       fbTitle = override === 'fallback'
-        ? `Prices are from ${fbFrom}'s ${formatMoney(fbNM)} NM and the fallback percentages. Click to go back to JustTCG`
-        : `Use ${fbFrom}'s ${formatMoney(fbNM)} for NM, and the fallback percentages for the other conditions, instead of JustTCG's prices`;
+        ? `Prices are from TCGplayer's ${formatMoney(fbNM)} NM (via ${fbFrom}) and the TCGplayer percentages. Click to go back to JustTCG`
+        : `Use TCGplayer's ${formatMoney(fbNM)} (via ${fbFrom}) for NM, and the TCGplayer percentages for the other conditions, instead of JustTCG's prices`;
     }
   }
 
@@ -99,8 +104,8 @@ export default function PriceTable({
       cmUsable = true;
       const was = `Cardmarket's ${formatEur(cardmarket.eur)} (≈ ${formatMoney(cmNM)})`;
       cmTitle = override === 'cardmarket'
-        ? `Prices are from ${was} NM and the fallback percentages. Click to go back to JustTCG`
-        : `Use ${was} for NM, and the fallback percentages for the other conditions, instead of JustTCG's prices`;
+        ? `Prices are from ${was} NM and the TCGplayer percentages. Click to go back to JustTCG`
+        : `Use ${was} for NM, and the TCGplayer percentages for the other conditions, instead of JustTCG's prices`;
     }
   }
   const overrideButton = (kind, label, usable, title) => (
@@ -138,7 +143,7 @@ export default function PriceTable({
       return (
         <span className="pc-price" style={priceStyle(formatMoney(price))}>
           {formatMoney(price)}
-          <span className="fb-tag">{ladder[code].base?.from === 'Cardmarket' ? 'CM' : 'fallback'}</span>
+          <span className="fb-tag">{ladder[code].base?.from === 'Cardmarket' ? 'CM' : 'TCGplayer'}</span>
         </span>
       );
     }
@@ -190,7 +195,7 @@ export default function PriceTable({
       </div>
       <div className="price-foot">
         <div className="price-tools">
-          {overrideButton('fallback', 'Use Fallback', fbUsable, fbTitle)}
+          {overrideButton('fallback', 'Use TCGplayer', fbUsable, fbTitle)}
           {overrideButton('cardmarket', 'Use Cardmarket', cmUsable, cmTitle)}
           {manualOpen ? (
             <span className="manual-edit">
