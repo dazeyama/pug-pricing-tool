@@ -16,9 +16,10 @@
   max-width: calc(1400px - 48px);
   margin: 16px auto;
   padding: 20px 24px;
-  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
+  /* Faint red (owner, 2026-10-02), the logo's crimson. */
+  border: 1px solid color-mix(in srgb, var(--pal-crimson) 30%, var(--border));
   border-radius: 14px;
-  background: color-mix(in srgb, var(--accent) 9%, var(--bg));
+  background: color-mix(in srgb, var(--pal-crimson) 10%, var(--bg));
   overflow: hidden;
 }
 .home {
