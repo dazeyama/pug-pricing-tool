@@ -122,8 +122,13 @@ function Status({ search, lang }) {
     );
   }
   const p = search.parsed;
-  if (lang === 'ja' && off !== 'pokemon' && search.query && p && !p.number && !p.setCode) {
-    bits.push(<span key="jp" className="jp-hint">Japanese Pokémon: search by number and set code, e.g. 25/165 SV2a.</span>);
+  if (lang === 'ja' && off !== 'pokemon' && search.query && p && !p.number && !p.setCode && !p.dexNo) {
+    bits.push(
+      <span key="jp" className="jp-hint">
+        Japanese Pokémon: search by number and set code, e.g. 25/165 SV2a; the oldest sets (1996–2001, no set
+        numbers) by the Pokédex number printed on them, e.g. No. 32.
+      </span>,
+    );
   }
   return <div className="suggest-status" aria-live="polite">{bits}</div>;
 }

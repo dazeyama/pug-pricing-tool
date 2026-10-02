@@ -232,10 +232,18 @@ function localIdParam(number) {
 }
 
 /**
+ * The first ten Japanese sets (1996–2001): their cards print no collector
+ * number, only the Pokédex number ("No. 032"). TCGdex numbers their cards in
+ * its own order, so they're found by Pokédex number instead.
+ */
+export const DEX_NUMBER_SETS = ['PMCG1', 'PMCG2', 'PMCG3', 'PMCG4', 'PMCG5', 'PMCG6', 'neo1', 'neo2', 'neo3', 'neo4'];
+
+/**
  * Candidate cards (briefs) for a query in one language.
  * @param {Lang} lang
- * @param {{ name: string, number: string|null, size: number|null, setCode: string|null }} q
- *   size: a plain printed size; setCode: only when it's a Pokémon code
+ * @param {{ name: string, number: string|null, size: number|null, setCode: string|null, dexNo?: string|null }} q
+ *   size: a plain printed size; setCode: only when it's a Pokémon code; dexNo: a Japanese
+ *   "No. 32" search (DEX_NUMBER_SETS only)
  * @param {AbortSignal} [signal]
  * @returns {Promise<CardBrief[]>}
  */
@@ -243,7 +251,12 @@ export async function searchCards(lang, q, signal) {
   const list = await loadSetList(lang);
   let briefs = [];
 
-  if (lang === 'ja') {
+  if (lang === 'ja' && q.dexNo) {
+    // "No. 32": exactly that Pokédex number (eq:, since a plain dexId=32
+    // also finds 132 and 232), in the sets that print only that.
+    const found = (await transport.getJson(`${API}/ja/cards?dexId=eq:${encodeURIComponent(q.dexNo)}`, { signal })) ?? [];
+    briefs = found.filter((b) => DEX_NUMBER_SETS.includes(setIdOf(b)));
+  } else if (lang === 'ja') {
     // Japanese names can't be typed reliably: match by set code (= set ID)
     // and number, or by number within sets of the printed size.
     let sets = null;

@@ -6,9 +6,7 @@ import * as scry from './scryfall.js';
 import * as dex from './tcgdex.js';
 import { isAbort, UnavailableError } from './transport.js';
 import { nameKey } from './normalize.js';
-import {
-  parseQuery, withoutGuessedSetCode, numericSize, numberPrefix, sameNumber,
-} from './query.js';
+import { parseQuery, withoutGuessedSetCode, numericSize, numberPrefix, sameNumber, dexNumberQuery } from './query.js';
 
 /** First page of each source; beyond this, "refine your search". */
 export const PAGE = 175;
@@ -109,7 +107,7 @@ async function magicCandidates(q, signal) {
 async function pokemonCandidates(lang, q, signal) {
   const size = numericSize(q.size);
   const briefs = await dex.searchCards(
-    lang, { name: q.name, number: q.number, size, setCode: q.pokemonSet }, signal);
+    lang, { name: q.name, number: q.number, size, setCode: q.pokemonSet, dexNo: q.dexNo ?? null }, signal);
 
   let rows = briefs.map((b) => ({ b, setId: dex.setIdOf(b) }));
   if (size != null) {
@@ -287,7 +285,11 @@ export async function runSearch(input, lang, games, oldest, signal, { onParsed, 
   await Promise.allSettled([scry.loadSets(), dex.loadSetList(lang)]);
   if (signal.aborted) throw new DOMException('Superseded', 'AbortError');
   const known = (t) => scry.isMagicSetCode(t) || dex.isPokemonSetCode(lang, t);
-  const parsed = parseQuery(input, known);
+  // "No. 32" in Japanese: a Pokédex number from the oldest sets (owner, 2026-10-01).
+  const dexNo = lang === 'ja' ? dexNumberQuery(input) : null;
+  const parsed = dexNo
+    ? { name: '', number: null, size: null, setCode: null, setCodeFrom: null, dexNo }
+    : parseQuery(input, known);
   const alternate = withoutGuessedSetCode(input, parsed);
   onParsed(parsed);
 
@@ -308,7 +310,9 @@ export async function runSearch(input, lang, games, oldest, signal, { onParsed, 
     for (let round = 0; ; round++) {
       try {
         const route = routeSetCode(p, lang);
-        let result = route.skip === game ? empty : await fetchers[game](p);
+        // A Pokédex number means nothing to Magic.
+        const skip = route.skip === game || (p.dexNo && game === 'mtg');
+        let result = skip ? empty : await fetchers[game](p);
         if (!result.list.length && alternate && p === parsed) result = await fetchers[game](alternate);
         onUpdate(game, { status: 'ok', ...result });
         return result;

@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  parseQuery, withoutGuessedSetCode, normNumber, sameNumber, numericSize, numberPrefix,
+  parseQuery, withoutGuessedSetCode, normNumber, sameNumber, numericSize, numberPrefix, dexNumberQuery,
 } from '../src/lib/query.js';
 
 // Codes a game uses, for rule 1's "matches a known set code" branch.
@@ -80,4 +80,15 @@ test('only plain sizes are numeric', () => {
   assert.equal(numericSize(null), null);
   assert.equal(numberPrefix('TG05'), 'tg');
   assert.equal(numberPrefix('125'), '');
+});
+
+// The oldest Japanese cards print only a Pokédex number (owner, 2026-10-01).
+test('dexNumberQuery reads "No. <number>" and nothing else', () => {
+  assert.equal(dexNumberQuery('No. 32'), '32');
+  assert.equal(dexNumberQuery('No.032'), '32');
+  assert.equal(dexNumberQuery('  no. 6 '), '6');
+  assert.equal(dexNumberQuery('No 32'), null);          // the dot is part of it
+  assert.equal(dexNumberQuery('32'), null);
+  assert.equal(dexNumberQuery('No. 32 SV2a'), null);
+  assert.equal(dexNumberQuery('Nidoran No. 32'), null);
 });

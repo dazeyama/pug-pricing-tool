@@ -68,6 +68,22 @@ export function parseQuery(input, isKnownSetCode = () => false) {
   return { name: tokens.join(' '), number, size, setCode, setCodeFrom };
 }
 
+// "No. 32", "No.032": the whole line is "No." and a number.
+const DEX_NUMBER = /^no\.\s*(\d{1,4})$/i;
+
+/**
+ * The first ten Japanese sets (1996–2001) print no collector number, only the
+ * Pokédex number: "No. 032". A Japanese search that starts with "No." looks
+ * that up instead (owner, 2026-10-01). The number without leading zeros, or
+ * null when the line isn't "No. <number>".
+ * @param {string} input
+ * @returns {string|null}
+ */
+export function dexNumberQuery(input) {
+  const m = DEX_NUMBER.exec(String(input ?? '').trim());
+  return m ? String(Number(m[1])) : null;
+}
+
 /**
  * The same query read without its set code, for when the last word was only
  * a guess ("Ancient Mew": MEW is also a Pokémon set code). null if there's no
