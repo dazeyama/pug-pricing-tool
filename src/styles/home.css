@@ -1,7 +1,9 @@
 /* Home (owner, 2026-10-01): what needs doing, then today. One panel, half
    the page wide, centered in the space below the header; the page never
    scrolls (the fixed shell), and the lists are short enough to fit. */
+/* The space between Home's panels, everywhere (owner, 2026-10-01: a little more room). */
 .home-screen {
+  --home-gap: 16px;
   flex: 1;
   min-height: 0;
   display: flex;
@@ -20,11 +22,11 @@
   max-height: 900px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--home-gap);
   overflow: hidden;
 }
 .home-warn { margin: 0; padding: 8px 12px; font-size: 13px; }
-.home-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.home-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--home-gap); }
 /* Split down the middle like the top row, so the two rows line up (owner, 2026-10-01). */
 .home-row.home-top { flex: 1; min-height: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .home-days .home-item { overflow: hidden; }
@@ -52,7 +54,7 @@
 .home-item.is-done:hover { opacity: 1; }
 .home-subhead { color: var(--muted); font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; align-items: flex-end !important; padding-bottom: 2px; }
 .home-sku { margin-left: auto; }
-.home-side { display: flex; flex-direction: column; gap: 12px; }
+.home-side { display: flex; flex-direction: column; gap: var(--home-gap); }
 .home-card {
   display: flex;
   flex-direction: column;
