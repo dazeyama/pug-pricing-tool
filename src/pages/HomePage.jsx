@@ -280,6 +280,23 @@ export default function HomePage() {
         </section>
 
         <div className="home-side">
+          <button
+            type="button"
+            className="home-card home-cant kind-system"
+            disabled={!cantUpload}
+            onClick={() => cantUpload && go(`/collections/${cantUpload.id}`)}
+          >
+            <span className="home-card-head"><span className="home-h">Can't upload cards</span></span>
+            <span className="home-cant-body">
+              <span className="home-big">{cardsIn(cantLines)}</span>
+              <span className="home-cant-info">
+                <span>{cardsIn(cantLines) === 1 ? 'card' : 'cards'} waiting</span>
+                <span className="home-muted">{oldestCant ? `Oldest from ${dayDate(dayOf(oldestCant))}` : 'Nothing waiting'}</span>
+                {cantLines.slice(0, CANT_SHOWN).map((l) => <span key={l.id} className="home-cant-line">{lineText(l)}</span>)}
+                {cantLines.length > CANT_SHOWN && <span className="home-muted">+{cantLines.length - CANT_SHOWN} more</span>}
+              </span>
+            </span>
+          </button>
           <section className="home-card home-recent">
             <div className="home-card-head">
               <h3>Recent activity</h3>
@@ -300,23 +317,6 @@ export default function HomePage() {
               {events.loaded && !(events.data ?? []).length && <p className="home-empty">Nothing yet.</p>}
             </div>
           </section>
-          <button
-            type="button"
-            className="home-card home-cant kind-system"
-            disabled={!cantUpload}
-            onClick={() => cantUpload && go(`/collections/${cantUpload.id}`)}
-          >
-            <span className="home-card-head"><span className="home-h">Can't upload cards</span></span>
-            <span className="home-cant-body">
-              <span className="home-big">{cardsIn(cantLines)}</span>
-              <span className="home-cant-info">
-                <span>{cardsIn(cantLines) === 1 ? 'card' : 'cards'} waiting</span>
-                <span className="home-muted">{oldestCant ? `Oldest from ${dayDate(dayOf(oldestCant))}` : 'Nothing waiting'}</span>
-                {cantLines.slice(0, CANT_SHOWN).map((l) => <span key={l.id} className="home-cant-line">{lineText(l)}</span>)}
-                {cantLines.length > CANT_SHOWN && <span className="home-muted">+{cantLines.length - CANT_SHOWN} more</span>}
-              </span>
-            </span>
-          </button>
         </div>
       </div>
     </div>
