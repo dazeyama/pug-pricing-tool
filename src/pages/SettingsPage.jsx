@@ -16,6 +16,7 @@ const CREDITS = [
   ['Pokémon card data and images', 'TCGdex'],
   ['Backup Pokémon images', 'pokemontcg.io and TCGplayer'],
   ['Japanese Pokémon images', 'Limitless TCG'],
+  ['Vintage Japanese Pokémon images (1996–2001)', 'Pokellector'],
   ['English names for Japanese Pokémon', 'PokeAPI'],
   ['Prices', 'JustTCG'],
   ['Cardmarket prices', 'Scryfall (Magic) and TCGdex (Pokémon)'],

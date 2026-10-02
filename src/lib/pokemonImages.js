@@ -20,6 +20,14 @@
 //   Checked 2026-09-29: whole Japanese sets TCGdex has no pictures of (SM12a,
 //   SM8b, S8b, SV5M…) were 19 of 21 there; misses were top secret rares.
 //   Credited in Settings' footer.
+// Japanese, the oldest sets (owner, 2026-10-01): the first ten (1996–2001:
+//   the six expansions and four Neo sets) are on neither TCGdex nor
+//   Limitless. Pokellector has them, but its picture addresses carry an ID
+//   of its own, so scripts/pokellector-jp.mjs reads its set pages once into
+//   pokellectorJp.json (TCGdex set → number → "311/Nidoran.EXP.5.37255").
+//   Its "thumb" is ~200 KB and its full picture ~700 KB; both are cached
+//   for 30 days. Tried before Limitless for those sets. Credited in
+//   Settings' footer.
 import { createTransport } from './transport.js';
 import { DAY, memoryCache, storedOrDownload } from './cache.js';
 import * as dex from './tcgdex.js';
@@ -28,6 +36,17 @@ const PTCG_API = 'https://api.pokemontcg.io/v2';
 const PTCG_IMAGES = 'https://images.pokemontcg.io';
 const TCGPLAYER_IMAGES = 'https://tcgplayer-cdn.tcgplayer.com/product';
 const LIMITLESS_IMAGES = 'https://limitlesstcg.nyc3.digitaloceanspaces.com/tpc';
+const POKELLECTOR_IMAGES = 'https://den-cards.pokellector.com';
+
+let pokellector = null;
+/** The oldest Japanese sets' Pokellector pictures, loaded the first time one is needed. */
+function loadPokellector() {
+  pokellector ??= import('./pokellectorJp.json').then((m) => m.default).catch(() => {
+    pokellector = null;
+    return {};
+  });
+  return pokellector;
+}
 // pokemontcg.io's API often answers 500/502 and then works on a retry.
 const ptcg = createTransport({ spacingMs: 200, tries: 6 });
 
@@ -149,6 +168,12 @@ const resolved = memoryCache(DAY);
 export function fallbackImages(c) {
   return resolved.get(c.key, async () => {
     if (c.lang === 'ja') {
+      // The oldest sets: Pokellector's pictures, by TCGdex number ("005" → 5).
+      const path = (await loadPokellector())[c.setId]?.[String(Number(c.number))];
+      if (path) {
+        const base = `${POKELLECTOR_IMAGES}/${encodeURI(path)}`;
+        return { thumb: `${base}.thumb.png`, image: `${base}.png`, source: 'Pokellector' };
+      }
       const set = encodeURIComponent(c.setId);
       const number = String(c.number ?? '').replace(/^0+(?=\d)/, '');
       const base = `${LIMITLESS_IMAGES}/${set}/${set}_${encodeURIComponent(number)}_R_JP`;
