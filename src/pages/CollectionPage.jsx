@@ -98,11 +98,14 @@ function CollectionScreen({ id }) {
   const removeLocked = buy?.status === 'paid' && lock.status === 'held' ? null : locked;
 
   // REPRICE? works where cards could be edited anyway (a project, Processing,
-  // Priced): why not now, or null.
+  // Priced), and on Can't upload cards beside its own EXPORT (owner,
+  // 2026-10-01): why not now, or null.
   let repriceBlocked = null;
   if (!user) repriceBlocked = 'Pick a user first';
   else if (offline) repriceBlocked = 'No connection';
-  else if (locked) repriceBlocked = locked;
+  else if (viewOnly) repriceBlocked = `View only: ${holderLabel} is editing this collection. Take over to reprice`;
+  else if (lock.status !== 'held') repriceBlocked = 'Checking who is editing this collection';
+  else if (locked && !system) repriceBlocked = locked;
   else if (!col.lines.length) repriceBlocked = 'No cards to reprice';
 
   async function reprice(updates, counts) {
@@ -427,22 +430,21 @@ function CollectionScreen({ id }) {
       )}
       renderListFooter={({ focusSearch }) => (
         <div className="list-buttons">
-          {/* REPRICE?: today's buy prices for every card (owner, 2026-10-01); smaller, beside EXPORT. */}
-          {!system && (
-            <button
-              type="button"
-              className={`btn reprice-btn${repriceBlocked ? ' is-disabled' : ''}`}
-              aria-disabled={repriceBlocked ? true : undefined}
-              title={repriceBlocked ?? 'Bring every card’s buy price up to today’s prices'}
-              onClick={() => {
-                if (!user) staff.pulse();
-                else if (repriceBlocked) toast(`${repriceBlocked}.`, 'err');
-                else setRepricing(true);
-              }}
-            >
-              REPRICE?
-            </button>
-          )}
+          {/* REPRICE?: today's buy prices for every card (owner, 2026-10-01); smaller, beside
+              EXPORT, Can't upload cards' included. */}
+          <button
+            type="button"
+            className={`btn reprice-btn${repriceBlocked ? ' is-disabled' : ''}`}
+            aria-disabled={repriceBlocked ? true : undefined}
+            title={repriceBlocked ?? 'Bring every card’s buy price up to today’s prices'}
+            onClick={() => {
+              if (!user) staff.pulse();
+              else if (repriceBlocked) toast(`${repriceBlocked}.`, 'err');
+              else setRepricing(true);
+            }}
+          >
+            REPRICE?
+          </button>
           <ExportButton onClick={startExport} />
           {repricing && (
             <RepriceModal
