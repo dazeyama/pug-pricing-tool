@@ -3,6 +3,7 @@ import UserTag from '../../components/UserTag.jsx';
 import GuardButton from '../../components/GuardButton.jsx';
 import MoreMenu from '../../components/MoreMenu.jsx';
 import InlineEdit from './InlineEdit.jsx';
+import CallChip from './CallChip.jsx';
 import { STATUSES, isClosed, statusText, statusTone } from './status.js';
 import { formatMoney } from '../../lib/money.js';
 import { PHONE_ERROR, formatPhone, phoneDigits, validPhone } from '../../lib/phone.js';
@@ -238,7 +239,8 @@ export default function CollectionDetails({
               </dd>
               {!project && <>
               <dt>Phone</dt>
-              <dd>
+              {/* 📞 (n) on Priced collections (owner, 2026-10-02): calls about the offer. */}
+              <dd className="cd-phone-row">
                 <InlineEdit
                   className="cd-phone"
                   label="Phone"
@@ -250,6 +252,7 @@ export default function CollectionDetails({
                   canEdit={api.canEdit}
                   editBlocked={api.editBlocked}
                 />
+                {buy.status === 'priced' && <CallChip buy={buy} />}
               </dd>
               <dt>Last 4 ID</dt>
               <dd>

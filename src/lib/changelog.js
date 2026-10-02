@@ -37,7 +37,9 @@ export const CATEGORIES = [
       // A day exported, put back, or marked Completed; one buy marked Completed or back;
       // a month's Cash buys file downloaded (owner, 2026-09-30 – 10-02).
       'day_exported', 'day_unexported', 'day_completed', 'buy_completed', 'buy_uncompleted',
-      'cash_buys_downloaded'],
+      'cash_buys_downloaded',
+      // 📞 on a Priced collection (owner, 2026-10-02).
+      'collection_called'],
   },
 ];
 /** Milestones are always shown (a backup restore, Phase 10). */
@@ -71,6 +73,7 @@ export const HEADLINES = {
   collection_status_changed: 'Status changed',
   collection_deleted: 'Collection deleted',
   collection_repriced: 'Collection repriced',
+  collection_called: 'Customer called',
   cant_upload_added: "Cards can't upload",
   cant_upload_exported: "Exported from Can't upload",
   cant_upload_returned: 'Cards returned',

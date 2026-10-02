@@ -260,6 +260,10 @@
 .cd-fields dd { margin: 0; min-width: 0; }
 .cd-name-edit .ie-value { font-weight: 600; }
 .cd-phone .ie-value { font-variant-numeric: tabular-nums; }
+/* 📞 (n) after the phone on a Priced collection (CallChip.jsx). */
+.cd-phone-row { display: flex; align-items: center; gap: 8px; }
+.cd-phone-row > :first-child { min-width: 0; }
+.btn.call-chip { flex: none; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .cd-last4 .ie-value, .last4-input { font-family: ui-monospace, Consolas, monospace; letter-spacing: .12em; }
 .last4-input { max-width: 120px; }
 .cd-notes .ie-value { white-space: pre-wrap; overflow-wrap: anywhere; }
