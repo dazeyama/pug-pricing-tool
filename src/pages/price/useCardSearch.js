@@ -66,7 +66,10 @@ export function useCardSearch(text, lang, games, oldest = false) {
         });
         setState((s) => ({ ...s, correction, tried, searching: false, settled: true }));
       } catch (e) {
-        if (!isAbort(e)) console.error('Search failed', e);
+        if (isAbort(e)) return;
+        // Never leave "Searching…" up: the search ends, with whatever it found.
+        console.error('Search failed', e);
+        setState((s) => ({ ...s, searching: false, settled: true }));
       }
     }, 250);
     return () => {

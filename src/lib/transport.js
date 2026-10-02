@@ -100,7 +100,18 @@ export function createTransport({ spacingMs = 100, tries = 5 } = {}) {
     return res.json();
   }
 
-  return { request, getJson };
+  /**
+   * A queued low-priority GET of this URL moves to the user's lane: a search
+   * is now waiting on what a background fill only queued (owner's "No. 32"
+   * search sat behind the whole Japanese set fill, 2026-10-01).
+   * @param {string} url
+   */
+  function promote(url) {
+    const i = low.findIndex((job) => job.url === url);
+    if (i !== -1) high.push(...low.splice(i, 1));
+  }
+
+  return { request, getJson, promote };
 }
 
 /** True for an error that only means "this search was replaced by a newer one". */

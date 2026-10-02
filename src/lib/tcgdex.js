@@ -118,8 +118,14 @@ const inflight = new Map();
  */
 export function fetchSetDetail(lang, id, options = {}) {
   const key = `${lang}:${id}`;
-  if (inflight.has(key)) return inflight.get(key);
-  const promise = transport.getJson(`${API}/${lang}/sets/${encodeURIComponent(id)}`, options)
+  const url = `${API}/${lang}/sets/${encodeURIComponent(id)}`;
+  if (inflight.has(key)) {
+    // The background fill may only have queued it: a search waiting on it
+    // has it fetched next, not after every other set.
+    if (options.priority !== 'low') transport.promote(url);
+    return inflight.get(key);
+  }
+  const promise = transport.getJson(url, options)
     .then((d) => {
       if (!d) throw new Error(`TCGdex has no set ${id}`);
       ensureInfoLoaded(lang);
