@@ -84,6 +84,6 @@ change.
 
 **For now the live site runs on dev** (owner's decision, 2026-09-30): the three Actions
 variables hold the **`pug-pricing-dev`** values from `.env.development`, so version
-0.9.0-dev, then 0.9.1-final (2026-09-30) and 0.9.9-export (2026-10-01), can be tried at the store against the dev data before launch. **At launch
+0.9.0-dev, then 0.9.1-final (2026-09-30), 0.9.9-export (2026-10-01) and 0.9.9-day0 (2026-10-02), can be tried at the store against the dev data before launch. **At launch
 (Phase 10), set them back to the `.env.production` values** (prod, `zvxquzcfffmxwizonxuo`)
 after prod is migrated, then push again or re-run the workflow.

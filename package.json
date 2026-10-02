@@ -1,7 +1,7 @@
 {
   "name": "pug-pricing-tool",
   "private": true,
-  "version": "0.9.9-export",
+  "version": "0.9.9-day0",
   "type": "module",
   "scripts": {
     "dev": "vite",

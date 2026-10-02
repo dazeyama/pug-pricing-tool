@@ -1773,7 +1773,7 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
   - Settings panels one fixed height, and Backups split on the page's centre line (Section 11); collection details with a clear header bar and fold button (9.4); the Changelog opens on Buys, with day pills that match the search's dates (12); card pictures on day pages (10.2); the computer is saved before anything can use it (7.4).
 - **Launch:**
   - **squash the migrations and set up prod from the single baseline** (owner's decision, 2026-10-02: "Migration squash at launch" below), then put the Edge Functions on prod;
-  - **set the GitHub Actions variables back to prod** (since 2026-09-30 they point the live site at **dev**, for testing 0.9.0-dev, then 0.9.1-final and 0.9.9-export, at the store; see `docs/SETUP.md` → Deploying);
+  - **set the GitHub Actions variables back to prod** (since 2026-09-30 they point the live site at **dev**, for testing 0.9.0-dev, then 0.9.1-final, 0.9.9-export and 0.9.9-day0, at the store; see `docs/SETUP.md` → Deploying);
   - finish `docs/SETUP.md`: run, deploy, the store password and backups are written; **restoring a paused project** is still to write;
   - the public `README.md` stays a very short description of the tool's purpose (owner's decision, 2026-09-29);
   - **push to `main` only when the owner says go**, then confirm the Pages deploy succeeded.
@@ -2158,6 +2158,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 193 | The changelog live (2026-10-02) | `events` joins the Realtime publication (migration 0035), so Home's Recent activity updates the moment something happens; the Changelog tab itself still loads its pages on demand |
 | 194 | "TCGplayer" where a price is TCGplayer's (2026-10-02) | Scryfall's `usd` prices (and TCGdex's) are TCGplayer's **Market Price** (not Low or Mid; Scryfall's FAQ). **Use Fallback is renamed Use TCGplayer.** A price that *is* TCGplayer's Market Price (through Scryfall / TCGdex, its condition at 100%, not capped) is tagged **TCGplayer** on its button and in the price panel; when every price comes from TCGplayer (Use TCGplayer on, or JustTCG has none) **every condition** reads **TCGplayer**, as an all-Cardmarket ladder reads **CM**; when JustTCG and TCGplayer prices are mixed, a price worked out as a percentage, or capped, stays **fallback** (Cardmarket's **CM**), and its tooltip names the base ("TCGplayer's $0.98 (via Scryfall) × 90%"). The Master Fallback Percentages keep their name. Internal names unchanged |
 | 195 | EN \| JP not remembered; a JP search tip (2026-10-02) | EN \| JP starts on EN on every screen; with JP on, the search field's sample text shows how to search Japanese cards (number and set code, "No. 32" for the oldest sets) (Section 8.2) |
+| 196 | v0.9.9-day0 pushed (2026-10-02) | Everything since 0.9.9-export's patches goes live as 0.9.9-day0 (tagged `v0.9.9-day0`), still built against the **dev** project (migrations through 0035 already on dev); prod launch still waits (Section 15, Phase 10) |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |
