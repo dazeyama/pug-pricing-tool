@@ -119,15 +119,15 @@ export default function HomePage() {
   }
   const recentDays = [...recent.values()].sort((a, b) => b.day.localeCompare(a.day)).slice(0, RECENT_DAYS);
   // The panel's rows, filled in order (owner, 2026-10-01): every waiting day
-  // (or "+N more" for the rest), today's row, then as many recently exported
-  // days as fit under their own heading row.
+  // (or "+N more" for the rest), then as many recently exported days as fit
+  // under their own heading row.
   const waitingRows = Math.max(1, toExport.length);           // the empty message is a row too
   let daysShown = toExport.length;
   let recentShown = 0;
-  if (waitingRows + 1 > daysFit) {
-    daysShown = Math.max(0, daysFit - 2);                     // room for "+N more" and today
+  if (waitingRows > daysFit) {
+    daysShown = Math.max(0, daysFit - 1);                     // room for "+N more"
   } else {
-    const left = daysFit - waitingRows - 1;
+    const left = daysFit - waitingRows;
     recentShown = left >= 2 ? Math.min(recentDays.length, left - 1) : 0;
   }
 
@@ -156,7 +156,6 @@ export default function HomePage() {
   const cash = paid('cash');
   const credit = paid('credit');
   const byGame = (game) => cardsIn(todayCards.filter((l) => l.game === game));
-  const magicBuysToday = buys.filter((b) => (b.buy_lines ?? []).some((l) => l.game === 'mtg')).length;
 
   const u = usage.data;
   const usageHigh = u?.daily_limit && u.daily_used >= u.daily_limit * USAGE_WARN;
@@ -199,14 +198,6 @@ export default function HomePage() {
                   +{toExport.length - daysShown} more on the Calendar
                 </button>
               )}
-              {/* Today: it can't be exported until it's over. */}
-              <button type="button" className="home-item game-mtg is-today" onClick={() => go(`/calendar/mtg/${today}`)}>
-                <strong>Today</strong>
-                <span className="home-muted">
-                  {magicBuysToday ? `Magic · ${plural(magicBuysToday, 'buy')} · ${plural(byGame('mtg'), 'card')} so far` : 'No Magic buys yet'}
-                </span>
-                <span className="home-age">exports tomorrow</span>
-              </button>
               {recentShown > 0 && (
                 <>
                   <span className="home-subhead home-row-line">Recently exported</span>
