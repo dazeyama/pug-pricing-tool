@@ -78,8 +78,8 @@ export default function FallbackPanel() {
           one (that price is thrown out): the condition gets JustTCG’s Near Mint price times its
           percentage. Without a JustTCG Near Mint, TCGplayer’s Market Price (through Scryfall for
           Magic, TCGdex for Pokémon) is used instead. Prices worked out this way are marked
-          “fallback”; one that is TCGplayer’s price itself (its condition at 100%) is marked
-          “TCGplayer”.
+          “fallback”; when every price comes from TCGplayer (Use TCGplayer, or no JustTCG prices),
+          or one is TCGplayer’s price itself (its condition at 100%), they’re marked “TCGplayer”.
         </p>
         <table className="fb-table">
           <thead>

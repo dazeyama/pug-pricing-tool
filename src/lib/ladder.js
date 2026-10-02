@@ -113,3 +113,24 @@ export const isTcgplayerBase = (entry) => TCGPLAYER_BASES.has(entry?.base?.from)
 export function isTcgplayerPrice(entry, conditionPct) {
   return entry?.source === 'fallback' && !entry.cap && isTcgplayerBase(entry) && Number(conditionPct) === 100;
 }
+
+/**
+ * Every price on the ladder comes from TCGplayer (owner, 2026-10-02): no
+ * JustTCG price for any condition (Use TCGplayer is on, or JustTCG has none)
+ * and the base is TCGplayer's Market Price. Then every condition reads
+ * "TCGplayer", the way an all-Cardmarket ladder reads "CM".
+ */
+export function ladderAllTcgplayer(ladder) {
+  return CONDITIONS.every((c) => ladder?.[c]?.source !== 'justtcg')
+    && CONDITIONS.some((c) => ladder?.[c]?.source === 'fallback' && isTcgplayerBase(ladder[c]));
+}
+
+/**
+ * Does this condition's price say "TCGplayer" (rather than "fallback")?
+ * When the whole ladder is TCGplayer's, or this price is TCGplayer's own.
+ */
+export function showsTcgplayer(ladder, code, conditionPct) {
+  const entry = ladder?.[code];
+  if (entry?.source !== 'fallback' || !isTcgplayerBase(entry)) return false;
+  return ladderAllTcgplayer(ladder) || isTcgplayerPrice(entry, conditionPct);
+}

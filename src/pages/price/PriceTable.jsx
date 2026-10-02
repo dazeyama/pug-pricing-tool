@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CONDITIONS } from '../../lib/prices.js';
-import { isTcgplayerBase, isTcgplayerPrice } from '../../lib/ladder.js';
+import { isTcgplayerBase, isTcgplayerPrice, showsTcgplayer } from '../../lib/ladder.js';
 import { formatEur, formatMoney, parseMoney, roundDownPrice } from '../../lib/money.js';
 import { timeAgo } from '../../lib/time.js';
 
@@ -58,17 +58,19 @@ export default function PriceTable({
       about = `TCGplayer ${formatMoney(e.price)}: TCGplayer's Market Price (via ${e.base.from})${rounded}`;
       if (override) about += ' (Use TCGplayer is on)';
     } else if (e.source === 'fallback') {
-      // A ratio of a base price: still "fallback"; a TCGplayer base says so.
+      // A ratio of a base price: "fallback" when the sources are mixed,
+      // "TCGplayer" when the whole ladder is TCGplayer's; a TCGplayer base says so.
+      const label = showsTcgplayer(ladder, code, pct?.[code]) ? 'TCGplayer' : 'fallback';
       const base = isTcgplayerBase(e)
         ? `TCGplayer's ${formatMoney(e.base.price)} (via ${e.base.from})`
         : `${e.base.from}'s ${formatMoney(e.base.price)}`;
       about = e.cap
-        ? `fallback ${formatMoney(e.price)}: `
+        ? `${label} ${formatMoney(e.price)}: `
           + (e.cap.quarter
             ? `a quarter below ${e.cap.code}'s ${formatMoney(ladder[e.cap.code].price)} (${e.cap.pct}% below would show the same price)`
             : `${e.cap.pct}% below ${e.cap.code}'s ${formatMoney(e.cap.from)}`)
           + ` (${base} × ${pct[code]}% = ${formatMoney(e.cap.was)} wasn't below ${e.cap.code})`
-        : `fallback ${formatMoney(e.price)}: ${base} × ${pct[code]}%`;
+        : `${label} ${formatMoney(e.price)}: ${base} × ${pct[code]}%`;
       about += rounded;
       if (e.thrownOut != null) about += ` (JustTCG's ${formatMoney(e.thrownOut)} was higher than a better condition, so it was thrown out)`;
       if (override) about += ` (Use ${override === 'cardmarket' ? 'Cardmarket' : 'TCGplayer'} is on)`;
@@ -149,7 +151,7 @@ export default function PriceTable({
         <span className="pc-price" style={priceStyle(formatMoney(price))}>
           {formatMoney(price)}
           <span className="fb-tag">
-            {ladder[code].base?.from === 'Cardmarket' ? 'CM' : isTcgplayerPrice(ladder[code], pct?.[code]) ? 'TCGplayer' : 'fallback'}
+            {ladder[code].base?.from === 'Cardmarket' ? 'CM' : showsTcgplayer(ladder, code, pct?.[code]) ? 'TCGplayer' : 'fallback'}
           </span>
         </span>
       );
