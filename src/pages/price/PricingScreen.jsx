@@ -24,7 +24,6 @@ import { useSettings } from '../../state/settings.jsx';
 import { useEurUsd } from '../../lib/useEurUsd.js';
 import { showsTcgplayer } from '../../lib/ladder.js';
 import { useEnglishPokemonName } from '../../lib/pokemonNames.js';
-import { readLocal, writeLocal } from '../../lib/local.js';
 import { buildLine } from '../../lib/buyLine.js';
 import { lineText } from '../../lib/lineFormat.js';
 import { useStaff } from '../../state/staff.jsx';
@@ -32,16 +31,6 @@ import { useConnection } from '../../state/connection.jsx';
 import { useToast } from '../../components/Toast.jsx';
 
 const BACKGROUND = { '--stage-bg': `url(${import.meta.env.BASE_URL}background.webp)` };
-const LANG_KEY = 'pug.pokemonLang';
-
-/** EN | JP for Pokémon, remembered per computer (spec 8.2). */
-function usePokemonLang() {
-  const [lang, setLang] = useState(() => (readLocal(LANG_KEY) === 'ja' ? 'ja' : 'en'));
-  return [lang, (next) => {
-    setLang(next);
-    writeLocal(LANG_KEY, next);
-  }];
-}
 
 // The list takes the width the suggestions don't use (owner, 2026-09-29).
 // A thumbnail is at most 146px wide and also limited by the area's height
@@ -133,7 +122,9 @@ export default function PricingScreen({
   searchBlocked = null, listBadge = null,
 }) {
   const [text, setText] = useState('');
-  const [lang, setLang] = usePokemonLang();
+  // EN | JP for Pokémon: EN every time a screen opens, not remembered
+  // (owner, 2026-10-02; spec 8.2).
+  const [lang, setLang] = useState('en');
   const [games, setGames] = useState(BOTH_GAMES);
   const [oldest, setOldest] = useState(false);
   const searchGames = lang === 'ja' ? PKM_ONLY : games;
