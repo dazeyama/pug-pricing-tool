@@ -24,7 +24,9 @@
   overflow: hidden;
 }
 .home {
-  width: 50%;
+  /* As wide as the band allows, up to 1100px (owner, 2026-10-02: extra
+     width where there's room; was half the page). */
+  width: min(100%, 1100px);
   min-width: 640px;
   /* As tall as the space below the header allows, up to 900px; the spare
      height goes to the top row (owner, 2026-10-01). No outer box: each
