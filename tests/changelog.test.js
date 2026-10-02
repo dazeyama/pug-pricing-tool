@@ -21,11 +21,13 @@ const ev = (over) => ({
 });
 const min = (m) => new Date(Date.UTC(2026, 8, 29, 20, 0) - m * 60_000).toISOString();
 
-// Owner, 2026-09-29: status changes are Collections; only detail edits are Actions.
+// Owner, 2026-10-02: Buys and Collections are cards in or out; the rest is Actions.
 test('categories', () => {
-  assert.equal(categoryOf('collection_status_changed'), 'collections');
+  assert.equal(categoryOf('collection_status_changed'), 'actions');
+  assert.equal(categoryOf('day_exported'), 'actions');
   assert.equal(categoryOf('collection_info_edited'), 'actions');
   assert.equal(categoryOf('buy_cards_removed'), 'buys');
+  assert.equal(categoryOf('collection_cards_added'), 'collections');
   assert.ok(actionsFor(['buys']).includes('backup_restored'));
   assert.ok(!actionsFor(['buys', 'collections']).includes('collection_info_edited'));
 });

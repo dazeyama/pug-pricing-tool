@@ -7,30 +7,35 @@ import { roundDownPrice } from './money.js';
 // fold into one panel, and how the game filter trims an entry.
 
 /**
- * The category buttons (spec 12.4). Status changes count as Collections
- * (owner, 2026-09-29: they carry the offer and price paid, so they show by
- * default); only detail edits are Actions.
+ * The category buttons (spec 12.4). Buys and Collections are only cards
+ * coming in or going out (owner, 2026-10-02, replacing "status changes are
+ * Collections"); everything else (status changes, exports and completions,
+ * edits, repricing, a collection made) is Actions.
  */
 export const CATEGORIES = [
   {
     key: 'buys',
     label: 'Buys',
-    // A day exported (its buys Completed), or put back to Paid/Ours (owner, 2026-09-30);
-    // one buy marked Completed by hand, or back, or turned into a project (owner, 2026-10-02).
-    actions: ['buy_confirmed', 'buy_cards_removed', 'buy_deleted', 'day_exported', 'day_unexported',
-      'buy_completed', 'buy_uncompleted', 'buy_converted',
-      // A month's Cash buys file downloaded; a day marked Completed with COMPLETE (owner, 2026-10-02).
-      'cash_buys_downloaded', 'day_completed'],
+    // A buy confirmed (cards in); cards removed, the buy deleted or moved to a project (cards out).
+    actions: ['buy_confirmed', 'buy_cards_removed', 'buy_deleted', 'buy_converted'],
   },
   {
     key: 'collections',
     label: 'Collections',
-    actions: ['collection_created', 'collection_cards_added', 'collection_line_edited',
-      'collection_cards_removed', 'collection_status_changed', 'collection_deleted', 'collection_repriced',
-      // Can't upload cards (export spec 9, 12).
+    actions: ['collection_cards_added', 'collection_cards_removed', 'collection_deleted',
+      // Can't upload cards (export spec 9, 12): copied in, exported out, taken back.
       'cant_upload_added', 'cant_upload_exported', 'cant_upload_returned'],
   },
-  { key: 'actions', label: 'Actions', actions: ['collection_info_edited'] },
+  {
+    key: 'actions',
+    label: 'Actions',
+    actions: ['collection_info_edited', 'collection_created', 'collection_status_changed',
+      'collection_line_edited', 'collection_repriced',
+      // A day exported, put back, or marked Completed; one buy marked Completed or back;
+      // a month's Cash buys file downloaded (owner, 2026-09-30 – 10-02).
+      'day_exported', 'day_unexported', 'day_completed', 'buy_completed', 'buy_uncompleted',
+      'cash_buys_downloaded'],
+  },
 ];
 /** Milestones are always shown (a backup restore, Phase 10). */
 export const MILESTONES = ['backup_restored'];
