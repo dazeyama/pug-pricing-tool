@@ -1772,11 +1772,34 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
   - **Purchase price on CONFIRM BUY** (Section 8.10): Cash / Credit chips and the amount typed in by hand; customer name, phone and price all required; the Paid/Ours chip is green or blue by how it was paid. Migration 0020.
   - Settings panels one fixed height, and Backups split on the page's centre line (Section 11); collection details with a clear header bar and fold button (9.4); the Changelog opens on Buys, with day pills that match the search's dates (12); card pictures on day pages (10.2); the computer is saved before anything can use it (7.4).
 - **Launch:**
-  - apply migrations **0001–0022** to **prod** (0022 drops the old 9-argument `confirm_buy`, done on dev 2026-09-30), and put the Edge Functions on prod;
+  - **squash the migrations and set up prod from the single baseline** (owner's decision, 2026-10-02: "Migration squash at launch" below), then put the Edge Functions on prod;
   - **set the GitHub Actions variables back to prod** (since 2026-09-30 they point the live site at **dev**, for testing 0.9.0-dev, then 0.9.1-final and 0.9.9-export, at the store; see `docs/SETUP.md` → Deploying);
   - finish `docs/SETUP.md`: run, deploy, the store password and backups are written; **restoring a paused project** is still to write;
   - the public `README.md` stays a very short description of the tool's purpose (owner's decision, 2026-09-29);
   - **push to `main` only when the owner says go**, then confirm the Pages deploy succeeded.
+
+**Migration squash at launch** (owner's decision, 2026-10-02)
+
+By launch dev has had 34+ migrations (0001–0034 on 2026-10-02), each a small step, several rewriting the same function. Prod is still empty, so it can start from **one baseline file** that builds today's database in one go, and the old files are archived. Nothing about the app changes; only how the database is set up. Prod doubles as the test database for the baseline (the Free plan allows two projects, and prod is empty and not live until launch). The steps, in order:
+
+1. **Freeze.** No new migrations from here until prod is set up. `npx supabase migration list` on dev shows every file applied, none pending. Check `supabase/.temp/project-ref` is dev (`psucrzljraxeootwnltf`) before every `--linked` command, and prod (`zvxquzcfffmxwizonxuo`) when working on prod.
+2. **Safety copies.** A git tag `pre-squash`; a backup file from dev (Settings → Download backup); and dev's schema as it stands, `npx supabase db dump --linked -f <scratch>/dev-schema-before.sql` (kept outside the repo).
+3. **Write the baseline** from dev: `npx supabase db dump --linked -f supabase/migrations/0035_baseline.sql` (the public schema: tables, constraints, indexes, functions, triggers, RLS policies, grants). It replaces 0001–0034, so the next migration after launch is 0036.
+4. **Add by hand what a dump leaves out** (found by reading 0001–0034, 2026-10-02), each with a comment saying which old migration it came from:
+   - `create extension if not exists pg_trgm with schema extensions;` at the top: the trigram indexes and the card and product searches need it (0001);
+   - the private storage bucket `master-inventory` (50 MB per file) and its four `storage.objects` policies for the store's role (0002, 0023);
+   - Realtime: `alter publication supabase_realtime add table` for `buys`, `buy_lines`, `collection_locks`, `staff_users`, `settings`, `master_inventory_files`, `api_usage` (0002), and `buy_lines` replica identity full if the dump didn't keep it;
+   - the starting rows: `settings` `cash_pct` 33 and `credit_pct` 66 (0001), and `select public.cant_upload_ensure();` for the Can't upload cards collection (0028);
+   - the grants: every function `revoke`d from `public, anon` and `grant`ed to `authenticated` as in the old files (a dump can drop or add Supabase's default grants);
+   - remove anything in the dump that belongs to Supabase itself rather than this app, if applying it errors.
+5. **Archive the old files.** Move 0001–0034 to `supabase/migrations-archive/` (the CLI doesn't read it), with a short README saying they're history only: never edited, never run.
+6. **Apply the baseline to prod.** Link prod (`npx supabase link --project-ref zvxquzcfffmxwizonxuo`); confirm prod has no tables of its own; `npx supabase db push --dry-run` must list only `0035_baseline.sql`; then `npx supabase db push`.
+7. **Prove prod matches dev.** Dump both with the same command and compare them, and compare these lists from each (a SQL query run on both): tables and columns, constraints, indexes, functions and their arguments, triggers, RLS policies, grants on tables and functions, the Realtime table list, the storage bucket and its policies, extensions, and the starting rows. They must match, apart from order. If they don't: fix the baseline, empty prod (`npx supabase db reset --linked`, **on prod only, never on dev**), and apply again.
+8. **Switch dev's record over.** Link dev again. Dev's database doesn't change; only its list of applied migrations: `npx supabase migration repair --status reverted 0001 0002 … 0034`, then `npx supabase migration repair --status applied 0035`. `npx supabase migration list` must show `0035` applied on both sides and nothing else; `db push --dry-run` on dev must say it's up to date.
+9. **Commit** the baseline, the archive move and these notes. From then on new migrations are `0036_…` and go to dev first, then prod, as before.
+10. **Carry on with launch**: the Edge Functions on prod, the GitHub Actions variables back to prod, the push.
+
+**If something goes wrong:** prod is empty and not live, so it can always be reset and tried again. Dev's data is never touched by the squash; if its migration record ends up wrong, `migration repair` puts it back, and the files come back from the `pre-squash` tag.
 
 **Owner tasks**
 - Say "push" when ready.
@@ -1795,6 +1818,7 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 - [ ] The milestone also shows with the Changelog filtered to Magic or Pokémon.
 - [ ] Everything still works on a 1366×768 laptop.
 - [ ] The live URL `https://dazeyama.github.io/pug-pricing-tool/` loads, signs in, and shows **prod** data (not your dev tests).
+- [ ] After the squash: `supabase/migrations/` holds just `0035_baseline.sql`, the old files are in `supabase/migrations-archive/`, and on prod everything works from a clean start: name the computer, add a user, confirm a buy, create a collection and a project, upload the inventory, and Can't upload cards is in the System table.
 
 ---
 
@@ -2128,6 +2152,7 @@ These are the owner's answers from the clarification session (2026-09-28), plus 
 | 189 | REPRICE? (2026-10-01) | A smaller button beside a collection's EXPORT reprices every card's buy price at today's prices, worked out as it was priced and rounded down; manual prices stay (Section 9.1b; migration 0033) |
 | 190 | Home tab, and "Buy" (2026-10-01) | A new first tab, **Home**, is where the app opens and where the logo goes: days to export (past Magic days not exported, oldest first), Can't upload cards waiting, collections by step and open projects (with their oldest price's age), quick actions, today's buys and paid out, and the latest changelog lines; a warning when JustTCG's day is 80% used. It's **half the page wide, centered, and never scrolls** (owner, 2026-10-01), each section a panel of its own (no outer box), as tall as the space below the header (up to 900px), laid out (owner, 2026-10-01): **Today** beside the 2×2 **quick actions** on top; **Collections and projects** in the middle; then, taking the spare height, **Days to export** (every waiting day, then as many dimmed **Recently exported** days, with their Custom SKU, as fit) beside a column of a compact **Can't upload cards** (its count, oldest date and first 2 cards) over **Recent activity** (as many entries as fit); every panel with the same bold heading, which shows as many days as fit; the other lists show their first few (collections 4, activity 5); each ends in "+N more" when there are more. The Price tab is renamed **Buy** (its address stays `/price`) |
 | 191 | Buy screen on smaller windows (2026-10-01) | The condition prices span the bottom two grid rows and Finish & Details the middle two, so the QTY / ADD CARD row is only its own height and the prices never squeeze Finish & Details; on windows up to 820px tall the info row, finish control, action row and gaps shrink and the suggestions are one row of 5 (bigger); on windows up to 1500px wide the card and side columns are slimmer; Finish & Details scroll as a whole, with a visible scrollbar, rather than hiding Details (Section 8.1) |
+| 192 | Squash the migrations at launch (2026-10-02) | Before prod is set up, migrations 0001–0034+ are replaced by one baseline file (`0035_baseline.sql`) made from dev, with the pieces a dump leaves out added by hand; it's proved on the still-empty prod against dev, dev's migration record is repaired to match, and the old files are archived (Phase 10, "Migration squash at launch") |
 | ◆ | Environments | Separate Supabase dev and prod projects |
 | ◆ | Devices | Each browser names itself ("Front Counter") for drafts and lock banners |
 | ◆ | Keyboard | ↓/↑ for suggestions (←/→ stay as text keys); Alt shortcuts for condition, foil, quantity, manual price |
