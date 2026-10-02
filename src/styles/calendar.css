@@ -94,13 +94,14 @@ button.cal-day:hover { border-color: var(--game); background: color-mix(in srgb,
   margin-top: auto;
   align-self: stretch;
   height: 14px;
-  padding: 0 4px;
+  /* Tight enough for "Completed" (owner, 2026-10-02), the longer word. */
+  padding: 0 2px;
   border: 1px solid currentColor;
   border-radius: 999px;
-  font-size: 9.5px;
+  font-size: 9px;
   font-weight: 800;
   line-height: 12px;
-  letter-spacing: .06em;
+  letter-spacing: 0;
   text-align: center;
   text-transform: uppercase;
   white-space: nowrap;
