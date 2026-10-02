@@ -40,7 +40,7 @@ function PctBox({ game, code }) {
       toast(`Couldn't save: ${err}`, 'err');
       setText(String(stored));
     } else {
-      toast(`${game.name} ${code} TCGplayer percentage saved: ${next}%.`, 'ok');
+      toast(`${game.name} ${code} fallback saved: ${next}%.`, 'ok');
     }
   }
 
@@ -51,7 +51,7 @@ function PctBox({ game, code }) {
         min="0"
         max="100"
         step="0.01"
-        aria-label={`${game.name} ${code} TCGplayer percentage`}
+        aria-label={`${game.name} ${code} fallback percentage`}
         value={text}
         onFocus={() => setEditing(true)}
         onChange={(e) => setText(e.target.value)}
@@ -71,15 +71,13 @@ function PctBox({ game, code }) {
 export default function FallbackPanel() {
   return (
     <section className="cardpanel settings-panel">
-      {/* "TCGplayer" in place of "fallback" on screen (owner, 2026-10-02). */}
-      <div className="cardpanel-head"><strong>Master TCGplayer Percentages</strong></div>
+      <div className="cardpanel-head"><strong>Master Fallback Percentages</strong></div>
       <div className="cardpanel-body">
         <p className="hint">
           Used when JustTCG has no price for a condition, or prices a worse condition above a better
           one (that price is thrown out): the condition gets JustTCG’s Near Mint price times its
-          percentage. Without a JustTCG Near Mint, TCGplayer’s Market Price (through Scryfall for
-          Magic, TCGdex for Pokémon) is used instead. Prices worked out this way are marked
-          “TCGplayer” (“CM” when they come from Cardmarket instead).
+          percentage. Without a JustTCG Near Mint, the Scryfall (Magic) or TCGdex (Pokémon) market
+          price is used instead. Prices worked out this way are marked “fallback”.
         </p>
         <table className="fb-table">
           <thead>

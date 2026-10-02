@@ -123,7 +123,7 @@ function KeyRow({ provider, status, reload }) {
             </>
           }
         >
-          <p>Prices stop loading until a new key is saved. TCGplayer and manual prices still work.</p>
+          <p>Prices stop loading until a new key is saved. Fallback and manual prices still work.</p>
         </Modal>
       )}
     </div>
