@@ -166,6 +166,12 @@ function DayScreen({ game, day }) {
   const exportedCards = doneLines.filter((l) => l.cc_status === 'exported').reduce((n, l) => n + l.quantity, 0);
   const cantCards = doneLines.filter((l) => l.cc_status === 'cant_upload').reduce((n, l) => n + l.quantity, 0);
   const fileName = `cc-mass-create-${game === 'mtg' ? 'magic' : game}-${day}.csv`;
+  // EXPORT (n) on Magic days (owner, 2026-10-02): the cards to count in the
+  // real pile first. The cards the export will take; once the day is all
+  // Completed, every card that day.
+  const dayLines = mine.flatMap((b) => b.buy_lines).filter((l) => l.game === game);
+  const toExport = dayLines.filter((l) => !l.completed_at);
+  const pileCards = (toExport.length ? toExport : dayLines).reduce((n, l) => n + l.quantity, 0);
 
   // Everything here needs a picked user and a connection.
   const guard = () => {
@@ -377,7 +383,15 @@ function DayScreen({ game, day }) {
               ]}
             />
           )}
-          <ExportButton className="top" onClick={startExport} blocked={exportBlocked} />
+          <ExportButton
+            className="top"
+            onClick={startExport}
+            blocked={exportBlocked}
+            count={game === 'mtg' && state.loaded ? pileCards : null}
+            countTitle={toExport.length
+              ? `${pileCards} card${pileCards === 1 ? '' : 's'} to export: count the pile first`
+              : `${pileCards} card${pileCards === 1 ? '' : 's'} that day`}
+          />
         </span>
       </div>
       <h2 className="day-title">
