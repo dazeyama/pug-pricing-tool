@@ -63,6 +63,12 @@ export function sortTraitKeys(keys, labels) {
   });
 }
 
+/** A Magic printing's traits as a buy line stores them: ["borderless", "showcase", "surgefoil"]. */
+export function magicTreatments(card) {
+  const traits = magicTraits(card);
+  return sortTraitKeys(traits.keys(), traits).map((k) => k.replace(/^(foil|stamp):/, ''));
+}
+
 /** Which finishes a printing comes in. */
 export function magicFinishes(card) {
   const f = card.finishes ?? [];

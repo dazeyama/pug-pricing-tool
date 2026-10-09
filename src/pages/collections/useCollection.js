@@ -34,6 +34,11 @@ const MESSAGES = {
   bad_last4: 'The Last 4 ID is up to 4 letters or digits.',
   bad_pct: 'Enter a percentage from 0 to 100.',
   no_user: 'Pick a user first.',
+  // Import Collection (owner, 2026-10-09).
+  not_empty: 'This collection already has cards: a file can only go into an empty one.',
+  nothing_to_import: 'There are no cards to import.',
+  import_magic_only: 'Only Magic cards can be imported.',
+  bad_import_line: 'A card in the file has no quantity or price.',
 };
 
 /** The code in a function's error ("not_lock_holder"), or null. */

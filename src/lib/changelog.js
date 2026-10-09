@@ -26,6 +26,8 @@ export const CATEGORIES = [
     label: 'Collections',
     actions: ['collection_created', 'collection_cards_added', 'collection_cards_removed',
       'collection_deleted',
+      // A file's cards imported (Import Collection, owner, 2026-10-09).
+      'collection_imported',
       // Can't upload cards (export spec 9, 12): copied in, exported out, taken back.
       'cant_upload_added', 'cant_upload_exported', 'cant_upload_returned'],
   },
@@ -71,6 +73,7 @@ export const HEADLINES = {
   day_completed: 'Day completed',
   collection_created: 'Collection created',
   collection_cards_added: 'Cards added to collection',
+  collection_imported: 'Cards imported',
   collection_line_edited: 'Card edited in collection',
   collection_cards_removed: 'Cards removed from collection',
   collection_info_edited: 'Collection details edited',

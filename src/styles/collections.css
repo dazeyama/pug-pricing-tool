@@ -7,6 +7,9 @@
 .col-table-head { flex-wrap: nowrap; gap: 12px; }
 .col-table-head .panel-title { margin-right: auto; }
 .col-table-head .new-col-btn { flex: none; padding: 10px 20px; font-size: 15px; font-weight: 700; }
+/* Import Collection: the + buttons' colours reversed (owner, 2026-10-09). */
+.btn.import-col-btn { background: transparent; border-color: var(--accent-2); color: var(--accent); }
+.btn.import-col-btn:hover:not(.is-disabled) { background: color-mix(in srgb, var(--accent) 12%, transparent); border-color: var(--accent); }
 .col-table-head .col-search {
   flex: none;
   width: 300px;

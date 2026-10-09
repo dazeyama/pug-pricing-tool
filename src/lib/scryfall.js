@@ -5,6 +5,9 @@ import { DAY, memoryCache, storedOrDownload } from './cache.js';
 
 const API = 'https://api.scryfall.com';
 const transport = createTransport({ spacingMs: 100 });
+// Many searches in a row (Import Collection) go slower: Scryfall allows about
+// two searches a second, and answers faster ones with a minute's 429.
+const bulkSearches = createTransport({ spacingMs: 550 });
 
 /**
  * @typedef {{ code: string, name: string, printed_size: number|null,
@@ -115,6 +118,26 @@ export async function searchPrints(q, signal) {
   const data = await transport.getJson(`${API}/cards/search?${params}`, { signal });
   if (!data) return { cards: [], total: 0, hasMore: false };   // 404: nothing matched
   return { cards: data.data, total: data.total_cards, hasMore: data.has_more };
+}
+
+/**
+ * Every printing a search finds (unique=prints), page after page up to
+ * `maxPages` (175 a page): Import Collection's lookups (importCollection.js).
+ * @param {string} q  a Scryfall query
+ * @param {{ maxPages?: number }} [opts]
+ * @returns {Promise<any[]>}  Scryfall cards, newest first; none when nothing matched
+ */
+export async function searchAll(q, { maxPages = 10 } = {}) {
+  const params = new URLSearchParams({ q, unique: 'prints', order: 'released', dir: 'desc' });
+  let url = `${API}/cards/search?${params}`;
+  const cards = [];
+  for (let page = 0; url && page < maxPages; page++) {
+    const data = await bulkSearches.getJson(url);
+    if (!data) break;                      // 404: nothing matched; 400: a query Scryfall can't read
+    cards.push(...(data.data ?? []));
+    url = data.has_more ? data.next_page : null;
+  }
+  return cards;
 }
 
 const siblingCache = memoryCache(DAY);

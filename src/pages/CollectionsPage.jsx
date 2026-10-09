@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
 import { useLiveTable } from '../lib/useLiveTable.js';
@@ -9,6 +9,7 @@ import { withLoading } from '../lib/loading.js';
 import GuardButton from '../components/GuardButton.jsx';
 import UserTag from '../components/UserTag.jsx';
 import { NewCollectionModal, NewProjectModal } from './collections/CollectionModals.jsx';
+import ImportDialog from './collections/ImportDialog.jsx';
 import { FILTERS, isClosed, statusText, statusTone } from './collections/status.js';
 import { OfferText, PaidText } from './collections/CollectionDetails.jsx';
 import { errorMessage } from './collections/useCollection.js';
@@ -118,6 +119,9 @@ export default function CollectionsPage() {
     return want === 'project' || want === 'collection' ? want : null;
   });
   const [busy, setBusy] = useState(false);
+  // Import Collection (owner, 2026-10-09): the CSV picked, while its dialog is open.
+  const [importing, setImporting] = useState(null);
+  const filePicker = useRef(null);
 
   // Locks go stale without an event, so look again now and then.
   const [now, setNow] = useState(Date.now());
@@ -284,7 +288,22 @@ export default function CollectionsPage() {
           <h2>Total</h2>
           <span className="count-badge">{all.length}</span>
         </div>
-        {/* Both buttons up here with the search, the same width (owner, 2026-10-01). */}
+        {/* The buttons up here with the search, the same width (owner, 2026-10-01); Import
+            Collection outlined, the others' colours reversed (owner, 2026-10-09). */}
+        <GuardButton className="btn big new-col-btn import-col-btn" onClick={() => filePicker.current?.click()}>
+          Import Collection
+        </GuardButton>
+        <input
+          ref={filePicker}
+          type="file"
+          accept=".csv,text/csv"
+          hidden
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            e.target.value = '';   // the same file can be picked again
+            if (file) setImporting(file);
+          }}
+        />
         <GuardButton className="btn primary big new-col-btn" onClick={() => setCreating('project')}>
           + Start Project
         </GuardButton>
@@ -320,6 +339,17 @@ export default function CollectionsPage() {
       )}
       {creating === 'project' && (
         <NewProjectModal busy={busy} onCreate={create} onClose={() => setCreating(null)} />
+      )}
+      {importing && (
+        <ImportDialog
+          file={importing}
+          target={{ kind: 'project' }}
+          onDone={(id) => {
+            setImporting(null);
+            navigate(`/collections/${id}`);
+          }}
+          onClose={() => setImporting(null)}
+        />
       )}
     </>
   );

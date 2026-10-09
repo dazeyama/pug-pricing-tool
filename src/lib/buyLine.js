@@ -2,7 +2,7 @@
 // selected printing, its finish or version, the condition, quantity and the
 // price the table gives it.
 import { CONDITIONS } from './prices.js';
-import { magicTraits, sortTraitKeys } from './printings.js';
+import { magicTreatments } from './printings.js';
 import { nameKey } from './normalize.js';
 import * as scry from './scryfall.js';
 
@@ -20,12 +20,6 @@ export function priceSource(entry, manual) {
   if (manual != null) return 'manual';
   if (entry?.source === 'justtcg') return 'justtcg';
   return FALLBACK_SOURCES[entry?.base?.from] ?? 'manual';
-}
-
-/** A Magic printing's traits as stored treatments: ["borderless", "showcase", "surgefoil"]. */
-function magicTreatments(card) {
-  const traits = magicTraits(card);
-  return sortTraitKeys(traits.keys(), traits).map((k) => k.replace(/^(foil|stamp):/, ''));
 }
 
 const cents = (n) => (n == null ? null : Math.round(n * 100) / 100);
