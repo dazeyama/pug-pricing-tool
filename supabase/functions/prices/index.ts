@@ -7,7 +7,10 @@
 //            fetched in the last 12 hours count (owner, 2026-10-01); older
 //            ones are fetched again (and the cache refreshed).
 //   Lookup = { key, game: 'mtg'|'pokemon', lang: 'en'|'ja',
-//              scryfallId? | tcgplayerId? | justtcgId? | (name + number [+ setName]) }
+//              scryfallId? | tcgplayerId? | tcgplayerSkuId? | justtcgId? | (name + number [+ setName]) }
+//            tcgplayerSkuId: one condition and printing of a product, as
+//            TCGplayer's own inventory files list cards (owner, 2026-10-09);
+//            the card comes back whole, its variants carrying their SKUs.
 //   key    = the source key, also the price_map key:
 //            mtg:scryfall:<id>, mtg:etched:<tcgplayer id>, pokemon:tcgplayer:<id>,
 //            pokemon:justtcg:<JustTCG card id>, pokemon:<lang>:<tcgdex id> (search)
@@ -35,7 +38,8 @@ const GAMES = { mtg: 'magic-the-gathering', pokemon: 'pokemon' } as const;
 
 type Lookup = {
   key: string; game: 'mtg' | 'pokemon'; lang: 'en' | 'ja';
-  scryfallId?: string; tcgplayerId?: string; justtcgId?: string; name?: string; number?: string; setName?: string;
+  scryfallId?: string; tcgplayerId?: string; tcgplayerSkuId?: string; justtcgId?: string;
+  name?: string; number?: string; setName?: string;
   setCode?: string;   // printed set code ("SV2a", "OBF"): breaks a tie between search matches
   size?: number;      // printed set size (165): JustTCG's numbers are "025/165"
 };
@@ -66,6 +70,7 @@ function slim(card: any) {
       language: v.language ?? null,
       price: v.price ?? null,
       lastUpdated: v.lastUpdated ?? null,
+      tcgplayerSkuId: v.tcgplayerSkuId ?? null,
     })),
   };
 }
@@ -149,6 +154,7 @@ Deno.serve(async (req) => {
         continue;
       }
       if (l.scryfallId) batch.push({ lookup: l, item: { scryfallId: l.scryfallId } });
+      else if (l.tcgplayerSkuId) batch.push({ lookup: l, item: { tcgplayerSkuId: String(l.tcgplayerSkuId) } });
       else if (l.tcgplayerId) batch.push({ lookup: l, item: { tcgplayerId: String(l.tcgplayerId) } });
       else if (l.justtcgId) batch.push({ lookup: l, item: { cardId: String(l.justtcgId) } });
       else if (l.name && l.number) searches.push(l);
@@ -200,10 +206,13 @@ Deno.serve(async (req) => {
       const res = await call(key, '/cards', { method: 'POST', body: JSON.stringify(chunk.map((b) => b.item)) });
       const cards: any[] = res?.data ?? [];
       for (const { lookup, item } of chunk) {
-        const card = cards.find((c) =>
+        let card = cards.find((c) =>
           (item.cardId && (c.uuid === item.cardId || c.id === item.cardId))
           || (item.scryfallId && c.scryfallId === item.scryfallId)
-          || (item.tcgplayerId && String(c.tcgplayerId) === item.tcgplayerId));
+          || (item.tcgplayerId && String(c.tcgplayerId) === item.tcgplayerId)
+          || (item.tcgplayerSkuId && (c.variants ?? []).some((v: any) => String(v.tcgplayerSkuId) === item.tcgplayerSkuId)));
+        // A SKU asked for alone: the one card that came back, if its variants don't say.
+        if (!card && item.tcgplayerSkuId && chunk.length === 1 && cards.length === 1) card = cards[0];
         found(lookup, card ?? null);
       }
     }
