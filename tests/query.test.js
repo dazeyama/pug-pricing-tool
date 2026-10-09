@@ -92,3 +92,20 @@ test('dexNumberQuery reads "No. <number>" and nothing else', () => {
   assert.equal(dexNumberQuery('No. 32 SV2a'), null);
   assert.equal(dexNumberQuery('Nidoran No. 32'), null);
 });
+
+// Names that end in a number or code (owner, 2026-10-09): the whole line as the name.
+test('whole-name reading', async () => {
+  const { wholeNameReading } = await import('../src/lib/query.js');
+  const read = (s, known = () => false) => wholeNameReading(s, parseQuery(s, known));
+  assert.equal(read('Energy Removal 2').name, 'Energy Removal 2');
+  assert.equal(read('Energy Removal 2').number, null);
+  assert.equal(read('  Alakazam   E4 ').name, 'Alakazam E4');
+  assert.equal(read('Spider-Man 2099').name, 'Spider-Man 2099');
+  assert.equal(read('Technical Machine TS-1').name, 'Technical Machine TS-1');
+  assert.ok(read('Energy Removal 2').whole);
+  // The parser took nothing off the end: nothing else to read.
+  assert.equal(read('Pikachu'), null);
+  assert.equal(read("Blaine's Quiz #1"), null);
+  // A set code taken off counts too.
+  assert.equal(read('Pikachu 25 SVI', (t) => t === 'SVI').name, 'Pikachu 25 SVI');
+});

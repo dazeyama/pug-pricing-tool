@@ -6,7 +6,9 @@ import * as scry from './scryfall.js';
 import * as dex from './tcgdex.js';
 import { isAbort, UnavailableError } from './transport.js';
 import { nameKey } from './normalize.js';
-import { parseQuery, withoutGuessedSetCode, numericSize, numberPrefix, sameNumber, dexNumberQuery } from './query.js';
+import {
+  parseQuery, withoutGuessedSetCode, wholeNameReading, numericSize, numberPrefix, sameNumber, dexNumberQuery,
+} from './query.js';
 import { searchTcgplayer } from './prices.js';
 import { fold, guessSetCode, justtcgCandidate, plainSetName } from './justtcgCards.js';
 
@@ -145,8 +147,17 @@ async function tcgplayerCandidates(q, size, signal) {
   return list;
 }
 
-async function pokemonCandidates(lang, q, signal) {
+/**
+ * @param {{ tcgplayer?: boolean, tcgplayerOnly?: boolean }} [opts]
+ *   tcgplayer: ask TCGplayer when TCGdex finds nothing (off while another
+ *   reading of the line is still to be tried); tcgplayerOnly: only that.
+ */
+async function pokemonCandidates(lang, q, signal, { tcgplayer = true, tcgplayerOnly = false } = {}) {
   const size = numericSize(q.size);
+  if (tcgplayerOnly) {
+    const list = lang === 'en' && (q.name ?? '').trim().length >= 3 ? await tcgplayerCandidates(q, size, signal) : [];
+    return { list, total: list.length, hasMore: false };
+  }
   const briefs = await dex.searchCards(
     lang, { name: q.name, number: q.number, size, setCode: q.pokemonSet, dexNo: q.dexNo ?? null }, signal);
 
@@ -179,7 +190,7 @@ async function pokemonCandidates(lang, q, signal) {
   }
 
   // Nothing in TCGdex: TCGplayer's catalogue (owner, 2026-10-09).
-  if (!rows.length && lang === 'en' && (q.name ?? '').trim().length >= 3) {
+  if (!rows.length && tcgplayer && lang === 'en' && (q.name ?? '').trim().length >= 3) {
     const list = await tcgplayerCandidates(q, size, signal);
     return { list, total: list.length, hasMore: false };
   }
@@ -252,9 +263,31 @@ export function rank(lists, q, oldest = false) {
 const indexes = {};
 function nameIndex(game, names) {
   if (indexes[game]?.names !== names) {
-    indexes[game] = { game, names, keys: names.map(nameKey), fuse: null };
+    indexes[game] = { game, names, keys: names.map(nameKey), fuse: null, known: null };
   }
   return indexes[game];
+}
+
+/**
+ * Is the whole line exactly a card name in a game being searched (owner,
+ * 2026-10-09)? The name lists are the typo correction's, usually already
+ * loaded; one that isn't ready within 1.5s doesn't count (the whole-name
+ * retry in runSearch still finds the card).
+ */
+async function isCardName(input, games, lang) {
+  const key = nameKey(input);
+  const lists = [];
+  if (games.mtg) lists.push(['mtg', scry.loadNames()]);
+  if (games.pokemon && lang === 'en') lists.push(['pokemon', dex.loadNames()]);
+  const late = new Promise((resolve) => setTimeout(() => resolve(null), 1500));
+  for (const [game, loading] of lists) {
+    const names = await Promise.race([loading.catch(() => null), late]);
+    if (!names) continue;
+    const ix = nameIndex(game, names);
+    ix.known ??= new Set(ix.keys);
+    if (ix.known.has(key)) return true;
+  }
+  return false;
 }
 
 /**
@@ -334,19 +367,29 @@ export async function runSearch(input, lang, games, oldest, signal, { onParsed, 
   const known = (t) => scry.isMagicSetCode(t) || dex.isPokemonSetCode(lang, t);
   // "No. 32" in Japanese: a Pokédex number from the oldest sets (owner, 2026-10-01).
   const dexNo = lang === 'ja' ? dexNumberQuery(input) : null;
-  const parsed = dexNo
+  let parsed = dexNo
     ? { name: '', number: null, size: null, setCode: null, setCodeFrom: null, dexNo }
     : parseQuery(input, known);
-  const alternate = withoutGuessedSetCode(input, parsed);
+  // Names that end in a number or code ("Energy Removal 2", "Alakazam E4",
+  // "Spider-Man 2099"; owner, 2026-10-09): the parser takes the end for a
+  // collector number. When the whole line is a card name, it's that name.
+  const whole = wholeNameReading(input, parsed);
+  if (whole && await isCardName(input, games, lang)) parsed = whole;
+  if (signal.aborted) throw new DOMException('Superseded', 'AbortError');
+  // Other readings, tried in turn when this one finds nothing: without a
+  // guessed set code; the whole line as the name (a card the name lists
+  // don't have yet).
+  const alternates = parsed.whole ? [] : [withoutGuessedSetCode(input, parsed), whole].filter(Boolean);
   onParsed(parsed);
 
   const fetchers = {
     mtg: (p) => magicCandidates({ ...p, oldest, magicSet: routeSetCode(p, lang).magicSet }, signal),
-    pokemon: (p) => pokemonCandidates(lang, { ...p, oldest, pokemonSet: routeSetCode(p, lang).pokemonSet }, signal),
+    pokemon: (p, opts) => pokemonCandidates(lang, { ...p, oldest, pokemonSet: routeSetCode(p, lang).pokemonSet }, signal, opts),
   };
 
-  // One game: the query, then the plain reading if a guessed set code found
-  // nothing. A source that stops answering is retried every few seconds.
+  // One game: the query, then the other readings if it found nothing, and for
+  // Pokémon TCGplayer's catalogue last. A source that stops answering is
+  // retried every few seconds.
   const runGame = async (game, p) => {
     const empty = { list: [], total: 0, hasMore: false };
     // A game switched off with MTG | PKM isn't asked at all.
@@ -359,8 +402,16 @@ export async function runSearch(input, lang, games, oldest, signal, { onParsed, 
         const route = routeSetCode(p, lang);
         // A Pokédex number means nothing to Magic.
         const skip = route.skip === game || (p.dexNo && game === 'mtg');
-        let result = skip ? empty : await fetchers[game](p);
-        if (!result.list.length && alternate && p === parsed) result = await fetchers[game](alternate);
+        // Japanese Pokémon isn't searched by name: no whole-name reading there.
+        const others = p === parsed ? alternates.filter((a) => !(a.whole && game === 'pokemon' && lang === 'ja')) : [];
+        let result = skip ? empty : await fetchers[game](p, { tcgplayer: !others.length });
+        for (const a of others) {
+          if (result.list.length) break;
+          result = await fetchers[game](a, { tcgplayer: false });
+        }
+        if (!result.list.length && !skip && others.length && game === 'pokemon') {
+          result = await fetchers.pokemon(p, { tcgplayerOnly: true });
+        }
         onUpdate(game, { status: 'ok', ...result });
         return result;
       } catch (e) {

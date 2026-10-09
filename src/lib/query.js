@@ -85,6 +85,22 @@ export function dexNumberQuery(input) {
 }
 
 /**
+ * The whole line read as a card name (owner, 2026-10-09): for names that end
+ * in what the parser takes for a collector number or set code, such as
+ * "Energy Removal 2", "Alakazam E4", "Technical Machine TS-1" or
+ * "Spider-Man 2099". null when the parser took nothing off the end.
+ * @param {string} input
+ * @param {ParsedQuery} parsed
+ * @returns {ParsedQuery & { whole: true } | null}
+ */
+export function wholeNameReading(input, parsed) {
+  if (!parsed?.name || parsed.dexNo) return null;
+  if (!parsed.number && !parsed.size && !parsed.setCode) return null;
+  const name = String(input ?? '').trim().replace(/\s+/g, ' ');
+  return { ...parsed, name, number: null, size: null, setCode: null, setCodeFrom: null, whole: true };
+}
+
+/**
  * The same query read without its set code, for when the last word was only
  * a guess ("Ancient Mew": MEW is also a Pokémon set code). null if there's no
  * other reading.
