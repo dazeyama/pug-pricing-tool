@@ -97,20 +97,20 @@ Deno.serve(async (req) => {
   if (denied) return denied;
 
   let lookups: Lookup[];
-  let searches: Search[];
+  let cardSearches: Search[];
   let maxAge = FRESH_MS;
   try {
     const body = await req.json();
     lookups = (body?.lookups ?? []).filter((l: Lookup) => l?.key && GAMES[l.game]);
-    searches = (body?.searches ?? []).filter((s: Search) => s?.key && s.game === 'pokemon'
+    cardSearches = (body?.searches ?? []).filter((s: Search) => s?.key && s.game === 'pokemon'
       && (s.kind === 'find' || s.kind === 'siblings') && String(s.name ?? '').trim().length >= 2);
     if (body?.fresh === true) maxAge = EXPORT_FRESH_MS;
   } catch {
     return json({ error: 'Expected { lookups: [...] }', code: 'BAD_REQUEST' }, 400);
   }
   lookups = [...new Map(lookups.map((l) => [l.key, l])).values()].slice(0, 200);
-  searches = [...new Map(searches.map((s) => [s.key, s])).values()].slice(0, SEARCHES_MAX);
-  if (!lookups.length && !searches.length) return json({ results: {}, searches: {} });
+  cardSearches = [...new Map(cardSearches.map((s) => [s.key, s])).values()].slice(0, SEARCHES_MAX);
+  if (!lookups.length && !cardSearches.length) return json({ results: {}, searches: {} });
 
   const db = adminClient();
   const key = await readSecret('justtcg');
@@ -290,11 +290,11 @@ Deno.serve(async (req) => {
     //     each only if the one before found no card with that number:
     //     JustTCG's "060/162" number, the number as printed ("101", promos),
     //     then the name alone (20 results), filtered here.
-    if (searches.length) {
+    if (cardSearches.length) {
       const { data: kept } = await db.from('price_cache')
-        .select('key, payload, fetched_at').in('key', searches.map((s) => `search:${s.key}`));
+        .select('key, payload, fetched_at').in('key', cardSearches.map((s) => `search:${s.key}`));
       const keptBy = new Map((kept ?? []).map((k) => [k.key, k]));
-      for (const s of searches) {
+      for (const s of cardSearches) {
         const row = keptBy.get(`search:${s.key}`);
         const keptCards: any[] = row?.payload?.cards ?? [];
         if (row && now - Date.parse(row.fetched_at) < (keptCards.length ? maxAge : SEARCH_MISS_MS)) {
