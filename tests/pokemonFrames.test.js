@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { frameEra, isRuleBox } from '../src/lib/pokemonFrames.js';
+import { frameEra, isFullArt, isRuleBox } from '../src/lib/pokemonFrames.js';
 
 // The owner's eras (2026-09-29): 1999, 2003, 2007, 2011, 2017, 2023+.
 test('frame eras by release year', () => {
@@ -39,4 +39,40 @@ test('ordinary Pokémon and Trainers have no rule box', () => {
   assert.ok(!isRuleBox({ category: 'Pokemon', stage: 'Stage2' }, 'Typhlosion'));
   assert.ok(!isRuleBox({ category: 'Pokemon', stage: 'Basic' }, 'Vivillon'));
   assert.ok(!isRuleBox({ category: 'Trainer' }, "Professor's Research"));
+});
+
+test('full art: by rarity, English, Japanese and TCGplayer names', () => {
+  assert.ok(isFullArt({ rarity: 'Special illustration rare', number: '199', printedSize: 165 }));
+  assert.ok(isFullArt({ rarity: 'Shiny rare', number: 'SV49' }));                   // Hidden Fates Shiny Vault
+  assert.ok(isFullArt({ rarity: 'Shiny rare', number: '092', printedSize: 91 }));   // Paldean Fates
+  assert.ok(isFullArt({ rarity: 'Secret Rare', number: '115', printedSize: 114 })); // BW Pikachu, listed non-holo
+  assert.ok(isFullArt({ rarity: 'Character Rare', number: '185', printedSize: 184 }));
+  assert.ok(isFullArt({ rarity: 'Amazing Rare', number: '022', printedSize: 185 }));
+  assert.ok(isFullArt({ rarity: 'Special Art Rare' }));                             // TCGplayer, Japanese
+  assert.ok(isFullArt({ rarity: 'Shiny Holo Rare' }));
+});
+
+test('full art: Trainer Gallery, Galarian Gallery, Shiny Vault, Radiant Collection numbers', () => {
+  assert.ok(isFullArt({ rarity: 'Rare', number: 'TG05' }));
+  assert.ok(isFullArt({ rarity: 'Rare', number: 'GG01' }));
+  assert.ok(isFullArt({ rarity: null, number: 'SV107' }));
+  assert.ok(isFullArt({ rarity: 'Common', number: 'RC25' }));
+});
+
+test('full art: a secret rare by its number, from Black & White on', () => {
+  // TCGdex has no rarity for these Japanese ones: N's Zoroark ex SV9 117, Roxanne S9a 081.
+  assert.ok(isFullArt({ rarity: null, number: '117', printedSize: 100, releaseDate: '2024-01-26' }));
+  assert.ok(isFullArt({ rarity: 'None', number: '081', printedSize: 67, releaseDate: '2022-04-08' }));
+  assert.ok(isFullArt({ number: '21', printedSize: 20, releaseDate: '2012-10-05' }));   // Dragon Vault Kyurem
+  // Before Black & White a secret rare kept the usual frame (Holon Phantoms Mew 111/110).
+  assert.ok(!isFullArt({ rarity: 'Rare Holo', number: '111', printedSize: 110, releaseDate: '2006-05-01' }));
+});
+
+test('not full art', () => {
+  assert.ok(!isFullArt({ rarity: 'Rare Holo', number: '010', printedSize: 102, releaseDate: '1999-01-09' }));
+  assert.ok(!isFullArt({ rarity: 'Double rare', number: '006', printedSize: 165, releaseDate: '2023-09-22' }));
+  assert.ok(!isFullArt({ rarity: 'Rare', number: '115', printedSize: null }));
+  // Promos' numbers run past the count (SVP 500).
+  assert.ok(!isFullArt({ rarity: null, number: '500', printedSize: 225, setName: 'SVP Black Star Promos', releaseDate: '2023-03-31' }));
+  assert.ok(!isFullArt({ rarity: null, number: '101', printedSize: 0, setName: 'MEP Black Star Promos' }));
 });
