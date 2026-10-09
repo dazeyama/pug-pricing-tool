@@ -15,6 +15,9 @@ import ExportButton from '../components/ExportButton.jsx';
 import LinePreview, { previewFor } from '../components/LinePreview.jsx';
 import ExportDialog from './export/ExportDialog.jsx';
 import { downloadMassCreate } from '../lib/ccExport.js';
+import { todaysPrices } from '../lib/todaysPrices.js';
+import { sellPriceFor } from '../lib/sellPrice.js';
+import { useSettings } from '../state/settings.jsx';
 import { RemoveModal } from './price/BuyList.jsx';
 import { statusLabel, statusTone, walkInStatus } from './collections/status.js';
 import { useConnection } from '../state/connection.jsx';
@@ -91,6 +94,8 @@ function DayScreen({ game, day }) {
   const [exporting, setExporting] = useState(false);     // the export dialog (export spec 8.3)
   const [unexporting, setUnexporting] = useState(false); // ⋯ → Mark Paid/Ours again
   const [completing, setCompleting] = useState(false);   // COMPLETE (Pokémon days)
+  const [completeStep, setCompleteStep] = useState('');   // what COMPLETE is doing (today's prices…)
+  const { values: settingValues } = useSettings();
   const [checking, setChecking] = useState(false);       // ⋯ → Check Crystal Commerce matches (export spec E2)
   const [busy, setBusy] = useState(false);
   const ticket = useRef(0);
@@ -342,19 +347,41 @@ function DayScreen({ game, day }) {
   /** The day's Paid/Ours buys in this game marked Completed, nothing exported (`day_complete`). */
   async function complete() {
     setBusy(true);
+    // Today's Sell Prices first, worked out as the export does (owner,
+    // 2026-10-09): shown in green once the day is Completed. Without today's
+    // prices nothing is completed.
+    const cards = mine.flatMap((b) => b.buy_lines).filter((l) => l.game === game && !l.completed_at);
+    let prices;
+    try {
+      setCompleteStep("Fetching today's prices…");
+      const today = await todaysPrices(cards, { onStep: setCompleteStep });
+      const pct = settingValues[game === 'pokemon' ? 'fallback_pct_pokemon' : 'fallback_pct_mtg'];
+      prices = cards.map((line) => {
+        const sell = sellPriceFor(line, { ...today.get(line.id), pct });
+        return { line_id: line.id, sell_price: sell.price, sell_basis: sell.basis };
+      });
+    } catch (e) {
+      setBusy(false);
+      setCompleteStep('');
+      toast(`${e.message} Nothing was marked Completed.`, 'err');
+      return;
+    }
+    setCompleteStep('Saving…');
     const { data, error } = await withLoading(() => supabase.rpc('day_complete', {
       p_day: day,
       p_game: game,
       p_user: user.id,
       p_device: deviceId,
+      p_prices: prices,
     }));
     setBusy(false);
+    setCompleteStep('');
     setCompleting(false);
     if (error) {
       toast(messageFor(error, "Couldn't mark the buys Completed"), 'err');
     } else {
       const n = Number(data ?? 0);
-      toast(`${n} ${GAME_NAMES[game]} buy${n === 1 ? '' : 's'} marked Completed: out of the header search.`, 'ok');
+      toast(`${n} ${GAME_NAMES[game]} buy${n === 1 ? '' : 's'} marked Completed, with today's Sell Prices: out of the header search.`, 'ok');
     }
     await reload();
   }
@@ -490,6 +517,7 @@ function DayScreen({ game, day }) {
           Completed {formatDateTime(lastDone.completed_at)}
           {lastDone.completed_by && <> by <UserTag user={staff.byId(lastDone.completed_by)} /></>}
           , not exported. These buys are locked, and left out of the header search.
+          {doneLines.some((l) => l.cc_sell_price != null) && <> Prices in green are the Sell Prices worked out then.</>}
         </p>
       )}
 
@@ -601,12 +629,19 @@ function DayScreen({ game, day }) {
             </>
           )}
         >
-          <p>
-            This day's <strong>{pending.length} Paid/Ours {GAME_NAMES[game]} buy{pending.length === 1 ? '' : 's'}</strong>{' '}
-            ({pileCards} card{pileCards === 1 ? '' : 's'}) become <strong>Completed</strong>: locked, and left out of the
-            header search, like an exported day. Nothing is exported.
-          </p>
-          <p className="hint">⋯ → Mark Paid/Ours again undoes it.</p>
+          {busy && completeStep ? (
+            <p className="loading-note">{completeStep}</p>
+          ) : (
+            <>
+              <p>
+                This day's <strong>{pending.length} Paid/Ours {GAME_NAMES[game]} buy{pending.length === 1 ? '' : 's'}</strong>{' '}
+                ({pileCards} card{pileCards === 1 ? '' : 's'}) become <strong>Completed</strong>: locked, and left out of the
+                header search, like an exported day. Each card gets today's <strong>Sell Price</strong>, worked out as the
+                export does, shown in green. Nothing is exported.
+              </p>
+              <p className="hint">Fetches today's prices (about one JustTCG request). ⋯ → Mark Paid/Ours again undoes it.</p>
+            </>
+          )}
         </Modal>
       )}
       {exportingBuy && (
@@ -796,7 +831,9 @@ function BuyPanel({
                 {/* The same column before and after an export (owner, 2026-10-01): a Sell price is green. */}
                 <td
                   className={`cell-price${l.cc_sell_price != null ? ' is-sell' : ''}`}
-                  title={l.cc_sell_price != null ? `Sell price from the export · bought at ${formatMoney(l.unit_price)}` : 'Price per card'}
+                  title={l.cc_sell_price != null
+                    ? `Sell price ${l.cc_status ? 'from the export' : 'worked out at COMPLETE'} · bought at ${formatMoney(l.unit_price)}`
+                    : 'Price per card'}
                 >
                   {formatMoney(shownPrice(l))}
                 </td>
@@ -822,7 +859,7 @@ function BuyPanel({
           </tbody>
         </table>
         <div className="buy-totals">
-          <span title={completed ? 'From the Sell Prices written to the export file' : undefined}>
+          <span title={completed ? (lines.some((l) => l.cc_status) ? 'From the Sell Prices written to the export file' : 'From the Sell Prices worked out at COMPLETE') : undefined}>
             {completed && lines.some((l) => l.cc_sell_price != null) ? 'Sell' : 'Market'} <strong>{formatMoney(t.market)}</strong>
           </span>
           <span className="is-cash">Cash ({Number(buy.cash_pct)}%) <strong>{formatMoney(t.cash)}</strong></span>
