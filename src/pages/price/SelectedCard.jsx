@@ -6,7 +6,7 @@ import * as scry from '../../lib/scryfall.js';
 import { useCardImages } from './useCardImages.js';
 import { POKEMON_CARD_BACK, tcgplayerId } from '../../lib/pokemonImages.js';
 import { openPopup, popupName } from '../../lib/popup.js';
-import { frameEra, isFullArt, isRuleBox } from '../../lib/pokemonFrames.js';
+import { classicFrame, frameEra, isFullArt, isRuleBox } from '../../lib/pokemonFrames.js';
 
 const MAGIC_RARITY = { mythic: 'Mythic rare', common: 'Common', uncommon: 'Uncommon', rare: 'Rare', special: 'Special', bonus: 'Bonus' };
 
@@ -107,26 +107,33 @@ export default function SelectedCard({ candidate: c, typedName, englishName, pok
   // Foil sheen (spec 8.4): the whole card for Magic foil or etched; for
   // Pokémon, the art window for holo and everything but it for reverse holo,
   // where the art window is the card's frame era's (owner, 2026-09-29).
-  const era = ` era-${frameEra(pokemon.info?.releaseDate ?? c.releasedAt)}`;
+  // A Classic Collection reprint has its original's frame (owner, 2026-10-09).
+  const classic = magic ? null : classicFrame(c.setId, c.number);
+  const era = ` era-${classic && classic !== 'full' ? classic : frameEra(pokemon.info?.releaseDate ?? c.releasedAt)}`;
   // Full art (pokemonFrames.js): by rarity, special numbers, or a secret
   // rare's number. Always the whole-card shine, whatever finish is listed:
   // every full art is foil (owner, 2026-10-09).
-  const fullArt = !magic && isFullArt({
+  const fullArt = !magic && (classic === 'full' || isFullArt({
     rarity: pokemon.card?.rarity ?? c.rarity,
     number: c.number,
     printedSize: size,
     setName: pokemon.card?.set?.name ?? c.setName,
     releaseDate: pokemon.info?.releaseDate ?? c.releasedAt,
-  });
+  }));
   // Rule-box Pokémon (ex, V, VMAX, VSTAR, GX…) shine across the whole card
   // too, holo or reverse: the art-window mask doesn't fit their frames
   // (owner, 2026-09-29).
   const ruleBox = !magic && isRuleBox(pokemon.card, c.name);
+  // Found through TCGplayer (JustTCG: a card TCGdex lacks, or a
+  // TCGplayer-only version): no frame known to fit a mask to, so a holo or
+  // reverse holo shines across the whole card (owner, 2026-10-09).
+  const fromTcgplayer = !magic && (c.source === 'justtcg' || Boolean(pokemonVersion?.tcgplayerOnly));
+  const whole = ruleBox || fromTcgplayer;
   const shine = magic
     ? (finish === 'foil' || finish === 'etched' ? 'foil' : null)
     : fullArt ? 'pokemon-full'
-      : pokemonFinish === 'holo' ? (ruleBox ? 'pokemon-full' : `holo${era}`)
-        : pokemonFinish === 'reverse' ? (ruleBox ? 'pokemon-full' : `reverse${era}`) : null;
+      : pokemonFinish === 'holo' ? (whole ? 'pokemon-full' : `holo${era}`)
+        : pokemonFinish === 'reverse' ? (whole ? 'pokemon-full' : `reverse${era}`) : null;
   // Poké Ball / Master Ball pattern reverse holos get a badge and say so.
   const ball = pokemonFinish === 'reverse'
     ? ['pokeball', 'masterball'].find((b) => pokemonVersion?.treatments?.includes(`${b}-pattern`))

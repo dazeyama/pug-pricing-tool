@@ -19,6 +19,41 @@ export function frameEra(releaseDate) {
   return era;
 }
 
+// Celebrations' Classic Collection (TCGdex cel25cc, CC001–CC025) reprints
+// old cards in their old frames (owner, 2026-10-09): each takes its
+// original's era, not 2021's. Rule-box ones (ex, LV.X, EX, GX) shine across
+// the whole card anyway; Reshiram and Zekrom are Black & White's full-art
+// secret rares (113/114, 114/114).
+const CLASSIC_COLLECTION = [
+  // CC001–CC010: Base Set Blastoise, Charizard, Venusaur; Team Rocket Imposter Professor Oak,
+  // Dark Gyarados, Here Comes Team Rocket!; Gym Challenge Rocket's Zapdos; _____'s Pikachu
+  // (2001 promo); Neo Genesis Cleffa; Neo Revelation Shining Magikarp
+  '1999', '1999', '1999', '1999', '1999', '1999', '1999', '1999', '1999', '1999',
+  // CC011–CC015: Team Magma vs Team Aqua Groudon, Team Rocket Returns Rocket's Admin.,
+  // Legend Maker Mew ex, Dragon Frontiers Gardevoir ex, POP Series 5 Umbreon ☆
+  '2003', '2003', '2003', '2003', '2003',
+  // CC016–CC019: Great Encounters Claydol, Rising Rivals Luxray GL LV.X,
+  // Supreme Victors Garchomp C LV.X, HeartGold SoulSilver Donphan
+  '2007', '2007', '2007', '2007',
+  // CC020–CC021: Black & White Reshiram 113/114, Zekrom 114/114
+  'full', 'full',
+  // CC022–CC025: Next Destinies Mewtwo EX, XY Xerneas EX, Roaring Skies M Rayquaza EX,
+  // Guardians Rising Tapu Lele GX
+  '2011', '2011', '2011', '2017',
+];
+
+/**
+ * A Classic Collection reprint's frame: its original's era ('1999'…), or
+ * 'full' for a full art. Null for any other card.
+ * @param {string|null} setId  TCGdex set id
+ * @param {string|null} number  its number in that set ("CC015")
+ */
+export function classicFrame(setId, number) {
+  if (setId !== 'cel25cc') return null;
+  const m = /^CC0*(\d+)$/i.exec(String(number ?? '').trim());
+  return m ? CLASSIC_COLLECTION[Number(m[1]) - 1] ?? null : null;
+}
+
 // Rule-box Pokémon (owner, 2026-09-29): ex / EX, GX, V, VMAX, VSTAR,
 // V-UNION, LV.X, LEGEND, BREAK, Radiant and Prism Star. TCGdex marks some by
 // `suffix` (ex, EX, GX, V, TAG TEAM-GX), some by `stage` (VMAX, VSTAR,

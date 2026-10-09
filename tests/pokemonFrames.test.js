@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { frameEra, isFullArt, isRuleBox } from '../src/lib/pokemonFrames.js';
+import { classicFrame, frameEra, isFullArt, isRuleBox } from '../src/lib/pokemonFrames.js';
 
 // The owner's eras (2026-09-29): 1999, 2003, 2007, 2011, 2017, 2023+.
 test('frame eras by release year', () => {
@@ -75,4 +75,17 @@ test('not full art', () => {
   // Promos' numbers run past the count (SVP 500).
   assert.ok(!isFullArt({ rarity: null, number: '500', printedSize: 225, setName: 'SVP Black Star Promos', releaseDate: '2023-03-31' }));
   assert.ok(!isFullArt({ rarity: null, number: '101', printedSize: 0, setName: 'MEP Black Star Promos' }));
+});
+
+test("Classic Collection: each reprint in its original's frame", () => {
+  assert.equal(classicFrame('cel25cc', 'CC002'), '1999');   // Base Set Charizard
+  assert.equal(classicFrame('cel25cc', 'CC010'), '1999');   // Shining Magikarp
+  assert.equal(classicFrame('cel25cc', 'CC011'), '2003');   // Team Magma's Groudon
+  assert.equal(classicFrame('cel25cc', 'CC015'), '2003');   // Umbreon ☆, POP Series 5 (2007, ex-era frame)
+  assert.equal(classicFrame('cel25cc', 'CC019'), '2007');   // Donphan
+  assert.equal(classicFrame('cel25cc', 'CC020'), 'full');   // Reshiram 113/114
+  assert.equal(classicFrame('cel25cc', 'CC025'), '2017');   // Tapu Lele GX
+  assert.equal(classicFrame('cel25cc', 'CC026'), null);
+  assert.equal(classicFrame('cel25', '4'), null);
+  assert.equal(classicFrame('base1', 'CC002'), null);
 });
