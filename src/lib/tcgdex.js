@@ -40,10 +40,25 @@ const listIndex = { en: null, ja: null };
  * @param {Lang} lang
  * @returns {Promise<SetBrief[]>}
  */
+// TCGdex's printed set sizes that are wrong (checked 2026-10-09): Black Bolt
+// (SV11B) prints "/086" like its twin White Flare (SV11W), but TCGdex gives
+// it 174, so "115/086" found only White Flare's card and selected it (owner,
+// 2026-10-09). Applied to the set list and to set details, cached or not.
+const OFFICIAL_FIXES = { ja: { SV11B: 86 } };
+
+/** A set's printed size, with TCGdex's known mistakes put right. */
+export function officialSize(lang, id, official) {
+  return OFFICIAL_FIXES[lang]?.[id] ?? official;
+}
+
 export function loadSetList(lang) {
   listPromises[lang] ??= storedOrDownload(`pug.tcgdex.sets.${lang}`, DAY, () =>
     transport.getJson(`${API}/${lang}/sets`),
   ).then((list) => {
+    for (const s of list) {
+      const fixed = officialSize(lang, s.id, s.cardCount?.official);
+      if (fixed !== s.cardCount?.official) s.cardCount = { ...s.cardCount, official: fixed };
+    }
     listIndex[lang] = new Map(list.map((s, i) => [s.id, { set: s, index: i }]));
     return list;
   }).catch((e) => {
@@ -101,7 +116,10 @@ function printedCode(lang, detail) {
 export function setInfo(lang, id) {
   ensureInfoLoaded(lang);
   const info = infoStore[lang][id];
-  return info && Date.now() - info.at < INFO_MAX_AGE ? info : null;
+  if (!info || Date.now() - info.at >= INFO_MAX_AGE) return null;
+  // Details saved before a fix still carry TCGdex's size.
+  const official = officialSize(lang, id, info.official);
+  return official === info.official ? info : { ...info, official };
 }
 
 // A set detail response includes the set's whole card list. Only lists a
@@ -133,7 +151,7 @@ export function fetchSetDetail(lang, id, options = {}) {
         id: d.id,
         name: d.name,
         code: printedCode(lang, d),
-        official: d.cardCount?.official ?? 0,
+        official: officialSize(lang, d.id, d.cardCount?.official ?? 0),
         total: d.cardCount?.total ?? 0,
         releaseDate: d.releaseDate ?? null,
         serieId: d.serie?.id ?? null,
