@@ -79,7 +79,10 @@ const columns = (by) => [
   {
     key: 'paid',
     label: 'Paid',
-    value: (c) => (isClosed(c.status) && c.paid_price != null ? Number(c.paid_price) : -1),
+    value: (c) => {
+      if (c.status === 'rejected') return 0;   // $0 (owner, 2026-10-09)
+      return isClosed(c.status) && c.paid_price != null ? Number(c.paid_price) : -1;
+    },
     cell: (c) => <td key="paid" className="col-money">{c.system_key || c.project ? '—' : <PaidText buy={c} />}</td>,
   },
 ];

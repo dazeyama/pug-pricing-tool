@@ -94,8 +94,9 @@ export function OfferText({ buy }) {
   );
 }
 
-/** The price paid, green for cash or blue for credit, or TBD. */
+/** The price paid, green for cash or blue for credit, or TBD; Rejected paid nothing: $0 in red (owner, 2026-10-09). */
 export function PaidText({ buy, withMethod = false }) {
+  if (buy.status === 'rejected') return <span className="paid-none">$0</span>;
   if (!isClosed(buy.status) || buy.paid_price == null) return TBD;
   return (
     <span className={`is-${buy.paid_method}`}>

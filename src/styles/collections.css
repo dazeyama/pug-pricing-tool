@@ -110,6 +110,8 @@
 
 /* Offer / Paid: TBD in amber until there's a figure; cash green, credit blue. */
 .tbd { color: var(--warn); font-weight: 700; font-size: 12px; letter-spacing: .06em; }
+/* Rejected: nothing was paid (owner, 2026-10-09). */
+.paid-none { color: var(--bad); font-weight: 700; }
 .is-cash { color: var(--cash); }
 .is-credit { color: var(--credit); }
 .deal-slash { color: var(--muted); }
