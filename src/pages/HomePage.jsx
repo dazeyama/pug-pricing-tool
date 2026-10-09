@@ -7,7 +7,6 @@ import { formatMoney } from '../lib/money.js';
 import { STORE_TZ, formatTime } from '../lib/time.js';
 import { HEADLINES } from '../lib/changelog.js';
 import { colorVar } from '../lib/palette.js';
-import { lineText } from '../lib/lineFormat.js';
 import { formatInTimeZone } from 'date-fns-tz';
 import { useStaff } from '../state/staff.jsx';
 
@@ -26,7 +25,6 @@ const SHOW = { rows: 3, events: 20 };  // collections rows shown; events fetched
 // Days to export takes the panel's spare height (owner, 2026-10-01): as many
 // rows as fit (each row 32px and a 6px gap, home.css).
 const DAY_ROW_PX = 38;
-const CANT_SHOWN = 2;     // Can't upload cards' lines listed beside its count
 const RECENT_DAYS = 6;    // exported days kept for "Recently exported"
 
 const EVENT_ROW_PX = 22;   // Recent activity: 18px rows, a 4px gap
@@ -116,12 +114,6 @@ function HomeScreen({ today }) {
     .eq('buys.status', 'confirmed')
     .order('completed_at', { ascending: false })
     .limit(400));
-  // Can't upload cards' lines, to list what's waiting.
-  const cant = useLiveTable('buys', () => supabase
-    .from('buys')
-    .select('id, buy_lines(*)')
-    .eq('system_key', 'cant_upload')
-    .maybeSingle());
   const usage = useLiveTable('api_usage', () => supabase.from('api_usage').select('*').eq('id', 1).maybeSingle());
 
   // ---- days to export: past days with Magic cards still Paid/Ours, oldest first
@@ -162,11 +154,7 @@ function HomeScreen({ today }) {
   // ---- collections and projects
   const collections = open.data ?? [];
   const cantUpload = collections.find((c) => c.system_key);
-  // Only from the query that has whole lines: the collections query's lines
-  // have no id or name (a React key warning, and blank card lines).
-  const cantLines = [...(cant.data?.buy_lines ?? [])]
-    .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
-  const oldestCant = cantLines.reduce((a, l) => (!a || l.created_at < a ? l.created_at : a), null);
+  const cantCards = cardsIn(cantUpload?.buy_lines ?? []);
   const customer = collections.filter((c) => !c.system_key && !c.project);
   const projects = collections.filter((c) => c.project);
   const count = (status) => customer.filter((c) => c.status === status).length;
@@ -204,8 +192,8 @@ function HomeScreen({ today }) {
         </div>
       )}
 
-      {/* Today and the quick actions first, Collections and projects in the middle,
-          then Days to export beside Recent activity and Can't upload cards, taking
+      {/* Today and the quick actions first, Collections and projects (Can't upload
+          cards its fifth tile) in the middle, then Days to export beside Recent activity, taking
           the spare height (owner, 2026-10-01). */}
       <div className="home-row home-first">
         <section className="home-card">
@@ -244,6 +232,17 @@ function HomeScreen({ today }) {
           <div className="home-stat"><span className="home-label">Offer out</span><strong>{count('priced')}</strong><span className="home-muted">Priced</span></div>
           <div className="home-stat"><span className="home-label">To export</span><strong>{count('paid')}</strong><span className="home-muted">Paid/Ours</span></div>
           <div className="home-stat"><span className="home-label">Projects open</span><strong>{projects.length}</strong><span className="home-muted">Ours</span></div>
+          {/* Can't upload cards, the fifth (owner, 2026-10-09): Recent activity has the column to itself. */}
+          <button
+            type="button"
+            className="home-stat home-stat-cant kind-system"
+            disabled={!cantUpload}
+            onClick={() => cantUpload && go(`/collections/${cantUpload.id}`)}
+          >
+            <span className="home-label">Can't upload</span>
+            <strong>{cantCards}</strong>
+            <span className="home-muted">{cantCards === 1 ? 'card' : 'cards'} waiting</span>
+          </button>
         </div>
         {rows.length > 0 && (
           <div className="home-list">
@@ -309,27 +308,6 @@ function HomeScreen({ today }) {
         </section>
 
         <div className="home-side">
-          <button
-            type="button"
-            className="home-card home-cant kind-system"
-            disabled={!cantUpload}
-            onClick={() => cantUpload && go(`/collections/${cantUpload.id}`)}
-          >
-            <span className="home-card-head">
-              <span className="home-h">Can't upload cards</span>
-              {/* Shorter windows show just this line (home.css; BUGS.md 2). */}
-              <span className="home-count home-cant-count">{cardsIn(cantLines)} waiting</span>
-            </span>
-            <span className="home-cant-body">
-              <span className="home-big">{cardsIn(cantLines)}</span>
-              <span className="home-cant-info">
-                <span>{cardsIn(cantLines) === 1 ? 'card' : 'cards'} waiting</span>
-                <span className="home-muted">{oldestCant ? `Oldest from ${dayDate(dayOf(oldestCant))}` : 'Nothing waiting'}</span>
-                {cantLines.slice(0, CANT_SHOWN).map((l) => <span key={l.id} className="home-cant-line">{lineText(l)}</span>)}
-                {cantLines.length > CANT_SHOWN && <span className="home-muted">+{cantLines.length - CANT_SHOWN} more</span>}
-              </span>
-            </span>
-          </button>
           <section className="home-card home-recent">
             <div className="home-card-head">
               <h3>Recent activity</h3>
