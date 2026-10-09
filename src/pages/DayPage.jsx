@@ -27,13 +27,13 @@ const MESSAGES = {
   stale_version: 'This buy changed on another computer — reloaded.',
   line_gone: 'That card was already removed.',
   buy_gone: 'That buy was already deleted.',
-  buy_completed: 'That buy is Completed (exported): mark the day Paid/Ours again (⋯ next to EXPORT) to change it.',
+  buy_completed: 'That buy is Completed (exported): mark it Paid/Ours again (its ⋯) to change it.',
   day_not_over: "Today can't be exported until it's over.",
   no_user: 'Pick a user first.',
   bad_name: 'Type a name for the project (up to 80 characters).',
 };
 const CANT_UPLOAD_TIP = "Not matched to Crystal Commerce: pulled from the upload. It's in Can't upload cards.";
-const COMPLETED_LOCK = 'Completed (exported): mark the day Paid/Ours again (⋯ next to EXPORT) to change it';
+const COMPLETED_LOCK = 'Completed (exported): its ⋯ → Mark Paid/Ours again, or the whole day\u2019s (⋯ next to EXPORT), to change it';
 // A buy marked Completed from its own ⋯, not exported (owner, 2026-10-02).
 const MARKED_LOCK = 'Completed (marked by hand, not exported): its ⋯ → Mark Paid/Ours again to change it';
 /** Was this line Completed by hand (Mark as completed), not by an export? */
@@ -86,6 +86,8 @@ function DayScreen({ game, day }) {
   const [removing, setRemoving] = useState(null);   // { buy, line }
   const [deleting, setDeleting] = useState(null);   // { buy, number, lastCard }
   const [converting, setConverting] = useState(null); // { buy, number }: ⋯ → Convert to project
+  const [exportingBuy, setExportingBuy] = useState(null);     // { buy, number }: ⋯ → Export single buy (owner, 2026-10-09)
+  const [unexportingBuy, setUnexportingBuy] = useState(null); // { buy, number }: ⋯ → Mark Paid/Ours again, after an export
   const [exporting, setExporting] = useState(false);     // the export dialog (export spec 8.3)
   const [unexporting, setUnexporting] = useState(false); // ⋯ → Mark Paid/Ours again
   const [completing, setCompleting] = useState(false);   // COMPLETE (Pokémon days)
@@ -275,6 +277,27 @@ function DayScreen({ game, day }) {
     await reload();
   }
 
+  /**
+   * A buy's ⋯ → Mark Paid/Ours again, for a buy that was exported, on its own
+   * or with its day (owner, 2026-10-09): `buy_unexport`, this buy only.
+   */
+  async function unexportBuy() {
+    const { buy, number } = unexportingBuy;
+    setBusy(true);
+    const { data, error } = await withLoading(() => supabase.rpc('buy_unexport', {
+      p_buy_id: buy.id,
+      p_game: game,
+      p_user: user.id,
+      p_device: deviceId,
+      p_expected_version: buy.version,
+    }));
+    setBusy(false);
+    setUnexportingBuy(null);
+    if (error) toast(messageFor(error, "Couldn't mark the buy Paid/Ours"), 'err');
+    else toast(`Buy ${number}'s ${Number(data ?? 0) === 1 ? 'card is' : 'cards are'} Paid/Ours again.`, 'ok');
+    await reload();
+  }
+
   /** A buy's ⋯ → Convert to project (owner, 2026-10-02): its cards go to a new project, the buy is deleted. */
   async function convert(name) {
     const { buy, number } = converting;
@@ -388,6 +411,7 @@ function DayScreen({ game, day }) {
   /** The export saved and its file handed over (export spec 8.4). */
   async function exported(result) {
     setExporting(false);
+    setExportingBuy(null);
     const cards = `${result.cards} card${result.cards === 1 ? '' : 's'}`;
     const cant = result.cant > 0
       ? ` ${result.cant} can't upload: copied to Can't upload cards.`
@@ -492,6 +516,8 @@ function DayScreen({ game, day }) {
               onDelete={(b, n) => guard() && setDeleting({ buy: b, number: n, lastCard: false })}
               onComplete={(b, n, complete) => guard() && markCompleted(b, n, complete)}
               onConvert={(b, n) => guard() && setConverting({ buy: b, number: n })}
+              onExport={(b, n) => guard() && setExportingBuy({ buy: b, number: n })}
+              onUnexport={(b, n) => guard() && setUnexportingBuy({ buy: b, number: n })}
             />
           ))}
         </div>
@@ -583,6 +609,47 @@ function DayScreen({ game, day }) {
           <p className="hint">⋯ → Mark Paid/Ours again undoes it.</p>
         </Modal>
       )}
+      {exportingBuy && (
+        // Export single buy (owner, 2026-10-09): the day's export, for one buy, today's too.
+        <ExportDialog
+          mode="export"
+          title={`Export Buy ${exportingBuy.number} (${GAME_NAMES[game]}, ${dayDate(day)}) to Crystal Commerce`}
+          items={exportingBuy.buy.buy_lines
+            .filter((l) => l.game === game && !l.completed_at)
+            .map((line) => ({ line, where: `Buy ${exportingBuy.number}` }))}
+          target={{ kind: 'buy', buy_id: exportingBuy.buy.id, game, version: exportingBuy.buy.version }}
+          fileName={`cc-mass-create-${game === 'mtg' ? 'magic' : game}-${day}-buy-${exportingBuy.number}.csv`}
+          onExported={exported}
+          onClose={() => {
+            setExportingBuy(null);
+            reload();
+          }}
+        />
+      )}
+      {unexportingBuy && (
+        <Modal
+          title={`Mark Buy ${unexportingBuy.number} Paid/Ours again?`}
+          onClose={busy ? undefined : () => setUnexportingBuy(null)}
+          footer={(
+            <>
+              <button type="button" className="btn ghost" disabled={busy} onClick={() => setUnexportingBuy(null)}>Cancel</button>
+              <button type="button" className={`btn primary${busy ? ' busy' : ''}`} disabled={busy} onClick={unexportBuy}>
+                Mark Paid/Ours again
+              </button>
+            </>
+          )}
+        >
+          <p>
+            <strong>Buy {unexportingBuy.number}</strong>'s {GAME_NAMES[game]} cards go back to <strong>Paid/Ours</strong>:
+            unlocked, back in the header search and this day's export, showing their buy prices again, and taken back
+            out of Can't upload cards. The rest of the day stays as it is.
+          </p>
+          <p className="hint">
+            The file already downloaded isn't undone: if it was uploaded to Crystal Commerce, fix the stock there by
+            hand.
+          </p>
+        </Modal>
+      )}
       {converting && (
         <ConvertBuyModal
           buy={converting.buy}
@@ -628,6 +695,7 @@ function totalsFor(lines, buy) {
 /** One buy on a day page (spec 10.2). */
 function BuyPanel({
   buy, number, game, other, day, byId, busy, offline, hits, flash, onRemove, onDelete, onComplete, onConvert,
+  onExport, onUnexport,
 }) {
   const [preview, setPreview] = useState(null);   // { src, top, left } while a line is hovered
   const hidePreview = useCallback(() => setPreview(null), []);
@@ -662,17 +730,27 @@ function BuyPanel({
         <MoreMenu
           items={[
             // Owner, 2026-10-02: one buy Completed without exporting it, and back.
+            // An exported buy goes back with its export undone, after asking (owner, 2026-10-09).
             completed ? {
-              label: 'Mark Paid/Ours again',
-              blocked: offOrBusy ?? (byHand ? null : COMPLETED_LOCK),
-              title: `Unlock this buy's ${GAME_NAMES[game]} cards: back in the header search and this day's export`,
-              onClick: () => onComplete(buy, number, false),
+              label: byHand ? 'Mark Paid/Ours again' : 'Mark Paid/Ours again…',
+              blocked: offOrBusy,
+              title: byHand
+                ? `Unlock this buy's ${GAME_NAMES[game]} cards: back in the header search and this day's export`
+                : `Undo this buy's export: its ${GAME_NAMES[game]} cards become Paid/Ours again; the rest of the day stays as it is`,
+              onClick: () => (byHand ? onComplete(buy, number, false) : onUnexport(buy, number)),
             } : {
               label: 'Mark as completed',
               blocked: offOrBusy ?? (lines.length ? null : `No ${GAME_NAMES[game]} cards in this buy`),
               title: `Mark this buy's ${GAME_NAMES[game]} cards Completed without exporting them: locked, left out of the header search and of this day's export`,
               onClick: () => onComplete(buy, number, true),
             },
+            // Export single buy (owner, 2026-10-09): Magic only, like EXPORT, but any day, today's too.
+            ...(game === 'mtg' ? [{
+              label: 'Export single buy…',
+              blocked: offOrBusy ?? (completed ? 'Already Completed' : lines.length ? null : 'No Magic cards in this buy'),
+              title: "Export just this buy's Magic cards to Crystal Commerce now; the buy is Completed, the rest of the day isn't",
+              onClick: () => onExport(buy, number),
+            }] : []),
             {
               label: 'Convert to project…',
               blocked: offOrBusy ?? (anyCompleted ? lockedWhy(locked) : null),

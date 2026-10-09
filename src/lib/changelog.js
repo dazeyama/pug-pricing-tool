@@ -35,8 +35,10 @@ export const CATEGORIES = [
     actions: ['collection_info_edited', 'collection_status_changed',
       'collection_line_edited', 'collection_repriced',
       // A day exported, put back, or marked Completed; one buy marked Completed or back;
-      // a month's Cash buys file downloaded (owner, 2026-09-30 – 10-02).
+      // a month's Cash buys file downloaded (owner, 2026-09-30 – 10-02); one buy
+      // exported on its own, or its export undone (owner, 2026-10-09).
       'day_exported', 'day_unexported', 'day_completed', 'buy_completed', 'buy_uncompleted',
+      'buy_exported', 'buy_unexported',
       'cash_buys_downloaded',
       // 📞 on a Priced collection (owner, 2026-10-02).
       'collection_called'],
@@ -61,6 +63,8 @@ export const HEADLINES = {
   buy_completed: 'Buy marked Completed',
   buy_uncompleted: 'Buy marked Paid/Ours again',
   buy_converted: 'Buy converted to project',
+  buy_exported: 'Buy exported',
+  buy_unexported: 'Buy export undone',
   cash_buys_downloaded: 'Cash buys downloaded',
   day_exported: 'Day exported',
   day_unexported: 'Export undone',
