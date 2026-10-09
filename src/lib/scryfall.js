@@ -140,6 +140,15 @@ export async function searchAll(q, { maxPages = 10 } = {}) {
   return cards;
 }
 
+/**
+ * The printing TCGplayer sells as this product (`/cards/tcgplayer/:id`), or
+ * null when Scryfall doesn't know it: TCGplayer-format imports.
+ * @param {string|number} id  a TCGplayer product ID
+ */
+export function cardByTcgplayerId(id) {
+  return transport.getJson(`${API}/cards/tcgplayer/${encodeURIComponent(String(id))}`);
+}
+
 const siblingCache = memoryCache(DAY);
 /**
  * Every English printing of a card in its set, extras and variations

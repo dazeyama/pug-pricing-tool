@@ -5,7 +5,8 @@
 
 import Papa from 'papaparse';
 import { supabase } from './supabase.js';
-import { cardImage, loadSets, searchAll } from './scryfall.js';
+import { cardByTcgplayerId, cardImage, loadSets, searchAll } from './scryfall.js';
+import { fetchPrices } from './prices.js';
 import { scryfallCards } from './todaysPrices.js';
 import { saveLink } from './ccExport.js';
 import { fold } from './ccMatch.js';
@@ -13,7 +14,8 @@ import { nameKey } from './normalize.js';
 import { magicTreatments } from './printings.js';
 import { lineText } from './lineFormat.js';
 import {
-  cardsForRow, categorySets, choosePrinting, finishOf, importKey, missingColumns, namesFor, readRows,
+  cardsForRow, categorySets, choosePrinting, fileFormat, finishOf, finishOfPrinting, importKey, missingColumns,
+  namesFor, readRows, readTcgplayerRows,
 } from './importMatch.js';
 
 const fail = (error, what) => {
@@ -27,19 +29,24 @@ const QUERY_MAX = 600;       // characters of names in one query
 const FALLBACK_PAGES = 3;    // pages (175 each) for a name looked up in every set
 
 /**
- * Read a Mass Create CSV.
+ * Read an import file: a Mass Create CSV, or TCGplayer's inventory format
+ * (each card by its SKU), told apart by the header.
  * @param {File} file
- * @returns {Promise<{ rows: object[], missing: string[] }>}
+ * @returns {Promise<{ format: 'cc'|'tcgplayer', rows: object[], missing: string[] }>}
  */
 export function readImportFile(file) {
   return new Promise((resolve, reject) => {
     Papa.parse(file, {
       header: true,
       skipEmptyLines: 'greedy',
-      complete: (res) => resolve({
-        rows: readRows(res.data),
-        missing: missingColumns(res.meta.fields),
-      }),
+      complete: (res) => {
+        const format = fileFormat(res.meta.fields);
+        resolve({
+          format,
+          rows: format === 'tcgplayer' ? readTcgplayerRows(res.data) : readRows(res.data),
+          missing: missingColumns(res.meta.fields, format),
+        });
+      },
       error: (e) => reject(new Error(`Couldn't read the file: ${e.message}`)),
     });
   });
@@ -66,6 +73,105 @@ function nameChunks(names) {
   return chunks;
 }
 
+const SKU_BATCH = 200;   // SKUs in one call to the prices function (two JustTCG requests)
+
+/** A JustTCG card's name as Scryfall has it: "Klothys, God of Destiny (Showcase)" → "Klothys, God of Destiny". */
+function plainName(name) {
+  const base = String(name ?? '').replace(/\s*\([^()]*\)\s*$/, '').trim();
+  // Godzilla Series and the like: "Anguirus, Armored Killer - Gemrazer" is flavor name - card name.
+  return base.includes(' - ') ? base.split(' - ').pop().trim() : base;
+}
+
+/**
+ * TCGplayer-format rows (owner, 2026-10-09): each SKU looked up on JustTCG
+ * (through the prices function, cached like any price), which names the
+ * card and the exact version, condition and printing; then its Scryfall
+ * printing, by the Scryfall ID JustTCG has, else by the TCGplayer product.
+ * A SKU JustTCG doesn't know, or a product Scryfall doesn't, goes to staff.
+ * Same results as matchImport.
+ */
+async function matchSkus(rows, onStep) {
+  const ok = rows.filter((r) => !r.problem);
+  const keys = [...new Set(ok.map(importKey))];
+  const { data: picked, error: pickError } = keys.length
+    ? await supabase.from('import_links').select('*').in('key', keys)
+    : { data: [], error: null };
+  fail(pickError, "Couldn't read the remembered picks");
+  const remembered = new Map((picked ?? []).map((k) => [k.key, k]));
+
+  const skus = [...new Set(ok.map((r) => r.sku))];
+  const found = {};
+  for (let i = 0; i < skus.length; i += SKU_BATCH) {
+    onStep?.(`Looking up TCGplayer SKUs: ${Math.min(i + SKU_BATCH, skus.length)} of ${skus.length}…`);
+    Object.assign(found, await fetchPrices(skus.slice(i, i + SKU_BATCH).map((sku) => ({
+      key: `mtg:sku:${sku}`, game: 'mtg', lang: 'en', tcgplayerSkuId: sku,
+    }))));
+  }
+
+  // Each row as JustTCG names it: the card, its set, the SKU's version.
+  const named = rows.map((row) => {
+    if (row.problem) return row;
+    const jt = found[`mtg:sku:${row.sku}`]?.card ?? null;
+    if (!jt) return { ...row, jt: null };
+    const variant = (jt.variants ?? []).find((v) => String(v.tcgplayerSkuId) === row.sku)
+      ?? ((jt.variants ?? []).length === 1 ? jt.variants[0] : null);
+    const next = { ...row, jt, variant, productName: jt.name, category: jt.set_name ?? 'TCGplayer' };
+    if (!/magic-the-gathering$/.test(String(jt.set ?? ''))) return { ...next, problem: 'Not a Magic card' };
+    if (!Number.isFinite(row.price)) {
+      if (variant?.price == null) return { ...next, problem: 'No price in the file, and none on TCGplayer' };
+      return { ...next, price: Math.round(Number(variant.price) * 100) / 100, priceFrom: 'TCGplayer' };
+    }
+    return next;
+  });
+
+  // Their Scryfall printings: by id (remembered, or JustTCG's), else by product.
+  const live = named.filter((r) => !r.problem);
+  const ids = live.map((r) => remembered.get(importKey(r))?.scryfall_id ?? r.jt?.scryfallId).filter(Boolean);
+  onStep?.('Finding their printings on Scryfall…');
+  const byId = await scryfallCards(ids);
+  const products = [...new Set(live.filter((r) => r.jt && !(r.jt.scryfallId && byId.has(r.jt.scryfallId)))
+    .map((r) => String(r.jt.tcgplayerId ?? '')).filter(Boolean))];
+  const byProduct = new Map();
+  for (const [i, id] of products.entries()) {
+    onStep?.(`Finding their printings on Scryfall: ${i + 1} of ${products.length}…`);
+    const card = await cardByTcgplayerId(id);
+    if (card) byProduct.set(id, card);
+  }
+  // Not found by product either: their names, for staff to choose from.
+  const lost = live.filter((r) => r.jt && !(r.jt.scryfallId && byId.has(r.jt.scryfallId))
+    && !byProduct.has(String(r.jt.tcgplayerId ?? '')));
+  const named2 = new Map();
+  for (const name of [...new Set(lost.map((r) => plainName(r.jt.name)))]) {
+    named2.set(name, await searchAll(`!"${name.replace(/"/g, '')}" lang:en game:paper`, { maxPages: 1 }));
+  }
+
+  return named.map((row) => {
+    if (row.problem) return { row, status: 'skip', card: null, finish: null, ranked: [] };
+    const base = { row, product: null, elsewhere: false };
+    const finish = row.variant ? finishOfPrinting(row.variant.printing) : 'nonfoil';
+    const pick = remembered.get(importKey(row));
+    if (pick && byId.has(pick.scryfall_id)) {
+      const card = byId.get(pick.scryfall_id);
+      return { ...base, status: 'auto', card, finish: pick.finish, via: 'remembered', ranked: [{ card, score: 0, reasons: [] }] };
+    }
+    if (!row.jt) return { ...base, status: 'none', card: null, finish, ranked: [] };
+    const card = (row.jt.scryfallId && byId.get(row.jt.scryfallId)) || byProduct.get(String(row.jt.tcgplayerId ?? '')) || null;
+    if (card) {
+      // A version JustTCG didn't say: the printing's own finish, non-foil first.
+      const f = row.variant ? finish : ((card.finishes ?? []).includes('nonfoil') ? 'nonfoil' : card.finishes?.[0] ?? 'nonfoil');
+      return { ...base, status: 'auto', card, finish: f, via: 'sku', ranked: [{ card, score: 0, reasons: [] }] };
+    }
+    const cards = named2.get(plainName(row.jt.name)) ?? [];
+    return {
+      ...base,
+      status: cards.length ? 'choose' : 'none',
+      card: null,
+      finish,
+      ranked: cards.map((c) => ({ card: c, score: 0, reasons: [] })),
+    };
+  });
+}
+
 /**
  * Match the file's rows to printings (importMatch.js). Each result:
  *  - status 'auto' (via 'remembered', 'link' or 'match'), 'choose', 'none',
@@ -76,7 +182,8 @@ function nameChunks(names) {
  * @param {object[]} rows  readRows(...)
  * @param {(text: string) => void} [onStep]
  */
-export async function matchImport(rows, onStep) {
+export async function matchImport(rows, onStep, format = 'cc') {
+  if (format === 'tcgplayer') return matchSkus(rows, onStep);
   const ok = rows.filter((r) => !r.problem);
   onStep?.('Reading the inventory and remembered picks…');
   const keys = [...new Set(ok.map(importKey))];
@@ -250,7 +357,16 @@ export function importLines(chosen, sets, fileName) {
       market_price: row.price,
       price_source: 'import',
       // Where the card came from: the file and its row.
-      price_snapshot: { imported: { file: fileName, product_name: row.productName, category: row.category, sell_price: row.price } },
+      price_snapshot: {
+        imported: {
+          file: fileName,
+          product_name: row.productName,
+          category: row.category,
+          sell_price: row.price,
+          ...(row.sku ? { tcgplayer_sku: row.sku } : {}),
+          ...(row.priceFrom ? { price_from: row.priceFrom } : {}),
+        },
+      },
       priced_at: new Date().toISOString(),
       scryfall_id: card.id,
       oracle_id: card.oracle_id ?? card.card_faces?.[0]?.oracle_id ?? null,

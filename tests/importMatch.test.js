@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  categorySets, cardsForRow, choosePrinting, conditionCode, defaultName, finishOf, importKey, missingColumns,
-  namesFor, readRows, scorePrinting,
+  categorySets, cardsForRow, choosePrinting, conditionCode, defaultName, fileFormat, finishOf, finishOfPrinting,
+  importKey, missingColumns, namesFor, readRows, readTcgplayerRows, scorePrinting,
 } from '../src/lib/importMatch.js';
 import { fold } from '../src/lib/ccMatch.js';
 
@@ -149,4 +149,32 @@ test('the default project name', () => {
   const day = (d) => d.toISOString().slice(0, 10);
   assert.equal(defaultName('export_crystalcommerce_1790637677.csv', day), 'CardBot import 2026-09-28');
   assert.equal(defaultName('Binder 3.csv', day), 'Binder 3');
+  assert.equal(defaultName('export_tcgplayer_online_1791588546.csv', day), 'CardBot import 2026-10-09');
+});
+
+test('TCGplayer format: told by its header, rows by SKU, a blank price allowed', () => {
+  const header = ['TCGplayer Id', 'Condition', 'Add to Quantity', 'TCG Marketplace Price'];
+  assert.equal(fileFormat(header), 'tcgplayer');
+  assert.equal(fileFormat(['Add Qty', 'Product Name']), 'cc');
+  assert.deepEqual(missingColumns(header, 'tcgplayer'), []);
+  assert.deepEqual(missingColumns(['TCGplayer Id', 'Condition'], 'tcgplayer'), ['Add to Quantity', 'TCG Marketplace Price']);
+  const rows = readTcgplayerRows([
+    { 'TCGplayer Id': '4561121', Condition: 'Lightly Played', 'Add to Quantity': '2', 'TCG Marketplace Price': '2.12' },
+    { 'TCGplayer Id': '5115830', Condition: 'Lightly Played', 'Add to Quantity': '1', 'TCG Marketplace Price': '' },
+    { 'TCGplayer Id': 'abc', Condition: 'Lightly Played', 'Add to Quantity': '1', 'TCG Marketplace Price': '1' },
+    { 'TCGplayer Id': '1', Condition: 'Near Mint', 'Add to Quantity': '0', 'TCG Marketplace Price': '1' },
+  ]);
+  assert.equal(rows[0].problem, null);
+  assert.equal(rows[0].sku, '4561121');
+  assert.equal(rows[0].qty, 2);
+  assert.equal(rows[0].condition, 'LP');
+  assert.equal(rows[0].price, 2.12);
+  assert.equal(rows[1].problem, null);
+  assert.ok(Number.isNaN(rows[1].price));
+  assert.match(rows[2].problem, /isn't a number/);
+  assert.match(rows[3].problem, /whole number/);
+  assert.equal(importKey(rows[0]), 'sku:4561121');
+  assert.equal(finishOfPrinting('Normal'), 'nonfoil');
+  assert.equal(finishOfPrinting('Foil'), 'foil');
+  assert.equal(finishOfPrinting('Etched Foil'), 'etched');
 });

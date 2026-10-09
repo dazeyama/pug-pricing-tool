@@ -8,14 +8,15 @@ import { formatMoney } from '../../lib/money.js';
 import { formatShortDate } from '../../lib/time.js';
 import { cardImage, loadSets } from '../../lib/scryfall.js';
 import { magicTraits } from '../../lib/printings.js';
-import { defaultName } from '../../lib/importMatch.js';
+import { IMPORT_COLUMNS, TCGPLAYER_COLUMNS, defaultName } from '../../lib/importMatch.js';
 import {
   findPrintings, importLines, matchImport, readImportFile, rememberPicks, saveImport,
 } from '../../lib/importCollection.js';
 import { errorMessage } from './useCollection.js';
 
 // Import Collection (owner, 2026-10-09): a Mass Create CSV (CardBot's, or
-// our own EXPORT's) read back into cards. Matching, then Review like the
+// our own EXPORT's), or a TCGplayer-format one (CardBot's, each card by its
+// SKU), read back into cards. Matching, then Review like the
 // export's (Needs a choice, Matched, Skipped): staff pick the printing for
 // each unclear row, or skip it, and their picks are remembered. Then the
 // new project's name, or straight into the empty collection it was dropped on.
@@ -57,13 +58,15 @@ export default function ImportDialog({ file, target, onDone, onClose }) {
     (async () => {
       try {
         setStepText(`Reading ${file.name}…`);
-        const { rows, missing } = await readImportFile(file);
+        const { format, rows, missing } = await readImportFile(file);
         if (missing.length) {
-          throw new Error(`This isn't a Mass Create file: it has no ${missing.join(', ')} column${missing.length === 1 ? '' : 's'}. `
-            + `It needs ${['Add Qty', 'Product Name', 'Category', 'Condition', 'Language', 'Sell Price'].join(', ')}.`);
+          const [kind, columns] = format === 'tcgplayer'
+            ? ['TCGplayer-format file', TCGPLAYER_COLUMNS] : ['Mass Create file', IMPORT_COLUMNS];
+          throw new Error(`This isn't a ${kind}: it has no ${missing.join(', ')} column${missing.length === 1 ? '' : 's'}. `
+            + `It needs ${columns.join(', ')}. (A Mass Create file, or a TCGplayer one with a TCGplayer Id column.)`);
         }
         if (!rows.length) throw new Error('The file has no cards in it.');
-        const found = await matchImport(rows, (t) => live && setStepText(t));
+        const found = await matchImport(rows, (t) => live && setStepText(t), format);
         if (!live) return;
         setResults(found);
         setPhase('review');
@@ -97,7 +100,7 @@ export default function ImportDialog({ file, target, onDone, onClose }) {
   const open = groups.choose.filter((r) => !picks.has(r.row.index));
   const going = results.filter((r) => stateOf(r).kind === 'matched');
   const cards = going.reduce((n, r) => n + r.row.qty, 0);
-  const value = going.reduce((s, r) => s + r.row.qty * r.row.price, 0);
+  const value = going.reduce((s, r) => s + r.row.qty * (Number.isFinite(r.row.price) ? r.row.price : 0), 0);
   const skippedRows = results.filter((r) => stateOf(r).kind === 'skip').length;
 
   const pick = (r, value) => setPicks((m) => new Map(m).set(r.row.index, value));
@@ -142,7 +145,12 @@ export default function ImportDialog({ file, target, onDone, onClose }) {
     <span className="xd-line">
       {r.row.qty}× {r.row.productName}
       <span className="xd-cat">{r.row.category}</span>
-      <span className="xd-where">{r.row.condition} · {formatMoney(r.row.price)}</span>
+      <span className="xd-where">
+        {r.row.condition}
+        {Number.isFinite(r.row.price) && <> · {formatMoney(r.row.price)}</>}
+        {r.row.priceFrom && <span title="The file had no price: TCGplayer's market price for this SKU"> (TCGplayer's)</span>}
+        {r.row.sku && <> · SKU {r.row.sku}</>}
+      </span>
     </span>
   );
   const rowProps = (r) => ({
@@ -198,8 +206,8 @@ export default function ImportDialog({ file, target, onDone, onClose }) {
         {(phase === 'review' || (phase === 'saving' && target.kind !== 'project')) && (
           <>
             <p className="hint xd-intro">
-              Magic only: each row is matched to its exact printing. Prices are the file's Sell Prices (REPRICE? updates
-              them). Printings you pick are remembered for next time.
+              Magic only: each row is matched to its exact printing. Prices are the file's (REPRICE? updates them).
+              Printings you pick are remembered for next time.
             </p>
             {groups.choose.length > 0 && (
               <section className="xd-group choose">
@@ -232,6 +240,7 @@ export default function ImportDialog({ file, target, onDone, onClose }) {
                           {printingLabel(s.card, s.finish)}
                           {s.by === 'remembered' && <span className="xd-tag" title="Picked for this row before">remembered</span>}
                           {s.by === 'link' && <span className="xd-tag" title="The printing the export matches to this product">export match</span>}
+                          {s.by === 'sku' && <span className="xd-tag" title="TCGplayer's SKU names this exact printing">by SKU</span>}
                           {s.by === 'staff' && <span className="xd-tag">picked</span>}
                           {s.by === 'match' && r.elsewhere && (
                             <span className="xd-note" title="None of the sets this category exports from has this card">another set</span>

@@ -14,8 +14,17 @@ import { isEtchedKind, parseProductName } from './ccNames.js';
 import { expectedFoilKind, expectedName, fold, frontFace, lineFamilies, ruleGuesses, wordFamilies } from './ccMatch.js';
 import { magicTreatments } from './printings.js';
 
-/** The columns a file must have (Custom SKU, our export's last column, is optional). */
+/** The columns a Mass Create file must have (Custom SKU, our export's last column, is optional). */
 export const IMPORT_COLUMNS = ['Add Qty', 'Product Name', 'Category', 'Condition', 'Language', 'Sell Price'];
+
+/**
+ * TCGplayer's inventory format (CardBot's other export, owner 2026-10-09):
+ * each card by its TCGplayer SKU, one condition and printing of a product.
+ */
+export const TCGPLAYER_COLUMNS = ['TCGplayer Id', 'Condition', 'Add to Quantity', 'TCG Marketplace Price'];
+
+/** Which format a file's header is: 'tcgplayer' (SKUs) or 'cc' (Mass Create). */
+export const fileFormat = (fields) => ((fields ?? []).some((f) => String(f).trim() === 'TCGplayer Id') ? 'tcgplayer' : 'cc');
 
 // The condition words: the inventory's (what our export writes now, 0046),
 // and the help page's, which CardBot files and our older exports use.
@@ -30,16 +39,19 @@ const CONDITIONS = {
 /** "Lightly Played" (or "Light Play") → 'LP'; null for a word it doesn't know. */
 export const conditionCode = (word) => CONDITIONS[fold(word)] ?? null;
 
-/** The required columns a file's header lacks. */
-export function missingColumns(fields) {
+/** The required columns a file's header lacks, for its format. */
+export function missingColumns(fields, format = 'cc') {
   const have = new Set((fields ?? []).map((f) => String(f).trim()));
-  return IMPORT_COLUMNS.filter((c) => !have.has(c));
+  return (format === 'tcgplayer' ? TCGPLAYER_COLUMNS : IMPORT_COLUMNS).filter((c) => !have.has(c));
 }
 
 const collapse = (s) => String(s ?? '').replace(/\s+/g, ' ').trim().toLowerCase();
 
-/** The key a staff pick is remembered by: the row's category and product name, as the file has them. */
-export const importKey = (row) => `${fold(row.category)}|${collapse(row.productName)}`;
+/**
+ * The key a staff pick is remembered by: a TCGplayer row's SKU; otherwise the
+ * row's category and product name, as the file has them.
+ */
+export const importKey = (row) => (row.sku ? `sku:${row.sku}` : `${fold(row.category)}|${collapse(row.productName)}`);
 
 /**
  * The file's rows, read (PapaParse, header: true). Each keeps where it is in
@@ -68,6 +80,42 @@ export function readRows(records) {
       parsed: parseProductName(productName),
     };
   });
+}
+
+/**
+ * A TCGplayer-format file's rows. The SKU says the card, and JustTCG says
+ * which (importCollection.js); until then each is named by its SKU. A blank
+ * price is allowed: JustTCG's price for the SKU is used.
+ * @param {object[]} records
+ */
+export function readTcgplayerRows(records) {
+  return (records ?? []).map((rec, index) => {
+    const sku = String(rec['TCGplayer Id'] ?? '').trim();
+    const qty = Number(String(rec['Add to Quantity'] ?? '').trim());
+    const priceText = String(rec['TCG Marketplace Price'] ?? '').replace(/[$,\s]/g, '');
+    const price = priceText === '' ? NaN : Math.round(Number(priceText) * 100) / 100;
+    const condition = conditionCode(rec.Condition);
+    let problem = null;
+    if (!/^\d+$/.test(sku)) problem = `TCGplayer Id "${sku}" isn't a number`;
+    else if (!Number.isInteger(qty) || qty < 1) problem = `Add to Quantity "${rec['Add to Quantity'] ?? ''}" isn't a whole number`;
+    else if (priceText !== '' && (!Number.isFinite(price) || price < 0)) problem = `TCG Marketplace Price "${priceText}" isn't a price`;
+    else if (!condition) problem = `Condition "${rec.Condition ?? ''}" isn't one the app knows`;
+    return {
+      index,
+      line: index + 2,
+      sku, qty, condition, price, problem,
+      productName: `SKU ${sku}`,
+      category: 'TCGplayer',
+      parsed: null,
+    };
+  });
+}
+
+/** A JustTCG printing ("Normal", "Foil", "Etched Foil") as a Magic finish. */
+export function finishOfPrinting(printing) {
+  const p = String(printing ?? '').toLowerCase();
+  if (p.includes('etched')) return 'etched';
+  return p.includes('foil') ? 'foil' : 'nonfoil';
 }
 
 /** The finish a product's foil kind says: none → non-foil, "… Etched" → etched, any other foil → foil. */
@@ -277,13 +325,14 @@ export function choosePrinting(row, cards) {
 
 /**
  * The new project's name, from the file's (owner, 2026-10-09): a CardBot
- * file ("export_crystalcommerce_1790637677.csv", its time in seconds) is
+ * file ("export_crystalcommerce_1790637677.csv", or "export_tcgplayer_online_…"; its time in seconds) is
  * "CardBot import Sep 28"; any other is its name without ".csv".
  * @param {string} fileName
  * @param {(date: Date) => string} formatDay  "Sep 28"
  */
 export function defaultName(fileName, formatDay) {
-  const bot = /export_crystalcommerce_(\d{9,})/i.exec(String(fileName ?? ''));
+  // "export_crystalcommerce_…" and "export_tcgplayer_online_…" alike.
+  const bot = /export_[a-z_]+?_(\d{9,})/i.exec(String(fileName ?? ''));
   if (bot) return `CardBot import ${formatDay(new Date(Number(bot[1]) * 1000))}`;
   const plain = String(fileName ?? '').replace(/\.csv$/i, '').trim();
   return (plain || `Import ${formatDay(new Date())}`).slice(0, 80);

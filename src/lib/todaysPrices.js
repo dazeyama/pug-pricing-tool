@@ -15,6 +15,8 @@ import { loadEurUsd } from './useEurUsd.js';
 import * as dex from './tcgdex.js';
 
 const SCRYFALL_BATCH = 75;
+// /cards/collection allows about two requests a second; a 429 says how long to wait.
+const SCRYFALL_SPACING = 550;
 const PRICE_BATCH = 100;   // JustTCG's batch size: one request per 100 lookups
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -30,8 +32,10 @@ export async function scryfallCards(ids) {
   for (let i = 0; i < unique.length; i += SCRYFALL_BATCH) {
     const body = JSON.stringify({ identifiers: unique.slice(i, i + SCRYFALL_BATCH).map((id) => ({ id })) });
     let data = null;
+    let wait = i ? SCRYFALL_SPACING : 0;
     for (let attempt = 0; attempt < 4 && !data; attempt++) {
-      if (i || attempt) await sleep(150 * (attempt + 1));
+      if (wait) await sleep(wait);
+      wait = SCRYFALL_SPACING * (attempt + 2);
       try {
         const res = await fetch('https://api.scryfall.com/cards/collection', {
           method: 'POST',
@@ -39,7 +43,10 @@ export async function scryfallCards(ids) {
           body,
         });
         if (res.ok) data = await res.json();
-        else if (res.status !== 429 && res.status !== 503) throw new Error(`Scryfall answered ${res.status}`);
+        else if (res.status === 429 || res.status === 503) {
+          const after = parseFloat(res.headers.get('Retry-After'));
+          if (!Number.isNaN(after)) wait = after * 1000 + 250;
+        } else throw new Error(`Scryfall answered ${res.status}`);
       } catch (e) {
         if (attempt === 3) throw new Error(`Scryfall couldn't be reached: ${e.message}`);
       }
