@@ -183,7 +183,7 @@ export default function CollectionsPage() {
       })
       : supabase.rpc('collection_create', {
         p_name: name,
-        p_phone: phone,
+        p_phone: phone || null,   // none: Ctrl+click Create (migration 0045)
         p_notes: notes,
         p_user: staff.current?.id ?? null,
         p_device: deviceId,

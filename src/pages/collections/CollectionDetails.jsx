@@ -274,6 +274,7 @@ export default function CollectionDetails({
                   value={buy.phone}
                   display={formatPhone(buy.phone)}
                   format={formatPhone}
+                  placeholder="none"
                   validate={(t) => (validPhone(t) ? null : PHONE_ERROR)}
                   onSave={(t) => onInfo({ phone: phoneDigits(t) })}
                   canEdit={api.canEdit}

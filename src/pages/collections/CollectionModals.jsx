@@ -18,11 +18,6 @@ export function nameError(text) {
 }
 
 /**
- * + Price Collection (spec 9.2): name, phone (formatted as typed), an
- * optional Last 4 ID (owner, 2026-09-29), notes. Create stays disabled until
- * the name and a 10-digit phone number are in.
- */
-/**
  * + Start Project (owner, 2026-10-01): a box of cards the store already
  * owns, priced for an export. Just a name and notes: no phone, no ID.
  */
@@ -92,18 +87,30 @@ export function NewProjectModal({ busy, onCreate, onClose }) {
   );
 }
 
+/**
+ * + Price Collection (spec 9.2): name, phone (formatted as typed), Last 4 ID
+ * (required since 2026-10-09), notes. Create looks disabled until the name,
+ * a 10-digit phone number and the Last 4 ID are in. Ctrl+click on Create
+ * creates it without the phone or the ID (owner, 2026-10-09: an admin
+ * shortcut, deliberately unexplained); the name is always needed, and a
+ * part-typed phone still has to be finished or cleared.
+ */
 export function NewCollectionModal({ busy, onCreate, onClose }) {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [last4, setLast4] = useState('');
   const [notes, setNotes] = useState('');
-  const [touched, setTouched] = useState({ name: false, phone: false });
+  const [touched, setTouched] = useState({ name: false, phone: false, last4: false });
   const nameProblem = nameError(name);
   const phoneProblem = validPhone(phone) ? null : PHONE_ERROR;
-  const ready = !nameProblem && !phoneProblem && !busy;
-  const submit = () => {
-    setTouched({ name: true, phone: true });
-    if (ready) onCreate({ name: cleanName(name), phone: phoneDigits(phone), idLast4: last4, notes: notes.trim() });
+  const last4Problem = last4 ? null : 'Type the last 4 of their ID';
+  const ready = !nameProblem && !phoneProblem && !last4Problem && !busy;
+  const submit = (bypass = false) => {
+    setTouched({ name: true, phone: true, last4: true });
+    const skipping = bypass && !nameProblem && !busy && (!phone || !phoneProblem);
+    if (ready || skipping) {
+      onCreate({ name: cleanName(name), phone: phone ? phoneDigits(phone) : null, idLast4: last4, notes: notes.trim() });
+    }
   };
 
   return (
@@ -113,7 +120,16 @@ export function NewCollectionModal({ busy, onCreate, onClose }) {
       footer={(
         <>
           <button type="button" className="btn ghost" onClick={onClose}>Cancel</button>
-          <button type="button" className="btn primary" disabled={!ready} onClick={submit}>Create</button>
+          {/* Stays clickable while it looks disabled: Ctrl+click skips the phone and ID. */}
+          <button
+            type="button"
+            className={`btn primary${ready ? '' : ' is-disabled'}`}
+            disabled={busy}
+            aria-disabled={!ready}
+            onClick={(e) => submit(e.ctrlKey || e.metaKey)}
+          >
+            Create
+          </button>
         </>
       )}
     >
@@ -150,7 +166,7 @@ export function NewCollectionModal({ busy, onCreate, onClose }) {
           {touched.phone && phoneProblem && <span className="field-error">{phoneProblem}</span>}
         </label>
         <label className="field">
-          <span>Last 4 ID <em>(optional)</em></span>
+          <span>Last 4 ID</span>
           <input
             type="text"
             className="last4-input"
@@ -159,7 +175,9 @@ export function NewCollectionModal({ busy, onCreate, onClose }) {
             autoCapitalize="characters"
             spellCheck={false}
             onChange={(e) => setLast4(cleanLast4(e.target.value))}
+            onBlur={() => setTouched((t) => ({ ...t, last4: true }))}
           />
+          {touched.last4 && last4Problem && <span className="field-error">{last4Problem}</span>}
         </label>
         <label className="field">
           <span>Notes <em>(optional)</em></span>
