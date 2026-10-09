@@ -133,6 +133,8 @@
 .deal-result { display: flex; gap: 18px; margin: 4px 0 8px; font-size: 14px; }
 .deal-result strong { margin-left: 4px; font-size: 16px; }
 .deal-offer { font-size: 14px; }
+/* "Mark as Rejected?" on the Paid/Ours dialog: apart, on the left. */
+.deal-reject { margin-right: auto; }
 .pay-method { display: flex; gap: 8px; margin: 12px 0 0; }
 .pay-choice {
   flex: 1;

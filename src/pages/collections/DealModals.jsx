@@ -107,9 +107,10 @@ export function OfferModal({ market, rates, current, busy, onSave, onClose }) {
 /**
  * Mark as Paid/Ours → "Set a final purchase price": what was actually paid,
  * and whether it was cash or credit, always typed in by hand: choosing one
- * fills nothing in (owner, 2026-09-30).
+ * fills nothing in (owner, 2026-09-30). "Mark as Rejected?" switches to the
+ * Reject dialog instead (owner, 2026-10-09).
  */
-export function PaidModal({ market, rates, offer, busy, onSave, onClose }) {
+export function PaidModal({ market, rates, offer, busy, onSave, onReject, onClose }) {
   const [text, setText] = useState('');
   const [method, setMethod] = useState(null);
   const price = parseMoney(text);
@@ -123,6 +124,11 @@ export function PaidModal({ market, rates, offer, busy, onSave, onClose }) {
       onClose={onClose}
       footer={(
         <>
+          {onReject && (
+            <button type="button" className="btn danger-ghost deal-reject" disabled={busy} onClick={onReject}>
+              Mark as Rejected?
+            </button>
+          )}
           <button type="button" className="btn ghost" onClick={onClose}>Cancel</button>
           <button type="button" className="btn primary" disabled={!ready} onClick={save}>
             Mark Paid/Ours

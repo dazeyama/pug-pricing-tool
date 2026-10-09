@@ -365,6 +365,8 @@ function CollectionScreen({ id }) {
                   api.focusSearch();
                 }
               }}
+              // The customer said no after all (owner, 2026-10-09): the Reject dialog instead.
+              onReject={buy.status === 'processing' || buy.status === 'priced' ? () => setAsking('reject') : null}
             />
           )}
           {asking === 'reopen' && (
