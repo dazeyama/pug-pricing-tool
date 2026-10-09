@@ -124,10 +124,11 @@ export default function SelectedCard({ candidate: c, typedName, englishName, pok
   // too, holo or reverse: the art-window mask doesn't fit their frames
   // (owner, 2026-09-29).
   const ruleBox = !magic && isRuleBox(pokemon.card, c.name);
-  // Found through TCGplayer (JustTCG: a card TCGdex lacks, or a
-  // TCGplayer-only version): no frame known to fit a mask to, so a holo or
-  // reverse holo shines across the whole card (owner, 2026-10-09).
-  const fromTcgplayer = !magic && (c.source === 'justtcg' || Boolean(pokemonVersion?.tcgplayerOnly));
+  // A card found through TCGplayer (JustTCG: one TCGdex lacks): no frame
+  // known to fit a mask to, so a holo or reverse holo shines across the
+  // whole card (owner, 2026-10-09). A TCGplayer-only version of a TCGdex
+  // card (Gengar's Cosmos Holo) keeps its card's mask, as before.
+  const fromTcgplayer = !magic && c.source === 'justtcg';
   const whole = ruleBox || fromTcgplayer;
   const shine = magic
     ? (finish === 'foil' || finish === 'etched' ? 'foil' : null)
