@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Modal from '../components/Modal.jsx';
+import ImportDialog from './collections/ImportDialog.jsx';
 import ExportDialog from './export/ExportDialog.jsx';
 import RepriceModal from './collections/RepriceModal.jsx';
 import { formatMoney } from '../lib/money.js';
@@ -59,6 +61,8 @@ function CollectionScreen({ id }) {
   const system = Boolean(buy?.system_key);   // Can't upload cards (export spec 9)
   const [exportStep, setExportStep] = useState(null);   // 'warn' | 'dialog' | 'pokemon'
   const [repricing, setRepricing] = useState(false);    // REPRICE? (owner, 2026-10-01)
+  const [dragging, setDragging] = useState(false);      // a file held over the window
+  const [dropped, setDropped] = useState(null);         // the CSV dropped, while its import dialog is open
   const back = () => navigate('/collections');
 
   // Deleted on another computer while open: say so and go back to the table.
@@ -109,6 +113,57 @@ function CollectionScreen({ id }) {
   else if (lock.status !== 'held') repriceBlocked = 'Checking who is editing this collection';
   else if (locked && !system) repriceBlocked = locked;
   else if (!col.lines.length) repriceBlocked = 'No cards to reprice';
+
+  // A CSV dropped on an empty collection or project imports into it (owner,
+  // 2026-10-09; Import Collection's dialog): only one with no cards at all,
+  // that this computer can edit. Why not here, or null.
+  let importBlocked = null;
+  if (!user) importBlocked = 'Pick a user first';
+  else if (offline) importBlocked = 'No connection';
+  else if (system) importBlocked = "Can't upload cards only takes cards from exports";
+  else if (locked) importBlocked = locked;
+  else if (!col.loaded) importBlocked = 'Loading the collection';
+  else if (col.lines.length) importBlocked = 'It already has cards: a file only goes into an empty collection or project';
+
+  useEffect(() => {
+    const files = (e) => [...(e.dataTransfer?.types ?? [])].includes('Files');
+    let depth = 0;   // dragenter / dragleave fire for every element crossed
+    const enter = (e) => {
+      if (!files(e)) return;
+      e.preventDefault();
+      depth += 1;
+      setDragging(true);
+    };
+    const over = (e) => {
+      if (files(e)) e.preventDefault();   // never let the browser open the file instead
+    };
+    const leave = (e) => {
+      if (!files(e)) return;
+      depth = Math.max(0, depth - 1);
+      if (!depth) setDragging(false);
+    };
+    const drop = (e) => {
+      if (!files(e)) return;
+      e.preventDefault();
+      depth = 0;
+      setDragging(false);
+      const file = e.dataTransfer.files?.[0];
+      if (!file) return;
+      if (importBlocked) toast(`${importBlocked}.`, 'err');
+      else if (!/\.csv$/i.test(file.name)) toast('Drop a .csv file: a Mass Create file, as Import Collection takes.', 'err');
+      else setDropped(file);
+    };
+    window.addEventListener('dragenter', enter);
+    window.addEventListener('dragover', over);
+    window.addEventListener('dragleave', leave);
+    window.addEventListener('drop', drop);
+    return () => {
+      window.removeEventListener('dragenter', enter);
+      window.removeEventListener('dragover', over);
+      window.removeEventListener('dragleave', leave);
+      window.removeEventListener('drop', drop);
+    };
+  }, [importBlocked, toast]);
 
   async function reprice(updates, counts) {
     const result = await col.reprice(updates, user.id);
@@ -455,6 +510,36 @@ function CollectionScreen({ id }) {
             >
               <p>{holderLabel} will switch to view-only.</p>
             </ConfirmModal>
+          )}
+          {dragging && createPortal(
+            <div className={`drop-overlay${importBlocked ? ' blocked' : ''}`} aria-hidden="true">
+              <div className="drop-card">
+                {importBlocked ? (
+                  <>
+                    <strong>Can't import here</strong>
+                    <span>{importBlocked}.</span>
+                  </>
+                ) : (
+                  <>
+                    <strong>Drop the CSV to import it</strong>
+                    <span>Into {buy?.customer_name}, matched card by card, as Import Collection does.</span>
+                  </>
+                )}
+              </div>
+            </div>,
+            document.body,
+          )}
+          {dropped && buy && (
+            <ImportDialog
+              file={dropped}
+              target={{ kind: 'into', buyId: buy.id, version: buy.version, name: buy.customer_name }}
+              onDone={async () => {
+                setDropped(null);
+                await col.reload();
+                api.focusSearch();
+              }}
+              onClose={() => setDropped(null)}
+            />
           )}
           {asking === 'delete' && buy && (
             <DeleteCollectionModal
