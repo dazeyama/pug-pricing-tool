@@ -146,19 +146,24 @@ function PokemonFinish({ c, pokemon, versions, version, onVersion }) {
       <div className="stage-label details-label">Details</div>
       <div className="details">
         {!versions.length && <p className="details-note">TCGdex lists no finishes for this card.</p>}
+        {/* Owner, 2026-10-09: a card or version TCGdex doesn't list, from TCGplayer's catalogue. */}
+        {c.source === 'justtcg' && (
+          <Chip label="From TCGplayer" title="TCGdex doesn't list this card yet: it's TCGplayer's listing, through JustTCG" />
+        )}
         {ofFinish.length > 1 && (
           <fieldset className="versions">
             <legend>Version</legend>
             {ofFinish.map((v) => (
-              <label key={v.id} className="trait-row">
+              <label key={v.id} className="trait-row" title={v.tcgplayerOnly && c.source !== 'justtcg' ? 'A separate TCGplayer product TCGdex doesn\u2019t list' : undefined}>
                 <input type="radio" name="pokemon-version" checked={v.id === version.id} onChange={() => onVersion(v.id)} />
                 {v.label}
+                {v.tcgplayerOnly && c.source !== 'justtcg' && <span className="version-source">TCGplayer</span>}
               </label>
             ))}
           </fieldset>
         )}
         {ofFinish.length === 1 && ofFinish[0].label !== 'Standard' && <Chip label={ofFinish[0].label} />}
-        {pokemon.card?.rarity && <Chip label={pokemon.card.rarity} title="Rarity" />}
+        {(pokemon.card?.rarity ?? c.rarity) && <Chip label={pokemon.card?.rarity ?? c.rarity} title="Rarity" />}
         <Chip label={c.lang === 'ja' ? 'Japanese' : 'English'} title="Language: set by EN | JP" />
       </div>
     </>

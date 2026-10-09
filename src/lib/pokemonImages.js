@@ -183,6 +183,14 @@ export function fallbackImages(c) {
     }
     if (c.lang !== 'en') return null;
 
+    // Known only from TCGplayer (owner, 2026-10-09): its product picture.
+    if (c.source === 'justtcg') {
+      const thumb = c.tcgplayerId && `${TCGPLAYER_IMAGES}/${c.tcgplayerId}_200w.jpg`;
+      return thumb && await isCardImage(thumb)
+        ? { thumb, image: `${TCGPLAYER_IMAGES}/${c.tcgplayerId}_in_1000x1000.jpg`, source: 'TCGplayer' }
+        : null;
+    }
+
     try {
       const sets = await loadPtcgSets();
       const setId = SET_ALIASES[c.setId]

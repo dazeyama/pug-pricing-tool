@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { fetchPrices, lookupsFor } from '../../lib/prices.js';
+import { fetchPrices, lookupsFor, priceResults, searchTcgplayer } from '../../lib/prices.js';
 import { usePriceLimit } from '../../state/priceLimit.jsx';
 import { useConnection } from '../../state/connection.jsx';
 
@@ -8,7 +8,7 @@ import { useConnection } from '../../state/connection.jsx';
 // are kept for the page's life per lookup key; the server keeps them 6 hours
 // for every computer.
 const SETTLE_MS = 400;
-const results = new Map();   // lookup key → { card, fetchedAt }
+const results = priceResults;   // lookup key → { card, fetchedAt } (prices.js, shared with TCGplayer searches)
 
 /**
  * @returns {{ status: 'idle'|'waiting'|'loading'|'ok'|'error'|'quota'|'no-key',
@@ -76,4 +76,41 @@ export function usePrices(selected, { pokemon, versions, jaName, waitName }) {
   const current = state.key === signature ? state : { status: signature ? 'loading' : 'idle', error: null };
   const own = signature ? Object.fromEntries(lookups.filter((l) => results.has(l.key)).map((l) => [l.key, results.get(l.key)])) : null;
   return { status: current.status, error: current.error, results: own, retry };
+}
+
+/**
+ * TCGplayer-only products sharing a TCGdex card's name and number (owner,
+ * 2026-10-09): Cosmos Holo, stamped and other separate products TCGdex
+ * doesn't list, for the Version list. English cards only, once the card has
+ * stayed selected (like prices), one search per card (kept by the server).
+ * @returns {{ cards: object[]|null, settled: boolean }} cards null while looking
+ */
+export function usePokemonSiblings(selected, pokemon) {
+  const { offline } = useConnection();
+  const wanted = selected?.game === 'pokemon' && selected.lang === 'en' && selected.source !== 'justtcg'
+    && selected.tcgdexId && selected.number && pokemon.resolved;
+  const key = wanted ? `pokemon:siblings:${selected.tcgdexId}` : null;
+  const [state, setState] = useState({ key: null, cards: null });
+
+  useEffect(() => {
+    if (!key || offline) return undefined;
+    let alive = true;
+    const size = selected.printedSize ?? pokemon.card?.set?.cardCount?.official ?? null;
+    const timer = setTimeout(() => {
+      searchTcgplayer({ kind: 'siblings', key, name: selected.name, number: selected.number, size })
+        .then((cards) => alive && setState({ key, cards }))
+        .catch((e) => {
+          // No extra versions this time; the card's own still price as usual.
+          console.warn('TCGplayer versions failed', e);
+          if (alive) setState({ key, cards: [] });
+        });
+    }, SETTLE_MS);
+    return () => {
+      alive = false;
+      clearTimeout(timer);
+    };
+  }, [key, offline]);
+
+  if (!key) return { cards: null, settled: true };
+  return state.key === key ? { cards: state.cards, settled: true } : { cards: null, settled: Boolean(offline) };
 }

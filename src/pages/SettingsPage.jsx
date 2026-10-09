@@ -19,6 +19,7 @@ const CREDITS = [
   ['Vintage Japanese Pokémon images (1996–2001)', 'Pokellector'],
   ['English names for Japanese Pokémon', 'PokeAPI'],
   ['Prices', 'JustTCG'],
+  ['Pokémon cards TCGdex doesn\u2019t list yet', 'TCGplayer\u2019s catalogue, through JustTCG'],
   ['Cardmarket prices', 'Scryfall (Magic) and TCGdex (Pokémon)'],
   ['Euro to dollar rate', 'Frankfurter (European Central Bank)'],
 ];

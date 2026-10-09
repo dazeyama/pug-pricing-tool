@@ -1,15 +1,26 @@
 // `prices` Edge Function (spec 5.3): condition-specific prices from JustTCG,
 // shared by every store computer through a 6-hour cache.
 //
-// POST { lookups: Lookup[], fresh?: true } → { results: { [key]: { card, fetchedAt } } }
+// POST { lookups?: Lookup[], searches?: Search[], fresh?: true }
+//   → { results: { [key]: { card, fetchedAt } }, searches: { [key]: { cards, fetchedAt } } }
 //   fresh  = the export's Sell Prices (docs/EXPORT_FUNCTION.md 5.4): prices
 //            fetched in the last 12 hours count (owner, 2026-10-01); older
 //            ones are fetched again (and the cache refreshed).
 //   Lookup = { key, game: 'mtg'|'pokemon', lang: 'en'|'ja',
-//              scryfallId? | tcgplayerId? | (name + number [+ setName]) }
+//              scryfallId? | tcgplayerId? | justtcgId? | (name + number [+ setName]) }
 //   key    = the source key, also the price_map key:
-//            mtg:scryfall:<id>, mtg:etched:<tcgplayer id>,
-//            pokemon:tcgplayer:<id>, pokemon:<lang>:<tcgdex id> (search)
+//            mtg:scryfall:<id>, mtg:etched:<tcgplayer id>, pokemon:tcgplayer:<id>,
+//            pokemon:justtcg:<JustTCG card id>, pokemon:<lang>:<tcgdex id> (search)
+//   Search = { key, kind: 'find'|'siblings', game: 'pokemon', name, number?, size? }
+//            (owner, 2026-10-09: Pokémon cards TCGdex lacks). Every English
+//            JustTCG card (TCGplayer's catalogue) for a name and number:
+//            find   = the cards whose names contain the name (a search TCGdex
+//                     found nothing for: new promos, missing sets);
+//            siblings = the products sharing a TCGdex card's name and number
+//                     (Cosmos Holo, stamped and other TCGplayer-only versions).
+//            Kept in price_cache as search:<key>, like a price (a miss a day),
+//            and each card found cached under its own lookup keys, so pricing
+//            one costs no more requests.
 //   card   = the JustTCG card, slimmed to what the app reads, or null when
 //            JustTCG has no match (the app then shows its fallback price).
 // Errors: 401 not signed in; 429 { code: DAILY_LIMIT_EXCEEDED |
@@ -24,10 +35,16 @@ const GAMES = { mtg: 'magic-the-gathering', pokemon: 'pokemon' } as const;
 
 type Lookup = {
   key: string; game: 'mtg' | 'pokemon'; lang: 'en' | 'ja';
-  scryfallId?: string; tcgplayerId?: string; name?: string; number?: string; setName?: string;
+  scryfallId?: string; tcgplayerId?: string; justtcgId?: string; name?: string; number?: string; setName?: string;
   setCode?: string;   // printed set code ("SV2a", "OBF"): breaks a tie between search matches
   size?: number;      // printed set size (165): JustTCG's numbers are "025/165"
 };
+type Search = {
+  key: string; kind: 'find' | 'siblings'; game: 'pokemon';
+  name: string; number?: string; size?: number;
+};
+const SEARCH_MISS_MS = 86400_000;   // a search that found nothing is asked again after a day
+const SEARCHES_MAX = 3;
 
 /** Only what the app reads; price history and statistics are dropped. */
 function slim(card: any) {
@@ -80,16 +97,20 @@ Deno.serve(async (req) => {
   if (denied) return denied;
 
   let lookups: Lookup[];
+  let searches: Search[];
   let maxAge = FRESH_MS;
   try {
     const body = await req.json();
     lookups = (body?.lookups ?? []).filter((l: Lookup) => l?.key && GAMES[l.game]);
+    searches = (body?.searches ?? []).filter((s: Search) => s?.key && s.game === 'pokemon'
+      && (s.kind === 'find' || s.kind === 'siblings') && String(s.name ?? '').trim().length >= 2);
     if (body?.fresh === true) maxAge = EXPORT_FRESH_MS;
   } catch {
     return json({ error: 'Expected { lookups: [...] }', code: 'BAD_REQUEST' }, 400);
   }
   lookups = [...new Map(lookups.map((l) => [l.key, l])).values()].slice(0, 200);
-  if (!lookups.length) return json({ results: {} });
+  searches = [...new Map(searches.map((s) => [s.key, s])).values()].slice(0, SEARCHES_MAX);
+  if (!lookups.length && !searches.length) return json({ results: {}, searches: {} });
 
   const db = adminClient();
   const key = await readSecret('justtcg');
@@ -97,6 +118,7 @@ Deno.serve(async (req) => {
 
   const now = Date.now();
   const results: Record<string, { card: any; fetchedAt: string | null }> = {};
+  const searchOut: Record<string, { cards: any[]; fetchedAt: string }> = {};
 
   try {
     // 1. What's already mapped (source key → JustTCG card), and cached.
@@ -128,6 +150,7 @@ Deno.serve(async (req) => {
       }
       if (l.scryfallId) batch.push({ lookup: l, item: { scryfallId: l.scryfallId } });
       else if (l.tcgplayerId) batch.push({ lookup: l, item: { tcgplayerId: String(l.tcgplayerId) } });
+      else if (l.justtcgId) batch.push({ lookup: l, item: { cardId: String(l.justtcgId) } });
       else if (l.name && l.number) searches.push(l);
       else results[l.key] = { card: null, fetchedAt: null };
     }
@@ -262,16 +285,76 @@ Deno.serve(async (req) => {
       found(l, cards.length === 1 ? cards[0] : null);
     }
 
+    // 3b. Card searches (owner, 2026-10-09): TCGplayer's listings for a name
+    //     and number, for the Pokémon cards TCGdex lacks. Up to three steps,
+    //     each only if the one before found no card with that number:
+    //     JustTCG's "060/162" number, the number as printed ("101", promos),
+    //     then the name alone (20 results), filtered here.
+    if (searches.length) {
+      const { data: kept } = await db.from('price_cache')
+        .select('key, payload, fetched_at').in('key', searches.map((s) => `search:${s.key}`));
+      const keptBy = new Map((kept ?? []).map((k) => [k.key, k]));
+      for (const s of searches) {
+        const row = keptBy.get(`search:${s.key}`);
+        const keptCards: any[] = row?.payload?.cards ?? [];
+        if (row && now - Date.parse(row.fetched_at) < (keptCards.length ? maxAge : SEARCH_MISS_MS)) {
+          searchOut[s.key] = { cards: keptCards, fetchedAt: row.fetched_at };
+          continue;
+        }
+        const want = fold(s.name);
+        const num = s.number ? normNumber(s.number) : null;
+        const english = (c: any) => !(c.variants ?? []).length
+          || c.variants.some((v: any) => !v.language || String(v.language).toLowerCase() === 'english');
+        // Same name (siblings: the name the card starts with), same number,
+        // and the same set size where JustTCG prints one ("060/162").
+        const sameNumber = (c: any) => {
+          if (num == null) return true;
+          if (normNumber(c.number) !== num) return false;
+          const of = String(c.number ?? '').split('/')[1];
+          return !s.size || !of || !/^\d+$/.test(of) || Number(of) === Number(s.size);
+        };
+        const named = (c: any) => (s.kind === 'siblings' ? fold(c.name).startsWith(want) : fold(c.name).includes(want));
+        const steps: Record<string, string>[] = [];
+        const printed = s.number ? justtcgNumber(s.number, s.size) : null;
+        if (printed) steps.push({ number: printed });
+        if (s.number && s.number !== printed) steps.push({ number: s.number });
+        steps.push({});
+        const log: string[] = [];
+        let cards: any[] = [];
+        for (const extra of steps) {
+          const params = new URLSearchParams({ game: GAMES[s.game], q: s.name, limit: '20', ...extra });
+          const res = await call(key, `/cards?${params}`);
+          const all: any[] = res?.data ?? [];
+          cards = all.filter((c: any) => named(c) && sameNumber(c) && english(c));
+          log.push(`${extra.number ? `number ${extra.number}` : 'name only'}: ${all.length} back, ${cards.length} fit`);
+          if (cards.length) break;
+        }
+        if (!cards.length) console.log(`prices: search found nothing for ${s.key} (q="${s.name}", number ${s.number ?? '-'}): ${log.join(' | ')}`);
+        const slimmed = cards.map(slim);
+        searchOut[s.key] = { cards: slimmed, fetchedAt };
+        cacheRows.push({ key: `search:${s.key}`, game: s.game, payload: { cards: slimmed }, fetched_at: fetchedAt });
+        for (const c of slimmed) {
+          const id = cardKey(c);
+          cacheRows.push({ key: id, game: s.game, payload: c, fetched_at: fetchedAt });
+          mapRows.push({ source_key: `pokemon:justtcg:${id}`, justtcg_card_id: id, resolved_at: fetchedAt });
+          if (c.tcgplayerId) mapRows.push({ source_key: `pokemon:tcgplayer:${c.tcgplayerId}`, justtcg_card_id: id, resolved_at: fetchedAt });
+        }
+      }
+    }
+
     // 4. Share with every computer.
     if (cacheRows.length) {
-      const { error } = await db.from('price_cache').upsert(cacheRows);
+      const unique = [...new Map(cacheRows.map((r) => [r.key, r])).values()];
+      const { error } = await db.from('price_cache').upsert(unique);
       if (error) console.error('price_cache write failed', error);
     }
     if (mapRows.length) {
-      const { error } = await db.from('price_map').upsert(mapRows);
+      // One row per key: a card found by a search and a lookup in the same call.
+      const unique = [...new Map(mapRows.map((r) => [r.source_key, r])).values()];
+      const { error } = await db.from('price_map').upsert(unique);
       if (error) console.error('price_map write failed', error);
     }
-    return json({ results });
+    return json({ results, searches: searchOut });
   } catch (e) {
     if (e instanceof QuotaError) {
       return json({
@@ -279,9 +362,10 @@ Deno.serve(async (req) => {
         code: e.code,
         resetAt: e.code === 'DAILY_LIMIT_EXCEEDED' ? nextUtcMidnight() : null,
         results,
+        searches: searchOut,
       }, 429);
     }
     console.error('prices failed', e);
-    return json({ error: (e as Error).message || 'Price lookup failed', code: 'SERVER_ERROR', results }, 502);
+    return json({ error: (e as Error).message || 'Price lookup failed', code: 'SERVER_ERROR', results, searches: searchOut }, 502);
   }
 });

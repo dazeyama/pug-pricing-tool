@@ -7,6 +7,8 @@ import * as dex from './tcgdex.js';
 import { isAbort, UnavailableError } from './transport.js';
 import { nameKey } from './normalize.js';
 import { parseQuery, withoutGuessedSetCode, numericSize, numberPrefix, sameNumber, dexNumberQuery } from './query.js';
+import { searchTcgplayer } from './prices.js';
+import { fold, guessSetCode, justtcgCandidate, plainSetName } from './justtcgCards.js';
 
 /** First page of each source; beyond this, "refine your search". */
 export const PAGE = 175;
@@ -32,6 +34,7 @@ export const PAGE = 175;
  *   setIcon?: string|null,    // Magic: the set symbol SVG, for the hover overlay
  *   scryfall?: any,           // the Scryfall card (Magic)
  *   tcgdexId?: string,        // the TCGdex card id (Pokémon)
+ *   source?: 'justtcg',       // a Pokémon card TCGdex lacks, from TCGplayer (justtcgCards.js)
  * }} Candidate
  */
 
@@ -104,6 +107,44 @@ async function magicCandidates(q, signal) {
 
 // ---------------------------------------------------------------- Pokémon
 
+/** TCGdex's printed code for a TCGplayer set when TCGdex has it (same name); else a guess. */
+async function setCodeFor(setName, signal) {
+  const plain = fold(plainSetName(setName));
+  const list = await dex.loadSetList('en');
+  const match = plain ? list.find((s) => fold(s.name) === plain) : null;
+  if (match) {
+    try {
+      const info = await dex.ensureSetInfo('en', match.id, signal);
+      if (info?.code) return info.code;
+    } catch (e) {
+      if (isAbort(e)) throw e;
+    }
+  }
+  return guessSetCode(setName);
+}
+
+/**
+ * The cards TCGdex lacks, from TCGplayer's catalogue through JustTCG (owner,
+ * 2026-10-09): new promos TCGdex hasn't added yet, and the few sets and
+ * cards it misses. English only; asked only when TCGdex found nothing, and
+ * only once the search has stayed put a moment, so typing on doesn't spend
+ * JustTCG requests. A failure is just no results.
+ */
+async function tcgplayerCandidates(q, size, signal) {
+  await sleep(600, signal);
+  let cards;
+  try {
+    cards = await searchTcgplayer({ kind: 'find', name: q.name, number: q.number, size });
+  } catch (e) {
+    console.warn('TCGplayer search failed', e);
+    return [];
+  }
+  if (signal.aborted) throw new DOMException('Superseded', 'AbortError');
+  const list = [];
+  for (const card of cards) list.push(justtcgCandidate(card, { lang: 'en', setCode: await setCodeFor(card.set_name, signal) }));
+  return list;
+}
+
 async function pokemonCandidates(lang, q, signal) {
   const size = numericSize(q.size);
   const briefs = await dex.searchCards(
@@ -135,6 +176,12 @@ async function pokemonCandidates(lang, q, signal) {
     await needInfo(rows.map((r) => r.setId));
     const code = q.pokemonSet.toLowerCase();
     rows = rows.filter((r) => dex.setInfo(lang, r.setId)?.code.toLowerCase() === code);
+  }
+
+  // Nothing in TCGdex: TCGplayer's catalogue (owner, 2026-10-09).
+  if (!rows.length && lang === 'en' && (q.name ?? '').trim().length >= 3) {
+    const list = await tcgplayerCandidates(q, size, signal);
+    return { list, total: list.length, hasMore: false };
   }
 
   const dated = (r) => dex.setInfo(lang, r.setId)?.releaseDate ?? '';

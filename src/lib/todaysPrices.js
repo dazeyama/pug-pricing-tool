@@ -10,6 +10,7 @@ import {
   cardmarketPrice, conditionPrices, conditionVariants, fallbackPrice, lookupsFor, resultFor,
 } from './prices.js';
 import { pokemonVersions } from './printings.js';
+import { isTcgplayerOnlyLine, lineVersion } from './justtcgCards.js';
 import { loadEurUsd } from './useEurUsd.js';
 import * as dex from './tcgdex.js';
 
@@ -107,10 +108,22 @@ export async function todaysPrices(lines, { cards = null, onStep } = {}) {
     if (line.game === 'mtg') {
       const card = scry.get(line.scryfall_id);
       if (card) seen.push({ line, c: { game: 'mtg', scryfall: card }, finish: line.finish, version: null, versions: [] });
+    } else if (line.game === 'pokemon' && !line.tcgdex_id) {
+      // A card known only from TCGplayer (owner, 2026-10-09): its JustTCG card.
+      if (!line.justtcg_card_id) continue;
+      const v = lineVersion(line);
+      seen.push({
+        line, card: null, versions: [v], version: v, finish: line.finish,
+        c: {
+          game: 'pokemon', lang: line.lang, source: 'justtcg', justtcgId: line.justtcg_card_id, name: line.name,
+          number: line.collector_number, setName: line.set_name, setCode: line.set_code, printedSize: line.printed_size,
+        },
+      });
     } else if (line.game === 'pokemon') {
       const card = dexCards.get(`${line.lang}|${line.tcgdex_id}`);
       if (!card) continue;
-      const versions = pokemonVersions(card);
+      // A TCGplayer-only version (Cosmos Holo…) isn't among TCGdex's: rebuilt from the line.
+      const versions = isTcgplayerOnlyLine(line) ? [...pokemonVersions(card), lineVersion(line)] : pokemonVersions(card);
       const version = versionOf(line, versions);
       seen.push({
         line,

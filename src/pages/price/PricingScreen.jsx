@@ -8,9 +8,10 @@ import PriceTable from './PriceTable.jsx';
 import QuotePanel from './QuotePanel.jsx';
 import ActionRow, { parseQty } from './ActionRow.jsx';
 import BuyList from './BuyList.jsx';
-import { usePrices } from './usePrices.js';
+import { usePokemonSiblings, usePrices } from './usePrices.js';
 import { useCardSearch } from './useCardSearch.js';
 import { usePokemonDetail, useMagicSiblings } from './usePrintingDetail.js';
+import { justtcgVersions, siblingVersions } from '../../lib/justtcgCards.js';
 import { useCardImages } from './useCardImages.js';
 import { warmUp, magicCandidate, otherLanguageSet } from '../../lib/cardSearch.js';
 import {
@@ -64,7 +65,9 @@ function useListRoom(screen) {
 }
 
 /** The search-bar key of a saved line's card (the candidate's key). */
-const lineKey = (line) => (line.game === 'mtg' ? `mtg:${line.scryfall_id}` : `pokemon:${line.lang}:${line.tcgdex_id}`);
+// A Pokémon card known only from TCGplayer has no TCGdex id: its JustTCG card's (owner, 2026-10-09).
+const lineKey = (line) => (line.game === 'mtg' ? `mtg:${line.scryfall_id}`
+  : line.tcgdex_id ? `pokemon:${line.lang}:${line.tcgdex_id}` : `pokemon:${line.lang}:jt:${line.justtcg_card_id}`);
 
 /**
  * A search line that finds exactly this saved card (spec 8.2's syntax):
@@ -74,6 +77,8 @@ function editQuery(line) {
   const size = line.printed_size ? `/${line.printed_size}` : '';
   if (line.game === 'mtg') return `${line.name} ${line.collector_number} ${line.set_code}`;
   if (line.lang === 'ja') return `${line.collector_number}${size} ${line.set_code}`;
+  // From TCGplayer: its set code may be one TCGdex doesn't know; name and number find it.
+  if (!line.tcgdex_id) return `${line.name} ${line.collector_number}${size}`;
   return `${line.name} ${line.collector_number}${size} ${line.set_code}`;
 }
 
@@ -148,7 +153,15 @@ export default function PricingScreen({
   const magic = selected?.game === 'mtg' ? selected.scryfall : null;
   const own = printing.key === selected?.key;
   const finish = magic ? (own && printing.finish) || defaultMagicFinish(magic) : null;
-  const versions = selected?.game === 'pokemon' ? pokemonVersions(pokemon.card) : [];
+  // Pokémon versions: TCGdex's, or for a card known only from TCGplayer its
+  // printings there; plus TCGplayer-only products with the same name and
+  // number (Cosmos Holo, stamped…; owner, 2026-10-09).
+  const tcgSiblings = usePokemonSiblings(selected, pokemon);
+  const ownVersions = selected?.game !== 'pokemon' ? []
+    : selected.source === 'justtcg' ? justtcgVersions(selected.justtcg, selected.suffix) : pokemonVersions(pokemon.card);
+  const versions = tcgSiblings.cards?.length
+    ? [...ownVersions, ...siblingVersions(tcgSiblings.cards, selected, ownVersions)]
+    : ownVersions;
   const version = versions.find((v) => own && v.id === printing.version) ?? defaultPokemonVersion(versions);
 
   // Every card starts on its defaults (owner's decision, 2026-09-29): a choice
@@ -305,6 +318,9 @@ export default function PricingScreen({
     const { line } = editing;
     if (line.game === 'pokemon') {
       if (!pokemon.resolved) return;   // its versions are still loading
+      // A TCGplayer-only version comes with the card's TCGplayer search.
+      const saved = line.price_snapshot?.version;
+      if (saved?.startsWith('jt:') && !versions.some((x) => x.id === saved) && !tcgSiblings.settled) return;
       const same = (v) => JSON.stringify([...(v.treatments ?? [])].sort()) === JSON.stringify(line.treatments ?? []);
       const v = versions.find((x) => x.id === line.price_snapshot?.version)
         ?? versions.find((x) => x.finish === line.finish && Boolean(x.firstEdition) === line.first_edition && same(x));
@@ -320,7 +336,7 @@ export default function PricingScreen({
     });
     setQty(String(line.quantity));
     setEditing((e) => e && { ...e, restored: true });
-  }, [editing, selected?.key, pokemon.resolved, versions.length]);
+  }, [editing, selected?.key, pokemon.resolved, versions.length, tcgSiblings.settled]);
 
   // The line being edited went (removed, confirmed, cancelled): stop editing.
   useEffect(() => {

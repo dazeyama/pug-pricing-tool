@@ -18,7 +18,8 @@ function patternName(treatment) {
 
 /**
  * The bracket's tags, only non-defaults, in the spec's order: condition (not
- * NM), 1st Ed, SL (Shadowless, not 1st Edition), JP, reverse pattern.
+ * NM), 1st Ed, SL (Shadowless, not 1st Edition), JP, reverse pattern,
+ * then a TCGplayer-only version's name.
  * @returns {string[]}
  */
 export function lineTags(line) {
@@ -31,6 +32,8 @@ export function lineTags(line) {
   if (line.finish === 'reverse') {
     for (const t of treatments) if (t.endsWith('-pattern')) tags.push(patternName(t));
   }
+  // A TCGplayer-only version or listing (owner, 2026-10-09): "Cosmos Holo", "30th Celebration".
+  for (const t of treatments) if (t.startsWith('variant:')) tags.push(t.slice('variant:'.length));
   return tags;
 }
 

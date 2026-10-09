@@ -103,7 +103,7 @@ export default function SelectedCard({ candidate: c, typedName, englishName, pok
   const thumb = magic ? scry.cardImage(magic, 'small', face) : pokemonImages.thumb;
   const image = magic ? scry.cardImage(magic, 'large', face) : pokemonImages.image;
   const set = magic ? scry.setByCode(c.setId) : null;
-  const rarity = magic ? MAGIC_RARITY[magic.rarity] ?? magic.rarity : pokemon.card?.rarity;
+  const rarity = magic ? MAGIC_RARITY[magic.rarity] ?? magic.rarity : pokemon.card?.rarity ?? c.rarity;
   const size = c.printedSize ?? pokemon.card?.set?.cardCount?.official ?? null;
   const link = magic ? magic.scryfall_uri : pokemon.page;
   // What to search other sites for: Japanese cards by their English name

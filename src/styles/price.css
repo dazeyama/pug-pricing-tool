@@ -670,6 +670,8 @@
   cursor: pointer;
 }
 .trait-row:hover { border-color: var(--accent); }
+/* A TCGplayer-only version in the Version list (owner, 2026-10-09). */
+.version-source { margin-left: auto; padding: 1px 7px; border: 1px solid var(--border); border-radius: 999px; color: var(--muted); font-size: 11px; font-weight: 600; }
 .trait-row input { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); cursor: inherit; }
 .trait-row.disabled { opacity: .5; cursor: not-allowed; }
 .trait-row.disabled:hover { border-color: var(--border); }

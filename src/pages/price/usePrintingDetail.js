@@ -9,8 +9,10 @@ import * as dex from '../../lib/tcgdex.js';
  */
 export function usePokemonDetail(c) {
   const [detail, setDetail] = useState({ key: null, card: null, info: null, page: null });
+  // A card known only from TCGplayer (owner, 2026-10-09) has no TCGdex record.
+  const tcgplayerOnly = c?.source === 'justtcg';
   useEffect(() => {
-    if (c?.game !== 'pokemon') return undefined;
+    if (c?.game !== 'pokemon' || tcgplayerOnly) return undefined;
     let alive = true;
     const brief = { localId: c.number, name: c.name };
     Promise.allSettled([dex.fetchCard(c.lang, c.tcgdexId), dex.ensureSetInfo(c.lang, c.setId)])
@@ -27,6 +29,7 @@ export function usePokemonDetail(c) {
       alive = false;
     };
   }, [c?.key]);
+  if (tcgplayerOnly) return { card: null, info: null, page: null, resolved: true };
   return detail.key === c?.key
     ? { ...detail, resolved: true }
     : { card: null, info: null, page: null, resolved: false };

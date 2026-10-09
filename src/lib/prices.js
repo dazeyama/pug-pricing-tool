@@ -15,6 +15,8 @@
 //   tcgplayer_etched_id), priced through that product.
 import { callFunction } from './functions.js';
 import { formatEur, formatMoney, roundDownPrice } from './money.js';
+import { cardId, fold } from './justtcgCards.js';
+import { normNumber } from './query.js';
 
 export { CONDITIONS, priceLadder } from './ladder.js';
 import { CONDITIONS } from './ladder.js';
@@ -29,12 +31,23 @@ export function conditionCode(name) {
 }
 
 /**
+ * Prices fetched this page's life, by lookup key: { card, fetchedAt }. A
+ * TCGplayer search fills it with the cards it found (their prices came with
+ * them), so pricing one costs no request.
+ */
+export const priceResults = new Map();
+
+/**
  * The lookups one selected card needs, all sent in a single request so that
  * switching finish or condition never costs another one.
  * @returns {{ key: string, game: string, lang: string, [k: string]: any }[]}
  */
 export function lookupsFor(c, { pokemonCard, versions, jaName }) {
   if (!c) return [];
+  // A card known only from TCGplayer's catalogue (owner, 2026-10-09): its JustTCG card.
+  if (c.source === 'justtcg') {
+    return [{ key: `pokemon:justtcg:${c.justtcgId}`, game: 'pokemon', lang: c.lang, justtcgId: c.justtcgId }];
+  }
   if (c.game === 'mtg') {
     const card = c.scryfall;
     const out = [{ key: `mtg:scryfall:${card.id}`, game: 'mtg', lang: 'en', scryfallId: card.id }];
@@ -44,26 +57,72 @@ export function lookupsFor(c, { pokemonCard, versions, jaName }) {
     return out;
   }
   // Pokémon: every version's TCGplayer product (stamped versions are their own
-  // products); without any, a name + number search.
-  const ids = [...new Set(versions.map((v) => v.tcgplayerId).filter(Boolean))];
-  if (ids.length) {
-    return ids.map((id) => ({ key: `pokemon:tcgplayer:${id}`, game: 'pokemon', lang: c.lang, tcgplayerId: id }));
+  // products); without any, a name + number search. TCGplayer-only versions
+  // (owner, 2026-10-09) are their own products too, priced as found.
+  const own = versions.filter((v) => !v.tcgplayerOnly);
+  const out = new Map();
+  const ids = [...new Set(own.map((v) => v.tcgplayerId).filter(Boolean))];
+  for (const id of ids) out.set(`pokemon:tcgplayer:${id}`, { key: `pokemon:tcgplayer:${id}`, game: 'pokemon', lang: c.lang, tcgplayerId: id });
+  if (!ids.length && (pokemonCard || c.number)) {
+    // Japanese cards' own names are Japanese; JustTCG's are English. `jaName`
+    // is the English name (Pokédex number) or what was typed (owner, 2026-09-29).
+    const name = c.lang === 'ja' ? (jaName || '') : c.name;
+    const key = `pokemon:${c.lang}:${c.tcgdexId}`;
+    out.set(key, {
+      key, game: 'pokemon', lang: c.lang,
+      name, number: c.number, setName: c.lang === 'en' ? c.setName : undefined, setCode: c.setCode,
+      size: c.printedSize ?? pokemonCard?.set?.cardCount?.official ?? undefined,
+    });
   }
-  // Japanese cards' own names are Japanese; JustTCG's are English. `jaName`
-  // is the English name (Pokédex number) or what was typed (owner, 2026-09-29).
-  const name = c.lang === 'ja' ? (jaName || '') : c.name;
-  if (!pokemonCard && !c.number) return [];
-  return [{
-    key: `pokemon:${c.lang}:${c.tcgdexId}`, game: 'pokemon', lang: c.lang,
-    name, number: c.number, setName: c.lang === 'en' ? c.setName : undefined, setCode: c.setCode,
-    size: c.printedSize ?? pokemonCard?.set?.cardCount?.official ?? undefined,
-  }];
+  for (const v of versions.filter((x) => x.tcgplayerOnly)) {
+    const l = v.tcgplayerId
+      ? { key: `pokemon:tcgplayer:${v.tcgplayerId}`, game: 'pokemon', lang: c.lang, tcgplayerId: v.tcgplayerId }
+      : { key: `pokemon:justtcg:${v.justtcgId}`, game: 'pokemon', lang: c.lang, justtcgId: v.justtcgId };
+    out.set(l.key, l);
+  }
+  return [...out.values()];
 }
 
 /** Ask the `prices` function. Rejects with .code (e.g. DAILY_LIMIT_EXCEEDED, NO_KEY). */
 export async function fetchPrices(lookups) {
   const data = await callFunction('prices', { lookups });
   return data?.results ?? {};
+}
+
+const searched = new Map();   // search key → JustTCG cards, this page's life
+
+/** A found card's prices, under each key a lookup would ask for it by. */
+function keepPrices(card, fetchedAt) {
+  const value = { card, fetchedAt };
+  priceResults.set(`pokemon:justtcg:${cardId(card)}`, value);
+  if (card.tcgplayerId) priceResults.set(`pokemon:tcgplayer:${card.tcgplayerId}`, value);
+}
+
+/**
+ * Search TCGplayer's catalogue (through JustTCG) for Pokémon cards (owner,
+ * 2026-10-09):
+ *  - kind 'find': the cards with this name (and number) TCGdex doesn't have;
+ *  - kind 'siblings': the other products sharing a TCGdex card's name and
+ *    number (Cosmos Holo, stamped…), `key` naming the card.
+ * English only. The server keeps each search like a price (a miss for a day),
+ * and the cards' prices come with them. Rejects with .code like fetchPrices.
+ * @param {{ kind: 'find'|'siblings', key?: string, name: string, number?: string|null, size?: number|null }} s
+ * @returns {Promise<object[]>} slimmed JustTCG cards
+ */
+export async function searchTcgplayer(s) {
+  const key = s.key ?? `pokemon:find:en:${fold(s.name)}|${normNumber(s.number ?? '')}|${s.size ?? ''}`;
+  if (searched.has(key)) return searched.get(key);
+  const body = {
+    key, kind: s.kind, game: 'pokemon', name: s.name,
+    ...(s.number ? { number: String(s.number) } : {}),
+    ...(s.size ? { size: Number(s.size) } : {}),
+  };
+  const data = await callFunction('prices', { searches: [body] });
+  const got = data?.searches?.[key];
+  const cards = got?.cards ?? [];
+  for (const card of cards) keepPrices(card, got.fetchedAt ?? null);
+  searched.set(key, cards);
+  return cards;
 }
 
 // ---------------------------------------------------------------- reading a card
@@ -136,6 +195,11 @@ export function resultFor(c, results, { finish, version, versions = [] }) {
       return etched ?? main;
     }
     return results[`mtg:scryfall:${card.id}`];
+  }
+  // A card known only from TCGplayer, or a TCGplayer-only version: its own product.
+  if (c.source === 'justtcg') return results[`pokemon:justtcg:${c.justtcgId}`];
+  if (version?.tcgplayerOnly) {
+    return results[version.tcgplayerId ? `pokemon:tcgplayer:${version.tcgplayerId}` : `pokemon:justtcg:${version.justtcgId}`];
   }
   // The version's own TCGplayer product; failing that, the plain version's of
   // the same finish (a stamped version is a different product, never a stand-in).

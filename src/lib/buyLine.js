@@ -113,13 +113,13 @@ export function buildLine({
     source_set_id: c.setId,
     collector_number: c.number,
     printed_size: c.printedSize ?? pokemonCard?.set?.cardCount?.official ?? null,
-    rarity: pokemonCard?.rarity ?? null,
+    rarity: pokemonCard?.rarity ?? c.rarity ?? null,
     finish: version.finish,
     first_edition: Boolean(version.firstEdition),
     treatments: [...(version.treatments ?? [])].sort(),
     scryfall_id: null,
     oracle_id: null,
-    tcgdex_id: c.tcgdexId,
+    tcgdex_id: c.tcgdexId ?? null,   // none for a card known only from TCGplayer
     tcgplayer_id: version.tcgplayerId ?? null,
   };
 }
