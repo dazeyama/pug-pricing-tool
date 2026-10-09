@@ -9,8 +9,8 @@ import { downloadMassCreate, saveExport } from '../lib/ccExport.js';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import PricingScreen from './price/PricingScreen.jsx';
 import CollectionDetails from './collections/CollectionDetails.jsx';
-import { isClosed, statusLabel } from './collections/status.js';
-import { ConfirmModal, DeleteCollectionModal } from './collections/CollectionModals.jsx';
+import { isClosed, keepsRates, statusLabel } from './collections/status.js';
+import { ConfirmModal, DeleteCollectionModal, RejectModal } from './collections/CollectionModals.jsx';
 import { OfferModal, PaidModal } from './collections/DealModals.jsx';
 import { marketTotal } from './price/BuyList.jsx';
 import { useCollection } from './collections/useCollection.js';
@@ -26,8 +26,9 @@ import { useToast } from '../components/Toast.jsx';
 // collection's list in the sidebar and its details at the sidebar's foot,
 // above the totals (owner, 2026-09-29). Every add and remove saves at once
 // and is logged; there's no CONFIRM BUY, only EXPORT. One computer edits at
-// a time (9.6); Paid/Ours and Completed lock it (9.5). Marking it Priced
-// records the offer, Paid/Ours the price paid (owner, 2026-09-29).
+// a time (9.6); Paid/Ours, Completed and Rejected lock it (9.5). Marking it
+// Priced records the offer, Paid/Ours the price paid (owner, 2026-09-29),
+// Rejected an optional reason (owner, 2026-10-09).
 export default function CollectionPage() {
   const { id } = useParams();
   // A fresh screen per collection: its search, toggles and lock start over.
@@ -48,7 +49,7 @@ function CollectionScreen({ id }) {
   const { values } = useSettings();
   const lock = useCollectionLock(id, { deviceId, userId: user?.id });
   const col = useCollection(id, { deviceId, onLockLost: lock.recheck });
-  // 'offer' | 'paid' | 'reopen' | 'unlock' | 'takeover' | 'delete'
+  // 'offer' | 'paid' | 'reopen' | 'unlock' | 'reject' | 'unreject' | 'takeover' | 'delete'
   const [asking, setAsking] = useState(null);
   const [unlockTo, setUnlockTo] = useState('priced');
   const seen = useRef(false);
@@ -70,13 +71,13 @@ function CollectionScreen({ id }) {
   }, [buy, col.missing]);
 
   // Rates (spec 8.9.1, 9.4): the Paid/Ours snapshot (kept while Completed),
-  // else the collection's custom rates where set, else the Master Buy
-  // Percentages.
+  // or Rejected's (migration 0044), else the collection's custom rates where
+  // set, else the Master Buy Percentages.
   const master = { cash: Number(values.cash_pct), credit: Number(values.credit_pct) };
   const customCash = buy?.custom_cash_pct != null ? Number(buy.custom_cash_pct) : null;
   const customCredit = buy?.custom_credit_pct != null ? Number(buy.custom_credit_pct) : null;
   const closed = Boolean(buy) && isClosed(buy.status);
-  const rates = closed && buy.cash_pct != null
+  const rates = Boolean(buy) && keepsRates(buy.status) && buy.cash_pct != null
     ? { cash: Number(buy.cash_pct), credit: Number(buy.credit_pct), customCash, customCredit }
     : { cash: customCash ?? master.cash, credit: customCredit ?? master.credit, customCash, customCredit };
 
@@ -93,6 +94,7 @@ function CollectionScreen({ id }) {
   // A project stays editable while Paid/Ours (owner, 2026-10-01).
   else if (buy.status === 'paid' && !buy.project) locked = 'Paid/Ours: unlock it to edit';
   else if (buy.status === 'completed') locked = 'Completed: reopen it to edit';
+  else if (buy.status === 'rejected') locked = 'Rejected: reopen it to edit';
   // Cards can still be removed from a Paid/Ours collection, not a Completed
   // one (owner, 2026-09-29); adding and editing stay locked.
   const removeLocked = buy?.status === 'paid' && lock.status === 'held' ? null : locked;
@@ -125,8 +127,9 @@ function CollectionScreen({ id }) {
   /**
    * EXPORT (export spec 8.2). Paid/Ours: the export dialog for its Magic
    * cards, then Completed (only Pokémon cards: Completed with no file, after
-   * asking). Completed: the same file again from the stamps. Processing or
-   * Priced: blocked. Can't upload cards (9.3): a warning, then the dialog.
+   * asking). Completed: the same file again from the stamps. Processing,
+   * Priced or Rejected: blocked. Can't upload cards (9.3): a warning, then
+   * the dialog.
    */
   function startExport() {
     if (buy && !system && buy.status === 'completed') {
@@ -139,6 +142,10 @@ function CollectionScreen({ id }) {
       }
       const rows = downloadMassCreate(stamped, `cc-mass-create-${fileSafe(buy.customer_name)}-${fileStamp(new Date(exportedAt))}.csv`);
       toast(`Downloaded the same file again: ${rows} row${rows === 1 ? '' : 's'}, Custom SKU ${skus.join(', ')}.`, 'ok');
+      return;
+    }
+    if (buy && !system && buy.status === 'rejected') {
+      toast('This collection was Rejected: there is nothing to export.', 'err');
       return;
     }
     if (buy && !system && buy.status !== 'paid') {
@@ -216,12 +223,19 @@ function CollectionScreen({ id }) {
 
   /**
    * Status changes (spec 9.5): Priced asks for the offer, Paid/Ours for the
-   * price paid, Completed and leaving a locked status ask first; only
-   * Priced → Processing just happens.
+   * price paid, Rejected for an optional reason, Completed and leaving a
+   * locked status ask first; only Priced → Processing just happens.
    */
   function changeStatus(next) {
     if (!canChangeStatus || next === buy.status) return;
-    if (next === 'priced' && buy.status === 'processing') setAsking('offer');
+    if (next === 'rejected') {
+      if (buy.status === 'processing' || buy.status === 'priced') setAsking('reject');
+    } else if (buy.status === 'rejected') {
+      // Reopened (owner, 2026-10-09): to Priced, its offer kept, or Processing.
+      if (next !== 'processing' && next !== 'priced') return;
+      setUnlockTo(next);
+      setAsking('unreject');
+    } else if (next === 'priced' && buy.status === 'processing') setAsking('offer');
     else if (next === 'paid' && buy.status === 'completed') setAsking('reopen');
     else if (next === 'paid') setAsking('paid');
     else if (next === 'completed') return;   // only EXPORT completes it (owner, 2026-10-01)
@@ -298,6 +312,10 @@ function CollectionScreen({ id }) {
                 setAsking('unlock');
               }}
               onReopen={() => setAsking('reopen')}
+              onUnreject={() => {
+                setUnlockTo(buy.offer_cash != null ? 'priced' : 'processing');
+                setAsking('unreject');
+              }}
               onInfo={(fields) => col.updateInfo(fields, user?.id)}
               onStatus={changeStatus}
               onDelete={() => setAsking('delete')}
@@ -384,6 +402,38 @@ function CollectionScreen({ id }) {
               <p>
                 It will go back to {statusLabel(unlockTo)} and can be edited. The price paid is cleared
                 {unlockTo === 'priced' ? '; the offer stays' : ''}.
+              </p>
+            </ConfirmModal>
+          )}
+          {asking === 'reject' && (
+            <RejectModal
+              busy={col.busy}
+              onClose={() => {
+                setAsking(null);
+                api.focusSearch();
+              }}
+              onReject={async (reason) => {
+                if (await col.setStatus('rejected', user?.id, master, { reason })) {
+                  setAsking(null);
+                  api.focusSearch();
+                }
+              }}
+            />
+          )}
+          {asking === 'unreject' && (
+            <ConfirmModal
+              title="Reopen this collection?"
+              yes="Reopen"
+              onClose={() => setAsking(null)}
+              onYes={async () => {
+                setAsking(null);
+                await col.setStatus(unlockTo, user?.id, master);
+                api.focusSearch();
+              }}
+            >
+              <p>
+                It will go back to {statusLabel(unlockTo)} and can be edited
+                {unlockTo === 'priced' ? ', its offer kept' : ''}. The reason stays in the Changelog.
               </p>
             </ConfirmModal>
           )}

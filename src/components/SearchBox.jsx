@@ -167,7 +167,8 @@ export default function SearchBox({ wide }) {
     // collection by its kind (System, Projects, Collections).
     const tint = buy ? ` game-${row.game}` : ` kind-${row.collectionKind ?? 'collection'}`;
     // Completed (an exported buy, a Completed collection; Show all only): partly faded (owner, 2026-09-30).
-    const done = buy ? row.completed : row.status === 'completed';
+    // Rejected too (owner, 2026-10-09).
+    const done = buy ? row.completed : row.status === 'completed' || row.status === 'rejected';
     return (
       <button
         key={row.key}
@@ -246,7 +247,7 @@ export default function SearchBox({ wide }) {
                 type="button"
                 className={`scope-toggle${showAll ? ' on' : ''}`}
                 aria-pressed={showAll}
-                title={showAll ? 'Show Paid/Ours only' : 'Also show Processing, Priced and Completed'}
+                title={showAll ? 'Show Paid/Ours only' : 'Also show Processing, Priced, Completed and Rejected'}
                 onMouseDown={(e) => e.preventDefault()}   // keep the typing in the box
                 onClick={() => setShowAll((v) => !v)}
               >

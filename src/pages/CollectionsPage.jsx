@@ -17,7 +17,7 @@ import { useStaff } from '../state/staff.jsx';
 import { useToast } from '../components/Toast.jsx';
 
 const STALE_MS = 60_000;   // a lock without a heartbeat for 60s is stale (spec 9.6)
-const STATUS_ORDER = { processing: 0, priced: 1, paid: 2, completed: 3 };
+const STATUS_ORDER = { processing: 0, priced: 1, paid: 2, completed: 3, rejected: 4 };
 
 // The table's columns (spec 9.1), in order: the value each sorts by and its
 // cell. Offer and Paid come last, after Notes, Paid the very last (owner,

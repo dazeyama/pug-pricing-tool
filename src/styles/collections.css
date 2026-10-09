@@ -98,6 +98,8 @@
 .tone-paid-cash { --tone: var(--cash); }
 .tone-paid-credit { --tone: var(--credit); }
 .tone-completed { --tone: var(--muted); }
+/* Rejected (owner, 2026-10-09): Priced's red, faded toward grey. */
+.tone-rejected { --tone: color-mix(in srgb, var(--bad) 50%, var(--muted)); }
 .tone-paid-walkin { --tone: #d3d8ea; }
 /* "Ours": System and Projects, the store's own cards (owner, 2026-10-01). */
 .tone-ours { --tone: #ffffff; }

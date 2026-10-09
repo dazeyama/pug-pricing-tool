@@ -243,6 +243,51 @@ export function DeleteCollectionModal({ name, count, busy, onDelete, onClose }) 
 }
 
 /** A yes/no question with its own wording (Paid/Ours, Unlock, Take over). */
+/**
+ * Reject (owner, 2026-10-09): the customer said no. An optional reason, kept
+ * on the collection and in the Changelog.
+ */
+export function RejectModal({ busy, onReject, onClose }) {
+  const [reason, setReason] = useState('');
+  const submit = () => {
+    if (!busy) onReject(reason.trim());
+  };
+  return (
+    <Modal
+      title="Reject this collection?"
+      onClose={onClose}
+      footer={(
+        <>
+          <button type="button" className="btn ghost" onClick={onClose}>Cancel</button>
+          <button type="button" className="btn danger" disabled={busy} onClick={submit}>Reject</button>
+        </>
+      )}
+    >
+      <p>
+        It's kept, with its prices and offer, until it's deleted: locked, and left out of the header search
+        (Show all finds it). Reopen takes it back.
+      </p>
+      <label className="field">
+        <span>Reason <em>(optional)</em></span>
+        <input
+          type="text"
+          autoFocus
+          maxLength={200}
+          value={reason}
+          placeholder="Wanted more cash"
+          onChange={(e) => setReason(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              submit();
+            }
+          }}
+        />
+      </label>
+    </Modal>
+  );
+}
+
 export function ConfirmModal({ title, children, yes, danger = false, onYes, onClose }) {
   return (
     <Modal

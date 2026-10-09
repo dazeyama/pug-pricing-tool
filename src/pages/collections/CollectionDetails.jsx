@@ -116,7 +116,7 @@ export function PaidText({ buy, withMethod = false }) {
  */
 export default function CollectionDetails({
   buy, byId, api, canChangeStatus, statusBlocked, deleteBlocked,
-  viewOnly, holder, onTakeOver, onUnlock, onReopen, onInfo, onStatus, onDelete,
+  viewOnly, holder, onTakeOver, onUnlock, onReopen, onUnreject, onInfo, onStatus, onDelete,
 }) {
   const [open, setOpen] = useState(true);
   const toggle = () => setOpen((o) => !o);
@@ -124,13 +124,23 @@ export default function CollectionDetails({
   // A project (owner, 2026-10-01): no phone, ID, offer or price paid, and
   // no status controls; Paid/Ours until EXPORT, Reopen after.
   const project = Boolean(buy.project);
-  const hasBody = open || viewOnly || buy.status === 'paid' || buy.status === 'completed';
+  const hasBody = open || viewOnly || ['paid', 'completed', 'rejected'].includes(buy.status);
   const tone = statusTone(buy);
   const step = {
     processing: { to: 'priced', label: 'Mark as Priced →' },
     priced: { to: 'paid', label: 'Mark as Paid/Ours →' },
     // Paid/Ours → Completed is EXPORT's job (owner, 2026-10-01): no step here.
   }[buy.status] ?? null;
+  // What the dropdown can't pick from here. Completed only comes from EXPORT
+  // (owner, 2026-10-01). Rejected (owner, 2026-10-09): only from Processing
+  // or Priced, and only reopened to one of those (Priced needs its offer).
+  const optionOff = (value) => {
+    if (value === 'completed') return true;
+    if (buy.status === 'rejected') return value === 'paid' || (value === 'priced' && buy.offer_cash == null);
+    if (value === 'rejected') return buy.status !== 'processing' && buy.status !== 'priced';
+    return false;
+  };
+  const reopensTo = buy.offer_cash != null ? 'Priced, its offer kept' : 'Processing';
 
   return (
     <section className={`col-details${open ? ' open' : ''}${hasBody ? ' has-body' : ''}`} aria-label="Collection details">
@@ -221,6 +231,22 @@ export default function CollectionDetails({
               </GuardButton>
             </div>
           )}
+          {buy.status === 'rejected' && (
+            <div className="cd-banner tone-rejected">
+              <span>
+                Rejected{buy.rejected_at && <> {formatShortDate(buy.rejected_at)}</>}
+                {buy.rejected_reason && <>: “{buy.rejected_reason}”</>}. Locked, and left out of search.
+              </span>
+              <GuardButton
+                className="btn small ghost"
+                disabled={!canChangeStatus}
+                title={canChangeStatus ? `Reopen: back to ${reopensTo}` : statusBlocked}
+                onClick={onUnreject}
+              >
+                Reopen
+              </GuardButton>
+            </div>
+          )}
 
           {open && (
             <dl className="cd-fields">
@@ -297,8 +323,7 @@ export default function CollectionDetails({
                   onChange={(e) => onStatus(e.target.value)}
                 >
                   {STATUSES.map((s) => (
-                    // Completed only comes from EXPORT (owner, 2026-10-01).
-                    <option key={s.value} value={s.value} disabled={s.value === 'completed'}>
+                    <option key={s.value} value={s.value} disabled={optionOff(s.value)}>
                       {s.label}
                     </option>
                   ))}

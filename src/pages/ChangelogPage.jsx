@@ -348,7 +348,9 @@ function MoneyText({ text }) {
   return <>{out}</>;
 }
 
-const STATUS_VALUES = { Processing: 'processing', Priced: 'priced', 'Paid/Ours': 'paid', Completed: 'completed' };
+const STATUS_VALUES = {
+  Processing: 'processing', Priced: 'priced', 'Paid/Ours': 'paid', Completed: 'completed', Rejected: 'rejected',
+};
 
 /**
  * A status as the chip it is elsewhere: a collection's Paid/Ours green or blue

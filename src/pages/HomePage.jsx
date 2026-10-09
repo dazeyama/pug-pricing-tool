@@ -98,7 +98,7 @@ function HomeScreen({ today }) {
     .from('buys')
     .select('id, customer_name, status, project, system_key, updated_at, buy_lines(quantity, unit_price, cc_sell_price, priced_at, created_at)')
     .eq('kind', 'collection')
-    .neq('status', 'completed'));
+    .not('status', 'in', '(completed,rejected)'));
   const events = useLiveTable('events', () => supabase
     .from('events')
     .select('seq, at, action, target_name, staff_user_name, staff_user_color, summary')

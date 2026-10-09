@@ -16,6 +16,9 @@ const MESSAGES = {
   not_lock_holder: 'Another computer is editing this collection now. Take over to edit.',
   collection_paid: 'This collection is Paid/Ours: unlock it to add or edit cards.',
   collection_completed: 'This collection is Completed: reopen it to edit.',
+  collection_rejected: 'This collection is Rejected: reopen it to edit.',
+  reject_from: 'Only a Processing or Priced collection can be Rejected.',
+  rejected_reopen: 'A Rejected collection reopens to Processing or Priced.',
   offer_needed: 'Set an offer to mark it Priced.',
   paid_price_needed: 'Set the final purchase price to mark it Paid/Ours.',
   paid_method_needed: 'Choose Cash or Credit to mark it Paid/Ours.',
@@ -158,9 +161,10 @@ export function useCollection(id, { deviceId, onLockLost }) {
   ), [updateInfo]);
 
   /**
-   * Processing / Priced / Paid/Ours / Completed; `master` is the rates the
-   * screen shows. `deal`: the offer for Priced ({ offerCash, offerCredit }),
-   * the final price for Paid/Ours ({ paidPrice, paidMethod }).
+   * Processing / Priced / Paid/Ours / Completed / Rejected; `master` is the
+   * rates the screen shows. `deal`: the offer for Priced ({ offerCash,
+   * offerCredit }), the final price for Paid/Ours ({ paidPrice, paidMethod }),
+   * the optional reason for Rejected ({ reason }).
    */
   const setStatus = useCallback(async (status, userId, master, deal = {}) => {
     const r = await run('collection_set_status', {
@@ -173,6 +177,7 @@ export function useCollection(id, { deviceId, onLockLost }) {
       p_offer_credit: deal.offerCredit ?? null,
       p_paid_price: deal.paidPrice ?? null,
       p_paid_method: deal.paidMethod ?? null,
+      p_reason: deal.reason ?? null,
     }, "Couldn't change the status");
     return r.ok;
   }, [id, run, deviceId]);
