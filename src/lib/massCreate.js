@@ -7,9 +7,13 @@ import { STORE_TZ } from './time.js';
 
 export const COLUMNS = ['Add Qty', 'Product Name', 'Category', 'Condition', 'Language', 'Sell Price', 'Custom SKU'];
 
-/** CC's condition words, exactly as its help page writes them (spec 3.1). */
+/**
+ * CC's condition words, exactly as the store's inventory writes them: CC
+ * matches them letter for letter, and the help page's "Light Play"… didn't
+ * update a thing (owner, 2026-10-09; migration 0046 stamps the same).
+ */
 export const CONDITION_WORDS = {
-  NM: 'Near Mint', LP: 'Light Play', MP: 'Moderate Play', HP: 'Heavy Play', DMG: 'Damaged',
+  NM: 'Near Mint', LP: 'Lightly Played', MP: 'Moderately Played', HP: 'Heavily Played', DMG: 'Damaged',
 };
 const CONDITION_ORDER = Object.values(CONDITION_WORDS);
 

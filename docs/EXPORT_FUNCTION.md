@@ -84,7 +84,7 @@ Source: <https://www.crystalcommerce.com/blog/2020/05/13/update-your-quantity-an
 - `Qty` sets the quantity; **`Add Qty` adds to it**.
 - **Products are matched by Product Name + Category together.** CC's import screen asks for both as the match fields.
 - **"Only Update Products"** updates existing products and creates nothing.
-- **Conditions:** `Near Mint`, `Light Play`, `Moderate Play`, `Heavy Play`, `Damaged`. **Language:** `English` (owner: use the help page's wording exactly).
+- **Conditions:** `Near Mint`, `Lightly Played`, `Moderately Played`, `Heavily Played`, `Damaged`: the store inventory's words, which CC matches exactly (owner, 2026-10-09: the help page's `Light Play`… didn't update anything in a test upload). **Language:** `English` (owner: use the help page's wording exactly).
 - The page says nothing about foil. The inventory shows why: foil is part of the Product Name (Section 3.3).
 
 ### 3.2 The owner's sample Mass Create file
@@ -139,7 +139,7 @@ The 26 distinct Magic printings in dev's buys on 2026-09-30, looked up in the in
 | 1 | `Add Qty` | The number of copies (a positive whole number) |
 | 2 | `Product Name` | The matched CC product's name, **copied exactly from the Master Crystal Inventory**, double spaces and all |
 | 3 | `Category` | The matched product's Category, copied exactly |
-| 4 | `Condition` | `Near Mint`, `Light Play`, `Moderate Play`, `Heavy Play` or `Damaged`, from the line's NM / LP / MP / HP / DMG |
+| 4 | `Condition` | `Near Mint`, `Lightly Played`, `Moderately Played`, `Heavily Played` or `Damaged`, from the line's NM / LP / MP / HP / DMG |
 | 5 | `Language` | `English`, always |
 | 6 | `Sell Price` | **The card's Sell Price** (Section 5): today's full market price for its condition, worked out as at the buy, rounded up, at least $0.40 |
 | 7 | `Custom SKU` | **The export's code** (Section 4.4): the export's date as a number, `61726` for 06/17/26, the same on every row. **It must always be the last column** (owner's decision) |
@@ -720,7 +720,7 @@ Each phase ends with the owner checking it on `localhost`. Apply migrations to *
 - *The Can't upload collection arrives in E4; until then can't-upload lines are stamped and chipped but not copied anywhere. Don't do real uploads with E3's file until the test upload (Appendix D #1) has worked.*
 
 **Where to look**
-- [ ] Export a past Magic day: the file downloads; open it in a text editor. The header is `Add Qty,Product Name,Category,Condition,Language,Sell Price,Custom SKU`; names and categories are exactly the inventory's; conditions read `Near Mint`, `Light Play`…; same-product rows are merged.
+- [ ] Export a past Magic day: the file downloads; open it in a text editor. The header is `Add Qty,Product Name,Category,Condition,Language,Sell Price,Custom SKU`; names and categories are exactly the inventory's; conditions read `Near Mint`, `Lightly Played`…; same-product rows are merged.
 - [ ] Set one card to "None of these": the red pull-out list appears and Export waits for the checkbox; afterwards that card is not in the file, and its row on the day page has a **Can't upload** chip.
 - [ ] Sell Prices in the file: a $1.01 card reads `1.25`, a $0.12 card `0.40`, a $10.01 card `11.00`; a manual-priced card shows the higher of its manual price and today's price, rounded up.
 - [ ] After the export the day page shows each card's Sell price ("Sell" on the price, the buy price in its tooltip).
@@ -828,7 +828,7 @@ Categories with no rule yet (from Section 3.3's 138 unmatched): `Mystery Booster
 | E1 | What EXPORT makes | A CSV for CC's **Mass Create**, in **"Only Update Products"** mode (owner, 2026-09-30) |
 | E2 | Columns | `Add Qty, Product Name, Category, Condition, Language, Sell Price` as in the owner's sample, plus **`Custom SKU` as the last column** (its date comes later) |
 | E3 | Quantity | **Add Qty**, adding to stock |
-| E4 | Wording | Conditions and language exactly as CC's help page: Near Mint, Light Play, Moderate Play, Heavy Play, Damaged; English |
+| E4 | Wording | Conditions exactly as the store's inventory: Near Mint, Lightly Played, Moderately Played, Heavily Played, Damaged (2026-10-09; the help page's Light Play… didn't match); language English |
 | E5 | Language | Always English; the store doesn't buy Japanese Magic |
 | E6 | Games | **Magic only.** Pokémon EXPORT greyed out on the Calendar side; maybe later, maybe another function |
 | E7 | Matching | Our Scryfall data is matched to the store's own CC inventory: sets to categories, and finishes and treatments to CC's suffixes in CC's exact order; **names always copied from the inventory** |

@@ -75,7 +75,7 @@ const stamped = (over) => ({
 test('rows: same product, condition and price merge; sorted; can\'t-upload left out', () => {
   const rows = massCreateRows([
     stamped({}), stamped({ quantity: 2 }),
-    stamped({ cc_condition: 'Light Play' }),
+    stamped({ cc_condition: 'Lightly Played' }),
     stamped({ cc_sell_price: 13 }),
     stamped({ cc_product_name: 'Ashnod\'s Altar', cc_category: 'Antiquities' }),
     stamped({ cc_status: 'cant_upload' }),
@@ -84,7 +84,7 @@ test('rows: same product, condition and price merge; sorted; can\'t-upload left 
     ['Antiquities', 'Ashnod\'s Altar', 'Near Mint', '12.00', 1],
     ['Mercadian Masques', 'Snuff Out', 'Near Mint', '12.00', 3],
     ['Mercadian Masques', 'Snuff Out', 'Near Mint', '13.00', 1],
-    ['Mercadian Masques', 'Snuff Out', 'Light Play', '12.00', 1],
+    ['Mercadian Masques', 'Snuff Out', 'Lightly Played', '12.00', 1],
   ]);
 });
 
