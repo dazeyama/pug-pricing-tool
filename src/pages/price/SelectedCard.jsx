@@ -197,7 +197,7 @@ export default function SelectedCard({ candidate: c, typedName, englishName, pok
             <span className="info-set-name">{c.setName}</span> <span className="info-code">({c.setCode})</span>
           </p>
           <p className="info-number">
-            #{c.number}{size ? ` / ${size}` : ''}
+            {/^No\./.test(c.number ?? '') ? c.number : `#${c.number}`}{size ? ` / ${size}` : ''}
             {rarity && <span className="info-rarity"> · {rarity}</span>}
           </p>
           <p className="info-tags">

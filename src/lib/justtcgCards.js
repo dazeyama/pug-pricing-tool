@@ -14,6 +14,39 @@ const lower = (s) => String(s ?? '').toLowerCase();
 /** Letters and digits only, for comparing names. */
 export const fold = (s) => lower(s).normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
 
+/**
+ * JustTCG's Japanese sets that TCGdex has too, as its ten oldest (owner,
+ * 2026-10-10): a "No." search drops a JustTCG card TCGdex already found there.
+ */
+export const TCGDEX_SET_FOR = {
+  'expansion-pack-pokemon-japan': 'pmcg1',
+  'expansion-pack-no-rarity-pokemon-japan': 'pmcg1',
+  'pokemon-jungle-pokemon-japan': 'pmcg2',
+  'mystery-of-the-fossils-pokemon-japan': 'pmcg3',
+  'rocket-gang-pokemon-japan': 'pmcg4',
+  'leaders-stadium-pokemon-japan': 'pmcg5',
+  'challenge-from-the-darkness-pokemon-japan': 'pmcg6',
+  'gold-silver-to-a-new-world-pokemon-japan': 'neo1',
+  'crossing-the-ruins-pokemon-japan': 'neo2',
+  'awakening-legends-pokemon-japan': 'neo3',
+  'darkness-and-to-light-pokemon-japan': 'neo4',
+};
+
+/**
+ * The "No." search's TCGplayer cards worth adding (owner, 2026-10-10): every
+ * one, less those TCGdex already found, the same English name in the same set
+ * (TCGDEX_SET_FOR), so a plain Starmie from the first set shows once.
+ * @param {object[]} cards  slimmed JustTCG cards from a 'dex' search
+ * @param {{ setId: string, name: string|null }[]} found  TCGdex's cards: set ID and English name
+ */
+export function noNumberCards(cards, found) {
+  const have = new Set(found.filter((f) => f.name).map((f) => `${lower(f.setId)}|${fold(f.name)}`));
+  return (cards ?? []).filter((c) => {
+    const set = TCGDEX_SET_FOR[c.set];
+    return !(set && have.has(`${set}|${fold(splitName(c.name).name)}`));
+  });
+}
+
 /** A JustTCG card's own id: the one its prices are looked up by. */
 export const cardId = (card) => String(card?.uuid ?? card?.id ?? '');
 
@@ -51,10 +84,12 @@ export function printingFinish(printing) {
   };
 }
 
-/** A card's English printings, in the order JustTCG lists them. */
-function printingsOf(card) {
-  const english = (card?.variants ?? []).filter((v) => !v.language || lower(v.language) === 'english');
-  return [...new Set(english.map((v) => v.printing).filter(Boolean))];
+/** A card's printings in one language (English, or Japanese for a Japanese card), in the order JustTCG lists them. */
+function printingsOf(card, lang = 'en') {
+  const mine = (card?.variants ?? []).filter((v) => (lang === 'ja'
+    ? lower(v.language) === 'japanese'
+    : !v.language || lower(v.language) === 'english'));
+  return [...new Set(mine.map((v) => v.printing).filter(Boolean))];
 }
 
 /**
@@ -64,8 +99,8 @@ function printingsOf(card) {
  * ("Cosmos Holo", "30th Celebration") is kept as a `variant:` treatment so the
  * buy line says it. `tcgplayerOnly` marks them as TCGplayer's, not TCGdex's.
  */
-export function justtcgVersions(card, suffix = '') {
-  const printings = printingsOf(card);
+export function justtcgVersions(card, suffix = '', lang = 'en') {
+  const printings = printingsOf(card, lang);
   const list = printings.length ? printings : ['Normal'];
   const hasFirst = list.some((p) => printingFinish(p).firstEdition);
   const seen = new Set();
@@ -185,11 +220,14 @@ export function guessSetCode(setName) {
  * A JustTCG card as a search result (spec 8.3's Candidate), for a card TCGdex
  * doesn't have. Its picture comes from TCGplayer (pokemonImages.js).
  * @param {object} card  a slimmed JustTCG card
- * @param {{ lang?: 'en'|'ja', setCode: string }} opts
+ * @param {{ lang?: 'en'|'ja', setCode: string, number?: string|null }} opts  number: shown instead of
+ *   JustTCG's ("No. 121" for an unnumbered old Japanese card)
  */
-export function justtcgCandidate(card, { lang = 'en', setCode }) {
+export function justtcgCandidate(card, { lang = 'en', setCode, number: shown = null }) {
   const { name, suffix } = splitName(card.name);
-  const { number, size } = splitNumber(card.number);
+  const split = splitNumber(card.number);
+  // An unnumbered old Japanese card goes by its Pokédex number ("No. 121").
+  const { number, size } = shown ? { number: shown, size: null } : split;
   const id = cardId(card);
   return {
     key: `pokemon:${lang}:jt:${id}`,

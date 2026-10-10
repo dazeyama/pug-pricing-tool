@@ -103,7 +103,7 @@ export function Thumb({ c, highlighted, selected, onPick, onSearchName }) {
           name, and Scryfall's rules keep overlays off the bottom strip. */}
       <span className="thumb-label">
         <GameBadge game={c.game} />
-        <span className="thumb-label-text">{c.setCode} #{c.number}</span>
+        <span className="thumb-label-text">{c.setCode} {/^No\./.test(c.number ?? '') ? c.number : `#${c.number}`}</span>
       </span>
     </button>
   );

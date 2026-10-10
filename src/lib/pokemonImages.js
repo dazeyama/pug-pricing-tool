@@ -167,6 +167,14 @@ const resolved = memoryCache(DAY);
  */
 export function fallbackImages(c) {
   return resolved.get(c.key, async () => {
+    // Known only from TCGplayer (owner, 2026-10-09; Japanese "No." cards
+    // 2026-10-10): its product picture.
+    if (c.source === 'justtcg') {
+      const thumb = c.tcgplayerId && `${TCGPLAYER_IMAGES}/${c.tcgplayerId}_200w.jpg`;
+      return thumb && await isCardImage(thumb)
+        ? { thumb, image: `${TCGPLAYER_IMAGES}/${c.tcgplayerId}_in_1000x1000.jpg`, source: 'TCGplayer' }
+        : null;
+    }
     if (c.lang === 'ja') {
       // The oldest sets: Pokellector's pictures, by TCGdex number ("005" → 5).
       const path = (await loadPokellector())[c.setId]?.[String(Number(c.number))];
@@ -182,14 +190,6 @@ export function fallbackImages(c) {
         : null;
     }
     if (c.lang !== 'en') return null;
-
-    // Known only from TCGplayer (owner, 2026-10-09): its product picture.
-    if (c.source === 'justtcg') {
-      const thumb = c.tcgplayerId && `${TCGPLAYER_IMAGES}/${c.tcgplayerId}_200w.jpg`;
-      return thumb && await isCardImage(thumb)
-        ? { thumb, image: `${TCGPLAYER_IMAGES}/${c.tcgplayerId}_in_1000x1000.jpg`, source: 'TCGplayer' }
-        : null;
-    }
 
     try {
       const sets = await loadPtcgSets();

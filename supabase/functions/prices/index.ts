@@ -14,13 +14,18 @@
 //   key    = the source key, also the price_map key:
 //            mtg:scryfall:<id>, mtg:etched:<tcgplayer id>, pokemon:tcgplayer:<id>,
 //            pokemon:justtcg:<JustTCG card id>, pokemon:<lang>:<tcgdex id> (search)
-//   Search = { key, kind: 'find'|'siblings', game: 'pokemon', name, number?, size? }
+//   Search = { key, kind: 'find'|'siblings'|'dex', game: 'pokemon', name, number?, size? }
 //            (owner, 2026-10-09: Pokémon cards TCGdex lacks). Every English
 //            JustTCG card (TCGplayer's catalogue) for a name and number:
 //            find   = the cards whose names contain the name (a search TCGdex
 //                     found nothing for: new promos, missing sets);
 //            siblings = the products sharing a TCGdex card's name and number
-//                     (Cosmos Holo, stamped and other TCGplayer-only versions).
+//                     (Cosmos Holo, stamped and other TCGplayer-only versions);
+//            dex    = a Japanese "No. 121" search (owner, 2026-10-10): the
+//                     Japanese cards from the sets that print the Pokédex number
+//                     instead of a collector number (NO_NUMBER_SETS), whose names
+//                     end in the species ("Misty's Starmie", "Dark Quilava"):
+//                     `name` is the species' English name.
 //            Kept in price_cache as search:<key>, like a price (a miss a day),
 //            and each card found cached under its own lookup keys, so pricing
 //            one costs no more requests.
@@ -70,9 +75,52 @@ type Lookup = {
   pattern?: string;   // "Poke Ball Pattern", "Master Ball Pattern"
 };
 type Search = {
-  key: string; kind: 'find' | 'siblings'; game: 'pokemon';
+  key: string; kind: 'find' | 'siblings' | 'dex'; game: 'pokemon';
   name: string; number?: string; size?: number;
 };
+// The Japanese sets that print "No. 121" (the Pokédex number) where later cards
+// print a collector number: 1996 until the e-series (December 2001), and the
+// unnumbered promos of those years (checked 2026-10-10: Pokémon VS, Web and the
+// P and J promos are numbered; Battle Road and Gym Challenge are 2003 and later).
+// A "No." search only ever shows cards from these, so newer cards of the same
+// Pokémon never crowd it.
+const NO_NUMBER_SETS = new Set([
+  'expansion-pack-pokemon-japan',
+  'expansion-pack-no-rarity-pokemon-japan',
+  'pokemon-jungle-pokemon-japan',
+  'mystery-of-the-fossils-pokemon-japan',
+  'rocket-gang-pokemon-japan',
+  'leaders-stadium-pokemon-japan',
+  'challenge-from-the-darkness-pokemon-japan',
+  'city-gym-decks-pokemon-japan',
+  'quick-starter-gift-set-green-deck-pokemon-japan',
+  'quick-starter-gift-set-red-deck-pokemon-japan',
+  'intro-pack-bulbasaur-pokemon-japan',
+  'intro-pack-squirtle-pokemon-japan',
+  'southern-island-pokemon-japan',
+  'neo-premium-file-1-pokemon-japan',
+  'neo-premium-file-2-pokemon-japan',
+  'neo-premium-file-3-pokemon-japan',
+  'gold-silver-to-a-new-world-pokemon-japan',
+  'crossing-the-ruins-pokemon-japan',
+  'awakening-legends-pokemon-japan',
+  'darkness-and-to-light-pokemon-japan',
+  'intro-pack-neo-chikorita-pokemon-japan',
+  'intro-pack-neo-totodile-pokemon-japan',
+  'vending-machine-cards-series-1-blue-pokemon-japan',
+  'vending-machine-cards-series-2-red-pokemon-japan',
+  'vending-machine-cards-series-3-green-pokemon-japan',
+  'corocoro-promotional-cards-pokemon-japan',
+  'unnumbered-promotional-cards-pokemon-japan',
+  'world-hobby-fair-pokemon-japan',
+  'champion-road-pokemon-japan',
+  'pokemon-card-fan-club-pokemon-japan',
+  'pokemon-card-information-promotional-cards-pokemon-japan',
+  'how-i-became-a-pokemon-card-pokemon-japan',
+  '64-mario-stadium-best-photo-contest-pokemon-japan',
+]);
+/** "Lt. Surge's Pikachu (LV.15)" → "Lt. Surge's Pikachu": the name without JustTCG's number or bracketed notes. */
+const plainName = (n: unknown) => baseName(n).replace(/\s*\([^()]*\)\s*$/, '');
 const SEARCH_MISS_MS = 86400_000;   // a search that found nothing is asked again after a day
 const SEARCHES_MAX = 3;
 
@@ -136,7 +184,7 @@ Deno.serve(async (req) => {
     const body = await req.json();
     lookups = (body?.lookups ?? []).filter((l: Lookup) => l?.key && GAMES[l.game]);
     cardSearches = (body?.searches ?? []).filter((s: Search) => s?.key && s.game === 'pokemon'
-      && (s.kind === 'find' || s.kind === 'siblings') && String(s.name ?? '').trim().length >= 2);
+      && (s.kind === 'find' || s.kind === 'siblings' || s.kind === 'dex') && String(s.name ?? '').trim().length >= 2);
     if (body?.fresh === true) maxAge = EXPORT_FRESH_MS;
   } catch {
     return json({ error: 'Expected { lookups: [...] }', code: 'BAD_REQUEST' }, 400);
@@ -370,6 +418,34 @@ Deno.serve(async (req) => {
           continue;
         }
         const want = fold(s.name);
+        if (s.kind === 'dex') {
+          // Unnumbered Japanese cards with the species' name, a page at a time
+          // (most species fit one; three at most), kept from the "No." sets only.
+          const log: string[] = [];
+          const cards: any[] = [];
+          for (let page = 0; page < 3; page++) {
+            const params = new URLSearchParams({
+              game: 'pokemon-japan', q: s.name, number: 'N/A', limit: '20', offset: String(page * 20),
+            });
+            const res = await call(key, `/cards?${params}`);
+            const all: any[] = res?.data ?? [];
+            const kept = all.filter((c: any) => NO_NUMBER_SETS.has(c.set) && fold(plainName(c.name)).endsWith(want)
+              && (c.variants ?? []).some((v: any) => String(v.language ?? '').toLowerCase() === 'japanese'));
+            cards.push(...kept);
+            log.push(`page ${page + 1}: ${all.length} back, ${kept.length} kept`);
+            if (!res?.meta?.hasMore) break;
+          }
+          if (!cards.length) console.log(`prices: no "No." cards for ${s.key} (q="${s.name}"): ${log.join(' | ')}`);
+          const slimmed = cards.map(slim);
+          searchOut[s.key] = { cards: slimmed, fetchedAt };
+          cacheRows.push({ key: `search:${s.key}`, game: s.game, payload: { cards: slimmed }, fetched_at: fetchedAt });
+          for (const c of slimmed) {
+            const id = cardKey(c);
+            cacheRows.push({ key: id, game: s.game, payload: c, fetched_at: fetchedAt });
+            mapRows.push({ source_key: `pokemon:justtcg:${id}`, justtcg_card_id: id, resolved_at: fetchedAt });
+          }
+          continue;
+        }
         const num = s.number ? normNumber(s.number) : null;
         const english = (c: any) => !(c.variants ?? []).length
           || c.variants.some((v: any) => !v.language || String(v.language).toLowerCase() === 'english');

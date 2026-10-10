@@ -10,7 +10,8 @@ import {
   parseQuery, withoutGuessedSetCode, wholeNameReading, numericSize, numberPrefix, sameNumber, dexNumberQuery,
 } from './query.js';
 import { searchTcgplayer } from './prices.js';
-import { fold, guessSetCode, justtcgCandidate, plainSetName } from './justtcgCards.js';
+import { fold, guessSetCode, justtcgCandidate, noNumberCards, plainSetName } from './justtcgCards.js';
+import { englishPokemonName } from './pokemonNames.js';
 
 /** First page of each source; beyond this, "refine your search". */
 export const PAGE = 175;
@@ -148,6 +149,40 @@ async function tcgplayerCandidates(q, size, signal) {
 }
 
 /**
+ * A Japanese "No. 121" search's cards TCGdex lacks (owner, 2026-10-10): a
+ * trainer's Pokémon or a Dark one ("Misty's Starmie", "Dark Quilava"), and
+ * cards from decks and promos TCGdex doesn't list, all from the sets that
+ * print the Pokédex number (the server keeps only those). Asked once the
+ * search has stayed put a moment; one JustTCG request for most Pokémon. A
+ * failure is just no extra cards.
+ * @param {string} dexNo
+ * @param {{ b: object, setId: string }[]} rows  what TCGdex found
+ */
+async function noNumberCandidates(dexNo, rows, signal) {
+  await sleep(600, signal);
+  let names;
+  try {
+    names = (await import('./pokemonNames.json')).default;
+  } catch {
+    return [];
+  }
+  const species = names[Number(dexNo) - 1];
+  if (!species) return [];
+  let cards;
+  try {
+    cards = await searchTcgplayer({ kind: 'dex', key: `pokemon:dex:ja:${Number(dexNo)}`, name: species });
+  } catch (e) {
+    console.warn('"No." search on TCGplayer failed', e);
+    return [];
+  }
+  if (signal.aborted) throw new DOMException('Superseded', 'AbortError');
+  const found = rows.map((r) => ({ setId: r.setId, name: englishPokemonName({ name: r.b.name, dexId: [Number(dexNo)] }, names) }));
+  return noNumberCards(cards, found).map((card) => justtcgCandidate(card, {
+    lang: 'ja', setCode: guessSetCode(card.set_name), number: `No. ${Number(dexNo)}`,
+  }));
+}
+
+/**
  * @param {{ tcgplayer?: boolean, tcgplayerOnly?: boolean }} [opts]
  *   tcgplayer: ask TCGplayer when TCGdex finds nothing (off while another
  *   reading of the line is still to be tried); tcgplayerOnly: only that.
@@ -226,6 +261,11 @@ async function pokemonCandidates(lang, q, signal, { tcgplayer = true, tcgplayerO
       tcgdexId: b.id,
     };
   });
+  // "No. 121": the same Pokémon's other old cards, from TCGplayer (owner, 2026-10-10).
+  if (lang === 'ja' && q.dexNo) {
+    const extra = await noNumberCandidates(q.dexNo, rows, signal);
+    return { list: [...list, ...extra], total: total + extra.length, hasMore: total > PAGE };
+  }
   return { list, total, hasMore: total > PAGE };
 }
 

@@ -76,6 +76,8 @@ const lineKey = (line) => (line.game === 'mtg' ? `mtg:${line.scryfall_id}`
 function editQuery(line) {
   const size = line.printed_size ? `/${line.printed_size}` : '';
   if (line.game === 'mtg') return `${line.name} ${line.collector_number} ${line.set_code}`;
+  // An unnumbered old Japanese card found through TCGplayer: its "No." search again.
+  if (line.lang === 'ja' && /^No\./.test(line.collector_number ?? '')) return line.collector_number;
   if (line.lang === 'ja') return `${line.collector_number}${size} ${line.set_code}`;
   // From TCGplayer: its set code may be one TCGdex doesn't know; name and number find it.
   if (!line.tcgdex_id) return `${line.name} ${line.collector_number}${size}`;
@@ -158,7 +160,7 @@ export default function PricingScreen({
   // number (Cosmos Holo, stamped…; owner, 2026-10-09).
   const tcgSiblings = usePokemonSiblings(selected, pokemon);
   const ownVersions = selected?.game !== 'pokemon' ? []
-    : selected.source === 'justtcg' ? justtcgVersions(selected.justtcg, selected.suffix) : pokemonVersions(pokemon.card);
+    : selected.source === 'justtcg' ? justtcgVersions(selected.justtcg, selected.suffix, selected.lang) : pokemonVersions(pokemon.card);
   const versions = tcgSiblings.cards?.length
     ? [...ownVersions, ...siblingVersions(tcgSiblings.cards, selected, ownVersions)]
     : ownVersions;

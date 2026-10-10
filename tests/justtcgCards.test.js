@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   splitName, splitNumber, printingFinish, justtcgVersions, siblingVersions, guessSetCode, plainSetName,
-  justtcgCandidate, lineVersion, isTcgplayerOnlyLine,
+  justtcgCandidate, lineVersion, isTcgplayerOnlyLine, noNumberCards,
 } from '../src/lib/justtcgCards.js';
 import { lineText } from '../src/lib/lineFormat.js';
 
@@ -116,4 +116,33 @@ test('the buy line names the TCGplayer version', () => {
     lang: 'en', treatments: ['variant:Cosmos Holo'],
   };
   assert.equal(lineText(line), '1 Gengar (BKT) 60 *H* [Cosmos Holo]');
+});
+
+test('"No." search: TCGplayer cards TCGdex already found (same set, same name) go; the rest stay', () => {
+  const cards = [
+    { name: 'Starmie', set: 'expansion-pack-pokemon-japan', variants: [] },
+    { name: 'Starmie', set: 'expansion-pack-no-rarity-pokemon-japan', variants: [] },
+    { name: "Misty's Starmie", set: 'city-gym-decks-pokemon-japan', variants: [] },
+    { name: 'Starmie', set: 'awakening-legends-pokemon-japan', variants: [] },
+  ];
+  const found = [{ setId: 'PMCG1', name: 'Starmie' }, { setId: 'neo3', name: 'Starmie' }];
+  assert.deepEqual(noNumberCards(cards, found).map((c) => `${c.name} | ${c.set}`), ["Misty's Starmie | city-gym-decks-pokemon-japan"]);
+  assert.equal(noNumberCards(cards, []).length, 4);
+});
+
+test('a Japanese JustTCG card: Japanese versions, shown by its "No."', () => {
+  const card = {
+    uuid: 'jt-1', name: "Misty's Starmie", set: 'city-gym-decks-pokemon-japan', set_name: 'City Gym Decks', number: 'N/A',
+    tcgplayerId: 614814,
+    variants: [
+      { condition: 'Near Mint', printing: 'Holofoil', language: 'Japanese', price: 8.67 },
+      { condition: 'Near Mint', printing: 'Holofoil', language: 'English', price: 1 },
+    ],
+  };
+  const v = justtcgVersions(card, '', 'ja');
+  assert.deepEqual(v.map((x) => x.finish), ['holo']);
+  assert.equal(justtcgVersions({ ...card, variants: card.variants.slice(0, 1) }, '').length, 1, 'English: one plain version when none');
+  const c = justtcgCandidate(card, { lang: 'ja', setCode: 'CGD', number: 'No. 121' });
+  assert.equal(c.number, 'No. 121');
+  assert.equal(c.key, 'pokemon:ja:jt:jt-1');
 });
