@@ -3,8 +3,9 @@
 // the chosen finish. The lookups themselves run in the `prices` Edge Function.
 //
 // JustTCG names, confirmed from its documentation (2026-09-29):
-// - Games: `magic-the-gathering`, `pokemon`. Japanese Pokémon is not its own
-//   game any more: its prices are variants with `language: "Japanese"`.
+// - Games: `magic-the-gathering`, `pokemon`, and `pokemon-japan` for Japanese
+//   Pokémon (2026-10-10: `pokemon` no longer lists Japanese prices). Japanese
+//   cards' variants carry `language: "Japanese"`.
 // - Conditions: "Near Mint", "Lightly Played", "Moderately Played",
 //   "Heavily Played", "Damaged".
 // - Printings: "Normal" and "Foil" (Magic); "Normal", "Holofoil",

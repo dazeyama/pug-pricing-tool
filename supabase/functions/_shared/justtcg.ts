@@ -2,8 +2,9 @@
 // the key. Facts from its docs, checked 2026-09-29 (justtcg.com/docs and
 // swagger.json v1.1.0):
 // - Base https://api.justtcg.com/v1, header x-api-key.
-// - Games: magic-the-gathering, pokemon (Japanese is a *language* inside
-//   pokemon now, not a separate "pokemon-japan" game).
+// - Games: magic-the-gathering, pokemon, pokemon-japan (checked 2026-10-10:
+//   Japanese cards are their own game again; `pokemon` with
+//   language=Japanese finds only English sets, with no Japanese listings).
 // - POST /v1/cards takes up to 100 items on Starter/Pro (200 on Enterprise).
 // - Every response carries _metadata: apiPlan, apiRequestLimit,
 //   apiRequestsUsed, apiRequestsRemaining, apiDailyLimit,

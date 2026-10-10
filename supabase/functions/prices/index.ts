@@ -35,6 +35,27 @@ const FRESH_MS = 6 * 3600_000;          // price_cache freshness
 const EXPORT_FRESH_MS = 12 * 3600_000; // with fresh: true (an export's Sell Prices; owner, 2026-10-01)
 const RETRY_UNMATCHED_MS = 7 * 86400_000; // price_map "no match" is retried after this
 const GAMES = { mtg: 'magic-the-gathering', pokemon: 'pokemon' } as const;
+// Japanese Pokémon is its own JustTCG game, `pokemon-japan` (checked
+// 2026-10-10: `pokemon` with language=Japanese now returns only English sets,
+// with no Japanese listings, so every Japanese search came back empty). Its
+// cards' variants carry `language: "Japanese"`.
+const gameFor = (l: { game: 'mtg' | 'pokemon'; lang?: string }) =>
+  (l.game === 'pokemon' && l.lang === 'ja' ? 'pokemon-japan' : GAMES[l.game]);
+// The ten oldest Japanese sets (1996–2001) print no collector numbers, and
+// JustTCG lists their cards as "N/A": they're matched by name within their
+// JustTCG set instead (TCGdex set → JustTCG set, checked 2026-10-10).
+const OLD_JA_SETS: Record<string, string> = {
+  pmcg1: 'expansion-pack-pokemon-japan',
+  pmcg2: 'pokemon-jungle-pokemon-japan',
+  pmcg3: 'mystery-of-the-fossils-pokemon-japan',
+  pmcg4: 'rocket-gang-pokemon-japan',
+  pmcg5: 'leaders-stadium-pokemon-japan',
+  pmcg6: 'challenge-from-the-darkness-pokemon-japan',
+  neo1: 'gold-silver-to-a-new-world-pokemon-japan',
+  neo2: 'crossing-the-ruins-pokemon-japan',
+  neo3: 'awakening-legends-pokemon-japan',
+  neo4: 'darkness-and-to-light-pokemon-japan',
+};
 
 type Lookup = {
   key: string; game: 'mtg' | 'pokemon'; lang: 'en' | 'ja';
@@ -89,6 +110,8 @@ const justtcgNumber = (n: string, size?: number) =>
     : null;
 const normNumber = (n: unknown) => String(n ?? '').trim().toLowerCase().split('/')[0]
   .replace(/^([a-z]*-?)0+(?=\d)/, '$1');
+/** "Mega Starmie ex - 021/088" → "Mega Starmie ex": JustTCG adds the number to some names. */
+const baseName = (n: unknown) => String(n ?? '').replace(/\s+-\s+\S+\/\S+$/, '');
 
 /** The next 00:00 UTC, when the daily allowance resets. */
 function nextUtcMidnight(): string {
@@ -169,7 +192,8 @@ Deno.serve(async (req) => {
     const setIds = new Map<string, string | null>();
     const justtcgSet = async (l: Lookup, log: string[]): Promise<string | null> => {
       const code = l.setCode!.toLowerCase();
-      const mapKey = `${l.game}:set:${code}`;
+      const game = gameFor(l);
+      const mapKey = `${game}:set:${code}`;
       if (setIds.has(mapKey)) return setIds.get(mapKey)!;
       const { data: row } = await db.from('price_map').select('*').eq('source_key', mapKey).maybeSingle();
       if (row && (row.justtcg_card_id || now - Date.parse(row.resolved_at) < RETRY_UNMATCHED_MS)) {
@@ -177,7 +201,7 @@ Deno.serve(async (req) => {
         log.push(`set ${code}: remembered ${row.justtcg_card_id ?? 'none'}`);
         return row.justtcg_card_id;
       }
-      const res = await call(key, `/sets?${new URLSearchParams({ game: GAMES[l.game], q: l.setCode! })}`);
+      const res = await call(key, `/sets?${new URLSearchParams({ game, q: l.setCode! })}`);
       const sets: any[] = res?.data ?? [];
       const hits = sets.filter((s: any) => words(s.name).includes(code) || words(s.id).includes(code));
       const id = hits.length === 1 ? hits[0].id : null;
@@ -226,8 +250,7 @@ Deno.serve(async (req) => {
     //    c) the name alone.
     //    What each step got back is logged when nothing (or several) match.
     const search = async (l: Lookup, extra: Record<string, string>, log: string[], label: string) => {
-      const params = new URLSearchParams({ game: GAMES[l.game], q: l.name!, limit: '20', ...extra });
-      if (l.lang === 'ja') params.set('language', 'Japanese');
+      const params = new URLSearchParams({ game: gameFor(l), q: l.name!, limit: '20', ...extra });
       const res = await call(key, `/cards?${params}`);
       const all: any[] = res?.data ?? [];
       const numbered = all.filter((c: any) => normNumber(c.number) === normNumber(l.number));
@@ -263,15 +286,27 @@ Deno.serve(async (req) => {
           log.push(`${label}: failed (${(e as Error).message})`);
         }
       };
-      const printed = justtcgNumber(l.number!, l.size);
-      if (printed) await attempt(`number ${printed}`, () => search(l, { number: printed }, log, `number ${printed}`));
-      if (l.setCode) {
-        await attempt(`set ${l.setCode}`, async () => {
-          const set = await justtcgSet(l, log);
-          return set ? search(l, { set }, log, `set ${set}`) : [];
+      const oldSet = l.lang === 'ja' && l.setCode ? OLD_JA_SETS[l.setCode.toLowerCase()] : undefined;
+      if (oldSet) {
+        // An unnumbered old set: the card with exactly this name in its set.
+        await attempt(`set ${oldSet}`, async () => {
+          const params = new URLSearchParams({ game: 'pokemon-japan', q: l.name!, set: oldSet, limit: '20' });
+          const all: any[] = (await call(key, `/cards?${params}`))?.data ?? [];
+          log.push(`set ${oldSet}: ${all.length} back [${all.slice(0, 8).map((c: any) => c.name).join('; ')}]`);
+          const want = fold(l.name);
+          return all.filter((c: any) => fold(baseName(c.name)) === want && (c.variants ?? []).length);
         });
+      } else {
+        const printed = justtcgNumber(l.number!, l.size);
+        if (printed) await attempt(`number ${printed}`, () => search(l, { number: printed }, log, `number ${printed}`));
+        if (l.setCode) {
+          await attempt(`set ${l.setCode}`, async () => {
+            const set = await justtcgSet(l, log);
+            return set ? search(l, { set }, log, `set ${set}`) : [];
+          });
+        }
+        await attempt('name only', () => search(l, {}, log, 'name only'));
       }
-      await attempt('name only', () => search(l, {}, log, 'name only'));
       // Several with that name and number (other sets): the one whose set
       // name or ID has the card's set code as a word, if exactly one does
       // (owner, 2026-09-29). TCGplayer names Japanese sets "SV2a: …".
@@ -279,6 +314,14 @@ Deno.serve(async (req) => {
         const code = l.setCode.toLowerCase();
         const inSet = cards.filter((c: any) => words(c.set_name).includes(code) || words(c.set).includes(code));
         if (inSet.length === 1) cards = inSet;
+      }
+      // Several still: the one named exactly as asked, if just one is. A
+      // Japanese card's Poké Ball and Master Ball Pattern versions share its
+      // number and set ("Starmie (Poke Ball Pattern)"; 2026-10-10).
+      if (cards.length > 1) {
+        const want = fold(l.name);
+        const exact = cards.filter((c: any) => fold(baseName(c.name)) === want);
+        if (exact.length === 1) cards = exact;
       }
       if (cards.length !== 1) {
         // Why not, for the function's logs (Supabase dashboard → Edge Functions → prices → Logs).
