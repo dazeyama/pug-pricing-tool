@@ -8,13 +8,13 @@
 // order, and every picture is there.
 
 export const PAGES = [
-  // Preamble and sources (owner, 2026-10-09). The preamble's own picture is in the README.
-  { id: 'preamble', chapter: 'Preamble and sources', start: 'Preamble and sources', title: 'Preamble' },
+  // About the app (owner, 2026-10-09). The preamble's own picture is in the README.
+  { id: 'preamble', chapter: 'About the app', start: 'About the app', title: 'Preamble' },
   {
-    id: 'justtcg', chapter: 'Preamble and sources', start: 'Preamble and sources > JustTCG',
+    id: 'justtcg', chapter: 'About the app', start: 'About the app > JustTCG',
     images: [{ src: 'settings-keys', caption: 'Settings: the JustTCG key and its usage' }],
   },
-  { id: 'other-sources', chapter: 'Preamble and sources', start: 'Preamble and sources > Other Sources' },
+  { id: 'other-sources', chapter: 'About the app', start: 'About the app > Other Sources' },
 
   // Getting started
   {

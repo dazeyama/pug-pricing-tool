@@ -18,7 +18,7 @@
 
 ---
 
-# 📜 Preamble and sources
+# 📜 About the app
 
 PUG Pricing Tool was made for Players' Union Games. The store decided how it should work, tested
 every feature, and approved every change before it went live.

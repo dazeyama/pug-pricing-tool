@@ -198,11 +198,12 @@
 .help-text summary { margin-bottom: 6px; cursor: pointer; }
 .help-text details ul { margin-bottom: 0; }
 
-/* A picture in the README's own text (the preamble's), under it. */
-.help-text figure { margin: 18px 0 4px; }
+/* A picture in the README's own text (the preamble's), under it: small, so
+   the page fits the screen; a click shows it full size (owner, 2026-10-09). */
+.help-text figure { width: fit-content; margin: 14px 0 0; }
 .help-text figure img {
   display: block;
-  max-width: 100%;
+  max-width: min(100%, 360px);
   height: auto;
   border: 1px solid var(--border);
   border-radius: 8px;
