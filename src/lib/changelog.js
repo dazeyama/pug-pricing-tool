@@ -18,8 +18,9 @@ export const CATEGORIES = [
     key: 'buys',
     label: 'Buys',
     // A buy confirmed (cards in); cards removed, or the buy deleted (cards out);
-    // a buy converted to a project, its cards added there (owner, 2026-10-02).
-    actions: ['buy_confirmed', 'buy_cards_removed', 'buy_deleted', 'buy_converted'],
+    // a buy converted to a project, its cards added there (owner, 2026-10-02);
+    // a project converted to a buy (owner, 2026-10-10).
+    actions: ['buy_confirmed', 'buy_cards_removed', 'buy_deleted', 'buy_converted', 'project_converted'],
   },
   {
     key: 'collections',
@@ -65,6 +66,7 @@ export const HEADLINES = {
   buy_completed: 'Buy marked Completed',
   buy_uncompleted: 'Buy marked Paid/Ours again',
   buy_converted: 'Buy converted to project',
+  project_converted: 'Project converted to buy',
   buy_exported: 'Buy exported',
   buy_unexported: 'Buy export undone',
   cash_buys_downloaded: 'Cash buys downloaded',
@@ -91,7 +93,7 @@ export const DAY_ACTIONS = new Set(['day_exported', 'day_unexported', 'day_compl
 /** Entries about a whole month (the Cash buys file; BUGS.md 10), not one buy. */
 export const MONTH_ACTIONS = new Set(['cash_buys_downloaded']);
 /** Landmarks: something made (big dot, green headline) or gone (red cross). */
-export const MADE = new Set(['buy_confirmed', 'collection_created', 'buy_converted']);
+export const MADE = new Set(['buy_confirmed', 'collection_created', 'buy_converted', 'project_converted']);
 export const GONE = new Set(['buy_deleted', 'collection_deleted']);
 
 const FOLDS = new Set(['collection_cards_added', 'collection_cards_removed']);

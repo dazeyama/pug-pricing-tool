@@ -118,6 +118,7 @@ export function PaidText({ buy, withMethod = false }) {
 export default function CollectionDetails({
   buy, byId, api, canChangeStatus, statusBlocked, deleteBlocked,
   viewOnly, holder, onTakeOver, onUnlock, onReopen, onUnreject, onInfo, onStatus, onDelete,
+  convertBlocked = null, onConvert,
 }) {
   const [open, setOpen] = useState(true);
   const toggle = () => setOpen((o) => !o);
@@ -159,13 +160,22 @@ export default function CollectionDetails({
         </button>
         <MoreMenu
           up
-          items={[{
-            label: 'Delete collection…',
-            danger: true,
-            blocked: deleteBlocked,
-            title: 'Delete this collection and every card in it',
-            onClick: onDelete,
-          }]}
+          items={[
+            // A project becomes a buy again (owner, 2026-10-10): the way back from Convert to project.
+            ...(project ? [{
+              label: 'Convert to buy…',
+              blocked: convertBlocked,
+              title: "Move every card into a new buy on today's page, confirmed now, and delete the project",
+              onClick: onConvert,
+            }] : []),
+            {
+              label: 'Delete collection…',
+              danger: true,
+              blocked: deleteBlocked,
+              title: 'Delete this collection and every card in it',
+              onClick: onDelete,
+            },
+          ]}
         />
         {/* Folds the details down to this bar, or brings them back up. */}
         <button

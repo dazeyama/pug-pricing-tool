@@ -15,6 +15,7 @@ import { isClosed, keepsRates, statusLabel } from './collections/status.js';
 import { ConfirmModal, DeleteCollectionModal, RejectModal } from './collections/CollectionModals.jsx';
 import { OfferModal, PaidModal } from './collections/DealModals.jsx';
 import { marketTotal } from './price/BuyList.jsx';
+import ConfirmBuyModal from './price/ConfirmBuyModal.jsx';
 import { useCollection } from './collections/useCollection.js';
 import { useCollectionLock } from './collections/useCollectionLock.js';
 import ExportButton from '../components/ExportButton.jsx';
@@ -51,7 +52,7 @@ function CollectionScreen({ id }) {
   const { values } = useSettings();
   const lock = useCollectionLock(id, { deviceId, userId: user?.id });
   const col = useCollection(id, { deviceId, onLockLost: lock.recheck });
-  // 'offer' | 'paid' | 'reopen' | 'unlock' | 'reject' | 'unreject' | 'takeover' | 'delete'
+  // 'offer' | 'paid' | 'reopen' | 'unlock' | 'reject' | 'unreject' | 'takeover' | 'delete' | 'convert'
   const [asking, setAsking] = useState(null);
   const [unlockTo, setUnlockTo] = useState('priced');
   const seen = useRef(false);
@@ -275,6 +276,13 @@ function CollectionScreen({ id }) {
   else if (lock.status !== 'held') statusBlocked = 'Checking who is editing this collection';
   const deleteBlocked = viewOnly ? `${holderLabel} is editing this collection: take over first`
     : offline ? 'No connection' : null;
+  // Convert to buy… (owner, 2026-10-10): a project's cards, none exported yet.
+  let convertBlocked = null;
+  if (offline) convertBlocked = 'No connection';
+  else if (viewOnly) convertBlocked = `${holderLabel} is editing this project: take over first`;
+  else if (lock.status !== 'held') convertBlocked = 'Checking who is editing this project';
+  else if (buy?.status === 'completed') convertBlocked = "Completed: its cards were exported, so it can't become a buy";
+  else if (!col.lines.length) convertBlocked = 'No cards to convert';
 
   /**
    * Status changes (spec 9.5): Priced asks for the offer, Paid/Ours for the
@@ -376,6 +384,8 @@ function CollectionScreen({ id }) {
               onInfo={(fields) => col.updateInfo(fields, user?.id)}
               onStatus={changeStatus}
               onDelete={() => setAsking('delete')}
+              convertBlocked={convertBlocked}
+              onConvert={() => setAsking('convert')}
             />
           ) : (
             <div className="col-details">
@@ -541,6 +551,53 @@ function CollectionScreen({ id }) {
                 api.focusSearch();
               }}
               onClose={() => setDropped(null)}
+            />
+          )}
+          {asking === 'convert' && buy && (
+            // CONFIRM BUY's questions (owner, 2026-10-10), starting from what the
+            // project has: a project made from a buy kept its phone, price paid
+            // and notes, and its name started as the customer's.
+            <ConfirmBuyModal
+              count={count}
+              market={marketTotal(col.lines)}
+              rates={rates}
+              user={user}
+              busy={col.busy}
+              title={`Convert to buy — ${count} card${count === 1 ? '' : 's'}`}
+              intro={(
+                <>
+                  Every card in <strong>{buy.customer_name}</strong> moves to a new buy on today's page, confirmed now
+                  at the prices it has, and the project is deleted.
+                </>
+              )}
+              initial={{
+                customer: buy.phone ? buy.customer_name : '',
+                phone: buy.phone ?? '',
+                method: buy.paid_method ?? null,
+                price: buy.paid_price,
+                notes: buy.notes ?? '',
+              }}
+              confirmLabel="Convert to buy"
+              busyLabel="Converting…"
+              onClose={() => {
+                setAsking(null);
+                api.focusSearch();
+              }}
+              onConfirm={async (deal) => {
+                if (!user) {
+                  staff.pulse();
+                  return;
+                }
+                deleting.current = true;
+                const made = await col.toBuy(deal, rates, user.id);
+                if (!made) {
+                  deleting.current = false;
+                  return;
+                }
+                setAsking(null);
+                toast(`${buy.customer_name} is now Buy ${made.number} on today's page.`, 'ok');
+                navigate(`/calendar/${made.games?.[0] ?? 'mtg'}/${made.day}`);
+              }}
             />
           )}
           {asking === 'delete' && buy && (

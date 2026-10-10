@@ -16,13 +16,21 @@ import { MoneyInput, PayMethod } from '../collections/DealModals.jsx';
  * is filled in). Name, phone and price are all required. The name suggests
  * past customers; picking one fills in their last phone number, which can
  * still be changed (owner, 2026-10-09).
+ *
+ * A project's Convert to buy… asks the same (owner, 2026-10-10), with its own
+ * title, `intro` and button, starting from what the project already has
+ * (`initial`: customer, phone, method, price, notes).
  */
-export default function ConfirmBuyModal({ count, market, rates, user, busy, onConfirm, onClose }) {
-  const [customer, setCustomer] = useState('');
-  const [notes, setNotes] = useState('');
-  const [phone, setPhone] = useState('');
-  const [method, setMethod] = useState(null);
-  const [priceText, setPriceText] = useState('');
+export default function ConfirmBuyModal({
+  count, market, rates, user, busy, onConfirm, onClose,
+  title = `Confirm buy — ${count} card${count === 1 ? '' : 's'}`, intro = null, initial = {},
+  confirmLabel = 'Confirm buy', busyLabel = 'Confirming…',
+}) {
+  const [customer, setCustomer] = useState(initial.customer ?? '');
+  const [notes, setNotes] = useState(initial.notes ?? '');
+  const [phone, setPhone] = useState(initial.phone ? formatPhone(initial.phone) : '');
+  const [method, setMethod] = useState(initial.method ?? null);
+  const [priceText, setPriceText] = useState(initial.price != null ? String(Number(initial.price)) : '');
   const [tried, setTried] = useState(false);        // Confirm pressed: show what's missing
   const [phoneTouched, setPhoneTouched] = useState(false);
 
@@ -53,7 +61,7 @@ export default function ConfirmBuyModal({ count, market, rates, user, busy, onCo
 
   return (
     <Modal
-      title={`Confirm buy — ${count} card${count === 1 ? '' : 's'}`}
+      title={title}
       onClose={onClose}
       footer={(
         <>
@@ -66,11 +74,12 @@ export default function ConfirmBuyModal({ count, market, rates, user, busy, onCo
             title={missing.length ? missing.join(' ') : undefined}
             onClick={submit}
           >
-            {busy ? 'Confirming…' : 'Confirm buy'}
+            {busy ? busyLabel : confirmLabel}
           </button>
         </>
       )}
     >
+      {intro && <p className="confirm-intro">{intro}</p>}
       <div className="confirm-totals">
         <div className="total-row"><span>Market</span><strong>{formatMoney(market)}</strong></div>
         {rate('Cash', 'cash', rates.customCash)}

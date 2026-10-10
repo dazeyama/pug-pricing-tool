@@ -34,6 +34,11 @@ const MESSAGES = {
   bad_last4: 'The Last 4 ID is up to 4 letters or digits.',
   bad_pct: 'Enter a percentage from 0 to 100.',
   no_user: 'Pick a user first.',
+  // Convert to buy… (owner, 2026-10-10): what CONFIRM BUY asks for, and a project that can't go.
+  name_needed: "Enter the customer's name.",
+  phone_needed: 'Enter a phone number.',
+  project_completed: "This project is Completed: its cards were exported, so it can't become a buy.",
+  empty_buy: 'There are no cards to convert.',
   // Import Collection (owner, 2026-10-09).
   not_empty: 'This collection already has cards: a file can only go into an empty one.',
   nothing_to_import: 'There are no cards to import.',
@@ -216,5 +221,41 @@ export function useCollection(id, { deviceId, onLockLost }) {
     }
   }, [id, deviceId, state.lines, toast]);
 
-  return { ...state, busy, reload, add, update, remove, updateInfo, setRates, setStatus, reprice, destroy };
+  /**
+   * Convert to buy… (owner, 2026-10-10): every card of this project to a new
+   * buy on today's page, confirmed now; the project is deleted. The new buy
+   * ({ id, number, games, day }) or null.
+   * @param {{ customerName: string, phone: string, notes: string, paidPrice: number, paidMethod: string }} deal
+   * @param {{ cash: number, credit: number }} rates  the rates the project shows
+   */
+  const toBuy = useCallback(async (deal, rates, userId) => {
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.rpc('project_to_buy', {
+        p_buy_id: id,
+        p_user: userId,
+        p_device: deviceId,
+        p_customer_name: deal.customerName,
+        p_phone: deal.phone,
+        p_paid_price: deal.paidPrice,
+        p_paid_method: deal.paidMethod,
+        p_notes: deal.notes,
+        p_cash_pct: rates.cash,
+        p_credit_pct: rates.credit,
+        p_expected_version: version.current,
+        p_line_texts: Object.fromEntries(state.lines.map((l) => [l.id, lineText(l)])),
+      });
+      if (error) {
+        if (!errorCode(error)) console.error('project_to_buy failed', error);
+        toast(errorMessage(error, "Couldn't convert the project"), 'err');
+        await reload();
+        return null;
+      }
+      return data;
+    } finally {
+      setBusy(false);
+    }
+  }, [id, deviceId, state.lines, toast, reload]);
+
+  return { ...state, busy, reload, add, update, remove, updateInfo, setRates, setStatus, reprice, destroy, toBuy };
 }
