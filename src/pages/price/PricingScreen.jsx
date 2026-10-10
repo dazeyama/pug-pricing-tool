@@ -539,7 +539,7 @@ export default function PricingScreen({
     );
   } else if (dexTyped) {
     note = (
-      <>
+      <span className="note-hint">
         <strong>No. {dexTyped}</strong> finds old Japanese Pokémon cards by Pokédex number:{' '}
         <button
           type="button"
@@ -551,12 +551,12 @@ export default function PricingScreen({
         >
           switch to JP
         </button>
-      </>
+      </span>
     );
   } else if (langHint) {
     const jp = langHint.lang === 'ja';
     note = (
-      <>
+      <span className="note-hint">
         <strong>{langHint.code}</strong> is {jp ? 'a Japanese' : 'an English'} Pokémon set:{' '}
         <button
           type="button"
@@ -568,7 +568,7 @@ export default function PricingScreen({
         >
           switch to {jp ? 'JP' : 'EN'}
         </button>
-      </>
+      </span>
     );
   } else if (search.correction) {
     note = <>Showing results for <strong>{search.correction.name}</strong></>;
