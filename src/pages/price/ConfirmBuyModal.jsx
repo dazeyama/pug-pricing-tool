@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Modal from '../../components/Modal.jsx';
 import UserTag from '../../components/UserTag.jsx';
+import CustomerNameInput from '../../components/CustomerNameInput.jsx';
 import { formatMoney, parseMoney, payout } from '../../lib/money.js';
 import { PHONE_ERROR, formatPhone, phoneDigits, validPhone } from '../../lib/phone.js';
 import { MoneyInput, PayMethod } from '../collections/DealModals.jsx';
@@ -12,7 +13,9 @@ import { MoneyInput, PayMethod } from '../collections/DealModals.jsx';
  * formatted as it's typed, 10 digits. The purchase price is asked for as a
  * collection's is before Paid/Ours (owner, 2026-09-30): Cash or Credit as
  * chips in their colours, then what was paid, always typed in by hand (nothing
- * is filled in). Name, phone and price are all required.
+ * is filled in). Name, phone and price are all required. The name suggests
+ * past customers; picking one fills in their last phone number, which can
+ * still be changed (owner, 2026-10-09).
  */
 export default function ConfirmBuyModal({ count, market, rates, user, busy, onConfirm, onClose }) {
   const [customer, setCustomer] = useState('');
@@ -75,12 +78,18 @@ export default function ConfirmBuyModal({ count, market, rates, user, busy, onCo
       </div>
       <label className="confirm-field">
         <span>Customer name</span>
-        <input
-          type="text"
+        <CustomerNameInput
           value={customer}
           autoFocus
           maxLength={120}
-          onChange={(e) => setCustomer(e.target.value)}
+          onChange={setCustomer}
+          onPick={({ name, phone: last }) => {
+            setCustomer(name);
+            if (last) {
+              setPhone(formatPhone(last));
+              setPhoneTouched(true);
+            }
+          }}
           onKeyDown={enter}
         />
         {show('name') && <span className="field-error">{problems.name}</span>}

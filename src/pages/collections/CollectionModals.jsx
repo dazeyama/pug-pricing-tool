@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Modal from '../../components/Modal.jsx';
+import CustomerNameInput from '../../components/CustomerNameInput.jsx';
 import { PHONE_ERROR, formatPhone, phoneDigits, validPhone } from '../../lib/phone.js';
 
 
@@ -93,7 +94,9 @@ export function NewProjectModal({ busy, onCreate, onClose }) {
  * a 10-digit phone number and the Last 4 ID are in. Ctrl+click on Create
  * creates it without the phone or the ID (owner, 2026-10-09: an admin
  * shortcut, deliberately unexplained); the name is always needed, and a
- * part-typed phone still has to be finished or cleared.
+ * part-typed phone still has to be finished or cleared. The name suggests
+ * past customers; picking one fills in their last phone number, never the
+ * Last 4 ID (owner, 2026-10-09).
  */
 export function NewCollectionModal({ busy, onCreate, onClose }) {
   const [name, setName] = useState('');
@@ -142,13 +145,16 @@ export function NewCollectionModal({ busy, onCreate, onClose }) {
       >
         <label className="field">
           <span>Name</span>
-          <input
-            type="text"
+          <CustomerNameInput
             autoFocus
             value={name}
             maxLength={120}
             placeholder="Jordan Reyes"
-            onChange={(e) => setName(e.target.value)}
+            onChange={setName}
+            onPick={({ name: picked, phone: last }) => {
+              setName(picked);
+              if (last) setPhone(formatPhone(last));
+            }}
             onBlur={() => setTouched((t) => ({ ...t, name: true }))}
           />
           {touched.name && nameProblem && <span className="field-error">{nameProblem}</span>}

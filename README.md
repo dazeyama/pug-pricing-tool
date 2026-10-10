@@ -187,7 +187,7 @@ Six tabs do the work: **Home**, **Buy**, **Collections**, **Calendar**, **Settin
 
 # Core ideas
 
-Five things make the rest of the app make sense.
+Six things make the rest of the app make sense.
 
 **A buy** is one customer at the counter. She builds it on the **Buy** tab and finishes it with
 **CONFIRM BUY**. It then sits on that day in the **Calendar**.
@@ -201,6 +201,10 @@ exported.
 **Market, Cash and Credit.** Market is what the cards sell for. The store pays a share of it:
 **Cash** at one percentage, **Credit** at a higher one. Both are set in **Settings**. Cash is green
 everywhere in the app. Credit is blue.
+
+**Customers.** Every customer name used on a confirmed buy or a collection is kept, with the
+phone number most recently used with it, so it can be suggested next time. Projects aren't
+customers. ID numbers are never kept this way.
 
 **Export.** Magic cards go to Crystal Commerce as a **Mass Create** file. Exporting marks the cards
 **Completed**. Pokémon cards can't be exported yet.
@@ -540,10 +544,15 @@ this buy only. A ✎ marks a custom rate. **Use master rates** goes back to the 
 
 | | |
 |---|---|
-| **Customer name** | Required. |
+| **Customer name** | Required. Past customers are suggested as she types. |
 | **Phone number** | Required. Ten digits. Formatted as she types. |
 | **Purchase price** | Required. **Cash** or **Credit**, then the amount actually paid. Nothing is filled in for her. |
 | **Notes** | Optional. |
+
+**Past customers.** After two letters, a list under the name shows past customers whose names
+match, each with their last phone number. **↓ ↑** and **Enter**, or a click, picks one: it fills in
+the name and the phone number. Both can still be changed. A changed number replaces the old one for
+next time. **Esc** closes the list.
 
 It names who is confirming. **Confirm buy** files the buy on today's date and starts a fresh one.
 A message says its number: *"Buy confirmed — Buy 4 today (Magic)"*.
@@ -628,8 +637,10 @@ A row open on another computer says so: *"✎ open on Front Counter (Clio)"*.
 |---|---|
 | **Name** | Required. Up to 80 characters. |
 | **Phone number** | Required. Ten digits. Formatted as she types. |
-| **Last 4 ID** | Required. The last 4 letters or digits of the customer's ID. |
+| **Last 4 ID** | Required. The last 4 letters or digits of the customer's ID. Never suggested or filled in. |
 | **Notes** | Optional. |
+
+The name suggests past customers, as on CONFIRM BUY. Picking one fills in the phone number.
 
 **Create** makes the collection in **Processing** and opens it.
 

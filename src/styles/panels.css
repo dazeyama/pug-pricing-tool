@@ -25,6 +25,41 @@
 .cardpanel-body { padding: 12px; }
 .setting-value { margin: 0 0 14px; font-size: 15px; }
 
+/* ---- Past customers under a name field (owner, 2026-10-09): over everything, dialogs included ---- */
+.name-suggest {
+  position: fixed;
+  z-index: 200;
+  max-height: 340px;
+  margin: 0;
+  padding: 4px;
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+.name-suggest li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.name-suggest li.active { background: var(--panel-2); }
+.name-suggest .name-suggest-head {
+  padding: 4px 10px 2px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  cursor: default;
+}
+.name-suggest-name { color: var(--text); font-weight: 600; }
+.name-suggest-phone { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
 /* ---- Modal ---- */
 .modal {
   position: fixed; inset: 0; z-index: 150;
