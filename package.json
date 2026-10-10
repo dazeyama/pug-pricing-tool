@@ -1,7 +1,7 @@
 {
   "name": "pug-pricing-tool",
   "private": true,
-  "version": "0.9.9.4-jp",
+  "version": "0.9.9.4-jp-hotfix",
   "type": "module",
   "scripts": {
     "dev": "vite",
