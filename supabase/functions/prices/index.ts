@@ -63,6 +63,11 @@ type Lookup = {
   name?: string; number?: string; setName?: string;
   setCode?: string;   // printed set code ("SV2a", "OBF"): breaks a tie between search matches
   size?: number;      // printed set size (165): JustTCG's numbers are "025/165"
+  // A Japanese card's Poké Ball / Master Ball version, its own product
+  // "<name> (<pattern>)": read off its card's search (`patternOf`, that
+  // lookup's key) when that runs in the same call, else searched itself.
+  patternOf?: string;
+  pattern?: string;   // "Poke Ball Pattern", "Master Ball Pattern"
 };
 type Search = {
   key: string; kind: 'find' | 'siblings'; game: 'pokemon';
@@ -271,7 +276,17 @@ Deno.serve(async (req) => {
       return cards;
     };
     let noJapanese = false;
-    for (const l of searches) {
+    // Cards first, so their pattern versions can be read off the same results.
+    searches.sort((a, b) => Number(Boolean(a.patternOf)) - Number(Boolean(b.patternOf)));
+    const candidatesOf = new Map<string, any[]>();
+    for (const asked of searches) {
+      const l: Lookup = asked.patternOf ? { ...asked, name: `${asked.name} (${asked.pattern})` } : asked;
+      if (asked.patternOf && candidatesOf.has(asked.patternOf)) {
+        const want = fold(l.name);
+        const pick = candidatesOf.get(asked.patternOf)!.filter((c: any) => fold(baseName(c.name)) === want);
+        found(l, pick.length === 1 ? pick[0] : null);
+        continue;
+      }
       const log: string[] = [];
       let cards: any[] = [];
       let failed = false;
@@ -307,6 +322,7 @@ Deno.serve(async (req) => {
         }
         await attempt('name only', () => search(l, {}, log, 'name only'));
       }
+      candidatesOf.set(l.key, cards);
       // Several with that name and number (other sets): the one whose set
       // name or ID has the card's set code as a word, if exactly one does
       // (owner, 2026-09-29). TCGplayer names Japanese sets "SV2a: …".

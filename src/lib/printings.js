@@ -230,7 +230,7 @@ export function pokemonVersions(card) {
   if (detailed.length) {
     const hasFirst = detailed.some((v) => (v.stamp ?? []).includes('1st-edition'));
     const seen = new Set();
-    return detailed.map((v) => {
+    return uncrossPatterns(detailed.map((v) => {
       const foil = foilOf(card, v);
       const stamps = v.stamp ?? [];
       const first = stamps.includes('1st-edition');
@@ -264,7 +264,7 @@ export function pokemonVersions(card) {
       if (seen.has(v.id)) return false;
       seen.add(v.id);
       return true;
-    });
+    }));
   }
   const v = card?.variants ?? {};
   const pricing = card?.pricing?.tcgplayer ?? {};
@@ -283,6 +283,27 @@ export function pokemonVersions(card) {
     }
   }
   return out;
+}
+
+/**
+ * A card's Poké Ball pattern is never pricier than its Master Ball pattern
+ * (owner, 2026-10-10). TCGdex sometimes crosses the two patterns' products
+ * (8 of 39 Japanese SV2a cards checked: Poké Ball €9.11 and Master Ball €0.92
+ * on Starmie), so a pair the wrong way round is put back, for the Cardmarket
+ * price and TCGplayer's market price alike. Changes the versions in place.
+ */
+export function uncrossPatterns(versions) {
+  for (const finish of POKEMON_FINISHES) {
+    const pokeball = versions.find((v) => v.finish === finish && v.treatments.includes('pokeball-pattern'));
+    const masterball = versions.find((v) => v.finish === finish && v.treatments.includes('masterball-pattern'));
+    if (!pokeball || !masterball) continue;
+    for (const field of ['cardmarketPrice', 'marketPrice']) {
+      if (pokeball[field] != null && masterball[field] != null && pokeball[field] > masterball[field]) {
+        [pokeball[field], masterball[field]] = [masterball[field], pokeball[field]];
+      }
+    }
+  }
+  return versions;
 }
 
 /** The version to start on: the first finish available in Normal → Holo → Reverse order, plainest version. */

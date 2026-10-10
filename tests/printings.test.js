@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { defaultPokemonVersion, pokemonVersions } from '../src/lib/printings.js';
+import { defaultPokemonVersion, pokemonVersions, uncrossPatterns } from '../src/lib/printings.js';
 
 // TCGdex's data for Fossil (2026-10-01): every printing tagged "galaxy".
 const fossil = (variants) => ({ set: { id: 'base3' }, variants_detailed: variants });
@@ -38,4 +38,29 @@ test('versions left the same once a mistaken pattern is dropped appear once', ()
     { type: 'holo', size: 'standard' },
   ]);
   assert.equal(pokemonVersions(card).length, 1);
+});
+
+test('a crossed Poké Ball / Master Ball pair is put back (TCGdex, SV2a Starmie, 2026-10-10)', () => {
+  const card = {
+    set: { id: 'SV2a' },
+    variants_detailed: [
+      { type: 'holo', size: 'standard', pricing: { cardmarket: { avg30: 0.12 } } },
+      { type: 'reverse', size: 'standard', foil: 'pokeball', pricing: { cardmarket: { 'avg30-holo': 9.11 } } },
+      { type: 'reverse', size: 'standard', foil: 'masterball', pricing: { cardmarket: { 'avg30-holo': 0.92 } } },
+    ],
+  };
+  const v = pokemonVersions(card);
+  const price = (t) => v.find((x) => x.treatments.includes(t)).cardmarketPrice;
+  assert.equal(price('pokeball-pattern'), 0.92);
+  assert.equal(price('masterball-pattern'), 9.11);
+  assert.equal(v.find((x) => x.finish === 'holo').cardmarketPrice, 0.12);
+});
+
+test('a pair the right way round, or with one price missing, is left alone', () => {
+  const pair = (pb, mb) => uncrossPatterns([
+    { finish: 'reverse', treatments: ['pokeball-pattern'], cardmarketPrice: pb, marketPrice: null },
+    { finish: 'reverse', treatments: ['masterball-pattern'], cardmarketPrice: mb, marketPrice: null },
+  ]).map((x) => x.cardmarketPrice);
+  assert.deepEqual(pair(2.39, 355.54), [2.39, 355.54]);
+  assert.deepEqual(pair(5, null), [5, null]);
 });

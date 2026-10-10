@@ -38,6 +38,14 @@ export function conditionCode(name) {
  */
 export const priceResults = new Map();
 
+// A Japanese card's foil patterns are their own TCGplayer products, which
+// JustTCG names "<card> (Poke Ball Pattern)" (owner, 2026-10-10).
+const PATTERN_PRODUCTS = { 'pokeball-pattern': 'Poke Ball Pattern', 'masterball-pattern': 'Master Ball Pattern' };
+/** A version's pattern treatment that's its own product, or null. */
+const patternOf = (v) => (v?.treatments ?? []).find((t) => PATTERN_PRODUCTS[t]) ?? null;
+/** The lookup key of a Japanese pattern version priced by name: pokemon:ja:<tcgdex id>:pokeball. */
+const patternKey = (c, t) => `pokemon:${c.lang}:${c.tcgdexId}:${t.replace(/-pattern$/, '')}`;
+
 /**
  * The lookups one selected card needs, all sent in a single request so that
  * switching finish or condition never costs another one.
@@ -69,11 +77,22 @@ export function lookupsFor(c, { pokemonCard, versions, jaName }) {
     // is the English name (Pokédex number) or what was typed (owner, 2026-09-29).
     const name = c.lang === 'ja' ? (jaName || '') : c.name;
     const key = `pokemon:${c.lang}:${c.tcgdexId}`;
-    out.set(key, {
+    const main = {
       key, game: 'pokemon', lang: c.lang,
       name, number: c.number, setName: c.lang === 'en' ? c.setName : undefined, setCode: c.setCode,
       size: c.printedSize ?? pokemonCard?.set?.cardCount?.official ?? undefined,
-    });
+    };
+    out.set(key, main);
+    // A Japanese card's Poké Ball and Master Ball versions: their own products,
+    // found in the same search as the card (no extra request).
+    if (c.lang === 'ja' && name) {
+      for (const v of own) {
+        const t = patternOf(v);
+        if (!t) continue;
+        const k = patternKey(c, t);
+        out.set(k, { ...main, key: k, patternOf: key, pattern: PATTERN_PRODUCTS[t] });
+      }
+    }
   }
   for (const v of versions.filter((x) => x.tcgplayerOnly)) {
     const l = v.tcgplayerId
@@ -208,7 +227,22 @@ export function resultFor(c, results, { finish, version, versions = [] }) {
     && !v.treatments.length && !v.firstEdition);
   const id = version?.tcgplayerId ?? plain?.tcgplayerId;
   if (id) return results[`pokemon:tcgplayer:${id}`];
+  // A Japanese pattern version: its own product, which is that version
+  // whatever TCGplayer calls its printing ("Holofoil" on a reverse holo).
+  const t = c.lang === 'ja' ? patternOf(version) : null;
+  if (t) return asFinish(results[patternKey(c, t)], version.finish);
   return results[`pokemon:${c.lang}:${c.tcgdexId}`];
+}
+
+const FINISH_PRINTINGS = { normal: 'Normal', holo: 'Holofoil', reverse: 'Reverse Holofoil' };
+/** A product that is one version: every printing read as that version's finish. */
+function asFinish(result, finish) {
+  if (!result?.card) return result;
+  const printing = FINISH_PRINTINGS[finish] ?? 'Normal';
+  return {
+    ...result,
+    card: { ...result.card, variants: (result.card.variants ?? []).map((v) => ({ ...v, printing })) },
+  };
 }
 
 /**
