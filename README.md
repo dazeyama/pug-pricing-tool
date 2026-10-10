@@ -723,7 +723,7 @@ The header bar always shows the name and status.
 | | |
 |---|---|
 | **Name and status** | Click to fold the details away, or bring them back. |
-| **⋯** | **Delete collection…** |
+| **⋯** | **Convert to buy…** (projects only) and **Delete collection…** |
 | **Arrow button** | Folds or unfolds the details. |
 | **Name, Phone, Last 4 ID, Notes** | Click the ✎ to edit in place. **Enter** saves. Clicking away saves. **Esc** leaves it as it was. Notes save with **Ctrl+Enter**. |
 | **📞 (N)** | On a Priced collection, beside the phone. See below. |
@@ -805,6 +805,23 @@ Sends the collection's Magic cards to Crystal Commerce. See
 
 A Completed collection shows its **Custom SKU** in the list heading. Its prices show in green: those
 are the Sell Prices written to the file.
+
+### Convert to buy…
+
+Projects only, from the ⋯ menu. It turns the project into a buy on today's day page: the way back
+from a buy's **Convert to project…**.
+
+It asks what **CONFIRM BUY** asks: **Customer name**, **Phone number**, **Purchase price** (Cash or
+Credit, and what was paid) and **Notes**. All but Notes are required. The name suggests past
+customers. What the project already has is filled in: a project made from a buy kept its phone,
+price paid and notes, and its name is the customer's.
+
+**Convert to buy** moves every card, both games, to a new buy confirmed by her now, at the prices
+they have. The project is deleted and today's day page opens. The Changelog shows it under
+**Buys** as *Project converted to buy*.
+
+It's greyed out while another computer is editing the project, once the project is Completed, or
+when it has no cards.
 
 ### Delete collection…
 
@@ -916,6 +933,7 @@ Once Completed, a buy is locked. Its prices show in green: those are its Sell Pr
 | **Delete buy…** | Deletes the buy and every card in it, both games. Asks first. |
 
 **Convert to project…** and **Delete buy…** are locked once any of the buy's cards are Completed.
+A project can become a buy again: see [Convert to buy…](#convert-to-buy).
 
 ### COMPLETE (Pokémon days)
 

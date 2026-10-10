@@ -134,8 +134,12 @@ export const PAGES = [
     images: [{ src: 'reprice', caption: 'Reprice this collection?' }],
   },
   {
-    id: 'collection-export', chapter: 'A collection', start: 'A collection > EXPORT', title: 'EXPORT and Delete',
-    images: [{ src: 'completed', caption: 'A Completed collection' }, { src: 'delete', caption: 'Delete collection' }],
+    id: 'collection-export', chapter: 'A collection', start: 'A collection > EXPORT',
+    images: [{ src: 'completed', caption: 'A Completed collection' }],
+  },
+  {
+    id: 'convert-delete', chapter: 'A collection', start: 'A collection > Convert to buy…', title: 'Convert to buy and Delete',
+    images: [{ src: 'delete', caption: 'Delete collection' }],
   },
   {
     id: 'cant-upload', chapter: 'A collection', start: 'A collection > Can\'t upload cards',
