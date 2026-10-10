@@ -23,56 +23,31 @@
 PUG Pricing Tool was made for Players' Union Games. The store decided how it should work, tested
 every feature, and approved every change before it went live.
 
-**AI tools helped write the program.** Its code was written with the help of an AI coding assistant
-(Claude Code, made by Anthropic).
+**AI tools helped write the program's code.** The app itself uses no AI. It never contacts an AI
+service, and no AI runs inside it. It is an ordinary program: it asks card databases and price
+services for their data, shows it, and saves what staff do with it.
 
-**The app itself uses no AI.** It never contacts an AI service, and no AI runs inside it. It is an
-ordinary program. It asks card databases and price services for their data, shows that data, and
-saves what staff do with it.
-
-**No AI comes up with anything in the app.** Every card name, set, number and picture comes from a
-card database. Every market price comes from a price service. Nothing is guessed, invented or
-generated. The few things the app works out for itself follow fixed, written rules: the buy
-percentages, the fallback percentages, the rounding steps, the Sell Price, and matching cards to
-Crystal Commerce products. The same cards and the same prices always give the same answer. This
-guide describes every one of those rules.
+**Nothing in the app is made up by AI.** Every card name, set, number and picture comes from a card
+database. Every market price comes from a price service. What the app works out for itself follows
+fixed, written rules: the percentages, the rounding, the Sell Price and the Crystal Commerce
+matches. This guide describes each one. The same cards and prices always give the same answer.
 
 **The data is stable.**
 
-- Every buy, collection, card and setting lives in one database, shared by every computer in the
-  store.
-- A card's price is saved with it when it's added, along with where the price came from. A price
-  changing later never changes a past buy. Only **REPRICE?** changes saved prices, and only when
-  someone presses it.
-- Confirmed buys and paid collections keep the rates they were made with.
-- Two computers can't overwrite each other. One computer edits a collection at a time, and a change
-  sent from an out-of-date screen is refused and the screen reloads.
-- The database checks every change against its own rules and refuses one that breaks them.
+- Everything lives in one database, shared by every computer in the store.
+- A card's price is saved with it, along with where it came from. A later price change never alters
+  a past buy. Only **REPRICE?** changes saved prices, and only when someone presses it.
+- Two computers can't overwrite each other. The database refuses any change that breaks its rules.
 - Every change is written to the **Changelog**, with who made it and when.
 - A full backup can be downloaded at any time, and put back with **Restore**.
-- When a source is slow or down, nothing already saved is touched. The app says which source isn't
-  answering, and prices can be typed by hand.
+- A source being down never touches saved data. Prices can be typed by hand until it's back.
 
 **Players' Union Games (PUG) does not endorse the use of AI.**
 
-### Sources
-
-The app gets its card data from these sources. Each is named at the foot of the **Settings** tab.
-Only searches for cards, and card IDs, are ever sent to them. Nothing about customers leaves the
-store's database.
-
-| | |
-|---|---|
-| **Scryfall**<br>Magic card data and images | A free Magic: The Gathering card database, run independently of Wizards of the Coast. Every Magic search, card detail, picture and set symbol comes from it. It also reports TCGplayer's Market Price and Cardmarket's price for each printing, updated once a day. |
-| **TCGdex**<br>Pokémon card data and images | A free, open-source Pokémon card database in ten languages, run by its community. Every Pokémon search, English and Japanese, comes from it: each card's details, picture and versions (holo, reverse holo, 1st Edition…). It also reports TCGplayer's and Cardmarket's prices. |
-| **pokemontcg.io and TCGplayer**<br>Backup Pokémon images | The Pokémon TCG API (pokemontcg.io, now part of Scrydex) and TCGplayer's own product pictures. Used only when TCGdex has no picture of an English card. |
-| **Limitless TCG**<br>Japanese Pokémon images | A Pokémon tournament and card database site with Japanese cards. Used for Japanese cards TCGdex has no picture of. |
-| **Pokellector**<br>Vintage Japanese Pokémon images (1996–2001) | A Pokémon card checklist site for English and Japanese sets. Used for the ten oldest Japanese sets, whose pictures neither TCGdex nor Limitless has. |
-| **PokeAPI**<br>English names for Japanese Pokémon | A free, open-source database of Pokémon game data. The app's list of 1,025 English Pokémon names came from it once, on September 29, 2026, and is kept inside the app. A Japanese card's English name comes from the Pokédex number printed on it. |
-| **JustTCG**<br>Prices | A paid price service for trading cards. It gives each card a price in every condition. See [JustTCG](#justtcg). |
-| **TCGplayer's catalogue, through JustTCG**<br>Pokémon cards TCGdex doesn't list yet | TCGplayer is a US online marketplace for trading cards. When TCGdex doesn't list a card or a version yet, the app finds it in TCGplayer's list of products, through JustTCG. Those cards are marked **From TCGplayer**. |
-| **Scryfall and TCGdex**<br>Cardmarket prices | Cardmarket is a European online marketplace for trading cards, with prices in euros. Scryfall reports them for Magic, TCGdex for Pokémon. They're used by **Use Cardmarket**, for Japanese Pokémon with no JustTCG price, and to spot a JustTCG price that may be wrong. |
-| **Frankfurter**<br>Euro to dollar rate | A free, open-source exchange-rate service. Its rate comes from the European Central Bank, which publishes one every working day. The app turns Cardmarket's euros into dollars with it. |
+<figure>
+<img src="public/help/from-claude-code.webp" alt="Claude Code, checking the app for AI services" width="744">
+<figcaption>From Claude Code</figcaption>
+</figure>
 
 ### JustTCG
 
@@ -135,6 +110,25 @@ status.justtcg.com.
   request for every 100 different cards.
 - Home shows a warning once 80% of the day's requests are used. When they run out, a yellow bar
   says so, and prices are typed by hand until midnight UTC.
+
+### Other Sources
+
+Besides JustTCG, the app gets its card data from these sources. Each is named at the foot of the
+**Settings** tab.
+Only searches for cards, and card IDs, are ever sent to them. Nothing about customers leaves the
+store's database.
+
+| | |
+|---|---|
+| **Scryfall**<br>Magic card data and images | A free Magic: The Gathering card database, run independently of Wizards of the Coast. Every Magic search, card detail, picture and set symbol comes from it. It also reports TCGplayer's Market Price and Cardmarket's price for each printing, updated once a day. |
+| **TCGdex**<br>Pokémon card data and images | A free, open-source Pokémon card database in ten languages, run by its community. Every Pokémon search, English and Japanese, comes from it: each card's details, picture and versions (holo, reverse holo, 1st Edition…). It also reports TCGplayer's and Cardmarket's prices. |
+| **pokemontcg.io and TCGplayer**<br>Backup Pokémon images | The Pokémon TCG API (pokemontcg.io, now part of Scrydex) and TCGplayer's own product pictures. Used only when TCGdex has no picture of an English card. |
+| **Limitless TCG**<br>Japanese Pokémon images | A Pokémon tournament and card database site with Japanese cards. Used for Japanese cards TCGdex has no picture of. |
+| **Pokellector**<br>Vintage Japanese Pokémon images (1996–2001) | A Pokémon card checklist site for English and Japanese sets. Used for the ten oldest Japanese sets, whose pictures neither TCGdex nor Limitless has. |
+| **PokeAPI**<br>English names for Japanese Pokémon | A free, open-source database of Pokémon game data. The app's list of 1,025 English Pokémon names came from it once, on September 29, 2026, and is kept inside the app. A Japanese card's English name comes from the Pokédex number printed on it. |
+| **TCGplayer's catalogue, through JustTCG**<br>Pokémon cards TCGdex doesn't list yet | TCGplayer is a US online marketplace for trading cards. When TCGdex doesn't list a card or a version yet, the app finds it in TCGplayer's list of products, through JustTCG. Those cards are marked **From TCGplayer**. |
+| **Scryfall and TCGdex**<br>Cardmarket prices | Cardmarket is a European online marketplace for trading cards, with prices in euros. Scryfall reports them for Magic, TCGdex for Pokémon. They're used by **Use Cardmarket**, for Japanese Pokémon with no JustTCG price, and to spot a JustTCG price that may be wrong. |
+| **Frankfurter**<br>Euro to dollar rate | A free, open-source exchange-rate service. Its rate comes from the European Central Bank, which publishes one every working day. The app turns Cardmarket's euros into dollars with it. |
 
 <br>
 

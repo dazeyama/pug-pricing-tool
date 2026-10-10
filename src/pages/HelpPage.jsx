@@ -13,8 +13,11 @@ import SIZES from './help/images.json';
 // sized to about fit the screen; the body scrolls when one doesn't. ← and →
 // turn the pages (owner, 2026-10-09).
 
-const HELP = buildHelp(readme, PAGES);
+// The README's own pictures (public/help/…) are served from the app's base.
+const HELP = buildHelp(readme, PAGES, { base: import.meta.env.BASE_URL });
 const picture = (src) => `${import.meta.env.BASE_URL}help/${src}.webp`;
+/** A page picture, ready to show full size. */
+const shot = (img) => ({ url: picture(img.src), caption: img.caption, width: SIZES[img.src]?.[0], height: SIZES[img.src]?.[1] });
 
 export default function HelpPage() {
   const { page: pageId } = useParams();
@@ -67,8 +70,17 @@ export default function HelpPage() {
     return () => window.removeEventListener('keydown', onKey);
   });
 
-  /** A README link ("#how-prices-are-worked-out") goes to the page and place it names. */
+  /**
+   * A README link ("#how-prices-are-worked-out") goes to the page and place
+   * it names; a picture in the text opens full size, with its caption.
+   */
   function onClick(e) {
+    const img = e.target.closest?.('img');
+    if (img) {
+      const caption = img.closest('figure')?.querySelector('figcaption')?.textContent ?? img.alt;
+      setZoom({ url: img.src, caption, width: img.naturalWidth, height: img.naturalHeight });
+      return;
+    }
     const link = e.target.closest?.('a[href^="#"]');
     if (!link) return;
     e.preventDefault();
@@ -129,7 +141,7 @@ export default function HelpPage() {
               <div className="help-figures" style={{ '--fig-h': `calc((100vh - 330px) / ${page.images.length} - 34px)` }}>
                 {page.images.map((img) => (
                   <figure key={img.src} className="help-figure">
-                    <button type="button" className="help-shot" title="Show full size" onClick={() => setZoom(img)}>
+                    <button type="button" className="help-shot" title="Show full size" onClick={() => setZoom(shot(img))}>
                       <img
                         src={picture(img.src)}
                         alt={img.caption}
@@ -161,13 +173,7 @@ export default function HelpPage() {
 
       {zoom && (
         <Modal title={zoom.caption} className="help-zoom" wide onClose={() => setZoom(null)}>
-          <img
-            src={picture(zoom.src)}
-            alt={zoom.caption}
-            width={SIZES[zoom.src]?.[0]}
-            height={SIZES[zoom.src]?.[1]}
-            onClick={() => setZoom(null)}
-          />
+          <img src={zoom.url} alt={zoom.caption} width={zoom.width} height={zoom.height} onClick={() => setZoom(null)} />
         </Modal>
       )}
     </div>

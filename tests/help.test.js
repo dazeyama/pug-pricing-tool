@@ -61,6 +61,15 @@ test('every README link finds a Help page', () => {
   for (const [, slug] of README.matchAll(/\]\(#([^)]+)\)/g)) assert.ok(help.anchors.has(slug), `#${slug}`);
 });
 
+test("the README's own pictures exist, and point at the app's base in Help", () => {
+  const srcs = [...README.matchAll(/src="(public\/[^"]+)"/g)].map((m) => m[1]);
+  assert.ok(srcs.length > 0);
+  for (const src of srcs) assert.ok(existsSync(new URL(`../${src}`, import.meta.url)), src);
+  const html = buildHelp(README, PAGES, { base: '/pug-pricing-tool/' }).pages.map((p) => p.html).join('');
+  assert.ok(html.includes('src="/pug-pricing-tool/help/from-claude-code.webp"'));
+  assert.ok(!html.includes('src="public/'));
+});
+
 test('every Help picture exists, with its size', () => {
   for (const p of PAGES) {
     for (const img of p.images ?? []) {

@@ -198,6 +198,19 @@
 .help-text summary { margin-bottom: 6px; cursor: pointer; }
 .help-text details ul { margin-bottom: 0; }
 
+/* A picture in the README's own text (the preamble's), under it. */
+.help-text figure { margin: 18px 0 4px; }
+.help-text figure img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: zoom-in;
+}
+.help-text figure img:hover { border-color: var(--accent); }
+.help-text figcaption { margin-top: 6px; color: var(--muted); font-size: 12px; text-align: center; }
+
 /* Full size, over everything. */
 .help-zoom .modal-box.wide { width: min(1600px, 96vw); max-height: 94vh; }
 .help-zoom .modal-body { padding: 10px; }

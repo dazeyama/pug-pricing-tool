@@ -8,13 +8,13 @@
 // order, and every picture is there.
 
 export const PAGES = [
-  // Preamble and sources (owner, 2026-10-09)
+  // Preamble and sources (owner, 2026-10-09). The preamble's own picture is in the README.
   { id: 'preamble', chapter: 'Preamble and sources', start: 'Preamble and sources', title: 'Preamble' },
-  { id: 'sources', chapter: 'Preamble and sources', start: 'Preamble and sources > Sources' },
   {
     id: 'justtcg', chapter: 'Preamble and sources', start: 'Preamble and sources > JustTCG',
     images: [{ src: 'settings-keys', caption: 'Settings: the JustTCG key and its usage' }],
   },
+  { id: 'other-sources', chapter: 'Preamble and sources', start: 'Preamble and sources > Other Sources' },
 
   // Getting started
   {

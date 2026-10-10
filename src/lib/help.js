@@ -4,8 +4,9 @@
 // page's (src/pages/help/pages.js), so a section added to the README shows up
 // in Help by itself, on the page before it. Pure, so the tests run under Node.
 //
-// The README is the store's own file, so its HTML (tables, <kbd>, <details>)
-// passes straight through; only the Markdown it uses is converted: headings,
+// The README is the store's own file, so its HTML (tables, <kbd>, <details>,
+// <figure>) passes straight through, its pictures' public/ paths pointed at the
+// app's own; only the Markdown it uses is converted: headings,
 // paragraphs, - and 1. lists, pipe tables, **bold**, *italic*, `code` and
 // [links](#anchor).
 
@@ -145,10 +146,12 @@ export function renderMarkdown(lines) {
  * page and place.
  * @param {string} readme  README.md's text
  * @param {{ id: string, chapter: string, start: string, title?: string, images?: object[] }[]} config
+ * @param {{ base?: string }} [options]  where public/ is served ("/pug-pricing-tool/"): a README
+ *   picture's src="public/help/…" becomes src="<base>help/…"
  * @returns {{ pages: object[], anchors: Map<string, { page: string, slug: string }>, problems: string[] }}
  *   `problems`: config starts the README doesn't have, or out of order (the tests check it's empty)
  */
-export function buildHelp(readme, config) {
+export function buildHelp(readme, config, { base = '' } = {}) {
   const blocks = parseReadme(readme);
   const problems = [];
   const index = new Map(blocks.map((b, i) => [b.key, i]));
@@ -171,7 +174,7 @@ export function buildHelp(readme, config) {
     const own = sections[n];
     for (const b of own) if (!anchors.has(b.slug)) anchors.set(b.slug, { page: p.id, slug: b.slug });
     const html = own.map((b, k) => (k === 0 ? '' : `<h3 id="help-${b.slug}">${inline(b.title)}</h3>\n`)
-      + renderMarkdown(b.lines)).join('\n');
+      + renderMarkdown(b.lines)).join('\n').replace(/src="public\//g, `src="${base}`);
     return {
       id: p.id,
       chapter: p.chapter,
