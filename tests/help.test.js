@@ -36,7 +36,8 @@ test('renderMarkdown: paragraphs, lists, tables, HTML', () => {
     '1. first', '2. second', '',
     '| | |', '|---|---|', '| **MTG \\| PKM** | Games |', '',
     '| Col | Two |', '|---|---|', '| x | y |', '',
-    '<details>', '<br>', '---', '</details>',
+    '<details>', '<br>', '---', '</details>', '',
+    '```', '<Card> (<n>) - **not bold**', '```',
   ]);
   assert.match(html, /<p>One line and its next\.<\/p>/);
   assert.match(html, /<ul><li>a wrapped<\/li><li>b<\/li><\/ul>/);
@@ -44,6 +45,7 @@ test('renderMarkdown: paragraphs, lists, tables, HTML', () => {
   assert.match(html, /<table class="help-table keyed"><tbody><tr><td><strong>MTG \| PKM<\/strong><\/td><td>Games<\/td><\/tr>/);
   assert.match(html, /<thead><tr><th>Col<\/th><th>Two<\/th><\/tr><\/thead>/);
   assert.match(html, /<details open>\n<\/details>/);
+  assert.match(html, /<pre><code>&lt;Card&gt; \(&lt;n&gt;\) - \*\*not bold\*\*<\/code><\/pre>/);
 });
 
 test('the README splits into the Help pages, in order', () => {

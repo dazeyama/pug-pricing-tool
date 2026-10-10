@@ -158,6 +158,14 @@ export const PAGES = [
     id: 'exporting', chapter: 'Exporting', start: 'Exporting to Crystal Commerce',
     images: [{ src: 'day', caption: 'EXPORT on a day page' }],
   },
+  // How matching works (owner, 2026-10-09: written a little more for programmers).
+  { id: 'cc-names', chapter: 'Exporting', start: 'Exporting to Crystal Commerce > Reading Crystal Commerce\'s names' },
+  {
+    id: 'cc-category', chapter: 'Exporting', start: 'Exporting to Crystal Commerce > Finding the category',
+    images: [{ src: 'settings-bottom', caption: 'Settings: remembered set choices and products' }],
+  },
+  { id: 'cc-product', chapter: 'Exporting', start: 'Exporting to Crystal Commerce > Picking the product' },
+  { id: 'cc-scoring', chapter: 'Exporting', start: 'Exporting to Crystal Commerce > Scoring', title: 'Scoring the candidates' },
   {
     id: 'export-review', chapter: 'Exporting', start: 'Exporting to Crystal Commerce > 2. Review', title: 'Reviewing the matches',
     images: [{ src: 'export-review', caption: 'Review' }],

@@ -7,8 +7,8 @@
 // The README is the store's own file, so its HTML (tables, <kbd>, <details>,
 // <figure>) passes straight through, its pictures' public/ paths pointed at the
 // app's own; only the Markdown it uses is converted: headings,
-// paragraphs, - and 1. lists, pipe tables, **bold**, *italic*, `code` and
-// [links](#anchor).
+// paragraphs, - and 1. lists, pipe tables, ``` code blocks, **bold**,
+// *italic*, `code` and [links](#anchor).
 
 /** "📤 Exporting to Crystal Commerce" → "Exporting to Crystal Commerce": the emoji in front go. */
 export function cleanTitle(text) {
@@ -91,7 +91,7 @@ function table(rows) {
 const LIST = /^(?:[-*]|\d+\.) /;
 const HTML = /^<\/?[a-zA-Z]/;
 /** A line that ends a paragraph: a new block starts on it. */
-const startsBlock = (t) => !t || t.startsWith('|') || LIST.test(t) || HTML.test(t) || t === '---';
+const startsBlock = (t) => !t || t.startsWith('|') || t.startsWith('```') || LIST.test(t) || HTML.test(t) || t === '---';
 
 /**
  * A README section's lines as HTML. Rules (---) and lone <br>s are the
@@ -103,7 +103,14 @@ export function renderMarkdown(lines) {
   let i = 0;
   while (i < lines.length) {
     const t = lines[i].trim();
-    if (!t || t === '---' || t === '<br>') {
+    if (t.startsWith('```')) {
+      // A code block, as written: escaped, never read as Markdown.
+      const code = [];
+      i += 1;
+      while (i < lines.length && !lines[i].trim().startsWith('```')) code.push(lines[i++]);
+      i += 1;
+      out.push(`<pre><code>${escapeHtml(code.join('\n'))}</code></pre>`);
+    } else if (!t || t === '---' || t === '<br>') {
       i += 1;
     } else if (t.startsWith('<p align="center">')) {
       while (i < lines.length && !lines[i].includes('</p>')) i += 1;

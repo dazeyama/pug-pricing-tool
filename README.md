@@ -884,8 +884,126 @@ Inventory** in Settings.
 
 ### 1. Matching
 
-The app matches each card to one Crystal Commerce product, by name and category. It also fetches
-today's prices for the Sell Prices. A line shows what it's doing.
+Matching runs as soon as the export window opens. Each Magic card gets exactly one Crystal Commerce
+product: a **Product Name** and a **Category**, both copied exactly from the Master Crystal
+Inventory. Mass Create only updates a product when both match to the letter, so nothing the app
+builds itself is ever written to the file.
+
+Every card goes through four steps:
+
+1. **A remembered match.** A product remembered for this printing and finish is used straight away,
+   if it's still in the inventory.
+2. **The category.** The card's set becomes a Crystal Commerce category.
+3. **The candidates.** Every product in that category with the card's name.
+4. **The pick.** Each candidate is checked and scored against the card. One clear winner is
+   **Matched**. Anything else goes to **Needs a choice**.
+
+At the same time it fetches today's prices for the Sell Prices. A line in the window shows what
+it's doing.
+
+The rules are in `src/lib/ccMatch.js` (category, expected name, scores) and `src/lib/ccNames.js`
+(reading product names). Both are covered by tests. `scripts/cc-report.mjs` runs them against an
+inventory file and a list of printings. On the store's inventory (October 1, 2026), 190 of 200
+random English printings matched on their own; 2 needed a choice and 8 had no category.
+
+### Reading Crystal Commerce's names
+
+When the Master Crystal Inventory is uploaded, every product's name is split into parts and stored
+with it. Crystal Commerce always writes its names in this order:
+
+```
+<Card name> (<bracket>) - <Foil kind> - <Variant 1> - <Variant 2> …
+```
+
+| Part | Examples | Read as |
+|---|---|---|
+| **Card name** | `Brazen Borrower // Petty Theft` | Everything before the first space-hyphen-space. Compared folded: lower case, no accents, curly quotes and dashes made plain. |
+| **Bracket** | `(2090)`, `(0008)`, `(263s)`, `(PAGL)` | The last `(…)` on the name, if any: a collector number, or a set code (The List). |
+| **Foil kind** | `Foil`, `Foil Etched`, `Surge Foil`, `Rainbow Foil` | A part ending in "Foil" or "Foil Etched", wherever it sits. None means non-foil. |
+| **Variants** | `Showcase`, `Borderless`, `Extended Art` | Every other part, in order. |
+
+So `Fabricate (2090) - Rainbow Foil` is Fabricate, number 2090, Rainbow Foil, no variants.
+`Brazen Borrower // Petty Theft - Foil - Showcase` is foil with one variant, Showcase. Runs of
+spaces are ignored for reading, but the file gets each name exactly as Crystal Commerce has it.
+
+### Finding the category
+
+The card's set becomes a category. The first rule that gives a category the inventory actually has
+wins:
+
+1. **Staff's choice** for that set, remembered from an earlier export (**Settings → Crystal
+   Commerce matching → Sets**).
+2. **Promos.** A prerelease promo goes to `Prerelease Promo: <set>`, else `Pre-Release Promos`. A
+   promo pack card goes to `Promo Pack: <set>`.
+3. **The same name.** The set's Scryfall name equals a category, compared as letters and digits
+   only. This covers about 71% of products.
+4. **Renames and patterns,** in this order:
+   - Sets Crystal Commerce names its own way: The List, Secret Lair Drop Series, Alpha, Beta,
+     Unlimited, Sixth Edition, Ravnica, Conspiracy 2: Take the Crown, Game Night 2018.
+   - Commander decks: `Commander: <main set's full name>`, so New Capenna Commander is
+     `Commander: Streets of New Capenna`. Then `Commander: Universes Beyond: <set>`.
+   - `<set> Eternal` → `<set>: Eternal-Legal` or `<set> Eternal-Legal`.
+   - `Universes Beyond: <set>`.
+5. **No category.** The candidates come from every category, and the card always goes to **Needs a
+   choice**. When she picks a product there, **Always use the picked product's category for…**
+   remembers it for the whole set (rule 1).
+
+
+### Picking the product
+
+**Candidates** are the products in the category whose card name is the card's, folded. Two special
+cases:
+
+- A card with a flavor name (the Universes Beyond Eternal sets) also matches
+  `<flavor name> - <card name>`.
+- A two-part card that Crystal Commerce lists by its front only (Kamigawa's flip cards) is found by
+  its front name.
+
+**The expected name.** The app writes the name Crystal Commerce would most likely use, in its
+order: `<name> (<number>) - <foil kind> - <variants>`.
+
+- **The number** is included only when one of the candidates carries a number.
+- **The foil kind** is none for non-foil, `Foil Etched` for etched, the card's special foil when it
+  has one (Surge, Rainbow, Galaxy, Halo, Ripple, Fracture, Textured, Mana, Gilded, Raised,
+  Confetti, Step-and-Compleat, Double Rainbow), and plain `Foil` otherwise.
+- **The variants** come from the printing's traits, saved at the buy, in Crystal Commerce's order:
+  Prerelease Promo, Promo Pack, The List, Extended Art, Borderless, Showcase, Retro Frame, Full Art,
+  Serialized, Buy-a-Box Promo, Bundle Promo, Textless.
+
+**Required checks.** A candidate is dropped when:
+
+- its finish doesn't fit: no foil kind for non-foil, `Foil Etched` for etched, any other foil kind
+  for foil;
+- its bracket is a collector number other than the card's. `0008` and `8` are the same number.
+
+### Scoring
+
+Every candidate that passes the checks gets points:
+
+| Evidence | Points |
+|---|---|
+| Exactly the expected name | +100 |
+| Its bracket is the card's collector number | +5 |
+| Its bracket is a set code matching the start of the card's number (`(PAGL)` for `PAGL-12`) | +3, else −1 |
+| Its foil kind is exactly the one expected (plain `Foil` included) | +2, a different one −1 |
+| Each of the card's variants it shows | +3, each one missing −1 |
+| Each variant it shows that the card doesn't have | −2, an unknown word −1 |
+| No bracketed number, when another candidate has the card's | −4 |
+
+Variants match by family: `Showcase` also covers `Showcase Scrolls` and `Japan Showcase`;
+`Borderless` covers `Anime Borderless`, `Borderless Manga` and `Borderless Poster`.
+
+The result:
+
+- **Matched** when only one candidate passes, or the best leads the next by 2 points or more.
+- **Needs a choice** when it's closer than that, or no candidate passes. The candidates are listed
+  best first. Ones that failed a check come after, marked *a different finish or number*.
+- **Can't upload** when there are no candidates at all, unless she finds a product with the search.
+
+**A remembered match skips all of this.** It's kept by printing and finish (the card's Scryfall ID
+and its finish) and points at a Product ID. A product renamed in a newer inventory is still found
+by its ID. One that's gone is ignored: the card is matched again from the start. If it then needs a choice,
+the review says which product it used to be.
 
 ### 2. Review
 
