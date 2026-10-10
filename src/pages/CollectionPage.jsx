@@ -332,6 +332,8 @@ function CollectionScreen({ id }) {
       removeLocked={removeLocked}
       // Highlighted in its kind's colour (owner, 2026-10-01): System, Projects or Collections.
       className={`collection-screen kind-${system ? 'system' : buy?.project ? 'project' : 'collection'}`}
+      // A project's prices round up, like an export (owner, 2026-10-10).
+      roundUp={Boolean(buy?.project)}
       hits={hits}
       listTitle="Collection list"
       ratesTitle="Rates for this collection"
@@ -586,6 +588,7 @@ function CollectionScreen({ id }) {
           {repricing && (
             <RepriceModal
               lines={col.lines}
+              roundUp={Boolean(buy?.project)}
               onReprice={reprice}
               onClose={() => {
                 setRepricing(false);

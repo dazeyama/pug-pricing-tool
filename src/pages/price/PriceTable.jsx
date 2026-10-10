@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CONDITIONS } from '../../lib/prices.js';
 import { isTcgplayerBase, isTcgplayerPrice, showsTcgplayer } from '../../lib/ladder.js';
-import { formatEur, formatMoney, parseMoney, roundDownPrice } from '../../lib/money.js';
+import { formatEur, formatMoney, parseMoney, roundDownPrice, roundUpPrice } from '../../lib/money.js';
 import { timeAgo } from '../../lib/time.js';
 
 /** Big prices, stepping down so "$1,234.56" still fits a button. */
@@ -15,7 +15,7 @@ function priceStyle(text) {
  * The condition / price table under the selected card (spec 8.7): five big
  * buttons, NM to DMG. Each shows its entry from the price ladder (lib/prices
  * priceLadder): JustTCG's price, or a fallback tagged "fallback", rounded
- * down; "—" when there's neither. ⚠️ on NM when JustTCG's prices look
+ * down (up in a project, `roundUp`); "—" when there's neither. ⚠️ on NM when JustTCG's prices look
  * wrong (the reasons are behind the warning line in the price panel). Under
  * them: Use Fallback and Use Cardmarket (every price from Scryfall/TCGdex, or
  * Cardmarket, and the fallback percentages instead of JustTCG; `override`),
@@ -23,8 +23,9 @@ function priceStyle(text) {
  */
 export default function PriceTable({
   candidate, prices, ladder, pct, market, fallback, cardmarket, warnings, override, onOverride, autoCardmarket,
-  fetchedAt, condition, onCondition, manual, onManual, manualOpen, setManualOpen, onDone,
+  fetchedAt, condition, onCondition, manual, onManual, manualOpen, setManualOpen, onDone, roundUp = false,
 }) {
+  const round = roundUp ? roundUpPrice : roundDownPrice;
   const [text, setText] = useState('');
   const input = useRef(null);
   useEffect(() => {
@@ -50,7 +51,7 @@ export default function PriceTable({
     const key = `Alt+${i + 1}`;
     if (!candidate || loading) return `${code} · ${key}`;
     const e = ladder[code];
-    const rounded = e.raw != null && e.raw !== e.price ? `, rounded down from ${formatMoney(e.raw)}` : '';
+    const rounded = e.raw != null && e.raw !== e.price ? `, rounded ${roundUp ? 'up' : 'down'} from ${formatMoney(e.raw)}` : '';
     let about = 'no price: enter a manual price';
     if (e.source === 'justtcg') about = `JustTCG ${formatMoney(e.price)}${rounded}`;
     else if (isTcgplayerPrice(e, pct?.[code])) {
@@ -85,7 +86,7 @@ export default function PriceTable({
   // Market Price (through Scryfall / TCGdex) and the other conditions from it
   // with the fallback percentages, as if JustTCG had no prices at all.
   const fbFrom = candidate?.game === 'mtg' ? 'Scryfall' : 'TCGdex';
-  const fbNM = fallback && pct?.NM != null ? roundDownPrice((fallback.price * Number(pct.NM)) / 100) : null;
+  const fbNM = fallback && pct?.NM != null ? round((fallback.price * Number(pct.NM)) / 100) : null;
   let fbTitle = "Price NM from TCGplayer's Market Price, and the other conditions from it with the fallback percentages, instead of JustTCG";
   let fbUsable = false;
   if (candidate && !loading) {
@@ -100,7 +101,7 @@ export default function PriceTable({
   }
 
   // Use Cardmarket: the same, from Cardmarket's European price in dollars.
-  const cmNM = cardmarket.usd != null && pct?.NM != null ? roundDownPrice((cardmarket.usd * Number(pct.NM)) / 100) : null;
+  const cmNM = cardmarket.usd != null && pct?.NM != null ? round((cardmarket.usd * Number(pct.NM)) / 100) : null;
   let cmTitle = 'Price every condition from Cardmarket instead of JustTCG';
   let cmUsable = false;
   if (candidate && !loading) {

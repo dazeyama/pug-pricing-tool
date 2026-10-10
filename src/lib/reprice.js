@@ -1,7 +1,7 @@
 // REPRICE? on a collection (owner, 2026-10-01): every card's buy price
 // brought up to today's prices, the way it was priced (the same ladder, its
-// Use Fallback / Use Cardmarket, rounded down like any buy price). For a
-// project worked on for weeks. Manual prices stay as typed (their market
+// Use Fallback / Use Cardmarket, rounded down like any buy price, or up in a
+// project). For a project worked on for weeks. Manual prices stay as typed (their market
 // figures are refreshed); a card with no price today keeps its price.
 // Today's data comes from todaysPrices.js, as the export's does.
 
@@ -16,9 +16,10 @@ const cents = (n) => (n == null ? null : Math.round(n * 100) / 100);
  * @param {object} line  a buy_lines row
  * @param {import('./todaysPrices.js').Today} today
  * @param {Record<string, number>} pct  the Master Fallback Percentages for its game
+ * @param {{ up?: boolean }} [opts]  up: round up (a project's line; ladder.js)
  */
-export function repricedLine(line, today, pct) {
-  const { ladder, wanted, override, auto } = ladderFor(line, today, pct);
+export function repricedLine(line, today, pct, { up = false } = {}) {
+  const { ladder, wanted, override, auto } = ladderFor(line, today, pct, { up });
   const entry = ladder[line.condition];
   const manual = line.price_source === 'manual';
   if (!manual && entry?.price == null) return { line_id: line.id, kept: 'no_price' };

@@ -123,11 +123,12 @@ const JP_NO_MTG = 'Japanese is Pokémon only: switch to EN to search Magic';
  * @param {{ ids: string[], key: string }|null} [p.hits]  list lines a header search matched, to flash
  * @param {string|null} [p.searchBlocked]  why the search bar is off (Can't upload cards), or null
  * @param {any} [p.listBadge]  in the list's heading, beside its title (an exported collection's Custom SKU)
+ * @param {boolean} [p.roundUp]  prices round up, not down (a project; owner, 2026-10-10)
  */
 export default function PricingScreen({
   list, rates, master, locked = null, removeLocked = locked, listTitle, ratesTitle,
   renderListDetails, renderListFooter, resetKey = 0, searchLead = null, className = '', hits = null,
-  searchBlocked = null, listBadge = null,
+  searchBlocked = null, listBadge = null, roundUp = false,
 }) {
   const [text, setText] = useState('');
   // EN | JP for Pokémon: EN every time a screen opens, not remembered
@@ -229,8 +230,9 @@ export default function PricingScreen({
   const base = activeOverride === 'cardmarket' || autoCardmarket
     ? { price: cardmarketUsd, source: 'cardmarket' }
     : fallback;
-  // The five prices shown and used (JustTCG, fallbacks, never rising, rounded down).
-  const ladder = priceLadder(activeOverride ? {} : market, base, fallbackPct, selected?.game);
+  // The five prices shown and used (JustTCG, fallbacks, never rising, rounded
+  // down, or up in a project).
+  const ladder = priceLadder(activeOverride ? {} : market, base, fallbackPct, selected?.game, { up: roundUp });
   // ⚠️ on NM (spec 8.7): reasons to doubt JustTCG's prices. A 1st Edition is
   // checked against its Unlimited version, whose prices came in the same request.
   const unlimited = !magic && version?.firstEdition
@@ -667,6 +669,7 @@ export default function PricingScreen({
                 candidate={selected}
                 prices={prices}
                 ladder={ladder}
+                roundUp={roundUp}
                 pct={fallbackPct}
                 market={market}
                 fallback={fallback}

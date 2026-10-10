@@ -1,7 +1,7 @@
 // The price ladder (spec 8.7), on its own so pure code (the Sell Price, its
 // tests) can use it without the network helpers in prices.js.
 
-import { roundDownPrice } from './money.js';
+import { roundDownPrice, roundUpPrice } from './money.js';
 
 export const CONDITIONS = ['NM', 'LP', 'MP', 'HP', 'DMG'];
 
@@ -21,16 +21,19 @@ const BASE_NAMES = { scryfall_fallback: 'Scryfall', tcgdex_fallback: 'TCGdex', c
  * same as or more than the better condition is set 10% (Magic) or 15%
  * (Pokémon) below it instead, or a quarter below where that would still
  * round to the same price. Then every price is rounded down by the store's
- * steps.
+ * steps, or up in a project (owner, 2026-10-10): the store's own cards,
+ * priced to sell, round up like an export's Sell Price.
  * @param {Record<string, number|null>} market  JustTCG prices by condition (conditionPrices)
  * @param {{ price: number, source: string }|null} fallback  the Scryfall/TCGdex market price
  * @param {Record<string, number>} pct  Master Fallback Percentages for the game
  * @param {'mtg'|'pokemon'} game
+ * @param {{ up?: boolean }} [opts]  up: round up (a project), not down
  * @returns {Record<string, { price: number|null, raw: number|null, source: 'justtcg'|'fallback'|null,
  *   base: { price: number, from: string }|null, thrownOut: number|null,
  *   cap: { code: string, pct: number, from: number, was: number, quarter: boolean }|null }>}
  */
-export function priceLadder(market, fallback, pct, game) {
+export function priceLadder(market, fallback, pct, game, { up = false } = {}) {
+  const round = up ? roundUpPrice : roundDownPrice;
   const out = {};
   let base = null;
   if (market?.NM != null) base = { price: market.NM, from: 'JustTCG' };
@@ -48,21 +51,21 @@ export function priceLadder(market, fallback, pct, game) {
     if (raw == null) {
       let value = base && pct?.[code] != null ? (base.price * Number(pct[code])) / 100 : null;
       // Compared as shown (rounded), so two conditions never show one price.
-      if (value != null && prev != null && roundDownPrice(value) >= roundDownPrice(prev)) {
+      if (value != null && prev != null && round(value) >= round(prev)) {
         const step = CAP_STEP[game] ?? CAP_STEP.mtg;
         entry.cap = { code: prevCode, pct: step, from: prev, was: value, quarter: false };
         value = (prev * (100 - step)) / 100;
         // $1–$2.50 rounds to the quarter, so 10% (or 15%) down can still show
         // the same price ($1.20 and $1.08 both show $1): drop a full quarter
         // below the shown price instead (owner, 2026-09-29).
-        if (roundDownPrice(value) >= roundDownPrice(prev)) {
-          value = Math.max(0, Math.round(roundDownPrice(prev) * 100) - 25) / 100;
+        if (round(value) >= round(prev)) {
+          value = Math.max(0, Math.round(round(prev) * 100) - 25) / 100;
           entry.cap.quarter = true;
         }
       }
       Object.assign(entry, { raw: value, source: value != null ? 'fallback' : null, base });
     }
-    entry.price = roundDownPrice(entry.raw);
+    entry.price = round(entry.raw);
     out[code] = entry;
     if (entry.raw != null) {
       prev = entry.raw;
@@ -81,8 +84,9 @@ export function priceLadder(market, fallback, pct, game) {
  * @param {{ game?: string, lang?: string, price_snapshot?: { override?: string|null } }} line
  * @param {{ market?: Record<string, number|null>, fallback?: object|null, cardmarketUsd?: number|null }} today
  * @param {Record<string, number>} pct  Master Fallback Percentages for the line's game
+ * @param {{ up?: boolean }} [opts]  up: round up (a project's line)
  */
-export function ladderFor(line, today, pct) {
+export function ladderFor(line, today, pct, { up = false } = {}) {
   const market = today.market ?? {};
   const anyMarket = CONDITIONS.some((c) => market[c] != null);
   const wanted = line.price_snapshot?.override ?? null;
@@ -93,7 +97,7 @@ export function ladderFor(line, today, pct) {
   const base = override === 'cardmarket' || auto
     ? { price: today.cardmarketUsd, source: 'cardmarket' }
     : today.fallback ?? null;
-  return { ladder: priceLadder(override ? {} : market, base, pct, line.game ?? 'mtg'), wanted, override, auto };
+  return { ladder: priceLadder(override ? {} : market, base, pct, line.game ?? 'mtg', { up }), wanted, override, auto };
 }
 
 /** The fallback bases that are TCGplayer's Market Price (Scryfall's usd, TCGdex's marketPrice). */

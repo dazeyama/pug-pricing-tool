@@ -10,10 +10,11 @@ import { repricedLine } from '../../lib/reprice.js';
  * all at once. Can't be closed while it works.
  * @param {object} p
  * @param {object[]} p.lines  the collection's lines
+ * @param {boolean} [p.roundUp]  a project: prices round up (ladder.js)
  * @param {(updates: object[], counts: { changed: number, manual: number, noPrice: number }) => Promise<boolean>} p.onReprice
  * @param {() => void} p.onClose
  */
-export default function RepriceModal({ lines, onReprice, onClose }) {
+export default function RepriceModal({ lines, roundUp = false, onReprice, onClose }) {
   const { values } = useSettings();
   const [phase, setPhase] = useState('ask');   // ask | working | error
   const [step, setStep] = useState('');
@@ -28,7 +29,7 @@ export default function RepriceModal({ lines, onReprice, onClose }) {
     try {
       const today = await todaysPrices(lines, { onStep: setStep });
       const pct = { mtg: values.fallback_pct_mtg, pokemon: values.fallback_pct_pokemon };
-      const repriced = lines.map((l) => ({ line: l, r: repricedLine(l, today.get(l.id) ?? {}, pct[l.game]) }));
+      const repriced = lines.map((l) => ({ line: l, r: repricedLine(l, today.get(l.id) ?? {}, pct[l.game], { up: roundUp }) }));
       const updates = repriced.filter(({ r }) => r.kept !== 'no_price').map(({ r }) => {
         const { kept, ...update } = r;
         return update;
@@ -69,7 +70,7 @@ export default function RepriceModal({ lines, onReprice, onClose }) {
           <p>
             Every card here (<strong>{cards} card{cards === 1 ? '' : 's'}</strong>) gets today's buy price for its
             condition, worked out the way it was priced: the same price ladder, Use TCGplayer / Use Cardmarket as it was,
-            rounded down as always. Sell prices aren't touched.
+            {roundUp ? 'rounded up, as in every project' : 'rounded down as always'}. Sell prices aren't touched.
           </p>
           <p className="hint">
             {manual > 0 && <>{manual} manual price{manual === 1 ? '' : 's'} stay{manual === 1 ? 's' : ''} as typed. </>}
