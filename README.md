@@ -108,6 +108,8 @@ status.justtcg.com.
   hours old.
 - One request covers up to 100 cards. An export, a **REPRICE?** or a **COMPLETE** uses about one
   request for every 100 different cards.
+- Japanese Pokémon are a catalogue of their own on JustTCG (Pokemon Japan). The app looks Japanese
+  cards up there. A "No." search uses about one request.
 - Home shows a warning once 80% of the day's requests are used. When they run out, a yellow bar
   says so, and prices are typed by hand until midnight UTC.
 
@@ -126,7 +128,7 @@ store's database.
 | **Limitless TCG**<br>Japanese Pokémon images | A Pokémon tournament and card database site with Japanese cards. Used for Japanese cards TCGdex has no picture of. |
 | **Pokellector**<br>Vintage Japanese Pokémon images (1996–2001) | A Pokémon card checklist site for English and Japanese sets. Used for the ten oldest Japanese sets, whose pictures neither TCGdex nor Limitless has. |
 | **PokeAPI**<br>English names for Japanese Pokémon | A free, open-source database of Pokémon game data. The app's list of 1,025 English Pokémon names came from it once, on September 29, 2026, and is kept inside the app. A Japanese card's English name comes from the Pokédex number printed on it. |
-| **TCGplayer's catalogue, through JustTCG**<br>Pokémon cards TCGdex doesn't list yet | TCGplayer is a US online marketplace for trading cards. When TCGdex doesn't list a card or a version yet, the app finds it in TCGplayer's list of products, through JustTCG. Those cards are marked **From TCGplayer**. |
+| **TCGplayer's catalogue, through JustTCG**<br>Pokémon cards TCGdex doesn't list yet | TCGplayer is a US online marketplace for trading cards. When TCGdex doesn't list a card or a version yet, the app finds it in TCGplayer's list of products, through JustTCG. That covers new English cards, and the oldest Japanese cards a "No." search finds (a trainer's Pokémon, Dark ones, old decks and promos). Those cards are marked **From TCGplayer**. |
 | **Scryfall and TCGdex**<br>Cardmarket prices | Cardmarket is a European online marketplace for trading cards, with prices in euros. Scryfall reports them for Magic, TCGdex for Pokémon. They're used by **Use Cardmarket**, for Japanese Pokémon with no JustTCG price, and to spot a JustTCG price that may be wrong. |
 | **Frankfurter**<br>Euro to dollar rate | A free, open-source exchange-rate service. Its rate comes from the European Central Bank, which publishes one every working day. The app turns Cardmarket's euros into dollars with it. |
 
@@ -401,12 +403,40 @@ part can be left out. The sample text shows one: `Lightning Bolt 117/331 2X2`.
 | **MTG \| PKM** | Which games to search. Both are on to start. One always stays on. |
 | **EN \| JP** | English or Japanese Pokémon. EN to start, every time the screen opens. |
 
-**Japanese Pokémon** are found by number and set code: `025/165 SV2a`. The oldest Japanese sets
-(1996 to 2001) have no set numbers. Those are found by the Pokédex number printed on the card:
-`No. 32`. JP is Pokémon only, so MTG is greyed out while it's on. A **JP** chip shows in the bar.
+Japanese cards are searched differently: see [Japanese searches](#japanese-searches).
 
-A set code from the other language gets a note under the bar, with a **switch to JP** (or **EN**)
-link.
+### Japanese searches
+
+**JP** searches Japanese Pokémon. It's Pokémon only, so MTG is greyed out while it's on, and a
+**JP** chip shows in the bar. Japanese names can't be typed, so Japanese cards are found by their
+numbers:
+
+| She types | It finds |
+|---|---|
+| `025/165 SV2a` | Card 25 in the set SV2a. |
+| `025/165` | Card 25 in each Japanese set of 165 cards. |
+| `No. 32` | The oldest cards, from 1996 to 2001, which print the Pokédex number instead of a collector number. |
+
+A **"No." search** shows:
+
+- The cards TCGdex has with that Pokédex number, in the ten oldest sets.
+- The same Pokémon's other cards from those years, from TCGplayer's catalogue: a trainer's Pokémon
+  (*Misty's Starmie*), Dark, Light and Shining ones, and cards from decks and promos TCGdex doesn't
+  list. They're marked **From TCGplayer**, labelled like *CGD No. 121*, and show up a moment after
+  the rest.
+- Cards from the sets that print the Pokédex number, and nothing else. Newer cards of the same
+  Pokémon never appear.
+
+A card is found by its own Pokémon's number. One misprinted with another number is found by the
+Pokémon's real number.
+
+**Suggestions under the bar,** in yellow, offer the other language when the search needs it:
+
+- A set code from the other language: *"**OBF** is an English Pokémon set: switch to EN"*.
+- A "No." search with EN on: *"**No. 121** finds old Japanese Pokémon cards by Pokédex number:
+  switch to JP"*.
+
+**Switch to JP** (or **EN**) changes the language and searches again.
 
 ### Suggestions
 
@@ -434,7 +464,8 @@ pattern reverse holos get a ball badge.
 ### Card details
 
 The name, set and set code, number and set size, rarity, game and language. A Japanese card shows
-its English name beside the Japanese one. Pokémon cards show their regulation mark.
+its English name beside the Japanese one, a trainer's or Dark one's included (*Misty's Starmie*,
+*Dark Charizard*). Pokémon cards show their regulation mark.
 
 Three links open the card on other sites, each in its own pop-up window:
 
@@ -583,8 +614,12 @@ The same list sits at the bottom of the screen.
 4. **Prices never go up as the condition gets worse.** A JustTCG price higher than a better
    condition's is thrown out and replaced by a fallback. A fallback that would match or beat the
    better condition is set 10% below it for Magic, 15% for Pokémon.
-5. **Japanese Pokémon** with no JustTCG price use Cardmarket automatically.
-6. **Every price is rounded down** by the store's steps.
+5. **Japanese Pokémon** come from JustTCG's Japanese catalogue. A Poké Ball or Master Ball pattern
+   version is priced as its own product. A Japanese card with no JustTCG price uses Cardmarket
+   automatically.
+6. **A Poké Ball pattern is never priced above the same card's Master Ball pattern.** When TCGdex's
+   figures have the two the wrong way round, the app swaps them back.
+7. **Every price is rounded down** by the store's steps.
 
 <br>
 

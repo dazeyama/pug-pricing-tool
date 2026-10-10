@@ -49,6 +49,10 @@ export const PAGES = [
   { id: 'buy', chapter: 'Buy tab', start: 'Buy tab', title: 'The Buy tab', images: [{ src: 'buy', caption: 'The Buy tab' }] },
   {
     id: 'search-bar', chapter: 'Buy tab', start: 'Buy tab > The search bar', title: 'Searching for a card',
+    images: [{ src: 'buy', caption: 'The search bar, across the top' }],
+  },
+  {
+    id: 'japanese-search', chapter: 'Buy tab', start: 'Buy tab > Japanese searches',
     images: [{ src: 'buy-jp', caption: 'JP: a Japanese search' }],
   },
   {
