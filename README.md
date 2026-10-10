@@ -198,7 +198,7 @@ Six things make the rest of the app make sense.
 ID. It's priced card by card, then offered, then paid for. Its **status** says where it is.
 
 **A project** is a box of the store's own cards. It has no customer. It's priced so it can be
-exported.
+exported, so its prices round up.
 
 **Market, Cash and Credit.** Market is what the cards sell for. The store pays a share of it:
 **Cash** at one percentage, **Credit** at a higher one. Both are set in **Settings**. Cash is green
@@ -228,10 +228,10 @@ exported.
 
 ### Rounding
 
-Prices are always rounded **down** by these steps. Cash and Credit amounts are too.
+Prices are rounded **down** by these steps. Cash and Credit amounts are too.
 
 <table>
-<tr><th align="left">Price</th><th align="left">Rounded down to the nearest</th></tr>
+<tr><th align="left">Price</th><th align="left">Rounded to the nearest</th></tr>
 <tr><td>Under $1</td><td>cent</td></tr>
 <tr><td>$1 to $10</td><td>quarter</td></tr>
 <tr><td>$10 to $100</td><td>dollar</td></tr>
@@ -239,8 +239,11 @@ Prices are always rounded **down** by these steps. Cash and Credit amounts are t
 <tr><td>$1,000 and up</td><td>$10</td></tr>
 </table>
 
-A price she types by hand is never rounded. Sell Prices on an export use the same steps, rounded
-**up** (see [Exporting](#-exporting-to-crystal-commerce)).
+**Projects round up.** A project's prices use the same steps, rounded **up**: its cards are the
+store's own, priced to sell. Cash and Credit still round down.
+
+A price she types by hand is never rounded. Sell Prices on an export are rounded **up** too (see
+[Exporting](#-exporting-to-crystal-commerce)).
 
 <br>
 
@@ -619,7 +622,8 @@ The same list sits at the bottom of the screen.
    automatically.
 6. **A Poké Ball pattern is never priced above the same card's Master Ball pattern.** When TCGdex's
    figures have the two the wrong way round, the app swaps them back.
-7. **Every price is rounded down** by the store's steps.
+7. **Every price is rounded down** by the store's steps. In a project, every price is rounded
+   **up** instead (see [Rounding](#rounding)).
 
 <br>
 
@@ -697,6 +701,8 @@ A collection opens on the Buy tab's screen, with three differences:
 - **< BACK**, before the search bar, returns to the Collections tab.
 - The list is the **Collection list**, with the collection's **details** at its foot.
 - Instead of CANCEL and CONFIRM BUY, there's **REPRICE?** and **EXPORT**.
+
+In a project, the prices round up (see [Rounding](#rounding)).
 
 Every card added or removed is saved at once and written to the Changelog. Holding a CSV file over
 the window shows whether it can be imported here (see [Import Collection](#-import-collection)).
@@ -776,6 +782,7 @@ Gives every card today's buy price for its condition. Works on Processing and Pr
 projects, and Can't upload cards. It asks first.
 
 - Each card is priced the way it was priced before, Use TCGplayer and Use Cardmarket included.
+- Prices round down, or up in a project.
 - Manual prices stay as typed.
 - A card with no price today keeps its old price.
 - Sell Prices aren't touched.
@@ -905,7 +912,7 @@ Once Completed, a buy is locked. Its prices show in green: those are its Sell Pr
 | **Mark as completed** | Completes this buy's cards without exporting them. They're locked, and left out of the search and the day's export. |
 | **Mark Paid/Ours again** | Undoes Mark as completed. On an exported buy it reads **Mark Paid/Ours again…** and undoes this buy's export only. |
 | **Export single buy…** | Magic only. Exports just this buy, on any day, today included. The rest of the day stays as it is. |
-| **Convert to project…** | Moves every card, both games, into a new project with the buy's notes and rates. The buy is deleted from the day. The name starts as the customer's. |
+| **Convert to project…** | Moves every card, both games, into a new project with the buy's notes and rates. The buy is deleted from the day. The name starts as the customer's. The cards keep their prices until a **REPRICE?** rounds them up. |
 | **Delete buy…** | Deletes the buy and every card in it, both games. Asks first. |
 
 **Convert to project…** and **Delete buy…** are locked once any of the buy's cards are Completed.
