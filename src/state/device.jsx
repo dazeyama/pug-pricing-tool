@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase.js';
 import { readLocal, writeLocal } from '../lib/local.js';
+import { uuid } from '../lib/uuid.js';
 import { useSession } from './session.jsx';
 
 // This browser on this store computer (spec 2, 7.4). A random ID kept in
@@ -24,7 +25,7 @@ const QUIET_RETRY_MS = [1000, 2000, 3000];
 function initialId() {
   const id = readLocal(ID_KEY);
   if (id || !readLocal(LABEL_KEY)) return id;
-  const fresh = crypto.randomUUID();
+  const fresh = uuid();
   writeLocal(ID_KEY, fresh);
   return fresh;
 }
@@ -79,7 +80,7 @@ export function DeviceProvider({ children }) {
     const clean = next.trim();
     if (!clean) return;
     if (!deviceId) {
-      const id = crypto.randomUUID();
+      const id = uuid();
       writeLocal(ID_KEY, id);
       setDeviceId(id);
     }
