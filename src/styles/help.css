@@ -199,11 +199,13 @@
 .help-text details ul { margin-bottom: 0; }
 
 /* A picture in the README's own text (the preamble's), under it: small, so
-   the page fits the screen; a click shows it full size (owner, 2026-10-09). */
-.help-text figure { width: fit-content; margin: 14px 0 0; }
+   the page fits the screen; a click shows it full size (owner, 2026-10-09).
+   The size limit sits on the figure and the picture fills it, so the figure
+   is always exactly as wide as the picture and its caption centres on it. */
+.help-text figure { width: fit-content; max-width: min(100%, 360px); margin: 14px 0 0; }
 .help-text figure img {
   display: block;
-  max-width: min(100%, 360px);
+  width: 100%;
   height: auto;
   border: 1px solid var(--border);
   border-radius: 8px;
