@@ -116,11 +116,19 @@ function Status({ search, lang }) {
   const bits = [];
   for (const game of ['mtg', 'pokemon']) {
     const s = search.games[game].status;
+    // Too many requests (429): say so, not "didn't respond" (owner, 2026-10-09).
+    const limited = search.games[game].limited;
     if (s === 'retrying' || s === 'failed') {
+      let text = s === 'retrying' ? `${SOURCE[game]} didn't respond — retrying…` : `${SOURCE[game]} isn't responding. Try again in a minute.`;
+      if (limited) {
+        text = s === 'retrying'
+          ? `${SOURCE[game]} asked for fewer searches — slowing down and retrying…`
+          : `${SOURCE[game]} is limiting searches right now. Wait a minute, then search again.`;
+      }
       bits.push(
         <span key={game} className="source-down">
           <GameBadge game={game} off />
-          {s === 'retrying' ? `${SOURCE[game]} didn't respond — retrying…` : `${SOURCE[game]} isn't responding. Try again in a minute.`}
+          {text}
         </span>,
       );
     }

@@ -13,13 +13,19 @@ function abortError() {
   return new DOMException('Superseded', 'AbortError');
 }
 
-/** The API didn't answer after every retry. */
+/** The API didn't answer after every retry; `limited` when it said 429 (too many requests). */
 export class UnavailableError extends Error {
-  constructor(url) {
-    super(`No response from ${new URL(url).host}`);
+  constructor(url, limited = false) {
+    super(limited ? `${new URL(url).host} is asking for fewer requests` : `No response from ${new URL(url).host}`);
     this.name = 'UnavailableError';
+    this.limited = limited;
   }
 }
+
+// After a 429 the queue spaces its requests five times wider (at least
+// 500 ms) for a minute (owner, 2026-10-09). A load test at the normal pace
+// (TCGdex's whole set fill and fast typing, 436 requests) never saw one.
+const SLOW_FOR_MS = 60_000;
 
 /**
  * @param {{ spacingMs?: number, tries?: number }} [options]
@@ -29,11 +35,14 @@ export function createTransport({ spacingMs = 100, tries = 5 } = {}) {
   const low = [];
   let running = false;
   let lastRequestAt = 0;
+  let slowUntil = 0;
 
   async function fetchWithRetry(url, signal) {
+    let limited = false;
     for (let attempt = 0; attempt < tries; attempt++) {
+      const gap = Date.now() < slowUntil ? Math.max(spacingMs * 5, 500) : spacingMs;
       const since = Date.now() - lastRequestAt;
-      if (since < spacingMs) await sleep(spacingMs - since);
+      if (since < gap) await sleep(gap - since);
       if (signal?.aborted) throw abortError();
       lastRequestAt = Date.now();
 
@@ -46,13 +55,17 @@ export function createTransport({ spacingMs = 100, tries = 5 } = {}) {
         continue;
       }
       if (res.status === 429 || res.status === 503) {
+        if (res.status === 429) {
+          limited = true;
+          slowUntil = Date.now() + SLOW_FOR_MS;
+        }
         const retryAfter = parseFloat(res.headers.get('Retry-After'));
         await sleep((Number.isNaN(retryAfter) ? 0.5 * (attempt + 1) : retryAfter) * 1000 + 250);
         continue;
       }
       return res;                                     // 200, 404, …: the caller decides
     }
-    throw new UnavailableError(url);
+    throw new UnavailableError(url, limited);
   }
 
   async function pump() {

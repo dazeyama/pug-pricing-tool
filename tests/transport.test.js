@@ -22,3 +22,27 @@ test('promote moves a queued low-priority request ahead of the rest', async () =
     globalThis.fetch = realFetch;
   }
 });
+
+// A 429 is told apart from silence, and the queue slows down after it (owner, 2026-10-09).
+test('a 429 marks the failure as limited and widens the spacing for a while', async () => {
+  const realFetch = globalThis.fetch;
+  const starts = [];
+  let calls = 0;
+  globalThis.fetch = async () => {
+    starts.push(Date.now());
+    calls += 1;
+    return calls === 1
+      ? new Response('{}', { status: 429, headers: { 'Retry-After': '0' } })
+      : new Response('{}', { status: 200 });
+  };
+  try {
+    const t = createTransport({ spacingMs: 10, tries: 1 });
+    await assert.rejects(t.request('https://x.test/a'), (e) => e.name === 'UnavailableError' && e.limited === true);
+    await t.request('https://x.test/b');
+    await t.request('https://x.test/c');
+    // After the 429, at least 500 ms between requests instead of 10.
+    assert.ok(starts[2] - starts[1] >= 480, `spacing was ${starts[2] - starts[1]} ms`);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});

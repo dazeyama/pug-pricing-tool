@@ -418,11 +418,13 @@ export async function runSearch(input, lang, games, oldest, signal, { onParsed, 
         if (isAbort(e)) throw e;
         console.error(`${game} search failed`, e);
         // Only a source that isn't answering is worth waiting on.
+        // `limited`: the source asked for fewer requests (429), not silence.
+        const limited = Boolean(e?.limited);
         if (round >= 4 || !(e instanceof UnavailableError)) {
-          onUpdate(game, { status: 'failed', ...empty });
+          onUpdate(game, { status: 'failed', limited, ...empty });
           return empty;
         }
-        onUpdate(game, { status: 'retrying', ...empty });
+        onUpdate(game, { status: 'retrying', limited, ...empty });
         await sleep(4000, signal);
       }
     }
