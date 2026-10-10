@@ -1,5 +1,6 @@
 import Papa from 'papaparse';
 import { supabase } from './supabase.js';
+import { inChunks } from './inChunks.js';
 import { monthRange, monthTitle, storeDay } from './calendar.js';
 import { formatMoney } from './money.js';
 import { formatPhone } from './phone.js';
@@ -43,17 +44,18 @@ export async function loadCashBuys(month) {
   // a walk-in buy keeps the buy's user there).
   const paidBy = new Map();
   const ids = collections.data.map((b) => b.id);
-  if (ids.length) {
-    const { data, error: e } = await supabase.from('events')
-      .select('target_id, staff_user_id, staff_user_name')
-      .eq('action', 'collection_status_changed')
-      .in('target_id', ids)
-      // As JSON text: an array here would be sent as a Postgres array.
-      .contains('fields', JSON.stringify([{ field: 'paid' }]))
-      .order('at', { ascending: false });
-    if (e) return { data: null, error: e };
-    for (const ev of data) if (!paidBy.has(ev.target_id)) paidBy.set(ev.target_id, ev);
-  }
+  // In chunks: a busy month's collections make too long a URL in one
+  // (inChunks.js). Each chunk is newest first, so the first entry per
+  // collection is still its latest.
+  const { data: paidEvents, error: e } = await inChunks((part) => supabase.from('events')
+    .select('target_id, staff_user_id, staff_user_name')
+    .eq('action', 'collection_status_changed')
+    .in('target_id', part)
+    // As JSON text: an array here would be sent as a Postgres array.
+    .contains('fields', JSON.stringify([{ field: 'paid' }]))
+    .order('at', { ascending: false }), ids);
+  if (e) return { data: null, error: e };
+  for (const ev of paidEvents) if (!paidBy.has(ev.target_id)) paidBy.set(ev.target_id, ev);
 
   const rows = [
     ...walkIns.data.map((b) => ({

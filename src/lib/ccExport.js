@@ -9,6 +9,7 @@ import { categoryFor, chooseProduct, fold, frontFace, promoKind } from './ccMatc
 import { scryfallCards, todaysPrices } from './todaysPrices.js';
 import { sellPriceFor } from './sellPrice.js';
 import { massCreateCsv, massCreateRows } from './massCreate.js';
+import { inChunks } from './inChunks.js';
 
 // Full Scryfall cards by id now live with today's prices (todaysPrices.js).
 export { scryfallCards };
@@ -50,7 +51,8 @@ export async function matchLines(lines, onStep) {
   const [sets, cards, { data: linkRows, error: linkError }] = await Promise.all([
     loadSets(),
     scryfallCards(ids),
-    supabase.from('cc_product_links').select('*').in('scryfall_id', ids.length ? ids : ['-']),
+    // In chunks: a big project's printings make too long a URL in one (inChunks.js).
+    inChunks((part) => supabase.from('cc_product_links').select('*').in('scryfall_id', part), ids),
   ]);
   fail(linkError, "Couldn't read the remembered matches");
   const links = new Map((linkRows ?? []).map((k) => [`${k.scryfall_id}|${k.finish}`, k]));

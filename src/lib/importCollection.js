@@ -7,6 +7,7 @@ import Papa from 'papaparse';
 import { supabase } from './supabase.js';
 import { cardImage, cardsByTcgplayerIds, loadSets, searchAll } from './scryfall.js';
 import { fetchPrices } from './prices.js';
+import { inChunks } from './inChunks.js';
 import { scryfallCards, scryfallCollection } from './todaysPrices.js';
 import { normNumber } from './query.js';
 import { saveLink } from './ccExport.js';
@@ -74,7 +75,10 @@ function nameChunks(names) {
   return chunks;
 }
 
-const SKU_BATCH = 200;   // SKUs in one call to the prices function (two JustTCG requests)
+const SKU_BATCH = 200;
+// Remembered picks are read by key (a category and product name, up to ~150
+// characters): 40 a request keeps the URL short (inChunks.js).
+const KEY_CHUNK = 40;   // SKUs in one call to the prices function (two JustTCG requests)
 
 /** A JustTCG card's name as Scryfall has it: "Klothys, God of Destiny (Showcase)" → "Klothys, God of Destiny". */
 function plainName(name) {
@@ -94,9 +98,8 @@ function plainName(name) {
 async function matchSkus(rows, onStep) {
   const ok = rows.filter((r) => !r.problem);
   const keys = [...new Set(ok.map(importKey))];
-  const { data: picked, error: pickError } = keys.length
-    ? await supabase.from('import_links').select('*').in('key', keys)
-    : { data: [], error: null };
+  const { data: picked, error: pickError } = await inChunks(
+    (part) => supabase.from('import_links').select('*').in('key', part), keys, KEY_CHUNK);
   fail(pickError, "Couldn't read the remembered picks");
   const remembered = new Map((picked ?? []).map((k) => [k.key, k]));
 
@@ -220,7 +223,7 @@ export async function matchImport(rows, onStep, format = 'cc') {
     supabase.rpc('cc_categories'),
     supabase.from('cc_set_map').select('scryfall_set, promo_kind, category'),
     loadSets(),
-    keys.length ? supabase.from('import_links').select('*').in('key', keys) : Promise.resolve({ data: [], error: null }),
+    inChunks((part) => supabase.from('import_links').select('*').in('key', part), keys, KEY_CHUNK),
   ]);
   fail(catError, "Couldn't read the inventory's categories");
   fail(mapError, "Couldn't read the set choices");
@@ -253,9 +256,8 @@ export async function matchImport(rows, onStep, format = 'cc') {
     }
   }
   const productIds = [...new Set([...product.values()].map((p) => p.product_id))];
-  const { data: linkRows, error: linkError } = productIds.length
-    ? await supabase.from('cc_product_links').select('scryfall_id, finish, product_id').in('product_id', productIds)
-    : { data: [], error: null };
+  const { data: linkRows, error: linkError } = await inChunks(
+    (part) => supabase.from('cc_product_links').select('scryfall_id, finish, product_id').in('product_id', part), productIds);
   fail(linkError, "Couldn't read the remembered matches");
 
   // Rows already answered: a pick remembered for this name, or the one
