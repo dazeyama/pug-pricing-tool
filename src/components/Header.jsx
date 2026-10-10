@@ -11,7 +11,8 @@ export function isPricingScreen(pathname) {
 }
 
 // CM's header (spec 7.2): brand on the left, user + search on the right,
-// tabs underneath.
+// tabs underneath. "?" between the user's buttons and the search opens Help
+// (owner, 2026-10-09).
 export default function Header() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
@@ -29,6 +30,15 @@ export default function Header() {
         </button>
         <div className="header-right">
           <UserMenu />
+          <button
+            type="button"
+            className={`help-btn${pathname.startsWith('/help') ? ' on' : ''}`}
+            title="Help"
+            aria-label="Help"
+            onClick={() => navigate('/help')}
+          >
+            ?
+          </button>
           <SearchBox wide={!isPricingScreen(pathname)} />
         </div>
       </div>

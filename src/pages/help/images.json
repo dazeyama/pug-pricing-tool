@@ -1,0 +1,198 @@
+{
+ "login": [
+  1600,
+  1280
+ ],
+ "first-run": [
+  1280,
+  600
+ ],
+ "header": [
+  1920,
+  213
+ ],
+ "user-menu": [
+  880,
+  688
+ ],
+ "search": [
+  1920,
+  2033
+ ],
+ "home": [
+  1920,
+  1523
+ ],
+ "home-tiles": [
+  1920,
+  538
+ ],
+ "home-days": [
+  1200,
+  930
+ ],
+ "buy": [
+  1920,
+  1080
+ ],
+ "buy-search": [
+  1920,
+  1080
+ ],
+ "buy-jp": [
+  1920,
+  301
+ ],
+ "buy-magic": [
+  1920,
+  1080
+ ],
+ "buy-foil": [
+  1920,
+  1076
+ ],
+ "buy-pokemon": [
+  1920,
+  1080
+ ],
+ "buy-conditions": [
+  1520,
+  1040
+ ],
+ "buy-manual": [
+  1520,
+  1040
+ ],
+ "buy-list": [
+  680,
+  1880
+ ],
+ "confirm-buy": [
+  1200,
+  1396
+ ],
+ "fallback": [
+  1400,
+  728
+ ],
+ "collections": [
+  1920,
+  1288
+ ],
+ "new-collection": [
+  1200,
+  1088
+ ],
+ "new-project": [
+  1200,
+  888
+ ],
+ "collection": [
+  1920,
+  1080
+ ],
+ "details": [
+  1480,
+  1560
+ ],
+ "offer": [
+  1200,
+  932
+ ],
+ "paid": [
+  1200,
+  1016
+ ],
+ "reject": [
+  1200,
+  654
+ ],
+ "paid-banner": [
+  1480,
+  1560
+ ],
+ "rejected": [
+  1480,
+  1560
+ ],
+ "completed": [
+  1480,
+  1880
+ ],
+ "reprice": [
+  1200,
+  614
+ ],
+ "delete": [
+  1200,
+  524
+ ],
+ "cant-upload": [
+  1920,
+  1080
+ ],
+ "calendar": [
+  1920,
+  964
+ ],
+ "day": [
+  1920,
+  1288
+ ],
+ "day-menu": [
+  1320,
+  876
+ ],
+ "pokemon-complete": [
+  1920,
+  1288
+ ],
+ "pokemon-done": [
+  1920,
+  1288
+ ],
+ "export-review": [
+  1920,
+  1347
+ ],
+ "export-confirm": [
+  1920,
+  345
+ ],
+ "import-drop": [
+  1760,
+  840
+ ],
+ "import-name": [
+  1920,
+  463
+ ],
+ "import-cc": [
+  1920,
+  1564
+ ],
+ "import-tcg": [
+  1920,
+  424
+ ],
+ "settings-top": [
+  1920,
+  505
+ ],
+ "settings-keys": [
+  1920,
+  505
+ ],
+ "settings-pct": [
+  1920,
+  505
+ ],
+ "settings-bottom": [
+  1920,
+  988
+ ],
+ "changelog": [
+  1920,
+  1288
+ ]
+}

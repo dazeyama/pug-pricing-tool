@@ -22,6 +22,7 @@ import CalendarPage from './pages/CalendarPage.jsx';
 import DayPage from './pages/DayPage.jsx';
 import SettingsPage from './pages/SettingsPage.jsx';
 import ChangelogPage from './pages/ChangelogPage.jsx';
+import HelpPage from './pages/HelpPage.jsx';
 
 /**
  * Header, then the current tab. The tab's panel is keyed by tab so it fades in
@@ -32,8 +33,9 @@ import ChangelogPage from './pages/ChangelogPage.jsx';
 function Layout() {
   const { pathname } = useLocation();
   const { label, saved } = useDevice();
-  // Home is one centered panel that never scrolls (owner, 2026-10-01).
-  const fullScreen = isPricingScreen(pathname) || pathname === '/home';
+  // Home is one centered panel that never scrolls (owner, 2026-10-01); Help's
+  // contents and page scroll inside their own panels (owner, 2026-10-09).
+  const fullScreen = isPricingScreen(pathname) || pathname === '/home' || pathname.startsWith('/help');
   return (
     <div className={`shell${fullScreen ? ' shell-fixed' : ''}`}>
       <Header />
@@ -71,6 +73,8 @@ function AuthGate() {
                   <Route path="/calendar/:game/:date" element={<DayPage />} />
                   <Route path="/settings" element={<SettingsPage />} />
                   <Route path="/changelog" element={<ChangelogPage />} />
+                  <Route path="/help" element={<HelpPage />} />
+                  <Route path="/help/:page" element={<HelpPage />} />
                   {/* Home is the first tab and where the app opens (owner, 2026-10-01). */}
                   <Route path="*" element={<Navigate to="/home" replace />} />
                 </Route>

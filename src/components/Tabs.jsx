@@ -11,9 +11,10 @@ export const TABS = [
   { key: 'changelog', label: 'Changelog', path: '/changelog', apart: true },
 ];
 
-/** Which tab a route belongs to: the first path segment. */
+/** Which tab a route belongs to: the first path segment. Help has no tab of its own (its "?" is in the header). */
 export function tabKeyFor(pathname) {
   const first = pathname.split('/')[1] || 'home';
+  if (first === 'help') return 'help';
   return TABS.some((t) => t.key === first) ? first : 'home';
 }
 
