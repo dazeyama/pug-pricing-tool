@@ -140,13 +140,64 @@ export async function searchAll(q, { maxPages = 10 } = {}) {
   return cards;
 }
 
+// /cards/tcgplayer/:id is under Scryfall's general limit, 10 requests a
+// second (scryfall.com/docs/api/rate-limits, read 2026-10-09; a 429 locks the
+// app out for 30 seconds). Requests start 120 ms apart, a few at once,
+// rather than each waiting for the last one's answer.
+const PRODUCT_GAP = 120;
+const PRODUCT_IN_FLIGHT = 6;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
 /**
- * The printing TCGplayer sells as this product (`/cards/tcgplayer/:id`), or
- * null when Scryfall doesn't know it: TCGplayer-format imports.
- * @param {string|number} id  a TCGplayer product ID
+ * The printings TCGplayer sells as these products (TCGplayer-format
+ * imports): product ID → Scryfall card, or null when Scryfall doesn't know
+ * it. A 429 holds every request for 31 seconds, as Scryfall asks.
+ * @param {(string|number)[]} ids  TCGplayer product IDs
+ * @param {(done: number, total: number) => void} [onProgress]
+ * @returns {Promise<Map<string, object|null>>}
  */
-export function cardByTcgplayerId(id) {
-  return transport.getJson(`${API}/cards/tcgplayer/${encodeURIComponent(String(id))}`);
+export async function cardsByTcgplayerIds(ids, onProgress) {
+  const queue = [...new Set(ids.map(String))];
+  const total = queue.length;
+  const out = new Map();
+  let slot = 0;     // when the next request may start
+  let pause = 0;    // after a 429: nothing before this
+  let done = 0;
+  const takeSlot = async () => {
+    for (;;) {
+      const start = Math.max(slot, pause, Date.now());
+      slot = start + PRODUCT_GAP;
+      await sleep(start - Date.now());
+      if (Date.now() >= pause) return;
+    }
+  };
+  const worker = async () => {
+    while (queue.length) {
+      const id = queue.shift();
+      let card = null;
+      for (let attempt = 0; attempt < 4; attempt++) {
+        await takeSlot();
+        let res = null;
+        try {
+          res = await fetch(`${API}/cards/tcgplayer/${encodeURIComponent(id)}`, { headers: { Accept: 'application/json' } });
+        } catch {
+          res = null;               // a network hiccup: try again in a later slot
+        }
+        if (res && (res.status === 429 || res.status === 503)) {
+          pause = Date.now() + 31_000;
+          continue;
+        }
+        if (!res) continue;
+        if (res.ok) card = await res.json();
+        break;                      // found, or 404: Scryfall doesn't know it
+      }
+      out.set(id, card);
+      done += 1;
+      onProgress?.(done, total);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(PRODUCT_IN_FLIGHT, total) }, worker));
+  return out;
 }
 
 const siblingCache = memoryCache(DAY);

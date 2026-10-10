@@ -28,9 +28,21 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
  */
 export async function scryfallCards(ids) {
   const unique = [...new Set(ids.filter(Boolean))];
-  const out = new Map();
-  for (let i = 0; i < unique.length; i += SCRYFALL_BATCH) {
-    const body = JSON.stringify({ identifiers: unique.slice(i, i + SCRYFALL_BATCH).map((id) => ({ id })) });
+  const cards = await scryfallCollection(unique.map((id) => ({ id })));
+  return new Map(cards.map((card) => [card.id, card]));
+}
+
+/**
+ * Scryfall cards for any identifiers /cards/collection takes ({ id }, or
+ * { set, collector_number }…), 75 a request, two requests a second at most
+ * (Scryfall's limit for this endpoint). Ones it doesn't know are left out.
+ * @param {object[]} identifiers
+ * @returns {Promise<object[]>}
+ */
+export async function scryfallCollection(identifiers) {
+  const out = [];
+  for (let i = 0; i < identifiers.length; i += SCRYFALL_BATCH) {
+    const body = JSON.stringify({ identifiers: identifiers.slice(i, i + SCRYFALL_BATCH) });
     let data = null;
     let wait = i ? SCRYFALL_SPACING : 0;
     for (let attempt = 0; attempt < 4 && !data; attempt++) {
@@ -52,7 +64,7 @@ export async function scryfallCards(ids) {
       }
     }
     if (!data) throw new Error("Scryfall couldn't be reached.");
-    for (const card of data.data ?? []) out.set(card.id, card);
+    out.push(...(data.data ?? []));
   }
   return out;
 }

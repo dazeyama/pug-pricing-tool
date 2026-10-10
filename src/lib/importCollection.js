@@ -5,9 +5,10 @@
 
 import Papa from 'papaparse';
 import { supabase } from './supabase.js';
-import { cardByTcgplayerId, cardImage, loadSets, searchAll } from './scryfall.js';
+import { cardImage, cardsByTcgplayerIds, loadSets, searchAll } from './scryfall.js';
 import { fetchPrices } from './prices.js';
-import { scryfallCards } from './todaysPrices.js';
+import { scryfallCards, scryfallCollection } from './todaysPrices.js';
+import { normNumber } from './query.js';
 import { saveLink } from './ccExport.js';
 import { fold } from './ccMatch.js';
 import { nameKey } from './normalize.js';
@@ -124,18 +125,46 @@ async function matchSkus(rows, onStep) {
     return next;
   });
 
-  // Their Scryfall printings: by id (remembered, or JustTCG's), else by product.
+  // Their Scryfall printings: by id (remembered, or JustTCG's); else by set
+  // and collector number, 75 a request, kept only where Scryfall's TCGplayer
+  // product is this one; else one by one by product (owner, 2026-10-09: as
+  // fast as Scryfall's limits allow, never over them).
   const live = named.filter((r) => !r.problem);
   const ids = live.map((r) => remembered.get(importKey(r))?.scryfall_id ?? r.jt?.scryfallId).filter(Boolean);
   onStep?.('Finding their printings on Scryfall…');
   const byId = await scryfallCards(ids);
-  const products = [...new Set(live.filter((r) => r.jt && !(r.jt.scryfallId && byId.has(r.jt.scryfallId)))
-    .map((r) => String(r.jt.tcgplayerId ?? '')).filter(Boolean))];
   const byProduct = new Map();
-  for (const [i, id] of products.entries()) {
-    onStep?.(`Finding their printings on Scryfall: ${i + 1} of ${products.length}…`);
-    const card = await cardByTcgplayerId(id);
-    if (card) byProduct.set(id, card);
+  const product = (r) => String(r.jt?.tcgplayerId ?? '');
+  const unsolved = () => live.filter((r) => r.jt && product(r) && !(r.jt.scryfallId && byId.has(r.jt.scryfallId))
+    && !byProduct.has(product(r)));
+
+  const sets = await loadSets();
+  const setNames = new Map(unsolved().map((r) => [fold(r.jt.set_name), r.jt.set_name]));
+  const codesFor = categorySets({ sets, categories: setNames, setMap: new Map() });
+  const identifiers = new Map();
+  for (const r of unsolved()) {
+    const codes = codesFor.get(fold(r.jt.set_name)) ?? [];
+    const number = normNumber(String(r.jt.number ?? '').split('/')[0]);
+    if (!number || !/^\d/.test(number) || !codes.length || codes.length > 4) continue;
+    for (const code of codes) {
+      // A promo pack's printing is numbered "46p" on Scryfall, "46" on TCGplayer.
+      const numbers = sets.get(code)?.set_type === 'promo' ? [number, `${number}p`] : [number];
+      for (const n of numbers) identifiers.set(`${code}|${n}`, { set: code, collector_number: n });
+    }
+  }
+  if (identifiers.size) {
+    onStep?.('Finding their printings on Scryfall by set and number…');
+    for (const card of await scryfallCollection([...identifiers.values()])) {
+      for (const id of [card.tcgplayer_id, card.tcgplayer_etched_id].filter(Boolean)) {
+        if (!byProduct.has(String(id))) byProduct.set(String(id), card);
+      }
+    }
+  }
+
+  const rest = [...new Set(unsolved().map(product))];
+  if (rest.length) {
+    const found = await cardsByTcgplayerIds(rest, (done, total) => onStep?.(`Finding their printings on Scryfall: ${done} of ${total}…`));
+    for (const [id, card] of found) if (card) byProduct.set(id, card);
   }
   // Not found by product either: their names, for staff to choose from.
   const lost = live.filter((r) => r.jt && !(r.jt.scryfallId && byId.has(r.jt.scryfallId))
