@@ -130,7 +130,7 @@ The header is the same on every tab.
 | **Logo and name** | Go to **Home**. |
 | **User button** | Shows who's working at this computer, in her colour. Reads **Pick user** when no one is picked. |
 | **Sign-out icon** | Beside the user button. Un-picks the current user. The next person picks a user before doing anything. |
-| **?** | Opens **Help**: this guide, inside the app, a section at a time, with pictures. |
+| **?** | Opens **Help**: this guide, inside the app, a section at a time, with pictures. <kbd>←</kbd> and <kbd>→</kbd> turn the pages. |
 | **Search buys & collections…** | Finds cards already bought. See below. |
 | **Tabs** | Home, Buy, Collections, Calendar, Settings. **Changelog** sits apart on the right. Clicking the tab she's already on takes it back to its start. |
 

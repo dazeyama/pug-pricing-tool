@@ -10,7 +10,8 @@ import SIZES from './help/images.json';
 // at a time. A small contents panel on the left (each chapter's pages, the
 // current chapter open), the page on the right: its text, and the training
 // deck's screenshots beside it (click one to see it full size). Pages are
-// sized to about fit the screen; the body scrolls when one doesn't.
+// sized to about fit the screen; the body scrolls when one doesn't. ← and →
+// turn the pages (owner, 2026-10-09).
 
 const HELP = buildHelp(readme, PAGES);
 const picture = (src) => `${import.meta.env.BASE_URL}help/${src}.webp`;
@@ -47,6 +48,24 @@ export default function HelpPage() {
     else body.current?.scrollTo({ top: 0 });
     nav.current?.querySelector('.help-link.on')?.scrollIntoView({ block: 'nearest' });
   }, [page.id, anchor, location.key]);
+
+  // ← / →: the page before or after. Not while typing (the header search),
+  // with a modifier held (the browser's own Alt+← is Back), or over a picture
+  // shown full size.
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || zoom) return;
+      const t = e.target;
+      if (t?.closest?.('input, textarea, select, [contenteditable="true"]')) return;
+      const to = e.key === 'ArrowLeft' ? prev : next;
+      if (!to) return;
+      e.preventDefault();
+      go(to.id);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
 
   /** A README link ("#how-prices-are-worked-out") goes to the page and place it names. */
   function onClick(e) {
@@ -128,10 +147,14 @@ export default function HelpPage() {
         </div>
         <footer className="help-foot">
           {prev ? (
-            <button type="button" className="btn help-step" onClick={() => go(prev.id)}>‹ {prev.title}</button>
+            <button type="button" className="btn help-step" title="Previous page (←)" onClick={() => go(prev.id)}>
+              ‹ {prev.title}
+            </button>
           ) : <span />}
           {next ? (
-            <button type="button" className="btn help-step next" onClick={() => go(next.id)}>{next.title} ›</button>
+            <button type="button" className="btn help-step next" title="Next page (→)" onClick={() => go(next.id)}>
+              {next.title} ›
+            </button>
           ) : <span />}
         </footer>
       </article>
