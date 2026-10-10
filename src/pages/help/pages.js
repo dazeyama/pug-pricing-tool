@@ -8,9 +8,17 @@
 // order, and every picture is there.
 
 export const PAGES = [
+  // Preamble and sources (owner, 2026-10-09)
+  { id: 'preamble', chapter: 'Preamble and sources', start: 'Preamble and sources', title: 'Preamble' },
+  { id: 'sources', chapter: 'Preamble and sources', start: 'Preamble and sources > Sources' },
+  {
+    id: 'justtcg', chapter: 'Preamble and sources', start: 'Preamble and sources > JustTCG',
+    images: [{ src: 'settings-keys', caption: 'Settings: the JustTCG key and its usage' }],
+  },
+
   // Getting started
   {
-    id: 'welcome', chapter: 'Getting started', start: 'What it does', title: 'Welcome',
+    id: 'welcome', chapter: 'Getting started', start: 'Getting started', title: 'Welcome',
     images: [{ src: 'login', caption: 'Signing in' }, { src: 'first-run', caption: 'Naming a computer, the first time' }],
   },
   { id: 'core-ideas', chapter: 'Getting started', start: 'Core ideas' },

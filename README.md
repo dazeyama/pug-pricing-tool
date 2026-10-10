@@ -18,6 +18,133 @@
 
 ---
 
+# 📜 Preamble and sources
+
+PUG Pricing Tool was made for Players' Union Games. The store decided how it should work, tested
+every feature, and approved every change before it went live.
+
+**AI tools helped write the program.** Its code was written with the help of an AI coding assistant
+(Claude Code, made by Anthropic).
+
+**The app itself uses no AI.** It never contacts an AI service, and no AI runs inside it. It is an
+ordinary program. It asks card databases and price services for their data, shows that data, and
+saves what staff do with it.
+
+**No AI comes up with anything in the app.** Every card name, set, number and picture comes from a
+card database. Every market price comes from a price service. Nothing is guessed, invented or
+generated. The few things the app works out for itself follow fixed, written rules: the buy
+percentages, the fallback percentages, the rounding steps, the Sell Price, and matching cards to
+Crystal Commerce products. The same cards and the same prices always give the same answer. This
+guide describes every one of those rules.
+
+**The data is stable.**
+
+- Every buy, collection, card and setting lives in one database, shared by every computer in the
+  store.
+- A card's price is saved with it when it's added, along with where the price came from. A price
+  changing later never changes a past buy. Only **REPRICE?** changes saved prices, and only when
+  someone presses it.
+- Confirmed buys and paid collections keep the rates they were made with.
+- Two computers can't overwrite each other. One computer edits a collection at a time, and a change
+  sent from an out-of-date screen is refused and the screen reloads.
+- The database checks every change against its own rules and refuses one that breaks them.
+- Every change is written to the **Changelog**, with who made it and when.
+- A full backup can be downloaded at any time, and put back with **Restore**.
+- When a source is slow or down, nothing already saved is touched. The app says which source isn't
+  answering, and prices can be typed by hand.
+
+**Players' Union Games (PUG) does not endorse the use of AI.**
+
+### Sources
+
+The app gets its card data from these sources. Each is named at the foot of the **Settings** tab.
+Only searches for cards, and card IDs, are ever sent to them. Nothing about customers leaves the
+store's database.
+
+| | |
+|---|---|
+| **Scryfall**<br>Magic card data and images | A free Magic: The Gathering card database, run independently of Wizards of the Coast. Every Magic search, card detail, picture and set symbol comes from it. It also reports TCGplayer's Market Price and Cardmarket's price for each printing, updated once a day. |
+| **TCGdex**<br>Pokémon card data and images | A free, open-source Pokémon card database in ten languages, run by its community. Every Pokémon search, English and Japanese, comes from it: each card's details, picture and versions (holo, reverse holo, 1st Edition…). It also reports TCGplayer's and Cardmarket's prices. |
+| **pokemontcg.io and TCGplayer**<br>Backup Pokémon images | The Pokémon TCG API (pokemontcg.io, now part of Scrydex) and TCGplayer's own product pictures. Used only when TCGdex has no picture of an English card. |
+| **Limitless TCG**<br>Japanese Pokémon images | A Pokémon tournament and card database site with Japanese cards. Used for Japanese cards TCGdex has no picture of. |
+| **Pokellector**<br>Vintage Japanese Pokémon images (1996–2001) | A Pokémon card checklist site for English and Japanese sets. Used for the ten oldest Japanese sets, whose pictures neither TCGdex nor Limitless has. |
+| **PokeAPI**<br>English names for Japanese Pokémon | A free, open-source database of Pokémon game data. The app's list of 1,025 English Pokémon names came from it once, on September 29, 2026, and is kept inside the app. A Japanese card's English name comes from the Pokédex number printed on it. |
+| **JustTCG**<br>Prices | A paid price service for trading cards. It gives each card a price in every condition. See [JustTCG](#justtcg). |
+| **TCGplayer's catalogue, through JustTCG**<br>Pokémon cards TCGdex doesn't list yet | TCGplayer is a US online marketplace for trading cards. When TCGdex doesn't list a card or a version yet, the app finds it in TCGplayer's list of products, through JustTCG. Those cards are marked **From TCGplayer**. |
+| **Scryfall and TCGdex**<br>Cardmarket prices | Cardmarket is a European online marketplace for trading cards, with prices in euros. Scryfall reports them for Magic, TCGdex for Pokémon. They're used by **Use Cardmarket**, for Japanese Pokémon with no JustTCG price, and to spot a JustTCG price that may be wrong. |
+| **Frankfurter**<br>Euro to dollar rate | A free, open-source exchange-rate service. Its rate comes from the European Central Bank, which publishes one every working day. The app turns Cardmarket's euros into dollars with it. |
+
+### JustTCG
+
+JustTCG is where the app's condition prices come from. This is a summary of its website and FAQ,
+read on October 9, 2026, followed by how the store uses it. JustTCG's plans and figures may change.
+
+**What it is.** A price service for trading card games, made for programs like this one. It covers
+more than 279,000 cards in 20 games, Magic and Pokémon (English and Japanese) among them. It gives
+each card a separate price for every condition, Near Mint to Damaged, and every printing (normal,
+foil and so on).
+
+**Where its prices come from.** Two kinds of sales, blended together:
+
+- Sales on large online trading card marketplaces.
+- Real sales in game stores that belong to its **Partner Program** (more than 65 stores). Each store
+  sends its card sales as they happen. Customer details are thrown away when they arrive.
+
+The two are blended as a volume-weighted average, so no single sale or store sets a price.
+Suspicious sales are held for a person to review. A store caught manipulating prices is removed.
+
+**How fresh.** Prices are worked out again every 6 hours. Each price also carries its changes over
+the last day, week, month and 90 days, and its price history. Graded cards (PSA, BGS, CGC) and
+prices by region are in testing.
+
+**Plans.** Prices before sales tax.
+
+| Plan | Price | Requests a month | A day | A minute | Cards a request |
+|---|---|---|---|---|---|
+| Free | $0 | 1,000 | 100 | 10 | 20 |
+| Starter | $19 a month | 10,000 | 1,000 | 50 | 100 |
+| Professional | $49 a month | 50,000 | 5,000 | 100 | 100 |
+| Enterprise | $149 a month | 500,000 | 50,000 | 500 | 200 |
+
+- The daily count resets at midnight UTC. The monthly count resets at the start of each billing
+  cycle.
+- Too many requests in a minute are refused for a short time.
+- Every paid plan allows business use. The free plan is for personal, non-commercial use only.
+- Paid plans may show the prices, work out figures from them, and keep their history while
+  subscribed. They may not resell the raw prices, publish them in bulk, or build a competing price
+  service.
+- Paid plans may also use the prices to train machine-learning models for their own products.
+  PUG Pricing Tool doesn't.
+- JustTCG also offers a connection for AI assistants. PUG Pricing Tool doesn't use it.
+
+**Account and support.** A key comes straight away when an account is made, with no approval and
+no card. Paid plans are paid by Visa, Mastercard or American Express, and have a 30-day money-back
+guarantee. Support answers tickets in about 24 hours, sooner on paid plans. Its uptime is shown at
+status.justtcg.com.
+
+**How the store uses it.**
+
+- The store has one JustTCG key. It's kept on the server, never on a computer, and every computer
+  shares it (**Settings → API keys**).
+- **Settings → JustTCG usage** shows the store's plan and how much of it is used. On October 9,
+  2026 it was the **Starter** plan.
+- A card's prices are kept for 6 hours, for every computer, matching JustTCG's own 6-hour update.
+  Looking up the same card again in that time uses no request. An export takes prices up to 12
+  hours old.
+- One request covers up to 100 cards. An export, a **REPRICE?** or a **COMPLETE** uses about one
+  request for every 100 different cards.
+- Home shows a warning once 80% of the day's requests are used. When they run out, a yellow bar
+  says so, and prices are typed by hand until midnight UTC.
+
+<br>
+
+---
+
+<br>
+
+# 👋 Getting started
+
+
 ## What it does
 
 The app is for buying cards from customers. She types what's printed on a card. The app finds that
