@@ -27,6 +27,7 @@ import { showsTcgplayer } from '../../lib/ladder.js';
 import { useEnglishPokemonName } from '../../lib/pokemonNames.js';
 import { buildLine } from '../../lib/buyLine.js';
 import { lineText } from '../../lib/lineFormat.js';
+import { dexNumberQuery } from '../../lib/query.js';
 import { useStaff } from '../../state/staff.jsx';
 import { useConnection } from '../../state/connection.jsx';
 import { useToast } from '../../components/Toast.jsx';
@@ -526,11 +527,30 @@ export default function PricingScreen({
     };
   }, [typedSet, lang]);
 
+  // "No. 121" with EN on: a Pokédex number search, which only JP does (owner, 2026-10-10).
+  const dexTyped = lang !== 'ja' ? dexNumberQuery(text) : null;
+
   let note = null;
   if (editing) {
     note = (
       <>
         Editing <strong>{lineText(editing.line)}</strong>: EDIT CARD saves the changes, Esc leaves it as it was.
+      </>
+    );
+  } else if (dexTyped) {
+    note = (
+      <>
+        <strong>No. {dexTyped}</strong> finds old Japanese Pokémon cards by Pokédex number:{' '}
+        <button
+          type="button"
+          className="link-btn"
+          onClick={() => {
+            setLang('ja');
+            focusSearch();
+          }}
+        >
+          switch to JP
+        </button>
       </>
     );
   } else if (langHint) {
