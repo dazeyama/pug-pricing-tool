@@ -10,6 +10,9 @@ import GuardButton from '../components/GuardButton.jsx';
 import UserTag from '../components/UserTag.jsx';
 import { NewCollectionModal, NewProjectModal } from './collections/CollectionModals.jsx';
 import ImportDialog from './collections/ImportDialog.jsx';
+import RowAction from './collections/RowAction.jsx';
+import MoreMenu from '../components/MoreMenu.jsx';
+import { useConnection } from '../state/connection.jsx';
 import { FILTERS, isClosed, statusText, statusTone } from './collections/status.js';
 import { OfferText, PaidText } from './collections/CollectionDetails.jsx';
 import { errorMessage } from './collections/useCollection.js';
@@ -22,9 +25,11 @@ const STATUS_ORDER = { processing: 0, priced: 1, paid: 2, completed: 3, rejected
 
 // The table's columns (spec 9.1), in order: the value each sorts by and its
 // cell. Offer and Paid come last, after Notes, Paid the very last (owner,
-// 2026-09-29). `by` looks up a staff user (Last edited by); `elsewhere` is a
-// row's "✎ open on" line. An offer or price not set yet (TBD) sorts as -1.
-const columns = (by) => [
+// 2026-09-29), then the ⋯ menu (owner, 2026-10-11). `by` looks up a staff
+// user (Last edited by); `elsewhere` is where a row is open on another
+// computer ("Front Counter (Dana)"); `menu` is a row's ⋯ items. An offer or
+// price not set yet (TBD) sorts as -1.
+const columns = (by, menu) => [
   {
     key: 'name',
     label: 'Name',
@@ -32,7 +37,7 @@ const columns = (by) => [
     cell: (c, elsewhere) => (
       <td key="name" className="col-name">
         {c.customer_name}
-        {elsewhere && <span className="lock-line">{elsewhere}</span>}
+        {elsewhere && <span className="lock-line">✎ open on {elsewhere}</span>}
       </td>
     ),
   },
@@ -86,6 +91,22 @@ const columns = (by) => [
     },
     cell: (c) => <td key="paid" className="col-money">{c.system_key || c.project ? '—' : <PaidText buy={c} />}</td>,
   },
+  {
+    // The menu a collection's details have (Delete collection…, a project's
+    // Convert to buy…), without opening it. Can't upload cards has none.
+    key: 'more',
+    label: '',
+    sortable: false,
+    value: () => 0,
+    cell: (c, elsewhere) => (
+      // Its clicks and keys stay here: the row itself opens the collection.
+      <td key="more" className="col-more" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => {
+        if (e.key === 'Enter') e.stopPropagation();
+      }}>
+        {!c.system_key && <MoreMenu float items={menu(c, elsewhere)} />}
+      </td>
+    ),
+  },
 ];
 
 /**
@@ -100,6 +121,9 @@ export default function CollectionsPage() {
   const { deviceId } = useDevice();
   const staff = useStaff();
   const toast = useToast();
+  const { offline } = useConnection();
+  // A row's ⋯ action, while its dialog is open: { id, action: 'delete' | 'convert' }.
+  const [acting, setActing] = useState(null);
   const { data, loaded } = useLiveTable('buys', () => supabase
     .from('buys')
     .select('id, customer_name, phone, status, notes, created_at, updated_at, last_edited_by, '
@@ -131,7 +155,27 @@ export default function CollectionsPage() {
   }, []);
 
   const all = data ?? [];
-  const COLUMNS = columns(staff.byId);
+
+  /** A row's ⋯ items, blocked as they are on its own screen (owner, 2026-10-11). */
+  const menu = (c, elsewhere) => {
+    const busy = offline ? 'No connection' : elsewhere ? `${elsewhere} is editing it: open it and take over first` : null;
+    return [
+      ...(c.project ? [{
+        label: 'Convert to buy…',
+        blocked: busy ?? (c.status === 'completed' ? "Completed: its cards were exported, so it can't become a buy" : null),
+        title: "Move every card into a new buy on today's page, confirmed now, and delete the project",
+        onClick: () => setActing({ id: c.id, action: 'convert' }),
+      }] : []),
+      {
+        label: 'Delete collection…',
+        danger: true,
+        blocked: busy,
+        title: 'Delete this collection and every card in it',
+        onClick: () => setActing({ id: c.id, action: 'delete' }),
+      },
+    ];
+  };
+  const COLUMNS = columns(staff.byId, menu);
   const kindOf = (c) => (c.system_key ? 'system' : c.project ? 'project' : 'collection');
   const tables = useMemo(() => {
     const words = nameKey(query);
@@ -161,13 +205,13 @@ export default function CollectionsPage() {
     collection: all.filter((c) => kindOf(c) === 'collection').length,
   };
 
-  /** Open on another computer: "✎ open on Front Counter (Dana)". */
+  /** Open on another computer: where, "Front Counter (Dana)", or null. */
   function openElsewhere(id) {
     const lock = (locks.data ?? []).find((l) => l.buy_id === id);
     if (!lock || lock.device_id === deviceId) return null;
     if (now - new Date(lock.heartbeat_at).getTime() > STALE_MS) return null;
     const who = staff.byId(lock.staff_user_id)?.name;
-    return `✎ open on ${lock.devices?.label ?? 'another computer'}${who ? ` (${who})` : ''}`;
+    return `${lock.devices?.label ?? 'another computer'}${who ? ` (${who})` : ''}`;
   }
 
   function sortBy(key) {
@@ -234,7 +278,7 @@ export default function CollectionsPage() {
           </colgroup>
           <thead>
             <tr>
-              {COLUMNS.map((c) => (
+              {COLUMNS.map((c) => (c.sortable === false ? <th key={c.key} className={`col-${c.key}`} aria-label="More" /> : (
                 <th
                   key={c.key}
                   className={`col-${c.key}`}
@@ -247,7 +291,7 @@ export default function CollectionsPage() {
                     </span>
                   </button>
                 </th>
-              ))}
+              )))}
             </tr>
           </thead>
           <tbody>
@@ -340,6 +384,7 @@ export default function CollectionsPage() {
       {creating === 'project' && (
         <NewProjectModal busy={busy} onCreate={create} onClose={() => setCreating(null)} />
       )}
+      {acting && <RowAction key={`${acting.id}:${acting.action}`} {...acting} onClose={() => setActing(null)} />}
       {importing && (
         <ImportDialog
           file={importing}

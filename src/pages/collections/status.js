@@ -32,6 +32,21 @@ export const isClosed = (s) => s === 'paid' || s === 'completed';
 export const keepsRates = (s) => isClosed(s) || s === 'rejected';
 
 /**
+ * A collection's rates (spec 8.9.1, 9.4): the Paid/Ours snapshot (kept while
+ * Completed), or Rejected's (migration 0044), else its custom rates where
+ * set, else the Master Buy Percentages.
+ * @param {object|null} buy
+ * @param {{ cash: number, credit: number }} master
+ */
+export function collectionRates(buy, master) {
+  const customCash = buy?.custom_cash_pct != null ? Number(buy.custom_cash_pct) : null;
+  const customCredit = buy?.custom_credit_pct != null ? Number(buy.custom_credit_pct) : null;
+  return Boolean(buy) && keepsRates(buy.status) && buy.cash_pct != null
+    ? { cash: Number(buy.cash_pct), credit: Number(buy.credit_pct), customCash, customCredit }
+    : { cash: customCash ?? master.cash, credit: customCredit ?? master.credit, customCash, customCredit };
+}
+
+/**
  * A collection's colour (owner, 2026-09-29): Processing amber, Priced red,
  * Paid/Ours green for cash or blue for credit (the Cash/Credit colours),
  * Completed grey, Rejected a faded red. A walk-in buy is Paid/Ours until exported, then Completed

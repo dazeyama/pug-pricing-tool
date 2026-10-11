@@ -11,11 +11,10 @@ import { downloadMassCreate, saveExport } from '../lib/ccExport.js';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import PricingScreen from './price/PricingScreen.jsx';
 import CollectionDetails from './collections/CollectionDetails.jsx';
-import { isClosed, keepsRates, statusLabel } from './collections/status.js';
-import { ConfirmModal, DeleteCollectionModal, RejectModal } from './collections/CollectionModals.jsx';
+import { collectionRates, isClosed, statusLabel } from './collections/status.js';
+import { ConfirmModal, ConvertToBuyModal, DeleteCollectionModal, RejectModal } from './collections/CollectionModals.jsx';
 import { OfferModal, PaidModal } from './collections/DealModals.jsx';
 import { marketTotal } from './price/BuyList.jsx';
-import ConfirmBuyModal from './price/ConfirmBuyModal.jsx';
 import { useCollection } from './collections/useCollection.js';
 import { useCollectionLock } from './collections/useCollectionLock.js';
 import ExportButton from '../components/ExportButton.jsx';
@@ -79,12 +78,8 @@ function CollectionScreen({ id }) {
   // or Rejected's (migration 0044), else the collection's custom rates where
   // set, else the Master Buy Percentages.
   const master = { cash: Number(values.cash_pct), credit: Number(values.credit_pct) };
-  const customCash = buy?.custom_cash_pct != null ? Number(buy.custom_cash_pct) : null;
-  const customCredit = buy?.custom_credit_pct != null ? Number(buy.custom_credit_pct) : null;
   const closed = Boolean(buy) && isClosed(buy.status);
-  const rates = Boolean(buy) && keepsRates(buy.status) && buy.cash_pct != null
-    ? { cash: Number(buy.cash_pct), credit: Number(buy.credit_pct), customCash, customCredit }
-    : { cash: customCash ?? master.cash, credit: customCredit ?? master.credit, customCash, customCredit };
+  const rates = collectionRates(buy, master);
 
   const holderUser = lock.holder ? staff.byId(lock.holder.userId) : null;
   const holderLabel = lock.holder?.label ?? 'another computer';
@@ -555,36 +550,17 @@ function CollectionScreen({ id }) {
             />
           )}
           {asking === 'convert' && buy && (
-            // CONFIRM BUY's questions (owner, 2026-10-10), starting from what the
-            // project has: a project made from a buy kept its phone, price paid
-            // and notes, and its name started as the customer's.
-            <ConfirmBuyModal
-              count={count}
-              market={marketTotal(col.lines)}
+            <ConvertToBuyModal
+              buy={buy}
+              lines={col.lines}
               rates={rates}
               user={user}
               busy={col.busy}
-              title={`Convert to buy — ${count} card${count === 1 ? '' : 's'}`}
-              intro={(
-                <>
-                  Every card in <strong>{buy.customer_name}</strong> moves to a new buy on today's page, confirmed now
-                  at the prices it has, and the project is deleted.
-                </>
-              )}
-              initial={{
-                customer: buy.phone ? buy.customer_name : '',
-                phone: buy.phone ?? '',
-                method: buy.paid_method ?? null,
-                price: buy.paid_price,
-                notes: buy.notes ?? '',
-              }}
-              confirmLabel="Convert to buy"
-              busyLabel="Converting…"
               onClose={() => {
                 setAsking(null);
                 api.focusSearch();
               }}
-              onConfirm={async (deal) => {
+              onConvert={async (deal) => {
                 if (!user) {
                   staff.pulse();
                   return;

@@ -1,17 +1,42 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import GuardButton from './GuardButton.jsx';
 
 /**
  * A ⋯ menu for actions kept away from everyday controls (Delete collection…,
  * Delete buy…). Each item needs a picked user (GuardButton); `blocked` is why
  * it can't run, for its tooltip. `up` opens it upward (near the window's foot).
+ * `float` places it over the page instead (a table row, whose table clips
+ * what spills out of it): below the button, or above when there's no room;
+ * scrolling closes it.
  *
  * @param {{ items: { label: string, onClick: () => void, danger?: boolean,
- *   blocked?: string|null, title?: string }[], up?: boolean }} p
+ *   blocked?: string|null, title?: string }[], up?: boolean, float?: boolean }} p
  */
-export default function MoreMenu({ items, up = false }) {
+export default function MoreMenu({ items, up = false, float = false }) {
   const [open, setOpen] = useState(false);
+  const [place, setPlace] = useState(null);   // float: where the list goes, once measured
   const wrap = useRef(null);
+  const list = useRef(null);
+  useLayoutEffect(() => {
+    if (!open || !float) return undefined;
+    const button = wrap.current?.querySelector('.more-btn')?.getBoundingClientRect();
+    if (button) {
+      const height = list.current?.offsetHeight ?? 0;
+      const below = button.bottom + 6 + height <= window.innerHeight - 8;
+      setPlace({
+        right: window.innerWidth - button.right,
+        ...(below ? { top: button.bottom + 6 } : { bottom: window.innerHeight - button.top + 6 }),
+      });
+    }
+    const close = () => setOpen(false);
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('resize', close);
+    return () => {
+      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('resize', close);
+      setPlace(null);
+    };
+  }, [open, float]);
   useEffect(() => {
     if (!open) return undefined;
     const onDown = (e) => {
@@ -40,7 +65,18 @@ export default function MoreMenu({ items, up = false }) {
         ⋯
       </button>
       {open && (
-        <div className={`more-list${up ? ' up' : ''}`} role="menu">
+        <div
+          ref={list}
+          className={`more-list${up && !float ? ' up' : ''}`}
+          role="menu"
+          style={float ? {
+            position: 'fixed',
+            right: place?.right ?? 0,
+            top: place?.top ?? 'auto',
+            bottom: place?.bottom ?? 'auto',
+            visibility: place ? 'visible' : 'hidden',
+          } : undefined}
+        >
           {items.map((item) => (
             <GuardButton
               key={item.label}

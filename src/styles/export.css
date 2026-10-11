@@ -205,9 +205,11 @@
 .col-w-created { width: 9%; }
 .col-w-edited { width: 10%; }
 .col-w-editor { width: 10%; }
-.col-w-notes { width: 13%; }
+.col-w-notes { width: 10%; }
 .col-w-offer { width: 9%; }
 .col-w-paid { width: 9%; }
+/* The ⋯ menu (owner, 2026-10-11). */
+.col-w-more { width: 52px; }
 .col-section .col-table td { overflow-wrap: anywhere; }
 /* A project's chip, like Can't upload cards' System chip, in the Projects colour. */
 .project-chip {

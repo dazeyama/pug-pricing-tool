@@ -2,6 +2,45 @@ import { useState } from 'react';
 import Modal from '../../components/Modal.jsx';
 import CustomerNameInput from '../../components/CustomerNameInput.jsx';
 import { PHONE_ERROR, formatPhone, phoneDigits, validPhone } from '../../lib/phone.js';
+import ConfirmBuyModal from '../price/ConfirmBuyModal.jsx';
+import { marketTotal } from '../price/BuyList.jsx';
+
+/**
+ * Convert to buy… (owner, 2026-10-10): CONFIRM BUY's questions for a project,
+ * starting from what it has: a project made from a buy kept its phone, price
+ * paid and notes, and its name started as the customer's. From the
+ * project's ⋯ menu, on its screen or on the Collections tab.
+ */
+export function ConvertToBuyModal({ buy, lines, rates, user, busy, onConvert, onClose }) {
+  const count = lines.reduce((n, l) => n + l.quantity, 0);
+  return (
+    <ConfirmBuyModal
+      count={count}
+      market={marketTotal(lines)}
+      rates={rates}
+      user={user}
+      busy={busy}
+      title={`Convert to buy — ${count} card${count === 1 ? '' : 's'}`}
+      intro={(
+        <>
+          Every card in <strong>{buy.customer_name}</strong> moves to a new buy on today's page, confirmed now
+          at the prices it has, and the project is deleted.
+        </>
+      )}
+      initial={{
+        customer: buy.phone ? buy.customer_name : '',
+        phone: buy.phone ?? '',
+        method: buy.paid_method ?? null,
+        price: buy.paid_price,
+        notes: buy.notes ?? '',
+      }}
+      confirmLabel="Convert to buy"
+      busyLabel="Converting…"
+      onClose={onClose}
+      onConfirm={onConvert}
+    />
+  );
+}
 
 
 /** A name as saved: trimmed, single spaces. */

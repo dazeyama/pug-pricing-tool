@@ -119,6 +119,7 @@
 .is-credit { color: var(--credit); }
 .deal-slash { color: var(--muted); }
 .col-table .col-money { white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 600; }
+.col-table td.col-more { padding: 7px 10px; text-align: right; cursor: default; }
 
 /* ---- New collection / delete dialogs ---- */
 .form-stack { display: flex; flex-direction: column; gap: 12px; min-width: 360px; }
