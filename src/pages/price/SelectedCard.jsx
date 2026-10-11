@@ -117,7 +117,13 @@ export default function SelectedCard({ candidate: c, typedName, englishName, pok
   const classic = magic ? null : classicFrame(c.setId, c.number);
   // A Trainer's art window is its own (owner, 2026-10-11): price.css .trainer.
   const trainer = !magic && !classic && pokemon.card?.category === 'Trainer';
-  const era = ` era-${classic && classic !== 'full' ? classic : frameEra(pokemon.info?.releaseDate ?? c.releasedAt)}${trainer ? ' trainer' : ''}`;
+  // The oldest Japanese cards, found on TCGplayer by a "No." search (owner,
+  // 2026-10-11: Neo Premium File 1's Typhlosion): 1996–2001, the vintage
+  // frame, so the 1999 mask fits them on TCGplayer's scans.
+  const vintageJp = !magic && c.source === 'justtcg' && c.lang === 'ja' && /^No\.\s*\d/.test(String(c.number ?? ''));
+  const frame = classic && classic !== 'full' ? classic
+    : vintageJp ? '1999' : frameEra(pokemon.info?.releaseDate ?? c.releasedAt);
+  const era = ` era-${frame}${trainer ? ' trainer' : ''}`;
   // Full art (pokemonFrames.js): by rarity, special numbers, or a secret
   // rare's number. Always the whole-card shine, whatever finish is listed:
   // every full art is foil (owner, 2026-10-09).
@@ -135,8 +141,9 @@ export default function SelectedCard({ candidate: c, typedName, englishName, pok
   // A card found through TCGplayer (JustTCG: one TCGdex lacks): no frame
   // known to fit a mask to, so a holo or reverse holo shines across the
   // whole card (owner, 2026-10-09). A TCGplayer-only version of a TCGdex
-  // card (Gengar's Cosmos Holo) keeps its card's mask, as before.
-  const fromTcgplayer = !magic && c.source === 'justtcg';
+  // card (Gengar's Cosmos Holo) keeps its card's mask, as before; so does a
+  // vintage Japanese one, with the 1999 mask (above).
+  const fromTcgplayer = !magic && c.source === 'justtcg' && !vintageJp;
   // A holo promo from Scarlet & Violet on (2023-03-31): the whole card too,
   // the way its promos are printed (owner, 2026-10-11). Reverse holos keep their mask.
   const promoFull = !magic && pokemonFinish === 'holo' && isFullPromo({
