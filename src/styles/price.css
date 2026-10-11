@@ -414,6 +414,8 @@
   aspect-ratio: 1;
   filter: drop-shadow(0 3px 6px rgba(0, 0, 0, .6));
 }
+/* The Play! Pokémon logo in the same place: taller than wide, as drawn. */
+.play-badge { aspect-ratio: auto; }
 
 /* ---- Card info, beside the card ---- */
 .card-info {

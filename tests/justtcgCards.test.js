@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   splitName, splitNumber, printingFinish, justtcgVersions, siblingVersions, guessSetCode, plainSetName,
-  justtcgCandidate, lineVersion, isTcgplayerOnlyLine, noNumberCards, withTcgplayerVersions, isOversized,
+  justtcgCandidate, lineVersion, isTcgplayerOnlyLine, noNumberCards, withTcgplayerVersions, isOversized, isPlayStamp,
 } from '../src/lib/justtcgCards.js';
 import { lineText } from '../src/lib/lineFormat.js';
 
@@ -202,6 +202,8 @@ test('a Prize Pack product is the Play! Pokémon stamp', () => {
   };
   const [v] = siblingVersions([prize], { setName: 'Silver Tempest' }, tcgdex);
   assert.equal(v.label, 'Play! Pokémon stamp');
+  assert.ok(isPlayStamp(v));   // its logo goes on the card (SelectedCard)
+  assert.ok(!isPlayStamp(tcgdex[0]));
   assert.deepEqual(v.treatments, ['variant:Play! Pokémon stamp']);
   // A stamp, so it matches TCGdex's one stamped version without a TCGplayer product.
   const stamped = [...tcgdex, { id: 'holo|||play', finish: 'holo', label: 'Play stamp', tcgplayerId: null, treatments: ['play'], stamps: ['play'] }];

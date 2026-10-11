@@ -138,7 +138,9 @@ const STAMPED = /\bstamp(ed)?\b/i;
 // reprints, and say so (owner, 2026-10-11). Being a stamp, one can match
 // TCGdex's stamped version (withTcgplayerVersions).
 const PRIZE_PACK = /prize pack/i;
-const PLAY_STAMP = 'Play! Pokémon stamp';
+export const PLAY_STAMP = 'Play! Pokémon stamp';
+/** Is this the Play! Pokémon stamped version (TCGplayer's Prize Pack product, or TCGdex's matched to it)? */
+export const isPlayStamp = (v) => (v?.treatments ?? []).includes(`variant:${PLAY_STAMP}`) || v?.label === PLAY_STAMP;
 /** A TCGplayer-only version's suffix ("Cosmos Holo"), from its `variant:` treatment. */
 const suffixOf = (v) => (v.treatments ?? []).find((t) => t.startsWith('variant:'))?.slice('variant:'.length) ?? '';
 

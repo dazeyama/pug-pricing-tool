@@ -7,10 +7,13 @@ import { useCardImages } from './useCardImages.js';
 import { POKEMON_CARD_BACK, tcgplayerId } from '../../lib/pokemonImages.js';
 import { openPopup, popupName } from '../../lib/popup.js';
 import { classicFrame, frameEra, isFullArt, isRuleBox } from '../../lib/pokemonFrames.js';
+import { isPlayStamp } from '../../lib/justtcgCards.js';
 
 const MAGIC_RARITY = { mythic: 'Mythic rare', common: 'Common', uncommon: 'Uncommon', rare: 'Rare', special: 'Special', bonus: 'Bonus' };
 
 const TCGPLAYER = 'https://www.tcgplayer.com';
+// The Play! Pokémon logo (owner's image, 2026-10-11), for the Play! Pokémon stamped version.
+const PLAY_LOGO = `${import.meta.env.BASE_URL}play-pokemon.webp`;
 
 /**
  * The card on TCGplayer: its product page when the TCGplayer ID is known
@@ -140,6 +143,8 @@ export default function SelectedCard({ candidate: c, typedName, englishName, pok
     ? ['pokeball', 'masterball'].find((b) => pokemonVersion?.treatments?.includes(`${b}-pattern`))
     : null;
   const ballName = { pokeball: 'Poké Ball', masterball: 'Master Ball' }[ball];
+  // The Play! Pokémon stamp, any finish: its logo where a ball's badge goes (owner, 2026-10-11).
+  const playStamp = !magic && !ball && isPlayStamp(pokemonVersion);
   const finishTag = magic
     ? { foil: 'FOIL', etched: 'ETCHED FOIL' }[finish]
     : { holo: 'HOLO', reverse: ballName ? `REVERSE HOLO · ${ballName.toUpperCase()}` : 'REVERSE HOLO' }[pokemonFinish];
@@ -165,6 +170,9 @@ export default function SelectedCard({ candidate: c, typedName, englishName, pok
           />
           {ball && (
             <BallIcon kind={ball} className="pattern-badge" title={`${ballName} pattern reverse holo`} />
+          )}
+          {playStamp && (
+            <img src={PLAY_LOGO} className="pattern-badge play-badge" alt="Play! Pokémon stamp" title="Play! Pokémon stamp" />
           )}
           {flippable && (
             <button
