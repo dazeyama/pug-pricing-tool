@@ -142,8 +142,15 @@ export async function todaysPrices(lines, { cards = null, onStep } = {}) {
       const card = dexCards.get(`${line.lang}|${line.tcgdex_id}`);
       if (!card) continue;
       // A TCGplayer-only version (Cosmos Holo…) isn't among TCGdex's: rebuilt from the line.
-      const versions = isTcgplayerOnlyLine(line) ? [...pokemonVersions(card), lineVersion(line)] : pokemonVersions(card);
-      const version = versionOf(line, versions);
+      let versions = isTcgplayerOnlyLine(line) ? [...pokemonVersions(card), lineVersion(line)] : pokemonVersions(card);
+      let version = versionOf(line, versions);
+      // A stamped version TCGdex gives no TCGplayer product, saved with the
+      // one TCGplayer matched it to (owner, 2026-10-11): priced from that product.
+      if (version && !version.tcgplayerId && !version.tcgplayerOnly && line.tcgplayer_id) {
+        const own = { ...version, tcgplayerId: String(line.tcgplayer_id) };
+        versions = versions.map((v) => (v === version ? own : v));
+        version = own;
+      }
       seen.push({
         line,
         card,

@@ -258,6 +258,9 @@ export function pokemonVersions(card) {
         tcgplayerId: v.thirdParty?.tcgplayer != null ? String(v.thirdParty.tcgplayer) : null,
         marketPrice: marketPriceIn(v.pricing?.tcgplayer),
         cardmarketPrice: cardmarketIn(v.pricing?.cardmarket, v.type),
+        // Its stamps besides 1st Edition: a stamped version TCGdex gives no
+        // TCGplayer product can be matched to TCGplayer's (justtcgCards.js).
+        stamps: stamps.filter((s) => s !== '1st-edition'),
       };
     }).filter((v) => {
       // A mistaken pattern dropped can leave two versions the same: keep the first.

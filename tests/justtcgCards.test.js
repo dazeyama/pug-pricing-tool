@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   splitName, splitNumber, printingFinish, justtcgVersions, siblingVersions, guessSetCode, plainSetName,
-  justtcgCandidate, lineVersion, isTcgplayerOnlyLine, noNumberCards,
+  justtcgCandidate, lineVersion, isTcgplayerOnlyLine, noNumberCards, withTcgplayerVersions, isOversized,
 } from '../src/lib/justtcgCards.js';
 import { lineText } from '../src/lib/lineFormat.js';
 
@@ -165,4 +165,31 @@ test('a Japanese JustTCG card: Japanese versions, shown by its "No."', () => {
   const c = justtcgCandidate(card, { lang: 'ja', setCode: 'CGD', number: 'No. 121' });
   assert.equal(c.number, 'No. 121');
   assert.equal(c.key, 'pokemon:ja:jt:jt-1');
+});
+
+test('Mimikyu ex 069: the jumbo card goes; TCGdex\'s set-logo stamp takes TCGplayer\'s stamped product', () => {
+  const tcgdex = [
+    { id: 'holo|||', finish: 'holo', label: 'Standard', tcgplayerId: '623496', treatments: [], stamps: [] },
+    { id: 'holo|||set-logo', finish: 'holo', label: 'Set logo stamp', tcgplayerId: null, treatments: ['set-logo'], stamps: ['set-logo'] },
+  ];
+  const card = (uuid, name, set, tcg) => ({ uuid, name, set_name: set, number: '069/159', tcgplayerId: tcg, variants: [{ printing: 'Holofoil' }] });
+  const cards = [
+    card('own', 'Mimikyu ex - 069/159', 'SV09: Journey Together', 623496),
+    card('jumbo', 'Mimikyu ex - 069/159 (Journey Together Stamped)', 'Jumbo Cards', 660078),
+    card('misc', 'Mimikyu ex - 069/159 (Journey Together Stamped)', 'Miscellaneous Cards & Products', 660074),
+  ];
+  const all = withTcgplayerVersions(tcgdex, cards, { setName: 'Journey Together' });
+  assert.deepEqual(all.map((v) => [v.id, v.label, v.tcgplayerId, Boolean(v.tcgplayerOnly)]), [
+    ['holo|||', 'Standard', '623496', false],
+    ['holo|||set-logo', 'Journey Together Stamped', '660074', false],
+  ]);
+  assert.deepEqual(all[1].treatments, ['set-logo']);   // still TCGdex's stamped version
+  assert.ok(isOversized(cards[1]));
+  assert.ok(!isOversized(cards[2]));
+
+  // Two stamped products: which is TCGdex's can't be told, so nothing is matched.
+  const two = withTcgplayerVersions(tcgdex, [...cards, card('pre', 'Mimikyu ex - 069/159 (Prerelease Stamped)', 'Prerelease Cards', 1)],
+    { setName: 'Journey Together' });
+  assert.equal(two.find((v) => v.id === 'holo|||set-logo').label, 'Set logo stamp');
+  assert.equal(two.filter((v) => v.tcgplayerOnly).length, 2);
 });

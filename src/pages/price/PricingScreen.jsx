@@ -11,7 +11,7 @@ import BuyList from './BuyList.jsx';
 import { usePokemonSiblings, usePrices } from './usePrices.js';
 import { useCardSearch } from './useCardSearch.js';
 import { usePokemonDetail, useMagicSiblings } from './usePrintingDetail.js';
-import { justtcgVersions, siblingVersions } from '../../lib/justtcgCards.js';
+import { justtcgVersions, withTcgplayerVersions } from '../../lib/justtcgCards.js';
 import { useCardImages } from './useCardImages.js';
 import { warmUp, magicCandidate, otherLanguageSet } from '../../lib/cardSearch.js';
 import {
@@ -164,7 +164,7 @@ export default function PricingScreen({
   const ownVersions = selected?.game !== 'pokemon' ? []
     : selected.source === 'justtcg' ? justtcgVersions(selected.justtcg, selected.suffix, selected.lang) : pokemonVersions(pokemon.card);
   const versions = tcgSiblings.cards?.length
-    ? [...ownVersions, ...siblingVersions(tcgSiblings.cards, selected, ownVersions)]
+    ? withTcgplayerVersions(ownVersions, tcgSiblings.cards, selected)
     : ownVersions;
   const version = versions.find((v) => own && v.id === printing.version) ?? defaultPokemonVersion(versions);
 

@@ -159,7 +159,12 @@ function PokemonFinish({ c, pokemon, versions, version, onVersion }) {
           <fieldset className="versions">
             <legend>Version</legend>
             {ofFinish.map((v) => (
-              <label key={v.id} className="trait-row" title={v.tcgplayerOnly && c.source !== 'justtcg' ? sourceTitle(v) : undefined}>
+              <label
+                key={v.id}
+                className="trait-row"
+                title={v.tcgplayerOnly && c.source !== 'justtcg' ? sourceTitle(v)
+                  : v.matchedTcgplayer ? 'TCGdex lists this stamp without a TCGplayer product: priced from TCGplayer\u2019s' : undefined}
+              >
                 <input type="radio" name="pokemon-version" checked={v.id === version.id} onChange={() => onVersion(v.id)} />
                 {v.label}
                 {v.tcgplayerOnly && c.source !== 'justtcg' && <span className="version-source">TCGplayer</span>}

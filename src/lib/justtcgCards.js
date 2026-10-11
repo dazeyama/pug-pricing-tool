@@ -126,6 +126,16 @@ export function justtcgVersions(card, suffix = '', lang = 'en') {
   return out;
 }
 
+// TCGplayer's oversized cards (owner, 2026-10-11): singles only (spec 1.4),
+// as TCGdex's jumbo variants are already left out.
+const OVERSIZED = /\b(jumbo|oversized?)\b/i;
+/** Is this JustTCG card an oversized one ("Jumbo Cards", "… (Oversized)")? */
+export const isOversized = (card) => OVERSIZED.test(`${card?.set_name ?? ''} ${card?.name ?? ''}`);
+// A TCGplayer suffix that names a stamp: "Journey Together Stamped", "Prerelease Stamp".
+const STAMPED = /\bstamp(ed)?\b/i;
+/** A TCGplayer-only version's suffix ("Cosmos Holo"), from its `variant:` treatment. */
+const suffixOf = (v) => (v.treatments ?? []).find((t) => t.startsWith('variant:'))?.slice('variant:'.length) ?? '';
+
 /**
  * TCGplayer-only versions of a TCGdex card (owner, 2026-10-09): the products
  * a siblings search found with its name and number, less the ones TCGdex
@@ -137,7 +147,8 @@ export function justtcgVersions(card, suffix = '', lang = 'en') {
  * printing of it that TCGdex's variants lack (XY Staryu 33/146: TCGdex says
  * Normal only, TCGplayer sells a Reverse Holofoil of the same product). Each
  * finish missing from TCGdex's versions (finish and 1st Edition) becomes a
- * version priced from that product, marked `ownProduct`.
+ * version priced from that product, marked `ownProduct`. Oversized products
+ * (jumbo cards) are left out (owner, 2026-10-11).
  * @param {object[]|null} cards  slimmed JustTCG cards
  * @param {{ setName: string }} c  the selected TCGdex candidate
  * @param {object[]} versions  its TCGdex versions
@@ -151,6 +162,7 @@ export function siblingVersions(cards, c, versions) {
   const have = new Set(versions.map(finishKey));
   const out = [];
   for (const card of cards ?? []) {
+    if (isOversized(card)) continue;
     const { suffix } = splitName(card.name);
     const theirs = setKey(card.set_name);
     const sameSet = Boolean(set && theirs && (theirs.includes(set) || set.includes(theirs)));
@@ -165,6 +177,38 @@ export function siblingVersions(cards, c, versions) {
     out.push(...justtcgVersions(card, suffix || card.set_name || 'TCGplayer'));
   }
   return out;
+}
+
+/**
+ * A TCGdex card's versions with TCGplayer's (owner, 2026-10-09 to 10-11):
+ * siblingVersions' extra products and printings added, and a stamped version
+ * TCGdex gives no TCGplayer product matched to TCGplayer's one stamped
+ * product of the same finish. They're the same card (Mimikyu ex 069: TCGdex's
+ * "Set logo stamp" is TCGplayer's "Journey Together Stamped"), which was
+ * listed twice, TCGdex's priced as the plain card. Matched, TCGdex's version
+ * keeps its id and stamp, takes the product (its prices) and TCGplayer's
+ * name, and the product isn't listed again. With more than one of either for
+ * a finish, nothing is matched.
+ * @param {object[]} versions  TCGdex's (pokemonVersions)
+ * @param {object[]|null} cards  the siblings search's JustTCG cards
+ * @param {{ setName: string }} c  the selected TCGdex candidate
+ */
+export function withTcgplayerVersions(versions, cards, c) {
+  const extra = siblingVersions(cards, c, versions);
+  const out = [...versions];
+  const matched = new Set();
+  for (const finish of new Set(versions.map((v) => v.finish))) {
+    const ours = versions.filter((v) => v.finish === finish && v.stamps?.length && !v.tcgplayerId && !v.firstEdition);
+    const theirs = extra.filter((v) => v.finish === finish && !v.ownProduct && !v.firstEdition && STAMPED.test(suffixOf(v)));
+    if (ours.length !== 1 || theirs.length !== 1) continue;
+    const [mine] = ours;
+    const [tcg] = theirs;
+    out[out.indexOf(mine)] = {
+      ...mine, label: suffixOf(tcg), tcgplayerId: tcg.tcgplayerId, justtcgId: tcg.justtcgId, matchedTcgplayer: true,
+    };
+    matched.add(tcg.id);
+  }
+  return [...out, ...extra.filter((v) => !matched.has(v.id))];
 }
 
 /**
