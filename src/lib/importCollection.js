@@ -36,7 +36,7 @@ const FALLBACK_PAGES = 3;    // pages (175 each) for a name looked up in every s
  * @param {File} file
  * @returns {Promise<{ format: 'cc'|'tcgplayer', rows: object[], missing: string[] }>}
  */
-export function readImportFile(file) {
+export function readImportFile(file, pct) {
   return new Promise((resolve, reject) => {
     Papa.parse(file, {
       header: true,
@@ -45,7 +45,7 @@ export function readImportFile(file) {
         const format = fileFormat(res.meta.fields);
         resolve({
           format,
-          rows: format === 'tcgplayer' ? readTcgplayerRows(res.data) : readRows(res.data),
+          rows: format === 'tcgplayer' ? readTcgplayerRows(res.data) : readRows(res.data, pct),
           missing: missingColumns(res.meta.fields, format),
         });
       },
@@ -396,6 +396,7 @@ export function importLines(chosen, sets, fileName) {
           sell_price: row.price,
           ...(row.sku ? { tcgplayer_sku: row.sku } : {}),
           ...(row.priceFrom ? { price_from: row.priceFrom } : {}),
+          ...(row.nearMint ? { near_mint: row.nearMint } : {}),
         },
       },
       priced_at: new Date().toISOString(),

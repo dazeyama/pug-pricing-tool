@@ -2,9 +2,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   categorySets, cardsForRow, choosePrinting, conditionCode, defaultName, fileFormat, finishOf, finishOfPrinting,
-  importKey, missingColumns, namesFor, readRows, readTcgplayerRows, scorePrinting,
+  importKey, missingColumns, namesFor, readRows, readTcgplayerRows, rowFallbackPrice, scorePrinting,
 } from '../src/lib/importMatch.js';
 import { fold } from '../src/lib/ccMatch.js';
+import Papa from 'papaparse';
+import { massCreateCsv, massCreateRows } from '../src/lib/massCreate.js';
 
 const row = (productName, category, over = {}) => readRows([{
   'Add Qty': '1', 'Product Name': productName, Category: category, Condition: 'Near Mint', Language: 'English',
@@ -177,4 +179,50 @@ test('TCGplayer format: told by its header, rows by SKU, a blank price allowed',
   assert.equal(finishOfPrinting('Normal'), 'nonfoil');
   assert.equal(finishOfPrinting('Foil'), 'foil');
   assert.equal(finishOfPrinting('Etched Foil'), 'etched');
+});
+
+// Owner, 2026-10-11: our export prices only Near Mint; reading one back works it out again.
+const MTG_PCT = { NM: 100, LP: 90, MP: 80, HP: 70, DMG: 60 };
+const exportLine = (name, category, condition, sell, qty = 1) => ({
+  cc_status: 'exported', quantity: qty, cc_product_name: name, cc_category: category,
+  cc_condition: condition, cc_sell_price: sell, cc_custom_sku: '101126',
+});
+
+test('our own export read back: 0-quantity rows left out, worse conditions priced from Near Mint', () => {
+  const csv = massCreateCsv(massCreateRows([
+    exportLine('Tundra', 'Revised Edition', 'Moderately Played', 87),
+    exportLine('Sol Ring', 'Commander Masters', 'Near Mint', 3.5, 2),
+    exportLine('Sol Ring', 'Commander Masters', 'Lightly Played', 3.25),
+    exportLine('Lightning Bolt', 'Fourth Edition', 'Lightly Played', 1.75),
+    exportLine('Lightning Bolt', 'Fourth Edition', 'Heavily Played', 1.5),
+  ], MTG_PCT));
+  const rows = readRows(Papa.parse(csv, { header: true, skipEmptyLines: 'greedy' }).data, MTG_PCT);
+  assert.deepEqual(rows.map((r) => [r.line, r.productName, r.condition, r.qty, r.price, r.priceFrom ?? null, r.problem]), [
+    [2, 'Sol Ring', 'NM', 2, 3.5, null, null],
+    [3, 'Sol Ring', 'LP', 1, 3.15, 'Near Mint', null],          // $3.50 × 90%
+    [5, 'Lightning Bolt', 'LP', 1, 1.8, 'Near Mint', null],     // $2 × 90%
+    [6, 'Lightning Bolt', 'HP', 1, 1.4, 'Near Mint', null],     // $2 × 70%
+    [8, 'Tundra', 'MP', 1, 88, 'Near Mint', null],              // $110 × 80%
+  ]);
+  assert.deepEqual(rows.at(-1).nearMint, { price: 110, pct: 80 });
+});
+
+test('a row with no Sell Price and no Near Mint price waits for its printing; a bad one is a problem', () => {
+  const rec = (over) => ({
+    'Add Qty': '1', 'Product Name': 'Mirari', Category: 'Odyssey', Condition: 'Lightly Played', Language: 'English',
+    'Sell Price': '', ...over,
+  });
+  const [blank, bad, noQty] = readRows([rec({}), rec({ 'Sell Price': 'abc' }), rec({ 'Add Qty': '' })], MTG_PCT);
+  assert.equal(blank.problem, null);
+  assert.ok(Number.isNaN(blank.price));
+  assert.equal(blank.priceFrom, undefined);
+  assert.match(bad.problem, /isn't a price/);
+  assert.match(noQty.problem, /whole number/);   // an empty Add Qty isn't a 0-quantity row
+
+  // Then TCGplayer's Market Price for the finish (through Scryfall) × the condition's percentage.
+  const mirari = { prices: { usd: '2.00', usd_foil: null, usd_etched: '5.10' } };
+  assert.equal(rowFallbackPrice(mirari, 'nonfoil', 'LP', MTG_PCT), 1.8);
+  assert.equal(rowFallbackPrice(mirari, 'etched', 'HP', MTG_PCT), 3.57);
+  assert.equal(rowFallbackPrice(mirari, 'foil', 'LP', MTG_PCT), null);
+  assert.equal(rowFallbackPrice(mirari, 'nonfoil', 'LP', {}), null);
 });

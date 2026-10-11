@@ -56,30 +56,73 @@ export const importKey = (row) => (row.sku ? `sku:${row.sku}` : `${fold(row.cate
 /**
  * The file's rows, read (PapaParse, header: true). Each keeps where it is in
  * the file and, when it can't be imported, why (`problem`).
+ *
+ * Our export prices only Near Mint (owner, 2026-10-11): a worse condition's
+ * row has no Sell Price, and a 0-quantity Near Mint row sets the product's
+ * price. Read back, a 0-quantity row adds no card, so it's left out (not
+ * skipped either). A row with no Sell Price gets its product's Near Mint
+ * price in the file × its condition's Master Fallback Percentage, the export
+ * in reverse (`priceFrom` 'Near Mint'); the last NM price in the file counts,
+ * as CC would end up with. With none to work from, it's priced once its
+ * printing is known (rowFallbackPrice).
  * @param {object[]} records
+ * @param {Record<string, number>} [pct]  Master Fallback Percentages (Magic)
  */
-export function readRows(records) {
-  return (records ?? []).map((rec, index) => {
-    const productName = String(rec['Product Name'] ?? '').trim();
-    const category = String(rec.Category ?? '').trim();
-    const qty = Number(String(rec['Add Qty'] ?? '').trim());
+export function readRows(records, pct) {
+  const read = (records ?? []).map((rec, index) => {
+    const qtyText = String(rec['Add Qty'] ?? '').trim();
     const priceText = String(rec['Sell Price'] ?? '').replace(/[$,\s]/g, '');
-    const price = priceText === '' ? NaN : Math.round(Number(priceText) * 100) / 100;
-    const condition = conditionCode(rec.Condition);
+    return {
+      rec, index, qtyText, priceText,
+      productName: String(rec['Product Name'] ?? '').trim(),
+      category: String(rec.Category ?? '').trim(),
+      qty: Number(qtyText),
+      price: priceText === '' ? NaN : Math.round(Number(priceText) * 100) / 100,
+      condition: conditionCode(rec.Condition),
+    };
+  });
+  const nearMint = new Map();
+  for (const r of read) {
+    if (r.condition === 'NM' && Number.isFinite(r.price) && r.price >= 0) nearMint.set(importKey(r), r.price);
+  }
+  return read.filter((r) => !(r.qtyText !== '' && r.qty === 0)).map((r) => {
+    const { rec, index, productName, category, qty, condition } = r;
+    let { price } = r;
+    let from = null;
+    const nm = nearMint.get(importKey(r));
+    if (r.priceText === '' && condition && condition !== 'NM' && nm != null && pct?.[condition] != null) {
+      price = Math.round(nm * Number(pct[condition])) / 100;
+      from = { price: nm, pct: Number(pct[condition]) };
+    }
     const language = String(rec.Language ?? '').trim();
     let problem = null;
     if (!productName || !category) problem = 'No product name or category';
     else if (!Number.isInteger(qty) || qty < 1) problem = `Add Qty "${rec['Add Qty'] ?? ''}" isn't a whole number`;
-    else if (!Number.isFinite(price) || price < 0) problem = 'No Sell Price';
+    else if (r.priceText !== '' && (!Number.isFinite(price) || price < 0)) problem = `Sell Price "${r.priceText}" isn't a price`;
     else if (!condition) problem = `Condition "${rec.Condition ?? ''}" isn't one the app knows`;
     else if (language && fold(language) !== 'english') problem = `${language}: only English cards can be imported`;
     return {
       index,
       line: index + 2,                     // the file's line number (after the header)
       qty, productName, category, condition, price, problem,
+      ...(from ? { priceFrom: 'Near Mint', nearMint: from } : {}),
       parsed: parseProductName(productName),
     };
   });
+}
+
+/**
+ * A Mass Create row with no Sell Price and no Near Mint price to work it out
+ * from, once its printing is known (owner, 2026-10-11): TCGplayer's Market
+ * Price for the finish (through Scryfall) × the condition's Master Fallback
+ * Percentage, the app's own fallback (DESIGN_SPEC 8.7). Null when Scryfall
+ * has no price.
+ */
+export function rowFallbackPrice(card, finish, condition, pct) {
+  const raw = { nonfoil: card?.prices?.usd, foil: card?.prices?.usd_foil, etched: card?.prices?.usd_etched }[finish];
+  const usd = raw != null ? Number(raw) : NaN;
+  if (!Number.isFinite(usd) || pct?.[condition] == null) return null;
+  return Math.round(usd * Number(pct[condition])) / 100;
 }
 
 /**

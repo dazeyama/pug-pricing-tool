@@ -3,12 +3,13 @@ import Modal from '../../components/Modal.jsx';
 import LinePreview, { previewFor } from '../../components/LinePreview.jsx';
 import { useStaff } from '../../state/staff.jsx';
 import { useDevice } from '../../state/device.jsx';
+import { useSettings } from '../../state/settings.jsx';
 import { useToast } from '../../components/Toast.jsx';
 import { formatMoney } from '../../lib/money.js';
 import { formatShortDate } from '../../lib/time.js';
 import { cardImage, loadSets } from '../../lib/scryfall.js';
 import { magicTraits } from '../../lib/printings.js';
-import { IMPORT_COLUMNS, TCGPLAYER_COLUMNS, defaultName } from '../../lib/importMatch.js';
+import { IMPORT_COLUMNS, TCGPLAYER_COLUMNS, defaultName, rowFallbackPrice } from '../../lib/importMatch.js';
 import {
   findPrintings, importLines, matchImport, readImportFile, rememberPicks, saveImport,
 } from '../../lib/importCollection.js';
@@ -41,6 +42,10 @@ export default function ImportDialog({ file, target, onDone, onClose }) {
   const staff = useStaff();
   const toast = useToast();
   const { deviceId } = useDevice();
+  const { values: settings } = useSettings();
+  const pct = settings.fallback_pct_mtg;
+  const pctRef = useRef(pct);
+  pctRef.current = pct;
   const [phase, setPhase] = useState('reading');   // reading | review | name | saving | error
   const [stepText, setStepText] = useState('');
   const [error, setError] = useState(null);
@@ -58,7 +63,7 @@ export default function ImportDialog({ file, target, onDone, onClose }) {
     (async () => {
       try {
         setStepText(`Reading ${file.name}…`);
-        const { format, rows, missing } = await readImportFile(file);
+        const { format, rows, missing } = await readImportFile(file, pctRef.current);
         if (missing.length) {
           const [kind, columns] = format === 'tcgplayer'
             ? ['TCGplayer-format file', TCGPLAYER_COLUMNS] : ['Mass Create file', IMPORT_COLUMNS];
@@ -98,9 +103,18 @@ export default function ImportDialog({ file, target, onDone, onClose }) {
     skipped: results.filter((r) => r.status === 'skip'),
   }), [results]);
   const open = groups.choose.filter((r) => !picks.has(r.row.index));
+  /**
+   * A row's price: the file's (or worked out from its Near Mint price), else
+   * TCGplayer's for the printing it's matched to (owner, 2026-10-11).
+   */
+  const priceOf = (r, st = stateOf(r)) => {
+    if (Number.isFinite(r.row.price)) return r.row.price;
+    return st.kind === 'matched' ? rowFallbackPrice(st.card, st.finish, r.row.condition, pct) : null;
+  };
   const going = results.filter((r) => stateOf(r).kind === 'matched');
+  const unpriced = going.filter((r) => priceOf(r) == null);
   const cards = going.reduce((n, r) => n + r.row.qty, 0);
-  const value = going.reduce((s, r) => s + r.row.qty * (Number.isFinite(r.row.price) ? r.row.price : 0), 0);
+  const value = going.reduce((s, r) => s + r.row.qty * (priceOf(r) ?? 0), 0);
   const skippedRows = results.filter((r) => stateOf(r).kind === 'skip').length;
 
   const pick = (r, value) => setPicks((m) => new Map(m).set(r.row.index, value));
@@ -120,7 +134,11 @@ export default function ImportDialog({ file, target, onDone, onClose }) {
     setPhase('saving');
     setSaveError(null);
     try {
-      const chosen = going.map((r) => ({ row: r.row, ...stateOf(r) }));
+      const chosen = going.map((r) => {
+        const st = stateOf(r);
+        const row = Number.isFinite(r.row.price) ? r.row : { ...r.row, price: priceOf(r, st), priceFrom: 'TCGplayer' };
+        return { row, ...st };
+      });
       const lines = importLines(chosen, await loadSets(), file.name);
       const id = await saveImport({
         target, name: name.trim(), lines, fileName: file.name, userId: staff.current.id, deviceId,
@@ -141,18 +159,39 @@ export default function ImportDialog({ file, target, onDone, onClose }) {
     }
   }
 
-  const label = (r) => (
-    <span className="xd-line">
-      {r.row.qty}× {r.row.productName}
-      <span className="xd-cat">{r.row.category}</span>
-      <span className="xd-where">
-        {r.row.condition}
-        {Number.isFinite(r.row.price) && <> · {formatMoney(r.row.price)}</>}
-        {r.row.priceFrom && <span title="The file had no price: TCGplayer's market price for this SKU"> (TCGplayer's)</span>}
-        {r.row.sku && <> · SKU {r.row.sku}</>}
+  const label = (r) => {
+    const st = stateOf(r);
+    const inFile = Number.isFinite(r.row.price);
+    const fallback = inFile ? null : priceOf(r, st);
+    return (
+      <span className="xd-line">
+        {r.row.qty}× {r.row.productName}
+        <span className="xd-cat">{r.row.category}</span>
+        <span className="xd-where">
+          {r.row.condition}
+          {inFile && <> · {formatMoney(r.row.price)}</>}
+          {r.row.priceFrom === 'Near Mint' && (
+            <span title={`The file had no price for ${r.row.condition}: its Near Mint ${formatMoney(r.row.nearMint.price)} × ${r.row.nearMint.pct}%`}>
+              {' '}(from NM)
+            </span>
+          )}
+          {r.row.priceFrom === 'TCGplayer' && <span title="The file had no price: TCGplayer's market price for this SKU"> (TCGplayer's)</span>}
+          {fallback != null && (
+            <>
+              {' '}· {formatMoney(fallback)}
+              <span title={`The file had no price: TCGplayer's Market Price for this printing (via Scryfall) × ${r.row.condition}'s ${pct?.[r.row.condition]}%`}>
+                {' '}(TCGplayer's)
+              </span>
+            </>
+          )}
+          {!inFile && fallback == null && st.kind !== 'skip' && (
+            <> · {st.kind === 'matched' ? 'no price, in the file or on TCGplayer' : 'TCGplayer’s price, once picked'}</>
+          )}
+          {r.row.sku && <> · SKU {r.row.sku}</>}
+        </span>
       </span>
-    </span>
-  );
+    );
+  };
   const rowProps = (r) => ({
     r,
     label: label(r),
@@ -165,7 +204,10 @@ export default function ImportDialog({ file, target, onDone, onClose }) {
 
   let footer;
   if (phase === 'review') {
-    const blocked = open.length ? `Pick or skip ${plural(open.length, 'row')} first` : !cards ? 'Nothing to import' : null;
+    const blocked = open.length ? `Pick or skip ${plural(open.length, 'row')} first`
+      : unpriced.length ? `${plural(unpriced.length, 'row')} ${unpriced.length === 1 ? 'has' : 'have'} no price, in the file or on `
+        + `TCGplayer: skip ${unpriced.length === 1 ? 'it' : 'them'} or pick another printing`
+        : !cards ? 'Nothing to import' : null;
     footer = (
       <>
         <span className="xd-summary imp-summary">
