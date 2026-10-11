@@ -115,7 +115,9 @@ export default function SelectedCard({ candidate: c, typedName, englishName, pok
   // where the art window is the card's frame era's (owner, 2026-09-29).
   // A Classic Collection reprint has its original's frame (owner, 2026-10-09).
   const classic = magic ? null : classicFrame(c.setId, c.number);
-  const era = ` era-${classic && classic !== 'full' ? classic : frameEra(pokemon.info?.releaseDate ?? c.releasedAt)}`;
+  // A Trainer's art window is its own (owner, 2026-10-11): price.css .trainer.
+  const trainer = !magic && !classic && pokemon.card?.category === 'Trainer';
+  const era = ` era-${classic && classic !== 'full' ? classic : frameEra(pokemon.info?.releaseDate ?? c.releasedAt)}${trainer ? ' trainer' : ''}`;
   // Full art (pokemonFrames.js): by rarity, special numbers, or a secret
   // rare's number. Always the whole-card shine, whatever finish is listed:
   // every full art is foil (owner, 2026-10-09).

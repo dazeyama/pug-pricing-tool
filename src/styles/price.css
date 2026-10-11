@@ -288,6 +288,23 @@
   --reverse-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M0 0H100V100H0Z M8 9.82H92.5V47.15H8Z'/%3E%3C/svg%3E");
   --ray-center: 50% 28.48%;
 }
+/* Trainer cards (owner, 2026-10-11: Super Rod 188's mask was off): their
+   art window sits lower and runs taller than a Pokémon's, under the name,
+   so Items, Supporters, Stadiums and Tools get their own mask where it's
+   been measured (the same way, 24 cards an era). Other eras' Trainers keep
+   the Pokémon mask for now. */
+/* 2017 Trainer: 7.83–91.83% across, 14.18–56.12% down (Cosmic Eclipse, Sword & Shield, Darkness Ablaze, Chilling Reign, Brilliant Stars, Lost Origin, Silver Tempest) */
+.card-shine.era-2017.trainer {
+  --holo-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Crect x='7.83' y='14.18' width='84' height='41.94'/%3E%3C/svg%3E");
+  --reverse-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M0 0H100V100H0Z M7.83 14.18H91.83V56.12H7.83Z'/%3E%3C/svg%3E");
+  --ray-center: 50% 35.15%;
+}
+/* 2023 Trainer: 8–92.5% across, 14.18–56.12% down (Scarlet & Violet through Surging Sparks: Super Rod, Ultra Ball, Iono, Town Store…) */
+.card-shine.era-2023.trainer {
+  --holo-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Crect x='8' y='14.18' width='84.5' height='41.94'/%3E%3C/svg%3E");
+  --reverse-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M0 0H100V100H0Z M8 14.18H92.5V56.12H8Z'/%3E%3C/svg%3E");
+  --ray-center: 50% 35.15%;
+}
 .card-shine.holo { --shine-area: var(--holo-area); }
 .card-shine.reverse { --shine-area: var(--reverse-area); }
 /* Pokémon: stronger than Magic's sheen (owner, 2026-09-29), since holo only
