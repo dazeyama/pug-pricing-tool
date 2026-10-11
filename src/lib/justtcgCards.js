@@ -133,6 +133,12 @@ const OVERSIZED = /\b(jumbo|oversized?)\b/i;
 export const isOversized = (card) => OVERSIZED.test(`${card?.set_name ?? ''} ${card?.name ?? ''}`);
 // A TCGplayer suffix that names a stamp: "Journey Together Stamped", "Prerelease Stamp".
 const STAMPED = /\bstamp(ed)?\b/i;
+// TCGplayer's Prize Pack products have no name of their own ("Lugia VSTAR -
+// 139/195" in "Prize Pack Series Cards"): they're the Play! Pokémon stamped
+// reprints, and say so (owner, 2026-10-11). Being a stamp, one can match
+// TCGdex's stamped version (withTcgplayerVersions).
+const PRIZE_PACK = /prize pack/i;
+const PLAY_STAMP = 'Play! Pokémon stamp';
 /** A TCGplayer-only version's suffix ("Cosmos Holo"), from its `variant:` treatment. */
 const suffixOf = (v) => (v.treatments ?? []).find((t) => t.startsWith('variant:'))?.slice('variant:'.length) ?? '';
 
@@ -141,7 +147,8 @@ const suffixOf = (v) => (v.treatments ?? []).find((t) => t.startsWith('variant:'
  * a siblings search found with its name and number, less the ones TCGdex
  * already gives (by TCGplayer ID) and the plain card itself (no suffix, same
  * set). Each is labelled by its suffix ("Cosmos Holo"), else its TCGplayer
- * set ("Prize Pack Series One").
+ * set ("Miscellaneous Cards & Products"); a Prize Pack one, "Play! Pokémon
+ * stamp".
  *
  * The card's own product counts too (owner, 2026-10-11): TCGplayer can list a
  * printing of it that TCGdex's variants lack (XY Staryu 33/146: TCGdex says
@@ -174,7 +181,8 @@ export function siblingVersions(cards, c, versions) {
       }
       continue;
     }
-    out.push(...justtcgVersions(card, suffix || card.set_name || 'TCGplayer'));
+    const named = PRIZE_PACK.test(card.set_name ?? '') ? PLAY_STAMP : card.set_name;
+    out.push(...justtcgVersions(card, suffix || named || 'TCGplayer'));
   }
   return out;
 }

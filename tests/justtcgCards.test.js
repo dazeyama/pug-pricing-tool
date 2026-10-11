@@ -193,3 +193,21 @@ test('Mimikyu ex 069: the jumbo card goes; TCGdex\'s set-logo stamp takes TCGpla
   assert.equal(two.find((v) => v.id === 'holo|||set-logo').label, 'Set logo stamp');
   assert.equal(two.filter((v) => v.tcgplayerOnly).length, 2);
 });
+
+test('a Prize Pack product is the Play! Pokémon stamp', () => {
+  const tcgdex = [{ id: 'holo|||', finish: 'holo', label: 'Standard', tcgplayerId: '451396', treatments: [], stamps: [] }];
+  const prize = {
+    uuid: 'pp', name: 'Lugia VSTAR - 139/195', set_name: 'Prize Pack Series Cards', number: '139/195', tcgplayerId: 600001,
+    variants: [{ printing: 'Holofoil' }],
+  };
+  const [v] = siblingVersions([prize], { setName: 'Silver Tempest' }, tcgdex);
+  assert.equal(v.label, 'Play! Pokémon stamp');
+  assert.deepEqual(v.treatments, ['variant:Play! Pokémon stamp']);
+  // A stamp, so it matches TCGdex's one stamped version without a TCGplayer product.
+  const stamped = [...tcgdex, { id: 'holo|||play', finish: 'holo', label: 'Play stamp', tcgplayerId: null, treatments: ['play'], stamps: ['play'] }];
+  const all = withTcgplayerVersions(stamped, [prize], { setName: 'Silver Tempest' });
+  assert.deepEqual(all.map((x) => [x.id, x.label, x.tcgplayerId]), [
+    ['holo|||', 'Standard', '451396'],
+    ['holo|||play', 'Play! Pokémon stamp', '600001'],
+  ]);
+});
