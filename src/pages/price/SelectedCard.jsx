@@ -6,7 +6,7 @@ import * as scry from '../../lib/scryfall.js';
 import { useCardImages } from './useCardImages.js';
 import { POKEMON_CARD_BACK, tcgplayerId } from '../../lib/pokemonImages.js';
 import { openPopup, popupName } from '../../lib/popup.js';
-import { classicFrame, frameEra, isFullArt, isRuleBox } from '../../lib/pokemonFrames.js';
+import { classicFrame, frameEra, isFullArt, isFullPromo, isRuleBox } from '../../lib/pokemonFrames.js';
 import { isPlayStamp } from '../../lib/justtcgCards.js';
 import { isPokemonCenterStamp } from '../../lib/printings.js';
 
@@ -135,7 +135,13 @@ export default function SelectedCard({ candidate: c, typedName, englishName, pok
   // whole card (owner, 2026-10-09). A TCGplayer-only version of a TCGdex
   // card (Gengar's Cosmos Holo) keeps its card's mask, as before.
   const fromTcgplayer = !magic && c.source === 'justtcg';
-  const whole = ruleBox || fromTcgplayer;
+  // A holo promo from Scarlet & Violet on (2023-03-31): the whole card too,
+  // the way its promos are printed (owner, 2026-10-11). Reverse holos keep their mask.
+  const promoFull = !magic && pokemonFinish === 'holo' && isFullPromo({
+    rarity: pokemon.card?.rarity ?? c.rarity,
+    releaseDate: pokemon.info?.releaseDate ?? c.releasedAt,
+  });
+  const whole = ruleBox || fromTcgplayer || promoFull;
   const shine = magic
     ? (finish === 'foil' || finish === 'etched' ? 'foil' : null)
     : fullArt ? 'pokemon-full'

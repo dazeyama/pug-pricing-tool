@@ -96,6 +96,25 @@ export function isFullArt({ rarity, number, printedSize, setName, releaseDate })
 }
 
 /**
+ * The day promos moved into the illustration-rare frame: Scarlet & Violet's
+ * release, 2023-03-31, its Elite Trainer Box promo (Koraidon / Miraidon SVP
+ * 013–014) the first (owner, 2026-10-11).
+ */
+export const FULL_PROMOS_FROM = '2023-03-31';
+
+/**
+ * True for a holo promo from then on (owner, 2026-10-11): TCGdex's "Promo"
+ * rarity in a set released on or after FULL_PROMOS_FROM shines across the
+ * whole card, with no art-window mask. By the set's release date
+ * ("2023-03-31"); no date, no.
+ * @param {{ rarity?: string|null, releaseDate?: string|null }} card
+ */
+export function isFullPromo({ rarity, releaseDate }) {
+  return String(rarity ?? '').trim().toLowerCase() === 'promo'
+    && /^\d{4}-\d{2}-\d{2}/.test(String(releaseDate ?? '')) && String(releaseDate).slice(0, 10) >= FULL_PROMOS_FROM;
+}
+
+/**
  * True for a Pokémon with a rule box: its holo covers the whole card (like a
  * full art), since the art-window mask doesn't fit those frames.
  * @param {{ category?: string, suffix?: string|null, stage?: string|null }|null} card  TCGdex card

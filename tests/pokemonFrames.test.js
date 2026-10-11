@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { classicFrame, frameEra, isFullArt, isRuleBox } from '../src/lib/pokemonFrames.js';
+import { classicFrame, frameEra, isFullArt, isFullPromo, isRuleBox } from '../src/lib/pokemonFrames.js';
 
 // The owner's eras (2026-09-29): 1999, 2003, 2007, 2011, 2017, 2023+.
 test('frame eras by release year', () => {
@@ -88,4 +88,13 @@ test("Classic Collection: each reprint in its original's frame", () => {
   assert.equal(classicFrame('cel25cc', 'CC026'), null);
   assert.equal(classicFrame('cel25', '4'), null);
   assert.equal(classicFrame('base1', 'CC002'), null);
+});
+
+test('holo promos from Scarlet & Violet on (2023-03-31) shine across the whole card', () => {
+  assert.ok(isFullPromo({ rarity: 'Promo', releaseDate: '2023-03-31' }));   // SVP: the day itself
+  assert.ok(isFullPromo({ rarity: 'promo', releaseDate: '2025-09-26' }));
+  assert.ok(!isFullPromo({ rarity: 'Promo', releaseDate: '2023-03-30' }));
+  assert.ok(!isFullPromo({ rarity: 'Promo', releaseDate: '2019-11-15' }));  // SWSH promos keep the mask
+  assert.ok(!isFullPromo({ rarity: 'Rare', releaseDate: '2024-01-01' }));
+  assert.ok(!isFullPromo({ rarity: 'Promo', releaseDate: null }));
 });
