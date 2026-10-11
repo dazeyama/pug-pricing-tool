@@ -804,7 +804,7 @@ Sends the collection's Magic cards to Crystal Commerce. See
 | Rejected | Says there's nothing to export. |
 
 A Completed collection shows its **Custom SKU** in the list heading. Its prices show in green: those
-are the Sell Prices written to the file.
+are its Sell Prices.
 
 ### Convert to buy…
 
@@ -1069,7 +1069,7 @@ After the export, Sell Prices show in green wherever the card appears.
 | **Name** | `cc-mass-create-magic-2026-10-06.csv` for a day. Collections and single buys get their own names. |
 | **Custom SKU** | The export's date, month-day-year, with no leading zero on the month: 10/09/26 is `100926`, 6/17/26 is `61726`. On every row. |
 | **Conditions** | Near Mint, Lightly Played, Moderately Played, Heavily Played, Damaged. |
-| **Rows** | One per product, condition and Sell Price. Quantities are added together. |
+| **Rows** | One per product and condition. Quantities are added together. |
 | **Quantity** | Added to the stock already in Crystal Commerce. |
 
 **EXPORT** on a Completed day or collection downloads the same file again. Nothing changes.
