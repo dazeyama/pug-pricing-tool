@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { defaultPokemonVersion, pokemonVersions, uncrossPatterns } from '../src/lib/printings.js';
+import { defaultPokemonVersion, isPokemonCenterStamp, pokemonVersions, uncrossPatterns } from '../src/lib/printings.js';
 
 // TCGdex's data for Fossil (2026-10-01): every printing tagged "galaxy".
 const fossil = (variants) => ({ set: { id: 'base3' }, variants_detailed: variants });
@@ -63,4 +63,19 @@ test('a pair the right way round, or with one price missing, is left alone', () 
   ]).map((x) => x.cardmarketPrice);
   assert.deepEqual(pair(2.39, 355.54), [2.39, 355.54]);
   assert.deepEqual(pair(5, null), [5, null]);
+});
+
+test('Snorlax 051: the Pokémon Center stamp, spelled right, with its logo', () => {
+  const versions = pokemonVersions({ set: { id: 'svp' }, variants_detailed: [
+    { type: 'holo', size: 'standard', thirdParty: { tcgplayer: 517175 } },
+    { type: 'holo', size: 'standard', stamp: ['pokemon-center'], thirdParty: { tcgplayer: 517270 } },
+  ] });
+  assert.deepEqual(versions.map((v) => v.label), ['Standard', 'Pokémon Center stamp']);
+  assert.ok(isPokemonCenterStamp(versions[1]));
+  assert.ok(!isPokemonCenterStamp(versions[0]));
+  // A TCGplayer product named for it, too.
+  assert.ok(isPokemonCenterStamp({ treatments: ['variant:Pokemon Center Exclusive'] }));
+  // Any stamp TCGdex names with "pokemon" gets its é.
+  assert.equal(pokemonVersions({ set: { id: 'x' }, variants_detailed: [{ type: 'holo', stamp: ['pokemon-league'] }] })[0].label,
+    'Pokémon League stamp');
 });

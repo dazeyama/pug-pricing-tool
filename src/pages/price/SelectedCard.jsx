@@ -8,12 +8,15 @@ import { POKEMON_CARD_BACK, tcgplayerId } from '../../lib/pokemonImages.js';
 import { openPopup, popupName } from '../../lib/popup.js';
 import { classicFrame, frameEra, isFullArt, isRuleBox } from '../../lib/pokemonFrames.js';
 import { isPlayStamp } from '../../lib/justtcgCards.js';
+import { isPokemonCenterStamp } from '../../lib/printings.js';
 
 const MAGIC_RARITY = { mythic: 'Mythic rare', common: 'Common', uncommon: 'Uncommon', rare: 'Rare', special: 'Special', bonus: 'Bonus' };
 
 const TCGPLAYER = 'https://www.tcgplayer.com';
 // The Play! Pokémon logo (owner's image, 2026-10-11), for the Play! Pokémon stamped version.
 const PLAY_LOGO = `${import.meta.env.BASE_URL}play-pokemon.webp`;
+// The Pokémon Center emblem (from the owner's logo, 2026-10-11), for its stamped version.
+const CENTER_LOGO = `${import.meta.env.BASE_URL}pokemon-center.webp`;
 
 /**
  * The card on TCGplayer: its product page when the TCGplayer ID is known
@@ -145,6 +148,8 @@ export default function SelectedCard({ candidate: c, typedName, englishName, pok
   const ballName = { pokeball: 'Poké Ball', masterball: 'Master Ball' }[ball];
   // The Play! Pokémon stamp, any finish: its logo where a ball's badge goes (owner, 2026-10-11).
   const playStamp = !magic && !ball && isPlayStamp(pokemonVersion);
+  // The Pokémon Center stamp, the same way (owner, 2026-10-11).
+  const centerStamp = !magic && !ball && !playStamp && isPokemonCenterStamp(pokemonVersion);
   const finishTag = magic
     ? { foil: 'FOIL', etched: 'ETCHED FOIL' }[finish]
     : { holo: 'HOLO', reverse: ballName ? `REVERSE HOLO · ${ballName.toUpperCase()}` : 'REVERSE HOLO' }[pokemonFinish];
@@ -173,6 +178,9 @@ export default function SelectedCard({ candidate: c, typedName, englishName, pok
           )}
           {playStamp && (
             <img src={PLAY_LOGO} className="pattern-badge play-badge" alt="Play! Pokémon stamp" title="Play! Pokémon stamp" />
+          )}
+          {centerStamp && (
+            <img src={CENTER_LOGO} className="pattern-badge" alt="Pokémon Center stamp" title="Pokémon Center stamp" />
           )}
           {flippable && (
             <button

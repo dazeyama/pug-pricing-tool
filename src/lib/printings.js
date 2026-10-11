@@ -157,7 +157,18 @@ export const POKEMON_FINISHES = ['normal', 'holo', 'reverse'];
 const STAMP_NAMES = {
   '1st-edition': '1st Edition', 'set-logo': 'Set logo stamp', 'pokemon-together': 'Pokémon Together stamp',
   'pre-release': 'Prerelease stamp', snowflake: 'Snowflake stamp', 'poketour-99': "Poké Tour '99 stamp", 'w-promo': 'W Promo stamp',
+  'pokemon-center': 'Pokémon Center stamp',
 };
+/** A stamp TCGdex names that isn't listed above: its words, "Pokémon" spelled right ("Pokemon Center" read wrong). */
+const stampName = (s) => STAMP_NAMES[s] ?? `${titleCase(s).replace(/\bPokemon\b/g, 'Pokémon')} stamp`;
+
+/**
+ * Is this the Pokémon Center stamped version (owner, 2026-10-11)? TCGdex's
+ * `pokemon-center` stamp, or a TCGplayer product named for the Pokémon
+ * Center ("Pokemon Center Exclusive"). Its logo goes on the card.
+ */
+export const isPokemonCenterStamp = (v) => (v?.treatments ?? [])
+  .some((t) => t === 'pokemon-center' || /^variant:.*\bpok[eé]mon center\b/i.test(t));
 const FOIL_NAMES = { pokeball: 'Poké Ball pattern', masterball: 'Master Ball pattern', cosmos: 'Cosmos foil' };
 const SUBTYPE_NAMES = {
   shadowless: 'Shadowless',
@@ -243,7 +254,7 @@ export function pokemonVersions(card) {
         if (name) parts.push(name);
       }
       if (foil) parts.push(FOIL_NAMES[foil] ?? `${titleCase(foil)} foil`);
-      for (const s of stamps) if (s !== '1st-edition') parts.push(STAMP_NAMES[s] ?? `${titleCase(s)} stamp`);
+      for (const s of stamps) if (s !== '1st-edition') parts.push(stampName(s));
       const treatments = [
         ...(v.subtype && v.subtype !== 'unlimited' ? [v.subtype] : []),
         ...(foil ? [`${foil}-pattern`] : []),
