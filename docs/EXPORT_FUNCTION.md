@@ -136,12 +136,12 @@ The 26 distinct Magic printings in dev's buys on 2026-09-30, looked up in the in
 
 | # | Column | Value |
 |---|---|---|
-| 1 | `Add Qty` | The number of copies (a positive whole number) |
+| 1 | `Add Qty` | The number of copies (a positive whole number), or `0` on a row that only sets a Near Mint price (4.2) |
 | 2 | `Product Name` | The matched CC product's name, **copied exactly from the Master Crystal Inventory**, double spaces and all |
 | 3 | `Category` | The matched product's Category, copied exactly |
 | 4 | `Condition` | `Near Mint`, `Lightly Played`, `Moderately Played`, `Heavily Played` or `Damaged`, from the line's NM / LP / MP / HP / DMG |
 | 5 | `Language` | `English`, always |
-| 6 | `Sell Price` | **The card's Sell Price** (Section 5): today's full market price for its condition, worked out as at the buy, rounded up, at least $0.40 |
+| 6 | `Sell Price` | **Near Mint rows only** (owner, 2026-10-11): the card's Sell Price (Section 5), today's full market price, worked out as at the buy, rounded up, at least $0.40. **Blank on every other condition** (4.2) |
 | 7 | `Custom SKU` | **The export's code** (Section 4.4): the export's date as a number, `61726` for 06/17/26, the same on every row. **It must always be the last column** (owner's decision) |
 
 The header row is exactly `Add Qty,Product Name,Category,Condition,Language,Sell Price,Custom SKU`.
@@ -149,8 +149,20 @@ The header row is exactly `Add Qty,Product Name,Category,Condition,Language,Sell
 ### 4.2 Rows
 
 - **One row per product, condition and price.** Lines whose Product Name, Category, Condition and Sell Price are all the same become one row, their quantities added. Lines that differ in any of those stay separate rows.
+- **Only Near Mint carries a price** (owner, 2026-10-11). CC prices every condition from its Near Mint price, so a Sell Price on an LP row would set the product's NM price to the LP figure. Worse-condition rows leave `Sell Price` **blank**: they add the cards without touching the price.
+- **A 0-quantity Near Mint row sets the price** for a product with worse-condition cards and no Near Mint card in the file: `Add Qty` `0`, `Near Mint`, and the NM price those cards stand for, their Sell Price ÷ the condition's Master Fallback Percentage (Magic), rounded up by the store's steps, at least $0.40. MP $87 at 80% → $108.75 → **$110**.
+  - With several worse conditions, the **best** one prices NM (LP before MP before HP…), and its highest Sell Price if its cards differ (owner, 2026-10-11).
+  - A product with Near Mint cards in the file gets no extra row: their own Sell Price sets NM.
+  - The percentage used is stamped on each line at its export (`cc_sell_basis.conditionPct`), so downloading the file again later gives the same NM prices even if the percentages have changed since. Lines exported before 2026-10-11 use today's percentages.
+  - Review shows **sets NM $110** beside a worse-condition card whose product gets the row.
+
+```
+Add Qty,Product Name,Category,Condition,Language,Sell Price,Custom SKU
+0,Tundra,Revised Edition,Near Mint,English,110.00,101126
+1,Tundra,Revised Edition,Moderately Played,English,,101126
+```
 - **Sorted** by Category, then Product Name, then Condition in NM → DMG order, so staff can check the file against a sorted pile.
-- **Prices** are written with two decimals (`1.50`), no `$`.
+- **Prices** are written with two decimals (`1.50`), no `$`; blank on worse-condition rows.
 - **Can't upload cards are never in the file** (Section 9). Neither are Pokémon cards.
 
 ### 4.3 Format and name

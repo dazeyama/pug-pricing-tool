@@ -431,7 +431,7 @@ function DayScreen({ game, day }) {
         : "These buys were marked Completed without being exported, so there's no file: mark them Paid/Ours again (⋯), then EXPORT.", 'err');
       return;
     }
-    const rows = downloadMassCreate(stamped, fileName);
+    const rows = downloadMassCreate(stamped, fileName, settingValues.fallback_pct_mtg);
     toast(`Downloaded the same file again: ${rows} row${rows === 1 ? '' : 's'}, Custom SKU ${skus.join(', ')}.`, 'ok');
   }
 

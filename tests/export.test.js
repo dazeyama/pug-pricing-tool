@@ -2,7 +2,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { SELL_FLOOR, roundUpPrice } from '../src/lib/money.js';
 import { sellPriceFor } from '../src/lib/sellPrice.js';
-import { customSkuFor, fileSafe, massCreateCsv, massCreateRows } from '../src/lib/massCreate.js';
+import {
+  customSkuFor, fileSafe, massCreateCsv, massCreateRows, nearMintPrice, nearMintPrices,
+} from '../src/lib/massCreate.js';
 
 // docs/EXPORT_FUNCTION.md 5.3: the buy steps, upward.
 test('rounding up: each band, prices on a step, float error', () => {
@@ -72,7 +74,7 @@ const stamped = (over) => ({
   cc_condition: 'Near Mint', cc_sell_price: 12, cc_custom_sku: '100126', ...over,
 });
 
-test('rows: same product, condition and price merge; sorted; can\'t-upload left out', () => {
+test('rows: same product, condition and price merge; sorted; can\'t-upload left out; only NM is priced', () => {
   const rows = massCreateRows([
     stamped({}), stamped({ quantity: 2 }),
     stamped({ cc_condition: 'Lightly Played' }),
@@ -84,7 +86,7 @@ test('rows: same product, condition and price merge; sorted; can\'t-upload left 
     ['Antiquities', 'Ashnod\'s Altar', 'Near Mint', '12.00', 1],
     ['Mercadian Masques', 'Snuff Out', 'Near Mint', '12.00', 3],
     ['Mercadian Masques', 'Snuff Out', 'Near Mint', '13.00', 1],
-    ['Mercadian Masques', 'Snuff Out', 'Lightly Played', '12.00', 1],
+    ['Mercadian Masques', 'Snuff Out', 'Lightly Played', '', 1],
   ]);
 });
 
@@ -94,4 +96,52 @@ test('the CSV: header, quotes only where needed, Custom SKU last, no BOM', () =>
     + '1,"Numot, the Devastator",Commander,Near Mint,English,12.00,100126');
   assert.notEqual(csv.charCodeAt(0), 0xfeff);
   assert.equal(fileSafe('Jordan Reyes!'), 'jordan-reyes');
+});
+
+// Owner, 2026-10-11: CC prices every condition from Near Mint.
+const MTG_PCT = { NM: 100, LP: 90, MP: 80, HP: 70, DMG: 60 };
+
+test('a worse condition\'s Sell Price ÷ its percentage, rounded up, at least $0.40', () => {
+  assert.equal(nearMintPrice(87, 80), 110);        // $108.75
+  assert.equal(nearMintPrice(1.75, 90), 2);        // $1.94
+  assert.equal(nearMintPrice(1.5, 70), 2.25);      // $2.14
+  assert.equal(nearMintPrice(0.1, 60), 0.4);       // $0.17, floored
+  assert.equal(nearMintPrice(5, 0), null);
+  assert.equal(nearMintPrice(5, undefined), null);
+});
+
+test('only Near Mint carries a price: worse conditions add cards, a 0-quantity NM row sets the price', () => {
+  const sku = { cc_custom_sku: '101126' };
+  const rows = massCreateRows([
+    stamped({ ...sku, cc_product_name: 'Tundra', cc_category: 'Revised Edition', cc_condition: 'Moderately Played', cc_sell_price: 87 }),
+    stamped({ ...sku, cc_product_name: 'Sol Ring', cc_category: 'Commander Masters', cc_sell_price: 3.5, quantity: 2 }),
+    stamped({ ...sku, cc_product_name: 'Sol Ring', cc_category: 'Commander Masters', cc_condition: 'Lightly Played', cc_sell_price: 3.25 }),
+    stamped({ ...sku, cc_product_name: 'Lightning Bolt', cc_category: 'Fourth Edition', cc_condition: 'Heavily Played', cc_sell_price: 1.5 }),
+    stamped({ ...sku, cc_product_name: 'Lightning Bolt', cc_category: 'Fourth Edition', cc_condition: 'Lightly Played', cc_sell_price: 1.75 }),
+  ], MTG_PCT);
+  assert.equal(massCreateCsv(rows), [
+    'Add Qty,Product Name,Category,Condition,Language,Sell Price,Custom SKU',
+    // NM copies in the file: their own price sets NM, no extra row.
+    '2,Sol Ring,Commander Masters,Near Mint,English,3.50,101126',
+    '1,Sol Ring,Commander Masters,Lightly Played,English,,101126',
+    // Two worse conditions: the best one (LP) prices NM, $1.75 ÷ 90%.
+    '0,Lightning Bolt,Fourth Edition,Near Mint,English,2.00,101126',
+    '1,Lightning Bolt,Fourth Edition,Lightly Played,English,,101126',
+    '1,Lightning Bolt,Fourth Edition,Heavily Played,English,,101126',
+    // $87 ÷ 80% = $108.75, rounded up.
+    '0,Tundra,Revised Edition,Near Mint,English,110.00,101126',
+    '1,Tundra,Revised Edition,Moderately Played,English,,101126',
+  ].join('\n'));
+});
+
+test('NM prices: the best condition\'s highest Sell Price; the percentage stamped at the export wins', () => {
+  const lp = { cc_condition: 'Lightly Played' };
+  const two = nearMintPrices([stamped({ ...lp, cc_sell_price: 1.75 }), stamped({ ...lp, cc_sell_price: 2 })], MTG_PCT);
+  assert.equal([...two.values()][0].price, 2.25);   // $2 ÷ 90% = $2.22
+  assert.equal([...two.values()][0].from, 'LP');
+  const kept = nearMintPrices([stamped({ ...lp, cc_sell_price: 2, cc_sell_basis: { conditionPct: 50 } })], MTG_PCT);
+  assert.equal([...kept.values()][0].price, 4);
+  // Can't-upload cards set nothing; nor does a card with no percentage to divide by.
+  assert.equal(nearMintPrices([stamped({ ...lp, cc_status: 'cant_upload' })], MTG_PCT).size, 0);
+  assert.equal(nearMintPrices([stamped(lp)], {}).size, 0);
 });

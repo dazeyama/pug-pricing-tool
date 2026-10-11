@@ -7,7 +7,7 @@ import { useDevice } from '../../state/device.jsx';
 import { useToast } from '../../components/Toast.jsx';
 import { lineTextWithCondition } from '../../lib/lineFormat.js';
 import { formatMoney } from '../../lib/money.js';
-import { CONDITION_WORDS, customSkuFor, massCreateRows } from '../../lib/massCreate.js';
+import { CONDITION_WORDS, customSkuFor, massCreateRows, nearMintPrices, productKey } from '../../lib/massCreate.js';
 import {
   downloadMassCreate, forgetLink, linkKey, matchLines, saveExport, saveLink, saveSetMap, searchProducts, sellPrices,
 } from '../../lib/ccExport.js';
@@ -180,15 +180,18 @@ export default function ExportDialog({
     setReopened((s) => new Set(s).add(r.line.id));
   }
 
-  /** The file's rows as they'll be, for the Confirm step's count. */
-  const previewRows = () => massCreateRows(groups.matched.map((r) => ({
+  /** The matched lines as the file will have them: its rows (the Confirm step's count) and NM prices. */
+  const fileLines = groups.matched.map((r) => ({
     cc_status: 'exported',
     quantity: r.line.quantity,
     cc_product_name: stateOf(r).product.product_name,
     cc_category: stateOf(r).product.category,
     cc_condition: CONDITION_WORDS[r.line.condition],
     cc_sell_price: sellOf(r.line.id)?.price,
-  })));
+  }));
+  const previewRows = () => massCreateRows(fileLines, pct);
+  // Worse-condition cards' products the file prices at Near Mint (owner, 2026-10-11).
+  const nearMint = exporting ? nearMintPrices(fileLines, pct) : new Map();
 
   async function save() {
     if (!staff.current) {
@@ -204,7 +207,8 @@ export default function ExportDialog({
         line_id: r.line.id,
         product_id: s.product.product_id,
         sell_price: sell.price,
-        sell_basis: sell.basis,
+        // The condition's percentage, so the same file comes out again later (massCreate.js).
+        sell_basis: { ...sell.basis, conditionPct: pct?.[r.line.condition] != null ? Number(pct[r.line.condition]) : null },
         link: s.by === 'staff' ? 'staff' : s.by === 'match' ? 'auto' : null,
       };
     });
@@ -220,7 +224,7 @@ export default function ExportDialog({
         userId: staff.current.id,
         deviceId,
       });
-      const rows = result.cards > 0 ? downloadMassCreate(result.lines, fileName) : 0;
+      const rows = result.cards > 0 ? downloadMassCreate(result.lines, fileName, pct) : 0;
       onExported?.({ ...result, rows });
     } catch (e) {
       if (e.code === 'stale_inventory') {
@@ -236,6 +240,10 @@ export default function ExportDialog({
   const sellNote = (r) => {
     const sell = sellOf(r.line.id);
     if (!sell) return null;
+    const st = stateOf(r);
+    const nm = r.line.condition !== 'NM' && st.group === 'matched'
+      ? nearMint.get(productKey(st.product.product_name, st.product.category)) ?? null
+      : null;
     const why = {
       manual: 'the manual price (higher than today’s), rounded up',
       today: 'today’s price, rounded up',
@@ -247,6 +255,15 @@ export default function ExportDialog({
         Bought {formatMoney(r.line.unit_price)} → Sell <strong>{formatMoney(sell.price)}</strong>
         {sell.basis.used === 'at_buy' && <span className="xd-note">no price today</span>}
         {sell.basis.used === 'staff' && <span className="xd-note">set by hand</span>}
+        {nm && (
+          <span
+            className="xd-note"
+            title={`Crystal Commerce prices every condition from Near Mint: the file sets Near Mint to ${formatMoney(nm.price)} `
+              + `(${nm.from} Sell ${formatMoney(nm.sell)} ÷ ${nm.pct}%, rounded up) and adds this card with no price`}
+          >
+            sets NM {formatMoney(nm.price)}
+          </span>
+        )}
       </span>
     );
   };

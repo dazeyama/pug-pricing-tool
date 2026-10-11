@@ -213,9 +213,12 @@ export async function saveExport({ target, matches, cant, setMaps, userId, devic
   return data;
 }
 
-/** Hand the browser the Mass Create file (export spec 4.3). */
-export function downloadMassCreate(lines, name) {
-  const rows = massCreateRows(lines);
+/**
+ * Hand the browser the Mass Create file (export spec 4.3).
+ * @param {Record<string, number>} pct  Master Fallback Percentages (Magic): worse conditions' NM prices
+ */
+export function downloadMassCreate(lines, name, pct) {
+  const rows = massCreateRows(lines, pct);
   const url = URL.createObjectURL(new Blob([massCreateCsv(rows)], { type: 'text/csv;charset=utf-8' }));
   const a = document.createElement('a');
   a.href = url;

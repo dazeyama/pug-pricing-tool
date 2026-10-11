@@ -196,7 +196,8 @@ function CollectionScreen({ id }) {
           : 'This collection was marked Completed before EXPORT did that: reopen it (back to Paid/Ours), then EXPORT.', 'err');
         return;
       }
-      const rows = downloadMassCreate(stamped, `cc-mass-create-${fileSafe(buy.customer_name)}-${fileStamp(new Date(exportedAt))}.csv`);
+      const rows = downloadMassCreate(stamped, `cc-mass-create-${fileSafe(buy.customer_name)}-${fileStamp(new Date(exportedAt))}.csv`,
+        values.fallback_pct_mtg);
       toast(`Downloaded the same file again: ${rows} row${rows === 1 ? '' : 's'}, Custom SKU ${skus.join(', ')}.`, 'ok');
       return;
     }
