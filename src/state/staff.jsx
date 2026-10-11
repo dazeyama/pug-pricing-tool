@@ -18,7 +18,7 @@ import { useLiveTable } from '../lib/useLiveTable.js';
 
 const CURRENT_KEY = 'pug.staffUserId';
 /** No mouse, keyboard or touch in this tab for this long, and the picked user is forgotten. */
-export const IDLE_MINUTES = 10;
+export const IDLE_MINUTES = 30;
 const IDLE_EVENTS = ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart'];
 
 /** Tooltip on anything that needs a user picked first. */
