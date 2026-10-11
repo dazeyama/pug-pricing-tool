@@ -16,7 +16,7 @@ import { useToast } from '../components/Toast.jsx';
 export default function PricePage() {
   const { deviceId } = useDevice();
   const draft = useDraft(deviceId);
-  const { current: user, pulse } = useStaff();
+  const { current: user, pulse, forget } = useStaff();
   const toast = useToast();
   const { values } = useSettings();
   const [confirming, setConfirming] = useState(false);
@@ -60,7 +60,9 @@ export default function PricePage() {
     if (!done) return;
     setConfirming(false);
     const names = done.games.map((g) => (g === 'mtg' ? 'Magic' : 'Pokémon')).join(' + ');
-    toast(`Buy confirmed — Buy ${done.number} today (${names})`, 'ok');
+    toast(`Buy confirmed — Buy ${done.number} today (${names}). Pick your user for the next one.`, 'ok');
+    // The next buy may be someone else's: they pick themselves (owner, 2026-10-11).
+    forget();
     setResetKey((k) => k + 1);
   }
 
