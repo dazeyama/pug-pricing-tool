@@ -107,6 +107,11 @@ function MagicFinish({ card, finish, siblings, onFinish, onMove }) {
   );
 }
 
+/** Why a version says TCGplayer: a printing of this card TCGdex misses, or a separate product. */
+const sourceTitle = (v) => (v.ownProduct
+  ? 'TCGdex doesn\u2019t list this printing: TCGplayer does, through JustTCG'
+  : 'A separate TCGplayer product TCGdex doesn\u2019t list');
+
 /** Pokémon: NORMAL | HOLO | REVERSE, then the versions of that finish (TCGdex variants). */
 function PokemonFinish({ c, pokemon, versions, version, onVersion }) {
   if (!pokemon.resolved) {
@@ -154,7 +159,7 @@ function PokemonFinish({ c, pokemon, versions, version, onVersion }) {
           <fieldset className="versions">
             <legend>Version</legend>
             {ofFinish.map((v) => (
-              <label key={v.id} className="trait-row" title={v.tcgplayerOnly && c.source !== 'justtcg' ? 'A separate TCGplayer product TCGdex doesn\u2019t list' : undefined}>
+              <label key={v.id} className="trait-row" title={v.tcgplayerOnly && c.source !== 'justtcg' ? sourceTitle(v) : undefined}>
                 <input type="radio" name="pokemon-version" checked={v.id === version.id} onChange={() => onVersion(v.id)} />
                 {v.label}
                 {v.tcgplayerOnly && c.source !== 'justtcg' && <span className="version-source">TCGplayer</span>}
@@ -163,6 +168,10 @@ function PokemonFinish({ c, pokemon, versions, version, onVersion }) {
           </fieldset>
         )}
         {ofFinish.length === 1 && ofFinish[0].label !== 'Standard' && <Chip label={ofFinish[0].label} />}
+        {/* The only version of this finish is TCGplayer's (owner, 2026-10-11: Staryu 33's reverse holo). */}
+        {ofFinish.length === 1 && ofFinish[0].tcgplayerOnly && c.source !== 'justtcg' && (
+          <Chip label="TCGplayer" title={sourceTitle(ofFinish[0])} />
+        )}
         {(pokemon.card?.rarity ?? c.rarity) && <Chip label={pokemon.card?.rarity ?? c.rarity} title="Rarity" />}
         <Chip label={c.lang === 'ja' ? 'Japanese' : 'English'} title="Language: set by EN | JP" />
       </div>

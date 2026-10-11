@@ -492,7 +492,7 @@ Three links open the card on other sites, each in its own pop-up window:
 | | |
 |---|---|
 | **NORMAL \| HOLO \| REVERSE** | The finish. A finish never printed is greyed out. |
-| **Version** | When a finish has several versions (1st Edition, Poké Ball pattern…), she picks one here. A **TCGplayer** tag marks a product only TCGplayer lists. |
+| **Version** | When a finish has several versions (1st Edition, Poké Ball pattern…), she picks one here. A **TCGplayer** tag marks a version only TCGplayer lists. |
 | **From TCGplayer** | The card itself is from TCGplayer's catalogue: TCGdex doesn't list it yet. |
 | **Chips** | Rarity and language. |
 

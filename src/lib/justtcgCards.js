@@ -132,6 +132,12 @@ export function justtcgVersions(card, suffix = '', lang = 'en') {
  * already gives (by TCGplayer ID) and the plain card itself (no suffix, same
  * set). Each is labelled by its suffix ("Cosmos Holo"), else its TCGplayer
  * set ("Prize Pack Series One").
+ *
+ * The card's own product counts too (owner, 2026-10-11): TCGplayer can list a
+ * printing of it that TCGdex's variants lack (XY Staryu 33/146: TCGdex says
+ * Normal only, TCGplayer sells a Reverse Holofoil of the same product). Each
+ * finish missing from TCGdex's versions (finish and 1st Edition) becomes a
+ * version priced from that product, marked `ownProduct`.
  * @param {object[]|null} cards  slimmed JustTCG cards
  * @param {{ setName: string }} c  the selected TCGdex candidate
  * @param {object[]} versions  its TCGdex versions
@@ -141,13 +147,21 @@ export function siblingVersions(cards, c, versions) {
   // "XY - BREAKthrough" = "BREAKthrough", "Diamond and Pearl" = "Diamond & Pearl".
   const setKey = (name) => fold(plainSetName(name).replace(/&|\band\b/gi, ' '));
   const set = setKey(c?.setName);
+  const finishKey = (v) => `${v.finish}|${Boolean(v.firstEdition)}`;
+  const have = new Set(versions.map(finishKey));
   const out = [];
   for (const card of cards ?? []) {
-    if (card.tcgplayerId && known.has(String(card.tcgplayerId))) continue;
     const { suffix } = splitName(card.name);
     const theirs = setKey(card.set_name);
     const sameSet = Boolean(set && theirs && (theirs.includes(set) || set.includes(theirs)));
-    if (!suffix && sameSet) continue;
+    if ((card.tcgplayerId && known.has(String(card.tcgplayerId))) || (!suffix && sameSet)) {
+      for (const v of justtcgVersions(card)) {
+        if (have.has(finishKey(v))) continue;
+        have.add(finishKey(v));
+        out.push({ ...v, ownProduct: true });
+      }
+      continue;
+    }
     out.push(...justtcgVersions(card, suffix || card.set_name || 'TCGplayer'));
   }
   return out;

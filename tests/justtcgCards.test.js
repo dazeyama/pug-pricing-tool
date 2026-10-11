@@ -71,9 +71,9 @@ test('TCGplayer-only versions of a TCGdex card', () => {
   const tcgdex = [{ id: 'normal|||', finish: 'normal', tcgplayerId: '100', treatments: [] }];
   const c = { setName: 'BREAKthrough' };
   const cards = [
-    { uuid: 'a', name: 'Gengar - 060/162', set_name: 'XY - BREAKthrough', number: '060/162', tcgplayerId: 100, variants: [{ printing: 'Holofoil' }] },
+    { uuid: 'a', name: 'Gengar - 060/162', set_name: 'XY - BREAKthrough', number: '060/162', tcgplayerId: 100, variants: [{ printing: 'Normal' }] },
     { uuid: 'b', name: 'Gengar - 060/162 (Cosmos Holo)', set_name: 'Miscellaneous Cards & Products', number: '060/162', tcgplayerId: 200, variants: [{ printing: 'Holofoil' }] },
-    { uuid: 'c', name: 'Gengar - 060/162', set_name: 'XY - BREAKthrough', number: '060/162', tcgplayerId: null, variants: [{ printing: 'Holofoil' }] },
+    { uuid: 'c', name: 'Gengar - 060/162', set_name: 'XY - BREAKthrough', number: '060/162', tcgplayerId: null, variants: [{ printing: 'Normal' }] },
   ];
   const extra = siblingVersions(cards, c, tcgdex);
   // The one TCGdex has (by TCGplayer ID) and the plain card again (same set, no suffix) are left out.
@@ -83,9 +83,29 @@ test('TCGplayer-only versions of a TCGdex card', () => {
   // Without TCGplayer IDs from TCGdex, the plain card is still recognised by its set.
   const dp = siblingVersions(
     [{ uuid: 'd', name: 'Drapion - 23/130', set_name: 'Diamond and Pearl', number: '23/130', variants: [{ printing: 'Normal' }] }],
-    { setName: 'Diamond & Pearl' }, [],
+    { setName: 'Diamond & Pearl' }, [{ id: 'normal|||', finish: 'normal', tcgplayerId: null, treatments: [] }],
   );
   assert.equal(dp.length, 0);
+});
+
+test('a printing of the card itself that TCGdex misses becomes a version (Staryu 33\'s reverse holo)', () => {
+  const tcgdex = [{ id: 'normal|||', finish: 'normal', tcgplayerId: null, treatments: [] }];
+  const staryu = {
+    uuid: 'st', name: 'Staryu - 033/146', set_name: 'XY Base Set', number: '033/146', tcgplayerId: 89554,
+    variants: [
+      { condition: 'Near Mint', printing: 'Normal', price: 0.25 },
+      { condition: 'Near Mint', printing: 'Reverse Holofoil', price: 0.99 },
+      { condition: 'Lightly Played', printing: 'Reverse Holofoil', price: 0.8 },
+    ],
+  };
+  const extra = siblingVersions([staryu], { setName: 'XY' }, tcgdex);
+  assert.deepEqual(extra.map((v) => [v.finish, v.label, v.tcgplayerId, v.ownProduct]), [['reverse', 'Standard', '89554', true]]);
+  assert.ok(extra[0].tcgplayerOnly);
+  // Found by its TCGplayer ID as well; and once TCGdex lists the reverse, nothing is added.
+  const byId = siblingVersions([{ ...staryu, set_name: 'Something Else' }], { setName: 'XY' },
+    [{ ...tcgdex[0], tcgplayerId: '89554' }]);
+  assert.deepEqual(byId.map((v) => v.finish), ['reverse']);
+  assert.equal(siblingVersions([staryu], { setName: 'XY' }, [...tcgdex, { id: 'reverse|||', finish: 'reverse', treatments: [] }]).length, 0);
 });
 
 test('set codes for TCGplayer sets', () => {
