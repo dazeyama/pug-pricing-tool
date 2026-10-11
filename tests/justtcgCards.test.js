@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   splitName, splitNumber, printingFinish, justtcgVersions, siblingVersions, guessSetCode, plainSetName,
   justtcgCandidate, lineVersion, isTcgplayerOnlyLine, noNumberCards, withTcgplayerVersions, isOversized, isPlayStamp,
+  isWorldsDeck,
 } from '../src/lib/justtcgCards.js';
 import { lineText } from '../src/lib/lineFormat.js';
 
@@ -212,4 +213,14 @@ test('a Prize Pack product is the Play! Pokémon stamp', () => {
     ['holo|||', 'Standard', '451396'],
     ['holo|||play', 'Play! Pokémon stamp', '600001'],
   ]);
+});
+
+test('World Championship deck cards are left out, like jumbo cards; a Worlds promo stamp stays', () => {
+  const tcgdex = [{ id: 'holo|||', finish: 'holo', label: 'Standard', tcgplayerId: '1', treatments: [], stamps: [] }];
+  const card = (uuid, name, set) => ({ uuid, name, set_name: set, number: '1', tcgplayerId: uuid.length, variants: [{ printing: 'Holofoil' }] });
+  const worlds = card('wcd', 'Pidgeot - 2006 (Hiroki Yano)', 'World Championship Decks');
+  const promo = card('promo', 'Pikachu - 027 (World Championships 2023 Stamp)', 'SV: Scarlet & Violet Promo Cards');
+  assert.ok(isWorldsDeck(worlds));
+  assert.ok(!isWorldsDeck(promo));
+  assert.deepEqual(siblingVersions([worlds, promo], { setName: 'Other' }, tcgdex).map((v) => v.label), ['World Championships 2023 Stamp']);
 });

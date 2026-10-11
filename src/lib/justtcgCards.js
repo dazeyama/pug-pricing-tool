@@ -131,6 +131,13 @@ export function justtcgVersions(card, suffix = '', lang = 'en') {
 const OVERSIZED = /\b(jumbo|oversized?)\b/i;
 /** Is this JustTCG card an oversized one ("Jumbo Cards", "… (Oversized)")? */
 export const isOversized = (card) => OVERSIZED.test(`${card?.set_name ?? ''} ${card?.name ?? ''}`);
+// TCGplayer's World Championship deck cards (owner, 2026-10-11): the players'
+// deck reprints ("Pidgeot - 2006 (Hiroki Yano)" in "World Championship
+// Decks"), not tournament-legal cards, left out the same way. A World
+// Championships promo stamp isn't a deck card and stays.
+const WORLDS_DECK = /\bworld championships? decks?\b/i;
+/** Is this JustTCG card from a World Championship deck? */
+export const isWorldsDeck = (card) => WORLDS_DECK.test(`${card?.set_name ?? ''} ${card?.name ?? ''}`);
 // A TCGplayer suffix that names a stamp: "Journey Together Stamped", "Prerelease Stamp".
 const STAMPED = /\bstamp(ed)?\b/i;
 // TCGplayer's Prize Pack products have no name of their own ("Lugia VSTAR -
@@ -157,7 +164,8 @@ const suffixOf = (v) => (v.treatments ?? []).find((t) => t.startsWith('variant:'
  * Normal only, TCGplayer sells a Reverse Holofoil of the same product). Each
  * finish missing from TCGdex's versions (finish and 1st Edition) becomes a
  * version priced from that product, marked `ownProduct`. Oversized products
- * (jumbo cards) are left out (owner, 2026-10-11).
+ * (jumbo cards) and World Championship deck cards are left out (owner,
+ * 2026-10-11).
  * @param {object[]|null} cards  slimmed JustTCG cards
  * @param {{ setName: string }} c  the selected TCGdex candidate
  * @param {object[]} versions  its TCGdex versions
@@ -171,7 +179,7 @@ export function siblingVersions(cards, c, versions) {
   const have = new Set(versions.map(finishKey));
   const out = [];
   for (const card of cards ?? []) {
-    if (isOversized(card)) continue;
+    if (isOversized(card) || isWorldsDeck(card)) continue;
     const { suffix } = splitName(card.name);
     const theirs = setKey(card.set_name);
     const sameSet = Boolean(set && theirs && (theirs.includes(set) || set.includes(theirs)));
