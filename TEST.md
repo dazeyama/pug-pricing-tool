@@ -60,17 +60,17 @@ to make sure nothing old broke.
 
 ## 3. Buy tab: searching 🆕
 
-- [ ] 🆕 **No auto-select.** `Lightning Bolt 161/295` shows one printing, but **nothing is selected**. **↓** selects
-      it, **Enter** adds it. Enter with nothing selected says to select a card first.
+- [ ] 🆕 **No auto-select.** `Lightning Bolt 117/331 2X2` shows one printing, but **nothing is selected**. **↓** selects
+      it, **Enter** adds it. Enter with nothing selected should say to select a card first (run 1: it says nothing, F3).
 - [ ] Clicking the selected card again un-selects it. A search that drops the selected card clears it.
-- [ ] 🆕 A name that ends in a number is searched as that name: `Naturalize 2` (Magic), `Energy Removal 2` (Pokémon).
+- [ ] 🆕 A name that ends in a number is searched as that name: `Spider-Man 2099` (Magic), `Energy Removal 2` (Pokémon).
 - [ ] 🆕 **Japanese prices:** JP on, `025/165 SV2a` (Pikachu) shows **JustTCG** prices, not only Cardmarket.
 - [ ] 🆕 **Patterns:** JP `121/165 SV2a` (Starmie): the Poké Ball pattern is never priced above the Master Ball pattern.
 - [ ] 🆕 **"No." search:** JP on, `No. 121`: TCGdex's old Starmies, then TCGplayer's extras a moment later, marked
       **From TCGplayer** (Misty's Starmie, CGD No. 121…). No modern Starmie appears.
 - [ ] 🆕 With **EN** on, `No. 121` shows a yellow hint, "**No. 121** finds old Japanese Pokémon cards…: **switch to JP**";
       the link switches and searches again.
-- [ ] 🆕 A set code from the other language (`OBF` with JP on) shows the yellow switch hint too.
+- [ ] 🆕 A number and set code from the other language (`125/197 OBF` with JP on) shows the yellow switch hint too.
 - [ ] 🆕 A Japanese card shows its English name beside the Japanese one, a trainer's included (*Misty's Starmie*).
 - [ ] 🆕 An English card TCGdex doesn't list comes up from TCGplayer, marked **From TCGplayer**.
 - [ ] Right-clicking a suggestion searches its name. Newest/Oldest first sorts the printings.
@@ -239,8 +239,44 @@ Make the test files in Claude's scratchpad.
 
 ---
 
+## Run 1: 2026-10-11, 9:40–10:26 PM
+
+Claude, in the browser pane at 1366×768, on the local dev server (`start.bat`, dev database). Build 0.9.9.5-final
+plus `36be5e6` (footer 0.9.9.5-final). About **35 JustTCG requests** (1,807 → 1,842 this month). Backup taken first
+(`pug-pricing-backup-20261011-214110.json`).
+
+**Result:** sections 0–16 run. No P1 findings. **3 P2** and **7 P3** findings, below. Everything else passed,
+including every 🆕 headline feature: user forgetting (new tab, after a buy, 30 minutes idle), Help, no auto-select,
+Japanese prices and "No." searches, Staryu's reverse, Mimikyu's merged stamp, the Play! Pokémon and Pokémon Center
+logos, SV promo and Trainer shine classes, past customers, Export single buy and its undo, the Near-Mint-only file
+(checked row by row, and identical when downloaded again), Rejected and Reopen, projects rounding up, Convert to buy
+and back, the Collections ⋯ menu, all four kinds of import, Home, the Changelog and 1366×768 layouts.
+
+**Not tested** (on purpose, or not possible from one browser):
+- A card that can't match going to Can't upload cards: it would have put SMOKE cards in the owner's real list.
+- Saving EXPORT on a past day, and COMPLETE on a Pokémon day: only the owner's data was there; both were opened,
+  checked and cancelled. Export single buy was saved instead, on a SMOKE buy.
+- Convert to buy greyed on a Completed project (no Completed project to try).
+- View only, and the table's ⋯ greyed, when another computer has a collection open: needs two computers (section 17).
+- Remembered import picks (no test row needed a pick), a project's price turning amber at 14 days (none old enough),
+  the JustTCG limit or a missing key, a card with no price at all, a slow Scryfall or TCGdex.
+
+**Left on dev after the clean-up:** the computer name `SMOKE Test Pane` (there's no way to delete a computer); the
+SMOKE names in the past-customer list (SMOKE Ash, SMOKE Misty, SMOKE Collection, SMOKE Rejected; no delete for those
+either); the run's Changelog entries (history is never deleted); and the export's remembered matches for the 2X2, M10
+and M11 Lightning Bolts, which are correct.
+
 ## Findings
 
 | # | Priority | Section | What happened | Expected | Steps |
 |---|---|---|---|---|---|
-| | | | | | |
+| F1 | P3 | 1 | With no user picked, Home's **+ Price Collection** / **+ Start Project** open their forms; Create then only says "Pick a user first." Nothing is created. | Quick actions guarded like the Collections tab's buttons: look disabled, pulse the user button. | New tab (no user) → Home → + Price Collection → fill → Create. |
+| F2 | P3 | 2 | Help's **Preamble** is 134px taller than its panel at 1366×768; the "From Claude Code" picture needs a scroll. | Fits without scrolling on the store laptop. | Help → About the app → Preamble at 1366×768. |
+| F3 | P2 | 3 | **Enter with no card selected does nothing and says nothing.** (ADD CARD's tooltip says "Select a card first", but Enter is silent.) With auto-select gone, staff will type, press Enter and see nothing happen. | A message: press ↓ to pick a card first. | Buy tab → type `Lightning Bolt 117/331 2X2` → Enter. |
+| F4 | P3 | 3 | A TCGplayer card with no rarity shows the word **"None"**: "No. 121 · None" in the card info and a "None" chip in Details. | No rarity shown. | JP → `No. 121` → CGD Misty's Starmie. |
+| F5 | P3 | 4 | TCGplayer's **League & Championship Cards** products are labelled with that set name, as Prize Pack ones were (Super Rod 188, REVERSE). | Owner to decide: a name like "League stamp"? | `Super Rod 188/193` → REVERSE. |
+| F6 | P2 | 4 | **World Championship deck cards still show**, from TCGdex: Pidgeot (FireRed & LeafGreen 10) HOLO lists "Takashi Yoneda / Jeremy Maron / Hiroki Yano / Jimmy Ballard stamp". TCGdex marks them as stamps named after the player, so the TCGplayer-only rule doesn't catch them. | Left out, like the TCGplayer ones. Their TCGplayer products are in "World Championship Decks", which the backfill already fetches. | `Pidgeot 10/112` → HOLO. |
+| F7 | P2 | 4 | **The default version can be a TCGplayer-only product**: Pikachu SVP 027 opens on **NORMAL "Baby"** (TCGplayer, NM $97) instead of TCGdex's holo ($18). | Default to TCGdex's own versions; TCGplayer ones only when picked. | `Pikachu 027 SVP` → ↓. |
+| F8 | P3 | 8, 9 | REPRICE?'s sentence is missing a space: "…Use Cardmarket as it was,rounded down as always" (and "was,rounded up" in a project). | "as it was, rounded …" | REPRICE? on any collection or project. |
+| F9 | P3 | 9, 11, 12 | Projects are called collections in places: the delete dialog ("Delete collection", "All 0 cards in this collection"), and the Changelog / Home headline **Collection created** for "Project started". | "project" for projects; "1 card" / "no cards". | Delete an empty project; Changelog after + Start Project. |
+| F10 | P3 | 14 | At 1366×768 the **Finish & Details** panel needs its own scroll once a card has a version list; the rarity and language chips are cut off. | Fits, or the chips stay visible. | `Mimikyu ex 069` at 1366×768. |
