@@ -894,7 +894,7 @@ function ConvertBuyModal({ buy, number, day, byId, busy, onClose, onConvert }) {
   const [name, setName] = useState(() => (buy.customer_name || `Buy ${number} · ${dayDate(day)}`).slice(0, 80));
   const count = buy.buy_lines.reduce((n, l) => n + l.quantity, 0);
   const bothGames = new Set(buy.buy_lines.map((l) => l.game)).size > 1;
-  // "its 1 card" / "all 12 cards, both games" (BUGS.md 8).
+  // "its 1 card" / "all 12 cards, both games" (smoke test 2026-10-02 #8).
   const cards = count === 1 ? 'its 1 card' : `all ${count} cards`;
   const who = byId(buy.confirmed_by)?.name ?? 'someone';
   const ready = name.trim().length > 0;

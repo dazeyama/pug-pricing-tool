@@ -115,11 +115,11 @@
 /* The bottom row's right-hand column: Recent activity, all of it (owner,
    2026-10-09; Can't upload cards moved up to Collections and projects). */
 .home-side { min-height: 0; }
-/* Never squeezed away (BUGS.md 2): room for its heading and two entries. */
+/* Never squeezed away (smoke test 2026-10-02 #2): room for its heading and two entries. */
 .home-recent { flex: 1; min-height: 0; }
 .home-recent .home-activity { flex: 1; min-height: 0; overflow: hidden; }
 .home-recent .home-event { flex: none; height: 18px; align-items: center; }
-/* The laptop (1366×768; BUGS.md 1–2): a slimmer band and gaps, and room
+/* The laptop (1366×768; smoke test 2026-10-02 #1–2): a slimmer band and gaps, and room
    kept for Recent activity, so Days to export and Recent activity keep their
    rows. Laptop-sized screens only, short AND
    narrow (owner, 2026-10-02): a 1080p screen keeps the full-size Home even in

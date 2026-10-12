@@ -61,7 +61,7 @@ function useStoreDay() {
 }
 
 /**
- * Home, loaded afresh when the store's day changes (BUGS.md 6): Today and
+ * Home, loaded afresh when the store's day changes (smoke test 2026-10-02 #6): Today and
  * Days to export were worked out for the day the page opened, so a page left
  * open overnight kept yesterday's numbers until the next buy.
  */
@@ -103,7 +103,7 @@ function HomeScreen({ today }) {
     .order('seq', { ascending: false })
     .limit(SHOW.events));
   // Magic days already exported, newest first, for "Recently exported": cards
-  // with export stamps, not ones only marked Completed by hand (BUGS.md 5).
+  // with export stamps, not ones only marked Completed by hand (smoke test 2026-10-02 #5).
   const exported = useLiveTable('buys', () => supabase
     .from('buy_lines')
     .select('quantity, completed_at, cc_custom_sku, buy_id, buys!inner(kind, status, confirmed_at)')
@@ -144,7 +144,7 @@ function HomeScreen({ today }) {
   let recentShown = 0;
   if (waitingRows > daysFit) {
     // Room for "+N more" under the days, unless only one row fits: then the
-    // oldest day itself (BUGS.md 1), and the heading's "N waiting" says the rest.
+    // oldest day itself (smoke test 2026-10-02 #1), and the heading's "N waiting" says the rest.
     daysShown = Math.max(1, daysFit - 1);
   } else {
     const left = daysFit - waitingRows;
