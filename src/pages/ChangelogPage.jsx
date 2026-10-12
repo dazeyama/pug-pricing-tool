@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
 import {
-  CATEGORIES, DAY_ACTIONS, MONTH_ACTIONS, DEFAULT_CATEGORIES, GONE, HEADLINES, MADE, MILESTONES, actionsFor, categoryOf, dayHeading, entryDay,
+  CATEGORIES, DAY_ACTIONS, MONTH_ACTIONS, DEFAULT_CATEGORIES, GONE, MADE, MILESTONES, actionsFor, categoryOf, dayHeading, entryDay, headlineOf,
   entryWhen, foldEvents, panelView,
 } from '../lib/changelog.js';
 import { storeDay } from '../lib/calendar.js';
@@ -398,7 +398,7 @@ function Entry({ panel, view, side, targets, game, onFunnel }) {
           <span className="tl-when">{entryWhen(view.newest, view.oldest)}</span>
           <span className="tl-what-wrap">
             <span className={`tl-what cat-${category}${made ? ' made' : ''}${gone ? ' gone' : ''}`}>
-              {HEADLINES[first.action] ?? first.action}
+              {headlineOf(first)}
             </span>
           </span>
           {first.target_id && (

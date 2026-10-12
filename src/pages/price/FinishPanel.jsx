@@ -151,10 +151,21 @@ function PokemonFinish({ c, pokemon, versions, version, onVersion }) {
       <div className="stage-label details-label">Details</div>
       <div className="details">
         {!versions.length && <p className="details-note">TCGdex lists no finishes for this card.</p>}
-        {/* Owner, 2026-10-09: a card or version TCGdex doesn't list, from TCGplayer's catalogue. */}
-        {c.source === 'justtcg' && (
-          <Chip label="From TCGplayer" title="TCGdex doesn't list this card yet: it's TCGplayer's listing, through JustTCG" />
-        )}
+        {/* The chips on one row, above the versions, so a long list never pushes them out of
+            sight (smoke test 2026-10-11, F10). */}
+        <div className="detail-chips">
+          {/* Owner, 2026-10-09: a card or version TCGdex doesn't list, from TCGplayer's catalogue. */}
+          {c.source === 'justtcg' && (
+            <Chip label="From TCGplayer" title="TCGdex doesn't list this card yet: it's TCGplayer's listing, through JustTCG" />
+          )}
+          {ofFinish.length === 1 && ofFinish[0].label !== 'Standard' && <Chip label={ofFinish[0].label} />}
+          {/* The only version of this finish is TCGplayer's (owner, 2026-10-11: Staryu 33's reverse holo). */}
+          {ofFinish.length === 1 && ofFinish[0].tcgplayerOnly && c.source !== 'justtcg' && (
+            <Chip label="TCGplayer" title={sourceTitle(ofFinish[0])} />
+          )}
+          {(pokemon.card?.rarity ?? c.rarity) && <Chip label={pokemon.card?.rarity ?? c.rarity} title="Rarity" />}
+          <Chip label={c.lang === 'ja' ? 'Japanese' : 'English'} title="Language: set by EN | JP" />
+        </div>
         {ofFinish.length > 1 && (
           <fieldset className="versions">
             <legend>Version</legend>
@@ -172,13 +183,6 @@ function PokemonFinish({ c, pokemon, versions, version, onVersion }) {
             ))}
           </fieldset>
         )}
-        {ofFinish.length === 1 && ofFinish[0].label !== 'Standard' && <Chip label={ofFinish[0].label} />}
-        {/* The only version of this finish is TCGplayer's (owner, 2026-10-11: Staryu 33's reverse holo). */}
-        {ofFinish.length === 1 && ofFinish[0].tcgplayerOnly && c.source !== 'justtcg' && (
-          <Chip label="TCGplayer" title={sourceTitle(ofFinish[0])} />
-        )}
-        {(pokemon.card?.rarity ?? c.rarity) && <Chip label={pokemon.card?.rarity ?? c.rarity} title="Rarity" />}
-        <Chip label={c.lang === 'ja' ? 'Japanese' : 'English'} title="Language: set by EN | JP" />
       </div>
     </>
   );

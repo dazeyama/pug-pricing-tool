@@ -244,3 +244,9 @@ test('TCGdex\'s World Championship deck versions go when TCGplayer files them as
   // Before TCGplayer answers (no cards), TCGdex's list is shown as it is.
   assert.equal(withTcgplayerVersions(tcgdex, [], { setName: 'FireRed & LeafGreen' }).length, 4);
 });
+
+test('TCGplayer\'s "None" rarity is no rarity (smoke test F4)', () => {
+  const card = { uuid: 'n', name: "Misty's Starmie", set: 'city-gym-decks-pokemon-japan', set_name: 'City Gym Decks', number: 'N/A', rarity: 'None', variants: [] };
+  assert.equal(justtcgCandidate(card, { lang: 'ja', setCode: 'CGD', number: 'No. 121' }).rarity, null);
+  assert.equal(justtcgCandidate({ ...card, rarity: 'Holo Rare' }, { lang: 'ja', setCode: 'CGD' }).rarity, 'Holo Rare');
+});

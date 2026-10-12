@@ -169,10 +169,10 @@ export default function CollectionDetails({
               onClick: onConvert,
             }] : []),
             {
-              label: 'Delete collection…',
+              label: project ? 'Delete project…' : 'Delete collection…',
               danger: true,
               blocked: deleteBlocked,
-              title: 'Delete this collection and every card in it',
+              title: `Delete this ${project ? 'project' : 'collection'} and every card in it`,
               onClick: onDelete,
             },
           ]}

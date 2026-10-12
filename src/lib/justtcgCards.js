@@ -331,7 +331,8 @@ export function justtcgCandidate(card, { lang = 'en', setCode, number: shown = n
     source: 'justtcg',
     justtcgId: id,
     tcgplayerId: card.tcgplayerId ? String(card.tcgplayerId) : null,
-    rarity: card.rarity ?? null,
+    // TCGplayer writes "None" for no rarity (smoke test 2026-10-11, F4).
+    rarity: card.rarity && !/^none$/i.test(String(card.rarity).trim()) ? card.rarity : null,
     suffix,
     justtcg: card,
   };

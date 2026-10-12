@@ -249,17 +249,20 @@ export function NewCollectionModal({ busy, onCreate, onClose }) {
 /**
  * Delete collection… (spec 9.7): a warning with the card count, then the
  * name typed to confirm. Delete forever only lights up on a match
- * (case-insensitive, trimmed); the server checks it again.
+ * (case-insensitive, trimmed); the server checks it again. A project says
+ * "project" (smoke test 2026-10-11, F9).
  */
-export function DeleteCollectionModal({ name, count, busy, onDelete, onClose }) {
+export function DeleteCollectionModal({ name, count, busy, onDelete, onClose, project = false }) {
   const [step, setStep] = useState(1);
   const [typed, setTyped] = useState('');
   const matches = typed.trim().toLowerCase() === name.trim().toLowerCase();
+  const kind = project ? 'project' : 'collection';
+  const title = project ? 'Delete project' : 'Delete collection';
 
   if (step === 1) {
     return (
       <Modal
-        title="Delete collection"
+        title={title}
         onClose={onClose}
         footer={(
           <>
@@ -269,15 +272,17 @@ export function DeleteCollectionModal({ name, count, busy, onDelete, onClose }) 
         )}
       >
         <p>
-          Delete <strong>{name}</strong>? All <strong>{count} card{count === 1 ? '' : 's'}</strong> in this
-          collection will be permanently removed.
+          Delete <strong>{name}</strong>?{' '}
+          {count === 0 ? <>It has no cards.</> : count === 1
+            ? <>Its <strong>1 card</strong> will be permanently removed.</>
+            : <>All <strong>{count} cards</strong> in this {kind} will be permanently removed.</>}
         </p>
       </Modal>
     );
   }
   return (
     <Modal
-      title="Delete collection"
+      title={title}
       onClose={onClose}
       footer={(
         <>
@@ -289,7 +294,7 @@ export function DeleteCollectionModal({ name, count, busy, onDelete, onClose }) 
       )}
     >
       <label className="field">
-        <span>Type the collection's name to confirm:</span>
+        <span>Type the {kind}'s name to confirm:</span>
         <input
           type="text"
           autoFocus

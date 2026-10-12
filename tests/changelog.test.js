@@ -1,8 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  actionsFor, categoryOf, dayHeading, entryWhen, foldEvents, panelView,
-} from '../src/lib/changelog.js';
+  actionsFor, categoryOf, dayHeading, entryWhen, foldEvents, panelView, headlineOf } from '../src/lib/changelog.js';
 
 let seq = 1000;
 const ev = (over) => ({
@@ -92,4 +91,11 @@ test('days and times in store time', () => {
   assert.equal(dayHeading('2026-08-17T21:37:00Z', now), 'August 17, 2026');
   assert.equal(entryWhen('2026-08-17T21:37:00Z'), 'August 17, 2026 at 2:37 PM');
   assert.equal(entryWhen('2026-08-17T21:41:00Z', '2026-08-17T21:04:00Z'), 'August 17, 2026 · 2:04 – 2:41 PM');
+});
+
+test('a project made reads "Project started", not "Collection created" (smoke test F9)', () => {
+  assert.equal(headlineOf({ action: 'collection_created', summary: 'Project started: SMOKE Drop.' }), 'Project started');
+  assert.equal(headlineOf({ action: 'collection_created', summary: 'Collection created for Jo.' }), 'Collection created');
+  assert.equal(headlineOf({ action: 'buy_confirmed' }), 'Buy confirmed');
+  assert.equal(headlineOf({ action: 'something_new' }), 'something_new');
 });

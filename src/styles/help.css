@@ -212,6 +212,29 @@
    The size limit sits on the figure and the picture fills it, so the figure
    is always exactly as wide as the picture and its caption centres on it. */
 .help-text figure { width: fit-content; max-width: min(100%, 360px); margin: 14px 0 0; }
+/* A picture in the text (the Preamble's) goes in the empty space beside the
+   760px column, at the bottom, where there's room, so the page fits the store
+   laptop (smoke test 2026-10-11, F2). Pages with screenshots have their own
+   column (.has-figures) and keep the text as it is. */
+@media (min-width: 1280px) {
+  .help-content:not(.has-figures) .help-text {
+    display: grid;
+    grid-template-columns: minmax(0, 760px) minmax(180px, 1fr);
+    column-gap: 28px;
+    max-width: none;
+  }
+  .help-content:not(.has-figures) .help-text > * { grid-column: 1; }
+  .help-content:not(.has-figures) .help-text > figure { grid-column: 2; grid-row: 1 / span 60; align-self: end; margin: 0; }
+  /* Grid items' margins don't collapse: no gap left under the last paragraph. */
+  .help-content:not(.has-figures) .help-text > :last-child,
+  .help-content:not(.has-figures) .help-text > :has(+ figure:last-child) { margin-bottom: 0; }
+}
+/* A short window (the 768px laptop): a little less padding around the page. */
+@media (max-height: 820px) {
+  .help-head { padding-top: 10px; padding-bottom: 8px; }
+  .help-foot { padding-top: 6px; padding-bottom: 6px; }
+  .help-scroll { padding-top: 12px; padding-bottom: 12px; }
+}
 .help-text figure img {
   display: block;
   width: 100%;

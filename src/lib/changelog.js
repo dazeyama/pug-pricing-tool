@@ -88,6 +88,17 @@ export const HEADLINES = {
   cant_upload_returned: 'Cards returned',
   backup_restored: 'Backup restored',
 };
+/**
+ * An entry's headline: HEADLINES by its action, except a project made, which
+ * reads "Project started" rather than "Collection created" (its summary says
+ * so; smoke test 2026-10-11, F9).
+ * @param {{ action: string, summary?: string|null }} e
+ */
+export function headlineOf(e) {
+  if (e?.action === 'collection_created' && /^Project started/.test(String(e.summary ?? ''))) return 'Project started';
+  return HEADLINES[e?.action] ?? e?.action;
+}
+
 /** Entries about a whole day (EXPORT on a day page), not one buy. */
 export const DAY_ACTIONS = new Set(['day_exported', 'day_unexported', 'day_completed']);
 /** Entries about a whole month (the Cash buys file; smoke test 2026-10-02 #10), not one buy. */

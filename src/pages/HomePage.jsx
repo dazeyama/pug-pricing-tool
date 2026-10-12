@@ -5,7 +5,8 @@ import { useLiveTable } from '../lib/useLiveTable.js';
 import { dayDate, dayRange, storeDay } from '../lib/calendar.js';
 import { formatMoney } from '../lib/money.js';
 import { STORE_TZ, formatTime } from '../lib/time.js';
-import { HEADLINES } from '../lib/changelog.js';
+import { headlineOf } from '../lib/changelog.js';
+import GuardButton from '../components/GuardButton.jsx';
 import { colorVar } from '../lib/palette.js';
 import { formatInTimeZone } from 'date-fns-tz';
 import { useStaff } from '../state/staff.jsx';
@@ -216,8 +217,9 @@ function HomeScreen({ today }) {
           <div className="home-actions" role="group" aria-label="Quick actions">
             <button type="button" className="btn" onClick={() => go('/price')}>Buy cards</button>
             <button type="button" className="btn" onClick={() => go(`/calendar/mtg/${today}`)}>Today's day</button>
-            <button type="button" className="btn" onClick={() => go('/collections', { create: 'project' })}>+ Start Project</button>
-            <button type="button" className="btn" onClick={() => go('/collections', { create: 'collection' })}>+ Price Collection</button>
+            {/* They make something, so they need a user like the Collections tab's (smoke test 2026-10-11, F1). */}
+            <GuardButton className="btn" onClick={() => go('/collections', { create: 'project' })}>+ Start Project</GuardButton>
+            <GuardButton className="btn" onClick={() => go('/collections', { create: 'collection' })}>+ Price Collection</GuardButton>
           </div>
         </section>
       </div>
@@ -318,7 +320,7 @@ function HomeScreen({ today }) {
                 <div key={e.seq} className="home-event">
                   <span className="home-time">{formatTime(e.at)}</span>
                   <span>
-                    {HEADLINES[e.action] ?? e.action}{e.target_name ? `: ${e.target_name}` : ''}
+                    {headlineOf(e)}{e.target_name ? `: ${e.target_name}` : ''}
                     {e.staff_user_name && (
                       <span className="home-who" style={{ '--c': colorVar(e.staff_user_color ?? 'pal-slate') }}> · {e.staff_user_name}</span>
                     )}

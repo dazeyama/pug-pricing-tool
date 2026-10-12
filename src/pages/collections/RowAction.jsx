@@ -49,6 +49,7 @@ export default function RowAction({ id, action, onClose }) {
     return (
       <DeleteCollectionModal
         name={buy.customer_name}
+        project={Boolean(buy.project)}
         count={count}
         busy={col.busy}
         onClose={onClose}

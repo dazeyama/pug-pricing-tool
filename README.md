@@ -723,7 +723,7 @@ The header bar always shows the name and status.
 | | |
 |---|---|
 | **Name and status** | Click to fold the details away, or bring them back. |
-| **⋯** | **Convert to buy…** (projects only) and **Delete collection…** |
+| **⋯** | **Convert to buy…** (projects only) and **Delete collection…** (**Delete project…** on a project) |
 | **Arrow button** | Folds or unfolds the details. |
 | **Name, Phone, Last 4 ID, Notes** | Click the ✎ to edit in place. **Enter** saves. Clicking away saves. **Esc** leaves it as it was. Notes save with **Ctrl+Enter**. |
 | **📞 (N)** | On a Priced collection, beside the phone. See below. |
@@ -825,8 +825,8 @@ when it has no cards.
 
 ### Delete collection…
 
-From the ⋯ menu. Two steps. First a warning with the card count and **Continue**. Then she types the
-collection's name. **Delete forever** removes it and every card in it. This can't be undone.
+From the ⋯ menu; on a project it reads **Delete project…**. Two steps. First a warning with the card count and
+**Continue**. Then she types the name. **Delete forever** removes it and every card in it. This can't be undone.
 
 ### Can't upload cards
 

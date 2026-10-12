@@ -167,10 +167,10 @@ export default function CollectionsPage() {
         onClick: () => setActing({ id: c.id, action: 'convert' }),
       }] : []),
       {
-        label: 'Delete collection…',
+        label: c.project ? 'Delete project…' : 'Delete collection…',
         danger: true,
         blocked: busy,
-        title: 'Delete this collection and every card in it',
+        title: `Delete this ${c.project ? 'project' : 'collection'} and every card in it`,
         onClick: () => setActing({ id: c.id, action: 'delete' }),
       },
     ];

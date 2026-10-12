@@ -580,6 +580,7 @@ function CollectionScreen({ id }) {
           {asking === 'delete' && buy && (
             <DeleteCollectionModal
               name={buy.customer_name}
+              project={Boolean(buy.project)}
               count={count}
               busy={col.busy}
               onClose={() => setAsking(null)}

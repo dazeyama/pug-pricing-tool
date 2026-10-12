@@ -69,7 +69,7 @@ export default function RepriceModal({ lines, roundUp = false, onReprice, onClos
           {error && <div className="banner err">{error}</div>}
           <p>
             Every card here (<strong>{cards} card{cards === 1 ? '' : 's'}</strong>) gets today's buy price for its
-            condition, worked out the way it was priced: the same price ladder, Use TCGplayer / Use Cardmarket as it was,
+            condition, worked out the way it was priced: the same price ladder, Use TCGplayer / Use Cardmarket as it was,{' '}
             {roundUp ? 'rounded up, as in every project' : 'rounded down as always'}. Sell prices aren't touched.
           </p>
           <p className="hint">
