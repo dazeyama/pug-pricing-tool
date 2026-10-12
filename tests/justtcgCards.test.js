@@ -224,3 +224,23 @@ test('World Championship deck cards are left out, like jumbo cards; a Worlds pro
   assert.ok(!isWorldsDeck(promo));
   assert.deepEqual(siblingVersions([worlds, promo], { setName: 'Other' }, tcgdex).map((v) => v.label), ['World Championships 2023 Stamp']);
 });
+
+test('TCGdex\'s World Championship deck versions go when TCGplayer files them as deck cards (Pidgeot ex6-10)', () => {
+  const v = (id, tcgplayerId, stamps = []) => ({ id, finish: 'holo', label: id, tcgplayerId, treatments: stamps, stamps });
+  const tcgdex = [
+    v('holo|||', '88031'),
+    v('holo|||takashi-yoneda', '477560', ['takashi-yoneda']),
+    v('holo|||jeremy-maron', '477561', ['jeremy-maron']),
+    v('holo|||hiroki-yano', '477881', ['hiroki-yano']),
+  ];
+  const card = (name, set, tcg) => ({ uuid: String(tcg), name, set_name: set, number: '10/112', tcgplayerId: tcg, variants: [{ printing: 'Holofoil' }] });
+  const cards = [
+    card('Pidgeot', 'EX FireRed & LeafGreen', 88031),
+    card('Pidgeot - 2005 (Takashi Yoneda)', 'World Championship Decks', 477560),
+    card('Pidgeot - 2005 (Jeremy Maron)', 'World Championship Decks', 477561),
+    card('Pidgeot - 2006 (Hiroki Yano)', 'World Championship Decks', 477881),
+  ];
+  assert.deepEqual(withTcgplayerVersions(tcgdex, cards, { setName: 'FireRed & LeafGreen' }).map((x) => x.id), ['holo|||']);
+  // Before TCGplayer answers (no cards), TCGdex's list is shown as it is.
+  assert.equal(withTcgplayerVersions(tcgdex, [], { setName: 'FireRed & LeafGreen' }).length, 4);
+});

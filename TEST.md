@@ -245,7 +245,8 @@ Claude, in the browser pane at 1366×768, on the local dev server (`start.bat`, 
 plus `36be5e6` (footer 0.9.9.5-final). About **35 JustTCG requests** (1,807 → 1,842 this month). Backup taken first
 (`pug-pricing-backup-20261011-214110.json`).
 
-**Result:** sections 0–16 run. No P1 findings. **3 P2** and **7 P3** findings, below. Everything else passed,
+**Result:** sections 0–16 run. No P1 findings. **3 P2** and **7 P3** findings, below. The three P2s were fixed the
+same night and checked in the browser. Everything else passed,
 including every 🆕 headline feature: user forgetting (new tab, after a buy, 30 minutes idle), Help, no auto-select,
 Japanese prices and "No." searches, Staryu's reverse, Mimikyu's merged stamp, the Play! Pokémon and Pokémon Center
 logos, SV promo and Trainer shine classes, past customers, Export single buy and its undo, the Near-Mint-only file
@@ -272,11 +273,11 @@ and M11 Lightning Bolts, which are correct.
 |---|---|---|---|---|---|
 | F1 | P3 | 1 | With no user picked, Home's **+ Price Collection** / **+ Start Project** open their forms; Create then only says "Pick a user first." Nothing is created. | Quick actions guarded like the Collections tab's buttons: look disabled, pulse the user button. | New tab (no user) → Home → + Price Collection → fill → Create. |
 | F2 | P3 | 2 | Help's **Preamble** is 134px taller than its panel at 1366×768; the "From Claude Code" picture needs a scroll. | Fits without scrolling on the store laptop. | Help → About the app → Preamble at 1366×768. |
-| F3 | P2 | 3 | **Enter with no card selected does nothing and says nothing.** (ADD CARD's tooltip says "Select a card first", but Enter is silent.) With auto-select gone, staff will type, press Enter and see nothing happen. | A message: press ↓ to pick a card first. | Buy tab → type `Lightning Bolt 117/331 2X2` → Enter. |
+| F3 | P2 ✅ fixed | 3 | **Enter with no card selected does nothing and says nothing.** (ADD CARD's tooltip says "Select a card first", but Enter is silent.) With auto-select gone, staff will type, press Enter and see nothing happen. | A message: press ↓ to pick a card first. | Buy tab → type `Lightning Bolt 117/331 2X2` → Enter. |
 | F4 | P3 | 3 | A TCGplayer card with no rarity shows the word **"None"**: "No. 121 · None" in the card info and a "None" chip in Details. | No rarity shown. | JP → `No. 121` → CGD Misty's Starmie. |
 | F5 | P3 | 4 | TCGplayer's **League & Championship Cards** products are labelled with that set name, as Prize Pack ones were (Super Rod 188, REVERSE). | Owner to decide: a name like "League stamp"? | `Super Rod 188/193` → REVERSE. |
-| F6 | P2 | 4 | **World Championship deck cards still show**, from TCGdex: Pidgeot (FireRed & LeafGreen 10) HOLO lists "Takashi Yoneda / Jeremy Maron / Hiroki Yano / Jimmy Ballard stamp". TCGdex marks them as stamps named after the player, so the TCGplayer-only rule doesn't catch them. | Left out, like the TCGplayer ones. Their TCGplayer products are in "World Championship Decks", which the backfill already fetches. | `Pidgeot 10/112` → HOLO. |
-| F7 | P2 | 4 | **The default version can be a TCGplayer-only product**: Pikachu SVP 027 opens on **NORMAL "Baby"** (TCGplayer, NM $97) instead of TCGdex's holo ($18). | Default to TCGdex's own versions; TCGplayer ones only when picked. | `Pikachu 027 SVP` → ↓. |
+| F6 | P2 ✅ fixed | 4 | **World Championship deck cards still show**, from TCGdex: Pidgeot (FireRed & LeafGreen 10) HOLO lists "Takashi Yoneda / Jeremy Maron / Hiroki Yano / Jimmy Ballard stamp". TCGdex marks them as stamps named after the player, so the TCGplayer-only rule doesn't catch them. | Left out, like the TCGplayer ones. Their TCGplayer products are in "World Championship Decks", which the backfill already fetches. | `Pidgeot 10/112` → HOLO. |
+| F7 | P2 ✅ fixed | 4 | **The default version can be a TCGplayer-only product**: Pikachu SVP 027 opens on **NORMAL "Baby"** (TCGplayer, NM $97) instead of TCGdex's holo ($18). | Default to TCGdex's own versions; TCGplayer ones only when picked. | `Pikachu 027 SVP` → ↓. |
 | F8 | P3 | 8, 9 | REPRICE?'s sentence is missing a space: "…Use Cardmarket as it was,rounded down as always" (and "was,rounded up" in a project). | "as it was, rounded …" | REPRICE? on any collection or project. |
 | F9 | P3 | 9, 11, 12 | Projects are called collections in places: the delete dialog ("Delete collection", "All 0 cards in this collection"), and the Changelog / Home headline **Collection created** for "Project started". | "project" for projects; "1 card" / "no cards". | Delete an empty project; Changelog after + Start Project. |
 | F10 | P3 | 14 | At 1366×768 the **Finish & Details** panel needs its own scroll once a card has a version list; the rarity and language chips are cut off. | Fits, or the chips stay visible. | `Mimikyu ex 069` at 1366×768. |

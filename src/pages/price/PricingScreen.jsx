@@ -267,7 +267,10 @@ export default function PricingScreen({
   const unitPrice = manual ?? ladder[condition]?.price ?? null;
   let addBlocked = null;
   if (locked) addBlocked = locked;
-  else if (!selected) addBlocked = 'Select a card first';
+  else if (!selected) {
+    // Nothing is picked for her (no auto-select): ↓ picks the first suggestion.
+    addBlocked = search.candidates.length ? 'Select a card first: ↓ picks the first suggestion' : 'Select a card first';
+  }
   else if (magic ? !finish : !version) addBlocked = "Waiting for the card's versions";
   else if (pricesLoading) addBlocked = 'Waiting for prices';
   else if (unitPrice == null) addBlocked = 'No price: enter a manual price (Alt+M)';
@@ -444,7 +447,13 @@ export default function PricingScreen({
       pulse();
       return;
     }
-    if (addBlocked || list.busy) return;
+    // Enter (or Qty's Enter) says why nothing was added (smoke test 2026-10-11, F3):
+    // with no auto-select, a card typed and Enter pressed used to do nothing at all.
+    if (addBlocked) {
+      toast(`${addBlocked}.`, 'err');
+      return;
+    }
+    if (list.busy) return;
     const opts = { game: selected.game, lang: selected.lang, finish: magic ? finish : version.finish, firstEdition: version?.firstEdition };
     const line = buildLine({
       candidate: selected,

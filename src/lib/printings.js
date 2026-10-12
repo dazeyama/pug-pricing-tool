@@ -322,8 +322,13 @@ export function uncrossPatterns(versions) {
 
 /** The version to start on: the first finish available in Normal → Holo → Reverse order, plainest version. */
 export function defaultPokemonVersion(versions) {
+  // TCGdex's own versions first (smoke test 2026-10-11, F7): a TCGplayer-only
+  // product (Pikachu SVP 027's "Baby" normal, $97) is never the default when
+  // TCGdex lists the card; a card known only from TCGplayer has nothing else.
+  const own = versions.filter((v) => !v.tcgplayerOnly);
+  const pool = own.length ? own : versions;
   for (const finish of POKEMON_FINISHES) {
-    const of = versions.filter((v) => v.finish === finish);
+    const of = pool.filter((v) => v.finish === finish);
     if (of.length) return of.find((v) => !v.treatments.length && !v.firstEdition) ?? of[0];
   }
   return null;

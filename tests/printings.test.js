@@ -79,3 +79,14 @@ test('Snorlax 051: the Pokémon Center stamp, spelled right, with its logo', () 
   assert.equal(pokemonVersions({ set: { id: 'x' }, variants_detailed: [{ type: 'holo', stamp: ['pokemon-league'] }] })[0].label,
     'Pokémon League stamp');
 });
+
+test('the default version is TCGdex\'s, not a TCGplayer-only product (Pikachu SVP 027)', () => {
+  const versions = [
+    { id: 'holo|||', finish: 'holo', treatments: [], firstEdition: false },
+    { id: 'holo|||pokemon-center', finish: 'holo', treatments: ['pokemon-center'], firstEdition: false },
+    { id: 'jt:x:Normal', finish: 'normal', treatments: ['variant:Baby'], firstEdition: false, tcgplayerOnly: true },
+  ];
+  assert.equal(defaultPokemonVersion(versions).id, 'holo|||');
+  // A card known only from TCGplayer: its own versions are all there is.
+  assert.equal(defaultPokemonVersion([versions[2]]).id, 'jt:x:Normal');
+});

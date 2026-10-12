@@ -207,16 +207,24 @@ export function siblingVersions(cards, c, versions) {
  * keeps its id and stamp, takes the product (its prices) and TCGplayer's
  * name, and the product isn't listed again. With more than one of either for
  * a finish, nothing is matched.
+ *
+ * TCGdex lists World Championship deck cards as versions too, each a "stamp"
+ * named for the player (Pidgeot ex6-10: "Hiroki Yano stamp"…); their TCGplayer
+ * products are in "World Championship Decks", so a TCGdex version with one of
+ * those products' IDs is left out like the products themselves (smoke test
+ * 2026-10-11, F6).
  * @param {object[]} versions  TCGdex's (pokemonVersions)
  * @param {object[]|null} cards  the siblings search's JustTCG cards
  * @param {{ setName: string }} c  the selected TCGdex candidate
  */
 export function withTcgplayerVersions(versions, cards, c) {
-  const extra = siblingVersions(cards, c, versions);
-  const out = [...versions];
+  const worlds = new Set((cards ?? []).filter(isWorldsDeck).map((card) => String(card.tcgplayerId ?? '')).filter(Boolean));
+  const kept = versions.filter((v) => !(v.tcgplayerId && worlds.has(String(v.tcgplayerId))));
+  const extra = siblingVersions(cards, c, kept);
+  const out = [...kept];
   const matched = new Set();
-  for (const finish of new Set(versions.map((v) => v.finish))) {
-    const ours = versions.filter((v) => v.finish === finish && v.stamps?.length && !v.tcgplayerId && !v.firstEdition);
+  for (const finish of new Set(kept.map((v) => v.finish))) {
+    const ours = kept.filter((v) => v.finish === finish && v.stamps?.length && !v.tcgplayerId && !v.firstEdition);
     const theirs = extra.filter((v) => v.finish === finish && !v.ownProduct && !v.firstEdition && STAMPED.test(suffixOf(v)));
     if (ours.length !== 1 || theirs.length !== 1) continue;
     const [mine] = ours;
