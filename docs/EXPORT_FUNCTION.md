@@ -368,7 +368,7 @@ An Edge Function isn't used for this: parsing 40 MB takes far longer than an Edg
 - The products belong to their upload's `master_inventory_files` row, so the upload runs in steps: **`master_inventory_start`** creates the row, not yet current → **`cc_products_load`** in batches of 2,000 (security definer; the store's role can only read `cc_products`) → **`master_inventory_finish`** makes it current, sets `master_inventory_files.products_loaded`, and deletes every other file's row (their products go with it, `on delete cascade`), returning their storage paths for the app to delete. On any failure, **`master_inventory_abort`** removes the new row and its products, and the app removes its stored file. These replace the spec's `cc_products_activate`. `master_inventory_add` (0024) stayed for the older live build (a file it uploaded had no products loaded) until migration 0051 dropped it (2026-10-12).
 - The check now also requires the **Product ID, Product Name and Category** columns.
 - Loading re-reads the CSV in 2 MB chunks (PapaParse, pausing while each batch is sent).
-- `scripts/cc-report.mjs` on the real inventory matched Appendix A (the parser counts multi-word foils like `First-Place Foil` as foil kinds and splits `Foil DCI Judge Promo` into `Foil` + `DCI Judge Promo`, so its shape counts differ by a few hundred).
+- `scripts/cc-report.mjs` (removed 2026-10-12, its job done) on the real inventory matched Appendix A (the parser counts multi-word foils like `First-Place Foil` as foil kinds and splits `Foil DCI Judge Promo` into `Foil` + `DCI Judge Promo`, so its shape counts differ by a few hundred).
 
 ---
 

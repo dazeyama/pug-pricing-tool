@@ -973,8 +973,7 @@ At the same time it fetches today's prices for the Sell Prices. A line in the wi
 it's doing.
 
 The rules are in `src/lib/ccMatch.js` (category, expected name, scores) and `src/lib/ccNames.js`
-(reading product names). Both are covered by tests. `scripts/cc-report.mjs` runs them against an
-inventory file and a list of printings. On the store's inventory (October 1, 2026), 190 of 200
+(reading product names). Both are covered by tests. On the store's inventory (October 1, 2026), 190 of 200
 random English printings matched on their own; 2 needed a choice and 8 had no category.
 
 ### Finding the category

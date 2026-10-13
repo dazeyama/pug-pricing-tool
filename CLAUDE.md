@@ -16,6 +16,6 @@
   the API doesn't serve. A function that calls one must `set search_path = public, internal`
   (security-definer: `public, internal, pg_temp`); a plain `= public` can't find them.
 - The owner is QA — see memory `user-is-qa`.
-- The export's spec is docs/EXPORT_FUNCTION.md; docs/EXPORT_BUILD_REPORT.md holds the owner's open questions.
-- Current phase: export E1–E5 built locally 2026-10-01 (migrations 0025–0029 on dev, not pushed),
-  waiting for the owner's QA and answers; app Phase 10 launch still waits for the owner's go
+- The export's spec is docs/EXPORT_FUNCTION.md.
+- Current phase: Phase 10 launch (the migration squash, then prod) waits for the owner's go; the live
+  site runs on the dev project until then. TEST.md holds the smoke tests and the database test run.

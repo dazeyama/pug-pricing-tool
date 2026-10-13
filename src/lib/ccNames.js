@@ -6,7 +6,7 @@
 //
 // The foil kind is normally the first suffix; in a few hundred names (mostly
 // Secret Lair and Unfinity) a variant comes first, and it's still found.
-// Pure functions, so the tests and scripts/cc-report.mjs run under Node.
+// Pure functions, so the tests run under Node.
 
 import { nameKey } from './normalize.js';
 

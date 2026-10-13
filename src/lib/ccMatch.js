@@ -1,8 +1,7 @@
 // Matching a Magic buy line to one Crystal Commerce product (export spec 7):
 // first its set → CC Category, then the product within that category, by the
 // name CC would use (in CC's exact order) and the evidence on each candidate.
-// Pure functions: the data comes in, so the tests and scripts/cc-report.mjs
-// run under Node.
+// Pure functions: the data comes in, so the tests run under Node.
 
 import { nameKey } from './normalize.js';
 import { normNumber } from './query.js';
