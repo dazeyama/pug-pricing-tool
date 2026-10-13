@@ -368,24 +368,28 @@ async function readStamp(url, layout, shift) {
 
 /**
  * The 1st Edition stamp drawn (owner, 2026-10-12: "draw the stamp yourself"),
- * as the real one is printed: a black disc with a white serif "1", and
- * EDITION in heavy capitals fanned over its top half, each letter standing
- * out from the disc's centre. In a 135 × 100 box, the real stamp's shape.
+ * as the real one is printed: a black disc with a serif "1" cut out of it
+ * (the card shows through; it isn't white), standing the disc's full height,
+ * and EDITION in heavy capitals fanned over its top half, each letter
+ * standing out from the disc's centre. In a 135 × 100 box, the real stamp's
+ * shape. `oneHeight`: Times New Roman's figures stand 0.662 of the font size.
  */
 export function stampDrawing() {
   const r = 36;                 // the disc
   const cx = 67.5;
   const cy = 63.5;
-  const base = r * 1.07;        // where the letters stand, just off the disc
-  const angles = [-78, -52, -26, 0, 26, 52, 78];
+  const base = r * 1.08;        // where the letters stand, just off the disc
+  const angles = [-80, -53.3, -26.7, 0, 26.7, 53.3, 80];
+  const oneHeight = r * 1.5;    // top to bottom of the disc, a thin rim left round it
   return {
     viewBox: '0 0 135 100',
     disc: { cx, cy, r },
-    one: { x: cx, y: cy + r * 0.56, size: r * 1.6 },
+    one: { x: cx, y: cy + oneHeight / 2, size: oneHeight / 0.662 },
     letters: [...'EDITION'].map((ch, i) => ({
       ch,
-      transform: `rotate(${angles[i]} ${cx} ${cy}) translate(${cx} ${cy - base}) scale(0.68 1)`,
+      transform: `rotate(${angles[i]} ${cx} ${cy}) translate(${cx} ${cy - base}) scale(0.82 1)`,
     })),
-    letterSize: r * 0.85,
+    letterSize: r * 0.86,
+    letterStroke: 2.4,          // thickens the letters, as heavy as the printed ones
   };
 }
