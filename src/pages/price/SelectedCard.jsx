@@ -8,7 +8,9 @@ import { useCardImages } from './useCardImages.js';
 import { useFirstEditionStamp } from './useFirstEditionStamp.js';
 import { POKEMON_CARD_BACK, tcgplayerId } from '../../lib/pokemonImages.js';
 import { openPopup, popupName } from '../../lib/popup.js';
-import { classicFrame, frameEra, isFullArt, isFullPromo, isRuleBox } from '../../lib/pokemonFrames.js';
+import {
+  BASE_SET_ART_FRAME, classicFrame, frameEra, isFullArt, isFullPromo, isRuleBox, needsBaseSetShadow,
+} from '../../lib/pokemonFrames.js';
 import { isPlayStamp } from '../../lib/justtcgCards.js';
 import { isPokemonCenterStamp } from '../../lib/printings.js';
 import { drawnStampBox, firstEditionMode } from '../../lib/firstEditionStamp.js';
@@ -188,6 +190,11 @@ export default function SelectedCard({ candidate: c, typedName, englishName, pok
     ? { foil: 'FOIL', etched: 'ETCHED FOIL' }[finish]
     : [{ holo: 'HOLO', reverse: ballName ? `REVERSE HOLO · ${ballName.toUpperCase()}` : 'REVERSE HOLO' }[pokemonFinish],
       firstEdition && '1ST EDITION'].filter(Boolean).join(' · ') || undefined;
+  // Base Set's art-frame shadow on its Unlimited prints (owner, 2026-10-12):
+  // TCGdex's scans are the shadowless 1st Edition ones (pokemonFrames.js).
+  const shadow = !magic && needsBaseSetShadow({
+    setId: c.setId, lang: c.lang, category: pokemon.card?.category, image, version: pokemonVersion,
+  });
   // The stamp painted out (Unlimited), or drawn on a scan without one (1st Edition).
   let stampOverlay = null;
   if (stamp && stampFound) {
@@ -213,7 +220,22 @@ export default function SelectedCard({ candidate: c, typedName, englishName, pok
             back={c.game === 'pokemon' ? POKEMON_CARD_BACK : undefined}
             loading={!magic && pokemonImages.status === 'loading'}
             shine={shine}
-            overlay={stampOverlay}
+            overlay={shadow || stampOverlay ? (
+              <>
+                {shadow && (
+                  <span
+                    className="art-shadow"
+                    style={percentBox({
+                      left: BASE_SET_ART_FRAME.left,
+                      top: BASE_SET_ART_FRAME.top,
+                      width: BASE_SET_ART_FRAME.right - BASE_SET_ART_FRAME.left,
+                      height: BASE_SET_ART_FRAME.bottom - BASE_SET_ART_FRAME.top,
+                    })}
+                  />
+                )}
+                {stampOverlay}
+              </>
+            ) : null}
             alt={c.name}
             name={c.name}
             number={c.number}

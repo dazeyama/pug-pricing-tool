@@ -127,3 +127,30 @@ export function isRuleBox(card, name) {
   const n = String(name ?? '').trim();
   return RULE_NAME.test(n) || RULE_NAME_JA.test(n) || /^Radiant\s/.test(n);
 }
+
+/**
+ * Base Set's art-frame shadow (owner, 2026-10-12). TCGdex's Base Set scans
+ * are 1st Edition ones, and Base Set's 1st Edition was printed shadowless;
+ * its Unlimited prints have a drop shadow along the art frame's right and
+ * bottom edges, as Base Set 2 and every later set do. So the Unlimited
+ * versions get one drawn (a CSS box shadow, price.css .art-shadow, measured
+ * against Base Set 2's and made a little stronger, as the owner asked).
+ * Pokémon only: Trainers don't have it. `BASE_SET_ART_FRAME` is the frame's
+ * outer edge as fractions of the picture, the same on all 69 Pokémon scans.
+ */
+export const BASE_SET_ART_FRAME = { left: 0.0883, top: 0.1067, right: 0.9117, bottom: 0.526 };
+
+/**
+ * True when the selected card's picture gets Base Set's shadow: an English
+ * Base Set Pokémon shown from TCGdex, with an Unlimited version picked (the
+ * plain one or the "1999–2000 copyright" print; not Shadowless, not 1st
+ * Edition, not a TCGplayer-only product).
+ * @param {{ setId?: string, lang?: string, category?: string|null, image?: string|null,
+ *   version?: { firstEdition?: boolean, treatments?: string[], tcgplayerOnly?: boolean }|null }} p
+ */
+export function needsBaseSetShadow({ setId, lang, category, image, version }) {
+  if (setId !== 'base1' || lang !== 'en' || category !== 'Pokemon' || !version) return false;
+  if (!String(image ?? '').startsWith('https://assets.tcgdex.net/')) return false;
+  if (version.firstEdition || version.tcgplayerOnly) return false;
+  return !(version.treatments ?? []).some((t) => String(t).startsWith('shadowless'));
+}

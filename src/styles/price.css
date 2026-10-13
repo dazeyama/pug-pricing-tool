@@ -211,10 +211,16 @@
 /* Laid on the large picture, in a box its own shape, under the foil sheen
    (CardImage overlay): the 1st Edition stamp painted out, or drawn on
    (owner, 2026-10-12). Its pieces are placed in % of the picture. */
-.card-overlay { position: absolute; z-index: 1; pointer-events: none; }
+.card-overlay { position: absolute; z-index: 1; pointer-events: none; container-type: inline-size; }
 .card-overlay > * { position: absolute; display: block; }
 .stamp-patch { image-rendering: auto; }
 .stamp-drawn { overflow: visible; }
+/* Base Set's art-frame shadow on its Unlimited prints (owner, 2026-10-12): an
+   empty box the frame's size casting a drop shadow down and right, in cqw
+   (1% of the picture's width) so it scales with the card. Measured against
+   Base Set 2's (a brown band hugging the frame's right edge, a thin one
+   under it), then made a little stronger, as the owner asked. */
+.art-shadow { box-shadow: 1.8cqw 0.8cqw 2cqw rgba(45, 18, 8, .78); }
 
 /* Foil sheen over the selected card (spec 8.4), like Moxfield's: a drifting
    rainbow blended into the card, brighter and dimmer in diagonal bands, over

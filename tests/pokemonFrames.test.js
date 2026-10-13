@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { classicFrame, frameEra, isFullArt, isFullPromo, isRuleBox } from '../src/lib/pokemonFrames.js';
+import {
+  BASE_SET_ART_FRAME, classicFrame, frameEra, isFullArt, isFullPromo, isRuleBox, needsBaseSetShadow,
+} from '../src/lib/pokemonFrames.js';
 
 // The owner's eras (2026-09-29): 1999, 2003, 2007, 2011, 2017, 2023+.
 test('frame eras by release year', () => {
@@ -97,4 +99,25 @@ test('holo promos from Scarlet & Violet on (2023-03-31) shine across the whole c
   assert.ok(!isFullPromo({ rarity: 'Promo', releaseDate: '2019-11-15' }));  // SWSH promos keep the mask
   assert.ok(!isFullPromo({ rarity: 'Rare', releaseDate: '2024-01-01' }));
   assert.ok(!isFullPromo({ rarity: 'Promo', releaseDate: null }));
+});
+
+// Owner, 2026-10-12: TCGdex's Base Set scans are the shadowless 1st Edition
+// ones; the Unlimited prints get the art frame's shadow drawn. Pokémon only.
+test('Base Set shadow: Unlimited Pokémon only, from TCGdex', () => {
+  const card = {
+    setId: 'base1', lang: 'en', category: 'Pokemon', image: 'https://assets.tcgdex.net/en/base/base1/4/high.webp',
+    version: { firstEdition: false, treatments: [] },
+  };
+  assert.equal(needsBaseSetShadow(card), true);                                                   // Unlimited
+  assert.equal(needsBaseSetShadow({ ...card, version: { treatments: ['1999-2000-copyright'] } }), true);
+  assert.equal(needsBaseSetShadow({ ...card, version: { treatments: ['shadowless'] } }), false);
+  assert.equal(needsBaseSetShadow({ ...card, version: { treatments: ['shadowless-red-cheek'] } }), false);
+  assert.equal(needsBaseSetShadow({ ...card, version: { firstEdition: true, treatments: ['shadowless'] } }), false);
+  assert.equal(needsBaseSetShadow({ ...card, version: { treatments: [], tcgplayerOnly: true } }), false);
+  assert.equal(needsBaseSetShadow({ ...card, category: 'Trainer' }), false);                     // Trainers don't have it
+  assert.equal(needsBaseSetShadow({ ...card, setId: 'base2' }), false);                          // Jungle: printed with it
+  assert.equal(needsBaseSetShadow({ ...card, lang: 'ja' }), false);
+  assert.equal(needsBaseSetShadow({ ...card, image: 'https://images.pokemontcg.io/base1/4_hires.png' }), false);
+  assert.equal(needsBaseSetShadow({ ...card, version: null }), false);
+  assert.ok(BASE_SET_ART_FRAME.left < BASE_SET_ART_FRAME.right && BASE_SET_ART_FRAME.top < BASE_SET_ART_FRAME.bottom);
 });
