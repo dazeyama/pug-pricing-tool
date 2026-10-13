@@ -307,4 +307,4 @@ uses start, load and finish).
 **Fixed the same day** (owner's go): migration **0051** grants the three helpers to the app's role only (F11) and
 drops `master_inventory_add`. **Run 2, after it: all 297 checks pass** (the old upload's check went with it), about
 17 seconds, nothing kept. Fingerprints (dev): all of the structure together, `4d371f766e770cae5e7a48280472becf`. Any
-later migration changes them, so make a fresh dev run (`--save`) just before the squash's comparison (Phase 10, step 7).
+later migration changes them, so a fresh dev run is saved at the squash, after the freeze (DESIGN_SPEC Phase 10, "Migration squash at launch", step 2), and prod is compared with it (step 7).
