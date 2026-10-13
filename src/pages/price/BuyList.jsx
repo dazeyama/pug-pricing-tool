@@ -266,7 +266,7 @@ export default function BuyList({
                     type="button"
                     className="buy-line"
                     title={l.id === editingId
-                      ? 'Being edited: EDIT CARD saves the changes, Esc leaves it as it was'
+                      ? 'Being edited: SAVE EDIT saves the changes, Esc leaves it as it was'
                       : `${l.name_en ? `${l.name} · ` : ''}${formatMoney(l.unit_price)} each${locked ? '' : ' · click to edit'}`}
                     onClick={() => (canEdit ? onEdit(l) : editBlocked())}
                   >

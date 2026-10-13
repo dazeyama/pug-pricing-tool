@@ -255,7 +255,7 @@ export default function PricingScreen({
   const qtyRef = useRef(null);
   const [flashId, setFlashId] = useState(null);
   // Editing a list line (owner, 2026-09-29): its card is searched for and
-  // selected (found), then its saved choices put back (restored); EDIT CARD
+  // selected (found), then its saved choices put back (restored); SAVE EDIT
   // saves over it. { line, key, query, found, restored } or null.
   const [editing, setEditing] = useState(null);
   const screen = useRef(null);
@@ -439,7 +439,7 @@ export default function PricingScreen({
 
   /**
    * ADD CARD (spec 8.8): save the line (merging), flash it, reset the stage.
-   * While editing, EDIT CARD: the same, saved over the line being edited, at
+   * While editing, SAVE EDIT: the same, saved over the line being edited, at
    * today's price (owner, 2026-09-29, collections included).
    */
   async function addCard() {
@@ -542,7 +542,7 @@ export default function PricingScreen({
   if (editing) {
     note = (
       <>
-        Editing <strong>{lineText(editing.line)}</strong>: EDIT CARD saves the changes, Esc leaves it as it was.
+        Editing <strong>{lineText(editing.line)}</strong>: SAVE EDIT saves the changes, Esc leaves it as it was.
       </>
     );
   } else if (dexTyped) {

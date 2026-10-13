@@ -9,7 +9,7 @@ export function parseQty(text) {
 /**
  * Qty · CLEAR · ADD CARD (spec 8.8), under Finish & Details. ADD CARD needs a
  * user (GuardButton), a card, a price and a connection; `blocked` is why not,
- * for its tooltip. While a buy-list line is being edited it reads EDIT CARD
+ * for its tooltip. While a buy-list line is being edited it reads SAVE EDIT
  * and saves over that line. Enter in the Qty box adds; Esc goes back to the search.
  */
 export default function ActionRow({ qtyRef, qty, onQty, onClear, onAdd, blocked, busy, editing, onDone }) {
@@ -53,7 +53,7 @@ export default function ActionRow({ qtyRef, qty, onQty, onClear, onAdd, blocked,
           : editing ? 'Save the changes over the line being edited (Enter)' : 'Add this card to the buy list (Enter)')}
         onClick={onAdd}
       >
-        {editing ? 'EDIT CARD' : 'ADD CARD'}
+        {editing ? 'SAVE EDIT' : 'ADD CARD'}
       </GuardButton>
     </div>
   );

@@ -98,7 +98,7 @@ to make sure nothing old broke.
 ## 5. Buy tab: a walk-in buy 🆕
 
 - [ ] Add a Magic card, an English Pokémon and a Japanese Pokémon. The Buy list and totals add up.
-- [ ] ✎ on a line re-opens that exact card with its finish, condition and price; EDIT CARD saves over it.
+- [ ] ✎ on a line re-opens that exact card with its finish, condition and price; SAVE EDIT saves over it.
 - [ ] CONFIRM BUY asks for name, phone and purchase price (Cash or Credit, typed in). Each is required.
 - [ ] 🆕 **Past customers:** type `SMOKE` in the name: earlier SMOKE customers are suggested ("Past customers");
       ↓/Enter picks one and fills its last phone number, which can still be changed. Esc closes only the list.
