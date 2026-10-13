@@ -231,11 +231,12 @@ Make the test files in Claude's scratchpad.
 
 ## 18. Make a database test run
 
-- [ ] **Make a database test run:** call every server function (confirm buy, collections and their statuses,
+- [x] **Make a database test run:** call every server function (confirm buy, collections and their statuses,
       Convert to project and Convert to buy, REPRICE?, export and undo, Can't upload cards, import, delete, the
       locks, backup restore…) on **dev**, each inside a transaction that's rolled back afterwards, and check its
       results and refusals. Keep the script, to run the same checks on **prod** after the migration squash and
-      prove the two match.
+      prove the two match. **Done 2026-10-12:** `node scripts/db-test-run.mjs` (results below, under "Database
+      test run 1").
 
 ---
 
@@ -282,3 +283,26 @@ and M11 Lightning Bolts, which are correct.
 | F8 | P3 ✅ fixed | 8, 9 | REPRICE?'s sentence is missing a space: "…Use Cardmarket as it was,rounded down as always" (and "was,rounded up" in a project). | "as it was, rounded …" | REPRICE? on any collection or project. |
 | F9 | P3 ✅ fixed | 9, 11, 12 | Projects are called collections in places: the delete dialog ("Delete collection", "All 0 cards in this collection"), and the Changelog / Home headline **Collection created** for "Project started". | "project" for projects; "1 card" / "no cards". | Delete an empty project; Changelog after + Start Project. |
 | F10 | P3 ✅ fixed | 14 | At 1366×768 the **Finish & Details** panel needs its own scroll once a card has a version list; the rarity and language chips are cut off. | Fits, or the chips stay visible. | `Mimikyu ex 069` at 1366×768. |
+| F11 | P3 | 18 | Three helper functions in the `internal` schema are open to everyone (PUBLIC) instead of the app's role only: `customer_key`, `customer_name` (0048) and `import_lines` (0047). Signed out they're out of reach (anon can't use `internal`), so nothing can misuse them. | Granted to the app's role only, like every other function. | `node scripts/db-test-run.mjs`: Security → "No server function is open to everyone". |
+
+## Database test run 1: 2026-10-12
+
+Claude, on **dev**, with `node scripts/db-test-run.mjs` (the SQL is `scripts/db-test-run.sql`). One transaction, about
+18 seconds, rolled back: the runner's before and after snapshots match, and no DBTEST user, computer, buy, customer,
+product or inventory file was kept. The Changelog's numbering skipped the numbers the run's entries used, which is
+harmless.
+
+**Result: 297 of 298 checks pass.** The one failure is F11 (above, P3). Everything else does what it should and
+refuses what it should, as the app's signed-in role:
+- **Security:** row security on every table, policies for the signed-in role only, nothing runnable signed out, the
+  stored API key unreadable signed in or out, the Changelog append-only, past customers and the price cache written
+  only by the server, five functions with the owner's rights (as designed), and a fixed search path on all 74.
+- **Buy tab, day pages, Convert to project / buy, collections and their five statuses, projects, import, delete, the
+  locks, the Master Inventory upload, EXPORT (a day, a single buy, a collection, Can't upload cards) and its undo,
+  COMPLETE, Can't upload cards, backup and restore:** every result, Changelog entry and refusal checked.
+
+**Also found:** `master_inventory_add`, the old one-step inventory upload, is no longer called by the app (the upload
+uses start, load and finish). It still works; it could be dropped before the squash.
+
+**Fingerprints (dev):** all of the structure together, `d2d09b05b1a7cbd7adee0bf2310eefd7`. Fixing F11 changes the
+privileges' fingerprint, so a new dev run is needed before the squash's comparison (Phase 10, step 7).
