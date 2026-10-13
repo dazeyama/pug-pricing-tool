@@ -1797,22 +1797,6 @@ select setval('events_seq_seq', greatest((select v::bigint from pg_temp.dbt_ctx 
                                          (select last_value from events_seq_seq)));
 set local role authenticated;
 
--- ============================================= The old one-step upload (unused)
-do $$
-declare
-  s text := 'Inventory';
-  u uuid := pg_temp.id('u1');
-  v_pruned text[];
-begin
-  v_pruned := master_inventory_add('dbtest/inventory-dbtest-3.csv', 'inventory-dbtest-3.csv', 1, 0, '{}', u);
-  perform pg_temp.ok(s, 'The old one-step upload (master_inventory_add, no longer used) still replaces the file',
-    (select original_filename from master_inventory_files where is_current) = 'inventory-dbtest-3.csv'
-    and 'dbtest/inventory-dbtest.csv' = any(v_pruned), array_to_string(v_pruned, ', '));
-exception when others then
-  declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;
-  perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
-end $$;
-
 -- ================================================================ results
 reset role;
 select n, section, name, ok, detail from pg_temp.dbt order by n;

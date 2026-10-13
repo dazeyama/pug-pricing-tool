@@ -283,7 +283,7 @@ and M11 Lightning Bolts, which are correct.
 | F8 | P3 ✅ fixed | 8, 9 | REPRICE?'s sentence is missing a space: "…Use Cardmarket as it was,rounded down as always" (and "was,rounded up" in a project). | "as it was, rounded …" | REPRICE? on any collection or project. |
 | F9 | P3 ✅ fixed | 9, 11, 12 | Projects are called collections in places: the delete dialog ("Delete collection", "All 0 cards in this collection"), and the Changelog / Home headline **Collection created** for "Project started". | "project" for projects; "1 card" / "no cards". | Delete an empty project; Changelog after + Start Project. |
 | F10 | P3 ✅ fixed | 14 | At 1366×768 the **Finish & Details** panel needs its own scroll once a card has a version list; the rarity and language chips are cut off. | Fits, or the chips stay visible. | `Mimikyu ex 069` at 1366×768. |
-| F11 | P3 | 18 | Three helper functions in the `internal` schema are open to everyone (PUBLIC) instead of the app's role only: `customer_key`, `customer_name` (0048) and `import_lines` (0047). Signed out they're out of reach (anon can't use `internal`), so nothing can misuse them. | Granted to the app's role only, like every other function. | `node scripts/db-test-run.mjs`: Security → "No server function is open to everyone". |
+| F11 | P3 ✅ fixed | 18 | Three helper functions in the `internal` schema are open to everyone (PUBLIC) instead of the app's role only: `customer_key`, `customer_name` (0048) and `import_lines` (0047). Signed out they're out of reach (anon can't use `internal`), so nothing can misuse them. | Granted to the app's role only, like every other function. | `node scripts/db-test-run.mjs`: Security → "No server function is open to everyone". |
 
 ## Database test run 1: 2026-10-12
 
@@ -302,7 +302,9 @@ refuses what it should, as the app's signed-in role:
   COMPLETE, Can't upload cards, backup and restore:** every result, Changelog entry and refusal checked.
 
 **Also found:** `master_inventory_add`, the old one-step inventory upload, is no longer called by the app (the upload
-uses start, load and finish). It still works; it could be dropped before the squash.
+uses start, load and finish).
 
-**Fingerprints (dev):** all of the structure together, `d2d09b05b1a7cbd7adee0bf2310eefd7`. Fixing F11 changes the
-privileges' fingerprint, so a new dev run is needed before the squash's comparison (Phase 10, step 7).
+**Fixed the same day** (owner's go): migration **0051** grants the three helpers to the app's role only (F11) and
+drops `master_inventory_add`. **Run 2, after it: all 297 checks pass** (the old upload's check went with it), about
+17 seconds, nothing kept. Fingerprints (dev): all of the structure together, `4d371f766e770cae5e7a48280472becf`. Any
+later migration changes them, so make a fresh dev run (`--save`) just before the squash's comparison (Phase 10, step 7).
