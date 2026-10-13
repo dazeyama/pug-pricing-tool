@@ -1,16 +1,17 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  STAMP_LAYOUTS, fillStamp, findStamp, firstEditionMode, stampDrawing, stampLayout, stampRect,
+  CARD_SHIFTS, STAMP_LAYOUTS, drawnStampBox, fillStamp, findStamp, firstEditionMode, stampDrawing, stampLayout, stampRect,
+  tcgdexCardId,
 } from '../src/lib/firstEditionStamp.js';
 
 const TCGDEX = 'https://assets.tcgdex.net/en/base/base1/4/high.webp';
 const card = { game: 'pokemon', lang: 'en', hasFirstEdition: true, firstEdition: false, category: 'Pokemon', image: TCGDEX };
 
 test('which cards get the stamp treatment, and which way', () => {
-  assert.deepEqual(firstEditionMode(card), { mode: 'hide', layout: 'pokemon' });
-  assert.deepEqual(firstEditionMode({ ...card, firstEdition: true }), { mode: 'show', layout: 'pokemon' });
-  assert.deepEqual(firstEditionMode({ ...card, category: 'Trainer' }), { mode: 'hide', layout: 'trainer' });
+  assert.deepEqual(firstEditionMode(card), { mode: 'hide', layout: 'pokemon', shift: 0 });
+  assert.deepEqual(firstEditionMode({ ...card, firstEdition: true }), { mode: 'show', layout: 'pokemon', shift: 0 });
+  assert.deepEqual(firstEditionMode({ ...card, category: 'Trainer' }), { mode: 'hide', layout: 'trainer', shift: 0 });
   // Not: Magic, Japanese, a card with no 1st Edition, an Energy, a picture from elsewhere.
   assert.equal(firstEditionMode({ ...card, game: 'mtg' }), null);
   assert.equal(firstEditionMode({ ...card, lang: 'ja' }), null);
@@ -112,4 +113,20 @@ test('the drawn stamp: a disc, a "1" and EDITION fanned over it', () => {
   assert.equal(d.letters.map((l) => l.ch).join(''), 'EDITION');
   assert.ok(d.disc.cy + d.disc.r <= 100 && d.disc.cx === 67.5);
   assert.match(d.letters[3].transform, /^rotate\(0 /);   // T stands at the top
+});
+
+test("Rocket's Mewtwo (Gym Challenge 14) has its stamp 64 pixels higher; every other card in its place", () => {
+  const mewtwo = 'https://assets.tcgdex.net/en/gym/gym2/14/high.webp';
+  assert.equal(tcgdexCardId(mewtwo), 'gym2-14');
+  assert.equal(tcgdexCardId(TCGDEX), 'base1-4');
+  assert.equal(tcgdexCardId('https://images.pokemontcg.io/base1/4_hires.png'), null);
+  const mode = firstEditionMode({ ...card, image: mewtwo });
+  assert.equal(Math.round(mode.shift * 825), -64);
+  assert.equal(firstEditionMode(card).shift, 0);
+  assert.deepEqual(Object.keys(CARD_SHIFTS), ['gym2-14']);
+  const usual = stampRect('pokemon', 600, 825);
+  const moved = stampRect('pokemon', 600, 825, mode.shift);
+  assert.equal(usual.y - moved.y, 64);
+  assert.deepEqual(moved.zone, usual.zone);               // the same shape, only higher
+  assert.ok(Math.abs(drawnStampBox('pokemon', mode.shift).top - (STAMP_LAYOUTS.pokemon.stamp.y0 - 64 / 825)) < 1e-9);
 });

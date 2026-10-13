@@ -40,6 +40,20 @@ const MARGIN = 6;
 
 const TCGDEX_IMAGE = /^https:\/\/assets\.tcgdex\.net\//;
 
+/**
+ * Cards whose stamp sits off its layout's place, by TCGdex card ID: how far
+ * down (negative: up), as a fraction of the picture's height. Rocket's Mewtwo
+ * (Gym Challenge 14): its art and stripe sit higher, and its stamp with them,
+ * 64 pixels on the 600 × 825 scan (owner, 2026-10-12: the one card that matters).
+ */
+export const CARD_SHIFTS = { 'gym2-14': -64 / 825 };
+
+/** A TCGdex picture's card ID: …/en/gym/gym2/14/high.webp → "gym2-14". */
+export function tcgdexCardId(image) {
+  const m = String(image ?? '').match(/^https:\/\/assets\.tcgdex\.net\/[a-z-]+\/[^/]+\/([^/]+)\/([^/]+)\//);
+  return m ? `${m[1]}-${m[2]}` : null;
+}
+
 /** A card's stamp layout by its category: Pokémon and Trainers; not Energy. */
 export function stampLayout(category) {
   return { Pokemon: 'pokemon', Trainer: 'trainer' }[category] ?? null;
@@ -49,26 +63,35 @@ export function stampLayout(category) {
  * Whether the selected card's picture gets the stamp treatment: an English
  * Pokémon card that has a 1st Edition version, shown from TCGdex (the only
  * scans measured). `hide` paints a stamp out (any version but 1st Edition),
- * `show` draws one on a scan without it (1st Edition).
- * @returns {{ mode: 'hide'|'show', layout: 'pokemon'|'trainer' }|null}
+ * `show` draws one on a scan without it (1st Edition). `shift` moves the
+ * stamp's place for a card in CARD_SHIFTS.
+ * @returns {{ mode: 'hide'|'show', layout: 'pokemon'|'trainer', shift: number }|null}
  */
 export function firstEditionMode({ game, lang, hasFirstEdition, firstEdition, category, image }) {
   if (game !== 'pokemon' || lang !== 'en' || !hasFirstEdition) return null;
   if (!TCGDEX_IMAGE.test(String(image ?? ''))) return null;
   const layout = stampLayout(category);
   if (!layout) return null;
-  return { mode: firstEdition ? 'show' : 'hide', layout };
+  return { mode: firstEdition ? 'show' : 'hide', layout, shift: CARD_SHIFTS[tcgdexCardId(image)] ?? 0 };
+}
+
+/** Where a drawn stamp goes, as fractions of the card picture. */
+export function drawnStampBox(layout, shift = 0) {
+  const b = STAMP_LAYOUTS[layout].stamp;
+  return { left: b.x0, top: b.y0 + shift, width: b.x1 - b.x0, height: b.y1 - b.y0 };
 }
 
 /**
  * The picture's rectangle the stamp work reads (the zone plus a margin), in
- * pixels of a picture `width` × `height`, and the zone and core inside it.
+ * pixels of a picture `width` × `height`, and the zone and core inside it;
+ * moved down by `shift` (a fraction of the height) for a card in CARD_SHIFTS.
  */
-export function stampRect(layout, width, height) {
+export function stampRect(layout, width, height, shift = 0) {
   const L = STAMP_LAYOUTS[layout];
+  const dy = Math.round(shift * height);   // whole pixels: the same shape, moved
   const px = (r) => ({
-    x0: Math.round(r.x0 * width), y0: Math.round(r.y0 * height),
-    x1: Math.round(r.x1 * width), y1: Math.round(r.y1 * height),
+    x0: Math.round(r.x0 * width), y0: Math.round(r.y0 * height) + dy,
+    x1: Math.round(r.x1 * width), y1: Math.round(r.y1 * height) + dy,
   });
   const zone = px(L.zone);
   const core = px(L.core);
@@ -296,7 +319,7 @@ export function fillStamp(data, w, h, mask, body, seed = 1) {
 
 // ------------------------------------------------------------------ browser
 
-const patches = new Map();   // `${url}|${layout}` → its answer, once worked out
+const patches = new Map();   // `${url}|${layout}|${shift}` → its answer, once worked out
 
 /**
  * Reads the picture at `url` (TCGdex allows that) and looks for the stamp.
@@ -307,10 +330,10 @@ const patches = new Map();   // `${url}|${layout}` → its answer, once worked o
  * @returns {Promise<{ stamped: boolean, patch: string|null, at: { left: number, top: number, width: number, height: number },
  *   aspect: number }|null>}
  */
-export function stampPatch(url, layout) {
-  const key = `${url}|${layout}`;
+export function stampPatch(url, layout, shift = 0) {
+  const key = `${url}|${layout}|${shift}`;
   if (!patches.has(key)) {
-    patches.set(key, readStamp(url, layout).catch(() => {
+    patches.set(key, readStamp(url, layout, shift).catch(() => {
       patches.delete(key);   // a network blip: try again next time
       return null;
     }));
@@ -318,7 +341,7 @@ export function stampPatch(url, layout) {
   return patches.get(key);
 }
 
-async function readStamp(url, layout) {
+async function readStamp(url, layout, shift) {
   const img = new Image();
   img.crossOrigin = 'anonymous';
   img.decoding = 'async';
@@ -326,7 +349,7 @@ async function readStamp(url, layout) {
   await img.decode();
   const W = img.naturalWidth;
   const H = img.naturalHeight;
-  const rect = stampRect(layout, W, H);
+  const rect = stampRect(layout, W, H, shift);
   const canvas = document.createElement('canvas');
   canvas.width = rect.w;
   canvas.height = rect.h;

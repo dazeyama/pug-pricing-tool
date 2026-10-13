@@ -11,7 +11,7 @@ import { openPopup, popupName } from '../../lib/popup.js';
 import { classicFrame, frameEra, isFullArt, isFullPromo, isRuleBox } from '../../lib/pokemonFrames.js';
 import { isPlayStamp } from '../../lib/justtcgCards.js';
 import { isPokemonCenterStamp } from '../../lib/printings.js';
-import { STAMP_LAYOUTS, firstEditionMode } from '../../lib/firstEditionStamp.js';
+import { drawnStampBox, firstEditionMode } from '../../lib/firstEditionStamp.js';
 
 const MAGIC_RARITY = { mythic: 'Mythic rare', common: 'Common', uncommon: 'Uncommon', rare: 'Rare', special: 'Special', bonus: 'Bonus' };
 
@@ -94,7 +94,7 @@ export default function SelectedCard({ candidate: c, typedName, englishName, pok
     game: c.game, lang: c.lang, hasFirstEdition, firstEdition,
     category: pokemon.card?.category, image: pokemonImages.image,
   }) : null;
-  const stampFound = useFirstEditionStamp(stamp ? pokemonImages.image : null, stamp?.layout);
+  const stampFound = useFirstEditionStamp(stamp ? pokemonImages.image : null, stamp?.layout, stamp?.shift);
 
   if (!c) {
     return (
@@ -194,13 +194,7 @@ export default function SelectedCard({ candidate: c, typedName, englishName, pok
     if (stamp.mode === 'hide' && stampFound.patch) {
       stampOverlay = <img className="stamp-patch" src={stampFound.patch} alt="" style={percentBox(stampFound.at)} />;
     } else if (stamp.mode === 'show' && !stampFound.stamped) {
-      const b = STAMP_LAYOUTS[stamp.layout].stamp;
-      stampOverlay = (
-        <FirstEditionStamp
-          className="stamp-drawn"
-          style={percentBox({ left: b.x0, top: b.y0, width: b.x1 - b.x0, height: b.y1 - b.y0 })}
-        />
-      );
+      stampOverlay = <FirstEditionStamp className="stamp-drawn" style={percentBox(drawnStampBox(stamp.layout, stamp.shift))} />;
     }
   }
   // A Japanese name staff can't read gets the English name they typed beside it.

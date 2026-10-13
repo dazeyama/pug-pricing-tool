@@ -7,14 +7,14 @@ import { stampPatch } from '../../lib/firstEditionStamp.js';
  * card that gets the stamp treatment (`layout` set). Null until it's known,
  * and when the picture can't be read: then the card shows as it is.
  */
-export function useFirstEditionStamp(image, layout) {
-  const key = image && layout ? `${image}|${layout}` : null;
+export function useFirstEditionStamp(image, layout, shift = 0) {
+  const key = image && layout ? `${image}|${layout}|${shift}` : null;
   const [found, setFound] = useState({ key: null, result: null });
 
   useEffect(() => {
     if (!key) return undefined;
     let alive = true;
-    stampPatch(image, layout).then((result) => alive && setFound({ key, result }));
+    stampPatch(image, layout, shift).then((result) => alive && setFound({ key, result }));
     return () => {
       alive = false;
     };
