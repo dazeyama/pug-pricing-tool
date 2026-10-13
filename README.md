@@ -555,7 +555,7 @@ counts the cards.
 |---|---|
 | **Price** | The price for one copy. |
 | **Hover a line** | Shows the card's picture beside the list. |
-| **Click a line** | Loads the card back to edit it. The button reads **EDIT CARD** and saves over the line. **CANCEL** or **Esc** leaves it as it was. Edited cards take today's price. |
+| **Click a line** | Loads the card back to edit it. The button reads **SAVE EDIT** and saves over the line. **CANCEL** or **Esc** leaves it as it was. Edited cards take today's price. |
 | **×** | Removes the card, after asking. With several copies, it asks how many. **Remove all N** takes every copy. |
 
 ### Totals and rates
