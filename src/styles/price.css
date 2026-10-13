@@ -208,6 +208,13 @@
 /* contain: a card image is never stretched or cropped, whatever its box does. */
 .card-img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: contain; }
 .card-img.pending { opacity: 0; }
+/* Laid on the large picture, in a box its own shape, under the foil sheen
+   (CardImage overlay): the 1st Edition stamp painted out, or drawn on
+   (owner, 2026-10-12). Its pieces are placed in % of the picture. */
+.card-overlay { position: absolute; z-index: 1; pointer-events: none; }
+.card-overlay > * { position: absolute; display: block; }
+.stamp-patch { image-rendering: auto; }
+.stamp-drawn { overflow: visible; }
 
 /* Foil sheen over the selected card (spec 8.4), like Moxfield's: a drifting
    rainbow blended into the card, brighter and dimmer in diagonal bands, over

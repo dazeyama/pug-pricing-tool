@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react';
 import CardImage from '../../components/CardImage.jsx';
 import BallIcon from '../../components/BallIcon.jsx';
+import FirstEditionStamp from '../../components/FirstEditionStamp.jsx';
 import GameBadge from '../../components/GameBadge.jsx';
 import * as scry from '../../lib/scryfall.js';
 import { useCardImages } from './useCardImages.js';
+import { useFirstEditionStamp } from './useFirstEditionStamp.js';
 import { POKEMON_CARD_BACK, tcgplayerId } from '../../lib/pokemonImages.js';
 import { openPopup, popupName } from '../../lib/popup.js';
 import { classicFrame, frameEra, isFullArt, isFullPromo, isRuleBox } from '../../lib/pokemonFrames.js';
 import { isPlayStamp } from '../../lib/justtcgCards.js';
 import { isPokemonCenterStamp } from '../../lib/printings.js';
+import { STAMP_LAYOUTS, firstEditionMode } from '../../lib/firstEditionStamp.js';
 
 const MAGIC_RARITY = { mythic: 'Mythic rare', common: 'Common', uncommon: 'Uncommon', rare: 'Rare', special: 'Special', bonus: 'Bonus' };
 
@@ -48,6 +51,11 @@ function tcgplayerLink(c, magic, pokemon, pokemonVersion, searchName, finish) {
     : search('pokemon', `${c.name} ${c.number}`);
 }
 
+/** A rectangle given as fractions of the card picture, as CSS percentages. */
+const percentBox = ({ left, top, width, height }) => ({
+  left: `${left * 100}%`, top: `${top * 100}%`, width: `${width * 100}%`, height: `${height * 100}%`,
+});
+
 const CARDMARKET = 'https://www.cardmarket.com/en';
 
 /**
@@ -70,13 +78,23 @@ function cardmarketLink(c, magic, searchName) {
  * The selected card, large, with its info panel beside it (spec 8.4).
  * `pokemon` is the shared full-card detail (usePokemonDetail); `finish` the
  * chosen Magic finish; `pokemonVersion` the chosen Pokémon version (shine,
- * finish label, and the Poké Ball / Master Ball badge).
+ * finish label, the Poké Ball / Master Ball badge, and the 1st Edition stamp:
+ * `hasFirstEdition` when one of the card's versions is 1st Edition).
  */
-export default function SelectedCard({ candidate: c, typedName, englishName, pokemon, finish, pokemonVersion }) {
+export default function SelectedCard({ candidate: c, typedName, englishName, pokemon, finish, pokemonVersion, hasFirstEdition = false }) {
   const pokemonFinish = pokemonVersion?.finish;
   const [face, setFace] = useState(0);
   const pokemonImages = useCardImages(c);   // TCGdex's, or a backup when it has none
   useEffect(() => setFace(0), [c?.key]);
+  // The 1st Edition stamp (owner, 2026-10-12): TCGdex's vintage scans carry
+  // it, but Unlimited is picked by default, so it's painted out; picked 1st
+  // Edition on a scan without one, it's drawn on (lib/firstEditionStamp.js).
+  const firstEdition = Boolean(pokemonVersion?.firstEdition);
+  const stamp = c ? firstEditionMode({
+    game: c.game, lang: c.lang, hasFirstEdition, firstEdition,
+    category: pokemon.card?.category, image: pokemonImages.image,
+  }) : null;
+  const stampFound = useFirstEditionStamp(stamp ? pokemonImages.image : null, stamp?.layout);
 
   if (!c) {
     return (
@@ -165,9 +183,26 @@ export default function SelectedCard({ candidate: c, typedName, englishName, pok
   const playStamp = !magic && !ball && isPlayStamp(pokemonVersion);
   // The Pokémon Center stamp, the same way (owner, 2026-10-11).
   const centerStamp = !magic && !ball && !playStamp && isPokemonCenterStamp(pokemonVersion);
+  // 1st Edition is named under the card too, after the finish (owner, 2026-10-12).
   const finishTag = magic
     ? { foil: 'FOIL', etched: 'ETCHED FOIL' }[finish]
-    : { holo: 'HOLO', reverse: ballName ? `REVERSE HOLO · ${ballName.toUpperCase()}` : 'REVERSE HOLO' }[pokemonFinish];
+    : [{ holo: 'HOLO', reverse: ballName ? `REVERSE HOLO · ${ballName.toUpperCase()}` : 'REVERSE HOLO' }[pokemonFinish],
+      firstEdition && '1ST EDITION'].filter(Boolean).join(' · ') || undefined;
+  // The stamp painted out (Unlimited), or drawn on a scan without one (1st Edition).
+  let stampOverlay = null;
+  if (stamp && stampFound) {
+    if (stamp.mode === 'hide' && stampFound.patch) {
+      stampOverlay = <img className="stamp-patch" src={stampFound.patch} alt="" style={percentBox(stampFound.at)} />;
+    } else if (stamp.mode === 'show' && !stampFound.stamped) {
+      const b = STAMP_LAYOUTS[stamp.layout].stamp;
+      stampOverlay = (
+        <FirstEditionStamp
+          className="stamp-drawn"
+          style={percentBox({ left: b.x0, top: b.y0, width: b.x1 - b.x0, height: b.y1 - b.y0 })}
+        />
+      );
+    }
+  }
   // A Japanese name staff can't read gets the English name they typed beside it.
   const latin = /^[\p{Script=Latin}\p{N}\p{P}\p{Zs}\p{S}]*$/u.test(c.name);
 
@@ -184,6 +219,7 @@ export default function SelectedCard({ candidate: c, typedName, englishName, pok
             back={c.game === 'pokemon' ? POKEMON_CARD_BACK : undefined}
             loading={!magic && pokemonImages.status === 'loading'}
             shine={shine}
+            overlay={stampOverlay}
             alt={c.name}
             name={c.name}
             number={c.number}

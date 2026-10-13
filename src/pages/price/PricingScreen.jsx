@@ -625,6 +625,7 @@ export default function PricingScreen({
               pokemon={pokemon}
               finish={finish}
               pokemonVersion={version}
+              hasFirstEdition={versions.some((v) => v.firstEdition)}
             />
             <Suggestions
               search={search}
