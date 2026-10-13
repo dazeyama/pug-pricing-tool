@@ -60,7 +60,7 @@ to make sure nothing old broke.
 
 ## 3. Buy tab: searching 🆕
 
-- [ ] 🆕 **No auto-select.** `Lightning Bolt 117/331 2X2` shows one printing, but **nothing is selected**. **↓** selects
+- [ ] 🆕 **No auto-select** (put back on 2026-10-12, decision 247: one printing is selected again). `Lightning Bolt 117/331 2X2` shows one printing, but **nothing is selected**. **↓** selects
       it, **Enter** adds it. Enter with nothing selected should say to select a card first (run 1: it says nothing, F3).
 - [ ] Clicking the selected card again un-selects it. A search that drops the selected card clears it.
 - [ ] 🆕 A name that ends in a number is searched as that name: `Spider-Man 2099` (Magic), `Energy Removal 2` (Pokémon).

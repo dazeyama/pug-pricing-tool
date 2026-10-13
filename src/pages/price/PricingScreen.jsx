@@ -268,7 +268,7 @@ export default function PricingScreen({
   let addBlocked = null;
   if (locked) addBlocked = locked;
   else if (!selected) {
-    // Nothing is picked for her (no auto-select): ↓ picks the first suggestion.
+    // Several suggestions and none picked yet: ↓ picks the first.
     addBlocked = search.candidates.length ? 'Select a card first: ↓ picks the first suggestion' : 'Select a card first';
   }
   else if (magic ? !finish : !version) addBlocked = "Waiting for the card's versions";
@@ -289,11 +289,10 @@ export default function PricingScreen({
   const visible = search.candidates.slice(0, shownCount);
   const hasShowAll = search.candidates.length > shownCount;
 
-  // When a search settles: a selection the new results don't include is
-  // dropped (spec 8.12). Nothing is selected for her, not even a lone
-  // printing (owner, 2026-10-11: auto-select got in the way); she clicks or
-  // presses ↓. While a line is being edited, its own search selects that
-  // exact card.
+  // When a search settles: a lone printing is selected automatically (owner:
+  // taken out 2026-10-11, put back 2026-10-12); a selection the new results
+  // don't include is dropped (spec 8.3, 8.12). While a line is being edited,
+  // its own search selects that exact card.
   useEffect(() => {
     if (!search.settled) return;
     const found = search.candidates;
@@ -308,6 +307,11 @@ export default function PricingScreen({
         toast("Couldn't find that card again, so it can't be edited here. Remove it with × and add it again.", 'err');
         setEditing(null);
       }
+      return;
+    }
+    if (found.length === 1) {
+      setSelected(found[0]);
+      setHighlight(0);
       return;
     }
     const cur = selectedRef.current;
@@ -448,7 +452,7 @@ export default function PricingScreen({
       return;
     }
     // Enter (or Qty's Enter) says why nothing was added (smoke test 2026-10-11, F3):
-    // with no auto-select, a card typed and Enter pressed used to do nothing at all.
+    // with several suggestions and none picked, Enter used to do nothing at all.
     if (addBlocked) {
       toast(`${addBlocked}.`, 'err');
       return;

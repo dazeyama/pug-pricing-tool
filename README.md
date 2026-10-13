@@ -453,8 +453,8 @@ Up to 10 matching printings, in two rows of 5. A shorter window shows one row of
 | **… show all (N)** | Opens every match in a window. Arrow keys move, **Enter** picks, **Esc** closes. |
 | **Hover** | Shows the set symbol in its rarity colour. |
 
-Nothing is selected until she clicks a card or presses **↓**, even when there's only one match. When
-Scryfall or TCGdex is slow or busy, a line above the suggestions says so and retries by itself.
+A search with one match selects it straight away. When Scryfall or TCGdex is slow or busy, a line
+above the suggestions says so and retries by itself.
 
 ### The selected card
 
