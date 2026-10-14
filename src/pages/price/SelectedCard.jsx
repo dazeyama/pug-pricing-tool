@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import CardImage from '../../components/CardImage.jsx';
 import BallIcon from '../../components/BallIcon.jsx';
 import FirstEditionStamp from '../../components/FirstEditionStamp.jsx';
+import CardZoom from './CardZoom.jsx';
 import GameBadge from '../../components/GameBadge.jsx';
 import * as scry from '../../lib/scryfall.js';
 import { useCardImages } from './useCardImages.js';
@@ -86,8 +87,13 @@ function cardmarketLink(c, magic, searchName) {
 export default function SelectedCard({ candidate: c, typedName, englishName, pokemon, finish, pokemonVersion, hasFirstEdition = false }) {
   const pokemonFinish = pokemonVersion?.finish;
   const [face, setFace] = useState(0);
+  // The card, large, with a magnifying glass (CardZoom): where the click that opened it was.
+  const [zoom, setZoom] = useState(null);
   const pokemonImages = useCardImages(c);   // TCGdex's, or a backup when it has none
-  useEffect(() => setFace(0), [c?.key]);
+  useEffect(() => {
+    setFace(0);
+    setZoom(null);
+  }, [c?.key]);
   // The 1st Edition stamp (owner, 2026-10-12): TCGdex's vintage scans carry
   // it, but Unlimited is picked by default, so it's painted out; picked 1st
   // Edition on a scan without one, it's drawn on (lib/firstEditionStamp.js).
@@ -204,6 +210,55 @@ export default function SelectedCard({ candidate: c, typedName, englishName, pok
       stampOverlay = <FirstEditionStamp className="stamp-drawn" style={percentBox(drawnStampBox(stamp.layout, stamp.shift))} />;
     }
   }
+  const overlay = shadow || stampOverlay ? (
+    <>
+      {shadow && (
+        <span
+          className="art-shadow"
+          style={percentBox({
+            left: BASE_SET_ART_FRAME.left,
+            top: BASE_SET_ART_FRAME.top,
+            width: BASE_SET_ART_FRAME.right - BASE_SET_ART_FRAME.left,
+            height: BASE_SET_ART_FRAME.bottom - BASE_SET_ART_FRAME.top,
+          })}
+        />
+      )}
+      {stampOverlay}
+    </>
+  ) : null;
+  // The picture with everything laid on it, here and enlarged (CardZoom),
+  // where Magic's is Scryfall's PNG: bigger and sharper, for small print.
+  const picture = (large) => {
+    const png = large && magic ? scry.cardImage(magic, 'png', face) : null;
+    return (
+      <>
+        {/* Keyed by the image too: a backup image arriving later starts a fresh load. */}
+        <CardImage
+          key={`${c.key}:${face}:${png ?? image ?? 'none'}`}
+          thumb={png ? image : thumb}
+          image={png ?? image}
+          back={c.game === 'pokemon' ? POKEMON_CARD_BACK : undefined}
+          loading={!magic && pokemonImages.status === 'loading'}
+          shine={shine}
+          overlay={overlay}
+          alt={c.name}
+          name={c.name}
+          number={c.number}
+        />
+        {ball && (
+          <BallIcon kind={ball} className="pattern-badge" title={`${ballName} pattern reverse holo`} />
+        )}
+        {playStamp && (
+          <img src={PLAY_LOGO} className="pattern-badge play-badge" alt="Play! Pokémon stamp" title="Play! Pokémon stamp" />
+        )}
+        {centerStamp && (
+          <img src={CENTER_LOGO} className="pattern-badge" alt="Pokémon Center stamp" title="Pokémon Center stamp" />
+        )}
+      </>
+    );
+  };
+  // Clicking the card opens it large, once it has a picture to show.
+  const zoomable = Boolean(image || thumb) && !(!magic && pokemonImages.status === 'loading');
   // A Japanese name staff can't read gets the English name they typed beside it.
   const latin = /^[\p{Script=Latin}\p{N}\p{P}\p{Zs}\p{S}]*$/u.test(c.name);
 
@@ -211,50 +266,20 @@ export default function SelectedCard({ candidate: c, typedName, englishName, pok
     <>
       <div className="area-card">
         <div className="stage-label">Selected card</div>
-        <div className="card-box">
-          {/* Keyed by the image too: a backup image arriving later starts a fresh load. */}
-          <CardImage
-            key={`${c.key}:${face}:${image ?? 'none'}`}
-            thumb={thumb}
-            image={image}
-            back={c.game === 'pokemon' ? POKEMON_CARD_BACK : undefined}
-            loading={!magic && pokemonImages.status === 'loading'}
-            shine={shine}
-            overlay={shadow || stampOverlay ? (
-              <>
-                {shadow && (
-                  <span
-                    className="art-shadow"
-                    style={percentBox({
-                      left: BASE_SET_ART_FRAME.left,
-                      top: BASE_SET_ART_FRAME.top,
-                      width: BASE_SET_ART_FRAME.right - BASE_SET_ART_FRAME.left,
-                      height: BASE_SET_ART_FRAME.bottom - BASE_SET_ART_FRAME.top,
-                    })}
-                  />
-                )}
-                {stampOverlay}
-              </>
-            ) : null}
-            alt={c.name}
-            name={c.name}
-            number={c.number}
-          />
-          {ball && (
-            <BallIcon kind={ball} className="pattern-badge" title={`${ballName} pattern reverse holo`} />
-          )}
-          {playStamp && (
-            <img src={PLAY_LOGO} className="pattern-badge play-badge" alt="Play! Pokémon stamp" title="Play! Pokémon stamp" />
-          )}
-          {centerStamp && (
-            <img src={CENTER_LOGO} className="pattern-badge" alt="Pokémon Center stamp" title="Pokémon Center stamp" />
-          )}
+        <div
+          className={`card-box${zoomable ? ' zoomable' : ''}`}
+          onClick={zoomable ? (e) => setZoom({ x: e.clientX, y: e.clientY }) : undefined}
+        >
+          {picture(false)}
           {flippable && (
             <button
               type="button"
               className="flip-btn"
               title="Show the other face"
-              onClick={() => setFace((f) => 1 - f)}
+              onClick={(e) => {
+                e.stopPropagation();   // flips it, doesn't open it large
+                setFace((f) => 1 - f);
+              }}
             >
               ⟲ Flip
             </button>
@@ -266,6 +291,11 @@ export default function SelectedCard({ candidate: c, typedName, englishName, pok
           {finishTag && <span className="finish-tag">✦ {finishTag}</span>}
         </div>
       </div>
+      {zoom && (
+        <CardZoom name={name} subtitle={englishName} at={zoom} onClose={() => setZoom(null)}>
+          {picture(true)}
+        </CardZoom>
+      )}
 
       {/* A fixed height for every card (see .area-info), so the suggestions
           below never shift: one line each, long text ends in "…". */}
