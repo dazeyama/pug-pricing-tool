@@ -92,6 +92,17 @@ function nameTerms(name) {
 }
 
 /**
+ * The collector-number term. A plain number also finds its promo pack
+ * printing, numbered with a "p" in the set's promos ("High Perfect 229":
+ * Lorwyn Eclipsed 229 and its Promos' 229p; owner, 2026-10-13).
+ */
+export function numberTerm(number) {
+  const n = String(number ?? '').replace(/"/g, '').trim();
+  if (!n) return null;
+  return /^\d+$/.test(n) ? `(cn:"${n}" or cn:"${n}p")` : `cn:"${n}"`;
+}
+
+/**
  * Candidate printings for a query: `cards/search` with unique=prints, newest
  * first. First page only (up to 175).
  * @param {{ name: string, number: string|null, setCode: string|null }} q
@@ -101,7 +112,8 @@ function nameTerms(name) {
  */
 export async function searchPrints(q, signal) {
   const parts = nameTerms(q.name);
-  if (q.number) parts.push(`cn:"${q.number.replace(/"/g, '')}"`);
+  const number = numberTerm(q.number);
+  if (number) parts.push(number);
   if (q.setCode) parts.push(`set:${q.setCode.toLowerCase()}`);
   if (!parts.length) return { cards: [], total: 0, hasMore: false };
   // English, paper only: Arena-only cards (e.g. Arena Anthology 3) can't be bought.
