@@ -1,6 +1,11 @@
 /* Colour tokens, copied verbatim from Collection Manager (static/style.css :root).
    Spec Appendix B.1. The only place these hex values live. */
 :root {
+  /* The app's zoom, 1 down to .8 on a small screen (src/lib/uiScale.js sets
+     it on <html>). Inside a zoomed element a viewport unit shrinks with it,
+     so sizes made from vh / vw there are divided by it again. */
+  --ui-zoom: 1;
+
   --bg: #0f1220;
   --panel: #181c2e;
   --panel-2: #20253a;

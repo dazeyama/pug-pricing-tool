@@ -21,11 +21,15 @@ export default function MoreMenu({ items, up = false, float = false }) {
     if (!open || !float) return undefined;
     const button = wrap.current?.querySelector('.more-btn')?.getBoundingClientRect();
     if (button) {
-      const height = list.current?.offsetHeight ?? 0;
+      // On the screen, in px, then in the zoomed app's own px (lib/uiScale.js):
+      // a fixed place inside it is drawn at `zoom` times its size.
+      // The page's width without its scrollbar: a fixed right edge is measured from there.
+      const zoom = wrap.current.currentCSSZoom ?? 1;
+      const height = (list.current?.offsetHeight ?? 0) * zoom;
       const below = button.bottom + 6 + height <= window.innerHeight - 8;
       setPlace({
-        right: window.innerWidth - button.right,
-        ...(below ? { top: button.bottom + 6 } : { bottom: window.innerHeight - button.top + 6 }),
+        right: (document.documentElement.clientWidth - button.right) / zoom,
+        ...(below ? { top: (button.bottom + 6) / zoom } : { bottom: (window.innerHeight - button.top + 6) / zoom }),
       });
     }
     const close = () => setOpen(false);

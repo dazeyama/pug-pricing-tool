@@ -138,7 +138,7 @@ export default function HelpPage() {
             <div className="help-text" onClick={onClick} dangerouslySetInnerHTML={{ __html: page.html }} />
             {page.images.length > 0 && (
               // Each picture's height is a share of the screen, so a page's pictures fit together.
-              <div className="help-figures" style={{ '--fig-h': `calc((100vh - 330px) / ${page.images.length} - 34px)` }}>
+              <div className="help-figures" style={{ '--fig-h': `calc((100vh / var(--ui-zoom) - 330px) / ${page.images.length} - 34px)` }}>
                 {page.images.map((img) => (
                   <figure key={img.src} className="help-figure">
                     <button type="button" className="help-shot" title="Show full size" onClick={() => setZoom(shot(img))}>

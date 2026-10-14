@@ -160,7 +160,7 @@
 .buy-list .cant-chip { margin-left: 6px; }
 .line-price.is-sell { color: var(--good); }
 /* The export dialog: wide, for long CC product names and the Bought → Sell prices. */
-.xd-modal .modal-box.wide { width: min(1180px, 96vw); max-height: 88vh; }
+.xd-modal .modal-box.wide { width: min(1180px, calc(96vw / var(--ui-zoom))); max-height: calc(88vh / var(--ui-zoom)); }
 .sku-chip.compact { flex: none; padding: 1px 9px; border-width: 1.5px; font-size: 11px; white-space: nowrap; }
 /* In the collection list's heading, between its title and the card count. */
 .list-head .list-sku { align-self: center; }
@@ -173,7 +173,7 @@
 .ccm > .backups-col { min-height: 0; overflow-y: auto; }
 .ccm .settings-sub { margin-top: 0; }
 .ccm-counts { margin-top: 2px; }
-.ccm-modal .modal-box.wide { width: min(980px, 94vw); height: min(720px, 86vh); }
+.ccm-modal .modal-box.wide { width: min(980px, calc(94vw / var(--ui-zoom))); height: min(720px, calc(86vh / var(--ui-zoom))); }
 .ccm-modal .ccm-search { display: block; }
 .ccm-caption { margin: 0 0 4px; }
 .ccm-more { margin-top: 10px; }

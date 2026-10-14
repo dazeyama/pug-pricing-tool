@@ -2,9 +2,11 @@
    right, Audit Tool's background art behind both at 50%. No page scroll:
    panels shrink or scroll inside themselves. */
 
-.shell { min-height: 100vh; display: flex; flex-direction: column; }
+/* Zoomed down to 80% on a small screen (--ui-zoom, lib/uiScale.js); its
+   heights in vh are divided by the zoom so it still fills the window. */
+.shell { zoom: var(--ui-zoom); min-height: calc(100vh / var(--ui-zoom)); display: flex; flex-direction: column; }
 .shell > header { flex: none; }
-.shell-fixed { height: 100vh; overflow: hidden; }
+.shell-fixed { height: calc(100vh / var(--ui-zoom)); overflow: hidden; }
 .shell-fixed main {
   flex: 1;
   min-height: 0;
@@ -117,7 +119,7 @@
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: 336px minmax(0, 1fr) clamp(260px, 21vw, 380px);
+  grid-template-columns: 336px minmax(0, 1fr) clamp(260px, calc(21vw / var(--ui-zoom)), 380px);
   --actions-h: 64px;
   grid-template-rows: var(--info-h) minmax(0, 1fr) auto var(--actions-h);
   grid-template-areas:
@@ -1115,7 +1117,11 @@
 }
 .all-grid .thumb { width: auto; }
 
-.hint-strip { flex: none; margin: 0; font-size: 12px; color: var(--muted); text-align: right; }
+/* One line, cut short with … where the window is too narrow for it (owner, 2026-10-14). */
+.hint-strip {
+  flex: none; margin: 0; font-size: 12px; color: var(--muted); text-align: right;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 
 /* ---- Buy list sidebar (Audit Tool list panel, docked right) ----
    340px, plus the width the suggestions don't use (--list-extra, set by
@@ -1305,6 +1311,7 @@
 .add-btn, .confirm-btn {
   flex: 1;
   min-height: 64px;
+  white-space: nowrap;
   border-color: var(--good);
   background: var(--good);
   color: #0d2418;
@@ -1318,6 +1325,8 @@
 .add-btn.is-disabled, .confirm-btn.is-disabled { filter: saturate(.4); }
 .confirm-btn.small-confirm { flex: none; min-height: 0; font-size: 14px; padding: 8px 16px; }
 .action-row { display: flex; align-items: stretch; gap: 10px; height: var(--actions-h, 64px); }
+/* The row's own height, whatever it is (52px on a short window). */
+.action-row .add-btn { min-height: 0; }
 .qty-box {
   flex: none;
   display: flex;
@@ -1366,6 +1375,10 @@
   .finish-segments button { font-size: 15px; }
   .foil-switch { height: 40px; }
   .foil-knob { width: 30px; height: 30px; }
+  /* ADD CARD / SAVE EDIT on one line in the narrower side column (owner, 2026-10-14). */
+  .action-row .add-btn { padding: 0 10px; font-size: 17px; }
+  .action-row .clear-btn { padding: 0 12px; }
+  .qty-box input { width: 54px; }
 }
 /* One row of 5 suggestions on a shorter window (Suggestions.jsx): each sized
    from the full height (36px for the line above, 22px for its label). */
@@ -1374,6 +1387,9 @@
 }
 /* Narrower windows: a slimmer card column and side column, smaller gaps. */
 @media (max-width: 1500px) {
-  .stage-body { grid-template-columns: 300px minmax(0, 1fr) clamp(240px, 21vw, 340px); column-gap: 24px; }
+  .stage-body { grid-template-columns: 300px minmax(0, 1fr) clamp(240px, calc(21vw / var(--ui-zoom)), 340px); column-gap: 24px; }
   .finish-segments button { font-size: 15px; letter-spacing: .02em; }
+  /* The three price buttons in the 300px column (they were 6px too wide; owner, 2026-10-14). */
+  .price-tools { gap: 4px; }
+  .price-tools .btn.small { padding: 5px 6px; }
 }

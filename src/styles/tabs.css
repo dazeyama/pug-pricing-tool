@@ -211,8 +211,8 @@ header h1 { margin: 0; font-size: 20px; font-weight: 600; }
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  width: max(100%, min(460px, 92vw));
-  max-height: 70vh;
+  width: max(100%, min(460px, calc(92vw / var(--ui-zoom))));
+  max-height: calc(70vh / var(--ui-zoom));
   overflow: auto;
   z-index: 320;
   background: var(--panel);
@@ -356,6 +356,20 @@ nav#tabs {
   border-color: var(--border);
   border-bottom: 3px solid var(--accent);
   padding: 11px 22px 11px;
+}
+
+/* A short window (the 1366×768 and 1200×650 laptops; owner, 2026-10-14):
+   a compact header, so the screen below it gets the room. Less space above
+   and under the brand, a smaller logo and user button, lower tabs. */
+@media (max-height: 820px) {
+  header { padding-top: 8px; }
+  .header-top { margin-bottom: 10px; }
+  .brand-mark { --brand-size: 40px; }
+  .user-btn { padding-top: 6px; padding-bottom: 6px; }
+  .user-signout { width: 38px; height: 38px; }
+  nav#tabs { min-height: calc(var(--tab-line) + 20px); }
+  .tab { padding: 6px 20px; font-size: 15px; }
+  .tab:not(.active):hover, .tab.active { padding: 8px 20px; }
 }
 
 /* Tab content fades in on every switch. */

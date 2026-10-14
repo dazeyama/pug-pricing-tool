@@ -139,7 +139,7 @@
   width: auto;
   max-width: 100%;
   height: auto;
-  max-height: var(--fig-h, 60vh);
+  max-height: var(--fig-h, calc(60vh / var(--ui-zoom)));
 }
 .help-figure figcaption { margin-top: 6px; color: var(--muted); font-size: 12px; text-align: center; }
 
@@ -247,14 +247,14 @@
 .help-text figcaption { margin-top: 6px; color: var(--muted); font-size: 12px; text-align: center; }
 
 /* Full size, over everything. */
-.help-zoom .modal-box.wide { width: min(1600px, 96vw); max-height: 94vh; }
+.help-zoom .modal-box.wide { width: min(1600px, calc(96vw / var(--ui-zoom))); max-height: calc(94vh / var(--ui-zoom)); }
 .help-zoom .modal-body { padding: 10px; }
 .help-zoom img {
   display: block;
   width: auto;
   height: auto;
   max-width: 100%;
-  max-height: calc(94vh - 80px);
+  max-height: calc(94vh / var(--ui-zoom) - 80px);
   margin: 0 auto;
   cursor: zoom-out;
 }
