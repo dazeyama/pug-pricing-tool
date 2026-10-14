@@ -783,7 +783,7 @@ function BuyPanel({
             },
             // Export single buy (owner, 2026-10-09): Magic only, like EXPORT, but any day, today's too.
             ...(game === 'mtg' ? [{
-              label: 'Export single buy…',
+              label: 'Export single buy',
               blocked: offOrBusy ?? (completed ? 'Already Completed' : lines.length ? null : 'No Magic cards in this buy'),
               title: "Export just this buy's Magic cards to Crystal Commerce now; the buy is Completed, the rest of the day isn't",
               onClick: () => onExport(buy, number),
@@ -797,7 +797,7 @@ function BuyPanel({
               onClick: () => onEditView(buy, number),
             },
             {
-              label: 'Convert to project…',
+              label: 'Convert to project',
               blocked: offOrBusy ?? (anyCompleted ? lockedWhy(locked) : null),
               title: 'Move every card in this buy, both games, into a new project, and delete the buy',
               onClick: () => onConvert(buy, number),
