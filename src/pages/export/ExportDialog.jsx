@@ -32,8 +32,16 @@ import {
  * @param {() => void} p.onClose
  */
 export default function ExportDialog({
-  items, mode = 'check', title, target, fileName, onExported, onClose, pullOut = true,
+  items: itemsNow, mode = 'check', title, target: targetNow, fileName, onExported, onClose, pullOut = true,
 }) {
+  // The cards and the buys' versions as they were when it opened, kept for
+  // as long as it's open (owner, 2026-10-14: an export kept starting over
+  // while staff fixed matches by hand). The page behind reloads whenever any
+  // buy changes, a card added at the counter on another computer included,
+  // and hands over the same cards anew; matching again then threw away every
+  // pick and typed price. A buy that really changed meanwhile is caught when
+  // saving (stale_version, from these versions).
+  const [{ items, target }] = useState(() => ({ items: itemsNow, target: targetNow }));
   const staff = useStaff();
   const toast = useToast();
   const { deviceId } = useDevice();
