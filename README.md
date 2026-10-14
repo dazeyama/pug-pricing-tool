@@ -809,7 +809,7 @@ are its Sell Prices.
 ### Convert to buy…
 
 Projects only, from the ⋯ menu. It turns the project into a buy on today's day page: the way back
-from a buy's **Convert to project…**.
+from a buy's **Convert to project**.
 
 It asks what **CONFIRM BUY** asks: **Customer name**, **Phone number**, **Purchase price** (Cash or
 Credit, and what was paid) and **Notes**. All but Notes are required. The name suggests past
@@ -928,11 +928,12 @@ Once Completed, a buy is locked. Its prices show in green: those are its Sell Pr
 |---|---|
 | **Mark as completed** | Completes this buy's cards without exporting them. They're locked, and left out of the search and the day's export. |
 | **Mark Paid/Ours again** | Undoes Mark as completed. On an exported buy it reads **Mark Paid/Ours again…** and undoes this buy's export only. |
-| **Export single buy…** | Magic only. Exports just this buy, on any day, today included. The rest of the day stays as it is. |
-| **Convert to project…** | Moves every card, both games, into a new project with the buy's notes and rates. The buy is deleted from the day. The name starts as the customer's. The cards keep their prices until a **REPRICE?** rounds them up. |
+| **Export single buy** | Magic only. Exports just this buy, on any day, today included. The rest of the day stays as it is. |
+| **Edit in project view** | Opens the buy's cards on the pricing screen, in the game's colour, to fix a card before an export (its condition or treatment, mostly). Click a card, change it, then **SAVE EDIT**; **×** takes cards out. Nothing is saved until **SAVE BUY**, which goes back to the day page. The buy stays on its day; cards can't be added and the rates don't change. |
+| **Convert to project** | Moves every card, both games, into a new project with the buy's notes and rates. The buy is deleted from the day. The name starts as the customer's. The cards keep their prices until a **REPRICE?** rounds them up. |
 | **Delete buy…** | Deletes the buy and every card in it, both games. Asks first. |
 
-**Convert to project…** and **Delete buy…** are locked once any of the buy's cards are Completed.
+**Edit in project view**, **Convert to project** and **Delete buy…** are locked once any of the buy's cards are Completed.
 A project can become a buy again: see [Convert to buy…](#convert-to-buy).
 
 ### COMPLETE (Pokémon days)
