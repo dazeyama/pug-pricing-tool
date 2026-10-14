@@ -3,6 +3,7 @@ import SearchBar from './SearchBar.jsx';
 import SelectedCard from './SelectedCard.jsx';
 import Suggestions, { useSuggestionCount } from './Suggestions.jsx';
 import { suggestionRoom } from '../../lib/thumbGrid.js';
+import { cardRoom } from '../../lib/cardRoom.js';
 import ShowAllModal from './ShowAllModal.jsx';
 import FinishPanel from './FinishPanel.jsx';
 import PriceTable from './PriceTable.jsx';
@@ -55,6 +56,27 @@ function useListRoom(screen) {
       const { cols, extra } = suggestionRoom(area.clientWidth, area.clientHeight, current.current, LIST_EXTRA_MAX);
       current.current = extra;
       setRoom((r) => (r.extra === extra && r.cols === cols ? r : { extra, cols }));
+    };
+    const observer = new ResizeObserver(measure);
+    observer.observe(area);
+    return () => observer.disconnect();
+  }, [screen]);
+  return room;
+}
+
+// The selected card fills its area's height on a tall window: its column
+// widens, Finish & Details and the suggestions narrowing (lib/cardRoom.js;
+// owner, 2026-10-14). Measured, like the list's room.
+function useCardRoom(screen) {
+  const [room, setRoom] = useState({ grow: 0, side: 0 });
+  const current = useRef(0);
+  useEffect(() => {
+    const area = screen.current?.querySelector('.area-card');
+    if (!area) return undefined;
+    const measure = () => {
+      const next = cardRoom(area.clientWidth, area.clientHeight, current.current);
+      current.current = next.grow;
+      setRoom((r) => (r.grow === next.grow ? r : next));
     };
     const observer = new ResizeObserver(measure);
     observer.observe(area);
@@ -142,6 +164,7 @@ export default function PricingScreen({
   // The list's share of the width the suggestions don't use, and their columns.
   const screen = useRef(null);
   const listRoom = useListRoom(screen);
+  const cardSpace = useCardRoom(screen);
   // 10 suggestions (8 on a laptop's window), or 5 on a shorter window (owner, 2026-10-01).
   const shownCount = useSuggestionCount(listRoom.cols);
   const [selected, setSelected] = useState(null);
@@ -594,7 +617,13 @@ export default function PricingScreen({
 
   return (
     <>
-      <div className={`price-screen ${className}`} ref={screen} style={{ ...BACKGROUND, '--list-extra': `${listRoom.extra}px` }}>
+      <div className={`price-screen ${className}`} ref={screen} style={{
+          ...BACKGROUND,
+          '--list-extra': `${listRoom.extra}px`,
+          '--card-grow': `${cardSpace.grow}px`,
+          '--side-give': `${cardSpace.side}px`,
+        }}
+      >
         <div className="stage">
           <SearchBar
             inputRef={input}

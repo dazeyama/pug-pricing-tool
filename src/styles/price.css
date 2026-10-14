@@ -119,7 +119,10 @@
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: 336px minmax(0, 1fr) clamp(260px, calc(21vw / var(--ui-zoom)), 380px);
+  /* The card's column widens on a tall window so the card fills it
+     (--card-grow, --side-give: src/lib/cardRoom.js; owner, 2026-10-14). */
+  grid-template-columns: calc(336px + var(--card-grow, 0px)) minmax(0, 1fr)
+    clamp(260px, calc(21vw / var(--ui-zoom)), calc(380px - var(--side-give, 0px)));
   --actions-h: 64px;
   grid-template-rows: var(--info-h) minmax(0, 1fr) auto var(--actions-h);
   grid-template-areas:
@@ -174,11 +177,12 @@
 
 /* ---- The selected card: Scryfall's card-page size, 336 × 468, centred in
         its column, empty or not (owner, 2026-09-29). It only shrinks when the
-        window is too short for it. ---- */
+        window is too short for it, and on a tall window it grows to fill
+        its area, its column widening with it (owner, 2026-10-14). ---- */
 .card-box { position: relative; align-self: center; }
 /* --card-h: the card's height, leaving room for the label above (26px) and
-   the finish line below (32px). */
-.area-card { --card-h: min(calc(100cqh - 58px), 468px); }
+   the finish line below (32px), and no wider than its column. */
+.area-card { --card-h: min(calc(100cqh - 58px), calc(100cqw / 0.7176)); }
 .card-box .card-wrap { height: var(--card-h); width: auto; }
 
 /* The finish named under the card, centred on it: one line whatever happens.
@@ -1390,7 +1394,11 @@
 }
 /* Narrower windows: a slimmer card column and side column, smaller gaps. */
 @media (max-width: 1500px) {
-  .stage-body { grid-template-columns: 300px minmax(0, 1fr) clamp(240px, calc(21vw / var(--ui-zoom)), 340px); column-gap: 24px; }
+  .stage-body {
+    grid-template-columns: calc(300px + var(--card-grow, 0px)) minmax(0, 1fr)
+      clamp(240px, calc(21vw / var(--ui-zoom)), calc(340px - var(--side-give, 0px)));
+    column-gap: 24px;
+  }
   .finish-segments button { font-size: 15px; letter-spacing: .02em; }
   /* The three price buttons in the 300px column (they were 6px too wide; owner, 2026-10-14). */
   .price-tools { gap: 4px; }
