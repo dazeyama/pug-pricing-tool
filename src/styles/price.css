@@ -371,6 +371,8 @@
   animation: tag-drift 3s linear infinite;
 }
 @keyframes tag-drift { to { background-position: 200% 0; } }
+/* Standing still behind the card enlarged (CardZoom): one sheen moving at a time. */
+.finish-line.still .finish-tag { animation-play-state: paused; }
 @media (prefers-reduced-motion: reduce) { .card-shine, .card-shine.holo, .finish-tag { animation: none; } }
 
 /* An image still on the way: a card-shaped shimmer with a spinner and

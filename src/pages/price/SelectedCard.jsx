@@ -228,6 +228,8 @@ export default function SelectedCard({ candidate: c, typedName, englishName, pok
   ) : null;
   // The picture with everything laid on it, here and enlarged (CardZoom),
   // where Magic's is Scryfall's PNG: bigger and sharper, for small print.
+  // One sheen at a time (owner, 2026-10-14): while it's enlarged, the card
+  // behind it has none, and its label's colours stand still.
   const picture = (large) => {
     const png = large && magic ? scry.cardImage(magic, 'png', face) : null;
     return (
@@ -239,7 +241,7 @@ export default function SelectedCard({ candidate: c, typedName, englishName, pok
           image={png ?? image}
           back={c.game === 'pokemon' ? POKEMON_CARD_BACK : undefined}
           loading={!magic && pokemonImages.status === 'loading'}
-          shine={shine}
+          shine={large || !zoom ? shine : null}
           overlay={overlay}
           alt={c.name}
           name={c.name}
@@ -287,7 +289,7 @@ export default function SelectedCard({ candidate: c, typedName, englishName, pok
         </div>
         {/* The finish, named under the card: always one line, always there so
             the card never moves when it appears. */}
-        <div className="finish-line" style={{ '--tag-len': finishTag ? finishTag.length + 2 : 1 }}>
+        <div className={`finish-line${zoom ? ' still' : ''}`} style={{ '--tag-len': finishTag ? finishTag.length + 2 : 1 }}>
           {finishTag && <span className="finish-tag">✦ {finishTag}</span>}
         </div>
       </div>
