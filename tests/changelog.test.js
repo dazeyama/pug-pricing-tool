@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  actionsFor, categoryOf, dayHeading, entryWhen, foldEvents, panelView, headlineOf } from '../src/lib/changelog.js';
+  HEADLINES, actionsFor, categoryOf, dayHeading, entryWhen, foldEvents, panelView, headlineOf } from '../src/lib/changelog.js';
 
 let seq = 1000;
 const ev = (over) => ({
@@ -98,4 +98,9 @@ test('a project made reads "Project started", not "Collection created" (smoke te
   assert.equal(headlineOf({ action: 'collection_created', summary: 'Collection created for Jo.' }), 'Collection created');
   assert.equal(headlineOf({ action: 'buy_confirmed' }), 'Buy confirmed');
   assert.equal(headlineOf({ action: 'something_new' }), 'something_new');
+});
+
+test("a buy edited in project view is a Buys entry, headlined Buy edited", () => {
+  assert.equal(categoryOf('buy_edited'), 'buys');
+  assert.equal(HEADLINES.buy_edited, 'Buy edited');
 });

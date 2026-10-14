@@ -633,6 +633,87 @@ exception when others then
   perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
 end $$;
 
+-- ========================================= Edit in project view (SAVE BUY)
+do $$
+declare
+  s text := 'Buy edits';
+  u uuid := pg_temp.id('u1');
+  a uuid := pg_temp.id('devA');
+  b uuid;
+  bolt uuid;
+  pika uuid;
+  v_ver integer;
+  v_target text;
+  v_line jsonb;
+begin
+  b := pg_temp.buy(a, u, 'DBTEST Edits', '5550100012', array[
+         pg_temp.line('Dbtest Bolt', 'DBT', '001', 2, 1.00),
+         pg_temp.line('Dbtestchu', 'DBTP', '025', 1, 4.00, 'pokemon')]);
+  bolt := pg_temp.line_id(b, 'Dbtest Bolt');
+  pika := pg_temp.line_id(b, 'Dbtestchu');
+  v_ver := pg_temp.version(b);
+  v_line := pg_temp.line('Dbtest Bolt', 'DBT', '001', 2, 0.90, p_cond => 'LP');
+  begin
+    perform buy_save_edits(b, null, a, v_ver, jsonb_build_array(jsonb_build_object('id', bolt, 'line', v_line)), '[]');
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'SAVE BUY needs a user', sqlerrm, 'no_user');
+  end;
+  begin
+    perform buy_save_edits(b, u, a, v_ver - 1, jsonb_build_array(jsonb_build_object('id', bolt, 'line', v_line)), '[]');
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, '… the buy as it is now', sqlerrm, 'stale_version');
+  end;
+  begin
+    perform buy_save_edits(b, u, a, v_ver, jsonb_build_array(jsonb_build_object('id', gen_random_uuid(), 'line', v_line)), '[]');
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, '… cards of this buy', sqlerrm, 'line_gone');
+  end;
+  begin
+    perform buy_save_edits(b, u, a, v_ver, '[]', jsonb_build_array(jsonb_build_object('id', bolt), jsonb_build_object('id', pika)));
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, '… and never takes every card out (Delete buy does)', sqlerrm, 'last_card');
+  end;
+  begin
+    perform buy_save_edits(b, u, a, v_ver, jsonb_build_array(jsonb_build_object('id', bolt, 'line', v_line || '{"quantity": 0}')), '[]');
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, '… at least one of each card', sqlerrm, 'quantity must be at least 1');
+  end;
+  begin
+    perform buy_save_edits(gen_random_uuid(), u, a, null, jsonb_build_array(jsonb_build_object('id', bolt, 'line', v_line)), '[]');
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, '… a buy that''s still there', sqlerrm, 'buy_gone');
+  end;
+  perform buy_mark_completed(b, 'mtg', u, a, true);
+  begin
+    perform buy_save_edits(b, u, a, pg_temp.version(b), jsonb_build_array(jsonb_build_object('id', bolt, 'line', v_line)), '[]');
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'Completed cards can''t be edited', sqlerrm, 'buy_completed');
+  end;
+  perform buy_mark_completed(b, 'mtg', u, a, false);
+  v_ver := pg_temp.version(b);
+  perform pg_temp.ok(s, 'Nothing changed: nothing saved', buy_save_edits(b, u, a, v_ver, '[]', '[]') = v_ver);
+  perform pg_temp.ok(s, '… and no Changelog entry', not exists (select 1 from events where target_id = b and action = 'buy_edited'));
+
+  v_target := internal.buy_target_name(b);
+  perform buy_save_edits(b, u, a, v_ver,
+    jsonb_build_array(jsonb_build_object('id', bolt, 'line', v_line, 'old_text', '2 Dbtest Bolt (DBT) 001', 'new_text', '2 Dbtest Bolt (DBT) 001 [LP]')),
+    jsonb_build_array(jsonb_build_object('id', pika, 'text', '1 Dbtestchu (DBTP) 025')));
+  perform pg_temp.ok(s, 'SAVE BUY saves the edited card in place, as edited',
+    (select condition = 'LP' and quantity = 2 and unit_price = 0.90 and buy_id = b from buy_lines where id = bolt));
+  perform pg_temp.ok(s, '… takes the removed one out', not exists (select 1 from buy_lines where id = pika));
+  perform pg_temp.ok(s, '… keeps the buy on its day and bumps its version',
+    (select status = 'confirmed' and version = v_ver + 1 and last_edited_by = u from buys where id = b));
+  perform pg_temp.ok(s, 'One Changelog entry, now, with each card before and after',
+    exists (select 1 from events where target_id = b and action = 'buy_edited' and target_name = v_target
+              and removed = 1 and summary = '1 card edited; 1 card removed.'
+              and lines @> '[{"sign": "-", "text": "2 Dbtest Bolt (DBT) 001"}, {"sign": "+", "text": "2 Dbtest Bolt (DBT) 001 [LP]"}, {"sign": "-", "text": "1 Dbtestchu (DBTP) 025"}]'
+              and games = array['mtg', 'pokemon']),
+    (select summary || ' ' || lines::text from events where target_id = b and action = 'buy_edited'));
+exception when others then
+  declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;
+  perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
+end $$;
+
 -- ============================================ Convert to project, and back
 do $$
 declare

@@ -5,9 +5,13 @@ import Tabs from './Tabs.jsx';
 
 const LOGO = `${import.meta.env.BASE_URL}pug-logo.webp`;
 
-/** The Price tab and a collection's pricing screen: the header search stays its normal size there. */
+/**
+ * The Price tab, a collection's pricing screen and a buy in project view: the
+ * header search stays its normal size there.
+ */
 export function isPricingScreen(pathname) {
-  return pathname === '/price' || /^\/collections\/[^/]+$/.test(pathname);
+  return pathname === '/price' || /^\/collections\/[^/]+$/.test(pathname)
+    || /^\/calendar\/[^/]+\/[^/]+\/buy\/[^/]+$/.test(pathname);
 }
 
 // CM's header (spec 7.2): brand on the left, user + search on the right,

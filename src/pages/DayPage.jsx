@@ -546,6 +546,8 @@ function DayScreen({ game, day }) {
               onConvert={(b, n) => guard() && setConverting({ buy: b, number: n })}
               onExport={(b, n) => guard() && setExportingBuy({ buy: b, number: n })}
               onUnexport={(b, n) => guard() && setUnexportingBuy({ buy: b, number: n })}
+              // Edit in project view (owner, 2026-10-13): the buy's cards on the pricing screen.
+              onEditView={(b, n) => navigate(`/calendar/${game}/${day}/buy/${b.id}`, { state: { number: n } })}
             />
           ))}
         </div>
@@ -730,7 +732,7 @@ function totalsFor(lines, buy) {
 /** One buy on a day page (spec 10.2). */
 function BuyPanel({
   buy, number, game, other, day, byId, busy, offline, hits, flash, onRemove, onDelete, onComplete, onConvert,
-  onExport, onUnexport,
+  onExport, onUnexport, onEditView,
 }) {
   const [preview, setPreview] = useState(null);   // { src, top, left } while a line is hovered
   const hidePreview = useCallback(() => setPreview(null), []);
@@ -786,6 +788,14 @@ function BuyPanel({
               title: "Export just this buy's Magic cards to Crystal Commerce now; the buy is Completed, the rest of the day isn't",
               onClick: () => onExport(buy, number),
             }] : []),
+            // Its cards edited on the pricing screen, saved with SAVE BUY (owner, 2026-10-13):
+            // for small fixes (a condition, a treatment) before an export.
+            {
+              label: 'Edit in project view',
+              blocked: offOrBusy ?? (anyCompleted ? lockedWhy(locked) : null),
+              title: "Open this buy's cards on the pricing screen to edit them (a condition, a treatment…); SAVE BUY saves them here",
+              onClick: () => onEditView(buy, number),
+            },
             {
               label: 'Convert to project…',
               blocked: offOrBusy ?? (anyCompleted ? lockedWhy(locked) : null),

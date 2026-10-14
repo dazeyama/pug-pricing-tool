@@ -20,6 +20,7 @@ import CollectionsPage from './pages/CollectionsPage.jsx';
 import CollectionPage from './pages/CollectionPage.jsx';
 import CalendarPage from './pages/CalendarPage.jsx';
 import DayPage from './pages/DayPage.jsx';
+import BuyEditPage from './pages/BuyEditPage.jsx';
 import SettingsPage from './pages/SettingsPage.jsx';
 import ChangelogPage from './pages/ChangelogPage.jsx';
 import HelpPage from './pages/HelpPage.jsx';
@@ -71,6 +72,7 @@ function AuthGate() {
                   <Route path="/collections/:id" element={<CollectionPage />} />
                   <Route path="/calendar" element={<CalendarPage />} />
                   <Route path="/calendar/:game/:date" element={<DayPage />} />
+                  <Route path="/calendar/:game/:date/buy/:id" element={<BuyEditPage />} />
                   <Route path="/settings" element={<SettingsPage />} />
                   <Route path="/changelog" element={<ChangelogPage />} />
                   <Route path="/help" element={<HelpPage />} />

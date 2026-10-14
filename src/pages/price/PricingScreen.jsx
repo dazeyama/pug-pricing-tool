@@ -124,11 +124,14 @@ const JP_NO_MTG = 'Japanese is Pokémon only: switch to EN to search Magic';
  * @param {string|null} [p.searchBlocked]  why the search bar is off (Can't upload cards), or null
  * @param {any} [p.listBadge]  in the list's heading, beside its title (an exported collection's Custom SKU)
  * @param {boolean} [p.roundUp]  prices round up, not down (a project; owner, 2026-10-10)
+ * @param {string|null} [p.addLocked]  why ADD CARD can't add a new card, though list lines can still be
+ *   edited (a confirmed buy in project view; owner, 2026-10-13), or null
+ * @param {string|null} [p.ratesLocked]  why the list's rates can't change (the same), or null
  */
 export default function PricingScreen({
   list, rates, master, locked = null, removeLocked = locked, listTitle, ratesTitle,
   renderListDetails, renderListFooter, resetKey = 0, searchLead = null, className = '', hits = null,
-  searchBlocked = null, listBadge = null, roundUp = false,
+  searchBlocked = null, listBadge = null, roundUp = false, addLocked = null, ratesLocked = null,
 }) {
   const [text, setText] = useState('');
   // EN | JP for Pokémon: EN every time a screen opens, not remembered
@@ -267,6 +270,7 @@ export default function PricingScreen({
   const unitPrice = manual ?? ladder[condition]?.price ?? null;
   let addBlocked = null;
   if (locked) addBlocked = locked;
+  else if (addLocked && !editing) addBlocked = addLocked;
   else if (!selected) {
     // Several suggestions and none picked yet: ↓ picks the first.
     addBlocked = search.candidates.length ? 'Select a card first: ↓ picks the first suggestion' : 'Select a card first';
@@ -741,6 +745,7 @@ export default function PricingScreen({
           details={renderListDetails?.(api)}
           footer={renderListFooter?.(api)}
           badge={listBadge}
+          ratesLocked={ratesLocked}
         />
 
         {showAll && (

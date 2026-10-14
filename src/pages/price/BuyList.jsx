@@ -144,9 +144,10 @@ function RatesPanel({ title, rates, master, onSave, onClose }) {
  * open the custom-rate subpanel (8.9.1) above them.
  */
 function Totals({
-  market, rates, master, ratesTitle, canEdit, editBlocked, onSaveRates, onDone,
+  market, rates, master, ratesTitle, canEdit, editBlocked, ratesLocked, onSaveRates, onDone,
 }) {
   const [ratesOpen, setRatesOpen] = useState(false);
+  const toast = useToast();
   const pct = (which, label) => {
     const custom = which === 'cash' ? rates.customCash : rates.customCredit;
     const value = rates[which];
@@ -157,7 +158,11 @@ function Totals({
         title={custom != null
           ? `Custom rate here. Master rate: ${Number(master[which])}%`
           : `Set a custom ${label} rate here`}
-        onClick={() => (canEdit ? setRatesOpen((o) => !o) : editBlocked())}
+        onClick={() => {
+          if (ratesLocked) toast(`${ratesLocked}.`, 'err');
+          else if (canEdit) setRatesOpen((o) => !o);
+          else editBlocked();
+        }}
       >
         {label} ({Number(value)}%{custom != null && ' ✎'})
       </button>
@@ -196,7 +201,7 @@ function Totals({
 export default function BuyList({
   title = 'Buy list', lines, loaded, rates, master, ratesTitle, flashId, hits = null, editingId,
   canEdit, locked = null, editBlocked, canRemove = canEdit, removeLocked = locked, removeBlocked = editBlocked,
-  onEdit, onRemove, onSaveRates, onDone, details, footer, badge = null,
+  onEdit, onRemove, onSaveRates, onDone, details, footer, badge = null, ratesLocked = null,
 }) {
   const [removing, setRemoving] = useState(null);
   const [preview, setPreview] = useState(null);   // { src, top, left } while a line is hovered
@@ -304,6 +309,7 @@ export default function BuyList({
           ratesTitle={ratesTitle}
           canEdit={canEdit}
           editBlocked={editBlocked}
+          ratesLocked={ratesLocked}
           onSaveRates={onSaveRates}
           onDone={onDone}
         />

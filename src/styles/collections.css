@@ -416,3 +416,18 @@
 }
 .reprice-btn:hover { border-color: var(--accent); }
 .reprice-btn.is-disabled { opacity: .45; cursor: default; }
+
+/* ---- Edit in project view (owner, 2026-10-13): a confirmed buy's cards on
+   the pricing screen, highlighted in its day page's game colour, as the day
+   page is (calendar.css .day-page): Magic blue, Pokémon amber. SAVE BUY is
+   filled with it. ---- */
+.price-screen.buy-edit-screen.game-mtg { --accent: #8f90ee; --accent-2: var(--pal-indigo); }
+.price-screen.buy-edit-screen.game-pokemon { --accent: #f2b53a; --accent-2: #a86f12; }
+.buy-edit-screen .save-buy-btn,
+.buy-edit-screen .save-buy-btn:hover { border-color: var(--accent-2); background: var(--accent-2); color: #fff; }
+.buy-edit-details .cd-head { padding: 7px 10px; }
+.buy-edit-details .be-title { flex: 1; font-size: 14px; }
+.buy-edit-details .be-game { color: var(--accent); font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.buy-edit-details .be-line { margin: 8px 0 4px; color: var(--muted); }
+.buy-edit-details .be-changes { margin: 4px 0 0; color: var(--muted); }
+.buy-edit-details .be-changes.on { color: var(--accent); font-weight: 700; }

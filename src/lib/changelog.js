@@ -19,8 +19,9 @@ export const CATEGORIES = [
     label: 'Buys',
     // A buy confirmed (cards in); cards removed, or the buy deleted (cards out);
     // a buy converted to a project, its cards added there (owner, 2026-10-02);
-    // a project converted to a buy (owner, 2026-10-10).
-    actions: ['buy_confirmed', 'buy_cards_removed', 'buy_deleted', 'buy_converted', 'project_converted'],
+    // a project converted to a buy (owner, 2026-10-10); a buy's cards edited
+    // in project view and saved (owner, 2026-10-13).
+    actions: ['buy_confirmed', 'buy_cards_removed', 'buy_deleted', 'buy_converted', 'project_converted', 'buy_edited'],
   },
   {
     key: 'collections',
@@ -62,6 +63,7 @@ export function actionsFor(categories) {
 export const HEADLINES = {
   buy_confirmed: 'Buy confirmed',
   buy_cards_removed: 'Cards removed from buy',
+  buy_edited: 'Buy edited',
   buy_deleted: 'Buy deleted',
   buy_completed: 'Buy marked Completed',
   buy_uncompleted: 'Buy marked Paid/Ours again',
