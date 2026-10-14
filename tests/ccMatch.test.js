@@ -114,6 +114,9 @@ test('The List and Mystery Booster are one shelf: either searches both, its own 
   assert.deepEqual(searchCategories('Zendikar', shelf), ['Zendikar']);
   assert.deepEqual(searchCategories('The List', cats('The List')), ['The List']);   // no Mystery Booster in the inventory
   assert.deepEqual(searchCategories(null, shelf), [null]);
+  // Mystery Booster's retail foils are Mystery Booster's.
+  const foils = { code: 'fmb1', name: 'Mystery Booster Retail Edition Foils', set_type: 'masters' };
+  assert.deepEqual(categoryFor({ set: foils, categories: shelf, setMap: new Map() }), { category: 'Mystery Booster', how: 'rule' });
 });
 
 test("a List card filed under Mystery Booster matches it; one in both stays in its own category", () => {

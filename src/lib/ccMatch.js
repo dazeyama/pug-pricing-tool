@@ -20,6 +20,8 @@ export const fold = (s) => String(s ?? '').toLowerCase().normalize('NFKD').repla
 const RENAMES = {
   sld: 'Secret Lair Drop Series',
   plst: 'The List',
+  // Mystery Booster's retail foils (owner, 2026-10-14): filed with Mystery Booster's other cards.
+  fmb1: 'Mystery Booster',
   lea: 'Alpha',
   leb: 'Beta',
   '2ed': 'Unlimited',

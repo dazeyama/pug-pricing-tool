@@ -413,7 +413,7 @@ Worked out per line from its set (`source_set_id`, the set's Scryfall name and t
 
 A set's answer is worked out once per export, not per line.
 
-**One shelf, two categories** (owner, 2026-10-14): the store keeps **The List** and **Mystery Booster** as one, so a card whose category is either is looked for in **both** (`searchCategories` in `ccMatch.js`; one `cc_candidates` want per category, under the line's key). The other category's products score 2 less (7.4), so a card in both still matches in its own category, as before; a card in only the other one ("Eldrazi Monument (PLST) CMA-216", filed under Mystery Booster) now matches it. Can't upload then says "in The List or Mystery Booster". Mystery Booster 2 and the playtest cards' category stay apart.
+**One shelf, two categories** (owner, 2026-10-14): the store keeps **The List** and **Mystery Booster** as one, so a card whose category is either is looked for in **both** (`searchCategories` in `ccMatch.js`; one `cc_candidates` want per category, under the line's key). The other category's products score 2 less (7.4), so a card in both still matches in its own category, as before; a card in only the other one ("Eldrazi Monument (PLST) CMA-216", filed under Mystery Booster) now matches it. Can't upload then says "in The List or Mystery Booster". Mystery Booster 2 and the playtest cards' category stay apart. Mystery Booster's retail foils (`fmb1`) are `Mystery Booster` (Appendix B), so they're searched in both too.
 
 ### 7.4 The product within the category
 
@@ -824,6 +824,7 @@ Tried in order after staff's choices and promo kinds (Section 7.3). Each rule's 
 | `<set> Eternal` | `<set>: Eternal-Legal`, else `<set> Eternal-Legal` | `Avatar: The Last Airbender Eternal` → `Avatar: The Last Airbender: Eternal-Legal`; `Teenage Mutant Ninja Turtles Eternal` → `Teenage Mutant Ninja Turtles Eternal-Legal` |
 | `Secret Lair Drop` (`sld`) | `Secret Lair Drop Series` | |
 | `The List` (`plst`) | `The List` | |
+| `Mystery Booster Retail Edition Foils` (`fmb1`) | `Mystery Booster` | (owner, 2026-10-14) |
 | `Limited Edition Alpha` / `Beta`, `Unlimited Edition` | `Alpha`, `Beta`, `Unlimited` | |
 | `Classic Sixth Edition` | `Sixth Edition` | |
 | `Ravnica: City of Guilds` | `Ravnica` | |
