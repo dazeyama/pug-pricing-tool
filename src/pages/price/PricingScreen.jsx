@@ -729,7 +729,6 @@ export default function PricingScreen({
                 market={market}
                 fallback={fallback}
                 warnings={warnings}
-                trends={trends}
                 cardmarket={{ eur: cardmarketEur, usd: cardmarketUsd, rate: eurUsd }}
                 override={activeOverride}
                 autoCardmarket={autoCardmarket}

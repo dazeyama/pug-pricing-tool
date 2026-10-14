@@ -72,17 +72,19 @@ export default function QuotePanel({
           <span className={`quote-cond cond-${condition.toLowerCase()}`}>{condition}</span>
           price
           {tag && !loading && <span className={`quote-tag ${source}`}>{tag}</span>}
-          {/* 📈 / 📉: the price rose or fell sharply lately (owner, 2026-10-14). */}
-          {trend && !loading && (
-            <span className={`quote-trend ${trend.dir}`} title={trendText(trend)} aria-label={trendText(trend)}>
-              {trendIcon(trend)}
-            </span>
-          )}
         </div>
         {loading ? (
           <div className="quote-price shimmer" aria-label="Loading price" />
         ) : (
-          <div className={`quote-price${price == null ? ' none' : ''}`}>{formatMoney(price)}</div>
+          <div className={`quote-price${price == null ? ' none' : ''}`}>
+            {formatMoney(price)}
+            {/* 📈 / 📉 beside the price: it rose or fell sharply lately (owner, 2026-10-14; only here). */}
+            {trend && (
+              <span className={`quote-trend ${trend.dir}`} title={trendText(trend)} aria-label={trendText(trend)}>
+                {trendIcon(trend)}
+              </span>
+            )}
+          </div>
         )}
         <div className="quote-chips">
           {chip('Credit', creditPct)}

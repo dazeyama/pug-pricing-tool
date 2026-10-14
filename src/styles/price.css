@@ -626,6 +626,18 @@
   white-space: nowrap;
 }
 .quote-price.none { color: var(--muted); }
+/* 📈 / 📉 just right of the price, out of its centring (owner, 2026-10-14). */
+.quote-price { position: relative; }
+.quote-trend {
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  margin-left: 8px;
+  transform: translateY(-50%);
+  font-size: 28px;
+  line-height: 1;
+  cursor: help;
+}
 .quote-price.shimmer {
   width: 60%;
   height: 44px;
@@ -874,10 +886,6 @@
 }
 .price-btn:disabled { cursor: default; opacity: .7; }
 .pc-cond { font-size: 16px; font-weight: 800; letter-spacing: .06em; }
-/* 📈 / 📉 tucked in the button's top-right corner, quiet (owner, 2026-10-14). */
-.price-btn { position: relative; }
-.pc-trend { position: absolute; top: 3px; right: 4px; font-size: 11px; line-height: 1; pointer-events: none; }
-.quote-trend { font-size: 13px; line-height: 1; cursor: help; }
 .pc-warn { margin-right: 4px; font-size: 14px; letter-spacing: 0; }
 .pc-manual { margin-right: 4px; font-size: 15px; letter-spacing: 0; color: var(--warn); }
 .price-btn.on .pc-manual { color: #fff; }

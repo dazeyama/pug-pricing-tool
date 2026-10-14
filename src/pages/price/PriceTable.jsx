@@ -4,7 +4,6 @@ import { CONDITIONS } from '../../lib/prices.js';
 import { isTcgplayerBase, isTcgplayerPrice, showsTcgplayer } from '../../lib/ladder.js';
 import { formatEur, formatMoney, parseMoney, roundDownPrice, roundUpPrice } from '../../lib/money.js';
 import { timeAgo } from '../../lib/time.js';
-import { trendIcon, trendText } from '../../lib/priceTrend.js';
 
 /** Big prices, stepping down so "$1,234.56" still fits a button. */
 function priceStyle(text) {
@@ -23,8 +22,8 @@ function priceStyle(text) {
  * ✎ Manual price (overrides the purchase price), then the caption.
  */
 export default function PriceTable({
-  candidate, prices, ladder, pct, market, fallback, cardmarket, warnings, trends = {}, override, onOverride,
-  autoCardmarket, fetchedAt, condition, onCondition, manual, onManual, manualOpen, setManualOpen, onDone, roundUp = false,
+  candidate, prices, ladder, pct, market, fallback, cardmarket, warnings, override, onOverride, autoCardmarket,
+  fetchedAt, condition, onCondition, manual, onManual, manualOpen, setManualOpen, onDone, roundUp = false,
 }) {
   const round = roundUp ? roundUpPrice : roundDownPrice;
   const [text, setText] = useState('');
@@ -80,8 +79,7 @@ export default function PriceTable({
     }
     if (manual != null && code === condition) about = `manual ${formatMoney(manual)} (market: ${about})`;
     const warn = code === 'NM' && warnings.length ? ' · ⚠️ may be wrong: see the warning in the price panel' : '';
-    const trend = trends[code] ? ` · ${trendIcon(trends[code])} ${trendText(trends[code])}` : '';
-    return `${code} · ${about}${warn}${trend} · ${key}`;
+    return `${code} · ${about}${warn} · ${key}`;
   };
 
   // Use TCGplayer (was "Use Fallback", owner 2026-10-02): NM from TCGplayer's
@@ -195,8 +193,6 @@ export default function PriceTable({
               onDone();
             }}
           >
-            {/* 📈 / 📉 in the corner, quietly (owner, 2026-10-14); the tooltip says how much. */}
-            {!loading && trends[code] && <span className={`pc-trend ${trends[code].dir}`} aria-hidden="true">{trendIcon(trends[code])}</span>}
             <span className="pc-cond">
               {code === 'NM' && warnings.length > 0 && <span className="pc-warn" aria-label="Price warning">⚠️</span>}
               {/* ✎ beside the label, not the price, so long manual prices fit (owner, 2026-09-29). */}
