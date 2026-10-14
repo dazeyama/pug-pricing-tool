@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { formatMoney, payout } from '../../lib/money.js';
 import PriceWarnings from './PriceWarnings.jsx';
+import { trendIcon, trendText } from '../../lib/priceTrend.js';
 
 /**
  * The price panel beside the card info (owner, 2026-09-29): the selected
@@ -15,7 +16,7 @@ import PriceWarnings from './PriceWarnings.jsx';
  * @param {{ source: 'justtcg'|'fallback'|'tcgplayer'|'cardmarket'|'manual'|null, warnings: string[] }} props
  */
 export default function QuotePanel({
-  candidate, loading, condition, price, source, cashPct, creditPct, warnings, onDone,
+  candidate, loading, condition, price, source, cashPct, creditPct, warnings, trend = null, onDone,
 }) {
   const [hover, setHover] = useState(false);
   const [pinned, setPinned] = useState(false);
@@ -71,6 +72,12 @@ export default function QuotePanel({
           <span className={`quote-cond cond-${condition.toLowerCase()}`}>{condition}</span>
           price
           {tag && !loading && <span className={`quote-tag ${source}`}>{tag}</span>}
+          {/* 📈 / 📉: the price rose or fell sharply lately (owner, 2026-10-14). */}
+          {trend && !loading && (
+            <span className={`quote-trend ${trend.dir}`} title={trendText(trend)} aria-label={trendText(trend)}>
+              {trendIcon(trend)}
+            </span>
+          )}
         </div>
         {loading ? (
           <div className="quote-price shimmer" aria-label="Loading price" />

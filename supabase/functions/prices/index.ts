@@ -124,7 +124,11 @@ const plainName = (n: unknown) => baseName(n).replace(/\s*\([^()]*\)\s*$/, '');
 const SEARCH_MISS_MS = 86400_000;   // a search that found nothing is asked again after a day
 const SEARCHES_MAX = 3;
 
-/** Only what the app reads; price history and statistics are dropped. */
+/**
+ * Only what the app reads: price history and most statistics are dropped,
+ * all but each price's movement over 7 and 30 days, for the 📈 / 📉 beside
+ * a price that rose or fell sharply (owner, 2026-10-14).
+ */
 function slim(card: any) {
   return {
     uuid: card.uuid ?? null,
@@ -144,6 +148,9 @@ function slim(card: any) {
       language: v.language ?? null,
       price: v.price ?? null,
       lastUpdated: v.lastUpdated ?? null,
+      priceChange7d: v.priceChange7d ?? null,
+      priceChange30d: v.priceChange30d ?? null,
+      avgPrice30d: v.avgPrice30d ?? null,
       tcgplayerSkuId: v.tcgplayerSkuId ?? null,
     })),
   };

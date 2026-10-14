@@ -4,6 +4,7 @@ import SelectedCard from './SelectedCard.jsx';
 import Suggestions, { useSuggestionCount } from './Suggestions.jsx';
 import { suggestionRoom } from '../../lib/thumbGrid.js';
 import { cardRoom } from '../../lib/cardRoom.js';
+import { priceTrend } from '../../lib/priceTrend.js';
 import ShowAllModal from './ShowAllModal.jsx';
 import FinishPanel from './FinishPanel.jsx';
 import PriceTable from './PriceTable.jsx';
@@ -229,12 +230,13 @@ export default function PricingScreen({
     pokemon, versions, jaName: englishName || search.parsed?.name, waitName: englishName === undefined,
   });
   const result = resultFor(selected, prices.results, { finish, version, versions });
-  const market = conditionPrices(result?.card, {
+  const variantOpts = {
     game: selected?.game,
     lang: selected?.lang,
     finish: magic ? finish : version?.finish,
     firstEdition: version?.firstEdition,
-  });
+  };
+  const market = conditionPrices(result?.card, variantOpts);
   const fallback = fallbackPrice(selected, { finish, version });
   const { values: settingValues } = useSettings();
   const fallbackPct = settingValues[selected?.game === 'pokemon' ? 'fallback_pct_pokemon' : 'fallback_pct_mtg'];
@@ -273,6 +275,11 @@ export default function PricingScreen({
   const warnings = priceWarnings({
     market, fallback, pct: fallbackPct, unlimitedNM, cardmarket: cardmarketEur, eurUsd,
   });
+  // 📈 / 📉 (owner, 2026-10-14): a JustTCG price shown that rose or fell
+  // sharply lately, by JustTCG's own figures for it (lib/priceTrend.js).
+  const marketVariants = conditionVariants(result?.card, variantOpts);
+  const trends = Object.fromEntries(CONDITIONS.map((c) => [c,
+    ladder[c]?.source === 'justtcg' ? priceTrend(marketVariants[c]) : null]));
 
   // ---- The list (spec 8.8–8.9): the walk-in draft or a collection ----
   const { current: user, pulse } = useStaff();
@@ -507,6 +514,9 @@ export default function PricingScreen({
         manual: manual ?? null,
         version: version?.id ?? null,
         warnings,
+        trend: manual == null && trends[condition]
+          ? { dir: trends[condition].dir, pct: trends[condition].pct, days: trends[condition].days }
+          : null,
       },
     });
     const id = editing
@@ -687,6 +697,7 @@ export default function PricingScreen({
               cashPct={rates.cash}
               creditPct={rates.credit}
               warnings={warnings}
+              trend={manual == null ? trends[condition] : null}
               onDone={focusSearch}
             />
             <div className="area-side">
@@ -718,6 +729,7 @@ export default function PricingScreen({
                 market={market}
                 fallback={fallback}
                 warnings={warnings}
+                trends={trends}
                 cardmarket={{ eur: cardmarketEur, usd: cardmarketUsd, rate: eurUsd }}
                 override={activeOverride}
                 autoCardmarket={autoCardmarket}
