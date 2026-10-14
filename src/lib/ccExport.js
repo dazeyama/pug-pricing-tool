@@ -5,7 +5,7 @@
 import { supabase } from './supabase.js';
 import { loadSets } from './scryfall.js';
 import { nameKey } from './normalize.js';
-import { categoryFor, chooseProduct, fold, frontFace, promoKind } from './ccMatch.js';
+import { categoryFor, chooseProduct, fold, frontFace, promoKind, searchCategories } from './ccMatch.js';
 import { scryfallCards, todaysPrices } from './todaysPrices.js';
 import { sellPriceFor } from './sellPrice.js';
 import { massCreateCsv, massCreateRows } from './massCreate.js';
@@ -72,11 +72,15 @@ export async function matchLines(lines, onStep) {
     const flavor = card?.flavor_name ?? null;
     const promo = promoKind(line.treatments);
     const where = categoryFor({ set, parent, promo, categories, setMap });
+    // The List and Mystery Booster are one at the store: both are searched (ccMatch.js).
+    const also = searchCategories(where?.category ?? null, categories).slice(1);
     const baseKeys = [nameKey(line.name), ...(flavor ? [nameKey(flavor)] : []),
       ...(line.name.includes(' // ') ? [nameKey(frontFace(line.name))] : [])];
-    return { line, set, promo, card, flavor, where, baseKeys };
+    return { line, set, promo, card, flavor, where, also, baseKeys };
   });
-  const wants = prepared.map((p) => ({ key: p.line.id, category: p.where?.category ?? null, base_keys: p.baseKeys }));
+  // One want per category searched; their rows come back under the line's key together.
+  const wants = prepared.flatMap((p) => [p.where?.category ?? null, ...p.also]
+    .map((category) => ({ key: p.line.id, category, base_keys: p.baseKeys })));
   onStep?.('Finding their Crystal Commerce products…');
   const { data: candRows, error: candError } = await supabase.rpc('cc_candidates', { p_wants: wants });
   fail(candError, "Couldn't read the inventory's products");
@@ -86,12 +90,14 @@ export async function matchLines(lines, onStep) {
     byKey.get(row.key).push(row);
   }
 
-  const results = prepared.map(({ line, set, promo, card, flavor, where }) => {
+  const results = prepared.map(({ line, set, promo, card, flavor, where, also }) => {
     const link = links.get(linkKey(line)) ?? null;
     const linkedProduct = link ? productById.get(link.product_id) ?? null : null;
     const candidates = byKey.get(line.id) ?? [];
-    const base = { line, set, promo, card, flavor, category: where?.category ?? null, how: where?.how ?? null, candidates };
-    const pick = chooseProduct(line, candidates, { flavor });
+    const base = {
+      line, set, promo, card, flavor, category: where?.category ?? null, also, how: where?.how ?? null, candidates,
+    };
+    const pick = chooseProduct(line, candidates, { flavor, home: also.length ? where.category : null });
     if (linkedProduct) {
       // Its candidates still ranked, so Change can offer them.
       return { ...base, status: 'auto', product: linkedProduct, ranked: pick.ranked, expected: pick.expected, via: 'link', link };

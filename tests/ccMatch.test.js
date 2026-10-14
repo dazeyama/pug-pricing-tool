@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { categoryFor, chooseProduct, expectedFoilKind, expectedName, fold, promoKind, ruleGuesses } from '../src/lib/ccMatch.js';
+import {
+  categoryFor, chooseProduct, expectedFoilKind, expectedName, fold, promoKind, ruleGuesses, searchCategories,
+} from '../src/lib/ccMatch.js';
 import { parseProductName } from '../src/lib/ccNames.js';
 
 // Hand-made fixtures following the store's inventory patterns (export spec
@@ -102,4 +104,35 @@ test('promo packs, prereleases, and two identical products are a choice', () => 
   assert.equal(chooseProduct(line({ name: 'Lotus Bloom', finish: 'foil', treatments: ['prerelease'] }), pre).status, 'auto');
   const twins = [product('Goblin Token', 'Tenth Edition', 'a'), product('Goblin Token', 'Tenth Edition', 'b')];
   assert.equal(chooseProduct(line({ name: 'Goblin Token' }), twins).status, 'choose');
+});
+
+test('The List and Mystery Booster are one shelf: either searches both, its own first', () => {
+  const shelf = cats('The List', 'Mystery Booster', 'Mystery Booster 2', 'Zendikar');
+  assert.deepEqual(searchCategories('The List', shelf), ['The List', 'Mystery Booster']);
+  assert.deepEqual(searchCategories('Mystery Booster', shelf), ['Mystery Booster', 'The List']);
+  assert.deepEqual(searchCategories('Mystery Booster 2', shelf), ['Mystery Booster 2']);
+  assert.deepEqual(searchCategories('Zendikar', shelf), ['Zendikar']);
+  assert.deepEqual(searchCategories('The List', cats('The List')), ['The List']);   // no Mystery Booster in the inventory
+  assert.deepEqual(searchCategories(null, shelf), [null]);
+});
+
+test("a List card filed under Mystery Booster matches it; one in both stays in its own category", () => {
+  const monument = line({ name: 'Eldrazi Monument', set_code: 'PLST', collector_number: 'CMA-216' });
+  const mb = product('Eldrazi Monument', 'Mystery Booster');
+  const only = chooseProduct(monument, [mb], { home: 'The List' });
+  assert.equal(only.status, 'auto');
+  assert.equal(only.product.category, 'Mystery Booster');
+  // In both: The List's own product wins, named as CC names it or plain.
+  for (const own of [product('Eldrazi Monument - The List', 'The List'), product('Eldrazi Monument', 'The List')]) {
+    const both = chooseProduct(monument, [mb, own], { home: 'The List' });
+    assert.equal(both.status, 'auto', own.product_name);
+    assert.equal(both.product.category, 'The List');
+  }
+  // A Mystery Booster card: its own product, over The List's.
+  const absorb = line({ name: 'Absorb Vis', set_code: 'MB1', collector_number: '126' });
+  const pick = chooseProduct(absorb, [product('Absorb Vis - The List', 'The List'), product('Absorb Vis', 'Mystery Booster')],
+    { home: 'Mystery Booster' });
+  assert.equal(pick.product.category, 'Mystery Booster');
+  // Foil still has to be foil.
+  assert.equal(chooseProduct({ ...monument, finish: 'foil' }, [mb], { home: 'The List' }).status, 'choose');
 });

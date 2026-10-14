@@ -98,6 +98,26 @@ export function categoryFor({ set, parent = null, promo = '', categories, setMap
   return null;
 }
 
+// Categories the store keeps as one (owner, 2026-10-14): The List's cards
+// and Mystery Booster's are shelved together, so a card in either is filed
+// under either ("Eldrazi Monument (PLST) CMA-216" is in Mystery Booster).
+const SAME_SHELF = [['The List', 'Mystery Booster']];
+
+/**
+ * Where a line's products are looked for: its own category first, then any
+ * the store keeps as the same one (The List ↔ Mystery Booster), where the
+ * inventory has them. No category: [null], every category.
+ * @param {string|null} category  categoryFor's answer
+ * @param {Map<string, string>} categories  folded category → the category exactly
+ * @returns {(string|null)[]}
+ */
+export function searchCategories(category, categories) {
+  if (!category) return [null];
+  const shelf = SAME_SHELF.find((g) => g.some((c) => fold(c) === fold(category))) ?? [];
+  const others = shelf.filter((c) => fold(c) !== fold(category)).map((c) => categories.get(fold(c))).filter(Boolean);
+  return [category, ...others];
+}
+
 // ---------------------------------------------------------------- the product
 
 // Named special foils (Scryfall promo_types, as the app stores them in
@@ -227,13 +247,15 @@ export function scoreCandidate(line, cand, { expected, flavor }) {
  * Pick a line's product from its candidates (export spec 7.4, 7.1 rule 4):
  * 'auto' when one passes the checks or one leads clearly; 'choose' when
  * staff must pick (a tie, or candidates that fail the checks); 'none' when
- * there are no candidates at all.
+ * there are no candidates at all. `home` is the line's own category, when
+ * candidates also come from one kept as the same (searchCategories): theirs
+ * score 2 less, so a card in both is matched in its own, as before.
  * @param {object} line
  * @param {object[]} candidates  cc_products rows for the line's name
- * @param {{ flavor?: string|null }} [opts]
+ * @param {{ flavor?: string|null, home?: string|null }} [opts]
  * @returns {{ status: 'auto'|'choose'|'none', product: object|null, ranked: object[], expected: string }}
  */
-export function chooseProduct(line, candidates, { flavor = null } = {}) {
+export function chooseProduct(line, candidates, { flavor = null, home = null } = {}) {
   const lineKey = nameKey(line.name);
   // Flavor-named products ("Aggro Amalgam - Voracious Hydra") count when the first suffix is our name.
   let own = (candidates ?? []).filter((c) => c.base_key === lineKey
@@ -249,7 +271,14 @@ export function chooseProduct(line, candidates, { flavor = null } = {}) {
   const expected = expectedName(line, { number: numbered, flavor: useFlavor ? flavor : null });
   if (!own.length) return { status: 'none', product: null, ranked: [], expected };
   const ranked = own
-    .map((product) => ({ product, ...(scoreCandidate(line, product, { expected, flavor: useFlavor ? flavor : null }) ?? { score: null, reasons: [] }) }))
+    .map((product) => {
+      const s = scoreCandidate(line, product, { expected, flavor: useFlavor ? flavor : null });
+      if (s && home && product.category !== home) {
+        s.score -= 2;
+        s.reasons.push('other category');
+      }
+      return { product, ...(s ?? { score: null, reasons: [] }) };
+    })
     .sort((a, b) => (b.score ?? -Infinity) - (a.score ?? -Infinity) || a.product.product_name.localeCompare(b.product.product_name));
   // When CC lists one with our collector number in brackets, the ones with no
   // number are other printings (an older Secret Lair drop of the same card).

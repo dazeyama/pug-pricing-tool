@@ -444,7 +444,7 @@ export default function ExportDialog({
                     {lineLabel(r)}
                     <span className="xd-reason">
                       {stateOf(r).reason === 'none' ? 'set to “None of these”' : 'no Crystal Commerce product with this name'}
-                      {r.category ? ` in ${r.category}` : ''}
+                      {r.category ? ` in ${[r.category, ...(r.also ?? [])].join(' or ')}` : ''}
                     </span>
                     <button type="button" className="btn small ghost xd-change" onClick={() => reopen(r)}>Find a product…</button>
                   </div>
