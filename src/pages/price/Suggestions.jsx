@@ -7,8 +7,12 @@ import { POKEMON_CARD_BACK } from '../../lib/pokemonImages.js';
 /** Suggestions shown at once: 2 rows of 5 (owner's layout, 2026-09-29). */
 export const ROW = 10;
 // Shorter windows show one row of 5, bigger (owner, 2026-10-01: room for
-// Finish and Details). The same height as the stage's compact layout.
-const SHORT = '(max-height: 820px)';
+// Finish and Details). Since the laptop pass (owner, 2026-10-14) a small
+// window is drawn down to 80% (lib/uiScale.js), which lays a 1200 × 650
+// window out like an 812px-tall one: room for both rows at the size one row
+// had (the column's width, not its height, sets it). So one row only on a
+// window shorter than that, where even 80% leaves less than 812px.
+const SHORT = '(max-height: 649px)';
 
 /** How many suggestions show: ROW, or 5 on a shorter window; follows resizing. */
 export function useSuggestionCount() {
