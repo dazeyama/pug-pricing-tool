@@ -19,3 +19,22 @@ export function thumbWidth(width, height, cols) {
 export function suggestionColumns(width, height) {
   return thumbWidth(width, height, 4) >= 1.15 * thumbWidth(width, height, 5) ? 4 : 5;
 }
+
+/**
+ * The suggestions' columns, and the width the Buy list takes from them
+ * (PricingScreen's useListRoom: the list gets what the thumbnails don't use,
+ * up to `max`), from their area as it is now, `width` × `height` px, with
+ * `extra` already given to the list. The columns are chosen from the area's
+ * width with nothing given away (`width + extra`): chosen from what's left,
+ * 4 across let the list take the room 5 needed, and then 4 looked best
+ * again (owner's bug, 2026-10-14: a 1080p screen showed 2 rows of 4).
+ * @returns {{ cols: number, extra: number }}
+ */
+export function suggestionRoom(width, height, extra, max) {
+  const cols = suggestionColumns(width + extra, height);
+  // As wide as the rows' height allows: what's past that goes to the list.
+  const tall = Math.min(THUMB.max, ((height - THUMB.head - THUMB.gapY - 2 * THUMB.label) / 2) * THUMB.ratio);
+  const spare = width - (cols * tall + (cols - 1) * THUMB.gapX);
+  const next = Math.round(Math.min(max, Math.max(0, extra + spare)));
+  return { cols, extra: Math.abs(next - extra) >= 2 ? next : extra };
+}

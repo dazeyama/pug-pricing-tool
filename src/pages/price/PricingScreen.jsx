@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import SearchBar from './SearchBar.jsx';
 import SelectedCard from './SelectedCard.jsx';
 import Suggestions, { useSuggestionCount } from './Suggestions.jsx';
-import { THUMB, suggestionColumns } from '../../lib/thumbGrid.js';
+import { suggestionRoom } from '../../lib/thumbGrid.js';
 import ShowAllModal from './ShowAllModal.jsx';
 import FinishPanel from './FinishPanel.jsx';
 import PriceTable from './PriceTable.jsx';
@@ -51,13 +51,8 @@ function useListRoom(screen) {
     const area = screen.current?.querySelector('.area-thumbs');
     if (!area) return undefined;
     const measure = () => {
-      const cols = suggestionColumns(area.clientWidth, area.clientHeight);
-      // The same sums as .thumbs' --thumb-w (thumbGrid.js), as tall as the rows allow.
-      const thumb = Math.min(THUMB.max,
-        ((area.clientHeight - THUMB.head - THUMB.gapY - 2 * THUMB.label) / 2) * THUMB.ratio);
-      const spare = area.clientWidth - (cols * thumb + (cols - 1) * THUMB.gapX);
-      const next = Math.round(Math.min(LIST_EXTRA_MAX, Math.max(0, current.current + spare)));
-      const extra = Math.abs(next - current.current) >= 2 ? next : current.current;
+      // The same sums as .thumbs' --thumb-w (thumbGrid.js).
+      const { cols, extra } = suggestionRoom(area.clientWidth, area.clientHeight, current.current, LIST_EXTRA_MAX);
       current.current = extra;
       setRoom((r) => (r.extra === extra && r.cols === cols ? r : { extra, cols }));
     };
