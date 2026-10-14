@@ -163,6 +163,28 @@
 .price-warnings ul { margin: 0; padding-left: 18px; }
 .price-warnings li { font-size: 13px; line-height: 1.35; font-variant-numeric: tabular-nums; }
 .price-warnings li + li { margin-top: 3px; }
+/* How the price moved lately (PriceTrendBox), in the same box: green for a
+   rise, red for a fall (owner, 2026-10-14). */
+.price-trend-box {
+  padding: 10px 14px 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--trend) 55%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--trend) 14%, rgb(14, 17, 28));
+  box-shadow: 0 12px 28px rgba(0, 0, 0, .55);
+}
+.price-trend-box.up { --trend: var(--good); }
+.price-trend-box.down { --trend: var(--bad); }
+.price-trend-head {
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--trend);
+}
+.price-trend-box ul { margin: 0; padding-left: 18px; }
+.price-trend-box li { font-size: 13px; line-height: 1.35; font-variant-numeric: tabular-nums; }
+.price-trend-box li + li { margin-top: 3px; }
 .area-prices { grid-area: prices; }
 .area-actions { grid-area: actions; }
 
@@ -632,12 +654,17 @@
   position: absolute;
   left: 100%;
   top: 50%;
-  margin-left: 8px;
+  margin-left: 6px;
   transform: translateY(-50%);
+  padding: 2px 3px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: none;
   font-size: 28px;
   line-height: 1;
-  cursor: help;
+  cursor: pointer;
 }
+.quote-trend:hover, .quote-trend.on { border-color: var(--border); background: rgba(255, 255, 255, .06); }
 .quote-price.shimmer {
   width: 60%;
   height: 44px;

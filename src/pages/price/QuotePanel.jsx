@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { formatMoney, payout } from '../../lib/money.js';
 import PriceWarnings from './PriceWarnings.jsx';
+import PriceTrendBox from './PriceTrendBox.jsx';
 import { trendIcon, trendText } from '../../lib/priceTrend.js';
 
 /**
@@ -12,27 +13,30 @@ import { trendIcon, trendText } from '../../lib/priceTrend.js';
  * When JustTCG's price looks wrong, one amber line under the chips says so;
  * hovering it shows the reasons in a box floating over Finish & Details, and
  * clicking keeps the box open until the next click anywhere (owner: nothing
- * else may lose room to it).
+ * else may lose room to it). The 📈 / 📉 beside the price opens its own box
+ * the same way (owner, 2026-10-14).
  * @param {{ source: 'justtcg'|'fallback'|'tcgplayer'|'cardmarket'|'manual'|null, warnings: string[] }} props
  */
 export default function QuotePanel({
   candidate, loading, condition, price, source, cashPct, creditPct, warnings, trend = null, onDone,
 }) {
-  const [hover, setHover] = useState(false);
-  const [pinned, setPinned] = useState(false);
+  // Which box floats over Finish & Details: 'warn' (the warnings) or 'trend'
+  // (the 📈 / 📉), while hovered, or clicked to keep it open.
+  const [hover, setHover] = useState(null);
+  const [pinned, setPinned] = useState(null);
   const box = useRef(null);
 
   // A new card starts closed.
   useEffect(() => {
-    setHover(false);
-    setPinned(false);
+    setHover(null);
+    setPinned(null);
   }, [candidate?.key]);
 
   // Pinned open: any click outside the panel closes it.
   useEffect(() => {
     if (!pinned) return undefined;
     const close = (e) => {
-      if (!box.current?.contains(e.target)) setPinned(false);
+      if (!box.current?.contains(e.target)) setPinned(null);
     };
     document.addEventListener('mousedown', close);
     return () => document.removeEventListener('mousedown', close);
@@ -64,9 +68,15 @@ export default function QuotePanel({
     );
   };
   const warned = !loading && warnings.length > 0;
+  const trended = !loading && trend != null;
+  const pin = (kind) => {
+    setPinned((p) => (p === kind ? null : kind));
+    onDone();
+  };
+  const open = hover ?? pinned;
 
   return (
-    <aside className="area-quote" ref={box} onMouseLeave={() => setHover(false)}>
+    <aside className="area-quote" ref={box} onMouseLeave={() => setHover(null)}>
       <div className="quote">
         <div className="quote-label">
           <span className={`quote-cond cond-${condition.toLowerCase()}`}>{condition}</span>
@@ -79,10 +89,17 @@ export default function QuotePanel({
           <div className={`quote-price${price == null ? ' none' : ''}`}>
             {formatMoney(price)}
             {/* 📈 / 📉 beside the price: it rose or fell sharply lately (owner, 2026-10-14; only here). */}
-            {trend && (
-              <span className={`quote-trend ${trend.dir}`} title={trendText(trend)} aria-label={trendText(trend)}>
+            {trended && (
+              <button
+                type="button"
+                className={`quote-trend ${trend.dir}${pinned === 'trend' ? ' on' : ''}`}
+                aria-label={trendText(trend)}
+                aria-expanded={open === 'trend'}
+                onMouseEnter={() => setHover('trend')}
+                onClick={() => pin('trend')}
+              >
                 {trendIcon(trend)}
-              </span>
+              </button>
             )}
           </div>
         )}
@@ -93,21 +110,23 @@ export default function QuotePanel({
         {warned && (
           <button
             type="button"
-            className={`quote-warn${pinned ? ' on' : ''}`}
-            aria-expanded={hover || pinned}
-            onMouseEnter={() => setHover(true)}
-            onClick={() => {
-              setPinned(!pinned);
-              onDone();
-            }}
+            className={`quote-warn${pinned === 'warn' ? ' on' : ''}`}
+            aria-expanded={open === 'warn'}
+            onMouseEnter={() => setHover('warn')}
+            onClick={() => pin('warn')}
           >
             ⚠️ Price may be wrong ({warnings.length})
           </button>
         )}
       </div>
-      {warned && (hover || pinned) && (
+      {warned && open === 'warn' && (
         <div className="quote-pop">
           <PriceWarnings warnings={warnings} />
+        </div>
+      )}
+      {trended && open === 'trend' && (
+        <div className="quote-pop">
+          <PriceTrendBox trend={trend} />
         </div>
       )}
     </aside>
