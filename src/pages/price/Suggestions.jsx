@@ -14,8 +14,12 @@ export const ROW = 10;
 // window shorter than that, where even 80% leaves less than 812px.
 const SHORT = '(max-height: 649px)';
 
-/** How many suggestions show: ROW, or 5 on a shorter window; follows resizing. */
-export function useSuggestionCount() {
+/**
+ * How many suggestions show: two rows of `cols` (5, or 4 on a laptop's
+ * window: lib/thumbGrid.js), or one row of 5 on a shorter window; follows
+ * resizing.
+ */
+export function useSuggestionCount(cols = 5) {
   const query = typeof window !== 'undefined' && window.matchMedia ? window.matchMedia(SHORT) : null;
   const [short, setShort] = useState(() => Boolean(query?.matches));
   useEffect(() => {
@@ -25,7 +29,7 @@ export function useSuggestionCount() {
     setShort(query.matches);
     return () => query.removeEventListener('change', onChange);
   }, []);
-  return short ? 5 : ROW;
+  return short ? 5 : 2 * cols;
 }
 
 const RARITIES = new Set(['common', 'uncommon', 'rare', 'mythic', 'special', 'bonus']);
@@ -163,12 +167,13 @@ function Status({ search, lang }) {
 }
 
 /**
- * The suggestions (spec 8.3): up to 10 thumbnails in 2 rows of 5. On the line
- * above: the sort toggle (newest / oldest first) on the left, "… show all (N)"
- * on the right when there are more.
+ * The suggestions (spec 8.3): up to 10 thumbnails in 2 rows of 5 (`cols`: 4
+ * on a laptop's window, 8 in all). On the line above: the sort toggle
+ * (newest / oldest first) on the left, "… show all (N)" on the right when
+ * there are more.
  */
 export default function Suggestions({
-  search, lang, highlight, selectedKey, onPick, onSearchName, onShowAll, oldest, onOldest, count: shown = ROW,
+  search, lang, highlight, selectedKey, onPick, onSearchName, onShowAll, oldest, onOldest, count: shown = ROW, cols = 5,
 }) {
   const visible = search.candidates.slice(0, shown);
   const more = search.candidates.length > shown;
@@ -199,7 +204,7 @@ export default function Suggestions({
           </button>
         )}
       </div>
-      <div className={`thumbs${shown <= 5 ? ' one-row' : ''}`}>
+      <div className={`thumbs${shown <= 5 ? ' one-row' : ''}`} style={shown > 5 ? { '--thumb-cols': cols } : undefined}>
         {visible.map((c, i) => (
           <Thumb
             key={c.key}

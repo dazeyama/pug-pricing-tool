@@ -968,12 +968,15 @@
 .show-all.highlight { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
 
 /* A thumbnail is at most Scryfall's small image, 146 × 204, and shrinks to
-   fit 5 across and 2 rows down: 36px for the line above, 16px between the
-   rows, 22px per label; 0.7176 is a card's width/height (488/680). */
+   fit 5 across (--thumb-cols: 4 on a laptop's window, src/lib/thumbGrid.js)
+   and 2 rows down: 36px for the line above, 16px between the rows, 22px per
+   label; 0.7176 is a card's width/height (488/680). */
 .thumbs {
-  --thumb-w: min(146px, calc((100cqw - 4 * 14px) / 5), calc((100cqh - 36px - 16px - 2 * 22px) / 2 * 0.7176));
+  --thumb-cols: 5;
+  --thumb-w: min(146px, calc((100cqw - (var(--thumb-cols) - 1) * 14px) / var(--thumb-cols)),
+    calc((100cqh - 36px - 16px - 2 * 22px) / 2 * 0.7176));
   display: grid;
-  grid-template-columns: repeat(5, var(--thumb-w));
+  grid-template-columns: repeat(var(--thumb-cols), var(--thumb-w));
   gap: 16px 14px;
   align-content: start;
 }

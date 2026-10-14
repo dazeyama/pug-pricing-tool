@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import SearchBar from './SearchBar.jsx';
 import SelectedCard from './SelectedCard.jsx';
 import Suggestions, { useSuggestionCount } from './Suggestions.jsx';
+import { THUMB, suggestionColumns } from '../../lib/thumbGrid.js';
 import ShowAllModal from './ShowAllModal.jsx';
 import FinishPanel from './FinishPanel.jsx';
 import PriceTable from './PriceTable.jsx';
@@ -41,28 +42,30 @@ const BACKGROUND = { '--stage-bg': `url(${import.meta.env.BASE_URL}background.we
 // LIST_EXTRA_MAX. Measured, since the thumbnails' size depends on their column.
 const LIST_EXTRA_MAX = 220;
 
+// It also picks the suggestions' columns: 5, or 4 on a laptop's window,
+// where the column is narrow but tall (lib/thumbGrid.js; owner, 2026-10-14).
 function useListRoom(screen) {
-  const [extra, setExtra] = useState(0);
+  const [room, setRoom] = useState({ extra: 0, cols: 5 });
   const current = useRef(0);
   useEffect(() => {
     const area = screen.current?.querySelector('.area-thumbs');
     if (!area) return undefined;
     const measure = () => {
-      // The same sums as .thumbs' --thumb-w: 36px line above, 16px between
-      // the rows, 22px per label, 5 across with 14px gaps.
-      const thumb = Math.min(146, ((area.clientHeight - 36 - 16 - 2 * 22) / 2) * 0.7176);
-      const spare = area.clientWidth - (5 * thumb + 4 * 14);
+      const cols = suggestionColumns(area.clientWidth, area.clientHeight);
+      // The same sums as .thumbs' --thumb-w (thumbGrid.js), as tall as the rows allow.
+      const thumb = Math.min(THUMB.max,
+        ((area.clientHeight - THUMB.head - THUMB.gapY - 2 * THUMB.label) / 2) * THUMB.ratio);
+      const spare = area.clientWidth - (cols * thumb + (cols - 1) * THUMB.gapX);
       const next = Math.round(Math.min(LIST_EXTRA_MAX, Math.max(0, current.current + spare)));
-      if (Math.abs(next - current.current) >= 2) {
-        current.current = next;
-        setExtra(next);
-      }
+      const extra = Math.abs(next - current.current) >= 2 ? next : current.current;
+      current.current = extra;
+      setRoom((r) => (r.extra === extra && r.cols === cols ? r : { extra, cols }));
     };
     const observer = new ResizeObserver(measure);
     observer.observe(area);
     return () => observer.disconnect();
   }, [screen]);
-  return extra;
+  return room;
 }
 
 /** The search-bar key of a saved line's card (the candidate's key). */
@@ -141,8 +144,11 @@ export default function PricingScreen({
   const [oldest, setOldest] = useState(false);
   const searchGames = lang === 'ja' ? PKM_ONLY : games;
   const search = useCardSearch(text, lang, searchGames, oldest);
-  // 10 suggestions, or 5 on a shorter window (owner, 2026-10-01).
-  const shownCount = useSuggestionCount();
+  // The list's share of the width the suggestions don't use, and their columns.
+  const screen = useRef(null);
+  const listRoom = useListRoom(screen);
+  // 10 suggestions (8 on a laptop's window), or 5 on a shorter window (owner, 2026-10-01).
+  const shownCount = useSuggestionCount(listRoom.cols);
   const [selected, setSelected] = useState(null);
   const [highlight, setHighlight] = useState(-1);
   const [showAll, setShowAll] = useState(false);
@@ -261,8 +267,6 @@ export default function PricingScreen({
   // selected (found), then its saved choices put back (restored); SAVE EDIT
   // saves over it. { line, key, query, found, restored } or null.
   const [editing, setEditing] = useState(null);
-  const screen = useRef(null);
-  const listExtra = useListRoom(screen);
   const images = useCardImages(selected);   // a Pokémon thumbnail for the line (backups too)
 
   // ADD CARD's requirements (spec 8.8), besides a user (GuardButton).
@@ -595,7 +599,7 @@ export default function PricingScreen({
 
   return (
     <>
-      <div className={`price-screen ${className}`} ref={screen} style={{ ...BACKGROUND, '--list-extra': `${listExtra}px` }}>
+      <div className={`price-screen ${className}`} ref={screen} style={{ ...BACKGROUND, '--list-extra': `${listRoom.extra}px` }}>
         <div className="stage">
           <SearchBar
             inputRef={input}
@@ -641,6 +645,7 @@ export default function PricingScreen({
               onShowAll={() => setShowAll(true)}
               oldest={oldest}
               count={shownCount}
+              cols={listRoom.cols}
               onOldest={(o) => {
                 setOldest(o);
                 focusSearch();
