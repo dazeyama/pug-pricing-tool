@@ -6,6 +6,36 @@ import {
   UNMATCHED, auditSections, cardBucket, matchCategory, printLines, savedCategory,
 } from '../../lib/auditPrint.js';
 
+const escapeHtml = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+/**
+ * What the printout's tab shows while it's being built (owner, 2026-10-14):
+ * the app's dark look, big bold white words and a spinner, all inline (no
+ * file to fetch), so it's there the moment the tab opens.
+ */
+function loadingPage(title) {
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Building the printout…</title>
+<style>
+html, body { height: 100%; margin: 0; }
+body {
+  display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(ellipse at 50% 38%, #1b2036 0%, #0f1220 62%);
+  color: #fff; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+.box { display: flex; flex-direction: column; align-items: center; gap: 22px; padding: 40px 48px; text-align: center;
+  background: #181c2e; border: 1px solid #2c3350; border-radius: 16px; box-shadow: 0 24px 70px rgba(0, 0, 0, .5); }
+.spin { width: 58px; height: 58px; border-radius: 50%; border: 6px solid rgba(108, 140, 255, .22);
+  border-top-color: #6c8cff; animation: spin .8s linear infinite; }
+h1 { margin: 0; font-size: 34px; font-weight: 800; letter-spacing: .01em; }
+p { margin: 0; font-size: 17px; font-weight: 600; color: #9aa1bd; }
+.what { font-size: 19px; font-weight: 700; color: #e6e8f0; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation-duration: 2.4s; } }
+</style></head><body><div class="box"><div class="spin" aria-hidden="true"></div>
+<h1>Building the printout…</h1><p class="what">${escapeHtml(title)}</p>
+<p>Finding each card's Crystal Commerce category. It opens here when it's ready.</p></div></body></html>`;
+}
+
 /** Hand the PDF over: downloaded, and shown in `tab` (opened at the click), else a new one. */
 function deliver(doc, fileName, tab) {
   const url = URL.createObjectURL(doc.output('blob'));
@@ -131,8 +161,9 @@ export function useAuditPrint() {
     // matching would be blocked as a pop-up.
     const tab = window.open('', '_blank');
     if (tab) {
-      tab.document.title = 'Printout';
-      tab.document.body.innerHTML = '<p style="font:16px system-ui,sans-serif;padding:24px;color:#555">Building the printout…</p>';
+      tab.document.open();
+      tab.document.write(loadingPage(title));
+      tab.document.close();
     }
     setPrinting(true);
     try {

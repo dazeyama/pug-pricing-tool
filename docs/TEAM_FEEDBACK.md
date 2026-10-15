@@ -137,7 +137,7 @@ Based on pull-pdf (`C:\ClaudeProjects\pull-pdf`, read-only: its `render.py` and 
 
 The app runs in the browser, so the PDF is built there: **a new dependency, `jspdf`** (MIT, pinned to an exact version; owner to approve with this plan). pull-pdf itself (Python, run by Collection Manager) isn't called.
 
-Print shows a short "Matching…" / "Building the printout…" note, then **downloads the PDF and opens it in a new tab** (the browser's PDF viewer prints it). File names: `audit-magic-2026-10-14.pdf`, `audit-magic-2026-10-14-buy-3.pdf`, `audit-cu-intake.pdf`.
+Print opens the new tab at once with a **"Building the printout…"** page in the app's dark look (owner, 2026-10-14: big bold white words, the printout's name, a spinner; all inline, so it shows instantly), then **downloads the PDF and shows it in that tab** (the browser's PDF viewer prints it). File names: `audit-magic-2026-10-14.pdf`, `audit-magic-2026-10-14-buy-3.pdf`, `audit-cu-intake.pdf`.
 
 ### 3.8 Code
 
