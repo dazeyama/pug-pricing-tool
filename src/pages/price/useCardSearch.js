@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { rank, runSearch } from '../../lib/cardSearch.js';
 import { isAbort } from '../../lib/transport.js';
+import { bulkSearch, bulkValuesFrom } from '../../lib/bulk.js';
+import { useSettings } from '../../state/settings.jsx';
 
 // Live search as the user types (spec 8.2): 250ms debounce, at least 2
 // characters, both games unless MTG | PKM leaves one out, newest printings
@@ -8,11 +10,16 @@ import { isAbort } from '../../lib/transport.js';
 // first page is the oldest, not the newest 175 turned round). A newer query
 // aborts the older one, so its queued requests are dropped and its answers
 // ignored.
+//
+// Bulk (docs/TEAM_FEEDBACK.md 5.3): a search with the word "bulk" lists the
+// matching bulk items first, then the cards as usual; "BULK" in capitals
+// lists only the items, without searching for cards.
 
 const IDLE = { status: 'idle', list: [], total: 0, hasMore: false };
 const START = {
   query: '',
   parsed: null,
+  bulk: [],
   games: { mtg: IDLE, pokemon: IDLE },
   correction: null,
   tried: null,
@@ -31,6 +38,9 @@ export function useCardSearch(text, lang, games, oldest = false) {
   const gamesKey = `${games.mtg ? 'mtg' : ''}|${games.pokemon ? 'pokemon' : ''}`;
   const [state, setState] = useState(START);
   const runs = useRef(0);
+  const { values } = useSettings();
+  const bulkValues = bulkValuesFrom(values.bulk_values);
+  const bulkKey = JSON.stringify(bulkValues);
 
   useEffect(() => {
     const input = text.trim();
@@ -39,8 +49,14 @@ export function useCardSearch(text, lang, games, oldest = false) {
       return undefined;
     }
     const controller = new AbortController();
+    const bulk = bulkSearch(input, games, bulkValues);
     const timer = setTimeout(async () => {
       const runId = ++runs.current;
+      // "BULK": only the bulk items, no card search.
+      if (bulk.only) {
+        setState({ ...START, query: input, bulk: bulk.items, runId });
+        return;
+      }
       // The old results go as soon as the new search starts (owner,
       // 2026-09-29), so the suggestions never show cards from the last query.
       // The selected card stays until the new results say otherwise (spec 8.12).
@@ -52,6 +68,7 @@ export function useCardSearch(text, lang, games, oldest = false) {
         correction: null,
         tried: null,
         runId,
+        bulk: bulk.items,
         games: {
           mtg: { ...IDLE, status: games.mtg ? 'searching' : 'off' },
           pokemon: { ...IDLE, status: games.pokemon ? 'searching' : 'off' },
@@ -76,13 +93,13 @@ export function useCardSearch(text, lang, games, oldest = false) {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [text, lang, gamesKey, oldest]);
+  }, [text, lang, gamesKey, oldest, bulkKey]);
 
   const candidates = useMemo(
-    () => rank([state.games.mtg.list, state.games.pokemon.list], state.parsed ?? {}, oldest),
-    [state.games, state.parsed, oldest],
+    () => [...state.bulk, ...rank([state.games.mtg.list, state.games.pokemon.list], state.parsed ?? {}, oldest)],
+    [state.bulk, state.games, state.parsed, oldest],
   );
-  const total = state.games.mtg.total + state.games.pokemon.total;
+  const total = state.bulk.length + state.games.mtg.total + state.games.pokemon.total;
   const hasMore = state.games.mtg.hasMore || state.games.pokemon.hasMore;
 
   return { ...state, candidates, total, hasMore };

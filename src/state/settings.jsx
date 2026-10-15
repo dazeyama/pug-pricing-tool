@@ -2,6 +2,7 @@ import { createContext, useContext, useMemo } from 'react';
 import { supabase } from '../lib/supabase.js';
 import { useLiveTable } from '../lib/useLiveTable.js';
 import { DEFAULT_TIERS } from '../lib/rates.js';
+import { DEFAULT_BULK_VALUES } from '../lib/bulk.js';
 
 // App settings (spec 6.1 `settings`): key/value rows, live on every computer.
 
@@ -14,6 +15,8 @@ export const DEFAULTS = {
   fallback_pct_pokemon: { NM: 100, LP: 85, MP: 70, HP: 55, DMG: 40 },
   // Low-end and high-end rates (docs/TEAM_FEEDBACK.md 4.2): read with rates.js tiersFrom.
   rate_tiers: DEFAULT_TIERS,
+  // Bulk values (docs/TEAM_FEEDBACK.md 5.2): read with bulk.js bulkValuesFrom.
+  bulk_values: DEFAULT_BULK_VALUES,
 };
 
 const SettingsContext = createContext(null);

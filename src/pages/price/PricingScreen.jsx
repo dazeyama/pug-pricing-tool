@@ -32,6 +32,8 @@ import { buildLine } from '../../lib/buyLine.js';
 import { lineText } from '../../lib/lineFormat.js';
 import { dexNumberQuery } from '../../lib/query.js';
 import { lineRate, whyText } from '../../lib/rates.js';
+import { buildBulkLine, isBulk } from '../../lib/bulk.js';
+import { BulkFinish, BulkPrice, BulkSelected } from './Bulk.jsx';
 import { useStaff } from '../../state/staff.jsx';
 import { useConnection } from '../../state/connection.jsx';
 import { useToast } from '../../components/Toast.jsx';
@@ -89,7 +91,7 @@ function useCardRoom(screen) {
 
 /** The search-bar key of a saved line's card (the candidate's key). */
 // A Pokémon card known only from TCGplayer has no TCGdex id: its JustTCG card's (owner, 2026-10-09).
-const lineKey = (line) => (line.game === 'mtg' ? `mtg:${line.scryfall_id}`
+const lineKey = (line) => (isBulk(line) ? `bulk:${line.bulk_kind}` : line.game === 'mtg' ? `mtg:${line.scryfall_id}`
   : line.tcgdex_id ? `pokemon:${line.lang}:${line.tcgdex_id}` : `pokemon:${line.lang}:jt:${line.justtcg_card_id}`);
 
 /**
@@ -97,6 +99,8 @@ const lineKey = (line) => (line.game === 'mtg' ? `mtg:${line.scryfall_id}`
  * "Sol Ring 472 CMR", "Charizard 4/102 BS", Japanese "025/165 SV2a".
  */
 function editQuery(line) {
+  // Bulk: its game's items, found by "BULK" alone (docs/TEAM_FEEDBACK.md 5.3).
+  if (isBulk(line)) return `BULK ${line.game === 'mtg' ? 'mtg' : 'pkm'}`;
   const size = line.printed_size ? `/${line.printed_size}` : '';
   if (line.game === 'mtg') return `${line.name} ${line.collector_number} ${line.set_code}`;
   // An unnumbered old Japanese card found through TCGplayer: its "No." search again.
@@ -179,25 +183,29 @@ export default function PricingScreen({
   const input = useRef(null);
   const selectedRef = useRef(null);
   selectedRef.current = selected;
+  // A bulk item (docs/TEAM_FEEDBACK.md 5.4) is no card: nothing to look up,
+  // no finish, versions, conditions or price movement; one price from Settings.
+  const bulk = selected?.bulk ? selected : null;
+  const card = bulk ? null : selected;
 
   useEffect(() => warmUp(lang), [lang]);
 
   // The chosen finish (Magic) or version (Pokémon) of the selected card. Tied
   // to the card's key, so a newly selected card starts on its defaults.
   const [printing, setPrinting] = useState({ key: null, finish: null, version: null });
-  const pokemon = usePokemonDetail(selected);
-  const siblings = useMagicSiblings(selected);
-  const magic = selected?.game === 'mtg' ? selected.scryfall : null;
+  const pokemon = usePokemonDetail(card);
+  const siblings = useMagicSiblings(card);
+  const magic = card?.game === 'mtg' ? card.scryfall : null;
   const own = printing.key === selected?.key;
   const finish = magic ? (own && printing.finish) || defaultMagicFinish(magic) : null;
   // Pokémon versions: TCGdex's, or for a card known only from TCGplayer its
   // printings there; plus TCGplayer-only products with the same name and
   // number (Cosmos Holo, stamped…; owner, 2026-10-09).
-  const tcgSiblings = usePokemonSiblings(selected, pokemon);
-  const ownVersions = selected?.game !== 'pokemon' ? []
-    : selected.source === 'justtcg' ? justtcgVersions(selected.justtcg, selected.suffix, selected.lang) : pokemonVersions(pokemon.card);
+  const tcgSiblings = usePokemonSiblings(card, pokemon);
+  const ownVersions = card?.game !== 'pokemon' ? []
+    : card.source === 'justtcg' ? justtcgVersions(card.justtcg, card.suffix, card.lang) : pokemonVersions(pokemon.card);
   const versions = tcgSiblings.cards?.length
-    ? withTcgplayerVersions(ownVersions, tcgSiblings.cards, selected)
+    ? withTcgplayerVersions(ownVersions, tcgSiblings.cards, card)
     : ownVersions;
   const version = versions.find((v) => own && v.id === printing.version) ?? defaultPokemonVersion(versions);
 
@@ -230,19 +238,19 @@ export default function PricingScreen({
 
   // A Japanese card's English name (Pokédex number): shown beside the
   // Japanese one, and used for JustTCG, TCGplayer and Cardmarket searches.
-  const englishName = useEnglishPokemonName(pokemon.card, selected?.lang);
-  const prices = usePrices(selected, {
+  const englishName = useEnglishPokemonName(pokemon.card, card?.lang);
+  const prices = usePrices(card, {
     pokemon, versions, jaName: englishName || search.parsed?.name, waitName: englishName === undefined,
   });
-  const result = resultFor(selected, prices.results, { finish, version, versions });
+  const result = resultFor(card, prices.results, { finish, version, versions });
   const variantOpts = {
-    game: selected?.game,
-    lang: selected?.lang,
+    game: card?.game,
+    lang: card?.lang,
     finish: magic ? finish : version?.finish,
     firstEdition: version?.firstEdition,
   };
   const market = conditionPrices(result?.card, variantOpts);
-  const fallback = fallbackPrice(selected, { finish, version });
+  const fallback = fallbackPrice(card, { finish, version });
   const { values: settingValues } = useSettings();
   const fallbackPct = settingValues[selected?.game === 'pokemon' ? 'fallback_pct_pokemon' : 'fallback_pct_mtg'];
   // Use Fallback / Use Cardmarket (owner, 2026-09-29): every JustTCG price
@@ -251,7 +259,7 @@ export default function PricingScreen({
   // Fallback needs JustTCG prices to replace; Use Cardmarket needs a
   // Cardmarket price and the day's euro rate.
   const eurUsd = useEurUsd();
-  const cardmarketEur = cardmarketPrice(selected, { finish, version });
+  const cardmarketEur = cardmarketPrice(card, { finish, version });
   const cardmarketUsd = cardmarketEur != null && eurUsd != null ? cardmarketEur * eurUsd : null;
   const canUseFallback = fallback != null && CONDITIONS.some((c) => market[c] != null);
   const activeOverride = (override === 'fallback' && canUseFallback) || (override === 'cardmarket' && cardmarketUsd != null)
@@ -259,25 +267,25 @@ export default function PricingScreen({
   // Japanese Pokémon with no JustTCG price for any condition (TCGdex has no
   // dollar price for them either): Cardmarket is the fallback on its own
   // (owner, 2026-09-29), like Scryfall/TCGdex for everything else.
-  const autoCardmarket = !activeOverride && selected?.game === 'pokemon' && selected?.lang === 'ja'
+  const autoCardmarket = !activeOverride && card?.game === 'pokemon' && card?.lang === 'ja'
     && cardmarketUsd != null && !CONDITIONS.some((c) => market[c] != null);
   const base = activeOverride === 'cardmarket' || autoCardmarket
     ? { price: cardmarketUsd, source: 'cardmarket' }
     : fallback;
   // The five prices shown and used (JustTCG, fallbacks, never rising, rounded
   // down, or up in a project).
-  const ladder = priceLadder(activeOverride ? {} : market, base, fallbackPct, selected?.game, { up: roundUp });
+  const ladder = priceLadder(activeOverride ? {} : market, base, fallbackPct, card?.game, { up: roundUp });
   // ⚠️ on NM (spec 8.7): reasons to doubt JustTCG's prices. A 1st Edition is
   // checked against its Unlimited version, whose prices came in the same request.
   const unlimited = !magic && version?.firstEdition
     ? versions.find((v) => v.finish === version.finish && !v.firstEdition && !v.treatments.length)
     : null;
   const unlimitedNM = unlimited
-    ? conditionPrices(resultFor(selected, prices.results, { finish, version: unlimited, versions })?.card, {
-      game: 'pokemon', lang: selected.lang, finish: unlimited.finish, firstEdition: false,
+    ? conditionPrices(resultFor(card, prices.results, { finish, version: unlimited, versions })?.card, {
+      game: 'pokemon', lang: card.lang, finish: unlimited.finish, firstEdition: false,
     }).NM
     : null;
-  const warnings = priceWarnings({
+  const warnings = bulk ? [] : priceWarnings({
     market, fallback, pct: fallbackPct, unlimitedNM, cardmarket: cardmarketEur, eurUsd,
   });
   // 📈 / 📉 (owner, 2026-10-14): a JustTCG price shown that rose or fell
@@ -297,17 +305,22 @@ export default function PricingScreen({
   // selected (found), then its saved choices put back (restored); SAVE EDIT
   // saves over it. { line, key, query, found, restored } or null.
   const [editing, setEditing] = useState(null);
-  const images = useCardImages(selected);   // a Pokémon thumbnail for the line (backups too)
+  const images = useCardImages(card);   // a Pokémon thumbnail for the line (backups too)
 
   // ADD CARD's requirements (spec 8.8), besides a user (GuardButton).
   const pricesLoading = prices.status === 'loading' || prices.status === 'waiting';
-  const unitPrice = manual ?? ladder[condition]?.price ?? null;
+  const unitPrice = bulk ? manual ?? bulk.value : manual ?? ladder[condition]?.price ?? null;
   let addBlocked = null;
   if (locked) addBlocked = locked;
   else if (addLocked && !editing) addBlocked = addLocked;
   else if (!selected) {
     // Several suggestions and none picked yet: ↓ picks the first.
     addBlocked = search.candidates.length ? 'Select a card first: ↓ picks the first suggestion' : 'Select a card first';
+  }
+  else if (bulk) {
+    // Bulk: a quantity of items, nothing to wait for.
+    if (parseQty(qty) == null) addBlocked = 'Quantity must be 1 to 99';
+    else if (offline) addBlocked = 'No connection';
   }
   else if (magic ? !finish : !version) addBlocked = "Waiting for the card's versions";
   else if (pricesLoading) addBlocked = 'Waiting for prices';
@@ -363,6 +376,14 @@ export default function PricingScreen({
   useEffect(() => {
     if (!editing?.found || editing.restored || selected?.key !== editing.key) return;
     const { line } = editing;
+    if (isBulk(line)) {
+      setPricing({
+        key: editing.key, condition: 'NM', manual: line.price_source === 'manual' ? Number(line.unit_price) : null, override: null,
+      });
+      setQty(String(line.quantity));
+      setEditing((e) => e && { ...e, restored: true });
+      return;
+    }
     if (line.game === 'pokemon') {
       if (!pokemon.resolved) return;   // its versions are still loading
       // A TCGplayer-only version comes with the card's TCGplayer search.
@@ -496,6 +517,16 @@ export default function PricingScreen({
       return;
     }
     if (list.busy) return;
+    if (bulk) {
+      // A bulk item (docs/TEAM_FEEDBACK.md 5.7): Qty counts items, at its Settings value (or its own).
+      const line = buildBulkLine(bulk.item, parseQty(qty), bulk.value, manual);
+      const id = editing ? await list.update(editing.line, line, user.id) : await list.add(line, user.id);
+      if (!id) return;
+      setFlashId(id);
+      setTimeout(() => setFlashId((f) => (f === id ? null : f)), 1600);
+      clear();
+      return;
+    }
     const opts = { game: selected.game, lang: selected.lang, finish: magic ? finish : version.finish, firstEdition: version?.firstEdition };
     const line = buildLine({
       candidate: selected,
@@ -630,7 +661,9 @@ export default function PricingScreen({
   // The price panel's Credit and Cash: the rate this card gets at this price
   // (docs/TEAM_FEEDBACK.md 4.4), a card being edited with its own or kept rates.
   const editLine = editing ? list.lines.find((l) => l.id === editing.line.id) ?? editing.line : null;
-  const quoteRate = lineRate({ ...editLine, unit_price: manual ?? ladder[condition].price ?? 0 }, rates);
+  const quoteRate = lineRate({
+    ...editLine, unit_price: unitPrice ?? 0, bulk_kind: bulk ? bulk.bulk : null,
+  }, rates);
 
   // What the page's own parts (a collection's details, the list's buttons) need.
   const api = { focusSearch, canEdit, editBlocked };
@@ -670,6 +703,7 @@ export default function PricingScreen({
               beside it with the suggestions below; finish & details beside the
               suggestions with the action row under them. Grid areas in price.css. */}
           <div className="stage-body">
+            {bulk ? <BulkSelected c={bulk} /> : (
             <SelectedCard
               candidate={selected}
               typedName={search.parsed?.name}
@@ -679,6 +713,7 @@ export default function PricingScreen({
               pokemonVersion={version}
               hasFirstEdition={versions.some((v) => v.firstEdition)}
             />
+            )}
             <Suggestions
               search={search}
               lang={lang}
@@ -699,8 +734,9 @@ export default function PricingScreen({
               candidate={selected}
               loading={prices.status === 'loading' || prices.status === 'waiting'}
               condition={condition}
-              price={manual ?? ladder[condition].price}
-              source={manual != null ? 'manual'
+              price={unitPrice}
+              bulkPer={bulk?.item.per ?? null}
+              source={manual != null ? 'manual' : bulk ? null
                 : ladder[condition].base?.from === 'Cardmarket' && ladder[condition].source === 'fallback' ? 'cardmarket'
                   : showsTcgplayer(ladder, condition, fallbackPct?.[condition]) ? 'tcgplayer'
                     : ladder[condition].source}
@@ -709,10 +745,11 @@ export default function PricingScreen({
               cashWhy={whyText(quoteRate.why.cash, rates)}
               creditWhy={whyText(quoteRate.why.credit, rates)}
               warnings={warnings}
-              trend={manual == null ? trends[condition] : null}
+              trend={manual == null && !bulk ? trends[condition] : null}
               onDone={focusSearch}
             />
             <div className="area-side">
+              {bulk ? <BulkFinish /> : (
               <FinishPanel
                 candidate={selected}
                 finish={finish}
@@ -730,8 +767,10 @@ export default function PricingScreen({
                   focusSearch();
                 }}
               />
+              )}
             </div>
             <div className="area-prices">
+              {bulk ? <BulkPrice c={bulk} manual={manual} /> : (
               <PriceTable
                 candidate={selected}
                 prices={prices}
@@ -754,6 +793,7 @@ export default function PricingScreen({
                 setManualOpen={setManualOpen}
                 onDone={focusSearch}
               />
+              )}
             </div>
             <div className="area-actions">
               <ActionRow

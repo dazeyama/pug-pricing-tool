@@ -1552,3 +1552,53 @@
 /* One line per card: the card in full — Credit · Cash, in their colours. */
 .own-rate-alert li { margin: 1px 0; line-height: 1.35; font-variant-numeric: tabular-nums; }
 .ora-card { font-weight: 600; }
+
+/* ---- Bulk (docs/TEAM_FEEDBACK.md 5.4): a stack of the game's card backs,
+        offset, with "100 · Commons & Uncommons" on it; one price per item. */
+.quote-cond.cond-bulk { --cond: #b48cff; }
+.bulk-stack { position: absolute; inset: 0; display: block; container-type: size; }
+.bulk-back {
+  position: absolute;
+  inset: 8% 11%;
+  border-radius: 4.5% / 3.3%;
+  overflow: hidden;
+  background: #4a3524;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, .55);
+}
+.bulk-stack.pokemon .bulk-back { background: #1f4fa3; }
+.bulk-back img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.bulk-back.b0 { transform: translate(-8%, -5%) rotate(-7deg); }
+.bulk-back.b1 { transform: rotate(1deg); }
+.bulk-back.b2 { transform: translate(8%, 5%) rotate(8deg); }
+.bulk-label {
+  position: absolute;
+  left: 50%;
+  bottom: 8%;
+  max-width: 90%;
+  transform: translateX(-50%);
+  padding: .3em .75em;
+  border-radius: 999px;
+  background: rgba(10, 12, 22, .88);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .5);
+  color: #fff;
+  font-size: clamp(8px, 6.4cqw, 17px);
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+}
+.bulk-label b { color: #d8c4ff; }
+.card-wrap.bulk-wrap { background: transparent; box-shadow: none; overflow: visible; }
+.bulk-thumb .thumb-img { background: transparent; overflow: visible; }
+.bulk-price-one {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, #b48cff 45%, var(--border));
+  border-radius: 10px;
+  background: rgba(15, 18, 32, .55);
+}
+.bulk-price-one strong { font-size: 30px; font-variant-numeric: tabular-nums; }
+.bulk-price-one > span { color: var(--muted); font-size: 15px; }
+.bulk-price .hint { margin: 8px 2px 0; font-size: 12.5px; }

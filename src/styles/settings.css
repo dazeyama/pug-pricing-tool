@@ -104,6 +104,12 @@
 .tier-cell { display: flex; align-items: center; gap: 8px; }
 .tier-when { min-width: 38px; font-size: 13px; color: var(--muted); }
 .tier-money input { width: 84px; }
+/* Bulk values: Magic and Pokémon side by side, "100 · Commons & Uncommons  $ [1.5]". */
+.bulk-tables { display: flex; flex-wrap: wrap; gap: 8px 28px; }
+.bulk-table th[colspan] { padding-bottom: 4px; }
+.bulk-table tbody th { white-space: nowrap; font-weight: 500; }
+.bulk-box { display: inline-flex; align-items: center; gap: 6px; }
+.bulk-box input { width: 80px; }
 /* Credit blue and Cash green (owner, 2026-10-15): the headings, the boxes and their % signs. */
 .tier-table th.is-credit { color: var(--credit); }
 .tier-table th.is-cash { color: var(--cash); }

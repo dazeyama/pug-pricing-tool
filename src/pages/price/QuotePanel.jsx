@@ -19,6 +19,7 @@ import { trendIcon, trendText } from '../../lib/priceTrend.js';
  */
 export default function QuotePanel({
   candidate, loading, condition, price, source, cashPct, creditPct, cashWhy = '', creditWhy = '', warnings, trend = null, onDone,
+  bulkPer = null,
 }) {
   // Which box floats over Finish & Details: 'warn' (the warnings) or 'trend'
   // (the 📈 / 📉), while hovered, or clicked to keep it open.
@@ -80,8 +81,10 @@ export default function QuotePanel({
     <aside className="area-quote" ref={box} onMouseLeave={() => setHover(null)}>
       <div className="quote">
         <div className="quote-label">
-          <span className={`quote-cond cond-${condition.toLowerCase()}`}>{condition}</span>
-          price
+          {/* Bulk (docs/TEAM_FEEDBACK.md 5.4): no condition, a price per item. */}
+          {bulkPer
+            ? <><span className="quote-cond cond-bulk">BULK</span> price per {bulkPer}</>
+            : <><span className={`quote-cond cond-${condition.toLowerCase()}`}>{condition}</span> price</>}
           {tag && !loading && <span className={`quote-tag ${source}`}>{tag}</span>}
         </div>
         {loading ? (

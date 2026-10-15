@@ -3,6 +3,7 @@ import GameBadge from '../../components/GameBadge.jsx';
 import CardLoading from '../../components/CardLoading.jsx';
 import { useCardImages } from './useCardImages.js';
 import { POKEMON_CARD_BACK } from '../../lib/pokemonImages.js';
+import { BulkThumb } from './Bulk.jsx';
 
 /** Suggestions shown at once: 2 rows of 5 (owner's layout, 2026-09-29). */
 export const ROW = 10;
@@ -65,12 +66,19 @@ function SetMark({ c }) {
   return <span className={`thumb-chip r-${rarity}`} aria-hidden="true">{c.setCode}</span>;
 }
 
-/** One suggestion: thumbnail, with the game badge and "SET #num" beneath. */
 /**
- * One suggestion. Clicking picks it; right-clicking searches its name, to see
+ * One suggestion: thumbnail, with the game badge and "SET #num" beneath; a
+ * bulk item (docs/TEAM_FEEDBACK.md 5.4) as its stack of card backs.
+ */
+export function Thumb(props) {
+  return props.c.bulk ? <BulkThumb {...props} /> : <CardThumb {...props} />;
+}
+
+/**
+ * One card. Clicking picks it; right-clicking searches its name, to see
  * every printing of the card (owner, 2026-09-29).
  */
-export function Thumb({ c, highlighted, selected, onPick, onSearchName }) {
+function CardThumb({ c, highlighted, selected, onPick, onSearchName }) {
   const { thumb, status } = useCardImages(c);
   // An image that fails to load shows the card back, never a broken-image icon.
   const [failed, setFailed] = useState(null);
