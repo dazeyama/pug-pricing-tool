@@ -1653,7 +1653,16 @@
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
-.bulk-per.own { color: var(--accent); font-weight: 700; }
+/* Its own value (Set value) in a neutral chip: white on grey, no colour that
+   means something else (Credit's blue; owner, 2026-10-15). */
+.bulk-per.own {
+  padding: 0 7px;
+  border: 1px solid color-mix(in srgb, var(--muted) 70%, transparent);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .06);
+  color: var(--text);
+  font-weight: 700;
+}
 .bulk-value-live { margin: 2px 0 4px; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 /* Set value: each part on one line (owner, 2026-10-15). */
 .bulk-value-panel .rates-head { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
