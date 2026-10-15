@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { supabase } from '../lib/supabase.js';
 import PricingScreen from './price/PricingScreen.jsx';
 import WalkInButtons from './price/WalkInButtons.jsx';
 import ConfirmBuyModal from './price/ConfirmBuyModal.jsx';
@@ -41,11 +42,12 @@ export default function PricePage() {
   const count = draft.lines.reduce((n, l) => n + l.quantity, 0);
 
   /** CONFIRM BUY's dialog confirmed (spec 8.10). */
-  async function confirmBuy({ customerName, phone, notes, paidPrice, paidMethod }) {
+  async function confirmBuy({ customerName, phone, notes, paidPrice, paidMethod, flagCondition }) {
     if (!user) {
       pulse();
       return;
     }
+    const buyId = draft.buy?.id;
     const done = await draft.confirm({
       userId: user.id,
       customerName,
@@ -60,7 +62,18 @@ export default function PricePage() {
     if (!done) return;
     setConfirming(false);
     const names = done.games.map((g) => (g === 'mtg' ? 'Magic' : 'Pokémon')).join(' + ');
-    toast(`Buy confirmed — Buy ${done.number} today (${names}). Pick your user for the next one.`, 'ok');
+    // 🚩 Flag check for condition (owner, 2026-10-14): set once it's confirmed.
+    let flagged = '';
+    if (flagCondition && buyId) {
+      const { error } = await supabase.rpc('buy_set_condition_check', {
+        p_buy_id: buyId, p_flag: true, p_user: user.id, p_device: deviceId,
+      });
+      flagged = error
+        ? ` It couldn't be flagged (${error.message}): flag it from its ⋯ on the day page.`
+        : ' 🚩 Flagged: check its condition before export.';
+    }
+    toast(`Buy confirmed — Buy ${done.number} today (${names}).${flagged} Pick your user for the next one.`,
+      flagged.includes("couldn't") ? 'warn' : 'ok');
     // The next buy may be someone else's: they pick themselves (owner, 2026-10-11).
     forget();
     setResetKey((k) => k + 1);
@@ -96,6 +109,7 @@ export default function PricePage() {
               user={user}
               busy={draft.busy}
               onConfirm={confirmBuy}
+              flagOption
               onClose={() => {
                 setConfirming(false);
                 focusSearch();

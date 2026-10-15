@@ -91,6 +91,8 @@ function DayScreen({ game, day }) {
   const [deleting, setDeleting] = useState(null);   // { buy, number, lastCard }
   const [converting, setConverting] = useState(null); // { buy, number }: ⋯ → Convert to project
   const [exportingBuy, setExportingBuy] = useState(null);     // { buy, number }: ⋯ → Export single buy (owner, 2026-10-09)
+  // 🚩 Flagged buys about to be exported (owner, 2026-10-14): { numbers, go } until answered.
+  const [flagWarning, setFlagWarning] = useState(null);
   const [unexportingBuy, setUnexportingBuy] = useState(null); // { buy, number }: ⋯ → Mark Paid/Ours again, after an export
   const [exporting, setExporting] = useState(false);     // the export dialog (export spec 8.3)
   const [unexporting, setUnexporting] = useState(false); // ⋯ → Mark Paid/Ours again
@@ -267,6 +269,30 @@ function DayScreen({ game, day }) {
    * Completed without exporting them, so they leave the header search and the
    * day's export; or, marked that way, Paid/Ours again.
    */
+  /** A buy's ⋯ → Flag check for condition / Condition checked (owner, 2026-10-14). */
+  async function setConditionFlag(buy, number, flag) {
+    setBusy(true);
+    const { error } = await withLoading(() => supabase.rpc('buy_set_condition_check', {
+      p_buy_id: buy.id, p_flag: flag, p_user: user.id, p_device: deviceId,
+    }));
+    setBusy(false);
+    if (error) toast(messageFor(error, flag ? "Couldn't flag the buy" : "Couldn't clear the flag"), 'err');
+    else toast(flag
+      ? `🚩 Buy ${number} flagged: check its cards' condition before export.`
+      : `Buy ${number}: condition checked, flag off.`, 'ok');
+    await reload();
+  }
+
+  /**
+   * Before an export takes flagged buys (owner, 2026-10-14): say which, and
+   * export only if asked to anyway. `buys`: the buys it would take.
+   */
+  function unlessFlagged(buys, go) {
+    const numbers = buys.filter((b) => b.condition_check).map((b) => mine.indexOf(b) + 1).filter((n) => n > 0);
+    if (numbers.length) setFlagWarning({ numbers, go });
+    else go();
+  }
+
   async function markCompleted(buy, number, complete) {
     setBusy(true);
     const { error } = await withLoading(() => supabase.rpc('buy_mark_completed', {
@@ -344,7 +370,8 @@ function DayScreen({ game, day }) {
       toast(`Every ${GAME_NAMES[game]} buy here is already Completed.`, 'ok');
       return;
     }
-    if (guard()) setCompleting(true);
+    // COMPLETE is a Pokémon day's export: flagged buys are asked about the same way.
+    if (guard()) unlessFlagged(pending, () => setCompleting(true));
   }
 
   /** The day's Paid/Ours buys in this game marked Completed, nothing exported (`day_complete`). */
@@ -424,7 +451,7 @@ function DayScreen({ game, day }) {
       return;
     }
     if (pending.length) {
-      if (guard()) setExporting(true);
+      if (guard()) unlessFlagged(pending, () => setExporting(true));
       return;
     }
     const stamped = doneLines.filter((l) => l.cc_status === 'exported');
@@ -578,7 +605,8 @@ function DayScreen({ game, day }) {
               onDelete={(b, n) => guard() && setDeleting({ buy: b, number: n, lastCard: false })}
               onComplete={(b, n, complete) => guard() && markCompleted(b, n, complete)}
               onConvert={(b, n) => guard() && setConverting({ buy: b, number: n })}
-              onExport={(b, n) => guard() && setExportingBuy({ buy: b, number: n })}
+              onExport={(b, n) => guard() && unlessFlagged([b], () => setExportingBuy({ buy: b, number: n }))}
+              onFlag={(b, n, flag) => guard() && setConditionFlag(b, n, flag)}
               onPrint={printBuy}
               printing={printing}
               onUnexport={(b, n) => guard() && setUnexportingBuy({ buy: b, number: n })}
@@ -589,6 +617,35 @@ function DayScreen({ game, day }) {
         </div>
       )}
 
+      {flagWarning && (
+        <Modal
+          title="Check condition first?"
+          onClose={() => setFlagWarning(null)}
+          footer={(
+            <>
+              <button type="button" className="btn ghost" autoFocus onClick={() => setFlagWarning(null)}>Cancel</button>
+              <button
+                type="button"
+                className="btn danger"
+                onClick={() => {
+                  const { go } = flagWarning;
+                  setFlagWarning(null);
+                  go();
+                }}
+              >
+                {completeOnly ? 'Complete anyway' : 'Export anyway'}
+              </button>
+            </>
+          )}
+        >
+          <p>
+            🚩 <strong>{flagWarning.numbers.map((n) => `Buy ${n}`).join(', ')}</strong>{' '}
+            {flagWarning.numbers.length === 1 ? 'is' : 'are'} flagged: {flagWarning.numbers.length === 1 ? 'its' : 'their'} cards
+            need their condition checked before export.
+          </p>
+          <p className="hint">Check them, then ⋯ → Condition checked; or go ahead anyway.</p>
+        </Modal>
+      )}
       {removing && (
         <RemoveModal
           line={removing.line}
@@ -768,7 +825,7 @@ function totalsFor(lines, buy) {
 /** One buy on a day page (spec 10.2). */
 function BuyPanel({
   buy, number, game, other, day, byId, busy, offline, hits, flash, onRemove, onDelete, onComplete, onConvert,
-  onExport, onUnexport, onEditView, onPrint, printing,
+  onExport, onUnexport, onEditView, onPrint, printing, onFlag,
 }) {
   const [preview, setPreview] = useState(null);   // { src, top, left } while a line is hovered
   const hidePreview = useCallback(() => setPreview(null), []);
@@ -797,6 +854,11 @@ function BuyPanel({
         <strong className="buy-number">Buy {number}</strong>
         <UserTag user={user} />
         <span className="buy-time">{formatTime(buy.confirmed_at)}</span>
+        {buy.condition_check && (
+          <span className="flag-chip" title="Flagged when it was confirmed: check its cards' condition before export">
+            🚩 Check condition
+          </span>
+        )}
         <span className={`status-chip ${statusTone({ kind: 'walk_in', status, paid_method: buy.paid_method })}`}>
           {statusLabel(status)}
         </span>
@@ -832,6 +894,18 @@ function BuyPanel({
               title: "A PDF of this buy's Magic cards by Crystal Commerce category, to check them by hand. Changes nothing.",
               onClick: () => onPrint(buy, number),
             }] : []),
+            // 🚩 Flag check for condition, and back (owner, 2026-10-14).
+            buy.condition_check ? {
+              label: 'Condition checked',
+              blocked: offOrBusy,
+              title: "Its cards' condition is checked: take the 🚩 flag off",
+              onClick: () => onFlag(buy, number, false),
+            } : {
+              label: 'Flag check for condition',
+              blocked: offOrBusy,
+              title: "🚩 Flag this buy: its cards' condition needs checking before export",
+              onClick: () => onFlag(buy, number, true),
+            },
             // Its cards edited on the pricing screen, saved with SAVE BUY (owner, 2026-10-13):
             // for small fixes (a condition, a treatment) before an export.
             {
@@ -863,6 +937,11 @@ function BuyPanel({
           </p>
         )}
         {buy.notes && <p className="buy-notes">{buy.notes}</p>}
+        {buy.condition_check && !completed && (
+          <p className="buy-flag-warn" role="note">
+            🚩 Check this buy&apos;s cards for condition before export. ⋯ → Condition checked when done.
+          </p>
+        )}
         <table className="deck-table">
           <thead>
             <tr>

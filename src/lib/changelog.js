@@ -20,8 +20,10 @@ export const CATEGORIES = [
     // A buy confirmed (cards in); cards removed, or the buy deleted (cards out);
     // a buy converted to a project, its cards added there (owner, 2026-10-02);
     // a project converted to a buy (owner, 2026-10-10); a buy's cards edited
-    // in project view and saved (owner, 2026-10-13).
-    actions: ['buy_confirmed', 'buy_cards_removed', 'buy_deleted', 'buy_converted', 'project_converted', 'buy_edited'],
+    // in project view and saved (owner, 2026-10-13); flagged to have its
+    // cards' condition checked before export, and checked (owner, 2026-10-14).
+    actions: ['buy_confirmed', 'buy_cards_removed', 'buy_deleted', 'buy_converted', 'project_converted', 'buy_edited',
+      'buy_flagged', 'buy_flag_cleared'],
   },
   {
     key: 'collections',
@@ -64,6 +66,8 @@ export const HEADLINES = {
   buy_confirmed: 'Buy confirmed',
   buy_cards_removed: 'Cards removed from buy',
   buy_edited: 'Buy edited',
+  buy_flagged: '🚩 Buy flagged: check condition',
+  buy_flag_cleared: 'Buy condition checked',
   buy_deleted: 'Buy deleted',
   buy_completed: 'Buy marked Completed',
   buy_uncompleted: 'Buy marked Paid/Ours again',

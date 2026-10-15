@@ -714,6 +714,49 @@ exception when others then
   perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
 end $$;
 
+-- ============================================ Flag check for condition (0053)
+do $$
+declare
+  s text := 'Condition flag';
+  u uuid := pg_temp.id('u1');
+  a uuid := pg_temp.id('devA');
+  b uuid;
+  v_ver integer;
+  v_flag boolean;
+begin
+  b := pg_temp.buy(a, u, 'DBTEST Flag', '5550100013', array[pg_temp.line('Dbtest Flag', 'DBT', '002', 1, 2.00)]);
+  v_ver := pg_temp.version(b);
+  perform pg_temp.ok(s, 'A confirmed buy starts unflagged', not (select condition_check from buys where id = b));
+  begin
+    perform buy_set_condition_check(b, true, null, a);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'Flagging needs a user', sqlerrm, 'no_user');
+  end;
+  begin
+    perform buy_set_condition_check(gen_random_uuid(), true, u, a);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, '… and a confirmed buy', sqlerrm, 'buy_gone');
+  end;
+  -- The call first, then its effect: one statement sees the rows as they were.
+  v_flag := buy_set_condition_check(b, true, u, a);
+  perform pg_temp.ok(s, 'Flagged', v_flag and (select condition_check from buys where id = b));
+  perform pg_temp.ok(s, '… without bumping the version (an open export stays good)', pg_temp.version(b) = v_ver);
+  perform pg_temp.ok(s, '… with a Changelog entry',
+    exists (select 1 from events where target_id = b and action = 'buy_flagged'
+              and summary = 'Flagged: its cards need their condition checked before export.'));
+  perform buy_set_condition_check(b, true, u, a);
+  perform pg_temp.ok(s, 'Flagging it again logs nothing more',
+    (select count(*) from events where target_id = b and action = 'buy_flagged') = 1);
+  perform buy_mark_completed(b, 'mtg', u, a, true);
+  v_flag := buy_set_condition_check(b, false, u, a);
+  perform pg_temp.ok(s, 'Cleared (Condition checked), even once Completed',
+    not v_flag and not (select condition_check from buys where id = b)
+    and exists (select 1 from events where target_id = b and action = 'buy_flag_cleared'));
+exception when others then
+  declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;
+  perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
+end $$;
+
 -- ============================================ Convert to project, and back
 do $$
 declare

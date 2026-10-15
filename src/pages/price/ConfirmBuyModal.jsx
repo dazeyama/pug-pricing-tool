@@ -20,12 +20,17 @@ import { MoneyInput, PayMethod } from '../collections/DealModals.jsx';
  * A project's Convert to buy… asks the same (owner, 2026-10-10), with its own
  * title, `intro` and button, starting from what the project already has
  * (`initial`: customer, phone, method, price, notes).
+ *
+ * `flagOption` (CONFIRM BUY; owner, 2026-10-14): a 🚩 "Flag check for
+ * condition" box; ticked, the buy is flagged on its day page to have its
+ * cards' condition checked before export (`flagCondition` in onConfirm).
  */
 export default function ConfirmBuyModal({
   count, market, rates, user, busy, onConfirm, onClose,
   title = `Confirm buy — ${count} card${count === 1 ? '' : 's'}`, intro = null, initial = {},
-  confirmLabel = 'Confirm buy', busyLabel = 'Confirming…',
+  confirmLabel = 'Confirm buy', busyLabel = 'Confirming…', flagOption = false,
 }) {
+  const [flag, setFlag] = useState(false);
   const [customer, setCustomer] = useState(initial.customer ?? '');
   const [notes, setNotes] = useState(initial.notes ?? '');
   const [phone, setPhone] = useState(initial.phone ? formatPhone(initial.phone) : '');
@@ -47,7 +52,10 @@ export default function ConfirmBuyModal({
   const submit = () => {
     setTried(true);
     if (missing.length || busy) return;
-    onConfirm({ customerName: customer.trim(), phone: phoneDigits(phone), notes, paidPrice: price, paidMethod: method });
+    onConfirm({
+      customerName: customer.trim(), phone: phoneDigits(phone), notes, paidPrice: price, paidMethod: method,
+      flagCondition: flagOption && flag,
+    });
   };
   const rate = (label, which, custom) => (
     <div className={`total-row ${which}`}>
@@ -127,6 +135,15 @@ export default function ConfirmBuyModal({
         <span>Notes <em>(optional)</em></span>
         <textarea rows={2} value={notes} maxLength={1000} onChange={(e) => setNotes(e.target.value)} />
       </label>
+      {flagOption && (
+        <label className={`confirm-flag${flag ? ' on' : ''}`}>
+          <input type="checkbox" checked={flag} onChange={(e) => setFlag(e.target.checked)} />
+          <span className="confirm-flag-text">
+            <span aria-hidden="true">🚩</span> Flag check for condition
+            <em>Its day page warns to check the cards' condition before export.</em>
+          </span>
+        </label>
+      )}
       <p className="confirm-user">Confirming as <UserTag user={user} /></p>
     </Modal>
   );

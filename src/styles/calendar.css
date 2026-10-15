@@ -185,6 +185,15 @@ button.cal-day.exported:hover { background: color-mix(in srgb, var(--game) 14%, 
 /* A Completed buy: locked, so its × is gone and the panel is quieter. */
 .buy-panel.completed .line-x { visibility: hidden; }
 .buy-panel-head .status-chip { margin-left: auto; font-size: 11px; padding: 1px 9px; }
+/* 🚩 Flag check for condition (owner, 2026-10-14). */
+.flag-chip {
+  flex: none; padding: 1px 8px; border: 1px solid var(--bad); border-radius: 999px;
+  background: rgba(255, 107, 107, .14); color: var(--bad); font-size: 11px; font-weight: 800; white-space: nowrap;
+}
+.buy-flag-warn {
+  margin: 0 0 10px; padding: 7px 10px; border: 1px solid var(--bad); border-radius: 8px;
+  background: rgba(255, 107, 107, .1); color: var(--text); font-size: 13px; font-weight: 600;
+}
 .buy-panel-head .status-chip + .more-menu { margin-left: 0; }
 /* < BACK, big and bold, like a collection's (owner, 2026-09-29). */
 .page-back {
