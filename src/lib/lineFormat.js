@@ -4,7 +4,9 @@
 // Japanese cards show their English name when the line has one (name_en,
 // owner 2026-09-29), else the Japanese name TCGdex gave.
 // Used by the buy list, the changelog (confirm_buy stores these) and later
-// the day pages and export.
+// the day pages and export. A bulk line reads in the cards it stands for:
+// "1,000 MTG Bulk commons/uncommons" (docs/TEAM_FEEDBACK.md 5.5).
+import { bulkItem, bulkLineText, isBulk } from './bulk.js';
 
 const FINISH_MARKERS = { foil: '*F*', etched: '*E*', holo: '*H*', reverse: '*RH*' };
 const PATTERNS = { 'pokeball-pattern': 'Poké Ball', 'masterball-pattern': 'Master Ball' };
@@ -45,6 +47,7 @@ export function lineTags(line) {
  *   treatments?: string[] }} line  a buy_lines row
  */
 export function lineBody(line) {
+  if (isBulk(line)) return bulkItem(line.bulk_kind)?.unit ?? line.name;
   const parts = [`${line.name_en || line.name} (${line.set_code}) ${line.collector_number}`];
   const marker = FINISH_MARKERS[line.finish];
   if (marker) parts.push(marker);
@@ -58,6 +61,7 @@ export function lineBody(line) {
  * @param {number} [quantity]  a different count to show (e.g. how many are being removed)
  */
 export function lineText(line, quantity = line.quantity) {
+  if (isBulk(line)) return bulkLineText(line, quantity);
   return `${quantity} ${lineBody(line)}`;
 }
 
@@ -69,6 +73,7 @@ export function lineText(line, quantity = line.quantity) {
  * @param {number} [quantity]
  */
 export function lineTextWithCondition(line, quantity = line.quantity) {
+  if (isBulk(line)) return bulkLineText(line, quantity);
   const parts = [`${quantity} ${line.name_en || line.name} (${line.set_code}) ${line.collector_number}`];
   const marker = FINISH_MARKERS[line.finish];
   if (marker) parts.push(marker);

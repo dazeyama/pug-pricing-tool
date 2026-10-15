@@ -28,6 +28,11 @@ test('thresholds are strict and use the unit price (4.2)', () => {
   assert.equal(lineRate(line(2, { cc_sell_price: 50 }), master).cash, 25);
 });
 
+test('bulk never takes the low-end or high-end rates (5.6)', () => {
+  assert.deepEqual(lineRate(line(0.75, { bulk_kind: 'pkm_100' }), master).why, { cash: 'base', credit: 'base' });
+  assert.equal(lineRate(line(80, { bulk_kind: 'mtg_10_dollar' }), master).credit, 66);
+});
+
 test('custom rates on the list turn the low/high rules off (4.1)', () => {
   const custom = { ...master, credit: 70, customCredit: 70 };
   // Credit custom, Cash not: Cash takes the base (master), still no tiers.

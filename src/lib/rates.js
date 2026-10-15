@@ -1,4 +1,5 @@
 import { creditOfferFor, formatMoney, roundDownPrice } from './money.js';
+import { isBulk } from './bulk.js';
 
 // Individual rates (docs/TEAM_FEEDBACK.md 4, owner 2026-10-14): which Cash and
 // Credit rate each card gets, and the totals from them. Every total in the
@@ -52,6 +53,8 @@ export const hasCustom = (rates) => rates?.customCash != null || rates?.customCr
 export function lineRate(line, rates) {
   const tiers = rates?.tiers ?? DEFAULT_TIERS;
   const price = Number(line?.unit_price ?? 0);
+  // Bulk: never the low-end or high-end rates (docs/TEAM_FEEDBACK.md 5.6).
+  const bulk = isBulk(line);
   const out = { why: {} };
   for (const side of SIDES) {
     const fixed = num(line?.[`${side}_pct`]);
@@ -63,7 +66,7 @@ export function lineRate(line, rates) {
       pct = fixed;
       if (own != null) why = 'own';
       else {
-        const live = lineRate({ unit_price: line.unit_price }, rates);
+        const live = lineRate({ unit_price: line.unit_price, bulk_kind: line.bulk_kind }, rates);
         why = live[side] === fixed ? live.why[side] : 'fixed';
       }
     } else if (own != null) {
@@ -72,10 +75,10 @@ export function lineRate(line, rates) {
     } else if (hasCustom(rates)) {
       pct = base;
       why = 'custom';
-    } else if (price < Number(tiers.low.under)) {
+    } else if (!bulk && price < Number(tiers.low.under)) {
       pct = Number(tiers.low[side]);
       why = 'low';
-    } else if (price > Number(tiers.high.over)) {
+    } else if (!bulk && price > Number(tiers.high.over)) {
       pct = Number(tiers.high[side]);
       why = 'high';
     } else {
