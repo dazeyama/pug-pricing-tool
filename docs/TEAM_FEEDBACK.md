@@ -108,7 +108,7 @@ Nothing is remembered, and staff picks are never asked for: those happen in the 
 ### 3.4 Order
 
 1. **Sections by category, A to Z**: case- and accent-insensitive, numbers in natural order ("Commander 2015" before "Commander 2021"), **Unmatched last**.
-2. **Inside a section, by collector number**, naturally: 7 < 12 < 120 < 120a; a number with a prefix (The List's `CMA-216`) sorts by its prefix, then its number. Then by name, then condition NM → DMG, then non-foil before foil before etched.
+2. **Inside a section, by condition (NM → DMG), then collector number** (owner, 2026-10-14: category, condition, collector number), naturally: 7 < 12 < 120 < 120a; a number with a prefix (The List's `CMA-216`) sorts by its prefix, then its number. Then by name, then non-foil before foil before etched.
 
 ### 3.5 What each row says
 
@@ -331,7 +331,7 @@ Each phase: build, `npm test`, `npm run build`, lint, the database test run afte
 - **EXPORT ▾**: the button gains a small ▾; a click opens **Print?** / **Export csv** (upward at the foot of a collection's list). A blocked EXPORT still just says why. Pokémon days' COMPLETE has no menu. **Print buy** sits under Export single buy in a Magic buy's ⋯ and needs no picked user.
 - **Which cards** (`printLines`): a batch's Magic cards not yet Completed; once all are, the ones an export took (exported, or sent to Can't upload). Cards Completed by hand print nothing (Print says so).
 - **Characters**: the PDF's built-in font draws Windows-1252 (accents, curly quotes, dashes, "…"); one character outside it garbled a whole line (tested: "120★"), so those become plain letters ("★" → "*", others their unaccented letter, else "?") (`pdfSafe`).
-- **Collector numbers** sort by prefix, number, then suffix: 12 < 120 < 120a, and a prefixed one (The List's `2XM-120`) after the plain ones; categories differing only in capitals share a section.
+- **Inside a category: condition first, then collector number** (owner, 2026-10-14). Collector numbers sort by prefix, number, then suffix: 12 < 120 < 120a, and a prefixed one (The List's `2XM-120`) after the plain ones; categories differing only in capitals share a section.
 - The page title: **Audit — Magic, Tuesday, October 14, 2026**, **Audit — Buy 3, October 14, 2026**, **Audit — CU Intake**, **Audit — Can't upload cards**; printing time and card count at the right; "Page 2 of 5" at the foot.
 - Checked by rendering a 150-line sample (10 sections, 4 pages) to images: bands, "(cont.)", Unmatched last, strips, tick boxes, counts, long names cut with "…".
 

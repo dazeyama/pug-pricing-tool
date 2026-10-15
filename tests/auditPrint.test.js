@@ -65,6 +65,17 @@ test('different condition, finish or treatments stay separate rows, NM before LP
   ]);
 });
 
+test('inside a category: condition first, then collector number', () => {
+  const s = auditSections([
+    { line: line({ name: 'Zap', collector_number: '5', condition: 'MP' }), category: 'Alpha' },
+    { line: line({ name: 'Bolt', collector_number: '200' }), category: 'Alpha' },
+    { line: line({ name: 'Ruby', collector_number: '3', condition: 'LP' }), category: 'Alpha' },
+    { line: line({ name: 'Mox', collector_number: '12' }), category: 'Alpha' },
+    { line: line({ name: 'Orb', collector_number: '1', condition: 'LP' }), category: 'Alpha' },
+  ]);
+  assert.deepEqual(s[0].rows.map((r) => `${r.condition} ${r.name}`), ['NM Mox', 'NM Bolt', 'LP Orb', 'LP Ruby', 'MP Zap']);
+});
+
 test("a row's words", () => {
   const r = auditRow(line({
     name: 'Lightning Bolt', set_code: '2x2', collector_number: '117', finish: 'foil', condition: 'MP',

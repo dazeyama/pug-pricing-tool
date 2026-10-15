@@ -83,11 +83,15 @@ const rank = (list, v) => {
   const i = list.indexOf(v);
   return i === -1 ? list.length : i;
 };
-/** Inside a section: collector number, then name, condition NM → DMG, non-foil → foil → etched (team plan 3.4). */
+/**
+ * Inside a section: condition NM → DMG, then collector number, then name,
+ * non-foil → foil → etched (owner, 2026-10-14: category, condition, number;
+ * team plan 3.4).
+ */
 function byCard(a, b) {
-  return byNumber(a.line.collector_number, b.line.collector_number)
+  return rank(CONDITIONS, a.line.condition) - rank(CONDITIONS, b.line.condition)
+    || byNumber(a.line.collector_number, b.line.collector_number)
     || collator.compare(a.line.name, b.line.name)
-    || rank(CONDITIONS, a.line.condition) - rank(CONDITIONS, b.line.condition)
     || rank(FINISHES, a.line.finish) - rank(FINISHES, b.line.finish);
 }
 
