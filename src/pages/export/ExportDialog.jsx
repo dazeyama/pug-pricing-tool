@@ -7,6 +7,7 @@ import { useDevice } from '../../state/device.jsx';
 import { useToast } from '../../components/Toast.jsx';
 import { lineTextWithCondition } from '../../lib/lineFormat.js';
 import { formatMoney } from '../../lib/money.js';
+import { openPopup, popupName } from '../../lib/popup.js';
 import { CONDITION_WORDS, customSkuFor, massCreateRows, nearMintPrices, productKey } from '../../lib/massCreate.js';
 import {
   downloadMassCreate, forgetLink, linkKey, matchLines, saveExport, saveLink, saveSetMap, searchProducts, sellPrices,
@@ -504,6 +505,14 @@ export default function ExportDialog({
 }
 
 /**
+ * The card's exact printing on Scryfall, by its set and collector number
+ * (owner, 2026-10-15), for telling look-alike products apart.
+ */
+const scryfallCardUrl = (line) => (line.set_code && line.collector_number
+  ? `https://scryfall.com/card/${encodeURIComponent(line.set_code.toLowerCase())}/${encodeURIComponent(line.collector_number)}`
+  : null);
+
+/**
  * One card's choices: its candidates, "None of these", a search and (when
  * exporting) a Sell price box. In Needs a choice nothing is selected yet and
  * a pick applies at once. A matched card opened with Change has its product
@@ -592,10 +601,25 @@ function ChooseRow({
     </label>
   );
 
+  const scryfall = scryfallCardUrl(r.line);
   return (
     <div className={`xd-choose${onDone ? ' editing' : ''}`}>
       <div className="xd-row">
-        {label}{price}
+        {label}
+        {/* In the Price screen's reused Scryfall pop-up (lib/popup.js), owner 2026-10-15. */}
+        {scryfall && (
+          <a
+            className="btn small ghost xd-scryfall"
+            href={scryfall}
+            target={popupName('scryfall')}
+            referrerPolicy="no-referrer"
+            onClick={(e) => openPopup(e, 'scryfall')}
+            title={`${r.line.set_code.toUpperCase()} ${r.line.collector_number} on Scryfall`}
+          >
+            View on Scryfall ↗
+          </a>
+        )}
+        {price}
         {draft && (
           <span className="xd-edit-buttons">
             <button type="button" className="btn small ghost" title="Leave this card as it was" onClick={onCancel}>
