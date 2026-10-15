@@ -138,8 +138,9 @@ export default function ConfirmBuyModal({
       {flagOption && (
         <label className={`confirm-flag${flag ? ' on' : ''}`}>
           <input type="checkbox" checked={flag} onChange={(e) => setFlag(e.target.checked)} />
+          {/* Two lines: the flag and its name, then what it does. */}
           <span className="confirm-flag-text">
-            <span aria-hidden="true">🚩</span> Flag check for condition
+            <span><span aria-hidden="true">🚩</span> Flag check for condition</span>
             <em>Its day page warns to check the cards' condition before export.</em>
           </span>
         </label>
