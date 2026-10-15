@@ -21,7 +21,12 @@ function deliver(doc, fileName, tab) {
   setTimeout(() => URL.revokeObjectURL(url), 120_000);
 }
 
-const SYMBOL_PX = 64;   // drawn 10pt tall: sharp on paper
+const SYMBOL_PX = 64;   // drawn 17pt tall: sharp on paper
+// Scryfall's promo shooting star (Secret Lair's own symbol): the symbol for a
+// set without one of its own (owner, 2026-10-14): no icon, Scryfall's
+// generic default.svg, or one that won't load.
+const STAR = 'https://svgs.scryfall.io/sets/star.svg';
+const symbolCache = new Map();   // icon address → its drawing, this page's life
 
 /**
  * A set's symbol for its category's band (owner, 2026-10-14): Scryfall's SVG,
@@ -31,10 +36,20 @@ const SYMBOL_PX = 64;   // drawn 10pt tall: sharp on paper
  * the canvas (as Suggestions' set masks found).
  * @returns {Promise<{ data: string, ratio: number }>}
  */
-async function setSymbol(uri) {
+function setSymbol(uri) {
+  if (!symbolCache.has(uri)) {
+    const drawing = drawSymbol(uri);
+    drawing.catch(() => symbolCache.delete(uri));   // a failure is tried again next time
+    symbolCache.set(uri, drawing);
+  }
+  return symbolCache.get(uri);
+}
+async function drawSymbol(uri) {
   const res = await fetch(`${uri}${uri.includes('?') ? '&' : '?'}print=1`, { mode: 'cors' });
   if (!res.ok) throw new Error(`symbol ${res.status}`);
   let svg = await res.text();
+  // A "not found" page isn't a symbol, whatever it answered with.
+  if (!/<svg[\s>]/i.test(svg)) throw new Error('not an SVG');
   const box = /viewBox="\s*[-\d.]+[\s,]+[-\d.]+[\s,]+([\d.]+)[\s,]+([\d.]+)\s*"/.exec(svg);
   const ratio = box ? Number(box[1]) / Number(box[2]) || 1 : 1;
   const w = Math.max(1, Math.round(SYMBOL_PX * ratio));
@@ -76,11 +91,15 @@ async function symbolsFor(sections) {
   const out = {};
   await Promise.all(codes.map(async (code) => {
     const uri = sets.get(code)?.icon_svg_uri;
-    if (!uri) return;
+    const own = uri && !/\/sets\/default\.svg/.test(uri) ? uri : null;
     try {
-      out[code] = await setSymbol(uri);
+      out[code] = await setSymbol(own ?? STAR);
     } catch {
-      // No symbol on that band: the category's name still says it.
+      try {
+        out[code] = await setSymbol(STAR);
+      } catch {
+        // No symbol on that band: its name and set code still say it.
+      }
     }
   }));
   return out;

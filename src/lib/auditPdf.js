@@ -34,6 +34,7 @@ const ROW = 13;                              // a one-line row
 const ROW_WRAPPED = 22;                      // its chips on a second line
 const ROW_GAP = 1;
 const SECTION_GAP = 7;
+const DIVIDER = 7;                           // the line between a category's NM cards and the rest
 const NAME_PT = 8.6;
 const CHIP_PT = 6.6;
 const CHIP_H = 9;
@@ -260,13 +261,26 @@ export function auditPdf({ title, sections, symbols = {}, printedAt = new Date()
     // A band never sits alone at a column's foot: it needs its first row under it.
     if (y + BAND + 2 + first.h > BOTTOM) nextColumn();
     band(s, false);
+    // A line between the NM cards and the lower conditions, when a category
+    // has both (owner, 2026-10-14).
+    let sawNM = false;
+    let divided = false;
     for (const r of s.rows) {
       const l = layout(r, s);
-      if (y + l.h > BOTTOM) {
+      const divide = sawNM && !divided && r.condition !== 'NM';
+      if (y + l.h + (divide ? DIVIDER : 0) > BOTTOM) {
         nextColumn();
         band(s, true);
       }
+      if (divide) {
+        doc.setDrawColor(45, 48, 66);
+        doc.setLineWidth(1.2);
+        doc.line(x() + 2, y + 2.6, x() + COL_W - 2, y + 2.6);
+        y += DIVIDER;
+        divided = true;
+      }
       row(r, l);
+      if (r.condition === 'NM') sawNM = true;
     }
   }
 
