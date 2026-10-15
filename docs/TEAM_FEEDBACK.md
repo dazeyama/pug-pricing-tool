@@ -5,7 +5,7 @@
 | **Product** | PUG Pricing Tool: three changes from the team's demo |
 | **Owner** | Players' Union Games (PUG) |
 | **Plan version** | 1.0 — 2026-10-14 |
-| **Status** | Approved by the owner (2026-10-14). Phase T1 built (2026-10-14); Phase T2 built and checked by the owner (2026-10-15). T3 (bulk) is next, on the owner's go. |
+| **Status** | Approved by the owner (2026-10-14). Phase T1 built (2026-10-14); Phase T2 built and checked by the owner (2026-10-15). Phase T3 (bulk) built (2026-10-15), waiting for the owner's check. |
 | **Extends** | `docs/DESIGN_SPEC.md` (the app) and `docs/EXPORT_FUNCTION.md` (the export). Both stay the source of truth for everything not changed here. |
 | **Project folder** | `C:\ClaudeProjects\pug-pricing-tool` |
 | **Built after** | v0.9.9.6-cosmetics |
@@ -365,12 +365,23 @@ Each phase: build, `npm test`, `npm run build`, lint, the database test run afte
 
 ### Phase T3: bulk
 
-- [ ] Migration (6.4), dev only; database test run extended (bulk never exported, completed, copied or searched; "fully Completed" ignores it).
-- [ ] `bulk.js` with tests: the items, search (bulk / BULK / more words), line text, separate counts.
-- [ ] Settings → Bulk values (Magic | Pokémon).
-- [ ] Search, the card-back stack and labels, the one-price table, Qty in items, ADD CARD.
-- [ ] Lists: "1,000 MTG Bulk commons/uncommons", "$1.50 per 100", "42 cards + 1,000 bulk"; master or buy rates only; Set value with live Cash / Credit, and the confirm alert.
-- [ ] Exports, COMPLETE, Mark as completed, Can't upload, the header search and printouts leave bulk out; conversions bring it along.
+- [x] Migration (6.4), dev only; database test run extended (bulk never exported, completed, copied or searched; "fully Completed" ignores it).
+- [x] `bulk.js` with tests: the items, search (bulk / BULK / more words), line text, separate counts.
+- [x] Settings → Bulk values (Magic | Pokémon).
+- [x] Search, the card-back stack and labels, the one-price table, Qty in items, ADD CARD.
+- [x] Lists: "1,000 MTG Bulk commons/uncommons", "$1.50 per 100", "42 cards + 1,000 bulk"; master or buy rates only; Set value with live Cash / Credit, and the confirm alert.
+- [x] Exports, COMPLETE, Mark as completed, Can't upload, the header search and printouts leave bulk out; conversions bring it along.
+
+**As built (2026-10-15):**
+- **Migration 0058** (dev): `buy_lines.bulk_kind` (one of the eight keys), `price_source` allows `'bulk'`, and a check that bulk, and only bulk, has the placeholders (set `BULK`, no number, NM; priced `bulk` or `manual`). Adds and edits save `bulk_kind` and merge only with the same item. `export_lines` (day, one buy, a collection), `day_complete` and `buy_mark_completed` skip bulk; `buys_in_range` counts a game Completed once all its real cards are; `global_search` leaves bulk out; `internal.line_pct` never gives bulk the low-end / high-end rates. Re-created from the live definitions with only that changed. Database test run: 359 checks ("Bulk", 9 new).
+- **`src/lib/bulk.js`** (tested): the eight items, `bulkSearch`, `buildBulkLine`, the line text, `cardCounts` / `countText`, `repricedBulk`. `lineText` reads bulk in cards; `rates.js` gives bulk no tiers.
+- **Settings → Bulk values**: beside Master Fallback Percentages, Magic and Pokémon side by side, "100 · Commons & Uncommons  $ [1.5]".
+- **Search**: a word "bulk" lists the matching items first, then the cards; "BULK" only the items (no card search); other words narrow them; MTG / PKM apply.
+- **The stage**: three of the game's card backs, offset, labelled "100 · Commons & Uncommons" (Magic: Scryfall's card back, from its image host; Pokémon: the app's); "✦ BULK" under it; the details say the cards per item and the Settings value. The prices give way to one box, "$1.50 per 100"; Finish: "Bulk: no finish or condition"; the price panel reads "BULK price per 100", at the base rates. No zoom, price movement or warnings. ADD CARD adds items (Qty 10 = 1,000 cards); a bulk line opens for editing by its game's "BULK mtg" / "BULK pkm" search.
+- **Lists**: "1,000 MTG Bulk commons/uncommons" with "$1.50 per 100" after it (✎ and the accent colour when it's the line's own); the Buy list's head and its game chips, CONFIRM BUY's and Convert to buy's titles, CANCEL, Delete buy / collection and Convert to project count "42 cards + 1,000 bulk"; the day page shows bulk rows in cards with their value per item.
+- **Set value**: right-click a bulk line → **Set value** (and **Clear value** when it has one): dollars per item beside the line, with the line's Credit and Cash as it's typed; the Settings value typed back, or Clear, goes back to it. Saved as an edit of the line. Allowed wherever the list can change (projects too: it's a value, not a rate). CONFIRM BUY's alert lists it ("1,000 MTG Bulk commons/uncommons — $2 per 100").
+- **Left out**: every export (and Check Crystal Commerce matches), COMPLETE, Mark as completed, printouts, the header search, and Home's card counts. A buy (or a game's part of it) is Completed once all its real cards are, so a buy of only bulk reads Completed at once. REPRICE? puts bulk back on its Settings value, keeping a value of its own as it keeps a manual price.
+- **Not changed**: the Changelog's counts (the +n chips and "5 cards bought…") count bulk items as they count cards; its card rows read in cards ("1,000 MTG Bulk …").
 
 **Where to look**: search "bulk" and "BULK"; add 10 × MTG 100 Bulk commons/uncommons to a buy with a few cards; Set value on it; confirm; export the day (bulk not in the file, the buy still Completed); Convert to project with bulk in it.
 
