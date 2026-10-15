@@ -113,9 +113,9 @@ const columns = (by, menu) => [
 
 /**
  * The Collections tab (spec 9.1): every collection, live, in three tables
- * (owner, 2026-10-01): System (Can't upload cards), Projects (the store's own
- * cards, + Start Project) and Collections (+ Price Collection, with the
- * status filter). One name/phone search and one sort for all three, and a
+ * (owner, 2026-10-01): System (Can't upload cards), Collections (+ Price
+ * Collection, with the status filter) and Projects (the store's own cards,
+ * + Start Project); Collections above Projects since 2026-10-14 (owner). One name/phone search and one sort for all three, and a
  * line on the ones open on another computer.
  */
 export default function CollectionsPage() {
@@ -393,14 +393,15 @@ export default function CollectionsPage() {
         empty: "Can't upload cards appears here after the first export.",
         noMatch: 'Nothing here matches.',
       })}
-      {section('project', 'Projects', {
-        empty: 'No projects yet. Press + Start Project to price a box of the store’s own cards.',
-        noMatch: 'No projects match.',
-      })}
+      {/* Collections above Projects (owner, 2026-10-14). */}
       {section('collection', 'Collections', {
         filters: true,
         empty: 'No collections yet. Press + Price Collection to start one.',
         noMatch: 'No collections match.',
+      })}
+      {section('project', 'Projects', {
+        empty: 'No projects yet. Press + Start Project to price a box of the store’s own cards.',
+        noMatch: 'No projects match.',
       })}
 
       {creating === 'collection' && (
