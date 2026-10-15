@@ -1545,6 +1545,6 @@
 }
 .own-rate-alert strong { display: block; margin-bottom: 4px; color: var(--warn); }
 .own-rate-alert ul { margin: 0; padding: 0; list-style: none; }
-/* One short line per card: its name, then Credit and Cash in their colours. */
-.own-rate-alert li { display: flex; gap: 14px; margin: 2px 0; line-height: 1.4; font-variant-numeric: tabular-nums; }
+/* One line per card: the card in full — Credit · Cash, in their colours. */
+.own-rate-alert li { margin: 2px 0; line-height: 1.4; font-variant-numeric: tabular-nums; }
 .ora-card { font-weight: 600; }
