@@ -2,11 +2,12 @@
 // browser with jsPDF: US Letter, portrait, two columns, in pull-pdf's look
 // (C:\ClaudeProjects\pull-pdf: dark section bands with their card counts,
 // one row per card tinted by its colour, with a tick box). Compact (owner,
-// 2026-10-14): one line a card, its set and number and its condition in
-// black chips lined up on the right, its finish and treatments in chips
-// after its name (wrapping under it only when they don't fit); the set's
-// symbol on each category's band. Sections carry on across columns and
-// pages with "(cont.)".
+// 2026-10-14): one line a card, its count first in a column of its own so
+// the names line up, its set and number and its condition in black chips
+// lined up on the right, its finish and treatments in chips after its name
+// (wrapping under it only when they don't fit); the set's symbol, large, on
+// each category's band. Sections carry on across columns and pages with
+// "(cont.)".
 
 import { jsPDF } from 'jspdf';
 
@@ -16,7 +17,8 @@ const GUTTER = 14;
 const COL_W = (PAGE.w - 2 * MARGIN - GUTTER) / 2;
 const TOP = 46;                              // under the page header
 const BOTTOM = PAGE.h - 28;                  // above the page number
-const BAND = 15;
+const BAND = 24;                             // big enough to see the set's symbol (owner, 2026-10-14)
+const SYMBOL_H = 17;
 const ROW = 13;                              // a one-line row
 const ROW_WRAPPED = 22;                      // its chips on a second line
 const ROW_GAP = 1;
@@ -25,8 +27,8 @@ const NAME_PT = 8.6;
 const CHIP_PT = 6.6;
 const CHIP_H = 9;
 const BOX = 7;
-const NAME_X = 19;                           // the name, after the chip and the tick box
-const QTY_W = 15;
+const QTY_RIGHT = 33;                        // the count, first, right-aligned in its own column
+const NAME_X = 37;                           // the name, after the chip, the tick box and the count
 const COND_W = 20;
 
 // pull-pdf's colour groups (sorting.py BUCKET_STYLE): a faint row tint, and a
@@ -143,24 +145,25 @@ export function auditPdf({ title, sections, symbols = {}, printedAt = new Date()
   const band = (s, cont) => {
     doc.setFillColor(35, 38, 58);
     doc.roundedRect(x(), y, COL_W, BAND, 2.5, 2.5, 'F');
-    let textX = x() + 6;
+    let textX = x() + 7;
     const symbol = s.set ? symbols[s.set] : null;
     if (symbol) {
-      const h = 10;
-      const w = Math.min(16, h * symbol.ratio);
+      // As tall as SYMBOL_H, a wide symbol no wider than 1.6 times that.
+      const w = Math.min(SYMBOL_H * 1.6, SYMBOL_H * symbol.ratio);
+      const h = w / symbol.ratio;
       doc.addImage(symbol.data, 'PNG', textX, y + (BAND - h) / 2, w, h);
-      textX += w + 5;
+      textX += w + 7;
     }
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
+    doc.setFontSize(9.5);
     const countText = String(s.cards);
     const countW = doc.getTextWidth(countText);
     doc.setTextColor(205, 208, 222);
-    doc.text(countText, x() + COL_W - 6, y + 10.4, { align: 'right' });
+    doc.text(countText, x() + COL_W - 7, y + 15.6, { align: 'right' });
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8.6);
+    doc.setFontSize(11);
     doc.setTextColor(255, 255, 255);
-    doc.text(fit(doc, pdfSafe(cont ? `${s.name} (cont.)` : s.name), x() + COL_W - 12 - countW - textX), textX, y + 10.4);
+    doc.text(fit(doc, pdfSafe(cont ? `${s.name} (cont.)` : s.name), x() + COL_W - 14 - countW - textX), textX, y + 15.8);
     y += BAND + 2;
   };
 
@@ -168,7 +171,7 @@ export function auditPdf({ title, sections, symbols = {}, printedAt = new Date()
   const layout = (r) => {
     const set = pdfSafe(r.set);
     const setW = chipWidth(set);
-    const right = COL_W - 4 - QTY_W - COND_W - 3 - setW - 4;   // the name's room ends at the set chip
+    const right = COL_W - 4 - COND_W - 3 - setW - 4;   // the name's room ends at the set chip
     const extras = r.extras.map((e) => pdfSafe(e));
     const extrasW = extras.reduce((w, e) => w + chipWidth(e) + 2, 0);
     doc.setFont('helvetica', 'normal');
@@ -190,15 +193,16 @@ export function auditPdf({ title, sections, symbols = {}, printedAt = new Date()
     doc.setLineWidth(0.7);
     doc.setFillColor(255, 255, 255);
     doc.rect(left + 8, y + (ROW - BOX) / 2, BOX, BOX, 'FD');
-    // Right to left: the count, the condition, the set and number, each in its own column.
+    // The count first, in its own column so every name starts at the same place
+    // (owner, 2026-10-14): a single card's quietly, more than one's in bold.
+    doc.setFont('helvetica', r.qty > 1 ? 'bold' : 'normal');
+    doc.setFontSize(NAME_PT);
+    if (r.qty > 1) doc.setTextColor(0, 0, 0);
+    else doc.setTextColor(110, 112, 122);
+    doc.text(`${r.qty}x`, left + QTY_RIGHT, y + 9.2, { align: 'right' });
+    // Right to left: the condition, then the set and number, each in its own column.
     const top = y + (ROW - CHIP_H) / 2;
-    if (r.qty > 1) {
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(NAME_PT);
-      doc.setTextColor(0, 0, 0);
-      doc.text(`x${r.qty}`, left + COL_W - 4, y + 9.2, { align: 'right' });
-    }
-    const condLeft = left + COL_W - 4 - QTY_W - COND_W;
+    const condLeft = left + COL_W - 4 - COND_W;
     chip(r.condition, condLeft, top, CONDITION_FILL[r.condition] ?? CONDITION_FILL.NM, COND_W);
     chip(l.set, condLeft - 3 - l.setW, top, [255, 255, 255], l.setW);
     // The name, then its finish and treatments (or under it, when they don't fit).
