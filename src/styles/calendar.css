@@ -238,7 +238,11 @@ button.flag-chip:hover, button.flag-chip[aria-expanded="true"] { background: rgb
   background: color-mix(in srgb, var(--game) 6%, var(--panel));
   border-color: color-mix(in srgb, var(--game) 40%, var(--border));
   border-top-color: var(--c);
+  /* Its ⋯ menu and the "Condition checked?" box hang out past a short panel
+     (owner, 2026-10-14: they were cut off); the header keeps the rounded top. */
+  overflow: visible;
 }
+.day-page .buy-panel > .cardpanel-head { border-radius: 6px 6px 0 0; }
 .day-page .cardpanel-head { background: color-mix(in srgb, var(--game) 16%, var(--panel-2)); }
 
 .buy-panel-head .buy-number { font-size: 15px; }

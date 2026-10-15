@@ -269,7 +269,7 @@ function DayScreen({ game, day }) {
    * Completed without exporting them, so they leave the header search and the
    * day's export; or, marked that way, Paid/Ours again.
    */
-  /** A buy's ⋯ → Flag check for condition / Condition checked (owner, 2026-10-14). */
+  /** A buy's 🚩 chip → Yes, or ⋯ → ✅ Condition checked: the flag off (owner, 2026-10-14). CONFIRM BUY flags. */
   async function setConditionFlag(buy, number, flag) {
     setBusy(true);
     const { error } = await withLoading(() => supabase.rpc('buy_set_condition_check', {
@@ -966,13 +966,6 @@ function BuyPanel({
               blocked: offline ? 'No connection' : printing ? 'Printing…' : lines.length ? null : 'No Magic cards in this buy',
               title: "A PDF of this buy's Magic cards by Crystal Commerce category, to check them by hand. Changes nothing.",
               onClick: () => onPrint(buy, number),
-            }] : []),
-            // 🚩 Flag check for condition (owner, 2026-10-14), on a buy not flagged now.
-            ...(!buy.condition_check ? [{
-              label: '🚩 Flag check for condition',
-              blocked: offOrBusy,
-              title: "🚩 Flag this buy: its cards' condition needs checking before export",
-              onClick: () => onFlag(buy, number, true),
             }] : []),
             // Its cards edited on the pricing screen, saved with SAVE BUY (owner, 2026-10-13):
             // for small fixes (a condition, a treatment) before an export.
