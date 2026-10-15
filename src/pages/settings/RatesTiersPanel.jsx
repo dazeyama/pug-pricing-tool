@@ -102,13 +102,13 @@ export default function RatesTiersPanel() {
           <tbody>
             <tr>
               <th scope="row">Low end</th>
-              <td><span className="tier-when">under</span><TierBox tier="low" field="under" money label="Low end: cards under" /></td>
+              <td><span className="tier-cell"><span className="tier-when">under</span><TierBox tier="low" field="under" money label="Low end: cards under" /></span></td>
               <td><TierBox tier="low" field="credit" label="Low end Credit" /></td>
               <td><TierBox tier="low" field="cash" label="Low end Cash" /></td>
             </tr>
             <tr>
               <th scope="row">High end</th>
-              <td><span className="tier-when">over</span><TierBox tier="high" field="over" money label="High end: cards over" /></td>
+              <td><span className="tier-cell"><span className="tier-when">over</span><TierBox tier="high" field="over" money label="High end: cards over" /></span></td>
               <td><TierBox tier="high" field="credit" label="High end Credit" /></td>
               <td><TierBox tier="high" field="cash" label="High end Cash" /></td>
             </tr>
