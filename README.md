@@ -637,9 +637,9 @@ Every collection and project, in three tables.
 
 | Table | What's in it |
 |---|---|
-| **System** | **Can't upload cards**, made by the app. |
-| **Projects** | The store's own cards, priced for an export. |
 | **Collections** | Customers' collections. |
+| **Projects** | The store's own cards, priced for an export. |
+| **System** | **Can't upload cards**, made by the app. |
 
 ### Buttons
 

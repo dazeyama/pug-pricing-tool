@@ -190,8 +190,8 @@
 
 .col-phone .system-chip { margin-left: 0; }
 
-/* Collections tab in three tables (owner, 2026-10-01): System, Projects,
-   Collections, each with its heading, count and button; fixed column widths
+/* Collections tab in three tables (owner, 2026-10-01): Collections,
+   Projects, System (that order since 2026-10-14), each with its heading, count and button; fixed column widths
    so the three line up. */
 .col-section + .col-section { margin-top: 26px; }
 .col-section-head { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; }
