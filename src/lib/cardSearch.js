@@ -10,7 +10,7 @@ import {
   parseQuery, withoutGuessedSetCode, wholeNameReading, numericSize, numberPrefix, sameNumber, dexNumberQuery,
 } from './query.js';
 import { searchTcgplayer } from './prices.js';
-import { fold, guessSetCode, justtcgCandidate, noNumberCards, plainSetName } from './justtcgCards.js';
+import { fold, guessSetCode, isSealed, justtcgCandidate, noNumberCards, plainSetName } from './justtcgCards.js';
 import { englishPokemonName } from './pokemonNames.js';
 
 /** First page of each source; beyond this, "refine your search". */
@@ -144,7 +144,10 @@ async function tcgplayerCandidates(q, size, signal) {
   }
   if (signal.aborted) throw new DOMException('Superseded', 'AbortError');
   const list = [];
-  for (const card of cards) list.push(justtcgCandidate(card, { lang: 'en', setCode: await setCodeFor(card.set_name, signal) }));
+  // Sealed products aren't cards (owner, 2026-10-15).
+  for (const card of cards.filter((c) => !isSealed(c))) {
+    list.push(justtcgCandidate(card, { lang: 'en', setCode: await setCodeFor(card.set_name, signal) }));
+  }
   return list;
 }
 

@@ -1,9 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  splitName, splitNumber, printingFinish, justtcgVersions, siblingVersions, guessSetCode, plainSetName,
-  justtcgCandidate, lineVersion, isTcgplayerOnlyLine, noNumberCards, withTcgplayerVersions, isOversized, isPlayStamp,
-  isWorldsDeck,
+  guessSetCode, isOversized, isPlayStamp, isSealed, isTcgplayerOnlyLine, isWorldsDeck, justtcgCandidate, justtcgVersions, lineVersion, noNumberCards, plainSetName, printingFinish, siblingVersions, splitName, splitNumber, withTcgplayerVersions,
 } from '../src/lib/justtcgCards.js';
 import { lineText } from '../src/lib/lineFormat.js';
 
@@ -249,4 +247,15 @@ test('TCGplayer\'s "None" rarity is no rarity (smoke test F4)', () => {
   const card = { uuid: 'n', name: "Misty's Starmie", set: 'city-gym-decks-pokemon-japan', set_name: 'City Gym Decks', number: 'N/A', rarity: 'None', variants: [] };
   assert.equal(justtcgCandidate(card, { lang: 'ja', setCode: 'CGD', number: 'No. 121' }).rarity, null);
   assert.equal(justtcgCandidate({ ...card, rarity: 'Holo Rare' }, { lang: 'ja', setCode: 'CGD' }).rarity, 'Holo Rare');
+});
+
+// Owner, 2026-10-15: TCGplayer's sealed products never show as cards or versions.
+test('sealed products are told apart from cards', () => {
+  assert.ok(isSealed({ name: '151 Booster Bundle Bulk Case', number: 'N/A', rarity: '' }));
+  assert.ok(isSealed({ name: 'Base Set 2 Booster Pack', number: 'N/A', rarity: null }));
+  assert.ok(isSealed({ name: 'XY Base Set Sleeved Booster Pack', number: 'N/A' }));
+  assert.ok(!isSealed({ name: 'Pikachu', number: '025/165', rarity: 'Common' }));
+  // An unnumbered card still has a rarity; a card named like a product still has a number.
+  assert.ok(!isSealed({ name: 'Pikachu', number: 'N/A', rarity: 'Promo' }));
+  assert.ok(!isSealed({ name: 'Energy Box', number: '12', rarity: '' }));
 });

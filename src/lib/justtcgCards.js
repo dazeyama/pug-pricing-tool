@@ -47,6 +47,16 @@ export function noNumberCards(cards, found) {
   });
 }
 
+/**
+ * TCGplayer's sealed products (packs, boxes, cases…), which a name search
+ * brings back too (owner, 2026-10-15: "151 Booster Bundle Bulk Case" on a
+ * "bulk" search): no card number ("N/A"), no rarity, and a product word in
+ * the name. Never a card, so never a suggestion or a version.
+ */
+const SEALED = /\b(booster|boosters|pack|packs|box|boxes|bundle|case|tin|tins|collection|display|blister|kit|binder|sleeved|deck)\b/i;
+export const isSealed = (card) => !/\d/.test(String(card?.number ?? ''))
+  && !String(card?.rarity ?? '').trim() && SEALED.test(String(card?.name ?? ''));
+
 /** A JustTCG card's own id: the one its prices are looked up by. */
 export const cardId = (card) => String(card?.uuid ?? card?.id ?? '');
 

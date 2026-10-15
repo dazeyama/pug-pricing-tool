@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchPrices, lookupsFor, priceResults, searchTcgplayer } from '../../lib/prices.js';
 import { usePriceLimit } from '../../state/priceLimit.jsx';
 import { useConnection } from '../../state/connection.jsx';
+import { isSealed } from '../../lib/justtcgCards.js';
 
 // Prices only after a card has stayed selected for 400ms (spec 5.3), so
 // arrowing through suggestions doesn't spend the JustTCG allowance. Results
@@ -98,7 +99,8 @@ export function usePokemonSiblings(selected, pokemon) {
     const size = selected.printedSize ?? pokemon.card?.set?.cardCount?.official ?? null;
     const timer = setTimeout(() => {
       searchTcgplayer({ kind: 'siblings', key, name: selected.name, number: selected.number, size })
-        .then((cards) => alive && setState({ key, cards }))
+        // Sealed products aren't versions of a card (owner, 2026-10-15).
+        .then((cards) => alive && setState({ key, cards: (cards ?? []).filter((c) => !isSealed(c)) }))
         .catch((e) => {
           // No extra versions this time; the card's own still price as usual.
           console.warn('TCGplayer versions failed', e);
