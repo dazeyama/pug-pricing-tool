@@ -827,10 +827,15 @@ begin
   perform pg_temp.ok(s, '… and its Cash comes from the next step down',
     (select internal.line_pct(l, x, 'cash') = 50 and internal.line_pct(l, x, 'credit') = 80
        from buy_lines l, buys x where l.id = l_own and x.id = b));
+  -- The same card merges, own rate or not (0056; owner, 2026-10-15).
   v_id := draft_add_line(a, pg_temp.line('Dbtest Rate Own', 'DBR', '004', 1, 10.00), u, true);
-  perform pg_temp.ok(s, 'The same card added again isn''t merged into one with its own rate',
-    v_id <> l_own and (select quantity from buy_lines where id = l_own) = 1);
-  perform draft_remove_line(v_id, 1, u);
+  perform pg_temp.ok(s, 'The same card added again merges, the copy taking its own rate',
+    v_id = l_own and (select quantity = 2 and custom_credit_pct = 80 from buy_lines where id = l_own));
+  v_id := draft_add_line(a, pg_temp.line('Dbtest Rate Own', 'DBR', '004', 1, 10.00, p_cond => 'LP'), u, true);
+  v_id := draft_update_line(v_id, pg_temp.line('Dbtest Rate Own', 'DBR', '004', 1, 10.00), u);
+  perform pg_temp.ok(s, 'A card edited into a copy of one with its own rate merges, keeping it',
+    v_id = l_own and (select quantity = 3 and custom_credit_pct = 80 from buy_lines where id = l_own));
+  perform draft_remove_line(l_own, 2, u);
   perform draft_set_custom_rates(a, 45, null, u);
   perform pg_temp.ok(s, 'Custom rates on the buy turn the low/high rules off',
     (select internal.line_pct(l, x, 'cash') = 45 and internal.line_pct(l, x, 'credit') = 65
