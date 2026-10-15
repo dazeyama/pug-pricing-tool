@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import GameBadge from '../../components/GameBadge.jsx';
 import { POKEMON_CARD_BACK } from '../../lib/pokemonImages.js';
-import { formatMoney } from '../../lib/money.js';
+import { formatMoney, payout } from '../../lib/money.js';
 import { perText, shortName } from '../../lib/bulk.js';
 
 // Bulk on the Price screen (docs/TEAM_FEEDBACK.md 5.4, Phase T3): a bulk item
@@ -101,6 +101,9 @@ export function BulkPrice({ c, manual = null, onManual, rate, onDone }) {
   const value = manual ?? c.value;
   const [text, setText] = useState(String(value));
   useEffect(() => setText(String(value)), [value]);
+  // The price as typed, for the Cash and Credit under it; the saved one while it isn't a price.
+  const typed = text.trim().replace(/^\$/, '');
+  const live = VALID_MONEY.test(typed) ? Number(typed) : value;
 
   function commit() {
     const raw = text.trim().replace(/^\$/, '');
@@ -138,12 +141,16 @@ export function BulkPrice({ c, manual = null, onManual, rate, onDone }) {
           <span className="quote-tag manual" title={`Settings → Bulk values: ${formatMoney(c.value)}`}>✎ own value</span>
         )}
       </label>
+      {/* What that pays, worked out as it's typed (owner, 2026-10-15): "Credit $0.99 · Cash $0.49 per 100". */}
       <p
         className="bulk-rates"
-        title={"Cash and Credit are these shares of the full market price: this buy's rates (the Master Buy "
-          + 'Percentages, or its custom ones). Bulk never takes the low-end or high-end rates.'}
+        title={`Credit ${rate.credit}% and Cash ${rate.cash}% of the full market price, rounded down: this buy's rates `
+          + '(the Master Buy Percentages, or its custom ones). Bulk never takes the low-end or high-end rates.'}
       >
-        Paid at <span className="is-credit">Credit {rate.credit}%</span> · <span className="is-cash">Cash {rate.cash}%</span>
+        Pays <span className="is-credit">Credit <strong>{formatMoney(payout(live, rate.credit))}</strong></span>
+        {' · '}
+        <span className="is-cash">Cash <strong>{formatMoney(payout(live, rate.cash))}</strong></span>
+        {' '}per {c.item.per}
         <span className="bulk-rates-q" aria-hidden="true">ⓘ</span>
       </p>
       <p className="hint">

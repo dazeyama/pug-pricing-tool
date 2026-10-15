@@ -1606,7 +1606,11 @@
 }
 .bulk-label b { font-size: 1.35em; line-height: 1.05; color: #d8c4ff; }
 .card-wrap.bulk-wrap { background: transparent; box-shadow: none; overflow: visible; }
-.bulk-thumb .thumb-img { background: transparent; overflow: visible; }
+.bulk-thumb .thumb-img { background: transparent; overflow: visible; box-shadow: none; }
+/* No card-shaped shadow or hover outline round a stack (owner, 2026-10-15):
+   the backs have their own; picked or highlighted, the outline still shows. */
+.thumb.bulk-thumb:not(.thumb-slot):hover .thumb-img { box-shadow: none; }
+.thumb.bulk-thumb:hover:not(.selected):not(.highlight) .thumb-img { outline-color: transparent; }
 /* The price box: the full market price per item, typed over for a value of its own. */
 .bulk-price-one {
   display: flex;
