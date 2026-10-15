@@ -19,6 +19,6 @@
 - The export's spec is docs/EXPORT_FUNCTION.md.
 - The team feedback plan (printout, individual rates, bulk; phases T1–T3) is docs/TEAM_FEEDBACK.md.
 - Current phase: docs/TEAM_FEEDBACK.md Phases T1 (audit printout) and T2 (individual rates, migrations
-  0055–0057) are done; T3 (bulk, migration 0058) is built and waits for the owner's check.
+  0055–0057) and T3 (bulk, migration 0058) are done, live as v0.9.9.7-feedback.
   Phase 10 launch (the migration squash, then prod) waits for the owner's go; the live site runs on the
   dev project until then. TEST.md holds the smoke tests and the database test run.
