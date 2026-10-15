@@ -108,18 +108,16 @@ Nothing is remembered, and staff picks are never asked for: those happen in the 
 ### 3.4 Order
 
 1. **Sections by category, A to Z**: case- and accent-insensitive, numbers in natural order ("Commander 2015" before "Commander 2021"), **Unmatched last**.
-2. **Inside a section, by condition (NM → DMG), then collector number** (owner, 2026-10-14: category, condition, collector number), naturally: 7 < 12 < 120 < 120a; a number with a prefix (The List's `CMA-216`) sorts by its prefix, then its number. Then by name, then non-foil before foil before etched.
+2. **Inside a section** (owner, 2026-10-14): **the NM cards by collector number, then every other condition together by collector number**, the same card's lower conditions in order down (LP, MP, HP, DMG). Numbers naturally: 7 < 12 < 120 < 120a; a number with a prefix (The List's `CMA-216`) sorts by its prefix, then its number. Then by name, then non-foil before foil before etched.
 
 ### 3.5 What each row says
 
 ```
-☐  Lightning Bolt                       x3
-   2X2 117 · NM · Foil · Borderless
+▌☐ Lightning Bolt [Foil] [Borderless]          [2X2 117] [NM]  x3
 ```
 
-- A **tick box**, the **card name** (in full, as the buy line has it; a long one ends in "…"), and the **quantity** on the right (`x3`, only when over 1, as pull-pdf prints it).
-- Under it, small: **set code and collector number**, **condition**, **finish** (Foil / Etched; nothing for non-foil), **treatments** in the app's own words (Extended Art, Borderless, Showcase, Promo Pack, Prerelease…).
-- A thin strip on the row's left edge in the **condition's colour** (NM green … DMG red, as on the condition buttons), so a stack's worse cards stand out.
+- **One line a card** (owner, 2026-10-14: compact, more cards a page): a **tick box**, the **card name** (in full; a long one ends in "…"), its **finish and treatments** in small chips after it (Foil / Etched, then Borderless, Showcase, Extended art, Promo pack stamp…; under the name when they don't fit), and on the right, each in its own column so they line up down the page: the **set and number** chip ("2X2 117"), the **condition** chip (tinted in the condition's colour), the **quantity** (`x3`, only when over 1). Every chip's text black and bold, easy to read at a glance.
+- The row's **left chip and tint are the card's colour**, exactly as pull-pdf's (owner, 2026-10-14): White, Blue, Black, Red, Green, Multicolor, Artifact (colourless), Lands (a land on either face), Unknown; from the Scryfall card, looked up while printing.
 - **No prices.**
 
 ### 3.6 Layout
@@ -128,8 +126,8 @@ Based on pull-pdf (`C:\ClaudeProjects\pull-pdf`, read-only: its `render.py` and 
 
 - **US Letter, portrait, 2 columns** (pull-pdf solves up to 8 columns onto one page; these rows carry more detail, and a day's batch runs to several pages).
 - **Page header**: the title (**Audit — Magic, Tuesday, October 14, 2026**; **Audit — Buy 3, October 14, 2026**; **Audit — "CU Intake"** for a collection), the printing time, and the card count (cards, not lines). Page numbers in the footer ("Page 2 of 5").
-- **Section bands**: dark, the category name in bold, the section's card count on the right (as pull-pdf's). A section broken by a column or page repeats its band as **"Commander 2015 (cont.)"**.
-- **Type size fixed** (about 10pt names, 8pt detail lines), not solved per page: every printout reads the same.
+- **Section bands**: dark, **the set's symbol in white** (owner, 2026-10-14: the set most of the section's cards are from; none for Unmatched), the category name in bold, the section's card count on the right (as pull-pdf's). A section broken by a column or page repeats its band as **"Commander 2015 (cont.)"**.
+- **Compact and fixed** (owner, 2026-10-14): 8.6pt names, 6.6pt chips, 13pt rows, 0.39" margins: about 100 cards a page, every printout reading the same.
 - Names outside the PDF's built-in fonts degrade rather than break (as pull-pdf's `_safe`); a card's name is never dropped.
 
 ### 3.7 Building and opening the PDF
@@ -331,9 +329,10 @@ Each phase: build, `npm test`, `npm run build`, lint, the database test run afte
 - **EXPORT ▾**: the button gains a small ▾; a click opens **Print?** / **Export csv** (upward at the foot of a collection's list). A blocked EXPORT still just says why. Pokémon days' COMPLETE has no menu. **Print buy** sits under Export single buy in a Magic buy's ⋯ and needs no picked user.
 - **Which cards** (`printLines`): a batch's Magic cards not yet Completed; once all are, the ones an export took (exported, or sent to Can't upload). Cards Completed by hand print nothing (Print says so).
 - **Characters**: the PDF's built-in font draws Windows-1252 (accents, curly quotes, dashes, "…"); one character outside it garbled a whole line (tested: "120★"), so those become plain letters ("★" → "*", others their unaccented letter, else "?") (`pdfSafe`).
-- **Inside a category: condition first, then collector number** (owner, 2026-10-14). Collector numbers sort by prefix, number, then suffix: 12 < 120 < 120a, and a prefixed one (The List's `2XM-120`) after the plain ones; categories differing only in capitals share a section.
+- **Inside a category: NM by number, then the other conditions by number** (owner, 2026-10-14). Collector numbers sort by prefix, number, then suffix: 12 < 120 < 120a, and a prefixed one (The List's `2XM-120`) after the plain ones; categories differing only in capitals share a section.
 - The page title: **Audit — Magic, Tuesday, October 14, 2026**, **Audit — Buy 3, October 14, 2026**, **Audit — CU Intake**, **Audit — Can't upload cards**; printing time and card count at the right; "Page 2 of 5" at the foot.
 - Checked by rendering a 150-line sample (10 sections, 4 pages) to images: bands, "(cont.)", Unmatched last, strips, tick boxes, counts, long names cut with "…".
+- **Compact rework (owner, 2026-10-14)**: one-line rows with black chips (set and number, condition, finish and treatments), pull-pdf's colour chip and tint (`cardBucket`; Scryfall cards from the matching, and fetched for exported cards), the set's symbol on each band (Scryfall's SVG drawn white on a canvas, fetched with `?print=1` for its own CORS copy; one that won't load is just left off). A 230-line sample with real set symbols came to 3 pages (about 100 a page, from 50). The symbols' canvas step runs in the browser only: the sample stood in for it with the same SVGs drawn white.
 
 **Where to look**: a Magic day with Paid/Ours buys → EXPORT ▾ → Print?; a buy's ⋯ → Print buy; an exported day → Print? (its exported categories); a card with no CC product → Unmatched.
 

@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { UNMATCHED, auditRow, auditSections, matchCategory, printLines, savedCategory } from '../src/lib/auditPrint.js';
+import {
+  UNMATCHED, auditRow, auditSections, cardBucket, matchCategory, printLines, savedCategory,
+} from '../src/lib/auditPrint.js';
 import { magicTreatmentLabel } from '../src/lib/printings.js';
 
 const line = (over) => ({
@@ -49,8 +51,12 @@ test('sections A to Z with Unmatched last; inside, by collector number; the same
   assert.equal(c21.cards, 6);
   assert.deepEqual(c21.rows.map((r) => [r.name, r.qty]), [['Arcane Signet', 2], ['Sol Ring', 4]]);
   // "alpha" joins "Alpha"; 12 before 120a; a prefixed number (The List's) after the plain ones.
-  assert.deepEqual(s[0].rows.map((r) => r.detail.split(' · ')[0]), ['LEA 12', 'LEA 120a', 'PLST 2XM-120']);
+  assert.deepEqual(s[0].rows.map((r) => r.set), ['LEA 12', 'LEA 120a', 'PLST 2XM-120']);
   assert.equal(s[3].rows[0].name, 'Mystery Card');
+  // The band's symbol: the set most of its cards are from; none for Unmatched.
+  assert.equal(s[0].set, 'lea');
+  assert.equal(s[2].set, 'c21');
+  assert.equal(s[3].set, null);
 });
 
 test('different condition, finish or treatments stay separate rows, NM before LP, non-foil before foil', () => {
@@ -60,28 +66,41 @@ test('different condition, finish or treatments stay separate rows, NM before LP
     { line: line({ name: 'Bolt' }), category: 'Alpha' },
     { line: line({ name: 'Bolt', treatments: ['borderless'] }), category: 'Alpha' },
   ]);
-  assert.deepEqual(s[0].rows.map((r) => r.detail), [
-    'MOM 1 · NM', 'MOM 1 · NM · Borderless', 'MOM 1 · NM · Foil', 'MOM 1 · LP',
-  ]);
+  assert.deepEqual(s[0].rows.map((r) => [r.condition, ...r.extras].join(' ')), ['NM', 'NM Borderless', 'NM Foil', 'LP']);
 });
 
-test('inside a category: condition first, then collector number', () => {
+test("inside a category: NM by number, then the rest by number, a card's conditions in order down", () => {
   const s = auditSections([
     { line: line({ name: 'Zap', collector_number: '5', condition: 'MP' }), category: 'Alpha' },
     { line: line({ name: 'Bolt', collector_number: '200' }), category: 'Alpha' },
-    { line: line({ name: 'Ruby', collector_number: '3', condition: 'LP' }), category: 'Alpha' },
+    { line: line({ name: 'Zap', collector_number: '5', condition: 'DMG' }), category: 'Alpha' },
+    { line: line({ name: 'Ruby', collector_number: '3', condition: 'HP' }), category: 'Alpha' },
     { line: line({ name: 'Mox', collector_number: '12' }), category: 'Alpha' },
+    { line: line({ name: 'Zap', collector_number: '5', condition: 'LP' }), category: 'Alpha' },
     { line: line({ name: 'Orb', collector_number: '1', condition: 'LP' }), category: 'Alpha' },
   ]);
-  assert.deepEqual(s[0].rows.map((r) => `${r.condition} ${r.name}`), ['NM Mox', 'NM Bolt', 'LP Orb', 'LP Ruby', 'MP Zap']);
+  assert.deepEqual(s[0].rows.map((r) => `${r.condition} ${r.name}`),
+    ['NM Mox', 'NM Bolt', 'LP Orb', 'HP Ruby', 'LP Zap', 'MP Zap', 'DMG Zap']);
+});
+
+test("a card's colour group, as pull-pdf's", () => {
+  assert.equal(cardBucket({ colors: ['R'], type_line: 'Instant' }), 'red');
+  assert.equal(cardBucket({ colors: ['W', 'U'], type_line: 'Creature' }), 'multicolor');
+  assert.equal(cardBucket({ colors: [], type_line: 'Artifact' }), 'artifact');
+  assert.equal(cardBucket({ colors: [], type_line: 'Land' }), 'land');
+  assert.equal(cardBucket({ colors: ['G'], type_line: 'Creature — Elf // Land' }), 'land');   // a land on either face
+  assert.equal(cardBucket({ type_line: '', card_faces: [{ colors: ['B'], type_line: 'Creature' }] }), 'black');
+  assert.equal(cardBucket(null), 'unknown');
 });
 
 test("a row's words", () => {
   const r = auditRow(line({
     name: 'Lightning Bolt', set_code: '2x2', collector_number: '117', finish: 'foil', condition: 'MP',
     treatments: ['borderless', 'surgefoil'], quantity: 3,
-  }));
-  assert.deepEqual(r, { name: 'Lightning Bolt', qty: 3, condition: 'MP', detail: '2X2 117 · MP · Foil · Borderless · Surge foil' });
+  }), 3, 'red');
+  assert.deepEqual(r, {
+    name: 'Lightning Bolt', qty: 3, set: '2X2 117', condition: 'MP', extras: ['Foil', 'Borderless', 'Surge foil'], bucket: 'red',
+  });
   assert.equal(magicTreatmentLabel('extendedart'), 'Extended art');
   assert.equal(magicTreatmentLabel('promopack'), 'Promo pack stamp');
   assert.equal(magicTreatmentLabel('variant:Foil Etched'), 'Foil Etched');

@@ -1,7 +1,10 @@
 import { useCallback, useState } from 'react';
 import { useToast } from '../../components/Toast.jsx';
-import { matchLines } from '../../lib/ccExport.js';
-import { UNMATCHED, auditSections, matchCategory, printLines, savedCategory } from '../../lib/auditPrint.js';
+import { matchLines, scryfallCards } from '../../lib/ccExport.js';
+import { loadSets } from '../../lib/scryfall.js';
+import {
+  UNMATCHED, auditSections, cardBucket, matchCategory, printLines, savedCategory,
+} from '../../lib/auditPrint.js';
 
 /** Hand the PDF over: downloaded, and shown in `tab` (opened at the click), else a new one. */
 function deliver(doc, fileName, tab) {
@@ -18,11 +21,77 @@ function deliver(doc, fileName, tab) {
   setTimeout(() => URL.revokeObjectURL(url), 120_000);
 }
 
+const SYMBOL_PX = 64;   // drawn 10pt tall: sharp on paper
+
+/**
+ * A set's symbol for its category's band (owner, 2026-10-14): Scryfall's SVG,
+ * drawn white at SYMBOL_PX tall on a canvas, as a PNG the PDF can hold.
+ * Asked for with its own address (`?print=1`): Scryfall's SVG host sends its
+ * CORS header only when asked, and a copy a plain <img> cached would taint
+ * the canvas (as Suggestions' set masks found).
+ * @returns {Promise<{ data: string, ratio: number }>}
+ */
+async function setSymbol(uri) {
+  const res = await fetch(`${uri}${uri.includes('?') ? '&' : '?'}print=1`, { mode: 'cors' });
+  if (!res.ok) throw new Error(`symbol ${res.status}`);
+  let svg = await res.text();
+  const box = /viewBox="\s*[-\d.]+[\s,]+[-\d.]+[\s,]+([\d.]+)[\s,]+([\d.]+)\s*"/.exec(svg);
+  const ratio = box ? Number(box[1]) / Number(box[2]) || 1 : 1;
+  const w = Math.max(1, Math.round(SYMBOL_PX * ratio));
+  // Its own size, so it's drawn sharp rather than stretched from a small default.
+  svg = svg.replace(/<svg\b([^>]*)>/, (_, attrs) => `<svg${attrs.replace(/\s(width|height)="[^"]*"/g, '')} width="${w}" height="${SYMBOL_PX}">`);
+  const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+  try {
+    const img = await new Promise((resolve, reject) => {
+      const i = new Image();
+      i.onload = () => resolve(i);
+      i.onerror = () => reject(new Error('symbol image'));
+      i.src = url;
+    });
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = SYMBOL_PX;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, w, SYMBOL_PX);
+    // White, for the dark band.
+    ctx.globalCompositeOperation = 'source-in';
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, w, SYMBOL_PX);
+    return { data: canvas.toDataURL('image/png'), ratio };
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+/** The sections' set symbols, by set code; one that won't load is left off, nothing more. */
+async function symbolsFor(sections) {
+  const codes = [...new Set(sections.map((s) => s.set).filter(Boolean))];
+  if (!codes.length) return {};
+  let sets;
+  try {
+    sets = await loadSets();
+  } catch {
+    return {};
+  }
+  const out = {};
+  await Promise.all(codes.map(async (code) => {
+    const uri = sets.get(code)?.icon_svg_uri;
+    if (!uri) return;
+    try {
+      out[code] = await setSymbol(uri);
+    } catch {
+      // No symbol on that band: the category's name still says it.
+    }
+  }));
+  return out;
+}
+
 /**
  * Print? and Print buy (docs/TEAM_FEEDBACK.md 3): the cards' Crystal
  * Commerce categories found without asking anything (the export's matching,
- * nothing remembered; exported cards from what their export saved), then the
- * PDF, downloaded and opened in a new tab. Writes nothing anywhere.
+ * nothing remembered; exported cards from what their export saved), each
+ * card's colour from Scryfall (pull-pdf's colour groups), the sets' symbols,
+ * then the PDF, downloaded and opened in a new tab. Writes nothing anywhere.
  * @returns {{ print: (p: { lines: object[], title: string, fileName: string }) => Promise<void>, printing: boolean }}
  */
 export function useAuditPrint() {
@@ -49,19 +118,26 @@ export function useAuditPrint() {
     setPrinting(true);
     try {
       const toMatch = chosen.filter((l) => savedCategory(l) === undefined);
-      const { results } = toMatch.length ? await matchLines(toMatch) : { results: [] };
+      const { results, cards } = toMatch.length ? await matchLines(toMatch) : { results: [], cards: new Map() };
+      // Exported cards weren't matched: their Scryfall cards (for their colour) on their own.
+      const missing = chosen.map((l) => l.scryfall_id).filter((id) => id && !cards.has(id));
+      const more = missing.length ? await scryfallCards(missing) : new Map();
       const byId = new Map(results.map((r) => [r.line.id, r]));
       const placed = chosen.map((line) => {
         const saved = savedCategory(line);
-        return { line, category: saved !== undefined ? saved : matchCategory(byId.get(line.id)) };
+        return {
+          line,
+          category: saved !== undefined ? saved : matchCategory(byId.get(line.id)),
+          bucket: cardBucket(cards.get(line.scryfall_id) ?? more.get(line.scryfall_id)),
+        };
       });
       const sections = auditSections(placed);
       // The PDF library loads only when something is printed: the app starts as light as before.
-      const { auditPdf } = await import('../../lib/auditPdf.js');
-      deliver(auditPdf({ title, sections }), fileName, tab);
-      const cards = sections.reduce((n, s) => n + s.cards, 0);
+      const [{ auditPdf }, symbols] = await Promise.all([import('../../lib/auditPdf.js'), symbolsFor(sections)]);
+      deliver(auditPdf({ title, sections, symbols }), fileName, tab);
+      const count = sections.reduce((n, s) => n + s.cards, 0);
       const unmatched = sections.find((s) => s.name === UNMATCHED)?.cards ?? 0;
-      toast(`Printout ready: ${cards} card${cards === 1 ? '' : 's'}`
+      toast(`Printout ready: ${count} card${count === 1 ? '' : 's'}`
         + `${unmatched ? `, ${unmatched} Unmatched` : ''}.`, 'ok');
     } catch (e) {
       tab?.close();
