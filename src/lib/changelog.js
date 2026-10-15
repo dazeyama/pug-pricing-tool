@@ -40,6 +40,8 @@ export const CATEGORIES = [
     label: 'Actions',
     actions: ['collection_info_edited', 'collection_status_changed',
       'collection_line_edited', 'collection_repriced',
+      // A card's own rate set or cleared (Set Rate, docs/TEAM_FEEDBACK.md 4.3).
+      'collection_line_rate',
       // A day exported, put back, or marked Completed; one buy marked Completed or back;
       // a month's Cash buys file downloaded (owner, 2026-09-30 – 10-02); one buy
       // exported on its own, or its export undone (owner, 2026-10-09).
@@ -83,6 +85,7 @@ export const HEADLINES = {
   collection_cards_added: 'Cards added to collection',
   collection_imported: 'Cards imported',
   collection_line_edited: 'Card edited in collection',
+  collection_line_rate: 'Card rate set',
   collection_cards_removed: 'Cards removed from collection',
   collection_info_edited: 'Collection details edited',
   collection_status_changed: 'Status changed',
@@ -161,8 +164,15 @@ export function panelView(panel) {
   let totals = first.totals ?? null;
   if (totals && recount) {
     const market = Math.round(rows.reduce((s, l) => s + Number(l.unit_price) * Number(l.qty), 0) * 100) / 100;
-    const pct = (p) => (p == null ? null : roundDownPrice((market * Number(p)) / 100));
-    totals = { ...totals, market, cash: pct(totals.cash_pct), credit: pct(totals.credit_pct) };
+    // Each row at its card's own rate where the entry kept it (migration 0055,
+    // docs/TEAM_FEEDBACK.md 4.4), else the entry's rate; added up, rounded down once.
+    const pct = (side) => {
+      if (totals[`${side}_pct`] == null && rows.every((l) => l[`${side}_pct`] == null)) return null;
+      const raw = rows.reduce((s, l) => s + Number(l.unit_price) * Number(l.qty)
+        * Number(l[`${side}_pct`] ?? totals[`${side}_pct`]), 0) / 100;
+      return roundDownPrice(raw);
+    };
+    totals = { ...totals, market, cash: pct('cash'), credit: pct('credit') };
   }
   const games = [...new Set(panel.events.flatMap((e) => e.games ?? []))];
   return {

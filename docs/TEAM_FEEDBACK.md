@@ -5,7 +5,7 @@
 | **Product** | PUG Pricing Tool: three changes from the team's demo |
 | **Owner** | Players' Union Games (PUG) |
 | **Plan version** | 1.0 — 2026-10-14 |
-| **Status** | Approved by the owner (2026-10-14). Phase T1 built (2026-10-14), waiting for the owner's check before T2. |
+| **Status** | Approved by the owner (2026-10-14). Phase T1 built (2026-10-14); Phase T2 built (2026-10-15), waiting for the owner's check before T3. |
 | **Extends** | `docs/DESIGN_SPEC.md` (the app) and `docs/EXPORT_FUNCTION.md` (the export). Both stay the source of truth for everything not changed here. |
 | **Project folder** | `C:\ClaudeProjects\pug-pricing-tool` |
 | **Built after** | v0.9.9.6-cosmetics |
@@ -342,11 +342,21 @@ Each phase: build, `npm test`, `npm run build`, lint, the database test run afte
 
 ### Phase T2: individual rates
 
-- [ ] Migration (6.3), dev only; database test run extended (rates fixed at confirm, totals, set/clear a card's rate, refusals).
-- [ ] `rates.js` with tests: the order (4.1), thresholds (4.2, strictly), totals (4.4), alert differences (4.5); every total in 4.4 uses it.
-- [ ] Settings → Low-end and high-end rates.
-- [ ] Right-click → Set Rate beside the card, Clear, the highlight; not in Edit in project view or on Completed cards.
-- [ ] The price panel's chips, the totals' "mixed" mark, the confirm / Paid/Ours / Convert to buy alert.
+- [x] Migration (6.3), dev only; database test run extended (rates fixed at confirm, totals, set/clear a card's rate, refusals).
+- [x] `rates.js` with tests: the order (4.1), thresholds (4.2, strictly), totals (4.4), alert differences (4.5); every total in 4.4 uses it.
+- [x] Settings → Low-end and high-end rates.
+- [x] Right-click → Set Rate beside the card, Clear, the highlight; not in Edit in project view or on Completed cards.
+- [x] The price panel's chips, the totals' "mixed" mark, the confirm / Paid/Ours / Convert to buy alert.
+
+**As built (2026-10-15):**
+- **Migration 0055** (dev): `buy_lines.custom_cash_pct / custom_credit_pct` (Set Rate) and `cash_pct / credit_pct` (kept). The rule is `internal.line_pct` (kept → own → the buy's custom rates, tiers off → low / high → base), the settings row `rate_tiers` read over the shipped defaults by `internal.rate_tiers`; totals by `internal.lines_totals`. The functions that log totals were re-created from their live definitions with only that changed: `buy_event` takes the totals, `collection_totals` is gone. Each past buy's rates were copied onto its cards; on dev every one of the 39 buys with kept rates totals exactly as before. Rehearsed in a rolled-back transaction first.
+- **Kept and cleared** (4.6): kept at CONFIRM BUY, Paid/Ours, Rejected and Convert to buy (a project's cards that came from a buy keep theirs); cleared when a collection goes back to Processing / Priced or is reopened from Rejected, and by REPRICE? for the cards it reprices. Set Rate on a kept card (a project's card from a buy) replaces what was kept.
+- **Merging**: an add never merges into a card with its own rate, and an edited card merges only with one on the same own rates, so an own rate stays that card's.
+- **Set Rate**: right-click a card in the Buy list, a collection's or a project's list → **Set Rate** → Cash and Credit beside the card, each saved on blur or Enter like the list's rates, with what it would otherwise get beside the box ("high end 40%"); typing that back, or **Clear**, removes the card's own rate. Blocked (with why) in Edit in project view, on locked collections and on Completed cards. A collection's change is in the Changelog (**Card rate set**, Actions), with each rate's before and after.
+- **Totals**: rate by rate, so a list on one rate comes to exactly what it did. The labels keep the base rate; **mixed** beside them when some cards are on others ("Mixed rates: 8 cards at the low-end rates, 1 card at its own rate."). The day page uses the rates kept on each card.
+- **Priced's credit offer**: as before on one rate; with mixed rates, the cash offer × the cards' Credit ÷ their Cash, so it's still the same deal.
+- **The alert** (4.5) on CONFIRM BUY, Paid/Ours and Convert to buy: "⚠ 2 cards have their own rates", each with its own side(s) against the rate it would otherwise get.
+- Tests: `tests/rates.test.js` (10), a folded Changelog run; database test run 345 checks (24 new, "Individual rates"). The sections written before T2 run with the tiers out of the way, so their numbers stand.
 
 **Where to look**: a $1 card and a $40 card in one buy (their chips and the totals); Set Rate on one card (highlight, totals, the alert at CONFIRM BUY); custom rates on the buy (low/high rules off); a past buy's totals unchanged.
 

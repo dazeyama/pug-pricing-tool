@@ -3,7 +3,8 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
 import { dayDate, dayRange, dayTitle, parseDay, storeDay } from '../lib/calendar.js';
 import { lineBody, lineText } from '../lib/lineFormat.js';
-import { formatMoney, payout } from '../lib/money.js';
+import { formatMoney } from '../lib/money.js';
+import { mixedNote, rateTotals, tiersFrom } from '../lib/rates.js';
 import { formatPhone } from '../lib/phone.js';
 import { formatDateTime, formatTime } from '../lib/time.js';
 import { colorVar } from '../lib/palette.js';
@@ -592,6 +593,7 @@ function DayScreen({ game, day }) {
             <BuyPanel
               key={buy.id}
               buy={buy}
+              tiers={tiersFrom(settingValues.rate_tiers)}
               number={i + 1}
               game={game}
               other={other}
@@ -810,16 +812,19 @@ function DayScreen({ game, day }) {
 const shownPrice = (l) => Number(l.cc_sell_price ?? l.unit_price);
 
 /**
- * Market, Cash and Credit for some of a buy's lines, at the buy's own rates;
- * from the Sell Prices once exported (owner, 2026-10-01).
+ * Market, Cash and Credit for some of a buy's lines, each card at the rates
+ * kept on it when the buy was confirmed (docs/TEAM_FEEDBACK.md 4.4, 4.6); from
+ * the Sell Prices once exported (owner, 2026-10-01). `tiers` only says why a
+ * card's rate differs (the "mixed" mark's tooltip).
  */
-function totalsFor(lines, buy) {
-  const market = Math.round(lines.reduce((s, l) => s + shownPrice(l) * l.quantity, 0) * 100) / 100;
-  return {
-    market,
-    cash: payout(market, buy.cash_pct),
-    credit: payout(market, buy.credit_pct),
-  };
+function totalsFor(lines, buy, tiers) {
+  return rateTotals(lines, {
+    cash: Number(buy.cash_pct),
+    credit: Number(buy.credit_pct),
+    customCash: buy.custom_cash_pct != null ? Number(buy.custom_cash_pct) : null,
+    customCredit: buy.custom_credit_pct != null ? Number(buy.custom_credit_pct) : null,
+    tiers,
+  }, shownPrice);
 }
 
 /**
@@ -895,7 +900,7 @@ function ConditionChip({ buy, byId, blocked, onChecked }) {
 /** One buy on a day page (spec 10.2). */
 function BuyPanel({
   buy, number, game, other, day, byId, busy, offline, hits, flash, onRemove, onDelete, onComplete, onConvert,
-  onExport, onUnexport, onEditView, onPrint, printing, onFlag,
+  onExport, onUnexport, onEditView, onPrint, printing, onFlag, tiers,
 }) {
   const [preview, setPreview] = useState(null);   // { src, top, left } while a line is hovered
   const hidePreview = useCallback(() => setPreview(null), []);
@@ -903,7 +908,7 @@ function BuyPanel({
   const user = byId(buy.confirmed_by);
   const lines = buy.buy_lines.filter((l) => l.game === game);
   const others = buy.buy_lines.filter((l) => l.game === other).reduce((n, l) => n + l.quantity, 0);
-  const t = totalsFor(lines, buy);
+  const t = totalsFor(lines, buy, tiers);
   // Paid/Ours, or Completed once exported (owner, 2026-09-30): locked like a Completed collection.
   const status = walkInStatus(buy, game);
   const completed = status === 'completed';
@@ -1056,8 +1061,14 @@ function BuyPanel({
           <span title={completed ? (lines.some((l) => l.cc_status) ? 'From the Sell Prices written to the export file' : 'From the Sell Prices worked out at COMPLETE') : undefined}>
             {completed && lines.some((l) => l.cc_sell_price != null) ? 'Sell' : 'Market'} <strong>{formatMoney(t.market)}</strong>
           </span>
-          <span className="is-cash">Cash ({Number(buy.cash_pct)}%) <strong>{formatMoney(t.cash)}</strong></span>
-          <span className="is-credit">Credit ({Number(buy.credit_pct)}%) <strong>{formatMoney(t.credit)}</strong></span>
+          <span className="is-cash">
+            Cash ({Number(buy.cash_pct)}%){t.mixed && <span className="mixed-mark" title={mixedNote(t.off)}>mixed</span>}
+            {' '}<strong>{formatMoney(t.cash)}</strong>
+          </span>
+          <span className="is-credit">
+            Credit ({Number(buy.credit_pct)}%){t.mixed && <span className="mixed-mark" title={mixedNote(t.off)}>mixed</span>}
+            {' '}<strong>{formatMoney(t.credit)}</strong>
+          </span>
         </div>
         {/* What was paid (owner, 2026-09-30): a chip in the Cash / Credit colour, right-aligned; for the whole buy, both games. */}
         {buy.paid_price != null && (

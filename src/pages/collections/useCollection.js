@@ -32,7 +32,8 @@ const MESSAGES = {
   bad_name: 'The name must be 1 to 80 characters.',
   bad_phone: 'Enter a 10-digit US phone number.',
   bad_last4: 'The Last 4 ID is up to 4 letters or digits.',
-  bad_pct: 'Enter a percentage from 0 to 100.',
+  bad_pct: 'Enter a percentage from 0 to 100, with up to 2 decimals.',
+  line_completed: "That card is Completed: its rate doesn't change.",
   no_user: 'Pick a user first.',
   // Convert to buy… (owner, 2026-10-10): what CONFIRM BUY asks for, and a project that can't go.
   name_needed: "Enter the customer's name.",
@@ -170,6 +171,14 @@ export function useCollection(id, { deviceId, onLockLost }) {
     { custom_cash_pct: cash, custom_credit_pct: credit }, userId,
   ), [updateInfo]);
 
+  /** Set Rate (docs/TEAM_FEEDBACK.md 4.3): a card's own rates, either null (cleared). */
+  const setLineRate = useCallback(async (line, cash, credit, userId) => {
+    const r = await run('collection_set_line_rate', {
+      p_line_id: line.id, p_cash: cash, p_credit: credit, ...mine(userId), p_text: lineText(line),
+    }, "Couldn't save the card's rate");
+    return r.ok;
+  }, [run, deviceId]);
+
   /**
    * Processing / Priced / Paid/Ours / Completed / Rejected; `master` is the
    * rates the screen shows. `deal`: the offer for Priced ({ offerCash,
@@ -265,5 +274,7 @@ export function useCollection(id, { deviceId, onLockLost }) {
     }
   }, [id, deviceId, state.lines, toast, reload]);
 
-  return { ...state, busy, reload, add, update, remove, updateInfo, setRates, setStatus, reprice, destroy, toBuy };
+  return {
+    ...state, busy, reload, add, update, remove, updateInfo, setRates, setLineRate, setStatus, reprice, destroy, toBuy,
+  };
 }

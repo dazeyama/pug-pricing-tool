@@ -1,5 +1,6 @@
 import MasterInventoryPanel from './settings/MasterInventoryPanel.jsx';
 import PercentagesPanel from './settings/PercentagesPanel.jsx';
+import RatesTiersPanel from './settings/RatesTiersPanel.jsx';
 import ApiKeysPanel from './settings/ApiKeysPanel.jsx';
 import UsagePanel from './settings/UsagePanel.jsx';
 import FallbackPanel from './settings/FallbackPanel.jsx';
@@ -26,8 +27,9 @@ const CREDITS = [
 
 // Settings (spec 11), each section in a panel, two columns across the page
 // with related panels side by side (owner, 2026-09-29): the required CSV
-// with this computer, the JustTCG key with its usage, and the two sets of
-// percentages; Crystal Commerce matching and Backups take a row each
+// with this computer, the JustTCG key with its usage, the Master Buy
+// Percentages with the low-end and high-end rates (owner, 2026-10-14), then
+// the fallback percentages; Crystal Commerce matching and Backups take a row each
 // (export spec 11.2, Phase 10). Staff users are
 // managed in the header dropdown, not here.
 export default function SettingsPage() {
@@ -42,6 +44,7 @@ export default function SettingsPage() {
         <ApiKeysPanel />
         <UsagePanel />
         <PercentagesPanel />
+        <RatesTiersPanel />
         <FallbackPanel />
         <CcMatchingPanel />
         <BackupsPanel />

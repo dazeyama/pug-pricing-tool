@@ -18,6 +18,7 @@
 - The owner is QA — see memory `user-is-qa`.
 - The export's spec is docs/EXPORT_FUNCTION.md.
 - The team feedback plan (printout, individual rates, bulk; phases T1–T3) is docs/TEAM_FEEDBACK.md.
-- Current phase: docs/TEAM_FEEDBACK.md Phase T1 (audit printout) is built; T2 waits for the owner's check.
+- Current phase: docs/TEAM_FEEDBACK.md Phases T1 (audit printout) and T2 (individual rates, migration 0055)
+  are built; T3 (bulk) waits for the owner's check of T2.
   Phase 10 launch (the migration squash, then prod) waits for the owner's go; the live site runs on the
   dev project until then. TEST.md holds the smoke tests and the database test run.

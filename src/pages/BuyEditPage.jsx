@@ -6,6 +6,7 @@ import GuardButton from '../components/GuardButton.jsx';
 import { supabase } from '../lib/supabase.js';
 import { dayTitle, parseDay } from '../lib/calendar.js';
 import { lineText } from '../lib/lineFormat.js';
+import { tiersFrom } from '../lib/rates.js';
 import { formatMoney } from '../lib/money.js';
 import { formatPhone } from '../lib/phone.js';
 import { useSettings } from '../state/settings.jsx';
@@ -130,6 +131,7 @@ export default function BuyEditPage() {
       return true;
     },
     setRates: async () => null,   // never: ratesLocked
+    setLineRate: async () => null,   // never: ratesLocked (right-click says why)
   };
 
   /** SAVE BUY: on a flagged buy, asks first whether its condition is checked. */
@@ -194,13 +196,15 @@ export default function BuyEditPage() {
     );
   }
 
-  // Its rates as confirmed (custom ones are kept in cash_pct / credit_pct too).
-  const master = { cash: Number(values.cash_pct), credit: Number(values.credit_pct) };
+  // Its rates as confirmed (custom ones are kept in cash_pct / credit_pct too);
+  // each card's own, as kept on it (docs/TEAM_FEEDBACK.md 4.6).
+  const master = { cash: Number(values.cash_pct), credit: Number(values.credit_pct), tiers: tiersFrom(values.rate_tiers) };
   const rates = {
     cash: Number(buy?.cash_pct ?? master.cash),
     credit: Number(buy?.credit_pct ?? master.credit),
     customCash: buy?.custom_cash_pct != null ? Number(buy.custom_cash_pct) : null,
     customCredit: buy?.custom_credit_pct != null ? Number(buy.custom_credit_pct) : null,
+    tiers: master.tiers,
   };
   const completed = original.some((l) => l.completed_at);
   const locked = completed

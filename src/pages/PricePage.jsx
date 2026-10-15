@@ -3,9 +3,9 @@ import { supabase } from '../lib/supabase.js';
 import PricingScreen from './price/PricingScreen.jsx';
 import WalkInButtons from './price/WalkInButtons.jsx';
 import ConfirmBuyModal from './price/ConfirmBuyModal.jsx';
-import { marketTotal } from './price/BuyList.jsx';
 import { useDraft } from './price/useDraft.js';
 import { lineText } from '../lib/lineFormat.js';
+import { tiersFrom } from '../lib/rates.js';
 import { useSettings } from '../state/settings.jsx';
 import { useDevice } from '../state/device.jsx';
 import { useStaff } from '../state/staff.jsx';
@@ -24,11 +24,14 @@ export default function PricePage() {
   const [resetKey, setResetKey] = useState(0);
 
   // This buy's rates: its custom ones where set, else the Master Buy
-  // Percentages (spec 8.9.1), for the totals and the price panel.
-  const master = { cash: Number(values.cash_pct), credit: Number(values.credit_pct) };
+  // Percentages (spec 8.9.1), with the low-end and high-end rates
+  // (docs/TEAM_FEEDBACK.md 4.2), for the totals and the price panel.
+  const master = { cash: Number(values.cash_pct), credit: Number(values.credit_pct), tiers: tiersFrom(values.rate_tiers) };
   const customCash = draft.buy?.custom_cash_pct != null ? Number(draft.buy.custom_cash_pct) : null;
   const customCredit = draft.buy?.custom_credit_pct != null ? Number(draft.buy.custom_credit_pct) : null;
-  const rates = { cash: customCash ?? master.cash, credit: customCredit ?? master.credit, customCash, customCredit };
+  const rates = {
+    cash: customCash ?? master.cash, credit: customCredit ?? master.credit, customCash, customCredit, tiers: master.tiers,
+  };
 
   const list = {
     lines: draft.lines,
@@ -38,6 +41,7 @@ export default function PricePage() {
     update: (old, line, userId) => draft.update(old.id, line, userId),
     remove: (line, n, userId) => draft.remove(line.id, n, userId),
     setRates: (cash, credit, userId) => draft.setRates(cash, credit, userId),
+    setLineRate: (line, cash, credit, userId) => draft.setLineRate(line.id, cash, credit, userId),
   };
   const count = draft.lines.reduce((n, l) => n + l.quantity, 0);
 
@@ -104,7 +108,7 @@ export default function PricePage() {
           {confirming && (
             <ConfirmBuyModal
               count={count}
-              market={marketTotal(draft.lines)}
+              lines={draft.lines}
               rates={rates}
               user={user}
               busy={draft.busy}

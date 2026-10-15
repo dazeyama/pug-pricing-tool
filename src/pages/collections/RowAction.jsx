@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ConvertToBuyModal, DeleteCollectionModal } from './CollectionModals.jsx';
 import { useCollection } from './useCollection.js';
 import { collectionRates } from './status.js';
+import { tiersFrom } from '../../lib/rates.js';
 import { useDevice } from '../../state/device.jsx';
 import { useSettings } from '../../state/settings.jsx';
 import { useStaff } from '../../state/staff.jsx';
@@ -70,7 +71,7 @@ export default function RowAction({ id, action, onClose }) {
     );
   }
 
-  const master = { cash: Number(values.cash_pct), credit: Number(values.credit_pct) };
+  const master = { cash: Number(values.cash_pct), credit: Number(values.credit_pct), tiers: tiersFrom(values.rate_tiers) };
   const rates = collectionRates(buy, master);
   return (
     <ConvertToBuyModal

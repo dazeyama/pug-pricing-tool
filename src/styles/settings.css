@@ -98,6 +98,11 @@
 .fb-table tbody th { padding-right: 16px; font-size: 13.5px; color: var(--text); }
 .fb-table td { padding: 3px 10px 3px 0; }
 .fb-box input { width: 74px; }
+/* Low-end and high-end rates: "under $3", "over $35" before the box. */
+.tier-table td { white-space: nowrap; }
+.tier-when { margin-right: 8px; font-size: 13px; color: var(--muted); }
+.tier-money { display: inline-flex; }
+.tier-money input { width: 84px; }
 
 /* Master Buy Percentages */
 .pct-row { display: flex; gap: 28px; }

@@ -2,7 +2,9 @@ import { useState } from 'react';
 import Modal from '../../components/Modal.jsx';
 import UserTag from '../../components/UserTag.jsx';
 import CustomerNameInput from '../../components/CustomerNameInput.jsx';
-import { formatMoney, parseMoney, payout } from '../../lib/money.js';
+import OwnRateAlert from '../../components/OwnRateAlert.jsx';
+import { formatMoney, parseMoney } from '../../lib/money.js';
+import { mixedNote, rateTotals } from '../../lib/rates.js';
 import { PHONE_ERROR, formatPhone, phoneDigits, validPhone } from '../../lib/phone.js';
 import { MoneyInput, PayMethod } from '../collections/DealModals.jsx';
 
@@ -24,9 +26,13 @@ import { MoneyInput, PayMethod } from '../collections/DealModals.jsx';
  * `flagOption` (CONFIRM BUY; owner, 2026-10-14): a 🚩 "Flag check for
  * condition" box; ticked, the buy is flagged on its day page to have its
  * cards' condition checked before export (`flagCondition` in onConfirm).
+ *
+ * The totals are each card at its own rate (docs/TEAM_FEEDBACK.md 4.4), from
+ * `lines`; cards with their own rate (Set Rate) are listed above them with
+ * what they change (4.5).
  */
 export default function ConfirmBuyModal({
-  count, market, rates, user, busy, onConfirm, onClose,
+  count, lines, rates, user, busy, onConfirm, onClose,
   title = `Confirm buy — ${count} card${count === 1 ? '' : 's'}`, intro = null, initial = {},
   confirmLabel = 'Confirm buy', busyLabel = 'Confirming…', flagOption = false,
 }) {
@@ -57,10 +63,14 @@ export default function ConfirmBuyModal({
       flagCondition: flagOption && flag,
     });
   };
+  const totals = rateTotals(lines, rates);
   const rate = (label, which, custom) => (
     <div className={`total-row ${which}`}>
-      <span>{label} ({Number(rates[which])}%{custom != null && <span className="custom-mark"> ✎</span>})</span>
-      <strong>{formatMoney(payout(market, rates[which]))}</strong>
+      <span>
+        {label} ({Number(rates[which])}%{custom != null && <span className="custom-mark"> ✎</span>})
+        {totals.mixed && <span className="mixed-mark" title={mixedNote(totals.off)}>mixed</span>}
+      </span>
+      <strong>{formatMoney(totals[which])}</strong>
     </div>
   );
   const enter = (e) => {
@@ -88,8 +98,9 @@ export default function ConfirmBuyModal({
       )}
     >
       {intro && <p className="confirm-intro">{intro}</p>}
+      <OwnRateAlert lines={lines} rates={rates} />
       <div className="confirm-totals">
-        <div className="total-row"><span>Market</span><strong>{formatMoney(market)}</strong></div>
+        <div className="total-row"><span>Market</span><strong>{formatMoney(totals.market)}</strong></div>
         {rate('Cash', 'cash', rates.customCash)}
         {rate('Credit', 'credit', rates.customCredit)}
       </div>

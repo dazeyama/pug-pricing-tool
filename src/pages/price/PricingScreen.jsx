@@ -31,6 +31,7 @@ import { useEnglishPokemonName } from '../../lib/pokemonNames.js';
 import { buildLine } from '../../lib/buyLine.js';
 import { lineText } from '../../lib/lineFormat.js';
 import { dexNumberQuery } from '../../lib/query.js';
+import { lineRate, whyText } from '../../lib/rates.js';
 import { useStaff } from '../../state/staff.jsx';
 import { useConnection } from '../../state/connection.jsx';
 import { useToast } from '../../components/Toast.jsx';
@@ -128,8 +129,11 @@ const JP_NO_MTG = 'Japanese is Pokémon only: switch to EN to search Magic';
  *   add: (line: object, userId: string) => Promise<string|null>,
  *   update: (old: object, line: object, userId: string) => Promise<string|null>,
  *   remove: (line: object, qty: number, userId: string) => Promise<unknown>,
- *   setRates: (cash: number|null, credit: number|null, userId: string) => Promise<unknown> }} p.list
- * @param {{ cash: number, credit: number, customCash: number|null, customCredit: number|null }} p.rates
+ *   setRates: (cash: number|null, credit: number|null, userId: string) => Promise<unknown>,
+ *   setLineRate?: (line: object, cash: number|null, credit: number|null, userId: string) => Promise<unknown> }} p.list
+ *   (setLineRate: right-click → Set Rate on a card, docs/TEAM_FEEDBACK.md 4.3)
+ * @param {{ cash: number, credit: number, customCash: number|null, customCredit: number|null, tiers: object }} p.rates
+ *   the list's base rates, its custom ones, and the low-end / high-end rates (lib/rates.js)
  * @param {{ cash: number, credit: number }} p.master  the Master Buy Percentages
  * @param {string|null} [p.locked]  why nothing can change here (Paid/Ours, view-only), or null
  * @param {string|null} [p.removeLocked]  why cards can't be removed, when that differs from
@@ -622,6 +626,11 @@ export default function PricingScreen({
     note = <>Showing results for <strong>{search.correction.name}</strong></>;
   }
 
+  // The price panel's Credit and Cash: the rate this card gets at this price
+  // (docs/TEAM_FEEDBACK.md 4.4), a card being edited with its own or kept rates.
+  const editLine = editing ? list.lines.find((l) => l.id === editing.line.id) ?? editing.line : null;
+  const quoteRate = lineRate({ ...editLine, unit_price: manual ?? ladder[condition].price ?? 0 }, rates);
+
   // What the page's own parts (a collection's details, the list's buttons) need.
   const api = { focusSearch, canEdit, editBlocked };
 
@@ -694,8 +703,10 @@ export default function PricingScreen({
                 : ladder[condition].base?.from === 'Cardmarket' && ladder[condition].source === 'fallback' ? 'cardmarket'
                   : showsTcgplayer(ladder, condition, fallbackPct?.[condition]) ? 'tcgplayer'
                     : ladder[condition].source}
-              cashPct={rates.cash}
-              creditPct={rates.credit}
+              cashPct={quoteRate.cash}
+              creditPct={quoteRate.credit}
+              cashWhy={whyText(quoteRate.why.cash, rates)}
+              creditWhy={whyText(quoteRate.why.credit, rates)}
               warnings={warnings}
               trend={manual == null ? trends[condition] : null}
               onDone={focusSearch}
@@ -781,6 +792,7 @@ export default function PricingScreen({
           onEdit={startEdit}
           onRemove={(line, n) => list.remove(line, n, user?.id)}
           onSaveRates={(cash, credit) => list.setRates(cash, credit, user?.id)}
+          onSetLineRate={list.setLineRate ? (line, cash, credit) => list.setLineRate(line, cash, credit, user?.id) : null}
           onDone={focusSearch}
           details={renderListDetails?.(api)}
           footer={renderListFooter?.(api)}

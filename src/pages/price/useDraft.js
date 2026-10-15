@@ -17,6 +17,8 @@ const CODES = {
   bad_phone: 'Enter a 10-digit phone number.',
   paid_price_needed: 'Enter the purchase price.',
   paid_method_needed: 'Choose Cash or Credit.',
+  bad_pct: 'Enter a percentage from 0 to 100, with up to 2 decimals.',
+  line_gone: 'That card was already removed.',
 };
 
 /**
@@ -25,6 +27,7 @@ const CODES = {
  *   update: (lineId: string, line: object, userId: string) => Promise<string|null>,
  *   remove: (lineId: string, qty: number, userId: string) => Promise<boolean>,
  *   setRates: (cash: number|null, credit: number|null, userId: string) => Promise<boolean>,
+ *   setLineRate: (lineId: string, cash: number|null, credit: number|null, userId: string) => Promise<boolean>,
  *   cancel: () => Promise<boolean>,
  *   confirm: (args: object) => Promise<object|null> }}
  */
@@ -108,6 +111,12 @@ export function useDraft(deviceId) {
       "Couldn't save the rate")).ok,
   [deviceId, run]);
 
+  /** Set Rate (docs/TEAM_FEEDBACK.md 4.3): a card's own rates, either null (cleared). */
+  const setLineRate = useCallback(async (lineId, cash, credit, userId) =>
+    (await run('draft_set_line_rate', { p_line_id: lineId, p_cash: cash, p_credit: credit, p_user: userId },
+      "Couldn't save the card's rate")).ok,
+  [run]);
+
   const cancel = useCallback(async () => {
     if (!state.buy) return true;
     return (await run('draft_cancel', { p_buy_id: state.buy.id }, "Couldn't cancel the buy")).ok;
@@ -134,5 +143,5 @@ export function useDraft(deviceId) {
     return r.ok ? r.data : null;
   }, [run, state.buy]);
 
-  return { ...state, busy, add, update, remove, setRates, cancel, confirm };
+  return { ...state, busy, add, update, remove, setRates, setLineRate, cancel, confirm };
 }

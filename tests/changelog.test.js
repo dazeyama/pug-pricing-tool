@@ -44,6 +44,22 @@ test('a run of adds by one user within 15 minutes folds into one panel', () => {
   assert.ok(v.folded);
 });
 
+// Individual rates (migration 0055): a folded run adds each card up at the rate on its row.
+test('a folded run totals each card at its own rate, rounded down once', () => {
+  const row = (unit, cash, credit) => [{ sign: '+', qty: 1, game: 'mtg', unit_price: unit, text: 'x', cash_pct: cash, credit_pct: credit }];
+  const v = panelView(foldEvents([
+    ev({ at: min(0), lines: row(1, 25, 50) }),
+    ev({ at: min(2), lines: row(40, 40, 70) }),
+    ev({ at: min(4) }),   // an older entry, without rates on its row: the entry's 33 / 66
+  ])[0]);
+  assert.equal(v.totals.market, 43);
+  // Cash 0.25 + 16 + 0.66 = 16.91 → $16; Credit 0.50 + 28 + 1.32 = 29.82 → $29.
+  assert.equal(v.totals.cash, 16);
+  assert.equal(v.totals.credit, 29);
+  assert.equal(categoryOf('collection_line_rate'), 'actions');
+  assert.equal(HEADLINES.collection_line_rate, 'Card rate set');
+});
+
 test('other collections in between do not break a run; its own other entries do', () => {
   const interleaved = foldEvents([
     ev({ at: min(0) }), ev({ at: min(2), target_id: 'c2' }), ev({ at: min(4) }),

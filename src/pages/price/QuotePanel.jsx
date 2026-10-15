@@ -18,7 +18,7 @@ import { trendIcon, trendText } from '../../lib/priceTrend.js';
  * @param {{ source: 'justtcg'|'fallback'|'tcgplayer'|'cardmarket'|'manual'|null, warnings: string[] }} props
  */
 export default function QuotePanel({
-  candidate, loading, condition, price, source, cashPct, creditPct, warnings, trend = null, onDone,
+  candidate, loading, condition, price, source, cashPct, creditPct, cashWhy = '', creditWhy = '', warnings, trend = null, onDone,
 }) {
   // Which box floats over Finish & Details: 'warn' (the warnings) or 'trend'
   // (the 📈 / 📉), while hovered, or clicked to keep it open.
@@ -52,10 +52,11 @@ export default function QuotePanel({
 
   // 'tcgplayer': the price is TCGplayer's Market Price itself (owner, 2026-10-02).
   const tag = { manual: '✎ manual', fallback: 'fallback', cardmarket: 'cardmarket', tcgplayer: 'TCGplayer' }[source] ?? null;
-  const chip = (label, pct) => {
+  // Each at this card's rate, and why (docs/TEAM_FEEDBACK.md 4.4): "Credit: 70% (high end: cards over $35)".
+  const chip = (label, pct, why) => {
     const amount = price != null ? payout(price, pct) : null;
     const raw = price != null ? (price * pct) / 100 : null;
-    let title = `${label}: ${pct}%`;
+    let title = `${label}: ${pct}%${why ? ` (${why})` : ''}`;
     if (amount != null) {
       title += ` of ${formatMoney(price)}`;
       if (Math.abs(raw - amount) >= 0.005) title += `, rounded down from ${formatMoney(raw)}`;
@@ -104,8 +105,8 @@ export default function QuotePanel({
           </div>
         )}
         <div className="quote-chips">
-          {chip('Credit', creditPct)}
-          {chip('Cash', cashPct)}
+          {chip('Credit', creditPct, creditWhy)}
+          {chip('Cash', cashPct, cashWhy)}
         </div>
         {warned && (
           <button

@@ -1,8 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Modal from '../../components/Modal.jsx';
 import LinePreview, { previewFor } from '../../components/LinePreview.jsx';
 import { lineText } from '../../lib/lineFormat.js';
-import { formatMoney, payout } from '../../lib/money.js';
+import { formatMoney } from '../../lib/money.js';
+import {
+  hasOwnRate, lineRate, mixedNote, otherRate, rateTotals, whyText,
+} from '../../lib/rates.js';
 import { useToast } from '../../components/Toast.jsx';
 
 const GROUPS = [
@@ -11,10 +14,38 @@ const GROUPS = [
 ];
 const VALID_PCT = /^\d{1,3}(\.\d{1,2})?$/;
 
-/** Σ unit price × quantity, to the cent. */
-export function marketTotal(lines) {
-  // An exported card counts at its Sell Price (export spec 5.5; owner, 2026-10-01).
-  return Math.round(lines.reduce((sum, l) => sum + Number(l.cc_sell_price ?? l.unit_price) * l.quantity, 0) * 100) / 100;
+/**
+ * What a card's rates are and why, for its tooltip (docs/TEAM_FEEDBACK.md
+ * 4.3): "Own rate: Credit 75%, Cash 45%", "Low end (cards under $3): …", or
+ * null on the list's usual rates.
+ */
+export function rateNote(line, rates) {
+  const r = lineRate(line, rates);
+  const both = `Credit ${r.credit}%, Cash ${r.cash}%`;
+  const why = [r.why.credit, r.why.cash];
+  if (why.includes('own')) return `Own rate: ${both}`;
+  if (why.includes('low')) return `Low end (${whyText('low', rates).replace(/^low end: /, '')}): ${both}`;
+  if (why.includes('high')) return `High end (${whyText('high', rates).replace(/^high end: /, '')}): ${both}`;
+  if (why.includes('fixed')) return `Rates kept when confirmed: ${both}`;
+  return null;
+}
+
+/** A card's own rate (Set Rate) after its name: ✎ Credit / Cash, in their colours. */
+function OwnRateTag({ line, rates }) {
+  const r = lineRate(line, rates);
+  return (
+    <span className="own-rate-tag" title={rateNote(line, rates)}>
+      ✎ <span className="is-credit">{r.credit}%</span> / <span className="is-cash">{r.cash}%</span>
+    </span>
+  );
+}
+
+/** A short name for the rate a card would get without its own: beside each box of Set Rate. */
+function otherLabel(why, which, rates, master) {
+  if (why === 'low') return 'low end';
+  if (why === 'high') return 'high end';
+  if (why === 'custom') return 'custom';
+  return Number(rates[which]) === Number(master[which]) ? 'master' : 'buy rate';
 }
 
 /**
@@ -140,14 +171,108 @@ function RatesPanel({ title, rates, master, onSave, onClose }) {
 }
 
 /**
+ * Set Rate (docs/TEAM_FEEDBACK.md 4.3): one card's own Cash and Credit rates,
+ * beside the card, saved like the list's rates (on blur or Enter). A box
+ * typed back to the rate the card would otherwise get clears that side; Clear
+ * clears both.
+ */
+function CardRatePanel({ line, rates, master, top, onSave, onClose }) {
+  const mine = lineRate(line, rates);
+  const other = otherRate(line, rates);
+  const [text, setText] = useState({ cash: String(mine.cash), credit: String(mine.credit) });
+  const toast = useToast();
+  const box = useRef(null);
+  // A save comes back as the card's new rates: show them.
+  useEffect(() => {
+    setText({ cash: String(mine.cash), credit: String(mine.credit) });
+  }, [mine.cash, mine.credit]);
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    // A click elsewhere saves what's typed (the box's blur), then closes.
+    const onDown = (e) => {
+      if (box.current?.contains(e.target)) return;
+      if (box.current?.contains(document.activeElement)) document.activeElement.blur();
+      onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    document.addEventListener('mousedown', onDown);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.removeEventListener('mousedown', onDown);
+    };
+  }, [onClose]);
+
+  const own = {
+    cash: line.custom_cash_pct != null ? Number(line.custom_cash_pct) : null,
+    credit: line.custom_credit_pct != null ? Number(line.custom_credit_pct) : null,
+  };
+  function commit(which) {
+    const raw = text[which].trim();
+    // Left as shown: nothing to save (a kept rate isn't made the card's own by passing through).
+    if (raw === String(mine[which])) return;
+    if (!VALID_PCT.test(raw) || Number(raw) > 100) {
+      toast('Enter a percentage from 0 to 100, with up to 2 decimals.', 'err');
+      setText((t) => ({ ...t, [which]: String(mine[which]) }));
+      return;
+    }
+    const value = Number(raw);
+    const next = { ...own, [which]: value === other[which] ? null : value };
+    if (next.cash !== own.cash || next.credit !== own.credit) onSave(next.cash, next.credit);
+  }
+
+  const row = (which, label) => (
+    <label className={`rate-row ${which}${own[which] != null ? ' own' : ''}`}>
+      <span className="rate-name">{label}</span>
+      <input
+        type="text"
+        inputMode="decimal"
+        aria-label={`${label} % for ${line.name}`}
+        autoFocus={which === 'cash'}
+        value={text[which]}
+        onChange={(e) => setText((t) => ({ ...t, [which]: e.target.value }))}
+        onBlur={() => commit(which)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') e.currentTarget.blur();
+        }}
+      />
+      <span className="rate-pct">%</span>
+      <span className="rate-master" title={`Without its own rate: ${whyText(other.why[which], rates)}`}>
+        {otherLabel(other.why[which], which, rates, master)} {other[which]}%
+      </span>
+    </label>
+  );
+
+  return (
+    <div className="rates-panel card-rate-panel" ref={box} style={{ top }}>
+      <div className="rates-head">Set Rate · <span className="card-rate-name">{line.name_en || line.name}</span></div>
+      {row('cash', 'Cash')}
+      {row('credit', 'Credit')}
+      <div className="rates-foot">
+        <button type="button" className="btn small ghost" disabled={!hasOwnRate(line)} onClick={() => onSave(null, null)}>
+          Clear
+        </button>
+        <button type="button" className="btn small" onClick={onClose}>Done</button>
+      </div>
+    </div>
+  );
+}
+
+/**
  * Market, Cash and Credit (spec 8.9), with the clickable percentages that
- * open the custom-rate subpanel (8.9.1) above them.
+ * open the custom-rate subpanel (8.9.1) above them. Each card at its own rate
+ * (docs/TEAM_FEEDBACK.md 4.4): the labels keep the list's base rates, and a
+ * "mixed" mark says when some cards are on others.
  */
 function Totals({
-  market, rates, master, ratesTitle, canEdit, editBlocked, ratesLocked, onSaveRates, onDone,
+  lines, rates, master, ratesTitle, canEdit, editBlocked, ratesLocked, onSaveRates, onDone,
 }) {
   const [ratesOpen, setRatesOpen] = useState(false);
   const toast = useToast();
+  const t = rateTotals(lines, rates);
+  const mixed = t.mixed && <span className="mixed-mark" title={mixedNote(t.off)}>mixed</span>;
   const pct = (which, label) => {
     const custom = which === 'cash' ? rates.customCash : rates.customCredit;
     const value = rates[which];
@@ -170,9 +295,9 @@ function Totals({
   };
   return (
     <div className="totals">
-      <div className="total-row"><span>Market</span><strong>{formatMoney(market)}</strong></div>
-      <div className="total-row cash">{pct('cash', 'Cash')}<strong>{formatMoney(payout(market, rates.cash))}</strong></div>
-      <div className="total-row credit">{pct('credit', 'Credit')}<strong>{formatMoney(payout(market, rates.credit))}</strong></div>
+      <div className="total-row"><span>Market</span><strong>{formatMoney(t.market)}</strong></div>
+      <div className="total-row cash"><span>{pct('cash', 'Cash')}{mixed}</span><strong>{formatMoney(t.cash)}</strong></div>
+      <div className="total-row credit"><span>{pct('credit', 'Credit')}{mixed}</span><strong>{formatMoney(t.credit)}</strong></div>
       {ratesOpen && (
         <RatesPanel
           title={ratesTitle}
@@ -197,21 +322,101 @@ function Totals({
  * 2026-09-29); its red × removes it. While `locked` (Paid/Ours, view-only)
  * lines can't be edited, and while `removeLocked` (Completed, view-only) the
  * × is hidden too; a Paid/Ours collection keeps it (owner, 2026-09-29).
+ *
+ * Right-clicking a card (docs/TEAM_FEEDBACK.md 4.3) opens Set Rate
+ * (`onSetLineRate`), blocked like the list's rates (`ratesLocked`, `locked`)
+ * and on Completed cards. A card with its own rate is tinted, with a ✎ tag.
  */
 export default function BuyList({
   title = 'Buy list', lines, loaded, rates, master, ratesTitle, flashId, hits = null, editingId,
   canEdit, locked = null, editBlocked, canRemove = canEdit, removeLocked = locked, removeBlocked = editBlocked,
-  onEdit, onRemove, onSaveRates, onDone, details, footer, badge = null, ratesLocked = null,
+  onEdit, onRemove, onSaveRates, onSetLineRate = null, onDone, details, footer, badge = null, ratesLocked = null,
 }) {
   const [removing, setRemoving] = useState(null);
   const [preview, setPreview] = useState(null);   // { src, top, left } while a line is hovered
+  const [rateMenu, setRateMenu] = useState(null);  // { line, top, left }: the right-click menu
+  const [rateFor, setRateFor] = useState(null);    // the card whose rate is being set (its id)
+  const [rateTop, setRateTop] = useState(0);
   const list = useRef(null);
   const aside = useRef(null);
+  const toast = useToast();
 
   const hidePreview = useCallback(() => setPreview(null), []);
 
   const count = lines.reduce((n, l) => n + l.quantity, 0);
-  const market = marketTotal(lines);
+  const rateLine = rateFor ? lines.find((l) => l.id === rateFor) ?? null : null;
+
+  // A point on the screen, in the sidebar's own px (it may be zoomed: lib/uiScale.js).
+  const inAside = (x, y) => {
+    const zoom = aside.current?.currentCSSZoom ?? 1;
+    const b = aside.current.getBoundingClientRect();
+    return { left: (x - b.left) / zoom, top: (y - b.top) / zoom };
+  };
+
+  /** Right-click on a card: the Set Rate menu where the pointer is. */
+  function openRateMenu(e, l) {
+    if (!onSetLineRate) return;   // no Set Rate here: the browser's own menu
+    e.preventDefault();
+    hidePreview();
+    setRateMenu({ line: l, ...inAside(e.clientX, e.clientY) });
+  }
+  const rateBlocked = (l) => ratesLocked ?? locked
+    ?? (l.completed_at ? "A Completed card's rate doesn't change" : null);
+  function startRate(l) {
+    setRateMenu(null);
+    const why = rateBlocked(l);
+    if (why) toast(`${why}.`, 'err');
+    else if (!canEdit) editBlocked();
+    else setRateFor(l.id);
+  }
+  const closeRate = useCallback(() => {
+    setRateFor(null);
+    onDone();
+  }, [onDone]);
+
+  // The menu goes on any click elsewhere, Esc or a scroll.
+  useEffect(() => {
+    if (!rateMenu) return undefined;
+    const close = (e) => {
+      if (!e.target.closest?.('.rate-menu')) setRateMenu(null);
+    };
+    const onKey = (e) => {
+      if (e.key === 'Escape') setRateMenu(null);
+    };
+    const onScroll = () => setRateMenu(null);
+    document.addEventListener('mousedown', close);
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('scroll', onScroll, true);
+    return () => {
+      document.removeEventListener('mousedown', close);
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('scroll', onScroll, true);
+    };
+  }, [rateMenu]);
+
+  // Set Rate sits level with its card, outside the sidebar, and follows it as the list scrolls.
+  useLayoutEffect(() => {
+    if (!rateFor) return undefined;
+    const place = () => {
+      const row = list.current?.querySelector(`[data-line="${rateFor}"]`);
+      if (!row || !aside.current) return;
+      const r = row.getBoundingClientRect();
+      const room = aside.current.offsetHeight - 190;
+      setRateTop(Math.max(8, Math.min(inAside(r.left, r.top).top - 6, room)));
+    };
+    place();
+    const body = list.current;
+    body?.addEventListener('scroll', place);
+    window.addEventListener('resize', place);
+    return () => {
+      body?.removeEventListener('scroll', place);
+      window.removeEventListener('resize', place);
+    };
+  }, [rateFor, lines]);
+  // A card removed meanwhile (here or elsewhere): nothing left to set.
+  useEffect(() => {
+    if (rateFor && loaded && !rateLine) setRateFor(null);
+  }, [rateFor, rateLine, loaded]);
 
   // A new or updated line scrolls into view and flashes (spec 8.8).
   useEffect(() => {
@@ -255,10 +460,13 @@ export default function BuyList({
                 <div
                   key={l.id}
                   data-line={l.id}
-                  className={`buy-line-row${l.id === flashId ? ' flash' : ''}${l.id === editingId ? ' editing' : ''}${hitSet.has(l.id) ? ' search-hit' : ''}`}
+                  className={`buy-line-row${l.id === flashId ? ' flash' : ''}${l.id === editingId ? ' editing' : ''}${hitSet.has(l.id) ? ' search-hit' : ''}${hasOwnRate(l) ? ' own-rate' : ''}${l.id === rateFor ? ' rating' : ''}`}
                   // A small card picture left of the sidebar, level with the line (owner, 2026-09-29).
-                  onMouseEnter={(e) => setPreview(previewFor(l.image_url, e.currentTarget, aside.current, 'left'))}
+                  onMouseEnter={(e) => {
+                    if (!rateFor) setPreview(previewFor(l.image_url, e.currentTarget, aside.current, 'left'));
+                  }}
                   onMouseLeave={hidePreview}
+                  onContextMenu={(e) => openRateMenu(e, l)}
                 >
                   {/* The same column before and after an export: a Sell price is green. */}
                   <span
@@ -272,10 +480,12 @@ export default function BuyList({
                     className="buy-line"
                     title={l.id === editingId
                       ? 'Being edited: SAVE EDIT saves the changes, Esc leaves it as it was'
-                      : `${l.name_en ? `${l.name} · ` : ''}${formatMoney(l.unit_price)} each${locked ? '' : ' · click to edit'}`}
+                      : `${l.name_en ? `${l.name} · ` : ''}${formatMoney(l.unit_price)} each${locked ? '' : ' · click to edit'}${rateNote(l, rates) ? `\n${rateNote(l, rates)}` : ''}`}
                     onClick={() => (canEdit ? onEdit(l) : editBlocked())}
                   >
                     {lineText(l)}
+                    {/* Its own rate (Set Rate): Credit / Cash, in their colours. */}
+                    {hasOwnRate(l) && <OwnRateTag line={l} rates={rates} />}
                     {l.cc_status === 'cant_upload' && (
                       <span className="cant-chip" title="Not matched to Crystal Commerce: pulled from the upload. It's in Can't upload cards.">
                         Can't upload
@@ -303,7 +513,7 @@ export default function BuyList({
       <div className="list-foot">
         {details}
         <Totals
-          market={market}
+          lines={lines}
           rates={rates}
           master={master}
           ratesTitle={ratesTitle}
@@ -317,6 +527,30 @@ export default function BuyList({
       </div>
 
       <LinePreview preview={preview} onHide={hidePreview} />
+      {rateMenu && (
+        <div className="rate-menu" role="menu" style={{ top: rateMenu.top, left: rateMenu.left }}>
+          <button
+            type="button"
+            role="menuitem"
+            className={rateBlocked(rateMenu.line) ? 'is-blocked' : ''}
+            title={rateBlocked(rateMenu.line) ?? 'Give this card its own Cash and Credit rates'}
+            onClick={() => startRate(rateMenu.line)}
+          >
+            Set Rate
+          </button>
+        </div>
+      )}
+      {rateLine && (
+        <CardRatePanel
+          key={rateLine.id}
+          line={rateLine}
+          rates={rates}
+          master={master}
+          top={rateTop}
+          onSave={(cash, credit) => onSetLineRate(rateLine, cash, credit)}
+          onClose={closeRate}
+        />
+      )}
       {removing && (
         <RemoveModal
           line={removing}

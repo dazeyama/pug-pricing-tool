@@ -1,6 +1,7 @@
 import { createContext, useContext, useMemo } from 'react';
 import { supabase } from '../lib/supabase.js';
 import { useLiveTable } from '../lib/useLiveTable.js';
+import { DEFAULT_TIERS } from '../lib/rates.js';
 
 // App settings (spec 6.1 `settings`): key/value rows, live on every computer.
 
@@ -11,6 +12,8 @@ export const DEFAULTS = {
   // price (no JustTCG price), each condition is that price × its percentage.
   fallback_pct_mtg: { NM: 100, LP: 90, MP: 80, HP: 70, DMG: 60 },
   fallback_pct_pokemon: { NM: 100, LP: 85, MP: 70, HP: 55, DMG: 40 },
+  // Low-end and high-end rates (docs/TEAM_FEEDBACK.md 4.2): read with rates.js tiersFrom.
+  rate_tiers: DEFAULT_TIERS,
 };
 
 const SettingsContext = createContext(null);

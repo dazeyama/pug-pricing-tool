@@ -13,9 +13,9 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import PricingScreen from './price/PricingScreen.jsx';
 import CollectionDetails from './collections/CollectionDetails.jsx';
 import { collectionRates, isClosed, statusLabel } from './collections/status.js';
+import { tiersFrom } from '../lib/rates.js';
 import { ConfirmModal, ConvertToBuyModal, DeleteCollectionModal, RejectModal } from './collections/CollectionModals.jsx';
 import { OfferModal, PaidModal } from './collections/DealModals.jsx';
-import { marketTotal } from './price/BuyList.jsx';
 import { useCollection } from './collections/useCollection.js';
 import { useCollectionLock } from './collections/useCollectionLock.js';
 import ExportButton from '../components/ExportButton.jsx';
@@ -80,7 +80,7 @@ function CollectionScreen({ id }) {
   // Rates (spec 8.9.1, 9.4): the Paid/Ours snapshot (kept while Completed),
   // or Rejected's (migration 0044), else the collection's custom rates where
   // set, else the Master Buy Percentages.
-  const master = { cash: Number(values.cash_pct), credit: Number(values.credit_pct) };
+  const master = { cash: Number(values.cash_pct), credit: Number(values.credit_pct), tiers: tiersFrom(values.rate_tiers) };
   const closed = Boolean(buy) && isClosed(buy.status);
   const rates = collectionRates(buy, master);
 
@@ -346,6 +346,7 @@ function CollectionScreen({ id }) {
     update: col.update,
     remove: col.remove,
     setRates: col.setRates,
+    setLineRate: col.setLineRate,
   };
 
   if (col.loaded && col.missing && !seen.current && !deleting.current) {
@@ -427,7 +428,7 @@ function CollectionScreen({ id }) {
 
           {asking === 'offer' && (
             <OfferModal
-              market={marketTotal(col.lines)}
+              lines={col.lines}
               rates={rates}
               current={buy.offer_cash}
               busy={col.busy}
@@ -445,7 +446,7 @@ function CollectionScreen({ id }) {
           )}
           {asking === 'paid' && (
             <PaidModal
-              market={marketTotal(col.lines)}
+              lines={col.lines}
               rates={rates}
               offer={{
                 cash: buy.status === 'processing' ? null : buy.offer_cash,

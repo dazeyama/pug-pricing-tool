@@ -1,22 +1,29 @@
 import { useState } from 'react';
 import Modal from '../../components/Modal.jsx';
-import { creditOfferFor, formatMoney, parseMoney, payout } from '../../lib/money.js';
+import OwnRateAlert from '../../components/OwnRateAlert.jsx';
+import { formatMoney, parseMoney } from '../../lib/money.js';
+import { creditOfferForLines, mixedNote, rateTotals } from '../../lib/rates.js';
 
 // The deal (owner, 2026-09-29): prices are simple maths, but the price is
 // agreed between two people. Marking a collection Priced records the offer
 // made; marking it Paid/Ours records what was actually paid, in cash or
 // credit. Both are typed in, never worked out alone.
 
-/** What the maths says: Market, and Cash / Credit at the collection's rates. */
-function Quote({ market, rates }) {
+/**
+ * What the maths says: Market, and Cash / Credit with each card at its own
+ * rate (docs/TEAM_FEEDBACK.md 4.4); the labels keep the collection's rates.
+ */
+function Quote({ lines, rates }) {
+  const t = rateTotals(lines, rates);
+  const mixed = t.mixed && <span className="mixed-mark" title={mixedNote(t.off)}>mixed</span>;
   return (
     <div className="confirm-totals">
-      <div className="total-row"><span>Market</span><strong>{formatMoney(market)}</strong></div>
+      <div className="total-row"><span>Market</span><strong>{formatMoney(t.market)}</strong></div>
       <div className="total-row cash">
-        <span>Cash ({Number(rates.cash)}%)</span><strong>{formatMoney(payout(market, rates.cash))}</strong>
+        <span>Cash ({Number(rates.cash)}%){mixed}</span><strong>{formatMoney(t.cash)}</strong>
       </div>
       <div className="total-row credit">
-        <span>Credit ({Number(rates.credit)}%)</span><strong>{formatMoney(payout(market, rates.credit))}</strong>
+        <span>Credit ({Number(rates.credit)}%){mixed}</span><strong>{formatMoney(t.credit)}</strong>
       </div>
     </div>
   );
@@ -69,10 +76,11 @@ export function PayMethod({ method, onChoose }) {
  * Mark as Priced → "Set an offer": a cash figure for the whole collection,
  * with the credit offer worked out from it as it's typed.
  */
-export function OfferModal({ market, rates, current, busy, onSave, onClose }) {
+export function OfferModal({ lines, rates, current, busy, onSave, onClose }) {
   const [text, setText] = useState(current != null ? String(Number(current)) : '');
   const cash = parseMoney(text);
-  const credit = creditOfferFor(cash, rates.cash, rates.credit);
+  const credit = creditOfferForLines(cash, lines, rates);
+  const mixed = rateTotals(lines, rates).mixed;
   const ready = cash != null && !busy;
   const save = () => {
     if (ready) onSave({ cash, credit });
@@ -88,7 +96,7 @@ export function OfferModal({ market, rates, current, busy, onSave, onClose }) {
         </>
       )}
     >
-      <Quote market={market} rates={rates} />
+      <Quote lines={lines} rates={rates} />
       <MoneyInput label="Set an offer (cash)" value={text} onChange={setText} onEnter={save} autoFocus />
       <div className="deal-result">
         <span className="is-cash">Cash offer <strong>{cash != null ? formatMoney(cash) : '—'}</strong></span>
@@ -97,8 +105,9 @@ export function OfferModal({ market, rates, current, busy, onSave, onClose }) {
         </span>
       </div>
       <p className="hint">
-        The credit offer is the same deal at this collection's rates
-        ({Number(rates.cash)}% cash, {Number(rates.credit)}% credit), rounded down.
+        {mixed
+          ? "The credit offer is the same deal at its cards' rates (their Credit ÷ their Cash), rounded down."
+          : `The credit offer is the same deal at this collection's rates (${Number(rates.cash)}% cash, ${Number(rates.credit)}% credit), rounded down.`}
       </p>
     </Modal>
   );
@@ -110,7 +119,7 @@ export function OfferModal({ market, rates, current, busy, onSave, onClose }) {
  * fills nothing in (owner, 2026-09-30). "Mark as Rejected?" switches to the
  * Reject dialog instead (owner, 2026-10-09).
  */
-export function PaidModal({ market, rates, offer, busy, onSave, onReject, onClose }) {
+export function PaidModal({ lines, rates, offer, busy, onSave, onReject, onClose }) {
   const [text, setText] = useState('');
   const [method, setMethod] = useState(null);
   const price = parseMoney(text);
@@ -136,7 +145,8 @@ export function PaidModal({ market, rates, offer, busy, onSave, onReject, onClos
         </>
       )}
     >
-      <Quote market={market} rates={rates} />
+      <OwnRateAlert lines={lines} rates={rates} />
+      <Quote lines={lines} rates={rates} />
       {(offer.cash != null || offer.credit != null) && (
         <p className="deal-offer">
           Offered{' '}

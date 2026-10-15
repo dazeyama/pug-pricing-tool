@@ -3,7 +3,6 @@ import Modal from '../../components/Modal.jsx';
 import CustomerNameInput from '../../components/CustomerNameInput.jsx';
 import { PHONE_ERROR, formatPhone, phoneDigits, validPhone } from '../../lib/phone.js';
 import ConfirmBuyModal from '../price/ConfirmBuyModal.jsx';
-import { marketTotal } from '../price/BuyList.jsx';
 
 /**
  * Convert to buy (owner, 2026-10-10): CONFIRM BUY's questions for a project,
@@ -16,7 +15,7 @@ export function ConvertToBuyModal({ buy, lines, rates, user, busy, onConvert, on
   return (
     <ConfirmBuyModal
       count={count}
-      market={marketTotal(lines)}
+      lines={lines}
       rates={rates}
       user={user}
       busy={busy}
