@@ -60,7 +60,7 @@ const symbolCache = new Map();   // icon address → its drawing, this page's li
 
 /**
  * A set's symbol for its category's band (owner, 2026-10-14): Scryfall's SVG,
- * drawn in ink at SYMBOL_PX tall on a canvas, as a PNG the PDF can hold.
+ * drawn white at SYMBOL_PX tall on a canvas, as a PNG the PDF can hold.
  * Asked for with its own address (`?print=1`): Scryfall's SVG host sends its
  * CORS header only when asked, and a copy a plain <img> cached would taint
  * the canvas (as Suggestions' set masks found).
@@ -98,9 +98,9 @@ async function drawSymbol(uri) {
     canvas.height = SYMBOL_PX;
     const ctx = canvas.getContext('2d');
     ctx.drawImage(img, 0, 0, w, SYMBOL_PX);
-    // In the bands' ink colour: the bands are outlines on white (owner, 2026-10-14: less ink).
+    // White, for the black band.
     ctx.globalCompositeOperation = 'source-in';
-    ctx.fillStyle = '#14141a';
+    ctx.fillStyle = '#fff';
     ctx.fillRect(0, 0, w, SYMBOL_PX);
     return { data: canvas.toDataURL('image/png'), ratio };
   } finally {

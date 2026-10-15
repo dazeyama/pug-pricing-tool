@@ -1,8 +1,8 @@
 // The audit printout as a PDF (docs/TEAM_FEEDBACK.md 3.6), built in the
 // browser with jsPDF: US Letter, portrait, two columns, in pull-pdf's look
-// (C:\ClaudeProjects\pull-pdf: section bands with their card counts, one
-// row per card marked with its colour, with a tick box), drawn in outlines to
-// save ink. Compact (owner,
+// (C:\ClaudeProjects\pull-pdf: black section bands with their card counts,
+// one row per card marked with its colour, with a tick box), its rows and
+// chips drawn in outlines to save ink. Compact (owner,
 // 2026-10-14): one line a card, its count first in a column of its own so
 // the names line up, its collector number and its condition in black chips
 // lined up on the right, its finish and treatments in chips after its name
@@ -45,9 +45,10 @@ const NAME_X = 37;                           // the name, after the chip, the ti
 const COND_W = 20;
 
 // Light on ink (owner, 2026-10-14: colour kept, but outlines over shading):
-// no filled bands or rows, just outlines; the colour only where it tells
-// something: each row's left chip (its card's colour) and its condition
-// chip's outline.
+// rows and chips are outlines, the colour only where it tells something:
+// each row's left chip (its card's colour) and its condition chip's outline.
+// The category bands stay solid black with white words (owner, 2026-10-14:
+// outlined ones lost the eye), the only ink spent on finding your place.
 
 // pull-pdf's colour groups (sorting.py BUCKET_STYLE), its chip colours: the
 // strip on a row's left edge. pull-pdf's faint row tints are left off.
@@ -67,7 +68,7 @@ const BUCKET_RGB = {
 const CONDITION_RGB = {
   NM: [34, 150, 96], LP: [104, 154, 36], MP: [196, 142, 18], HP: [212, 106, 28], DMG: [204, 58, 58],
 };
-const INK = [20, 20, 26];        // text, the bands' outlines
+const INK = [20, 20, 26];        // text, the bands
 const LINE = [190, 192, 200];    // the rows' hairlines
 
 // PDF's built-in fonts draw Windows-1252 (Latin-1 and a few more: curly
@@ -108,7 +109,7 @@ function fit(doc, text, width) {
  * @param {object} p
  * @param {string} p.title  "Audit — Magic, Tuesday, October 14, 2026"
  * @param {ReturnType<import('./auditPrint.js').auditSections>} p.sections
- * @param {Record<string, { data: string, ratio: number }>} [p.symbols]  set code → its symbol (a PNG in ink; width / height)
+ * @param {Record<string, { data: string, ratio: number }>} [p.symbols]  set code → its symbol (a white PNG; width / height)
  * @param {Date} [p.printedAt]
  * @returns {jsPDF}
  */
@@ -163,9 +164,8 @@ export function auditPdf({ title, sections, symbols = {}, printedAt = new Date()
   };
 
   const band = (s, cont) => {
-    doc.setDrawColor(...INK);
-    doc.setLineWidth(1.1);
-    doc.roundedRect(x() + 0.55, y + 0.55, COL_W - 1.1, BAND - 1.1, 2.5, 2.5, 'S');
+    doc.setFillColor(...INK);
+    doc.roundedRect(x(), y, COL_W, BAND, 2.5, 2.5, 'F');
     let textX = x() + 7;
     const symbol = s.set ? symbols[s.set] : null;
     if (symbol) {
@@ -179,7 +179,7 @@ export function auditPdf({ title, sections, symbols = {}, printedAt = new Date()
     doc.setFontSize(9.5);
     const countText = String(s.cards);
     const countW = doc.getTextWidth(countText);
-    doc.setTextColor(95, 99, 115);
+    doc.setTextColor(205, 208, 222);
     doc.text(countText, x() + COL_W - 7, y + 15.6, { align: 'right' });
     // The name, then its set's code in brackets and "(cont.)", lighter:
     // "Alpha [LEA]" (owner, 2026-10-14). A long name gives way, never the code.
@@ -189,14 +189,14 @@ export function auditPdf({ title, sections, symbols = {}, printedAt = new Date()
     const tailW = tail ? doc.getTextWidth(` ${tail}`) : 0;
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
-    doc.setTextColor(...INK);
+    doc.setTextColor(255, 255, 255);
     const name = fit(doc, pdfSafe(s.name), x() + COL_W - 14 - countW - tailW - textX);
     doc.text(name, textX, y + 15.8);
     if (tail) {
       const after = textX + doc.getTextWidth(name);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(10);
-      doc.setTextColor(95, 99, 115);
+      doc.setTextColor(205, 208, 222);
       doc.text(` ${pdfSafe(tail)}`, after, y + 15.8);
     }
     y += BAND + 2;
