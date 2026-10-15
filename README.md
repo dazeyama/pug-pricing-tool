@@ -549,13 +549,15 @@ adding a new line.
 ### The buy list
 
 Every card in the buy, in the order added, under **Magic** and **Pokémon** headings. The heading
-counts the cards.
+counts the cards, and bulk apart: *42 cards + 1,000 bulk*.
 
 | | |
 |---|---|
-| **Price** | The price for one copy. |
+| **Price** | The price for one copy (for bulk, one item). |
 | **Hover a line** | Shows the card's picture beside the list. |
 | **Click a line** | Loads the card back to edit it. The button reads **SAVE EDIT** and saves over the line. **CANCEL** or **Esc** leaves it as it was. Edited cards take today's price. |
+| **Right-click a card** | **Set Rate**: the card's own Cash % and Credit %, beside the card. **Maintain ratio** keeps Credit at twice Cash; a red box warns when Cash is above Credit. **Clear Rate** takes it off. A card with its own rate is tinted, with a ✎ tag. |
+| **Right-click bulk** | **Set value**: the line's own price per item, showing what it pays as she types. **Back to $1.50** (or **Clear value**) goes back to Settings. |
 | **×** | Removes the card, after asking. With several copies, it asks how many. **Remove all N** takes every copy. |
 
 ### Totals and rates
@@ -566,9 +568,24 @@ counts the cards.
 | **Cash (N%)** | What the store pays in cash. |
 | **Credit (N%)** | What the store pays in credit. |
 
+**Each card is paid at its own rate**, then the total is rounded down once. Which rate a card gets,
+strongest first:
+
+1. **Its own rate** (right-click → Set Rate).
+2. **The buy's custom rates**, if set: every card at them, low and high end included.
+3. **Low end / high end** (Settings): cards strictly under $3 at 50% credit / 25% cash, over $35 at
+   70% / 40%.
+4. **The Master Buy Percentages.**
+
+The labels show the buy's own rate. A **CUSTOM** chip beside them means a card has its own rate.
+The price panel's Credit and Cash use the selected card's rate; hover them to see why.
+
 Clicking a percentage opens **Rates for this buy**. She can set a different Cash % or Credit % for
 this buy only. A ✎ marks a custom rate. **Use master rates** goes back to the ones in Settings.
 **Done** closes it.
+
+**Custom rates only help price.** CONFIRM BUY forgets them: the confirmed buy keeps each card's
+default rate.
 
 ### CANCEL and CONFIRM BUY
 
@@ -582,6 +599,11 @@ this buy only. A ✎ marks a custom rate. **Use master rates** goes back to the 
 | **Phone number** | Required. Ten digits. Formatted as she types. |
 | **Purchase price** | Required. **Cash** or **Credit**, then the amount actually paid. Nothing is filled in for her. |
 | **Notes** | Optional. |
+| **🚩 Flag check for condition** | Optional. Flags the buy on its day page to have its cards' condition checked before export. |
+
+Cards with their own rate, and bulk with its own value, are listed at the top:
+*1 Mental Misstep (NPH) 38 \*F\* [MP] — Credit 80% · Cash 50%*. It's a reminder; **Confirm buy**
+still confirms.
 
 **Past customers.** After two letters, a list under the name shows past customers whose names
 match, each with their last phone number. **↓ ↑** and **Enter**, or a click, picks one: it fills in
@@ -590,6 +612,24 @@ next time. **Esc** closes the list.
 
 It names who is confirming. **Confirm buy** files the buy on today's date and starts a fresh one.
 A message says its number: *"Buy confirmed — Buy 4 today (Magic)"*.
+
+### Bulk
+
+Eight items stand for unsorted bulk, priced in Settings → **Bulk values**:
+
+| Magic | Pokémon |
+|---|---|
+| 100 commons/uncommons · 100 rares/mythics · 10 $1 cards · 10 50¢ cards | 100 bulk · 100 EXs · 10 $1 cards · 10 50¢ cards |
+
+- **Search "bulk"** to find them, ahead of the cards. **"BULK"** in capitals shows only bulk. More
+  words narrow it: *bulk rares*, *BULK pkm*, *bulk $1*.
+- They show as a stack of card backs: *100 BULK c/u*. The price box is the **full market price per
+  item**; typing another price gives the line its own value (**✎ own value**, × clears it). Under it,
+  what that pays in Credit and Cash.
+- **Qty counts items**: 10 × 100 commons/uncommons is 1,000 cards.
+- Bulk is paid at the master or custom rates, never low end / high end.
+- **Bulk only helps price.** It's never exported, completed, printed or found by the header search.
+  A buy counts as Completed once its real cards are.
 
 ### Keyboard shortcuts
 
@@ -806,6 +846,11 @@ Sends the collection's Magic cards to Crystal Commerce. See
 A Completed collection shows its **Custom SKU** in the list heading. Its prices show in green: those
 are its Sell Prices.
 
+**EXPORT ▾** opens **Print?** and **Export csv**. **Print?** makes the audit printout (see
+[Print?](#print-the-audit-printout)). The ⋯ menu has **Print collection** (or **Print project**) too.
+
+**Projects have no rates.** They're the store's own cards: no custom rates, no Set Rate.
+
 ### Convert to buy…
 
 Projects only, from the ⋯ menu. It turns the project into a buy on today's day page: the way back
@@ -889,7 +934,7 @@ One game's part of every walk-in buy confirmed that day.
 |---|---|
 | **< BACK** | Back to the Calendar, on the same month. |
 | **⋯** | The day's menu. See below. |
-| **EXPORT (N)** | Magic days. Exports the day. N is the cards to export: count the pile first. |
+| **EXPORT (N) ▾** | Magic days. **Export csv** exports the day; **Print?** makes the audit printout. N is the cards to export: count the pile first. |
 | **COMPLETE (N)** | Pokémon days. Marks the day Completed. See below. |
 
 The title shows the date and game. Once exported it also shows **Exported** and the **Custom SKU**.
@@ -920,21 +965,37 @@ user, the time and its status.
 
 **×** removes cards. It asks how many. Removing the last card deletes the buy, after asking.
 
+**🚩 Check condition.** A buy flagged at CONFIRM BUY shows a red chip. Clicking it asks **Condition
+checked?**; **Yes** turns it into a green **✅ Condition checked** for good. EXPORT, Export single buy
+and COMPLETE warn while a buy is flagged.
+
 Once Completed, a buy is locked. Its prices show in green: those are its Sell Prices.
 
 ### A buy's ⋯ menu
 
 | | |
 |---|---|
+| **✅ Condition checked** | Flagged buys only, first in the menu. Takes the 🚩 flag off. |
 | **Mark as completed** | Completes this buy's cards without exporting them. They're locked, and left out of the search and the day's export. |
 | **Mark Paid/Ours again** | Undoes Mark as completed. On an exported buy it reads **Mark Paid/Ours again…** and undoes this buy's export only. |
 | **Export single buy** | Magic only. Exports just this buy, on any day, today included. The rest of the day stays as it is. |
+| **Print buy** | Magic only. The audit printout of this buy's cards. |
 | **Edit in project view** | Opens the buy's cards on the pricing screen, in the game's colour, to fix a card before an export (its condition or treatment, mostly). Click a card, change it, then **SAVE EDIT**; **×** takes cards out. Nothing is saved until **SAVE BUY**, which goes back to the day page. The buy stays on its day; cards can't be added and the rates don't change. |
-| **Convert to project** | Moves every card, both games, into a new project with the buy's notes and rates. The buy is deleted from the day. The name starts as the customer's. The cards keep their prices until a **REPRICE?** rounds them up. |
+| **Convert to project** | Moves every card, both games, into a new project with the buy's notes (a project has no rates). The buy is deleted from the day. The name starts as the customer's. The cards keep their prices until a **REPRICE?** rounds them up. |
 | **Delete buy…** | Deletes the buy and every card in it, both games. Asks first. |
 
 **Edit in project view**, **Convert to project** and **Delete buy…** are locked once any of the buy's cards are Completed.
 A project can become a buy again: see [Convert to buy…](#convert-to-buy).
+
+### Print? (the audit printout)
+
+A PDF to check a batch by hand before it goes up to Crystal Commerce. It changes nothing.
+
+- The Magic cards still to export (once exported, the ones the export took), sorted by **Crystal
+  Commerce category**, each with its set symbol; anything with no product goes under **Unmatched**.
+- In each category: Near Mint first, by collector number, then the other conditions.
+- Each row: quantity, a tick box, the name, its colour, the collector number, condition and finish.
+- It opens in a new tab and downloads. Bulk is never on it.
 
 ### COMPLETE (Pokémon days)
 
@@ -1021,6 +1082,7 @@ The cards fall into three groups.
 
 | | |
 |---|---|
+| **View on Scryfall ↗** | Beside the card's name: the exact printing on Scryfall, in the same pop-up as the Buy tab's. |
 | **A product** | Picks it. Every card of the same printing and finish takes the same pick. |
 | **None of these (can't upload)** | Sends the card to Can't upload. |
 | **Find another CC product…** | Searches the inventory by name. |
@@ -1177,10 +1239,21 @@ lookups allowed per minute, and when the daily count resets (midnight UTC).
 box. Changes apply at once to buys in progress and to unpaid collections. Confirmed buys and
 Paid/Ours collections keep the rates they had.
 
+### Low-end and high-end rates
+
+Cards strictly **under** a price (default $3) or **over** one (default $35) get their own Credit %
+and Cash % (defaults 50 / 25 and 70 / 40), unless the buy has custom rates or the card its own.
+Never for bulk.
+
 ### Master Fallback Percentages
 
 A percentage for each condition, NM to DMG, for Magic and for Pokémon. They work out the prices
 JustTCG doesn't give (see [How prices are worked out](#how-prices-are-worked-out)).
+
+### Bulk values
+
+The market value of each bulk item, Magic and Pokémon side by side: *100 · Commons & Uncommons
+$1.50*. Bulk already in a list keeps its value; **REPRICE?** puts a project's bulk back on it.
 
 ### Crystal Commerce matching
 
