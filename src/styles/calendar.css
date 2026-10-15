@@ -186,10 +186,26 @@ button.cal-day.exported:hover { background: color-mix(in srgb, var(--game) 14%, 
 .buy-panel.completed .line-x { visibility: hidden; }
 .buy-panel-head .status-chip { margin-left: auto; font-size: 11px; padding: 1px 9px; }
 /* 🚩 Flag check for condition (owner, 2026-10-14). */
+.flag-wrap { position: relative; flex: none; display: inline-flex; }
 .flag-chip {
   flex: none; padding: 1px 8px; border: 1px solid var(--bad); border-radius: 999px;
-  background: rgba(255, 107, 107, .14); color: var(--bad); font-size: 11px; font-weight: 800; white-space: nowrap;
+  background: rgba(255, 107, 107, .14); color: var(--bad); font: inherit; font-size: 11px; font-weight: 800; white-space: nowrap;
 }
+button.flag-chip { cursor: pointer; }
+button.flag-chip:hover, button.flag-chip[aria-expanded="true"] { background: rgba(255, 107, 107, .26); }
+/* Checked: green for good (owner, 2026-10-14). */
+.flag-chip.checked { border-color: var(--good); background: rgba(62, 207, 142, .14); color: var(--good); }
+/* "✅ Condition checked?" under the chip. */
+.flag-pop {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 30;
+  display: flex; flex-direction: column; gap: 8px; padding: 10px 12px;
+  background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .45); white-space: nowrap;
+}
+.flag-pop-q { font-size: 13px; font-weight: 700; color: var(--text); }
+.flag-pop-buttons { display: flex; justify-content: flex-end; gap: 6px; }
+.flag-yes { border-color: var(--good); background: var(--good); color: #0d2418; font-weight: 800; }
+.flag-yes:hover:not(.is-disabled) { filter: brightness(1.08); }
 .buy-flag-warn {
   margin: 0 0 10px; padding: 7px 10px; border: 1px solid var(--bad); border-radius: 8px;
   background: rgba(255, 107, 107, .1); color: var(--text); font-size: 13px; font-weight: 600;

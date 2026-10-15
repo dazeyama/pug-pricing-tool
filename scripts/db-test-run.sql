@@ -726,7 +726,11 @@ declare
 begin
   b := pg_temp.buy(a, u, 'DBTEST Flag', '5550100013', array[pg_temp.line('Dbtest Flag', 'DBT', '002', 1, 2.00)]);
   v_ver := pg_temp.version(b);
-  perform pg_temp.ok(s, 'A confirmed buy starts unflagged', not (select condition_check from buys where id = b));
+  perform pg_temp.ok(s, 'A confirmed buy starts unflagged, never checked',
+    (select not condition_check and condition_checked_at is null from buys where id = b));
+  v_flag := buy_set_condition_check(b, false, u, a);
+  perform pg_temp.ok(s, '"Checked" on a buy never flagged changes nothing (no green chip)',
+    (select not condition_check and condition_checked_at is null from buys where id = b));
   begin
     perform buy_set_condition_check(b, true, null, a);
     raise exception 'dbt_no_error';
@@ -752,6 +756,11 @@ begin
   perform pg_temp.ok(s, 'Cleared (Condition checked), even once Completed',
     not v_flag and not (select condition_check from buys where id = b)
     and exists (select 1 from events where target_id = b and action = 'buy_flag_cleared'));
+  perform pg_temp.ok(s, '… and remembers who checked it, and when (the green chip)',
+    (select condition_checked_at is not null and condition_checked_by = u from buys where id = b));
+  v_flag := buy_set_condition_check(b, true, u, a);
+  perform pg_temp.ok(s, 'Flagged again: the red flag back, the check forgotten',
+    (select condition_check and condition_checked_at is null and condition_checked_by is null from buys where id = b));
 exception when others then
   declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;
   perform pg_temp.crashed(s, sqlerrm, v_ctx); end;

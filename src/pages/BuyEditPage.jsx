@@ -58,6 +58,8 @@ export default function BuyEditPage() {
   const [lines, setLines] = useState([]);
   const [busy, setBusy] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  // SAVE BUY on a 🚩 flagged buy asks "✅ Condition checked?" first (owner, 2026-10-14).
+  const [askChecked, setAskChecked] = useState(false);
 
   const backTo = useCallback((focus) => navigate(`/calendar/${game}/${date}`, focus ? { state: { focus } } : undefined),
     [navigate, game, date]);
@@ -130,12 +132,32 @@ export default function BuyEditPage() {
     setRates: async () => null,   // never: ratesLocked
   };
 
-  async function save() {
+  /** SAVE BUY: on a flagged buy, asks first whether its condition is checked. */
+  function startSave() {
+    if (!user) {
+      staff.pulse();
+      return;
+    }
+    if (buy?.condition_check) setAskChecked(true);
+    else save(false);
+  }
+
+  /** The flag off, its condition checked (buy_set_condition_check, migration 0053). */
+  async function markChecked() {
+    const { error } = await supabase.rpc('buy_set_condition_check', {
+      p_buy_id: id, p_flag: false, p_user: user.id, p_device: deviceId,
+    });
+    if (error) toast(`Saved, but the 🚩 flag couldn't be taken off (${error.message}): use the flag on the day page.`, 'warn');
+    return !error;
+  }
+
+  async function save(checked) {
     if (!user) {
       staff.pulse();
       return;
     }
     if (!dirty) {
+      if (checked && await markChecked()) toast(`${number ? `Buy ${number}` : 'Buy'}: ✅ condition checked.`, 'ok');
       backTo({ buyId: id, lineIds: [] });
       return;
     }
@@ -158,7 +180,8 @@ export default function BuyEditPage() {
       changes.edits.length && `${changes.edits.length} card${changes.edits.length === 1 ? '' : 's'} edited`,
       changes.removed.length && `${changes.removed.length} removed`,
     ].filter(Boolean).join(', ');
-    toast(`${number ? `Buy ${number}` : 'Buy'} saved: ${parts}.`, 'ok');
+    const tick = checked && await markChecked() ? ' ✅ Condition checked.' : '';
+    toast(`${number ? `Buy ${number}` : 'Buy'} saved: ${parts}.${tick}`, 'ok');
     backTo({ buyId: id, lineIds: changes.edits.map((e) => e.id) });
   }
 
@@ -238,13 +261,49 @@ export default function BuyEditPage() {
               disabled={busy || offline || Boolean(locked)}
               title={busy ? 'Saving…' : offline ? 'No connection' : locked
                 ?? (dirty ? 'Save the changes to this buy and go back to its day page' : 'Nothing changed: back to the day page')}
-              onClick={save}
+              onClick={startSave}
             >
               SAVE BUY
             </GuardButton>
           </div>
         )}
       />
+      {askChecked && (
+        <Modal
+          title="Condition checked?"
+          onClose={() => setAskChecked(false)}
+          footer={(
+            <>
+              <button
+                type="button"
+                className="btn ghost"
+                onClick={() => {
+                  setAskChecked(false);
+                  save(false);
+                }}
+              >
+                No, keep the flag
+              </button>
+              <button
+                type="button"
+                className="btn flag-yes"
+                autoFocus
+                onClick={() => {
+                  setAskChecked(false);
+                  save(true);
+                }}
+              >
+                ✅ Yes, checked
+              </button>
+            </>
+          )}
+        >
+          <p>
+            🚩 This buy is flagged to have its cards&apos; condition checked before export. Is it checked now?
+          </p>
+          <p className="hint">Either way the changes are saved. Yes takes the flag off (a green ✅ on its day page).</p>
+        </Modal>
+      )}
       {leaving && (
         <Modal
           title="Leave without saving?"

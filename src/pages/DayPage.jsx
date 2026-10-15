@@ -643,7 +643,7 @@ function DayScreen({ game, day }) {
             {flagWarning.numbers.length === 1 ? 'is' : 'are'} flagged: {flagWarning.numbers.length === 1 ? 'its' : 'their'} cards
             need their condition checked before export.
           </p>
-          <p className="hint">Check them, then ⋯ → Condition checked; or go ahead anyway.</p>
+          <p className="hint">Check them (click 🚩 Check condition → Yes), or go ahead anyway.</p>
         </Modal>
       )}
       {removing && (
@@ -822,6 +822,76 @@ function totalsFor(lines, buy) {
   };
 }
 
+/**
+ * The buy's condition chip (owner, 2026-10-14): 🚩 Check condition while it's
+ * flagged, which asks "✅ Condition checked?" (Yes takes the flag off); once
+ * checked, a green ✅ Condition checked for good, saying who and when. A buy
+ * never flagged has none.
+ */
+function ConditionChip({ buy, byId, blocked, onChecked }) {
+  const [asking, setAsking] = useState(false);
+  const wrap = useRef(null);
+  useEffect(() => {
+    if (!asking) return undefined;
+    const onDown = (e) => {
+      if (!wrap.current?.contains(e.target)) setAsking(false);
+    };
+    const onKey = (e) => {
+      if (e.key === 'Escape') setAsking(false);
+    };
+    document.addEventListener('mousedown', onDown);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [asking]);
+
+  if (buy.condition_check) {
+    return (
+      <span className="flag-wrap" ref={wrap}>
+        <button
+          type="button"
+          className="flag-chip"
+          aria-expanded={asking}
+          title="Flagged: check its cards' condition before export. Click when it's checked."
+          onClick={() => setAsking((a) => !a)}
+        >
+          🚩 Check condition
+        </button>
+        {asking && (
+          <span className="flag-pop" role="dialog" aria-label="Condition checked?">
+            <span className="flag-pop-q"><span aria-hidden="true">✅</span> Condition checked?</span>
+            <span className="flag-pop-buttons">
+              <button type="button" className="btn small ghost" onClick={() => setAsking(false)}>No</button>
+              <button
+                type="button"
+                className={`btn small flag-yes${blocked ? ' is-disabled' : ''}`}
+                aria-disabled={blocked ? true : undefined}
+                title={blocked ?? 'Take the 🚩 flag off: its condition is checked'}
+                onClick={() => {
+                  if (blocked) return;
+                  setAsking(false);
+                  onChecked();
+                }}
+              >
+                Yes
+              </button>
+            </span>
+          </span>
+        )}
+      </span>
+    );
+  }
+  if (!buy.condition_checked_at) return null;
+  const who = byId(buy.condition_checked_by)?.name;
+  return (
+    <span className="flag-chip checked" title={`Condition checked${who ? ` by ${who}` : ''}, ${formatDateTime(buy.condition_checked_at)}`}>
+      ✅ Condition checked
+    </span>
+  );
+}
+
 /** One buy on a day page (spec 10.2). */
 function BuyPanel({
   buy, number, game, other, day, byId, busy, offline, hits, flash, onRemove, onDelete, onComplete, onConvert,
@@ -854,16 +924,19 @@ function BuyPanel({
         <strong className="buy-number">Buy {number}</strong>
         <UserTag user={user} />
         <span className="buy-time">{formatTime(buy.confirmed_at)}</span>
-        {buy.condition_check && (
-          <span className="flag-chip" title="Flagged when it was confirmed: check its cards' condition before export">
-            🚩 Check condition
-          </span>
-        )}
+        <ConditionChip buy={buy} byId={byId} blocked={offOrBusy} onChecked={() => onFlag(buy, number, false)} />
         <span className={`status-chip ${statusTone({ kind: 'walk_in', status, paid_method: buy.paid_method })}`}>
           {statusLabel(status)}
         </span>
         <MoreMenu
           items={[
+            // ✅ Condition checked, pinned first while the buy is flagged (owner, 2026-10-14).
+            ...(buy.condition_check ? [{
+              label: '✅ Condition checked',
+              blocked: offOrBusy,
+              title: "Its cards' condition is checked: take the 🚩 flag off",
+              onClick: () => onFlag(buy, number, false),
+            }] : []),
             // Owner, 2026-10-02: one buy Completed without exporting it, and back.
             // An exported buy goes back with its export undone, after asking (owner, 2026-10-09).
             completed ? {
@@ -894,18 +967,13 @@ function BuyPanel({
               title: "A PDF of this buy's Magic cards by Crystal Commerce category, to check them by hand. Changes nothing.",
               onClick: () => onPrint(buy, number),
             }] : []),
-            // 🚩 Flag check for condition, and back (owner, 2026-10-14).
-            buy.condition_check ? {
-              label: 'Condition checked',
-              blocked: offOrBusy,
-              title: "Its cards' condition is checked: take the 🚩 flag off",
-              onClick: () => onFlag(buy, number, false),
-            } : {
-              label: 'Flag check for condition',
+            // 🚩 Flag check for condition (owner, 2026-10-14), on a buy not flagged now.
+            ...(!buy.condition_check ? [{
+              label: '🚩 Flag check for condition',
               blocked: offOrBusy,
               title: "🚩 Flag this buy: its cards' condition needs checking before export",
               onClick: () => onFlag(buy, number, true),
-            },
+            }] : []),
             // Its cards edited on the pricing screen, saved with SAVE BUY (owner, 2026-10-13):
             // for small fixes (a condition, a treatment) before an export.
             {
@@ -939,7 +1007,7 @@ function BuyPanel({
         {buy.notes && <p className="buy-notes">{buy.notes}</p>}
         {buy.condition_check && !completed && (
           <p className="buy-flag-warn" role="note">
-            🚩 Check this buy&apos;s cards for condition before export. ⋯ → Condition checked when done.
+            🚩 Check this buy&apos;s cards for condition before export. Click 🚩 Check condition when done.
           </p>
         )}
         <table className="deck-table">
