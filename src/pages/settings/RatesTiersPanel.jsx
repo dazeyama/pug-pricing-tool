@@ -55,7 +55,8 @@ function TierBox({ tier, field, money = false, label }) {
   }
 
   return (
-    <span className={`pct-input fb-box${money ? ' tier-money' : ''}`}>
+    // Credit and Cash boxes in their colours (owner, 2026-10-15).
+    <span className={`pct-input fb-box${money ? ' tier-money' : ` tier-${field}`}`}>
       {money && <span className="pct-sign">$</span>}
       <input
         type="number"
