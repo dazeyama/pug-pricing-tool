@@ -1654,4 +1654,8 @@
   font-variant-numeric: tabular-nums;
 }
 .bulk-per.own { color: var(--accent); font-weight: 700; }
-.bulk-value-live { margin: 2px 0 4px; font-size: 13px; font-variant-numeric: tabular-nums; }
+.bulk-value-live { margin: 2px 0 4px; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* Set value: each part on one line (owner, 2026-10-15). */
+.bulk-value-panel .rates-head { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bulk-value-row input { width: 80px; }
+.bulk-value-row .rate-pct { font-size: 14px; }

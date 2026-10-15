@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   BULK_ITEMS, DEFAULT_BULK_VALUES, bulkItem, bulkLineText, bulkSearch, bulkValuesFrom, buildBulkLine, cardCounts,
-  countText, isBulk, perText, repricedBulk, shortName,
+  bulkShortText, countText, isBulk, perText, repricedBulk, shortName,
 } from '../src/lib/bulk.js';
 import { lineText, lineTextWithCondition } from '../src/lib/lineFormat.js';
 
@@ -57,6 +57,7 @@ test('a bulk line reads in total cards (5.5)', () => {
   assert.equal(lineText(line), '1,000 MTG Bulk commons/uncommons');
   assert.equal(lineText(line, 2), '200 MTG Bulk commons/uncommons');
   assert.equal(lineTextWithCondition(line), '1,000 MTG Bulk commons/uncommons');
+  assert.equal(bulkShortText(line), '1,000 BULK c/u');
   const set = buildBulkLine(bulkItem('pkm_10_dollar'), 1, 7, 9);
   assert.equal(set.unit_price, 9);
   assert.equal(set.price_source, 'manual');

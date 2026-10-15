@@ -7,7 +7,7 @@ import {
   hasOwnRate, lineRate, otherRate, rateTotals, whyText,
 } from '../../lib/rates.js';
 import { useToast } from '../../components/Toast.jsx';
-import { bulkItem, cardCounts, countText, isBulk, perText } from '../../lib/bulk.js';
+import { bulkItem, bulkShortText, cardCounts, countText, isBulk, perText } from '../../lib/bulk.js';
 import CustomRateMark from '../../components/CustomRateMark.jsx';
 
 const GROUPS = [
@@ -324,16 +324,17 @@ function CardRatePanel({ line, rates, master, top, onSave, onClose }) {
 /**
  * Set value (docs/TEAM_FEEDBACK.md 5.6): a bulk line's own value per item in
  * place of Set Rate, beside the line, with its Cash and Credit as it's typed.
- * Saved on blur or Enter; the Settings value typed back, or Clear, goes back
- * to it.
+ * Saved on blur or Enter; the Settings value typed back, or "Back to $1.50",
+ * goes back to it. One clean line each (owner, 2026-10-15): the line in short,
+ * the box, what it pays, the buttons.
  */
 function BulkValuePanel({ line, rates, value, top, onSave, onClose }) {
   const item = bulkItem(line.bulk_kind);
   const shown = Number(line.unit_price);
-  const [text, setText] = useState(String(shown));
+  const [text, setText] = useState(shown.toFixed(2));
   const toast = useToast();
   const box = useRef(null);
-  useEffect(() => setText(String(shown)), [shown]);
+  useEffect(() => setText(shown.toFixed(2)), [shown]);
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === 'Escape') onClose();
@@ -355,20 +356,19 @@ function BulkValuePanel({ line, rates, value, top, onSave, onClose }) {
   const typed = /^\d{1,6}(\.\d{1,2})?$/.test(text.trim().replace(/^\$/, '')) ? Number(text.trim().replace(/^\$/, '')) : null;
   const live = rateTotals([{ ...line, unit_price: typed ?? shown, cc_sell_price: null }], rates);
   function commit() {
-    if (text.trim() === String(shown)) return;
+    if (typed === shown) return;
     if (typed == null) {
       toast('Enter a dollar amount, with up to 2 decimals.', 'err');
-      setText(String(shown));
+      setText(shown.toFixed(2));
       return;
     }
     onSave(typed === value ? null : typed);
   }
 
   return (
-    <div className="rates-panel card-rate-panel" ref={box} style={{ top }}>
-      <div className="rates-head">Set value · <span className="card-rate-name">{lineText(line)}</span></div>
-      <label className="rate-row">
-        <span className="rate-name">Value</span>
+    <div className="rates-panel card-rate-panel bulk-value-panel" ref={box} style={{ top }}>
+      <div className="rates-head" title={lineText(line)}>Set value · <span className="card-rate-name">{bulkShortText(line)}</span></div>
+      <label className="rate-row bulk-value-row">
         <span className="rate-pct">$</span>
         <input
           type="text"
@@ -383,16 +383,21 @@ function BulkValuePanel({ line, rates, value, top, onSave, onClose }) {
           }}
         />
         <span className="rate-pct">per {item.per}</span>
-        <span className="rate-master" title="Settings → Bulk values">settings {formatMoney(value)}</span>
       </label>
       <p className="bulk-value-live">
-        This line: <span className="is-credit">Credit <strong>{formatMoney(live.credit)}</strong></span>
+        Pays <span className="is-credit">Credit <strong>{formatMoney(live.credit)}</strong></span>
         {' · '}
         <span className="is-cash">Cash <strong>{formatMoney(live.cash)}</strong></span>
       </p>
       <div className="rates-foot">
-        <button type="button" className="btn small ghost" disabled={line.price_source !== 'manual'} onClick={() => onSave(null)}>
-          Clear
+        <button
+          type="button"
+          className="btn small ghost"
+          disabled={line.price_source !== 'manual'}
+          title="Settings → Bulk values"
+          onClick={() => onSave(null)}
+        >
+          Back to {formatMoney(value)}
         </button>
         <button type="button" className="btn small" onClick={onClose}>Done</button>
       </div>

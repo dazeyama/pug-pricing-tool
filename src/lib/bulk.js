@@ -60,6 +60,13 @@ export function bulkValuesFrom(value) {
 /** A suggestion's caption: "100 BULK c/u", "10 BULK $1", "100 BULK" (owner, 2026-10-15). */
 export const shortName = (item) => `${item.per} BULK${item.short ? ` ${item.short}` : ''}`;
 
+/** A bulk line in short: "1,000 BULK c/u" (its cards, then its short name). */
+export function bulkShortText(line, quantity = line.quantity) {
+  const item = bulkItem(line.bulk_kind);
+  if (!item) return `${quantity} ${line.name}`;
+  return `${(quantity * item.per).toLocaleString('en-US')} BULK${item.short ? ` ${item.short}` : ''}`;
+}
+
 /** "$1.50 per 100". */
 export const perText = (item, value) => `${formatMoney(value)} per ${item.per}`;
 
