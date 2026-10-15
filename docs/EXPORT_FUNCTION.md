@@ -500,6 +500,8 @@ EXPORT checks, in this order, and stops with a toast (and nothing changed) when 
 | Collection | Processing / Priced | Blocked: "Mark it Paid/Ours first" |
 | Can't upload cards | Always Paid/Ours | Warns first, then the export (Section 9.3) |
 
+Since 2026-10-14 every Magic EXPORT opens a small menu: **Print?** (the audit printout, `docs/TEAM_FEEDBACK.md` 3) and **Export csv**, which is everything in this table.
+
 ### 8.3 The export dialog
 
 A wide modal with three steps. It can't be closed while it's saving.

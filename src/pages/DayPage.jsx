@@ -14,6 +14,7 @@ import UserTag from '../components/UserTag.jsx';
 import ExportButton from '../components/ExportButton.jsx';
 import LinePreview, { previewFor } from '../components/LinePreview.jsx';
 import ExportDialog from './export/ExportDialog.jsx';
+import { useAuditPrint } from './export/useAuditPrint.js';
 import { downloadMassCreate } from '../lib/ccExport.js';
 import { todaysPrices } from '../lib/todaysPrices.js';
 import { sellPriceFor } from '../lib/sellPrice.js';
@@ -96,6 +97,8 @@ function DayScreen({ game, day }) {
   const [completing, setCompleting] = useState(false);   // COMPLETE (Pokémon days)
   const [completeStep, setCompleteStep] = useState('');   // what COMPLETE is doing (today's prices…)
   const { values: settingValues } = useSettings();
+  // Print? and Print buy (docs/TEAM_FEEDBACK.md 3): the audit printout, changing nothing.
+  const { print, printing } = useAuditPrint();
   const [checking, setChecking] = useState(false);       // ⋯ → Check Crystal Commerce matches (export spec E2)
   const [busy, setBusy] = useState(false);
   const ticket = useRef(0);
@@ -435,6 +438,35 @@ function DayScreen({ game, day }) {
     toast(`Downloaded the same file again: ${rows} row${rows === 1 ? '' : 's'}, Custom SKU ${skus.join(', ')}.`, 'ok');
   }
 
+  /**
+   * EXPORT ▾ → Print? (docs/TEAM_FEEDBACK.md 3.1): the cards EXPORT would
+   * take, or once the day is exported, what it exported; blocked when EXPORT is.
+   */
+  function printDay() {
+    if (exportBlocked) {
+      toast(`${exportBlocked}.`, 'err');
+      return;
+    }
+    if (!mine.length) {
+      toast(`No ${GAME_NAMES[game]} buys that day.`, 'err');
+      return;
+    }
+    if (offline) {
+      toast('No connection: printing needs it to find the Crystal Commerce categories.', 'err');
+      return;
+    }
+    print({ lines: dayLines, title: `Audit — Magic, ${dayTitle(day)}`, fileName: `audit-magic-${day}.pdf` });
+  }
+
+  /** A buy's ⋯ → Print buy (docs/TEAM_FEEDBACK.md 3.1): that buy alone, any day. */
+  function printBuy(b, n) {
+    print({
+      lines: b.buy_lines,
+      title: `Audit — Buy ${n}, ${dayDate(day)}`,
+      fileName: `audit-magic-${day}-buy-${n}.pdf`,
+    });
+  }
+
   /** The export saved and its file handed over (export spec 8.4). */
   async function exported(result) {
     setExporting(false);
@@ -481,6 +513,8 @@ function DayScreen({ game, day }) {
             className="top"
             label={completeOnly ? 'COMPLETE' : 'EXPORT'}
             onClick={completeOnly ? startComplete : startExport}
+            onPrint={completeOnly ? null : printDay}
+            printing={printing}
             blocked={exportBlocked}
             count={state.loaded ? pileCards : null}
             countTitle={toExport.length
@@ -545,6 +579,8 @@ function DayScreen({ game, day }) {
               onComplete={(b, n, complete) => guard() && markCompleted(b, n, complete)}
               onConvert={(b, n) => guard() && setConverting({ buy: b, number: n })}
               onExport={(b, n) => guard() && setExportingBuy({ buy: b, number: n })}
+              onPrint={printBuy}
+              printing={printing}
               onUnexport={(b, n) => guard() && setUnexportingBuy({ buy: b, number: n })}
               // Edit in project view (owner, 2026-10-13): the buy's cards on the pricing screen.
               onEditView={(b, n) => navigate(`/calendar/${game}/${day}/buy/${b.id}`, { state: { number: n } })}
@@ -732,7 +768,7 @@ function totalsFor(lines, buy) {
 /** One buy on a day page (spec 10.2). */
 function BuyPanel({
   buy, number, game, other, day, byId, busy, offline, hits, flash, onRemove, onDelete, onComplete, onConvert,
-  onExport, onUnexport, onEditView,
+  onExport, onUnexport, onEditView, onPrint, printing,
 }) {
   const [preview, setPreview] = useState(null);   // { src, top, left } while a line is hovered
   const hidePreview = useCallback(() => setPreview(null), []);
@@ -787,6 +823,14 @@ function BuyPanel({
               blocked: offOrBusy ?? (completed ? 'Already Completed' : lines.length ? null : 'No Magic cards in this buy'),
               title: "Export just this buy's Magic cards to Crystal Commerce now; the buy is Completed, the rest of the day isn't",
               onClick: () => onExport(buy, number),
+            }, {
+              // Print buy (owner, 2026-10-14; docs/TEAM_FEEDBACK.md 3.1): this buy's
+              // Magic cards by Crystal Commerce category, for a single-buy export.
+              label: 'Print buy',
+              needsUser: false,
+              blocked: offline ? 'No connection' : printing ? 'Printing…' : lines.length ? null : 'No Magic cards in this buy',
+              title: "A PDF of this buy's Magic cards by Crystal Commerce category, to check them by hand. Changes nothing.",
+              onClick: () => onPrint(buy, number),
             }] : []),
             // Its cards edited on the pricing screen, saved with SAVE BUY (owner, 2026-10-13):
             // for small fixes (a condition, a treatment) before an export.

@@ -9,8 +9,10 @@ import GuardButton from './GuardButton.jsx';
  * what spills out of it): below the button, or above when there's no room;
  * scrolling closes it.
  *
+ * `needsUser: false` on an item that changes nothing (Print buy).
+ *
  * @param {{ items: { label: string, onClick: () => void, danger?: boolean,
- *   blocked?: string|null, title?: string }[], up?: boolean, float?: boolean }} p
+ *   blocked?: string|null, title?: string, needsUser?: boolean }[], up?: boolean, float?: boolean }} p
  */
 export default function MoreMenu({ items, up = false, float = false }) {
   const [open, setOpen] = useState(false);
@@ -84,6 +86,7 @@ export default function MoreMenu({ items, up = false, float = false }) {
           {items.map((item) => (
             <GuardButton
               key={item.label}
+              needsUser={item.needsUser ?? true}
               role="menuitem"
               className={`more-item${item.danger ? ' danger' : ''}`}
               disabled={Boolean(item.blocked)}

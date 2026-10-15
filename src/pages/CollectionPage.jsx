@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import Modal from '../components/Modal.jsx';
 import ImportDialog from './collections/ImportDialog.jsx';
 import ExportDialog from './export/ExportDialog.jsx';
+import { useAuditPrint } from './export/useAuditPrint.js';
 import RepriceModal from './collections/RepriceModal.jsx';
 import { formatMoney } from '../lib/money.js';
 import { fileStamp } from '../lib/time.js';
@@ -48,6 +49,8 @@ function CollectionScreen({ id }) {
   const user = staff.current;
   const { offline } = useConnection();
   const toast = useToast();
+  // Print? (docs/TEAM_FEEDBACK.md 3): the audit printout, changing nothing.
+  const { print, printing } = useAuditPrint();
   const { values } = useSettings();
   const lock = useCollectionLock(id, { deviceId, userId: user?.id });
   const col = useCollection(id, { deviceId, onLockLost: lock.recheck });
@@ -224,6 +227,28 @@ function CollectionScreen({ id }) {
     }
     // Pokémon cards are left out entirely (owner, 2026-09-30).
     setExportStep(magic ? 'dialog' : 'pokemon');
+  }
+
+  /**
+   * EXPORT ▾ → Print? (docs/TEAM_FEEDBACK.md 3.1): its Magic cards by Crystal
+   * Commerce category; once Completed, what it exported. Blocked like EXPORT
+   * (Paid/Ours first), but needs no user or edit lock: it changes nothing.
+   */
+  function printCollection() {
+    if (buy && !system && buy.status === 'rejected') {
+      toast('This collection was Rejected: there is nothing to print.', 'err');
+      return;
+    }
+    if (buy && !system && !['paid', 'completed'].includes(buy.status)) {
+      toast('Mark it Paid/Ours first.', 'err');
+      return;
+    }
+    if (offline) {
+      toast('No connection: printing needs it to find the Crystal Commerce categories.', 'err');
+      return;
+    }
+    const name = system ? "Can't upload cards" : buy.customer_name;
+    print({ lines: col.lines, title: `Audit — ${name}`, fileName: `audit-${fileSafe(name)}.pdf` });
   }
 
   async function exported(result) {
@@ -619,7 +644,7 @@ function CollectionScreen({ id }) {
           >
             REPRICE?
           </button>
-          <ExportButton onClick={startExport} />
+          <ExportButton onClick={startExport} onPrint={printCollection} printing={printing} up />
           {repricing && (
             <RepriceModal
               lines={col.lines}

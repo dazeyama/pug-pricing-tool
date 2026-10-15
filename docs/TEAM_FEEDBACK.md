@@ -5,7 +5,7 @@
 | **Product** | PUG Pricing Tool: three changes from the team's demo |
 | **Owner** | Players' Union Games (PUG) |
 | **Plan version** | 1.0 — 2026-10-14 |
-| **Status** | Written from the owner's notes and answers (2026-10-14). Awaiting the owner's approval before Phase T1. |
+| **Status** | Approved by the owner (2026-10-14). Phase T1 built (2026-10-14), waiting for the owner's check before T2. |
 | **Extends** | `docs/DESIGN_SPEC.md` (the app) and `docs/EXPORT_FUNCTION.md` (the export). Both stay the source of truth for everything not changed here. |
 | **Project folder** | `C:\ClaudeProjects\pug-pricing-tool` |
 | **Built after** | v0.9.9.6-cosmetics |
@@ -117,7 +117,7 @@ Nothing is remembered, and staff picks are never asked for: those happen in the 
    2X2 117 · NM · Foil · Borderless
 ```
 
-- A **tick box**, the **card name** (the front face's for a two-faced card), and the **quantity** on the right (`x3`, only when over 1, as pull-pdf prints it).
+- A **tick box**, the **card name** (in full, as the buy line has it; a long one ends in "…"), and the **quantity** on the right (`x3`, only when over 1, as pull-pdf prints it).
 - Under it, small: **set code and collector number**, **condition**, **finish** (Foil / Etched; nothing for non-foil), **treatments** in the app's own words (Extended Art, Borderless, Showcase, Promo Pack, Prerelease…).
 - A thin strip on the row's left edge in the **condition's colour** (NM green … DMG red, as on the condition buttons), so a stack's worse cards stand out.
 - **No prices.**
@@ -320,11 +320,20 @@ Each phase: build, `npm test`, `npm run build`, lint, the database test run afte
 
 ### Phase T1: the audit printout
 
-- [ ] `jspdf` added (owner's approval with this plan), pinned.
-- [ ] EXPORT's menu (**Print?** / **Export csv**) on the day page, collections, projects and Can't upload cards; **Print buy** in every Magic buy's ⋯.
-- [ ] `auditPrint.js` with tests: sections (3.3), order (3.4), merged lines and rows (3.5), exported cards from their saved category (3.2).
-- [ ] `auditPdf.js`: Letter, 2 columns, bands with counts and "(cont.)", tick boxes, condition strips, header and page numbers (3.6).
-- [ ] Downloads and opens in a new tab; no inventory → says so; nothing written.
+- [x] `jspdf` added (owner's approval with this plan), pinned.
+- [x] EXPORT's menu (**Print?** / **Export csv**) on the day page, collections, projects and Can't upload cards; **Print buy** in every Magic buy's ⋯.
+- [x] `auditPrint.js` with tests: sections (3.3), order (3.4), merged lines and rows (3.5), exported cards from their saved category (3.2).
+- [x] `auditPdf.js`: Letter, 2 columns, bands with counts and "(cont.)", tick boxes, condition strips, header and page numbers (3.6).
+- [x] Downloads and opens in a new tab; no inventory → says so; nothing written.
+
+**As built (2026-10-14):**
+- `jspdf` **4.2.1** (2026-03-17), pinned. It loads only when something is printed (its own 402 kB file), so the app starts as light as before.
+- **EXPORT ▾**: the button gains a small ▾; a click opens **Print?** / **Export csv** (upward at the foot of a collection's list). A blocked EXPORT still just says why. Pokémon days' COMPLETE has no menu. **Print buy** sits under Export single buy in a Magic buy's ⋯ and needs no picked user.
+- **Which cards** (`printLines`): a batch's Magic cards not yet Completed; once all are, the ones an export took (exported, or sent to Can't upload). Cards Completed by hand print nothing (Print says so).
+- **Characters**: the PDF's built-in font draws Windows-1252 (accents, curly quotes, dashes, "…"); one character outside it garbled a whole line (tested: "120★"), so those become plain letters ("★" → "*", others their unaccented letter, else "?") (`pdfSafe`).
+- **Collector numbers** sort by prefix, number, then suffix: 12 < 120 < 120a, and a prefixed one (The List's `2XM-120`) after the plain ones; categories differing only in capitals share a section.
+- The page title: **Audit — Magic, Tuesday, October 14, 2026**, **Audit — Buy 3, October 14, 2026**, **Audit — CU Intake**, **Audit — Can't upload cards**; printing time and card count at the right; "Page 2 of 5" at the foot.
+- Checked by rendering a 150-line sample (10 sections, 4 pages) to images: bands, "(cont.)", Unmatched last, strips, tick boxes, counts, long names cut with "…".
 
 **Where to look**: a Magic day with Paid/Ours buys → EXPORT ▾ → Print?; a buy's ⋯ → Print buy; an exported day → Print? (its exported categories); a card with no CC product → Unmatched.
 

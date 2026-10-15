@@ -25,6 +25,10 @@ const STAMPS = {
 
 /** Fixed display order for the usual traits; special foils and stamps follow. */
 const ORDER = ['borderless', 'showcase', 'extendedart', 'fullart', 'retro', 'textless', 'serialized'];
+const TRAIT_LABELS = {
+  borderless: 'Borderless', showcase: 'Showcase', extendedart: 'Extended art', fullart: 'Full art',
+  retro: 'Retro frame', textless: 'Textless', serialized: 'Serialized',
+};
 
 function foilName(key) {
   return SPECIAL_FOILS[key] ?? `${key.replace(/foil$/, '').replace(/^./, (c) => c.toUpperCase())} foil`;
@@ -39,13 +43,13 @@ export function magicTraits(card) {
   const t = new Map();
   const effects = card.frame_effects ?? [];
   const promos = card.promo_types ?? [];
-  if (card.border_color === 'borderless') t.set('borderless', 'Borderless');
-  if (effects.includes('showcase')) t.set('showcase', 'Showcase');
-  if (effects.includes('extendedart')) t.set('extendedart', 'Extended art');
-  if (card.full_art) t.set('fullart', 'Full art');
-  if (['1993', '1997'].includes(card.frame) && (card.released_at ?? '') >= MODERN_FRAME_FROM) t.set('retro', 'Retro frame');
-  if (card.textless) t.set('textless', 'Textless');
-  if (promos.includes('serialized')) t.set('serialized', 'Serialized');
+  if (card.border_color === 'borderless') t.set('borderless', TRAIT_LABELS.borderless);
+  if (effects.includes('showcase')) t.set('showcase', TRAIT_LABELS.showcase);
+  if (effects.includes('extendedart')) t.set('extendedart', TRAIT_LABELS.extendedart);
+  if (card.full_art) t.set('fullart', TRAIT_LABELS.fullart);
+  if (['1993', '1997'].includes(card.frame) && (card.released_at ?? '') >= MODERN_FRAME_FROM) t.set('retro', TRAIT_LABELS.retro);
+  if (card.textless) t.set('textless', TRAIT_LABELS.textless);
+  if (promos.includes('serialized')) t.set('serialized', TRAIT_LABELS.serialized);
   for (const p of promos) {
     if (SPECIAL_FOILS[p] || /foil$/.test(p)) t.set(`foil:${p}`, foilName(p));
     if (STAMPS[p]) t.set(`stamp:${p}`, STAMPS[p]);
@@ -61,6 +65,19 @@ export function sortTraitKeys(keys, labels) {
     if (ia !== -1 || ib !== -1) return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
     return (labels.get(a) ?? a).localeCompare(labels.get(b) ?? b);
   });
+}
+
+/**
+ * A stored Magic treatment in plain words, as the details panel names it:
+ * "extendedart" → "Extended art", "surgefoil" → "Surge foil", "promopack" →
+ * "Promo pack stamp", a TCGplayer listing's "variant:Foil Etched" → its own name.
+ */
+export function magicTreatmentLabel(key) {
+  if (TRAIT_LABELS[key]) return TRAIT_LABELS[key];
+  if (STAMPS[key]) return STAMPS[key];
+  if (SPECIAL_FOILS[key] || /foil$/.test(key)) return foilName(key);
+  if (key.startsWith('variant:')) return key.slice('variant:'.length);
+  return key.replace(/[-_]/g, ' ').replace(/^./, (c) => c.toUpperCase());
 }
 
 /** A Magic printing's traits as a buy line stores them: ["borderless", "showcase", "surgefoil"]. */
