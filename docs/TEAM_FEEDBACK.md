@@ -1,0 +1,358 @@
+# PUG Pricing Tool — Team Feedback Plan: Printout, Individual Rates, Bulk
+
+| | |
+|---|---|
+| **Product** | PUG Pricing Tool: three changes from the team's demo |
+| **Owner** | Players' Union Games (PUG) |
+| **Plan version** | 1.0 — 2026-10-14 |
+| **Status** | Written from the owner's notes and answers (2026-10-14). Awaiting the owner's approval before Phase T1. |
+| **Extends** | `docs/DESIGN_SPEC.md` (the app) and `docs/EXPORT_FUNCTION.md` (the export). Both stay the source of truth for everything not changed here. |
+| **Project folder** | `C:\ClaudeProjects\pug-pricing-tool` |
+| **Built after** | v0.9.9.6-cosmetics |
+
+---
+
+## 0. How to use this document
+
+1. **Read the whole document before starting**, and the parts of `DESIGN_SPEC.md` and `EXPORT_FUNCTION.md` each phase names. Sections 1–5 describe the finished result; Section 6 lists every database change; Section 7 splits the work into phases T1–T3.
+2. **One phase at a time, in order** (CLAUDE.md). Each phase ends at something the owner can check on `localhost`; don't start the next until the owner reports back.
+3. **The owner is QA.** Build, run `npm test` and `npm run build`, run the database test run after a migration (`node scripts/db-test-run.mjs`, TEST.md §18), fix what fails, then hand off with the phase's "Where to look".
+4. **Database changes are new migration files, applied to the dev project only.** Rehearse SQL inside `begin … rollback` first; apply with `npx supabase db push`.
+5. **Where it says must, it's a requirement; should, use judgement.** If something here conflicts with the owner's later word, the owner wins: update this file so it doesn't come back.
+6. **No secrets, no customer data, no CSV files** in this document, the repo or the code.
+
+---
+
+## 1. Overview
+
+### 1.1 The three changes, and why
+
+| | What | The team's concern |
+|---|---|---|
+| **A** | **Audit printout** (Section 3): every EXPORT gets **Print?** beside **Export csv**, and every Magic buy's ⋯ gets **Print buy**. A 2-column PDF of the cards, by Crystal Commerce category, ticked off by hand. | A batch has to be checked by hand before it goes up to Crystal Commerce; a sheet in Crystal Commerce's own order makes that one walk through the stack. |
+| **B** | **Individual rates** (Section 4): cards under $3 and over $35 get their own default rates, and any card can get its own rate by right-clicking it. Confirming a buy says which cards have their own rate and what it changes. | One flat rate overpays on cheap cards (the margin is handling) and underpays on high-end ones (a Revised dual land at 75–80% credit is normal), while the rest of the trade stays standard. |
+| **C** | **Bulk** (Section 5): eight "cards" standing for unsorted bulk (100 commons/uncommons, 10 $1 cards…), priced from Settings, found only by searching "bulk". | Pricing a box of bulk card by card is slow, and stand-in cards would end up in the inventory. Bulk only helps price a buy; it never goes into the inventory. |
+
+### 1.2 Order
+
+T1 Printout → T2 Individual rates → T3 Bulk. The printout is self-contained (no database change). The rates change how every total is worked out, so they go before bulk, whose **Set value** is a variant of **Set Rate**.
+
+### 1.3 Non-goals
+
+- **No printout for Pokémon** for now (owner, 2026-10-14: a similar one may follow). Pokémon days keep COMPLETE; nothing about them changes in T1.
+- **No prices on the printout.**
+- **No user input while printing**: no matching dialog, nothing remembered (Section 3.3).
+- **Bulk is never inventory**: never exported, never in a Mass Create file, never in Can't upload cards, never on a printout.
+- **No change to past buys**: every rate is fixed on each card when its buy is confirmed (Section 4.6).
+
+---
+
+## 2. The owner's decisions (2026-10-14)
+
+From the owner's notes and answers. Each is a rule below; the section is in brackets.
+
+1. **Bulk values are market values**, set in Settings; Cash and Credit are taken from them like any card's market price (5.2).
+2. **The low-end and high-end rates never apply to bulk**: bulk uses the master rates, or the buy's custom rates (4.1, 5.6).
+3. **Bulk comes along on Convert to project and Convert to buy**, for now; this may change once the workflow is seen in use (5.8).
+4. **Bulk is counted separately**: "42 cards + 1,000 bulk", so card counts keep meaning real cards (5.5).
+5. **Rate order**, strongest first: the card's own rate (Set Rate) → the buy's or collection's custom rates → the low-end / high-end rates → the master rates. A buy or collection with custom rates set turns the low/high rules off for all its cards (4.1).
+6. **Thresholds are strict and use the card's own unit price**: under $3.00, over $35.00; exactly $3.00 or $35.00 gets the master rates. They apply to walk-in buys, collections and projects alike (4.2).
+7. **No Set Rate in Edit in project view**: the customer was paid already, as the buy's rates are locked there now (4.3).
+8. **Confirming a buy alerts** on every card with its own rate, and what difference it makes (4.5).
+9. **Printing asks nothing**: matching does its best on its own, and anything it can't place goes to **Unmatched**. Hand matching stays the export's job (3.3).
+10. **"Unmatched" means no Crystal Commerce product** for the card (what the export calls Can't upload). A card still waiting on a staff choice goes under its set's category (3.3).
+11. **Magic only**, for now (1.3).
+12. **Printing changes nothing**: no Completed marks, no export record, no remembered matches; no bulk, no prices (3.2).
+13. **Every Magic buy's ⋯ menu gets Print buy**, for single-buy exports (3.1).
+
+---
+
+## 3. Part A: the audit printout (Phase T1)
+
+### 3.1 Where Print appears
+
+Every **EXPORT** button becomes a button with a small menu (the same look as the ⋯ menus): **Print?** and **Export csv**. **Export csv** is exactly today's EXPORT, whatever state it's in (`EXPORT_FUNCTION.md` 8.2: the export, or downloading the same file again). The button's label, count and blocked states are unchanged; a blocked EXPORT blocks both items, with the same reason.
+
+| Where | Print? prints |
+|---|---|
+| Magic day page, **EXPORT** | The cards EXPORT would take (Paid/Ours buys' Magic cards); on a fully exported day, the day's exported cards (3.2) |
+| Collection or project, **EXPORT** | Its Magic cards (Paid/Ours), or what it exported once Completed |
+| **Can't upload cards**, EXPORT | Its Magic cards |
+| A Magic buy's ⋯ menu, new item **Print buy**, under Export single buy | That buy's Magic cards (Paid/Ours, or exported: 3.2) |
+
+Pokémon days keep **COMPLETE** with no menu. Print needs no picked user (it changes nothing), but it needs the connection, like EXPORT: matching reads the inventory from the database.
+
+### 3.2 Which cards, and from where
+
+- **Bulk is left out**, always (Section 5).
+- **Cards not yet exported** (Paid/Ours): matched now (3.3).
+- **Cards already exported** (Completed by an export: `cc_status = 'exported'`): printed from what the export saved, their `cc_category` and product. No matching, so a reprint of an exported day is exactly what went up.
+- **Cards that went to Can't upload** (`cc_status = 'cant_upload'`): in **Unmatched**.
+- **Cards Completed by hand** (Mark as completed) aren't printed: they weren't exported and won't be.
+- **The same card twice** (same printing, finish, condition and treatments, from different buys) prints once with the quantities added.
+
+Printing never writes anything: no Completed marks, no export record, no `cc_product_links`, no `cc_set_map` rows, no Changelog entry.
+
+### 3.3 Categories, with no questions asked
+
+Print runs the export's own matching (`matchLines`, `EXPORT_FUNCTION.md` 7) on the cards to print, then places each card without asking:
+
+| The match | Section |
+|---|---|
+| A remembered match (`cc_product_links`), or one clear product | **That product's category** |
+| Several possible products (the export would ask), and the set has a category (7.3 steps 1–4) | **The set's category** |
+| No product with this name in the category, or no category for the set | **Unmatched** |
+
+Nothing is remembered, and staff picks are never asked for: those happen in the export afterwards (owner, 2026-10-14). With no Master Crystal Inventory loaded, Print says so ("Upload the Master Crystal Inventory in Settings first") and prints nothing, since no card has a category to go under.
+
+### 3.4 Order
+
+1. **Sections by category, A to Z**: case- and accent-insensitive, numbers in natural order ("Commander 2015" before "Commander 2021"), **Unmatched last**.
+2. **Inside a section, by collector number**, naturally: 7 < 12 < 120 < 120a; a number with a prefix (The List's `CMA-216`) sorts by its prefix, then its number. Then by name, then condition NM → DMG, then non-foil before foil before etched.
+
+### 3.5 What each row says
+
+```
+☐  Lightning Bolt                       x3
+   2X2 117 · NM · Foil · Borderless
+```
+
+- A **tick box**, the **card name** (the front face's for a two-faced card), and the **quantity** on the right (`x3`, only when over 1, as pull-pdf prints it).
+- Under it, small: **set code and collector number**, **condition**, **finish** (Foil / Etched; nothing for non-foil), **treatments** in the app's own words (Extended Art, Borderless, Showcase, Promo Pack, Prerelease…).
+- A thin strip on the row's left edge in the **condition's colour** (NM green … DMG red, as on the condition buttons), so a stack's worse cards stand out.
+- **No prices.**
+
+### 3.6 Layout
+
+Based on pull-pdf (`C:\ClaudeProjects\pull-pdf`, read-only: its `render.py` and `out\example-preview.png`):
+
+- **US Letter, portrait, 2 columns** (pull-pdf solves up to 8 columns onto one page; these rows carry more detail, and a day's batch runs to several pages).
+- **Page header**: the title (**Audit — Magic, Tuesday, October 14, 2026**; **Audit — Buy 3, October 14, 2026**; **Audit — "CU Intake"** for a collection), the printing time, and the card count (cards, not lines). Page numbers in the footer ("Page 2 of 5").
+- **Section bands**: dark, the category name in bold, the section's card count on the right (as pull-pdf's). A section broken by a column or page repeats its band as **"Commander 2015 (cont.)"**.
+- **Type size fixed** (about 10pt names, 8pt detail lines), not solved per page: every printout reads the same.
+- Names outside the PDF's built-in fonts degrade rather than break (as pull-pdf's `_safe`); a card's name is never dropped.
+
+### 3.7 Building and opening the PDF
+
+The app runs in the browser, so the PDF is built there: **a new dependency, `jspdf`** (MIT, pinned to an exact version; owner to approve with this plan). pull-pdf itself (Python, run by Collection Manager) isn't called.
+
+Print shows a short "Matching…" / "Building the printout…" note, then **downloads the PDF and opens it in a new tab** (the browser's PDF viewer prints it). File names: `audit-magic-2026-10-14.pdf`, `audit-magic-2026-10-14-buy-3.pdf`, `audit-cu-intake.pdf`.
+
+### 3.8 Code
+
+- `src/lib/auditPrint.js` (pure, tested): match results → sections and rows (3.2–3.5).
+- `src/lib/auditPdf.js`: rows → the PDF (3.6).
+- `ExportButton.jsx` gains the menu; `DayPage.jsx` (EXPORT, and **Print buy** in the buy ⋯), `CollectionPage.jsx` (EXPORT, Can't upload cards).
+- No database change.
+
+---
+
+## 4. Part B: individual rates (Phase T2)
+
+### 4.1 Which rate a card gets
+
+Each card's Cash rate and Credit rate, strongest first:
+
+1. **Its own rate** (Set Rate, 4.3).
+2. **The buy's or collection's custom rates** (the ✎ rates in the list's totals). If either is set, the low/high rules are off for every card in it.
+3. **The low-end or high-end rates** (4.2), for a card under or over the thresholds. **Never for bulk.**
+4. **The master rates** (Settings → Master Buy Percentages).
+
+Cash and Credit come from the same step: a card with its own Credit rate and no Cash rate takes Cash from the next step down.
+
+### 4.2 Low-end and high-end rates
+
+A new Settings panel, **Low-end and high-end rates**, beside Master Buy Percentages:
+
+| | Threshold | Credit | Cash |
+|---|---|---|---|
+| **Low end** | Cards under **$3.00** | **50%** | **25%** |
+| **High end** | Cards over **$35.00** | **70%** | **40%** |
+
+- The threshold is the card's **unit price**: the price shown on its condition button, after rounding, or its manual price. **Strictly** under or over: a $3.00 or $35.00 card gets the master rates.
+- For walk-in buys, collections and projects alike.
+- Saved like every setting (live on every computer, with who changed it). Percentages 0–100, up to 2 decimals; dollars over 0. The low threshold must stay below the high one.
+
+### 4.3 A card's own rate: Set Rate
+
+- **Right-click a card in a list** (the Buy list on the Price tab, a collection's or project's list) → a small menu with **Set Rate**. It opens the same Cash / Credit editor the list's totals use, **beside that card**.
+- **Clear** in the editor removes the card's own rate.
+- A card with its own rate is **highlighted** in the list (a tinted row and a small **✎ 75% / 45%** tag); its tooltip says which rate applies and why ("Own rate: Credit 75%, Cash 45%"). Cards on the low-end or high-end rates get a quieter tag ("low end" / "high end") in the tooltip only.
+- **Not in Edit in project view**, not on Completed cards, not on confirmed buys on the day page. An edited card (SAVE EDIT) keeps its own rate.
+- **Bulk**: Set Rate opens **Set value** instead (5.6).
+
+### 4.4 Totals
+
+- **Cash = the cards' market prices, each times its own Cash rate, added up**, then rounded the way a payout is rounded today (`payout`, `money.js`); Credit the same. With every card on one rate it comes to exactly what it does today.
+- The totals' **Cash (33%)** and **Credit (66%)** labels keep showing the buy's base rate; when some cards have other rates they gain a small "mixed" mark, whose tooltip breaks it down ("8 cards at the low-end rates, 1 at its own rate").
+- The **price panel's** Credit and Cash chips use the selected card's rate (so a $40 card shows 70% / 40% credit / cash), and say why in their tooltip.
+- **Every total uses this**: the Buy list, CONFIRM BUY, a collection's Paid/Ours dialog and details, the day page's buy totals, the Changelog's totals, Home's figures and the cash-buys report. The database's own totals (`collection_totals`, buy events) too.
+
+### 4.5 The alert when confirming
+
+CONFIRM BUY's dialog (and a collection's Paid/Ours, and Convert to buy) lists **every card with its own rate** and the difference it makes, against the rate it would otherwise get:
+
+```
+⚠ 2 cards have their own rates
+  Volcanic Island (3ED) NM — Credit 75% (not 70%): +$22.50 credit · Cash 45% (not 40%): +$22.50 cash
+  Sol Ring (CMR) LP — Credit 40% (not 66%): −$0.52 credit
+```
+
+Then the totals with them. Nothing to confirm separately: the alert informs, CONFIRM BUY still confirms.
+
+### 4.6 Fixed when confirmed
+
+- When a buy is confirmed (and when a collection is marked Paid/Ours, or a project converted to a buy), **each card's Cash and Credit rate is saved on the card**. Changing the settings later never changes a confirmed buy.
+- Existing confirmed buys get their buy's rates copied onto their cards by the migration, so every past total stays exactly what it was.
+- REPRICE? (projects) works the rates out again, as it does the prices.
+
+### 4.7 Code
+
+- `src/lib/rates.js` (pure, tested): a card's rates (4.1–4.2), totals (4.4), the alert's differences (4.5). Every total in 4.4 calls it; nothing works out a payout on its own any more.
+- Settings: a new `RatesTiersPanel.jsx`; `DEFAULTS` gains the two settings (Section 6.2).
+- `BuyList.jsx`: the right-click menu, the editor beside a card, the highlight. `ConfirmBuyModal.jsx`, `DealModals.jsx`: the alert. `QuotePanel.jsx`: the chips.
+- Migration (Section 6.3) and the database test run's new checks.
+
+---
+
+## 5. Part C: bulk (Phase T3)
+
+### 5.1 The eight items
+
+| Item | Game | Cards per item | Value per item (default) |
+|---|---|---|---|
+| MTG 100 Bulk commons/uncommons | Magic | 100 | **$1.50** |
+| MTG 100 Bulk rares/mythics | Magic | 100 | **$2.40** |
+| MTG 10 Bulk $1 cards | Magic | 10 | **$8.00** |
+| MTG 10 Bulk 50¢ cards | Magic | 10 | **$3.00** |
+| PKM 100 Bulk | Pokémon | 100 | **$0.75** |
+| PKM 100 Bulk EXs | Pokémon | 100 | **$2.40** |
+| PKM 10 Bulk $1 cards | Pokémon | 10 | **$7.00** |
+| PKM 10 Bulk 50¢ cards | Pokémon | 10 | **$2.50** |
+
+The values are **market values** (owner, 2026-10-14): Cash and Credit are taken from them like any card's market price. The MTG items count as Magic and the PKM items as Pokémon everywhere (game toggles, day pages, totals by game).
+
+### 5.2 Settings: Bulk values
+
+A new panel, **Bulk values**, laid out like Master Fallback Percentages: two tables side by side, **Magic** and **Pokémon**, one row per item, its **$ per item** in a box (dollars, up to 2 decimals, saved on leaving the box, live on every computer). Changing a value changes bulk added afterwards; bulk already in a list keeps its value until REPRICE? (projects) or Set value.
+
+### 5.3 Finding bulk
+
+- **Only by searching "bulk"**: they never appear for any other search.
+- **"bulk"** in any other case: the bulk items first, then the cards that match as usual (the Magic card *Bulk Up*).
+- **"BULK"** in capitals: **only** the bulk items.
+- More words narrow them: "bulk rares", "BULK pkm", "bulk $1". The MTG / PKM toggles apply; EN / JP doesn't (bulk has no language).
+
+### 5.4 Selected, and in the suggestions
+
+- Drawn as a **stack of card backs**: the game's card back (Pokémon's, already in the app; Magic's, a new image in `public/`) three times, offset, on the usual card box. On it, a short label: **100 · Commons & Uncommons**, **10 · $1 cards**, **100 · EXs**…
+- No condition, finish or versions: the five condition buttons give way to one price, **$1.50 per 100**; Finish & Details says "Bulk: no finish or condition". The zoom view and price movement don't apply.
+- **Qty** counts items: Qty 10 of "MTG 100 Bulk commons/uncommons" is 1,000 cards. **ADD CARD** adds them like a card (merging with the same item already in the list).
+
+### 5.5 In lists, and counted separately
+
+- A bulk line reads in **total cards**: 10 × "MTG 100 Bulk commons/uncommons" shows as **1,000 MTG Bulk commons/uncommons**, with **$1.50 per 100** beside it.
+- **Counted separately** (owner, 2026-10-14): "42 cards + 1,000 bulk" on the Buy list, CONFIRM BUY, day pages and collections. Card counts everywhere else (exports, Home, the calendar) count real cards only.
+- Cash and Credit: like any card's, at the buy's base rate (5.6).
+
+### 5.6 Rates for bulk
+
+- **Always the master rates, or the buy's or collection's custom rates**; never the low-end or high-end rates (owner, 2026-10-14).
+- **Set Rate** on a bulk line opens **Set value**: a dollar value per item instead of a rate, with **live Cash and Credit** for the line as it's typed. Clear goes back to the Settings value. The line shows ✎ like a manual price, and CONFIRM BUY's alert (4.5) lists it ("1,000 MTG Bulk commons/uncommons — $2.00 per 100, not $1.50: +$1.65 credit").
+
+### 5.7 Stored like a card, marked as bulk
+
+A bulk item is a `buy_lines` row with a new **`bulk_kind`** (which of the eight; null for every real card), `game` mtg / pokemon, its label as `name`, `quantity` = items, `unit_price` = value per item, `price_source` `'bulk'` (or `'manual'` after Set value). The columns a card needs and bulk doesn't (set code, collector number, finish, condition) hold fixed placeholders the migration allows only for bulk.
+
+### 5.8 Where bulk is not there
+
+Bulk only helps price; it is **treated as if it isn't there** in:
+
+| | |
+|---|---|
+| **Exports** | Never in the export dialog, never in a Mass Create file, never Completed by an export, never copied to Can't upload cards. A buy or day counts as **exported / Completed once all its real cards are**. |
+| **Mark as completed / COMPLETE** | Skipped, with the same rule for "fully Completed". |
+| **Printouts** | Never on one (Section 3). |
+| **The header search** | Not found by it. |
+| **Card counts** | Separate (5.5). |
+
+It **is** there in: totals and payouts, CONFIRM BUY, the Changelog's lines, backups, Edit in project view (it can be edited or taken out), and **Convert to project / Convert to buy**, where it comes along (owner, 2026-10-14; may change once the workflow is seen in use).
+
+### 5.9 Code
+
+- `src/lib/bulk.js` (pure, tested): the eight items, search, line text, counts.
+- Search (`useCardSearch`), the card box (`SelectedCard.jsx`, a `BulkStack` drawing), the price table and Finish & Details, `BuyList.jsx` line text and counts, the day pages and collections' counts.
+- Settings: a new `BulkValuesPanel.jsx`; `DEFAULTS` gains `bulk_values` (Section 6.2).
+- Migration (Section 6.4): the column, the price source, and the export / complete / Can't upload / search functions skipping bulk; the database test run's new checks.
+
+---
+
+## 6. Data model changes
+
+### 6.1 Phase T1
+
+None.
+
+### 6.2 Settings rows (`settings`, key / value)
+
+| Key | Value (default) | Phase |
+|---|---|---|
+| `rate_tiers` | `{ "low": { "under": 3, "credit": 50, "cash": 25 }, "high": { "over": 35, "credit": 70, "cash": 40 } }` | T2 |
+| `bulk_values` | `{ "mtg_100_common": 1.5, "mtg_100_rare": 2.4, "mtg_10_dollar": 8, "mtg_10_fifty": 3, "pkm_100": 0.75, "pkm_100_ex": 2.4, "pkm_10_dollar": 7, "pkm_10_fifty": 2.5 }` | T3 |
+
+### 6.3 Migration for T2 (next number after 0052)
+
+- `buy_lines`: `custom_cash_pct`, `custom_credit_pct` (Set Rate; null = none), and `cash_pct`, `credit_pct` (the rates fixed at confirm / Paid/Ours, 4.6). Confirmed buys' cards get their buy's rates copied in.
+- New functions: set or clear a card's own rate (a walk-in draft's card, a collection's card), checked like every list change (version, locks, Completed).
+- Changed: `confirm_buy`, `collection_set_status` (Paid/Ours), `project_to_buy`, `buy_to_project`, `collection_reprice` (fix or carry the cards' rates); `collection_totals` and the buy events (totals as 4.4).
+- The low/high rule itself lives in one place in the database too (an `internal` helper), so the database's totals and the app's agree.
+
+### 6.4 Migration for T3
+
+- `buy_lines.bulk_kind` (one of the eight keys, or null), `price_source` allows `'bulk'`, placeholders allowed only when `bulk_kind` is set.
+- `export_check`, `export_lines`, `cant_upload_copy`, `buy_mark_completed`, `day_complete` and the "fully Completed" checks skip bulk; `global_search` leaves it out.
+
+---
+
+## 7. Phases
+
+Each phase: build, `npm test`, `npm run build`, lint, the database test run after a migration (dev only), then hand off with "Where to look". The spec (`DESIGN_SPEC.md`: decisions, the sections named) is updated as each lands; README and Help get one line per feature when the owner asks.
+
+### Phase T1: the audit printout
+
+- [ ] `jspdf` added (owner's approval with this plan), pinned.
+- [ ] EXPORT's menu (**Print?** / **Export csv**) on the day page, collections, projects and Can't upload cards; **Print buy** in every Magic buy's ⋯.
+- [ ] `auditPrint.js` with tests: sections (3.3), order (3.4), merged lines and rows (3.5), exported cards from their saved category (3.2).
+- [ ] `auditPdf.js`: Letter, 2 columns, bands with counts and "(cont.)", tick boxes, condition strips, header and page numbers (3.6).
+- [ ] Downloads and opens in a new tab; no inventory → says so; nothing written.
+
+**Where to look**: a Magic day with Paid/Ours buys → EXPORT ▾ → Print?; a buy's ⋯ → Print buy; an exported day → Print? (its exported categories); a card with no CC product → Unmatched.
+
+### Phase T2: individual rates
+
+- [ ] Migration (6.3), dev only; database test run extended (rates fixed at confirm, totals, set/clear a card's rate, refusals).
+- [ ] `rates.js` with tests: the order (4.1), thresholds (4.2, strictly), totals (4.4), alert differences (4.5); every total in 4.4 uses it.
+- [ ] Settings → Low-end and high-end rates.
+- [ ] Right-click → Set Rate beside the card, Clear, the highlight; not in Edit in project view or on Completed cards.
+- [ ] The price panel's chips, the totals' "mixed" mark, the confirm / Paid/Ours / Convert to buy alert.
+
+**Where to look**: a $1 card and a $40 card in one buy (their chips and the totals); Set Rate on one card (highlight, totals, the alert at CONFIRM BUY); custom rates on the buy (low/high rules off); a past buy's totals unchanged.
+
+### Phase T3: bulk
+
+- [ ] Migration (6.4), dev only; database test run extended (bulk never exported, completed, copied or searched; "fully Completed" ignores it).
+- [ ] `bulk.js` with tests: the items, search (bulk / BULK / more words), line text, separate counts.
+- [ ] Settings → Bulk values (Magic | Pokémon).
+- [ ] Search, the card-back stack and labels, the one-price table, Qty in items, ADD CARD.
+- [ ] Lists: "1,000 MTG Bulk commons/uncommons", "$1.50 per 100", "42 cards + 1,000 bulk"; master or buy rates only; Set value with live Cash / Credit, and the confirm alert.
+- [ ] Exports, COMPLETE, Mark as completed, Can't upload, the header search and printouts leave bulk out; conversions bring it along.
+
+**Where to look**: search "bulk" and "BULK"; add 10 × MTG 100 Bulk commons/uncommons to a buy with a few cards; Set value on it; confirm; export the day (bulk not in the file, the buy still Completed); Convert to project with bulk in it.
+
+---
+
+## 8. Later, or to decide when it comes up
+
+- **A Pokémon printout** (owner, 2026-10-14: maybe later), likely by set and number, since Pokémon has no CC matching.
+- **Bulk on conversions**: may be left out instead, once the workflow is seen in use (5.8).
+- **The low/high rates on the alert**: 4.5 lists cards with their own rate, as asked; a one-line summary of the low/high-end cards ("12 cards at the low-end rates: −$4.20 credit") could join it if the team wants it.
