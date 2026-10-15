@@ -107,10 +107,11 @@
 /* Credit blue and Cash green (owner, 2026-10-15): the headings, the boxes and their % signs. */
 .tier-table th.is-credit { color: var(--credit); }
 .tier-table th.is-cash { color: var(--cash); }
-.tier-credit input { color: var(--credit); border-color: color-mix(in srgb, var(--credit) 45%, var(--border)); }
-.tier-cash input { color: var(--cash); border-color: color-mix(in srgb, var(--cash) 45%, var(--border)); }
-.tier-credit .pct-sign { color: var(--credit); }
-.tier-cash .pct-sign { color: var(--cash); }
+/* … and the Master Buy Percentages' boxes the same way. */
+.tier-credit input, .pct-field.credit input { color: var(--credit); border-color: color-mix(in srgb, var(--credit) 45%, var(--border)); }
+.tier-cash input, .pct-field.cash input { color: var(--cash); border-color: color-mix(in srgb, var(--cash) 45%, var(--border)); }
+.tier-credit .pct-sign, .pct-field.credit .pct-sign { color: var(--credit); }
+.tier-cash .pct-sign, .pct-field.cash .pct-sign { color: var(--cash); }
 
 /* Master Buy Percentages */
 .pct-row { display: flex; gap: 28px; }
