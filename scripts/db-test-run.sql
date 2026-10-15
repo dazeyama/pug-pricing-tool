@@ -380,6 +380,12 @@ begin
   insert into settings (key, value, updated_by) values ('cash_pct', '50', v_u1), ('credit_pct', '65', v_u1)
   on conflict (key) do update set value = excluded.value, updated_by = excluded.updated_by;
   perform pg_temp.ok(s, 'Master Buy Percentages are saved', master_pct('cash_pct') = 50 and master_pct('credit_pct') = 65);
+  -- The low-end and high-end rates (0055) out of the way for the sections
+  -- written before them, so every card there is on one rate: nothing is
+  -- under $0 or over $1,000,000. Individual rates sets real ones.
+  insert into settings (key, value, updated_by)
+  values ('rate_tiers', '{"low": {"under": 0, "credit": 50, "cash": 25}, "high": {"over": 1000000, "credit": 70, "cash": 40}}', v_u1)
+  on conflict (key) do update set value = excluded.value, updated_by = excluded.updated_by;
 exception when others then
   declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;
   perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
@@ -761,6 +767,151 @@ begin
   v_flag := buy_set_condition_check(b, true, u, a);
   perform pg_temp.ok(s, 'Flagged again: the red flag back, the check forgotten',
     (select condition_check and condition_checked_at is null and condition_checked_by is null from buys where id = b));
+exception when others then
+  declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;
+  perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
+end $$;
+
+-- ================================================ Individual rates (0055)
+do $$
+declare
+  s text := 'Individual rates';
+  u uuid := pg_temp.id('u1');
+  a uuid := pg_temp.id('devA');
+  bd uuid := pg_temp.id('devB');
+  b uuid;
+  c uuid;
+  l_low uuid;
+  l_mid uuid;
+  l_high uuid;
+  l_own uuid;
+  l_c uuid;
+  v_id uuid;
+  v_ver integer;
+  v jsonb;
+  t jsonb;
+begin
+  -- The shipped tiers (master 50/65 for the run): under $3 at 25/50, over $35 at 40/70.
+  update settings set value = '{"low": {"under": 3, "credit": 50, "cash": 25}, "high": {"over": 35, "credit": 70, "cash": 40}}'
+   where key = 'rate_tiers';
+  b := draft_for_device(a, u);
+  l_low := draft_add_line(a, pg_temp.line('Dbtest Rate Low', 'DBR', '001', 2, 1.00), u, false);
+  l_mid := draft_add_line(a, pg_temp.line('Dbtest Rate Mid', 'DBR', '002', 1, 3.00), u, false);
+  l_high := draft_add_line(a, pg_temp.line('Dbtest Rate High', 'DBR', '003', 1, 40.00), u, false);
+  l_own := draft_add_line(a, pg_temp.line('Dbtest Rate Own', 'DBR', '004', 1, 10.00), u, false);
+  perform pg_temp.ok(s, 'A $1 card is on the low-end rates',
+    (select internal.line_pct(l, x, 'cash') = 25 and internal.line_pct(l, x, 'credit') = 50
+       from buy_lines l, buys x where l.id = l_low and x.id = b));
+  perform pg_temp.ok(s, '… a $3 card isn''t: strictly under (the master rates)',
+    (select internal.line_pct(l, x, 'cash') = 50 and internal.line_pct(l, x, 'credit') = 65
+       from buy_lines l, buys x where l.id = l_mid and x.id = b));
+  perform pg_temp.ok(s, 'A $40 card is on the high-end rates',
+    (select internal.line_pct(l, x, 'cash') = 40 and internal.line_pct(l, x, 'credit') = 70
+       from buy_lines l, buys x where l.id = l_high and x.id = b));
+
+  begin
+    perform draft_set_line_rate(l_own, 101, null, u);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'Set Rate: 0 to 100', sqlerrm, 'bad_pct');
+  end;
+  begin
+    perform draft_set_line_rate(l_own, null, 12.345, u);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, '… with up to 2 decimals', sqlerrm, 'bad_pct');
+  end;
+  v_ver := pg_temp.version(b);
+  perform draft_set_line_rate(l_own, null, 80, u);
+  perform pg_temp.ok(s, 'Set Rate keeps a card''s own Credit rate',
+    (select custom_credit_pct = 80 and custom_cash_pct is null from buy_lines where id = l_own)
+    and pg_temp.version(b) > v_ver);
+  perform pg_temp.ok(s, '… and its Cash comes from the next step down',
+    (select internal.line_pct(l, x, 'cash') = 50 and internal.line_pct(l, x, 'credit') = 80
+       from buy_lines l, buys x where l.id = l_own and x.id = b));
+  v_id := draft_add_line(a, pg_temp.line('Dbtest Rate Own', 'DBR', '004', 1, 10.00), u, true);
+  perform pg_temp.ok(s, 'The same card added again isn''t merged into one with its own rate',
+    v_id <> l_own and (select quantity from buy_lines where id = l_own) = 1);
+  perform draft_remove_line(v_id, 1, u);
+  perform draft_set_custom_rates(a, 45, null, u);
+  perform pg_temp.ok(s, 'Custom rates on the buy turn the low/high rules off',
+    (select internal.line_pct(l, x, 'cash') = 45 and internal.line_pct(l, x, 'credit') = 65
+       from buy_lines l, buys x where l.id = l_low and x.id = b));
+  perform pg_temp.ok(s, '… but not a card''s own rate',
+    (select internal.line_pct(l, x, 'credit') = 80 from buy_lines l, buys x where l.id = l_own and x.id = b));
+  perform draft_set_custom_rates(a, null, null, u);
+
+  perform confirm_buy(b, u, 'DBTEST Rates', '', 50, 65, null, 20, 'cash', '{}', '5550100021');
+  perform pg_temp.ok(s, 'CONFIRM BUY keeps each card''s rates on it',
+    (select bool_and(case id when l_low then cash_pct = 25 and credit_pct = 50
+                             when l_mid then cash_pct = 50 and credit_pct = 65
+                             when l_high then cash_pct = 40 and credit_pct = 70
+                             when l_own then cash_pct = 50 and credit_pct = 80 end)
+       from buy_lines where buy_id = b));
+  -- $2 + $3 + $40 + $10 = $55; Cash 0.50 + 1.50 + 16 + 5 = 23; Credit 1 + 1.95 + 28 + 8 = 38.95 → $38.
+  select totals into t from events where action = 'buy_confirmed' and target_id = b;
+  perform pg_temp.ok(s, 'The Changelog''s totals: each card at its rate, rounded down once',
+    (t ->> 'market')::numeric = 55 and (t ->> 'cash')::numeric = 23 and (t ->> 'credit')::numeric = 38
+    and (t ->> 'cash_pct')::numeric = 50 and (t ->> 'credit_pct')::numeric = 65, t::text);
+  update settings set value = '{"low": {"under": 50, "credit": 10, "cash": 5}, "high": {"over": 35, "credit": 70, "cash": 40}}'
+   where key = 'rate_tiers';
+  update settings set value = '20' where key = 'cash_pct';
+  perform pg_temp.ok(s, 'Changing the settings later changes nothing on a confirmed buy',
+    (select (internal.lines_totals(x, array(select l from buy_lines l where l.buy_id = x.id)) ->> 'cash')::numeric = 23
+       from buys x where x.id = b));
+  update settings set value = '50' where key = 'cash_pct';
+  update settings set value = '{"low": {"under": 3, "credit": 50, "cash": 25}, "high": {"over": 35, "credit": 70, "cash": 40}}'
+   where key = 'rate_tiers';
+  begin
+    perform draft_set_line_rate(l_low, 30, 30, u);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'Set Rate only on a draft''s card', sqlerrm, 'line_gone');
+  end;
+  perform buy_remove_line(l_low, 1, u, a, null, null);
+  perform pg_temp.ok(s, 'Cards removed from a buy: their totals at the card''s rate',
+    exists (select 1 from events where action = 'buy_cards_removed' and target_id = b
+              and (totals ->> 'market')::numeric = 1 and (totals ->> 'cash')::numeric = 0.25
+              and (totals ->> 'credit')::numeric = 0.5));
+
+  -- A collection.
+  c := collection_create('DBTEST Rate Collection', null, '', u, a);
+  v := lock_acquire(c, a, u);
+  l_c := collection_add_line(c, pg_temp.line('Dbtest Rate Coll', 'DBR', '010', 2, 50.00), false, u, a, null, null);
+  perform pg_temp.ok(s, 'Cards added: the Changelog''s row carries their rates (a folded run''s totals)',
+    exists (select 1 from events where action = 'collection_cards_added' and target_id = c
+              and lines -> 0 ->> 'cash_pct' = '40' and lines -> 0 ->> 'credit_pct' = '70'
+              and (totals ->> 'cash')::numeric = 40));
+  begin
+    perform collection_set_line_rate(l_c, 45, null, null, a, null, null);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'Set Rate on a collection''s card needs a user', sqlerrm, 'no_user');
+  end;
+  begin
+    perform collection_set_line_rate(l_c, 45, null, u, bd, null, null);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, '… the lock', sqlerrm, 'not_lock_holder');
+  end;
+  begin
+    perform collection_set_line_rate(l_c, 45, null, u, a, pg_temp.version(c) - 1, null);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, '… and the version it saw', sqlerrm, 'stale_version');
+  end;
+  perform collection_set_line_rate(l_c, 45, null, u, a, pg_temp.version(c), '2 Dbtest Rate Coll');
+  perform pg_temp.ok(s, 'Set Rate on a collection''s card',
+    (select custom_cash_pct = 45 and custom_credit_pct is null from buy_lines where id = l_c));
+  perform pg_temp.ok(s, '… logged with what the rate was',
+    exists (select 1 from events where action = 'collection_line_rate' and target_id = c
+              and summary = 'Own rate set: 2 Dbtest Rate Coll.'
+              and fields = '[{"field": "cash %", "before": "40", "after": "45"}]'::jsonb));
+  perform collection_set_status(c, 'paid', u, a, 50, 65, null, p_paid_price => 30, p_paid_method => 'cash');
+  perform pg_temp.ok(s, 'Paid/Ours keeps each card''s rates on it',
+    (select cash_pct = 45 and credit_pct = 70 from buy_lines where id = l_c));
+  begin
+    perform collection_set_line_rate(l_c, null, null, u, a, null, null);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'No Set Rate on a Paid/Ours collection', sqlerrm, 'collection_paid');
+  end;
+  perform collection_set_status(c, 'processing', u, a, null, null, null);
+  perform pg_temp.ok(s, 'Unlocked again: worked out live, its own rate kept',
+    (select cash_pct is null and credit_pct is null and custom_cash_pct = 45 from buy_lines where id = l_c));
 exception when others then
   declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;
   perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
