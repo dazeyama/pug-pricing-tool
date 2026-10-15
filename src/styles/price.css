@@ -1404,6 +1404,18 @@
 .rates-panel.card-rate-panel { left: auto; right: calc(100% + 10px); bottom: auto; width: 300px; }
 .card-rate-name { text-transform: none; letter-spacing: 0; color: var(--text); }
 .rate-row.own .rate-name { font-weight: 700; }
+/* Maintain ratio (owner, 2026-10-15): ticked, Credit is twice Cash and can't be typed. */
+.rate-keep { display: flex; align-items: center; gap: 7px; margin: 0 0 8px; font-size: 13px; cursor: pointer; }
+.rate-keep input { margin: 0; }
+.rate-keep-note { color: var(--muted); font-size: 12px; }
+.card-rate-panel .rate-row input[readonly] { opacity: .65; cursor: default; }
+/* Cash above Credit: the Cash box red, and a warning under the boxes. */
+.card-rate-panel .rate-row input.is-warn {
+  border-color: var(--bad);
+  background: color-mix(in srgb, var(--bad) 16%, transparent);
+  box-shadow: 0 0 0 1px var(--bad);
+}
+.rate-warn { margin: 0 0 6px; color: var(--bad); font-size: 12.5px; font-weight: 600; }
 .list-buttons { display: flex; gap: 10px; align-items: stretch; }
 
 /* CLEAR / ADD CARD and CANCEL / CONFIRM BUY mirror each other (spec 8.9):

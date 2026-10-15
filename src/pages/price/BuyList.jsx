@@ -170,16 +170,28 @@ function RatesPanel({ title, rates, master, onSave, onClose }) {
   );
 }
 
+/** Maintain ratio: Credit is twice Cash (owner, 2026-10-15). */
+const RATIO = 2;
+const twice = (n) => Math.round(n * RATIO * 100) / 100;
+const pctOf = (raw) => (VALID_PCT.test(String(raw).trim()) && Number(raw) <= 100 ? Number(raw) : null);
+
 /**
  * Set Rate (docs/TEAM_FEEDBACK.md 4.3): one card's own Cash and Credit rates,
  * beside the card, saved like the list's rates (on blur or Enter). A box
  * typed back to the rate the card would otherwise get clears that side; Clear
  * clears both.
+ *
+ * Maintain ratio (owner, 2026-10-15): ticked, only Cash is typed and Credit is
+ * twice it, saved together; ticking it on a card off the 2:1 ratio sets its
+ * Credit to twice its Cash. It starts ticked when the card is on 2:1 now.
+ * Cash above Credit turns the Cash box red, with a warning: allowed, but
+ * likely a slip.
  */
 function CardRatePanel({ line, rates, master, top, onSave, onClose }) {
   const mine = lineRate(line, rates);
   const other = otherRate(line, rates);
   const [text, setText] = useState({ cash: String(mine.cash), credit: String(mine.credit) });
+  const [keep, setKeep] = useState(mine.credit === twice(mine.cash));
   const toast = useToast();
   const box = useRef(null);
   // A save comes back as the card's new rates: show them.
@@ -209,19 +221,48 @@ function CardRatePanel({ line, rates, master, top, onSave, onClose }) {
     cash: line.custom_cash_pct != null ? Number(line.custom_cash_pct) : null,
     credit: line.custom_credit_pct != null ? Number(line.custom_credit_pct) : null,
   };
+  /** Save these rates as the card's own, each side cleared where it's what the card would get anyway. */
+  function save(cash, credit) {
+    const next = { cash: cash === other.cash ? null : cash, credit: credit === other.credit ? null : credit };
+    if (next.cash !== own.cash || next.credit !== own.credit) onSave(next.cash, next.credit);
+  }
+  /** Cash for Maintain ratio: at most 50%, so Credit stays within 100%. */
+  function ratioCash(value) {
+    if (twice(value) <= 100) return true;
+    toast(`With Maintain ratio, Cash can be at most ${100 / RATIO}% (Credit 100%).`, 'err');
+    return false;
+  }
   function commit(which) {
     const raw = text[which].trim();
     // Left as shown: nothing to save (a kept rate isn't made the card's own by passing through).
-    if (raw === String(mine[which])) return;
-    if (!VALID_PCT.test(raw) || Number(raw) > 100) {
-      toast('Enter a percentage from 0 to 100, with up to 2 decimals.', 'err');
+    if (raw === String(mine[which]) && !(keep && which === 'cash' && mine.credit !== twice(mine.cash))) return;
+    const value = pctOf(raw);
+    if (value == null || (keep && which === 'cash' && !ratioCash(value))) {
+      if (value == null) toast('Enter a percentage from 0 to 100, with up to 2 decimals.', 'err');
       setText((t) => ({ ...t, [which]: String(mine[which]) }));
       return;
     }
-    const value = Number(raw);
-    const next = { ...own, [which]: value === other[which] ? null : value };
-    if (next.cash !== own.cash || next.credit !== own.credit) onSave(next.cash, next.credit);
+    if (keep) save(value, twice(value));
+    else save(which === 'cash' ? value : (own.cash ?? mine.cash), which === 'credit' ? value : (own.credit ?? mine.credit));
   }
+  /** Ticking Maintain ratio sets Credit to twice the Cash shown. */
+  function toggleKeep(on) {
+    if (!on) {
+      setKeep(false);
+      return;
+    }
+    const cash = pctOf(text.cash) ?? mine.cash;
+    if (!ratioCash(cash)) return;
+    setKeep(true);
+    setText({ cash: String(cash), credit: String(twice(cash)) });
+    save(cash, twice(cash));
+  }
+  // What the boxes say now (Credit follows Cash as it's typed while the ratio is kept).
+  const shown = {
+    cash: text.cash,
+    credit: keep && pctOf(text.cash) != null ? String(twice(pctOf(text.cash))) : text.credit,
+  };
+  const cashHigher = pctOf(shown.cash) != null && pctOf(shown.credit) != null && pctOf(shown.cash) > pctOf(shown.credit);
 
   const row = (which, label) => (
     <label className={`rate-row ${which}${own[which] != null ? ' own' : ''}`}>
@@ -231,9 +272,17 @@ function CardRatePanel({ line, rates, master, top, onSave, onClose }) {
         inputMode="decimal"
         aria-label={`${label} % for ${line.name}`}
         autoFocus={which === 'cash'}
-        value={text[which]}
+        // Maintain ratio: Credit is worked out, not typed.
+        readOnly={keep && which === 'credit'}
+        tabIndex={keep && which === 'credit' ? -1 : undefined}
+        title={keep && which === 'credit' ? `Twice Cash: untick Maintain ratio to type it` : undefined}
+        className={which === 'cash' && cashHigher ? 'is-warn' : undefined}
+        aria-invalid={which === 'cash' && cashHigher ? true : undefined}
+        value={shown[which]}
         onChange={(e) => setText((t) => ({ ...t, [which]: e.target.value }))}
-        onBlur={() => commit(which)}
+        onBlur={() => {
+          if (!(keep && which === 'credit')) commit(which);
+        }}
         onKeyDown={(e) => {
           if (e.key === 'Enter') e.currentTarget.blur();
         }}
@@ -248,8 +297,13 @@ function CardRatePanel({ line, rates, master, top, onSave, onClose }) {
   return (
     <div className="rates-panel card-rate-panel" ref={box} style={{ top }}>
       <div className="rates-head">Set Rate · <span className="card-rate-name">{line.name_en || line.name}</span></div>
+      <label className="rate-keep">
+        <input type="checkbox" checked={keep} onChange={(e) => toggleKeep(e.target.checked)} />
+        Maintain ratio <span className="rate-keep-note">Credit = {RATIO} × Cash</span>
+      </label>
       {row('cash', 'Cash')}
       {row('credit', 'Credit')}
+      {cashHigher && <p className="rate-warn" role="alert">⚠ Cash is higher than Credit.</p>}
       <div className="rates-foot">
         <button type="button" className="btn small ghost" disabled={!hasOwnRate(line)} onClick={() => onSave(null, null)}>
           Clear
