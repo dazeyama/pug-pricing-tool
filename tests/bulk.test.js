@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   BULK_ITEMS, DEFAULT_BULK_VALUES, bulkItem, bulkLineText, bulkSearch, bulkValuesFrom, buildBulkLine, cardCounts,
-  countText, isBulk, perText, repricedBulk,
+  countText, isBulk, perText, repricedBulk, shortName,
 } from '../src/lib/bulk.js';
 import { lineText, lineTextWithCondition } from '../src/lib/lineFormat.js';
 
@@ -17,6 +17,8 @@ test('the eight items and their values', () => {
   assert.equal(bulkValuesFrom({ pkm_100: -1 }).pkm_100, 0.75);
   assert.equal(perText(bulkItem('mtg_100_common'), 1.5), '$1.50 per 100');
   assert.equal(perText(bulkItem('pkm_10_dollar'), 7), '$7 per 10');
+  assert.deepEqual(BULK_ITEMS.map(shortName), ['100 BULK c/u', '100 BULK r/m', '10 BULK $1', '10 BULK 50¢',
+    '100 BULK', '100 BULK EX', '10 BULK $1', '10 BULK 50¢']);
 });
 
 test('only a search with the word "bulk" finds bulk (5.3)', () => {

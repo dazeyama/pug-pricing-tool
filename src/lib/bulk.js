@@ -10,25 +10,26 @@ import { formatMoney } from './money.js';
 /**
  * The eight items (5.1). `per`: cards in one item; `unit`: the line's words
  * after its card count ("1,000 MTG Bulk commons/uncommons"); `label`: on the
- * card-back stack; `words`: what narrows a "bulk …" search to it.
+ * card-back stack; `short`: its suggestion's caption ("100 BULK c/u", owner
+ * 2026-10-15); `words`: what narrows a "bulk …" search to it.
  */
 export const BULK_ITEMS = Object.freeze([
   { kind: 'mtg_100_common', game: 'mtg', per: 100, name: 'MTG 100 Bulk commons/uncommons',
-    unit: 'MTG Bulk commons/uncommons', label: 'Commons & Uncommons', words: 'commons uncommons common uncommon' },
+    unit: 'MTG Bulk commons/uncommons', label: 'Commons & Uncommons', short: 'c/u', words: 'commons uncommons common uncommon' },
   { kind: 'mtg_100_rare', game: 'mtg', per: 100, name: 'MTG 100 Bulk rares/mythics',
-    unit: 'MTG Bulk rares/mythics', label: 'Rares & Mythics', words: 'rares mythics rare mythic' },
+    unit: 'MTG Bulk rares/mythics', label: 'Rares & Mythics', short: 'r/m', words: 'rares mythics rare mythic' },
   { kind: 'mtg_10_dollar', game: 'mtg', per: 10, name: 'MTG 10 Bulk $1 cards',
-    unit: 'MTG Bulk $1 cards', label: '$1 cards', words: '$1 1 dollar dollars' },
+    unit: 'MTG Bulk $1 cards', label: '$1 cards', short: '$1', words: '$1 1 dollar dollars' },
   { kind: 'mtg_10_fifty', game: 'mtg', per: 10, name: 'MTG 10 Bulk 50¢ cards',
-    unit: 'MTG Bulk 50¢ cards', label: '50¢ cards', words: '50¢ 50c 50 fifty cents' },
+    unit: 'MTG Bulk 50¢ cards', label: '50¢ cards', short: '50¢', words: '50¢ 50c 50 fifty cents' },
   { kind: 'pkm_100', game: 'pokemon', per: 100, name: 'PKM 100 Bulk',
-    unit: 'PKM Bulk', label: 'Bulk', words: 'commons' },
+    unit: 'PKM Bulk', label: 'Bulk', short: '', words: 'commons' },
   { kind: 'pkm_100_ex', game: 'pokemon', per: 100, name: 'PKM 100 Bulk EXs',
-    unit: 'PKM Bulk EXs', label: 'EXs', words: 'ex exs' },
+    unit: 'PKM Bulk EXs', label: 'EXs', short: 'EX', words: 'ex exs' },
   { kind: 'pkm_10_dollar', game: 'pokemon', per: 10, name: 'PKM 10 Bulk $1 cards',
-    unit: 'PKM Bulk $1 cards', label: '$1 cards', words: '$1 1 dollar dollars' },
+    unit: 'PKM Bulk $1 cards', label: '$1 cards', short: '$1', words: '$1 1 dollar dollars' },
   { kind: 'pkm_10_fifty', game: 'pokemon', per: 10, name: 'PKM 10 Bulk 50¢ cards',
-    unit: 'PKM Bulk 50¢ cards', label: '50¢ cards', words: '50¢ 50c 50 fifty cents' },
+    unit: 'PKM Bulk 50¢ cards', label: '50¢ cards', short: '50¢', words: '50¢ 50c 50 fifty cents' },
 ].map(Object.freeze));
 
 /** Settings → Bulk values as shipped (6.2): market value per item, in dollars. */
@@ -55,6 +56,9 @@ export function bulkValuesFrom(value) {
   }
   return out;
 }
+
+/** A suggestion's caption: "100 BULK c/u", "10 BULK $1", "100 BULK" (owner, 2026-10-15). */
+export const shortName = (item) => `${item.per} BULK${item.short ? ` ${item.short}` : ''}`;
 
 /** "$1.50 per 100". */
 export const perText = (item, value) => `${formatMoney(value)} per ${item.per}`;

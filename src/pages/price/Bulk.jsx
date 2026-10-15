@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import GameBadge from '../../components/GameBadge.jsx';
 import { POKEMON_CARD_BACK } from '../../lib/pokemonImages.js';
 import { formatMoney } from '../../lib/money.js';
-import { perText } from '../../lib/bulk.js';
+import { perText, shortName } from '../../lib/bulk.js';
 
 // Bulk on the Price screen (docs/TEAM_FEEDBACK.md 5.4, Phase T3): a bulk item
 // is drawn as a stack of its game's card backs with a short label, priced
@@ -23,7 +23,8 @@ export function BulkStack({ item }) {
           {!broken && <img src={back} alt="" onError={() => setBroken(true)} />}
         </span>
       ))}
-      <span className="bulk-label"><b>{item.per}</b> · {item.label}</span>
+      {/* Two lines: the count, then what it is (owner, 2026-10-15: larger, easier to read). */}
+      <span className="bulk-label"><b>{item.per}</b><span>{item.label}</span></span>
     </span>
   );
 }
@@ -38,9 +39,10 @@ export function BulkThumb({ c, highlighted, selected, onPick }) {
       onClick={() => onPick(c)}
     >
       <span className="thumb-img"><BulkStack item={c.item} /></span>
+      {/* "100 BULK c/u": short enough for the caption (owner, 2026-10-15). */}
       <span className="thumb-label">
         <GameBadge game={c.game} />
-        <span className="thumb-label-text">BULK · {perText(c.item, c.value)}</span>
+        <span className="thumb-label-text">{shortName(c.item)}</span>
       </span>
     </button>
   );
@@ -87,18 +89,66 @@ export function BulkFinish() {
   );
 }
 
-/** The prices for a bulk item: one price, per item (5.4). `manual`: a value of its own (Set value). */
-export function BulkPrice({ c, manual = null }) {
+const VALID_MONEY = /^\d{1,6}(\.\d{1,2})?$/;
+
+/**
+ * The prices for a bulk item: its market price per item, in a box that can be
+ * typed over (owner, 2026-10-15): a value other than Settings' is the line's
+ * own (Set value, `manual`), the Settings value typed back clears it. Under
+ * it, the Cash and Credit rates it's paid at (`rate`), with a tooltip.
+ */
+export function BulkPrice({ c, manual = null, onManual, rate, onDone }) {
   const value = manual ?? c.value;
+  const [text, setText] = useState(String(value));
+  useEffect(() => setText(String(value)), [value]);
+
+  function commit() {
+    const raw = text.trim().replace(/^\$/, '');
+    if (!VALID_MONEY.test(raw)) {
+      setText(String(value));
+      return;
+    }
+    const next = Number(raw);
+    if (next !== value) onManual(next === c.value ? null : next);
+  }
+
   return (
     <div className="price-table bulk-price">
-      <div className="bulk-price-one">
-        <strong>{formatMoney(value)}</strong> <span>per {c.item.per}</span>
-        {manual != null && <span className="quote-tag manual" title={`Settings: ${formatMoney(c.value)}`}>✎ set value</span>}
-      </div>
+      <label className="bulk-price-one">
+        <span className="bulk-price-label">Full market price</span>
+        <span className="bulk-price-input">
+          <span className="money-sign" aria-hidden="true">$</span>
+          <input
+            type="text"
+            inputMode="decimal"
+            aria-label={`Market price per ${c.item.per} cards`}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onBlur={commit}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.currentTarget.blur();
+                onDone?.();
+              }
+            }}
+          />
+        </span>
+        <span className="bulk-price-per">per {c.item.per}</span>
+        {manual != null && (
+          <span className="quote-tag manual" title={`Settings → Bulk values: ${formatMoney(c.value)}`}>✎ own value</span>
+        )}
+      </label>
+      <p
+        className="bulk-rates"
+        title={"Cash and Credit are these shares of the full market price: this buy's rates (the Master Buy "
+          + 'Percentages, or its custom ones). Bulk never takes the low-end or high-end rates.'}
+      >
+        Paid at <span className="is-credit">Credit {rate.credit}%</span> · <span className="is-cash">Cash {rate.cash}%</span>
+        <span className="bulk-rates-q" aria-hidden="true">ⓘ</span>
+      </p>
       <p className="hint">
-        Qty counts items: 10 is {(10 * c.item.per).toLocaleString('en-US')} cards. The value is in
-        Settings → Bulk values; a line&apos;s own value is set from the list (right-click → Set value).
+        Settings → Bulk values: {formatMoney(c.value)} per {c.item.per}. Another price here is this line&apos;s own
+        value. Qty counts items: 10 is {(10 * c.item.per).toLocaleString('en-US')} cards.
       </p>
     </div>
   );

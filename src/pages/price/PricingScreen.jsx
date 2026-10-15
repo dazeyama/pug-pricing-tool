@@ -778,7 +778,7 @@ export default function PricingScreen({
               )}
             </div>
             <div className="area-prices">
-              {bulk ? <BulkPrice c={bulk} manual={manual} /> : (
+              {bulk ? <BulkPrice c={bulk} manual={manual} onManual={setManual} rate={quoteRate} onDone={focusSearch} /> : (
               <PriceTable
                 candidate={selected}
                 prices={prices}

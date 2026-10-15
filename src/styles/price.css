@@ -1557,50 +1557,88 @@
         offset, with "100 · Commons & Uncommons" on it; one price per item. */
 .quote-cond.cond-bulk { --cond: #b48cff; }
 .bulk-stack { position: absolute; inset: 0; display: block; container-type: size; }
+/* Each back in the card's own shape, so its border is even all round (owner,
+   2026-10-15), centred and nudged by --dx / --dy / --rot. */
 .bulk-back {
+  --dx: 0%;
+  --dy: 0%;
+  --rot: 0deg;
   position: absolute;
-  inset: 8% 11%;
-  border-radius: 4.5% / 3.3%;
+  left: 50%;
+  top: 50%;
+  width: 74%;
+  aspect-ratio: 488 / 680;
+  border-radius: 4.75% / 3.4%;
   overflow: hidden;
   background: #4a3524;
   box-shadow: 0 3px 10px rgba(0, 0, 0, .55);
+  transform: translate(-50%, -50%) translate(var(--dx), var(--dy)) rotate(var(--rot));
+  transition: transform .25s cubic-bezier(.2, .8, .3, 1.2);
 }
 .bulk-stack.pokemon .bulk-back { background: #1f4fa3; }
 .bulk-back img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.bulk-back.b0 { transform: translate(-8%, -5%) rotate(-7deg); }
-.bulk-back.b1 { transform: rotate(1deg); }
-.bulk-back.b2 { transform: translate(8%, 5%) rotate(8deg); }
+.bulk-back.b0 { --dx: -9%; --dy: -4%; --rot: -7deg; }
+.bulk-back.b1 { --rot: 1deg; }
+.bulk-back.b2 { --dx: 9%; --dy: 4%; --rot: 8deg; }
+/* Hovered in the suggestions, as it grows: the stack fans out a little (owner, 2026-10-15). */
+.thumb:not(.thumb-slot):hover .bulk-back.b0 { --dx: -17%; --dy: -2%; --rot: -14deg; }
+.thumb:not(.thumb-slot):hover .bulk-back.b2 { --dx: 17%; --dy: 2%; --rot: 15deg; }
 .bulk-label {
   position: absolute;
   left: 50%;
-  bottom: 8%;
-  max-width: 90%;
+  bottom: 6%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: max-content;
+  max-width: 88%;
   transform: translateX(-50%);
-  padding: .3em .75em;
-  border-radius: 999px;
-  background: rgba(10, 12, 22, .88);
+  padding: .3em .7em .4em;
+  border-radius: .7em;
+  background: rgba(10, 12, 22, .9);
   box-shadow: 0 2px 8px rgba(0, 0, 0, .5);
   color: #fff;
-  font-size: clamp(8px, 6.4cqw, 17px);
-  font-weight: 700;
-  line-height: 1.2;
+  font-size: clamp(11px, 9.6cqw, 22px);
+  font-weight: 800;
+  line-height: 1.12;
   text-align: center;
+  text-wrap: balance;
 }
-.bulk-label b { color: #d8c4ff; }
+.bulk-label b { font-size: 1.35em; line-height: 1.05; color: #d8c4ff; }
 .card-wrap.bulk-wrap { background: transparent; box-shadow: none; overflow: visible; }
 .bulk-thumb .thumb-img { background: transparent; overflow: visible; }
+/* The price box: the full market price per item, typed over for a value of its own. */
 .bulk-price-one {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   flex-wrap: wrap;
-  gap: 4px 10px;
-  padding: 14px 16px;
+  gap: 6px 10px;
+  padding: 12px 16px 14px;
   border: 1px solid color-mix(in srgb, #b48cff 45%, var(--border));
   border-radius: 10px;
   background: rgba(15, 18, 32, .55);
 }
-.bulk-price-one strong { font-size: 30px; font-variant-numeric: tabular-nums; }
-.bulk-price-one > span { color: var(--muted); font-size: 15px; }
+.bulk-price-label {
+  flex-basis: 100%;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.bulk-price-input { display: inline-flex; align-items: center; gap: 4px; }
+.bulk-price-input .money-sign { font-size: 26px; font-weight: 700; color: var(--muted); }
+.bulk-price-input input {
+  width: 6.5ch;
+  margin: 0;
+  padding: 2px 8px;
+  font-size: 28px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.bulk-price-per { color: var(--muted); font-size: 15px; }
+.bulk-rates { margin: 8px 2px 0; font-size: 13.5px; font-variant-numeric: tabular-nums; cursor: help; }
+.bulk-rates-q { margin-left: 6px; color: var(--muted); }
 .bulk-price .hint { margin: 8px 2px 0; font-size: 12.5px; }
 /* A bulk line's value per item beside it, ✎ when it's its own (Set value). */
 .bulk-per {
