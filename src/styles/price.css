@@ -1336,6 +1336,7 @@
   box-shadow: 0 12px 28px rgba(0, 0, 0, .55);
 }
 .rates-head { margin-bottom: 8px; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.rates-note { margin: -2px 0 9px; font-size: 12px; line-height: 1.4; color: var(--muted); }
 .rate-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-size: 14px; }
 .rate-name { width: 52px; }
 .rate-row input { width: 64px; margin: 0; padding: 4px 8px; }

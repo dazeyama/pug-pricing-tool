@@ -161,6 +161,11 @@ function RatesPanel({ title, rates, master, onSave, onClose }) {
   return (
     <div className="rates-panel" ref={box}>
       <div className="rates-head">{title}</div>
+      {/* How custom rates work (owner, 2026-10-15; docs/TEAM_FEEDBACK.md 4.1). */}
+      <p className="rates-note">
+        Custom rates apply to every card equally, low and high end included; a card's own rate (Set Rate)
+        still wins. On the master rates, the low-end and high-end rates apply.
+      </p>
       {row('cash', 'Cash')}
       {row('credit', 'Credit')}
       <div className="rates-foot">
