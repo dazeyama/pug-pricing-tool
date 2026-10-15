@@ -81,6 +81,8 @@ export default function ConfirmBuyModal({
   return (
     <Modal
       title={title}
+      // Taller than other dialogs: room for an own-rate alert's card without a scrollbar (owner, 2026-10-15).
+      className="confirm-modal"
       onClose={onClose}
       footer={(
         <>

@@ -1471,6 +1471,10 @@
 .remove-qty input { width: 72px; margin: 0; }
 /* Convert to buy…'s sentence above the totals (owner, 2026-10-10). */
 .confirm-intro { margin: 0 0 12px; }
+/* CONFIRM BUY (and Convert to buy) may stand a little taller than other dialogs, so
+   an own-rate alert with one card fits without a scrollbar; two or more may scroll
+   (owner, 2026-10-15). */
+.confirm-modal .modal-box { max-height: calc(94vh / var(--ui-zoom)); }
 .confirm-totals { margin-bottom: 12px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; }
 .confirm-field { display: block; margin-bottom: 10px; }
 .confirm-field span { display: block; margin-bottom: 4px; font-size: 13px; color: var(--muted); }
@@ -1536,15 +1540,15 @@
    and what each changes (docs/TEAM_FEEDBACK.md 4.5). It informs; the dialog
    still confirms. */
 .own-rate-alert {
-  margin: 0 0 12px;
-  padding: 9px 12px;
+  margin: 0 0 10px;
+  padding: 6px 11px;
   border: 1px solid color-mix(in srgb, var(--warn) 60%, transparent);
   border-radius: 8px;
   background: color-mix(in srgb, var(--warn) 10%, transparent);
   font-size: 13px;
 }
-.own-rate-alert strong { display: block; margin-bottom: 4px; color: var(--warn); }
+.own-rate-alert strong { display: block; margin-bottom: 1px; color: var(--warn); }
 .own-rate-alert ul { margin: 0; padding-left: 16px; }
 /* One line per card: the card in full — Credit · Cash, in their colours. */
-.own-rate-alert li { margin: 2px 0; line-height: 1.4; font-variant-numeric: tabular-nums; }
+.own-rate-alert li { margin: 1px 0; line-height: 1.35; font-variant-numeric: tabular-nums; }
 .ora-card { font-weight: 600; }
