@@ -1661,7 +1661,8 @@
   white-space: nowrap;
   cursor: pointer;
 }
-.own-value-x { visibility: hidden; font-size: 13px; line-height: 1; color: var(--bad); }
+/* The × glyph sits on the baseline, below the text's middle: nudged up to it. */
+.own-value-x { display: inline-block; visibility: hidden; font-size: 13px; line-height: 1; color: var(--bad); transform: translateY(-1.5px); }
 .own-value-chip:hover { border-color: var(--warn); background: color-mix(in srgb, var(--warn) 18%, transparent); }
 .own-value-chip:hover .own-value-x { visibility: visible; }
 .bulk-rates { margin: 8px 2px 0; font-size: 13.5px; font-variant-numeric: tabular-nums; cursor: help; }
