@@ -79,6 +79,7 @@ Every **EXPORT** button becomes a button with a small menu (the same look as the
 | Collection or project, **EXPORT** | Its Magic cards (Paid/Ours), or what it exported once Completed |
 | **Can't upload cards**, EXPORT | Its Magic cards |
 | A Magic buy's ⋯ menu, new item **Print buy**, under Export single buy | That buy's Magic cards (Paid/Ours, or exported: 3.2) |
+| A collection's or project's ⋯ (its screen, and its row on the Collections tab), **Print collection / Print project** (owner, 2026-10-14) | Its Magic cards, as its EXPORT ▾ → Print? does; from a row, its cards fetched once the tab is open |
 
 Pokémon days keep **COMPLETE** with no menu. Print needs no picked user (it changes nothing), but it needs the connection, like EXPORT: matching reads the inventory from the database.
 

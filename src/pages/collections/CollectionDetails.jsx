@@ -118,7 +118,7 @@ export function PaidText({ buy, withMethod = false }) {
 export default function CollectionDetails({
   buy, byId, api, canChangeStatus, statusBlocked, deleteBlocked,
   viewOnly, holder, onTakeOver, onUnlock, onReopen, onUnreject, onInfo, onStatus, onDelete,
-  convertBlocked = null, onConvert,
+  convertBlocked = null, onConvert, printBlocked = null, onPrint,
 }) {
   const [open, setOpen] = useState(true);
   const toggle = () => setOpen((o) => !o);
@@ -161,9 +161,18 @@ export default function CollectionDetails({
         <MoreMenu
           up
           items={[
+            // The same as a buy's ⋯ (owner, 2026-10-14): Print, then Convert, then Delete.
+            // Print (docs/TEAM_FEEDBACK.md 3): its Magic cards by Crystal Commerce category.
+            ...(onPrint ? [{
+              label: project ? 'Print project' : 'Print collection',
+              needsUser: false,
+              blocked: printBlocked,
+              title: `A PDF of this ${project ? 'project' : 'collection'}'s Magic cards by Crystal Commerce category, to check them by hand. Changes nothing.`,
+              onClick: onPrint,
+            }] : []),
             // A project becomes a buy again (owner, 2026-10-10): the way back from Convert to project.
             ...(project ? [{
-              label: 'Convert to buy…',
+              label: 'Convert to buy',
               blocked: convertBlocked,
               title: "Move every card into a new buy on today's page, confirmed now, and delete the project",
               onClick: onConvert,

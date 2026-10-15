@@ -91,7 +91,7 @@ export default function RowAction({ id, action, onClose }) {
           done.current = false;
           return;
         }
-        toast(`${buy.customer_name} is now Buy ${made.number} on today's page.`, 'ok');
+        toast(`${buy.customer_name} is now Buy ${made.number} on today's page.${made.flagged ? ' 🚩 Flagged: check its condition before export.' : ''}`, 'ok');
         navigate(`/calendar/${made.games?.[0] ?? 'mtg'}/${made.day}`);
       }}
     />

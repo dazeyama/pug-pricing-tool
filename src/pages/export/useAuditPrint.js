@@ -141,20 +141,25 @@ async function symbolsFor(sections) {
  * nothing remembered; exported cards from what their export saved), each
  * card's colour from Scryfall (pull-pdf's colour groups), the sets' symbols,
  * then the PDF, downloaded and opened in a new tab. Writes nothing anywhere.
- * @returns {{ print: (p: { lines: object[], title: string, fileName: string }) => Promise<void>, printing: boolean }}
+ * `load` instead of `lines`: the cards fetched once the tab is open (a
+ * collection's ⋯ on the Collections tab, whose cards aren't loaded yet).
+ * @returns {{ print: (p: { lines?: object[], load?: () => Promise<object[]>, title: string, fileName: string }) => Promise<void>, printing: boolean }}
  */
 export function useAuditPrint() {
   const toast = useToast();
   const [printing, setPrinting] = useState(false);
 
-  const print = useCallback(async ({ lines, title, fileName }) => {
+  const print = useCallback(async ({ lines, load, title, fileName }) => {
     if (printing) return;
-    const chosen = printLines(lines);
-    if (!chosen.length) {
-      const magic = (lines ?? []).some((l) => l.game === 'mtg' && !l.bulk_kind);
+    const nothing = (all) => {
+      const magic = (all ?? []).some((l) => l.game === 'mtg' && !l.bulk_kind);
       toast(magic
         ? 'Nothing to print: these cards were marked Completed without being exported.'
         : 'No Magic cards to print.', 'err');
+    };
+    let chosen = load ? null : printLines(lines);
+    if (chosen && !chosen.length) {
+      nothing(lines);
       return;
     }
     // A tab opened now, while this is still the click: one opened after the
@@ -167,6 +172,15 @@ export function useAuditPrint() {
     }
     setPrinting(true);
     try {
+      if (load) {
+        const all = await load();
+        chosen = printLines(all);
+        if (!chosen.length) {
+          tab?.close();
+          nothing(all);
+          return;
+        }
+      }
       const toMatch = chosen.filter((l) => savedCategory(l) === undefined);
       const { results, cards } = toMatch.length ? await matchLines(toMatch) : { results: [], cards: new Map() };
       // Exported cards weren't matched: their Scryfall cards (for their colour) on their own.

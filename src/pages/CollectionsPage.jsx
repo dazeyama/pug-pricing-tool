@@ -19,6 +19,8 @@ import { errorMessage } from './collections/useCollection.js';
 import { useDevice } from '../state/device.jsx';
 import { useStaff } from '../state/staff.jsx';
 import { useToast } from '../components/Toast.jsx';
+import { useAuditPrint } from './export/useAuditPrint.js';
+import { fileSafe } from '../lib/massCreate.js';
 
 const STALE_MS = 60_000;   // a lock without a heartbeat for 60s is stale (spec 9.6)
 const STATUS_ORDER = { processing: 0, priced: 1, paid: 2, completed: 3, rejected: 4 };
@@ -122,6 +124,8 @@ export default function CollectionsPage() {
   const staff = useStaff();
   const toast = useToast();
   const { offline } = useConnection();
+  // Print project / Print collection from a row's ⋯ (owner, 2026-10-14).
+  const { print, printing } = useAuditPrint();
   // A row's ⋯ action, while its dialog is open: { id, action: 'delete' | 'convert' }.
   const [acting, setActing] = useState(null);
   const { data, loaded } = useLiveTable('buys', () => supabase
@@ -159,9 +163,30 @@ export default function CollectionsPage() {
   /** A row's ⋯ items, blocked as they are on its own screen (owner, 2026-10-11). */
   const menu = (c, elsewhere) => {
     const busy = offline ? 'No connection' : elsewhere ? `${elsewhere} is editing it: open it and take over first` : null;
+    const what = c.project ? 'project' : 'collection';
     return [
+      // Print (owner, 2026-10-14; docs/TEAM_FEEDBACK.md 3), as on its screen: its cards
+      // fetched once the printout's tab is open. Reading only, so another computer editing it doesn't matter.
+      {
+        label: c.project ? 'Print project' : 'Print collection',
+        needsUser: false,
+        blocked: offline ? 'No connection'
+          : printing ? 'Printing…'
+            : c.status === 'rejected' ? 'Rejected: there is nothing to print'
+              : !['paid', 'completed'].includes(c.status) ? 'Mark it Paid/Ours first' : null,
+        title: `A PDF of this ${what}'s Magic cards by Crystal Commerce category, to check them by hand. Changes nothing.`,
+        onClick: () => print({
+          load: async () => {
+            const { data: rows, error } = await supabase.from('buy_lines').select('*').eq('buy_id', c.id).order('position');
+            if (error) throw new Error(error.message);
+            return rows ?? [];
+          },
+          title: `Audit — ${c.customer_name}`,
+          fileName: `audit-${fileSafe(c.customer_name)}.pdf`,
+        }),
+      },
       ...(c.project ? [{
-        label: 'Convert to buy…',
+        label: 'Convert to buy',
         blocked: busy ?? (c.status === 'completed' ? "Completed: its cards were exported, so it can't become a buy" : null),
         title: "Move every card into a new buy on today's page, confirmed now, and delete the project",
         onClick: () => setActing({ id: c.id, action: 'convert' }),

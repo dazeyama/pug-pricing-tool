@@ -6,7 +6,7 @@ import ConfirmBuyModal from '../price/ConfirmBuyModal.jsx';
 import { marketTotal } from '../price/BuyList.jsx';
 
 /**
- * Convert to buy… (owner, 2026-10-10): CONFIRM BUY's questions for a project,
+ * Convert to buy (owner, 2026-10-10): CONFIRM BUY's questions for a project,
  * starting from what it has: a project made from a buy kept its phone, price
  * paid and notes, and its name started as the customer's. From the
  * project's ⋯ menu, on its screen or on the Collections tab.
@@ -36,6 +36,8 @@ export function ConvertToBuyModal({ buy, lines, rates, user, busy, onConvert, on
       }}
       confirmLabel="Convert to buy"
       busyLabel="Converting…"
+      // The buy it makes is confirmed here: it can be flagged, as at CONFIRM BUY (owner, 2026-10-14).
+      flagOption
       onClose={onClose}
       onConfirm={onConvert}
     />

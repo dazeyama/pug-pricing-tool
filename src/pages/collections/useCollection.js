@@ -251,6 +251,14 @@ export function useCollection(id, { deviceId, onLockLost }) {
         await reload();
         return null;
       }
+      // 🚩 Flag check for condition, ticked in its dialog (owner, 2026-10-14): on the new buy.
+      if (deal.flagCondition && data?.id) {
+        const { error: flagError } = await supabase.rpc('buy_set_condition_check', {
+          p_buy_id: data.id, p_flag: true, p_user: userId, p_device: deviceId,
+        });
+        if (flagError) toast(`Converted, but it couldn't be flagged: ${flagError.message}`, 'warn');
+        else return { ...data, flagged: true };
+      }
       return data;
     } finally {
       setBusy(false);

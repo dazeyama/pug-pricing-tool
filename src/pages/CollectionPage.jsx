@@ -229,6 +229,13 @@ function CollectionScreen({ id }) {
     setExportStep(magic ? 'dialog' : 'pokemon');
   }
 
+  // Why Print can't run now (its ⋯ shows it; printCollection says it too).
+  const printBlockedWhy = offline ? 'No connection'
+    : printing ? 'Printing…'
+      : buy?.status === 'rejected' ? 'Rejected: there is nothing to print'
+        : buy && !buy.system_key && !['paid', 'completed'].includes(buy.status) ? 'Mark it Paid/Ours first'
+          : !col.lines.some((l) => l.game === 'mtg') ? 'No Magic cards here' : null;
+
   /**
    * EXPORT ▾ → Print? (docs/TEAM_FEEDBACK.md 3.1): its Magic cards by Crystal
    * Commerce category; once Completed, what it exported. Blocked like EXPORT
@@ -407,6 +414,8 @@ function CollectionScreen({ id }) {
               onDelete={() => setAsking('delete')}
               convertBlocked={convertBlocked}
               onConvert={() => setAsking('convert')}
+              onPrint={printCollection}
+              printBlocked={printBlockedWhy}
             />
           ) : (
             <div className="col-details">
@@ -597,7 +606,7 @@ function CollectionScreen({ id }) {
                   return;
                 }
                 setAsking(null);
-                toast(`${buy.customer_name} is now Buy ${made.number} on today's page.`, 'ok');
+                toast(`${buy.customer_name} is now Buy ${made.number} on today's page.${made.flagged ? ' 🚩 Flagged: check its condition before export.' : ''}`, 'ok');
                 navigate(`/calendar/${made.games?.[0] ?? 'mtg'}/${made.day}`);
               }}
             />
