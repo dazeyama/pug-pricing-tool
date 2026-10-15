@@ -138,7 +138,18 @@ export function BulkPrice({ c, manual = null, onManual, rate, onDone }) {
         </span>
         <span className="bulk-price-per">per {c.item.per}</span>
         {manual != null && (
-          <span className="quote-tag manual" title={`Settings → Bulk values: ${formatMoney(c.value)}`}>✎ own value</span>
+          // A chip that clears it (owner, 2026-10-15): × on hover, back to the Settings value.
+          <button
+            type="button"
+            className="own-value-chip"
+            title={`Clear: back to Settings → Bulk values, ${formatMoney(c.value)}`}
+            onClick={() => {
+              onManual(null);
+              onDone?.();
+            }}
+          >
+            ✎ own value <span className="own-value-x" aria-hidden="true">×</span>
+          </button>
         )}
       </label>
       {/* What that pays, worked out as it's typed (owner, 2026-10-15): "Credit $0.99 · Cash $0.49 per 100". */}
