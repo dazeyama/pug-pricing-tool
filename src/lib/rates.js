@@ -158,30 +158,6 @@ export function whyText(why, rates) {
 }
 
 /**
- * The cards with their own rate, and what it changes against the rate they'd
- * otherwise get (4.5), for CONFIRM BUY, Paid/Ours and Convert to buy. Only a
- * side with its own rate is listed; `diff` is that side's difference in
- * dollars (price × copies × the rates' difference), to the cent.
- * @returns {{ line: object, sides: { side: string, own: number, other: number, diff: number }[] }[]}
- */
-export function ownRateChanges(lines, rates, priceOf = countedPrice) {
-  const out = [];
-  for (const line of lines) {
-    if (!hasOwnRate(line)) continue;
-    const mine = lineRate(line, rates);
-    const other = otherRate(line, rates);
-    const sides = [];
-    for (const side of ['credit', 'cash']) {
-      if (line[`custom_${side}_pct`] == null) continue;
-      const diff = Math.round(priceOf(line) * line.quantity * (mine[side] - other[side])) / 100;
-      sides.push({ side, own: mine[side], other: other[side], diff });
-    }
-    out.push({ line, sides });
-  }
-  return out;
-}
-
-/**
  * The credit offer that goes with a typed cash offer (owner, 2026-09-29): the
  * same deal at the list's rates. With every card on the base rates that's
  * cash × credit % ÷ cash %, as before; with mixed rates, cash × the cards'

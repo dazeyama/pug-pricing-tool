@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { creditOfferFor, payout } from '../src/lib/money.js';
 import {
-  DEFAULT_TIERS, creditOfferForLines, customNote, lineRate, otherRate, ownRateChanges, rateTotals, tiersFrom,
+  DEFAULT_TIERS, creditOfferForLines, customNote, lineRate, otherRate, rateTotals, tiersFrom,
 } from '../src/lib/rates.js';
 
 // Individual rates (docs/TEAM_FEEDBACK.md 4, owner 2026-10-14).
@@ -84,19 +84,6 @@ test('an exported card counts at its Sell Price', () => {
   const t = rateTotals([line(10, { cc_sell_price: 12 })], master);
   assert.equal(t.market, 12);
   assert.equal(t.cash, payout(12, 33));
-});
-
-test('the alert: own sides only, against the rate it would otherwise get (4.5)', () => {
-  const volcanic = line(300, { custom_credit_pct: 75, custom_cash_pct: 45 });
-  const sol = line(1.3, { quantity: 2, custom_credit_pct: 40 });
-  const changes = ownRateChanges([volcanic, sol, line(5)], master);
-  assert.equal(changes.length, 2);
-  assert.deepEqual(changes[0].sides, [
-    { side: 'credit', own: 75, other: 70, diff: 15 },
-    { side: 'cash', own: 45, other: 40, diff: 15 },
-  ]);
-  // Sol Ring: low end 50% otherwise: 2 × $1.30 × −10% = −$0.26.
-  assert.deepEqual(changes[1].sides, [{ side: 'credit', own: 40, other: 50, diff: -0.26 }]);
 });
 
 test('credit offers: as before on one rate, the same deal on mixed rates', () => {
