@@ -4,7 +4,8 @@ import { supabase } from '../lib/supabase.js';
 import { dayDate, dayRange, dayTitle, parseDay, storeDay } from '../lib/calendar.js';
 import { lineBody, lineText } from '../lib/lineFormat.js';
 import { formatMoney } from '../lib/money.js';
-import { mixedNote, rateTotals, tiersFrom } from '../lib/rates.js';
+import { rateTotals, tiersFrom } from '../lib/rates.js';
+import CustomRateMark from '../components/CustomRateMark.jsx';
 import { formatPhone } from '../lib/phone.js';
 import { formatDateTime, formatTime } from '../lib/time.js';
 import { colorVar } from '../lib/palette.js';
@@ -815,7 +816,7 @@ const shownPrice = (l) => Number(l.cc_sell_price ?? l.unit_price);
  * Market, Cash and Credit for some of a buy's lines, each card at the rates
  * kept on it when the buy was confirmed (docs/TEAM_FEEDBACK.md 4.4, 4.6); from
  * the Sell Prices once exported (owner, 2026-10-01). `tiers` only says why a
- * card's rate differs (the "mixed" mark's tooltip).
+ * card's rate differs.
  */
 function totalsFor(lines, buy, tiers) {
   return rateTotals(lines, {
@@ -1062,11 +1063,11 @@ function BuyPanel({
             {completed && lines.some((l) => l.cc_sell_price != null) ? 'Sell' : 'Market'} <strong>{formatMoney(t.market)}</strong>
           </span>
           <span className="is-cash">
-            Cash ({Number(buy.cash_pct)}%){t.mixed && <span className="mixed-mark" title={mixedNote(t.off)}>mixed</span>}
+            Cash ({Number(buy.cash_pct)}%)<CustomRateMark totals={t} />
             {' '}<strong>{formatMoney(t.cash)}</strong>
           </span>
           <span className="is-credit">
-            Credit ({Number(buy.credit_pct)}%){t.mixed && <span className="mixed-mark" title={mixedNote(t.off)}>mixed</span>}
+            Credit ({Number(buy.credit_pct)}%)<CustomRateMark totals={t} />
             {' '}<strong>{formatMoney(t.credit)}</strong>
           </span>
         </div>

@@ -2,7 +2,8 @@ import { useState } from 'react';
 import Modal from '../../components/Modal.jsx';
 import OwnRateAlert from '../../components/OwnRateAlert.jsx';
 import { formatMoney, parseMoney } from '../../lib/money.js';
-import { creditOfferForLines, mixedNote, rateTotals } from '../../lib/rates.js';
+import { creditOfferForLines, rateTotals } from '../../lib/rates.js';
+import CustomRateMark from '../../components/CustomRateMark.jsx';
 
 // The deal (owner, 2026-09-29): prices are simple maths, but the price is
 // agreed between two people. Marking a collection Priced records the offer
@@ -15,15 +16,15 @@ import { creditOfferForLines, mixedNote, rateTotals } from '../../lib/rates.js';
  */
 function Quote({ lines, rates }) {
   const t = rateTotals(lines, rates);
-  const mixed = t.mixed && <span className="mixed-mark" title={mixedNote(t.off)}>mixed</span>;
+  const customChip = <CustomRateMark totals={t} />;
   return (
     <div className="confirm-totals">
       <div className="total-row"><span>Market</span><strong>{formatMoney(t.market)}</strong></div>
       <div className="total-row cash">
-        <span>Cash ({Number(rates.cash)}%){mixed}</span><strong>{formatMoney(t.cash)}</strong>
+        <span>Cash ({Number(rates.cash)}%){customChip}</span><strong>{formatMoney(t.cash)}</strong>
       </div>
       <div className="total-row credit">
-        <span>Credit ({Number(rates.credit)}%){mixed}</span><strong>{formatMoney(t.credit)}</strong>
+        <span>Credit ({Number(rates.credit)}%){customChip}</span><strong>{formatMoney(t.credit)}</strong>
       </div>
     </div>
   );

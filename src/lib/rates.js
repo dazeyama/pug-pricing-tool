@@ -101,7 +101,7 @@ export const hasOwnRate = (line) => line?.custom_cash_pct != null || line?.custo
  * rate, added up, then rounded down once like any payout. Cards are added up
  * rate by rate, so with every card on one rate it's exactly payout(market,
  * rate), as before. `off` counts the cards (copies) not on the base rate, by
- * why, for the "mixed" mark.
+ * why (`off.own`: the CUSTOM chip); `mixed`, any card off the base rate.
  * @param {object[]} lines
  * @param {object} rates
  * @param {(l: object) => number} [priceOf]
@@ -138,15 +138,10 @@ export function rateTotals(lines, rates, priceOf = countedPrice) {
   };
 }
 
-/** "8 cards at the low-end rates, 1 at its own rate": the "mixed" mark's tooltip. */
-export function mixedNote(off) {
-  const card = (n) => `${n} card${n === 1 ? '' : 's'}`;
-  const parts = [];
-  if (off.low) parts.push(`${card(off.low)} at the low-end rates`);
-  if (off.high) parts.push(`${card(off.high)} at the high-end rates`);
-  if (off.own) parts.push(`${card(off.own)} at ${off.own === 1 ? 'its' : 'their'} own rate${off.own === 1 ? '' : 's'}`);
-  if (off.fixed) parts.push(`${card(off.fixed)} at the rates kept when confirmed`);
-  return parts.length ? `Mixed rates: ${parts.join(', ')}.` : '';
+/** The CUSTOM chip's tooltip: "2 cards have their own rates (Set Rate)." */
+export function customNote(off) {
+  const n = off.own;
+  return n === 1 ? '1 card has its own rate (Set Rate).' : `${n} cards have their own rates (Set Rate).`;
 }
 
 /** Why a card has its rate, for a tooltip: "high end: cards over $35". */

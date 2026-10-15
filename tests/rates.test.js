@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { creditOfferFor, payout } from '../src/lib/money.js';
 import {
-  DEFAULT_TIERS, creditOfferForLines, lineRate, mixedNote, otherRate, ownRateChanges, rateTotals, tiersFrom,
+  DEFAULT_TIERS, creditOfferForLines, customNote, lineRate, otherRate, ownRateChanges, rateTotals, tiersFrom,
 } from '../src/lib/rates.js';
 
 // Individual rates (docs/TEAM_FEEDBACK.md 4, owner 2026-10-14).
@@ -75,7 +75,9 @@ test('mixed rates: each card at its rate, added up, rounded down once', () => {
   assert.equal(t.credit, 54);
   assert.equal(t.mixed, true);
   assert.deepEqual(t.off, { own: 1, low: 8, high: 1, fixed: 0 });
-  assert.equal(mixedNote(t.off), 'Mixed rates: 8 cards at the low-end rates, 1 card at the high-end rates, 1 card at its own rate.');
+  // The CUSTOM chip counts only cards with their own rate (owner, 2026-10-15).
+  assert.equal(customNote(t.off), '1 card has its own rate (Set Rate).');
+  assert.equal(customNote({ own: 3 }), '3 cards have their own rates (Set Rate).');
 });
 
 test('an exported card counts at its Sell Price', () => {

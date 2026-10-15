@@ -4,9 +4,10 @@ import LinePreview, { previewFor } from '../../components/LinePreview.jsx';
 import { lineText } from '../../lib/lineFormat.js';
 import { formatMoney } from '../../lib/money.js';
 import {
-  hasOwnRate, lineRate, mixedNote, otherRate, rateTotals, whyText,
+  hasOwnRate, lineRate, otherRate, rateTotals, whyText,
 } from '../../lib/rates.js';
 import { useToast } from '../../components/Toast.jsx';
+import CustomRateMark from '../../components/CustomRateMark.jsx';
 
 const GROUPS = [
   { game: 'mtg', name: 'Magic' },
@@ -317,8 +318,8 @@ function CardRatePanel({ line, rates, master, top, onSave, onClose }) {
 /**
  * Market, Cash and Credit (spec 8.9), with the clickable percentages that
  * open the custom-rate subpanel (8.9.1) above them. Each card at its own rate
- * (docs/TEAM_FEEDBACK.md 4.4): the labels keep the list's base rates, and a
- * "mixed" mark says when some cards are on others.
+ * (docs/TEAM_FEEDBACK.md 4.4): the labels keep the list's base rates, with a
+ * CUSTOM chip when a card has its own (Set Rate).
  */
 function Totals({
   lines, rates, master, ratesTitle, canEdit, editBlocked, ratesLocked, onSaveRates, onDone,
@@ -326,7 +327,7 @@ function Totals({
   const [ratesOpen, setRatesOpen] = useState(false);
   const toast = useToast();
   const t = rateTotals(lines, rates);
-  const mixed = t.mixed && <span className="mixed-mark" title={mixedNote(t.off)}>mixed</span>;
+  const customChip = <CustomRateMark totals={t} />;
   const pct = (which, label) => {
     const custom = which === 'cash' ? rates.customCash : rates.customCredit;
     const value = rates[which];
@@ -352,8 +353,8 @@ function Totals({
   return (
     <div className="totals">
       <div className="total-row"><span>Market</span><strong>{formatMoney(t.market)}</strong></div>
-      <div className="total-row cash"><span>{pct('cash', 'Cash')}{mixed}</span><strong>{formatMoney(t.cash)}</strong></div>
-      <div className="total-row credit"><span>{pct('credit', 'Credit')}{mixed}</span><strong>{formatMoney(t.credit)}</strong></div>
+      <div className="total-row cash"><span>{pct('cash', 'Cash')}{customChip}</span><strong>{formatMoney(t.cash)}</strong></div>
+      <div className="total-row credit"><span>{pct('credit', 'Credit')}{customChip}</span><strong>{formatMoney(t.credit)}</strong></div>
       {ratesOpen && (
         <RatesPanel
           title={ratesTitle}

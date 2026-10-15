@@ -1342,9 +1342,11 @@
 .rate-master { margin-left: auto; font-size: 12px; color: var(--muted); }
 .rates-foot { display: flex; justify-content: space-between; margin-top: 8px; }
 
-/* Individual rates (docs/TEAM_FEEDBACK.md 4.3–4.4). Some cards on other
-   rates: a small "mixed" beside Cash and Credit, its tooltip saying which. */
-.mixed-mark {
+/* Individual rates (docs/TEAM_FEEDBACK.md 4.3–4.4). A card with its own rate
+   (Set Rate) in the list: a small CUSTOM beside Cash and Credit, its tooltip
+   saying how many (owner, 2026-10-15; not for the low-end / high-end rates,
+   which almost every trade has). */
+.custom-rate-mark {
   margin-left: 6px;
   padding: 0 6px;
   border: 1px solid currentColor;

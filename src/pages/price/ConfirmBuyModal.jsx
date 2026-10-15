@@ -4,7 +4,8 @@ import UserTag from '../../components/UserTag.jsx';
 import CustomerNameInput from '../../components/CustomerNameInput.jsx';
 import OwnRateAlert from '../../components/OwnRateAlert.jsx';
 import { formatMoney, parseMoney } from '../../lib/money.js';
-import { mixedNote, rateTotals } from '../../lib/rates.js';
+import { rateTotals } from '../../lib/rates.js';
+import CustomRateMark from '../../components/CustomRateMark.jsx';
 import { PHONE_ERROR, formatPhone, phoneDigits, validPhone } from '../../lib/phone.js';
 import { MoneyInput, PayMethod } from '../collections/DealModals.jsx';
 
@@ -68,7 +69,7 @@ export default function ConfirmBuyModal({
     <div className={`total-row ${which}`}>
       <span>
         {label} ({Number(rates[which])}%{custom != null && <span className="custom-mark"> ✎</span>})
-        {totals.mixed && <span className="mixed-mark" title={mixedNote(totals.off)}>mixed</span>}
+        <CustomRateMark totals={totals} />
       </span>
       <strong>{formatMoney(totals[which])}</strong>
     </div>
