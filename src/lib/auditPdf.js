@@ -1,7 +1,8 @@
 // The audit printout as a PDF (docs/TEAM_FEEDBACK.md 3.6), built in the
 // browser with jsPDF: US Letter, portrait, two columns, in pull-pdf's look
-// (C:\ClaudeProjects\pull-pdf: dark section bands with their card counts,
-// one row per card tinted by its colour, with a tick box). Compact (owner,
+// (C:\ClaudeProjects\pull-pdf: section bands with their card counts, one
+// row per card marked with its colour, with a tick box), drawn in outlines to
+// save ink. Compact (owner,
 // 2026-10-14): one line a card, its count first in a column of its own so
 // the names line up, its collector number and its condition in black chips
 // lined up on the right, its finish and treatments in chips after its name
@@ -43,23 +44,31 @@ const QTY_RIGHT = 33;                        // the count, first, right-aligned 
 const NAME_X = 37;                           // the name, after the chip, the tick box and the count
 const COND_W = 20;
 
-// pull-pdf's colour groups (sorting.py BUCKET_STYLE): a faint row tint, and a
-// stronger chip on the row's left edge.
+// Light on ink (owner, 2026-10-14: colour kept, but outlines over shading):
+// no filled bands or rows, just outlines; the colour only where it tells
+// something: each row's left chip (its card's colour) and its condition
+// chip's outline.
+
+// pull-pdf's colour groups (sorting.py BUCKET_STYLE), its chip colours: the
+// strip on a row's left edge. pull-pdf's faint row tints are left off.
 const BUCKET_RGB = {
-  white: { fill: [254, 250, 234], chip: [225, 212, 163] },
-  blue: { fill: [232, 243, 252], chip: [139, 186, 224] },
-  black: { fill: [236, 234, 239], chip: [150, 144, 157] },
-  red: { fill: [253, 233, 229], chip: [225, 150, 139] },
-  green: { fill: [231, 244, 231], chip: [140, 196, 140] },
-  multicolor: { fill: [254, 245, 217], chip: [224, 191, 102] },
-  artifact: { fill: [240, 241, 242], chip: [173, 180, 186] },
-  land: { fill: [242, 236, 228], chip: [191, 173, 150] },
-  unknown: { fill: [255, 255, 255], chip: [217, 217, 217] },
+  white: [225, 212, 163],
+  blue: [139, 186, 224],
+  black: [150, 144, 157],
+  red: [225, 150, 139],
+  green: [140, 196, 140],
+  multicolor: [224, 191, 102],
+  artifact: [173, 180, 186],
+  land: [191, 173, 150],
+  unknown: [217, 217, 217],
 };
-// The condition chip: a light tint of the condition buttons' colours (price.css).
-const CONDITION_FILL = {
-  NM: [190, 238, 214], LP: [214, 238, 180], MP: [255, 232, 180], HP: [255, 212, 172], DMG: [255, 190, 190],
+// The condition chip's outline: the condition buttons' colours (price.css),
+// deepened to read as a thin line on paper.
+const CONDITION_RGB = {
+  NM: [34, 150, 96], LP: [104, 154, 36], MP: [196, 142, 18], HP: [212, 106, 28], DMG: [204, 58, 58],
 };
+const INK = [20, 20, 26];        // text, the bands' outlines
+const LINE = [190, 192, 200];    // the rows' hairlines
 
 // PDF's built-in fonts draw Windows-1252 (Latin-1 and a few more: curly
 // quotes, dashes, …). One character outside it garbles the whole line
@@ -99,7 +108,7 @@ function fit(doc, text, width) {
  * @param {object} p
  * @param {string} p.title  "Audit — Magic, Tuesday, October 14, 2026"
  * @param {ReturnType<import('./auditPrint.js').auditSections>} p.sections
- * @param {Record<string, { data: string, ratio: number }>} [p.symbols]  set code → its symbol (a white PNG; width / height)
+ * @param {Record<string, { data: string, ratio: number }>} [p.symbols]  set code → its symbol (a PNG in ink; width / height)
  * @param {Date} [p.printedAt]
  * @returns {jsPDF}
  */
@@ -142,12 +151,11 @@ export function auditPdf({ title, sections, symbols = {}, printedAt = new Date()
     doc.setFontSize(CHIP_PT);
     return doc.getTextWidth(text) + 5;
   };
-  /** A chip: `text` in black on `fill`, its left edge at `left`. */
-  const chip = (text, left, top, fill, width) => {
-    doc.setFillColor(...fill);
-    doc.setDrawColor(150, 152, 162);
-    doc.setLineWidth(0.4);
-    doc.roundedRect(left, top, width, CHIP_H, 1.6, 1.6, 'FD');
+  /** A chip: `text` in black inside an outline (`stroke`, `weight` thick), its left edge at `left`. */
+  const chip = (text, left, top, width, stroke = [140, 142, 152], weight = 0.5) => {
+    doc.setDrawColor(...stroke);
+    doc.setLineWidth(weight);
+    doc.roundedRect(left, top, width, CHIP_H, 1.6, 1.6, 'S');
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(CHIP_PT);
     doc.setTextColor(0, 0, 0);
@@ -155,8 +163,9 @@ export function auditPdf({ title, sections, symbols = {}, printedAt = new Date()
   };
 
   const band = (s, cont) => {
-    doc.setFillColor(35, 38, 58);
-    doc.roundedRect(x(), y, COL_W, BAND, 2.5, 2.5, 'F');
+    doc.setDrawColor(...INK);
+    doc.setLineWidth(1.1);
+    doc.roundedRect(x() + 0.55, y + 0.55, COL_W - 1.1, BAND - 1.1, 2.5, 2.5, 'S');
     let textX = x() + 7;
     const symbol = s.set ? symbols[s.set] : null;
     if (symbol) {
@@ -170,7 +179,7 @@ export function auditPdf({ title, sections, symbols = {}, printedAt = new Date()
     doc.setFontSize(9.5);
     const countText = String(s.cards);
     const countW = doc.getTextWidth(countText);
-    doc.setTextColor(205, 208, 222);
+    doc.setTextColor(95, 99, 115);
     doc.text(countText, x() + COL_W - 7, y + 15.6, { align: 'right' });
     // The name, then its set's code in brackets and "(cont.)", lighter:
     // "Alpha [LEA]" (owner, 2026-10-14). A long name gives way, never the code.
@@ -180,14 +189,14 @@ export function auditPdf({ title, sections, symbols = {}, printedAt = new Date()
     const tailW = tail ? doc.getTextWidth(` ${tail}`) : 0;
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
-    doc.setTextColor(255, 255, 255);
+    doc.setTextColor(...INK);
     const name = fit(doc, pdfSafe(s.name), x() + COL_W - 14 - countW - tailW - textX);
     doc.text(name, textX, y + 15.8);
     if (tail) {
       const after = textX + doc.getTextWidth(name);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(10);
-      doc.setTextColor(205, 208, 222);
+      doc.setTextColor(95, 99, 115);
       doc.text(` ${pdfSafe(tail)}`, after, y + 15.8);
     }
     y += BAND + 2;
@@ -209,16 +218,16 @@ export function auditPdf({ title, sections, symbols = {}, printedAt = new Date()
 
   const row = (r, l) => {
     const left = x();
-    const tint = BUCKET_RGB[r.bucket] ?? BUCKET_RGB.unknown;
-    doc.setFillColor(...tint.fill);
-    doc.rect(left, y, COL_W, l.h, 'F');
-    doc.setFillColor(...tint.chip);
-    doc.rect(left, y, 3.5, l.h, 'F');
+    // A hairline round the row, and its card's colour as the chip on its left edge.
+    doc.setDrawColor(...LINE);
+    doc.setLineWidth(0.35);
+    doc.rect(left, y, COL_W, l.h, 'S');
+    doc.setFillColor(...(BUCKET_RGB[r.bucket] ?? BUCKET_RGB.unknown));
+    doc.rect(left, y, 3, l.h, 'F');
     // The tick box.
-    doc.setDrawColor(90, 92, 104);
+    doc.setDrawColor(70, 72, 84);
     doc.setLineWidth(0.7);
-    doc.setFillColor(255, 255, 255);
-    doc.rect(left + 8, y + (ROW - BOX) / 2, BOX, BOX, 'FD');
+    doc.rect(left + 8, y + (ROW - BOX) / 2, BOX, BOX, 'S');
     // The count first, in its own column so every name starts at the same place
     // (owner, 2026-10-14): a single card's quietly, more than one's in bold.
     doc.setFont('helvetica', r.qty > 1 ? 'bold' : 'normal');
@@ -229,8 +238,8 @@ export function auditPdf({ title, sections, symbols = {}, printedAt = new Date()
     // Right to left: the condition, then the set and number, each in its own column.
     const top = y + (ROW - CHIP_H) / 2;
     const condLeft = left + COL_W - 4 - COND_W;
-    chip(r.condition, condLeft, top, CONDITION_FILL[r.condition] ?? CONDITION_FILL.NM, COND_W);
-    chip(l.set, condLeft - 3 - l.setW, top, [255, 255, 255], l.setW);
+    chip(r.condition, condLeft, top, COND_W, CONDITION_RGB[r.condition] ?? CONDITION_RGB.NM, 1);
+    chip(l.set, condLeft - 3 - l.setW, top, l.setW);
     // The name, then its finish and treatments (or under it, when they don't fit).
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(NAME_PT);
@@ -242,7 +251,7 @@ export function auditPdf({ title, sections, symbols = {}, printedAt = new Date()
     for (const e of l.extras) {
       const w = chipWidth(e);
       if (ex + w > left + COL_W - 4) break;   // never past the row
-      chip(e, ex, exTop, [238, 236, 250], w);
+      chip(e, ex, exTop, w, [170, 172, 182], 0.4);
       ex += w + 2;
     }
     y += l.h + ROW_GAP;
@@ -273,8 +282,8 @@ export function auditPdf({ title, sections, symbols = {}, printedAt = new Date()
         band(s, true);
       }
       if (divide) {
-        doc.setDrawColor(45, 48, 66);
-        doc.setLineWidth(1.2);
+        doc.setDrawColor(...INK);
+        doc.setLineWidth(0.9);
         doc.line(x() + 2, y + 2.6, x() + COL_W - 2, y + 2.6);
         y += DIVIDER;
         divided = true;
