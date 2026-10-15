@@ -3,6 +3,7 @@ import Modal from '../../components/Modal.jsx';
 import CustomerNameInput from '../../components/CustomerNameInput.jsx';
 import { PHONE_ERROR, formatPhone, phoneDigits, validPhone } from '../../lib/phone.js';
 import ConfirmBuyModal from '../price/ConfirmBuyModal.jsx';
+import { cardCounts, countText } from '../../lib/bulk.js';
 
 /**
  * Convert to buy (owner, 2026-10-10): CONFIRM BUY's questions for a project,
@@ -11,15 +12,13 @@ import ConfirmBuyModal from '../price/ConfirmBuyModal.jsx';
  * project's ⋯ menu, on its screen or on the Collections tab.
  */
 export function ConvertToBuyModal({ buy, lines, rates, user, busy, onConvert, onClose }) {
-  const count = lines.reduce((n, l) => n + l.quantity, 0);
   return (
     <ConfirmBuyModal
-      count={count}
       lines={lines}
       rates={rates}
       user={user}
       busy={busy}
-      title={`Convert to buy — ${count} card${count === 1 ? '' : 's'}`}
+      title={`Convert to buy — ${countText(cardCounts(lines))}`}
       intro={(
         <>
           Every card in <strong>{buy.customer_name}</strong> moves to a new buy on today's page, confirmed now
@@ -253,7 +252,9 @@ export function NewCollectionModal({ busy, onCreate, onClose }) {
  * (case-insensitive, trimmed); the server checks it again. A project says
  * "project" (smoke test 2026-10-11, F9).
  */
-export function DeleteCollectionModal({ name, count, busy, onDelete, onClose, project = false }) {
+export function DeleteCollectionModal({ name, lines, busy, onDelete, onClose, project = false }) {
+  // Cards and bulk counted apart (docs/TEAM_FEEDBACK.md 5.5).
+  const counts = cardCounts(lines);
   const [step, setStep] = useState(1);
   const [typed, setTyped] = useState('');
   const matches = typed.trim().toLowerCase() === name.trim().toLowerCase();
@@ -274,9 +275,9 @@ export function DeleteCollectionModal({ name, count, busy, onDelete, onClose, pr
       >
         <p>
           Delete <strong>{name}</strong>?{' '}
-          {count === 0 ? <>It has no cards.</> : count === 1
+          {!counts.cards && !counts.bulk ? <>It has no cards.</> : counts.cards === 1 && !counts.bulk
             ? <>Its <strong>1 card</strong> will be permanently removed.</>
-            : <>All <strong>{count} cards</strong> in this {kind} will be permanently removed.</>}
+            : <>All <strong>{countText(counts)}</strong> in this {kind} will be permanently removed.</>}
         </p>
       </Modal>
     );

@@ -6,6 +6,7 @@ import ConfirmBuyModal from './price/ConfirmBuyModal.jsx';
 import { useDraft } from './price/useDraft.js';
 import { lineText } from '../lib/lineFormat.js';
 import { tiersFrom } from '../lib/rates.js';
+import { cardCounts, countText } from '../lib/bulk.js';
 import { useSettings } from '../state/settings.jsx';
 import { useDevice } from '../state/device.jsx';
 import { useStaff } from '../state/staff.jsx';
@@ -100,6 +101,7 @@ export default function PricePage() {
         <>
           <WalkInButtons
             count={count}
+            label={countText(cardCounts(draft.lines))}
             busy={draft.busy}
             canEdit={canEdit}
             onCancel={cancelBuy}
@@ -107,7 +109,6 @@ export default function PricePage() {
           />
           {confirming && (
             <ConfirmBuyModal
-              count={count}
               lines={draft.lines}
               rates={rates}
               user={user}

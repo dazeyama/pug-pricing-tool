@@ -32,7 +32,7 @@ import { buildLine } from '../../lib/buyLine.js';
 import { lineText } from '../../lib/lineFormat.js';
 import { dexNumberQuery } from '../../lib/query.js';
 import { lineRate, whyText } from '../../lib/rates.js';
-import { buildBulkLine, isBulk } from '../../lib/bulk.js';
+import { buildBulkLine, bulkItem, bulkValuesFrom, isBulk } from '../../lib/bulk.js';
 import { BulkFinish, BulkPrice, BulkSelected } from './Bulk.jsx';
 import { useStaff } from '../../state/staff.jsx';
 import { useConnection } from '../../state/connection.jsx';
@@ -665,6 +665,14 @@ export default function PricingScreen({
     ...editLine, unit_price: unitPrice ?? 0, bulk_kind: bulk ? bulk.bulk : null,
   }, rates);
 
+  // Set value on a bulk line (docs/TEAM_FEEDBACK.md 5.6): its own value per
+  // item, or null back to Settings → Bulk values; saved like an edit of it.
+  const bulkValues = bulkValuesFrom(settingValues.bulk_values);
+  const setLineValue = (line, value) => {
+    const item = bulkItem(line.bulk_kind);
+    return list.update(line, buildBulkLine(item, line.quantity, bulkValues[item.kind], value), user?.id);
+  };
+
   // What the page's own parts (a collection's details, the list's buttons) need.
   const api = { focusSearch, canEdit, editBlocked };
 
@@ -834,6 +842,8 @@ export default function PricingScreen({
           onRemove={(line, n) => list.remove(line, n, user?.id)}
           onSaveRates={list.setRates ? (cash, credit) => list.setRates(cash, credit, user?.id) : null}
           onSetLineRate={list.setLineRate ? (line, cash, credit) => list.setLineRate(line, cash, credit, user?.id) : null}
+          onSetLineValue={setLineValue}
+          bulkValues={bulkValues}
           onDone={focusSearch}
           details={renderListDetails?.(api)}
           footer={renderListFooter?.(api)}

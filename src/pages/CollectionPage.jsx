@@ -14,6 +14,7 @@ import PricingScreen from './price/PricingScreen.jsx';
 import CollectionDetails from './collections/CollectionDetails.jsx';
 import { collectionRates, isClosed, statusLabel } from './collections/status.js';
 import { tiersFrom } from '../lib/rates.js';
+import { isBulk } from '../lib/bulk.js';
 import { ConfirmModal, ConvertToBuyModal, DeleteCollectionModal, RejectModal } from './collections/CollectionModals.jsx';
 import { OfferModal, PaidModal } from './collections/DealModals.jsx';
 import { useCollection } from './collections/useCollection.js';
@@ -359,8 +360,6 @@ function CollectionScreen({ id }) {
     );
   }
 
-  const count = col.lines.reduce((n, l) => n + l.quantity, 0);
-
   return (
     <PricingScreen
       list={list}
@@ -617,7 +616,7 @@ function CollectionScreen({ id }) {
             <DeleteCollectionModal
               name={buy.customer_name}
               project={Boolean(buy.project)}
-              count={count}
+              lines={col.lines}
               busy={col.busy}
               onClose={() => setAsking(null)}
               onDelete={async (typed) => {
@@ -688,7 +687,7 @@ function CollectionScreen({ id }) {
             <ExportDialog
               mode="export"
               title={`Export ${buy.customer_name} to Crystal Commerce`}
-              items={col.lines.filter((l) => l.game === 'mtg').map((line) => ({ line, where: '' }))}
+              items={col.lines.filter((l) => l.game === 'mtg' && !isBulk(l)).map((line) => ({ line, where: '' }))}
               target={{ kind: 'collection', buy_id: buy.id, version: buy.version }}
               fileName={`cc-mass-create-${fileSafe(buy.customer_name)}-${fileStamp(new Date())}.csv`}
               onExported={exported}
@@ -721,7 +720,7 @@ function CollectionScreen({ id }) {
               mode="export"
               pullOut={false}
               title="Export Can't upload cards to Crystal Commerce"
-              items={col.lines.filter((l) => l.game === 'mtg').map((line) => ({ line, where: line.source_note ?? '' }))}
+              items={col.lines.filter((l) => l.game === 'mtg' && !isBulk(l)).map((line) => ({ line, where: line.source_note ?? '' }))}
               target={{ kind: 'cant_upload', version: buy.version }}
               fileName={`cc-mass-create-cant-upload-${fileStamp(new Date())}.csv`}
               onExported={exported}

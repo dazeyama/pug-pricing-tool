@@ -5,6 +5,7 @@ import CustomerNameInput from '../../components/CustomerNameInput.jsx';
 import OwnRateAlert from '../../components/OwnRateAlert.jsx';
 import { formatMoney, parseMoney } from '../../lib/money.js';
 import { rateTotals } from '../../lib/rates.js';
+import { cardCounts, countText } from '../../lib/bulk.js';
 import CustomRateMark from '../../components/CustomRateMark.jsx';
 import { PHONE_ERROR, formatPhone, phoneDigits, validPhone } from '../../lib/phone.js';
 import { MoneyInput, PayMethod } from '../collections/DealModals.jsx';
@@ -33,8 +34,9 @@ import { MoneyInput, PayMethod } from '../collections/DealModals.jsx';
  * what they change (4.5).
  */
 export default function ConfirmBuyModal({
-  count, lines, rates, user, busy, onConfirm, onClose,
-  title = `Confirm buy — ${count} card${count === 1 ? '' : 's'}`, intro = null, initial = {},
+  lines, rates, user, busy, onConfirm, onClose,
+  // Cards and bulk counted apart (docs/TEAM_FEEDBACK.md 5.5): "Confirm buy — 42 cards + 1,000 bulk".
+  title = `Confirm buy — ${countText(cardCounts(lines))}`, intro = null, initial = {},
   confirmLabel = 'Confirm buy', busyLabel = 'Confirming…', flagOption = false,
 }) {
   const [flag, setFlag] = useState(false);

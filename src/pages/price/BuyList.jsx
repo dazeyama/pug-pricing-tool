@@ -7,6 +7,7 @@ import {
   hasOwnRate, lineRate, otherRate, rateTotals, whyText,
 } from '../../lib/rates.js';
 import { useToast } from '../../components/Toast.jsx';
+import { bulkItem, cardCounts, countText, isBulk, perText } from '../../lib/bulk.js';
 import CustomRateMark from '../../components/CustomRateMark.jsx';
 
 const GROUPS = [
@@ -321,6 +322,85 @@ function CardRatePanel({ line, rates, master, top, onSave, onClose }) {
 }
 
 /**
+ * Set value (docs/TEAM_FEEDBACK.md 5.6): a bulk line's own value per item in
+ * place of Set Rate, beside the line, with its Cash and Credit as it's typed.
+ * Saved on blur or Enter; the Settings value typed back, or Clear, goes back
+ * to it.
+ */
+function BulkValuePanel({ line, rates, value, top, onSave, onClose }) {
+  const item = bulkItem(line.bulk_kind);
+  const shown = Number(line.unit_price);
+  const [text, setText] = useState(String(shown));
+  const toast = useToast();
+  const box = useRef(null);
+  useEffect(() => setText(String(shown)), [shown]);
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    // A click elsewhere saves what's typed (the box's blur), then closes.
+    const onDown = (e) => {
+      if (box.current?.contains(e.target)) return;
+      if (box.current?.contains(document.activeElement)) document.activeElement.blur();
+      onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    document.addEventListener('mousedown', onDown);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.removeEventListener('mousedown', onDown);
+    };
+  }, [onClose]);
+
+  const typed = /^\d{1,6}(\.\d{1,2})?$/.test(text.trim().replace(/^\$/, '')) ? Number(text.trim().replace(/^\$/, '')) : null;
+  const live = rateTotals([{ ...line, unit_price: typed ?? shown, cc_sell_price: null }], rates);
+  function commit() {
+    if (text.trim() === String(shown)) return;
+    if (typed == null) {
+      toast('Enter a dollar amount, with up to 2 decimals.', 'err');
+      setText(String(shown));
+      return;
+    }
+    onSave(typed === value ? null : typed);
+  }
+
+  return (
+    <div className="rates-panel card-rate-panel" ref={box} style={{ top }}>
+      <div className="rates-head">Set value · <span className="card-rate-name">{lineText(line)}</span></div>
+      <label className="rate-row">
+        <span className="rate-name">Value</span>
+        <span className="rate-pct">$</span>
+        <input
+          type="text"
+          inputMode="decimal"
+          aria-label={`Value per ${item.per} for ${lineText(line)}`}
+          autoFocus
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') e.currentTarget.blur();
+          }}
+        />
+        <span className="rate-pct">per {item.per}</span>
+        <span className="rate-master" title="Settings → Bulk values">settings {formatMoney(value)}</span>
+      </label>
+      <p className="bulk-value-live">
+        This line: <span className="is-credit">Credit <strong>{formatMoney(live.credit)}</strong></span>
+        {' · '}
+        <span className="is-cash">Cash <strong>{formatMoney(live.cash)}</strong></span>
+      </p>
+      <div className="rates-foot">
+        <button type="button" className="btn small ghost" disabled={line.price_source !== 'manual'} onClick={() => onSave(null)}>
+          Clear
+        </button>
+        <button type="button" className="btn small" onClick={onClose}>Done</button>
+      </div>
+    </div>
+  );
+}
+
+/**
  * Market, Cash and Credit (spec 8.9), with the clickable percentages that
  * open the custom-rate subpanel (8.9.1) above them. Each card at its own rate
  * (docs/TEAM_FEEDBACK.md 4.4): the labels keep the list's base rates, with a
@@ -387,12 +467,17 @@ function Totals({
  *
  * Right-clicking a card (docs/TEAM_FEEDBACK.md 4.3) opens Set Rate
  * (`onSetLineRate`), and Clear Rate on a card with its own rate, blocked like
- * the list's rates (`ratesLocked`, `locked`) and on Completed cards. A card with its own rate is tinted, with a ✎ tag.
+ * the list's rates (`ratesLocked`, `locked`) and on Completed cards. A card
+ * with its own rate is tinted, with a ✎ tag.
+ * On a bulk line (docs/TEAM_FEEDBACK.md 5.6) the menu has Set value instead
+ * (`onSetLineValue`, `bulkValues`: Settings' values), blocked only like any
+ * change to the list.
  */
 export default function BuyList({
   title = 'Buy list', lines, loaded, rates, master, ratesTitle, flashId, hits = null, editingId,
   canEdit, locked = null, editBlocked, canRemove = canEdit, removeLocked = locked, removeBlocked = editBlocked,
-  onEdit, onRemove, onSaveRates, onSetLineRate = null, onDone, details, footer, badge = null, ratesLocked = null,
+  onEdit, onRemove, onSaveRates, onSetLineRate = null, onSetLineValue = null, bulkValues = null, onDone, details,
+  footer, badge = null, ratesLocked = null,
 }) {
   const [removing, setRemoving] = useState(null);
   const [preview, setPreview] = useState(null);   // { src, top, left } while a line is hovered
@@ -405,7 +490,8 @@ export default function BuyList({
 
   const hidePreview = useCallback(() => setPreview(null), []);
 
-  const count = lines.reduce((n, l) => n + l.quantity, 0);
+  // Real cards and bulk counted apart (docs/TEAM_FEEDBACK.md 5.5).
+  const counts = cardCounts(lines);
   const rateLine = rateFor ? lines.find((l) => l.id === rateFor) ?? null : null;
 
   // A point on the screen, in the sidebar's own px (it may be zoomed: lib/uiScale.js).
@@ -417,12 +503,13 @@ export default function BuyList({
 
   /** Right-click on a card: the Set Rate menu where the pointer is. */
   function openRateMenu(e, l) {
-    if (!onSetLineRate) return;   // no Set Rate here: the browser's own menu
+    if (!(isBulk(l) ? onSetLineValue : onSetLineRate)) return;   // none here: the browser's own menu
     e.preventDefault();
     hidePreview();
     setRateMenu({ line: l, ...inAside(e.clientX, e.clientY) });
   }
-  const rateBlocked = (l) => ratesLocked ?? locked
+  // Bulk's value is a price, not a rate: only what blocks any change to the list.
+  const rateBlocked = (l) => (isBulk(l) ? null : ratesLocked) ?? locked
     ?? (l.completed_at ? "A Completed card's rate doesn't change" : null);
   function startRate(l) {
     setRateMenu(null);
@@ -438,7 +525,8 @@ export default function BuyList({
     if (why) toast(`${why}.`, 'err');
     else if (!canEdit) editBlocked();
     else {
-      await onSetLineRate(l, null, null);
+      if (isBulk(l)) await onSetLineValue(l, null);
+      else await onSetLineRate(l, null, null);
       onDone();
     }
   }
@@ -516,7 +604,7 @@ export default function BuyList({
       <div className="list-head">
         <span className="list-title">{title}</span>
         {badge}
-        <span className="list-count">{count} card{count === 1 ? '' : 's'}</span>
+        <span className="list-count">{countText(counts)}</span>
       </div>
 
       <div className="list-body" ref={list}>
@@ -527,7 +615,7 @@ export default function BuyList({
           return (
             <section key={g.game} className="list-group">
               <div className="group-head">
-                <span className={`group-chip ${g.game}`}>{g.name} ({mine.reduce((n, l) => n + l.quantity, 0)})</span>
+                <span className={`group-chip ${g.game}`}>{g.name} ({countText(cardCounts(mine)).replace(/ cards?\b/, '')})</span>
               </div>
               {mine.map((l) => (
                 <div
@@ -544,7 +632,8 @@ export default function BuyList({
                   {/* The same column before and after an export: a Sell price is green. */}
                   <span
                     className={`line-price${l.cc_sell_price != null ? ' is-sell' : ''}`}
-                    title={l.cc_sell_price != null ? `Sell price from the export · bought at ${formatMoney(l.unit_price)}` : 'Price per card'}
+                    title={l.cc_sell_price != null ? `Sell price from the export · bought at ${formatMoney(l.unit_price)}`
+                      : isBulk(l) ? `Value per item (${bulkItem(l.bulk_kind)?.per} cards)` : 'Price per card'}
                   >
                     {formatMoney(l.cc_sell_price ?? l.unit_price)}
                   </span>
@@ -559,6 +648,12 @@ export default function BuyList({
                     {lineText(l)}
                     {/* Its own rate (Set Rate): Credit / Cash, in their colours. */}
                     {hasOwnRate(l) && <OwnRateTag line={l} rates={rates} />}
+                    {/* Bulk: its value per item beside it, ✎ when it's the line's own (Set value). */}
+                    {isBulk(l) && (
+                      <span className={`bulk-per${l.price_source === 'manual' ? ' own' : ''}`}>
+                        {l.price_source === 'manual' && '✎ '}{perText(bulkItem(l.bulk_kind), Number(l.unit_price))}
+                      </span>
+                    )}
                     {l.cc_status === 'cant_upload' && (
                       <span className="cant-chip" title="Not matched to Crystal Commerce: pulled from the upload. It's in Can't upload cards.">
                         Can't upload
@@ -606,11 +701,23 @@ export default function BuyList({
             type="button"
             role="menuitem"
             className={rateBlocked(rateMenu.line) ? 'is-blocked' : ''}
-            title={rateBlocked(rateMenu.line) ?? 'Give this card its own Cash and Credit rates'}
+            title={rateBlocked(rateMenu.line)
+              ?? (isBulk(rateMenu.line) ? 'Give this bulk its own value per item' : 'Give this card its own Cash and Credit rates')}
             onClick={() => startRate(rateMenu.line)}
           >
-            Set Rate
+            {isBulk(rateMenu.line) ? 'Set value' : 'Set Rate'}
           </button>
+          {isBulk(rateMenu.line) && rateMenu.line.price_source === 'manual' && (
+            <button
+              type="button"
+              role="menuitem"
+              className={rateBlocked(rateMenu.line) ? 'is-blocked' : ''}
+              title={rateBlocked(rateMenu.line) ?? 'Back to the value in Settings → Bulk values'}
+              onClick={() => clearRate(rateMenu.line)}
+            >
+              Clear value
+            </button>
+          )}
           {hasOwnRate(rateMenu.line) && (
             <button
               type="button"
@@ -624,7 +731,18 @@ export default function BuyList({
           )}
         </div>
       )}
-      {rateLine && (
+      {rateLine && isBulk(rateLine) && (
+        <BulkValuePanel
+          key={rateLine.id}
+          line={rateLine}
+          rates={rates}
+          value={bulkValues?.[rateLine.bulk_kind] ?? Number(rateLine.market_price ?? rateLine.unit_price)}
+          top={rateTop}
+          onSave={(value) => onSetLineValue(rateLine, value)}
+          onClose={closeRate}
+        />
+      )}
+      {rateLine && !isBulk(rateLine) && (
         <CardRatePanel
           key={rateLine.id}
           line={rateLine}

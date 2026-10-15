@@ -6,7 +6,7 @@ import GuardButton from '../../components/GuardButton.jsx';
  * The walk-in buy's buttons under its totals (spec 8.9, 8.10): CANCEL (asks
  * first when there are cards) and CONFIRM BUY.
  */
-export default function WalkInButtons({ count, busy, canEdit, onCancel, onConfirm }) {
+export default function WalkInButtons({ count, label = null, busy, canEdit, onCancel, onConfirm }) {
   const [asking, setAsking] = useState(false);
   return (
     <>
@@ -49,7 +49,7 @@ export default function WalkInButtons({ count, busy, canEdit, onCancel, onConfir
             </>
           )}
         >
-          <p><strong>{count} card{count === 1 ? '' : 's'}</strong> will be discarded.</p>
+          <p><strong>{label ?? `${count} card${count === 1 ? '' : 's'}`}</strong> will be discarded.</p>
         </Modal>
       )}
     </>

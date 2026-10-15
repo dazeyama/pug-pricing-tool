@@ -5,6 +5,7 @@ import { dayDate, dayRange, dayTitle, parseDay, storeDay } from '../lib/calendar
 import { lineBody, lineText } from '../lib/lineFormat.js';
 import { formatMoney } from '../lib/money.js';
 import { rateTotals, tiersFrom } from '../lib/rates.js';
+import { bulkItem, cardCounts, countText, isBulk, perText } from '../lib/bulk.js';
 import CustomRateMark from '../components/CustomRateMark.jsx';
 import { formatPhone } from '../lib/phone.js';
 import { formatDateTime, formatTime } from '../lib/time.js';
@@ -187,7 +188,8 @@ function DayScreen({ game, day }) {
   // EXPORT (n) on Magic days (owner, 2026-10-02): the cards to count in the
   // real pile first. The cards the export will take; once the day is all
   // Completed, every card that day.
-  const dayLines = mine.flatMap((b) => b.buy_lines).filter((l) => l.game === game);
+  // Bulk is never exported (docs/TEAM_FEEDBACK.md 5.8): real cards only.
+  const dayLines = mine.flatMap((b) => b.buy_lines).filter((l) => l.game === game && !isBulk(l));
   const toExport = dayLines.filter((l) => !l.completed_at);
   const pileCards = (toExport.length ? toExport : dayLines).reduce((n, l) => n + l.quantity, 0);
   // When and by whom the day was marked Completed, when it wasn't exported.
@@ -382,7 +384,7 @@ function DayScreen({ game, day }) {
     // Today's Sell Prices first, worked out as the export does (owner,
     // 2026-10-09): shown in green once the day is Completed. Without today's
     // prices nothing is completed.
-    const cards = mine.flatMap((b) => b.buy_lines).filter((l) => l.game === game && !l.completed_at);
+    const cards = mine.flatMap((b) => b.buy_lines).filter((l) => l.game === game && !l.completed_at && !isBulk(l));
     let prices;
     try {
       setCompleteStep("Fetching today's prices…");
@@ -661,7 +663,7 @@ function DayScreen({ game, day }) {
         <ExportDialog
           mode="check"
           title={`Crystal Commerce matches: ${GAME_NAMES[game]}, ${dayDate(day)}`}
-          items={mine.flatMap((b, i) => b.buy_lines.filter((l) => l.game === 'mtg').map((line) => ({ line, where: `Buy ${i + 1}` })))}
+          items={mine.flatMap((b, i) => b.buy_lines.filter((l) => l.game === 'mtg' && !isBulk(l)).map((line) => ({ line, where: `Buy ${i + 1}` })))}
           onClose={() => setChecking(false)}
         />
       )}
@@ -670,14 +672,14 @@ function DayScreen({ game, day }) {
           mode="export"
           title={`Export ${GAME_NAMES[game]} for ${dayDate(day)} to Crystal Commerce`}
           items={mine.flatMap((b, i) => b.buy_lines
-            .filter((l) => l.game === game && !l.completed_at)
+            .filter((l) => l.game === game && !l.completed_at && !isBulk(l))
             .map((line) => ({ line, where: `Buy ${i + 1}` })))}
           target={{
             kind: 'day',
             day,
             game,
             versions: Object.fromEntries(mine
-              .filter((b) => b.buy_lines.some((l) => l.game === game && !l.completed_at))
+              .filter((b) => b.buy_lines.some((l) => l.game === game && !l.completed_at && !isBulk(l)))
               .map((b) => [b.id, b.version])),
           }}
           fileName={fileName}
@@ -748,7 +750,7 @@ function DayScreen({ game, day }) {
           mode="export"
           title={`Export Buy ${exportingBuy.number} (${GAME_NAMES[game]}, ${dayDate(day)}) to Crystal Commerce`}
           items={exportingBuy.buy.buy_lines
-            .filter((l) => l.game === game && !l.completed_at)
+            .filter((l) => l.game === game && !l.completed_at && !isBulk(l))
             .map((line) => ({ line, where: `Buy ${exportingBuy.number}` }))}
           target={{ kind: 'buy', buy_id: exportingBuy.buy.id, game, version: exportingBuy.buy.version }}
           fileName={`cc-mass-create-${game === 'mtg' ? 'magic' : game}-${day}-buy-${exportingBuy.number}.csv`}
@@ -1037,9 +1039,12 @@ function BuyPanel({
                 >
                   {formatMoney(shownPrice(l))}
                 </td>
-                <td className="cell-qty">{l.quantity}</td>
+                <td className="cell-qty">
+                  {isBulk(l) ? (l.quantity * (bulkItem(l.bulk_kind)?.per ?? 1)).toLocaleString('en-US') : l.quantity}
+                </td>
                 <td className="cell-name" title={l.name_en ? l.name : undefined}>
                   {lineBody(l)}
+                  {isBulk(l) && <span className="bulk-per">{perText(bulkItem(l.bulk_kind), Number(l.unit_price))}</span>}
                   {l.cc_status === 'cant_upload' && <span className="cant-chip" title={CANT_UPLOAD_TIP}>Can't upload</span>}
                 </td>
                 <td className="cell-x">
@@ -1098,10 +1103,11 @@ function BuyPanel({
  */
 function ConvertBuyModal({ buy, number, day, byId, busy, onClose, onConvert }) {
   const [name, setName] = useState(() => (buy.customer_name || `Buy ${number} · ${dayDate(day)}`).slice(0, 80));
-  const count = buy.buy_lines.reduce((n, l) => n + l.quantity, 0);
+  const counts = cardCounts(buy.buy_lines);
   const bothGames = new Set(buy.buy_lines.map((l) => l.game)).size > 1;
-  // "its 1 card" / "all 12 cards, both games" (smoke test 2026-10-02 #8).
-  const cards = count === 1 ? 'its 1 card' : `all ${count} cards`;
+  // "its 1 card" / "all 12 cards, both games" (smoke test 2026-10-02 #8); bulk apart (T3).
+  const single = counts.cards === 1 && !counts.bulk;
+  const cards = single ? 'its 1 card' : `all ${countText(counts)}`;
   const who = byId(buy.confirmed_by)?.name ?? 'someone';
   const ready = name.trim().length > 0;
   return (
@@ -1124,8 +1130,8 @@ function ConvertBuyModal({ buy, number, day, byId, busy, onClose, onConvert }) {
     >
       <p>
         <strong>Buy {number}</strong> ({who}, {formatTime(buy.confirmed_at)}) becomes a new <strong>project</strong>:{' '}
-        <strong>{cards}</strong>{bothGames ? ', both games,' : ''} {count === 1 ? 'moves' : 'move'} there as{' '}
-        {count === 1 ? 'it is' : 'they are'}, with the buy's notes and rates, and the buy is deleted from this day.
+        <strong>{cards}</strong>{bothGames ? ', both games,' : ''} {single ? 'moves' : 'move'} there as{' '}
+        {single ? 'it is' : 'they are'}, with the buy's notes (a project has no rates), and the buy is deleted from this day.
       </p>
       <label className="field">
         <span>Project name</span>
@@ -1146,7 +1152,7 @@ function ConvertBuyModal({ buy, number, day, byId, busy, onClose, onConvert }) {
 
 /** Delete buy… (spec 10.2), or removing its last card (owner, 2026-09-29). */
 function DeleteBuyModal({ buy, number, lastCard, byId, busy, onClose, onDelete }) {
-  const count = buy.buy_lines.reduce((n, l) => n + l.quantity, 0);
+  const counts = cardCounts(buy.buy_lines);
   const who = byId(buy.confirmed_by)?.name ?? 'someone';
   return (
     <Modal
@@ -1162,7 +1168,7 @@ function DeleteBuyModal({ buy, number, lastCard, byId, busy, onClose, onDelete }
       {lastCard && <p>That's the last card in this buy, so removing it deletes the buy.</p>}
       <p>
         Delete <strong>Buy {number}</strong> ({who}, {formatTime(buy.confirmed_at)})? All{' '}
-        <strong>{count} card{count === 1 ? '' : 's'}</strong> in this buy — including any from the other game — will
+        <strong>{countText(counts)}</strong> in this buy — including any from the other game — will
         be permanently removed.
       </p>
     </Modal>

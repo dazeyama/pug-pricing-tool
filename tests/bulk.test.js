@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   BULK_ITEMS, DEFAULT_BULK_VALUES, bulkItem, bulkLineText, bulkSearch, bulkValuesFrom, buildBulkLine, cardCounts,
-  countText, isBulk, perText,
+  countText, isBulk, perText, repricedBulk,
 } from '../src/lib/bulk.js';
 import { lineText, lineTextWithCondition } from '../src/lib/lineFormat.js';
 
@@ -71,4 +71,15 @@ test('cards and bulk are counted apart', () => {
   assert.equal(countText({ cards: 1, bulk: 0 }), '1 card');
   assert.equal(countText({ cards: 0, bulk: 100 }), '100 bulk');
   assert.equal(countText({ cards: 0, bulk: 0 }), '0 cards');
+});
+
+test('REPRICE? puts bulk back on its Settings value, keeping a value of its own', () => {
+  const values = { ...DEFAULT_BULK_VALUES, mtg_100_common: 2 };
+  const plain = repricedBulk({ id: 'a', bulk_kind: 'mtg_100_common', unit_price: 1.5, price_source: 'bulk' }, values);
+  assert.equal(plain.unit_price, 2);
+  assert.equal(plain.price_source, 'bulk');
+  assert.equal(plain.kept, null);
+  const own = repricedBulk({ id: 'b', bulk_kind: 'mtg_100_common', unit_price: 3, price_source: 'manual' }, values);
+  assert.equal(own.unit_price, 3);
+  assert.equal(own.kept, 'manual');
 });

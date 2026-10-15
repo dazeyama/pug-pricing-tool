@@ -166,3 +166,27 @@ export function buildBulkLine(item, quantity, value, manual = null) {
     image_url: null,
   };
 }
+
+/**
+ * REPRICE? for a bulk line (5.2): back to its Settings value, as collection_reprice
+ * saves it; a value of its own (Set value) is kept, as a manual price is.
+ * @returns {{ line_id: string, kept: 'manual'|null, unit_price: number, market_price: number,
+ *   price_source: string, price_snapshot: object, priced_at: string,
+ *   justtcg_card_id: null, justtcg_variant_id: null }}
+ */
+export function repricedBulk(line, values) {
+  const item = bulkItem(line.bulk_kind);
+  const value = values[line.bulk_kind];
+  const manual = line.price_source === 'manual';
+  return {
+    line_id: line.id,
+    kept: manual ? 'manual' : null,
+    unit_price: manual ? Number(line.unit_price) : value,
+    market_price: value,
+    price_source: manual ? 'manual' : 'bulk',
+    price_snapshot: { ...(line.price_snapshot ?? {}), bulk: { kind: line.bulk_kind, value, per: item?.per ?? null }, repriced_at: new Date().toISOString() },
+    priced_at: new Date().toISOString(),
+    justtcg_card_id: null,
+    justtcg_variant_id: null,
+  };
+}

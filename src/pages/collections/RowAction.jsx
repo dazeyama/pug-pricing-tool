@@ -44,14 +44,13 @@ export default function RowAction({ id, action, onClose }) {
   }, [col.loaded, col.missing, buy, col.lines.length]);
 
   if (!col.loaded || !buy) return null;
-  const count = col.lines.reduce((n, l) => n + l.quantity, 0);
 
   if (action === 'delete') {
     return (
       <DeleteCollectionModal
         name={buy.customer_name}
         project={Boolean(buy.project)}
-        count={count}
+        lines={col.lines}
         busy={col.busy}
         onClose={onClose}
         onDelete={async (typed) => {

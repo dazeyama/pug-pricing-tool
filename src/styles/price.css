@@ -1602,3 +1602,14 @@
 .bulk-price-one strong { font-size: 30px; font-variant-numeric: tabular-nums; }
 .bulk-price-one > span { color: var(--muted); font-size: 15px; }
 .bulk-price .hint { margin: 8px 2px 0; font-size: 12.5px; }
+/* A bulk line's value per item beside it, ✎ when it's its own (Set value). */
+.bulk-per {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.bulk-per.own { color: var(--accent); font-weight: 700; }
+.bulk-value-live { margin: 2px 0 4px; font-size: 13px; font-variant-numeric: tabular-nums; }

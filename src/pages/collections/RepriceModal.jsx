@@ -3,6 +3,7 @@ import Modal from '../../components/Modal.jsx';
 import { useSettings } from '../../state/settings.jsx';
 import { todaysPrices } from '../../lib/todaysPrices.js';
 import { repricedLine } from '../../lib/reprice.js';
+import { bulkValuesFrom, cardCounts, countText, isBulk, repricedBulk } from '../../lib/bulk.js';
 
 /**
  * REPRICE? (owner, 2026-10-01): asks first, then fetches today's prices for
@@ -19,7 +20,7 @@ export default function RepriceModal({ lines, roundUp = false, onReprice, onClos
   const [phase, setPhase] = useState('ask');   // ask | working | error
   const [step, setStep] = useState('');
   const [error, setError] = useState(null);
-  const cards = lines.reduce((n, l) => n + l.quantity, 0);
+  const counts = cardCounts(lines);
   const manual = lines.filter((l) => l.price_source === 'manual').length;
   const requests = Math.max(1, Math.ceil(lines.length / 100));
 
@@ -27,9 +28,14 @@ export default function RepriceModal({ lines, roundUp = false, onReprice, onClos
     setPhase('working');
     setError(null);
     try {
-      const today = await todaysPrices(lines, { onStep: setStep });
+      // Bulk (docs/TEAM_FEEDBACK.md 5.2): no price to fetch, its Settings value instead.
+      const today = await todaysPrices(lines.filter((l) => !isBulk(l)), { onStep: setStep });
       const pct = { mtg: values.fallback_pct_mtg, pokemon: values.fallback_pct_pokemon };
-      const repriced = lines.map((l) => ({ line: l, r: repricedLine(l, today.get(l.id) ?? {}, pct[l.game], { up: roundUp }) }));
+      const bulkValues = bulkValuesFrom(values.bulk_values);
+      const repriced = lines.map((l) => ({
+        line: l,
+        r: isBulk(l) ? repricedBulk(l, bulkValues) : repricedLine(l, today.get(l.id) ?? {}, pct[l.game], { up: roundUp }),
+      }));
       const updates = repriced.filter(({ r }) => r.kept !== 'no_price').map(({ r }) => {
         const { kept, ...update } = r;
         return update;
@@ -68,7 +74,7 @@ export default function RepriceModal({ lines, roundUp = false, onReprice, onClos
         <>
           {error && <div className="banner err">{error}</div>}
           <p>
-            Every card here (<strong>{cards} card{cards === 1 ? '' : 's'}</strong>) gets today's buy price for its
+            Every card here (<strong>{countText(counts)}</strong>) gets today's buy price for its
             condition, worked out the way it was priced: the same price ladder, Use TCGplayer / Use Cardmarket as it was,{' '}
             {roundUp ? 'rounded up, as in every project' : 'rounded down as always'}. Sell prices aren't touched.
           </p>
