@@ -51,7 +51,7 @@ test('sections A to Z with Unmatched last; inside, by collector number; the same
   assert.equal(c21.cards, 6);
   assert.deepEqual(c21.rows.map((r) => [r.name, r.qty]), [['Arcane Signet', 2], ['Sol Ring', 4]]);
   // "alpha" joins "Alpha"; 12 before 120a; a prefixed number (The List's) after the plain ones.
-  assert.deepEqual(s[0].rows.map((r) => r.set), ['LEA 12', 'LEA 120a', 'PLST 2XM-120']);
+  assert.deepEqual(s[0].rows.map((r) => `${r.set} ${r.number}`), ['LEA 12', 'LEA 120a', 'PLST 2XM-120']);
   assert.equal(s[3].rows[0].name, 'Mystery Card');
   // The band's symbol: the set most of its cards are from; none for Unmatched.
   assert.equal(s[0].set, 'lea');
@@ -99,7 +99,8 @@ test("a row's words", () => {
     treatments: ['borderless', 'surgefoil'], quantity: 3,
   }), 3, 'red');
   assert.deepEqual(r, {
-    name: 'Lightning Bolt', qty: 3, set: '2X2 117', condition: 'MP', extras: ['Foil', 'Borderless', 'Surge foil'], bucket: 'red',
+    name: 'Lightning Bolt', qty: 3, set: '2X2', number: '117', condition: 'MP', extras: ['Foil', 'Borderless', 'Surge foil'],
+    bucket: 'red',
   });
   assert.equal(magicTreatmentLabel('extendedart'), 'Extended art');
   assert.equal(magicTreatmentLabel('promopack'), 'Promo pack stamp');

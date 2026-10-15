@@ -113,10 +113,11 @@ Nothing is remembered, and staff picks are never asked for: those happen in the 
 ### 3.5 What each row says
 
 ```
-▌☐  3x Lightning Bolt [Foil] [Borderless]          [2X2 117] [NM]
+[symbol]  Double Masters 2022 [2X2]                    42
+▌☐  3x Lightning Bolt [Foil] [Borderless]              [117] [NM]
 ```
 
-- **One line a card** (owner, 2026-10-14: compact, more cards a page): a **tick box**, the **count first** in a column of its own so every name starts at the same place (`3x` in bold; a single card's `1x` quieter), the **card name** (in full; a long one ends in "…"), its **finish and treatments** in small chips after it (Foil / Etched, then Borderless, Showcase, Extended art, Promo pack stamp…; under the name when they don't fit), and on the right, each in its own column so they line up down the page: the **set and number** chip ("2X2 117"), and the **condition** chip (tinted in the condition's colour). Every chip's text black and bold, easy to read at a glance.
+- **One line a card** (owner, 2026-10-14: compact, more cards a page): a **tick box**, the **count first** in a column of its own so every name starts at the same place (`3x` in bold; a single card's `1x` quieter), the **card name** (in full; a long one ends in "…"), its **finish and treatments** in small chips after it (Foil / Etched, then Borderless, Showcase, Extended art, Promo pack stamp…; under the name when they don't fit), and on the right, each in its own column so they line up down the page: the **collector number** chip ("117"; the set's code is on the band, owner 2026-10-14: a card from another set than its band's, or in Unmatched, keeps its code, "PLST CMA-216"), and the **condition** chip (tinted in the condition's colour). Every chip's text black and bold, easy to read at a glance.
 - The row's **left chip and tint are the card's colour**, exactly as pull-pdf's (owner, 2026-10-14): White, Blue, Black, Red, Green, Multicolor, Artifact (colourless), Lands (a land on either face), Unknown; from the Scryfall card, looked up while printing.
 - **No prices.**
 
@@ -126,7 +127,7 @@ Based on pull-pdf (`C:\ClaudeProjects\pull-pdf`, read-only: its `render.py` and 
 
 - **US Letter, portrait, 2 columns** (pull-pdf solves up to 8 columns onto one page; these rows carry more detail, and a day's batch runs to several pages).
 - **Page header**: the title (**Audit — Magic, Tuesday, October 14, 2026**; **Audit — Buy 3, October 14, 2026**; **Audit — "CU Intake"** for a collection), the printing time, and the card count (cards, not lines). Page numbers in the footer ("Page 2 of 5").
-- **Section bands**: dark and tall enough to see **the set's symbol in white** (owner, 2026-10-14: 24pt bands, 17pt symbols; the set most of the section's cards are from; none for Unmatched), the category name in bold, the section's card count on the right (as pull-pdf's). A section broken by a column or page repeats its band as **"Commander 2015 (cont.)"**.
+- **Section bands**: dark and tall enough to see **the set's symbol in white** (owner, 2026-10-14: 24pt bands, 17pt symbols; the set most of the section's cards are from; none for Unmatched), then the category name in bold and **the set's code in brackets** ("Alpha [LEA]", owner 2026-10-14), the section's card count on the right (as pull-pdf's). A section broken by a column or page repeats its band as **"Commander 2015 [C15] (cont.)"**.
 - **Compact and fixed** (owner, 2026-10-14): 8.6pt names, 6.6pt chips, 13pt rows, 0.39" margins: about 100 cards a page, every printout reading the same.
 - Names outside the PDF's built-in fonts degrade rather than break (as pull-pdf's `_safe`); a card's name is never dropped.
 

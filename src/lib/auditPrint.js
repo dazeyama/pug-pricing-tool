@@ -73,15 +73,17 @@ export function matchCategory(result) {
 }
 
 /**
- * One row's parts (team plan 3.5): the name and count; its set and number
- * ("2X2 117") and condition, which the PDF lines up in chips; its finish and
- * treatments ("Foil", "Borderless"), chips after the name; its colour group.
+ * One row's parts (team plan 3.5): the name and count; its set ("2X2") and
+ * collector number ("117") and condition, which the PDF lines up in chips;
+ * its finish and treatments ("Foil", "Borderless"), chips after the name;
+ * its colour group.
  */
 export function auditRow(line, qty = line.quantity, bucket = 'unknown') {
   return {
     name: line.name_en || line.name,
     qty,
-    set: `${String(line.set_code ?? '').toUpperCase()} ${line.collector_number ?? ''}`.trim(),
+    set: String(line.set_code ?? '').toUpperCase(),
+    number: String(line.collector_number ?? ''),
     condition: line.condition || 'NM',
     extras: [FINISH_WORDS[line.finish], ...(line.treatments ?? []).map(magicTreatmentLabel)].filter(Boolean),
     bucket,

@@ -3,13 +3,24 @@
 // (C:\ClaudeProjects\pull-pdf: dark section bands with their card counts,
 // one row per card tinted by its colour, with a tick box). Compact (owner,
 // 2026-10-14): one line a card, its count first in a column of its own so
-// the names line up, its set and number and its condition in black chips
+// the names line up, its collector number and its condition in black chips
 // lined up on the right, its finish and treatments in chips after its name
-// (wrapping under it only when they don't fit); the set's symbol, large, on
-// each category's band. Sections carry on across columns and pages with
+// (wrapping under it only when they don't fit); the set's symbol, large, and
+// its code in brackets on each category's band ("Alpha [LEA]"), so the rows
+// carry only their numbers. Sections carry on across columns and pages with
 // "(cont.)".
 
 import { jsPDF } from 'jspdf';
+
+/**
+ * A row's number chip: the collector number alone when its set is its
+ * band's (owner, 2026-10-14: the set code is on the band), "PLST CMA-216"
+ * when it's from another set than most of its category's cards, or in
+ * Unmatched, whose cards come from any set.
+ */
+export function numberChip(row, sectionSet) {
+  return sectionSet && row.set.toLowerCase() === sectionSet ? row.number : `${row.set} ${row.number}`.trim();
+}
 
 const PAGE = { w: 612, h: 792 };            // Letter, in points
 const MARGIN = 28;
@@ -160,16 +171,30 @@ export function auditPdf({ title, sections, symbols = {}, printedAt = new Date()
     const countW = doc.getTextWidth(countText);
     doc.setTextColor(205, 208, 222);
     doc.text(countText, x() + COL_W - 7, y + 15.6, { align: 'right' });
+    // The name, then its set's code in brackets and "(cont.)", lighter:
+    // "Alpha [LEA]" (owner, 2026-10-14). A long name gives way, never the code.
+    const tail = [s.set ? `[${s.set.toUpperCase()}]` : '', cont ? '(cont.)' : ''].filter(Boolean).join(' ');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    const tailW = tail ? doc.getTextWidth(` ${tail}`) : 0;
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
     doc.setTextColor(255, 255, 255);
-    doc.text(fit(doc, pdfSafe(cont ? `${s.name} (cont.)` : s.name), x() + COL_W - 14 - countW - textX), textX, y + 15.8);
+    const name = fit(doc, pdfSafe(s.name), x() + COL_W - 14 - countW - tailW - textX);
+    doc.text(name, textX, y + 15.8);
+    if (tail) {
+      const after = textX + doc.getTextWidth(name);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(205, 208, 222);
+      doc.text(` ${pdfSafe(tail)}`, after, y + 15.8);
+    }
     y += BAND + 2;
   };
 
   /** How a row lays out: the name's room, its extras, one line or two. */
-  const layout = (r) => {
-    const set = pdfSafe(r.set);
+  const layout = (r, s) => {
+    const set = pdfSafe(numberChip(r, s.set));
     const setW = chipWidth(set);
     const right = COL_W - 4 - COND_W - 3 - setW - 4;   // the name's room ends at the set chip
     const extras = r.extras.map((e) => pdfSafe(e));
@@ -231,12 +256,12 @@ export function auditPdf({ title, sections, symbols = {}, printedAt = new Date()
   }
   for (const s of sections) {
     if (y > TOP) y += SECTION_GAP;
-    const first = s.rows[0] ? layout(s.rows[0]) : { h: ROW };
+    const first = s.rows[0] ? layout(s.rows[0], s) : { h: ROW };
     // A band never sits alone at a column's foot: it needs its first row under it.
     if (y + BAND + 2 + first.h > BOTTOM) nextColumn();
     band(s, false);
     for (const r of s.rows) {
-      const l = layout(r);
+      const l = layout(r, s);
       if (y + l.h > BOTTOM) {
         nextColumn();
         band(s, true);
