@@ -842,19 +842,23 @@ begin
        from buy_lines l, buys x where l.id = l_low and x.id = b));
   perform pg_temp.ok(s, '… but not a card''s own rate',
     (select internal.line_pct(l, x, 'credit') = 80 from buy_lines l, buys x where l.id = l_own and x.id = b));
-  perform draft_set_custom_rates(a, null, null, u);
 
+  -- Confirmed with its custom rates (45 cash) and a card's own (80 credit) still set.
   perform confirm_buy(b, u, 'DBTEST Rates', '', 50, 65, null, 20, 'cash', '{}', '5550100021');
-  perform pg_temp.ok(s, 'CONFIRM BUY keeps each card''s rates on it',
+  perform pg_temp.ok(s, 'CONFIRM BUY forgets custom and own rates: the buy on the default rates (0057)',
+    (select cash_pct = 50 and credit_pct = 65 and custom_cash_pct is null and custom_credit_pct is null
+       from buys where id = b)
+    and not exists (select 1 from buy_lines where buy_id = b and (custom_cash_pct is not null or custom_credit_pct is not null)));
+  perform pg_temp.ok(s, '… and keeps each card''s default rate on it',
     (select bool_and(case id when l_low then cash_pct = 25 and credit_pct = 50
                              when l_mid then cash_pct = 50 and credit_pct = 65
                              when l_high then cash_pct = 40 and credit_pct = 70
-                             when l_own then cash_pct = 50 and credit_pct = 80 end)
+                             when l_own then cash_pct = 50 and credit_pct = 65 end)
        from buy_lines where buy_id = b));
-  -- $2 + $3 + $40 + $10 = $55; Cash 0.50 + 1.50 + 16 + 5 = 23; Credit 1 + 1.95 + 28 + 8 = 38.95 → $38.
+  -- $2 + $3 + $40 + $10 = $55; Cash 0.50 + 1.50 + 16 + 5 = 23; Credit 1 + 1.95 + 28 + 6.50 = 37.45 → $37.
   select totals into t from events where action = 'buy_confirmed' and target_id = b;
   perform pg_temp.ok(s, 'The Changelog''s totals: each card at its rate, rounded down once',
-    (t ->> 'market')::numeric = 55 and (t ->> 'cash')::numeric = 23 and (t ->> 'credit')::numeric = 38
+    (t ->> 'market')::numeric = 55 and (t ->> 'cash')::numeric = 23 and (t ->> 'credit')::numeric = 37
     and (t ->> 'cash_pct')::numeric = 50 and (t ->> 'credit_pct')::numeric = 65, t::text);
   update settings set value = '{"low": {"under": 50, "credit": 10, "cash": 5}, "high": {"over": 35, "credit": 70, "cash": 40}}'
    where key = 'rate_tiers';
@@ -933,6 +937,7 @@ declare
   v_p uuid;
   v_e uuid;
   v_r uuid;
+  v_l uuid;
   v_nb uuid;
   v_ver integer;
   v_res jsonb;
@@ -943,8 +948,8 @@ begin
   perform draft_add_line(a, pg_temp.line('Dbtest Bolt', 'DBT', '001', 2, 1.00), u, true);
   perform draft_add_line(a, pg_temp.line('Dbtestchu', 'DBTP', '025', 1, 4.00, 'pokemon'), u, true);
   perform confirm_buy(v_b, u, 'DBTEST Brock', '', 50, 65, null, 3, 'cash', '{}', '5550100003');
-  perform pg_temp.ok(s, 'A buy''s custom rates win over the master ones',
-    (select cash_pct = 40 and credit_pct = 60 from buys where id = v_b));
+  perform pg_temp.ok(s, 'Confirmed, a buy forgets its custom rates: the master ones (0057)',
+    (select cash_pct = 50 and credit_pct = 65 and custom_cash_pct is null from buys where id = v_b));
 
   begin
     perform buy_to_project(v_b, '   ', u, a);
@@ -969,8 +974,11 @@ begin
   v_p := buy_to_project(v_b, '  DBTEST   Project  ', u, a, pg_temp.version(v_b), '{}');
   perform pg_temp.ok(s, 'Convert to project makes a Paid/Ours project, keeping what was paid',
     (select kind = 'collection' and status = 'paid' and project and customer_name = 'DBTEST Project'
-            and phone = '5550100003' and paid_price = 3 and paid_method = 'cash' and cash_pct = 40
-            and credit_pct = 60 and created_by = u from buys where id = v_p));
+            and phone = '5550100003' and paid_price = 3 and paid_method = 'cash' and cash_pct is null
+            and credit_pct is null and created_by = u from buys where id = v_p));
+  perform pg_temp.ok(s, '… with no rates, nor its cards (a project is the store''s own cards)',
+    not exists (select 1 from buy_lines where buy_id = v_p
+                  and (cash_pct is not null or credit_pct is not null or custom_cash_pct is not null)));
   perform pg_temp.ok(s, 'Its cards moved; the buy is gone',
     (select count(*) from buy_lines where buy_id = v_p) = 2 and not exists (select 1 from buys where id = v_b));
   perform pg_temp.ok(s, 'One Changelog entry: Project started from Buy N',
@@ -1054,15 +1062,25 @@ begin
   perform pg_temp.ok(s, 'The customer is remembered',
     exists (select 1 from customers where name_key = 'dbtest gary' and phone = '5550100004'));
 
-  -- A project's custom rates stay custom.
+  -- A project has no rates (0057; owner, 2026-10-15).
   v_r := project_create('DBTEST Rates', '', u, a);
   perform lock_acquire(v_r, a, u);
-  perform collection_add_line(v_r, pg_temp.line('Dbtest Bolt', 'DBT', '001', 1, 1.00), true, u, a, null, null);
-  perform collection_update_info(v_r, '{"custom_cash_pct": 45, "custom_credit_pct": 55}', u, a, null);
+  v_l := collection_add_line(v_r, pg_temp.line('Dbtest Bolt', 'DBT', '001', 1, 1.00), true, u, a, null, null);
+  begin
+    perform collection_update_info(v_r, '{"custom_cash_pct": 45, "custom_credit_pct": 55}', u, a, null);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'A project takes no custom rates', sqlerrm, 'project_rates');
+  end;
+  begin
+    perform collection_set_line_rate(v_l, 45, null, u, a, null, null);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, '… nor Set Rate on its cards', sqlerrm, 'project_rates');
+  end;
   v_res := project_to_buy(v_r, u, a, 'DBTEST Gary', '5550100004', 1, 'cash', '', 50, 65);
-  perform pg_temp.ok(s, 'A project''s custom rates stay custom on the buy (its own lock is no bar)',
-    (select cash_pct = 45 and credit_pct = 55 and custom_cash_pct = 45 and custom_credit_pct = 55
-       from buys where id = (v_res ->> 'id')::uuid));
+  perform pg_temp.ok(s, 'Converted, it''s a buy on the default rates (its own lock is no bar)',
+    (select cash_pct = 50 and credit_pct = 65 and custom_cash_pct is null and custom_credit_pct is null
+       from buys where id = (v_res ->> 'id')::uuid)
+    and (select cash_pct = 25 and credit_pct = 50 from buy_lines where id = v_l));
 exception when others then
   declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;
   perform pg_temp.crashed(s, sqlerrm, v_ctx); end;

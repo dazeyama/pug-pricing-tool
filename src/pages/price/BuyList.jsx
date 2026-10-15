@@ -276,6 +276,8 @@ function Totals({
   const pct = (which, label) => {
     const custom = which === 'cash' ? rates.customCash : rates.customCredit;
     const value = rates[which];
+    // No rate controls (a project's list, owner 2026-10-15): just the rate.
+    if (!onSaveRates) return <span>{label} ({Number(value)}%)</span>;
     return (
       <button
         type="button"

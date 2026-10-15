@@ -129,7 +129,8 @@ const JP_NO_MTG = 'Japanese is Pokémon only: switch to EN to search Magic';
  *   add: (line: object, userId: string) => Promise<string|null>,
  *   update: (old: object, line: object, userId: string) => Promise<string|null>,
  *   remove: (line: object, qty: number, userId: string) => Promise<unknown>,
- *   setRates: (cash: number|null, credit: number|null, userId: string) => Promise<unknown>,
+ *   setRates: ((cash: number|null, credit: number|null, userId: string) => Promise<unknown>)|null,
+ *   (setRates and setLineRate null: no rate controls at all, a project's list)
  *   setLineRate?: (line: object, cash: number|null, credit: number|null, userId: string) => Promise<unknown> }} p.list
  *   (setLineRate: right-click → Set Rate on a card, docs/TEAM_FEEDBACK.md 4.3)
  * @param {{ cash: number, credit: number, customCash: number|null, customCredit: number|null, tiers: object }} p.rates
@@ -791,7 +792,7 @@ export default function PricingScreen({
           removeBlocked={removeBlocked}
           onEdit={startEdit}
           onRemove={(line, n) => list.remove(line, n, user?.id)}
-          onSaveRates={(cash, credit) => list.setRates(cash, credit, user?.id)}
+          onSaveRates={list.setRates ? (cash, credit) => list.setRates(cash, credit, user?.id) : null}
           onSetLineRate={list.setLineRate ? (line, cash, credit) => list.setLineRate(line, cash, credit, user?.id) : null}
           onDone={focusSearch}
           details={renderListDetails?.(api)}

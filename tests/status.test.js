@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { statusTone, walkInStatus } from '../src/pages/collections/status.js';
+import { collectionRates, statusTone, walkInStatus } from '../src/pages/collections/status.js';
 
 // Owner, 2026-09-30: a walk-in buy is Paid/Ours until exported, then Completed, game by game.
 test('a walk-in buy is Completed for a game once all its cards in that game are exported', () => {
@@ -21,4 +21,14 @@ test('Paid/Ours follows how it was paid; a walk-in from before the price was ask
   assert.equal(statusTone({ kind: 'walk_in', status: 'completed' }), 'tone-completed');
   assert.equal(statusTone({ status: 'paid', paid_method: 'credit' }), 'tone-paid-credit');
   assert.equal(statusTone({ status: 'paid', paid_method: 'cash' }), 'tone-paid-cash');
+});
+
+// Owner, 2026-10-15: a project has no rates of its own, whatever it carries.
+test("a project's rates are always the default ones", () => {
+  const master = { cash: 33, credit: 66, tiers: { low: {}, high: {} } };
+  const project = { project: true, status: 'paid', cash_pct: 40, credit_pct: 60, custom_cash_pct: 45, custom_credit_pct: 55 };
+  assert.deepEqual(collectionRates(project, master),
+    { cash: 33, credit: 66, customCash: null, customCredit: null, tiers: master.tiers });
+  const kept = { project: false, status: 'paid', cash_pct: 40, credit_pct: 60, custom_cash_pct: null, custom_credit_pct: null };
+  assert.equal(collectionRates(kept, master).cash, 40);
 });

@@ -35,13 +35,15 @@ export const keepsRates = (s) => isClosed(s) || s === 'rejected';
  * A collection's rates (spec 8.9.1, 9.4): the Paid/Ours snapshot (kept while
  * Completed), or Rejected's (migration 0044), else its custom rates where
  * set, else the Master Buy Percentages; with the low-end and high-end rates
- * (`master.tiers`, docs/TEAM_FEEDBACK.md 4.2), for each card's own.
+ * (`master.tiers`, docs/TEAM_FEEDBACK.md 4.2), for each card's own. A project
+ * has no rates of its own (owner, 2026-10-15): always the default ones.
  * @param {object|null} buy
  * @param {{ cash: number, credit: number }} master
  */
 export function collectionRates(buy, master) {
   const customCash = buy?.custom_cash_pct != null ? Number(buy.custom_cash_pct) : null;
   const customCredit = buy?.custom_credit_pct != null ? Number(buy.custom_credit_pct) : null;
+  if (buy?.project) return { cash: master.cash, credit: master.credit, customCash: null, customCredit: null, tiers: master.tiers };
   return Boolean(buy) && keepsRates(buy.status) && buy.cash_pct != null
     ? { cash: Number(buy.cash_pct), credit: Number(buy.credit_pct), customCash, customCredit, tiers: master.tiers }
     : { cash: customCash ?? master.cash, credit: customCredit ?? master.credit, customCash, customCredit, tiers: master.tiers };

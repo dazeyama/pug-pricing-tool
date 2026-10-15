@@ -34,6 +34,7 @@ const MESSAGES = {
   bad_last4: 'The Last 4 ID is up to 4 letters or digits.',
   bad_pct: 'Enter a percentage from 0 to 100, with up to 2 decimals.',
   line_completed: "That card is Completed: its rate doesn't change.",
+  project_rates: "A project has no rates of its own: it's the store's own cards.",
   no_user: 'Pick a user first.',
   // Convert to buy… (owner, 2026-10-10): what CONFIRM BUY asks for, and a project that can't go.
   name_needed: "Enter the customer's name.",

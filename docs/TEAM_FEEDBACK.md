@@ -64,6 +64,7 @@ From the owner's notes and answers. Each is a rule below; the section is in brac
 11. **Magic only**, for now (1.3).
 12. **Printing changes nothing**: no Completed marks, no export record, no remembered matches; no bulk, no prices (3.2).
 13. **Every Magic buy's ⋯ menu gets Print buy**, for single-buy exports (3.1).
+14. **Custom rates only help price a buy** (owner, 2026-10-15): "Custom rates are a tool for pricing buys, but not important to persist", forgotten the way bulk is (5.8). CONFIRM BUY, Convert to project and Convert to buy put the buy on the default rates; **projects have no rates or rate controls at all** ("Projects are just cards we already own"), and REPRICE? doesn't touch rates (4.3, 4.6).
 
 ---
 
@@ -177,7 +178,7 @@ A new Settings panel, **Low-end and high-end rates**, beside Master Buy Percenta
 
 ### 4.3 A card's own rate: Set Rate
 
-- **Right-click a card in a list** (the Buy list on the Price tab, a collection's or project's list) → a small menu with **Set Rate**. It opens the same Cash / Credit editor the list's totals use, **beside that card**.
+- **Right-click a card in a list** (the Buy list on the Price tab, a collection's list; not a project's, which has no rates, decision 14) → a small menu with **Set Rate**. It opens the same Cash / Credit editor the list's totals use, **beside that card**.
 - **Clear** in the editor removes the card's own rate.
 - A card with its own rate is **highlighted** in the list (a tinted row and a small **✎ 75% / 45%** tag); its tooltip says which rate applies and why ("Own rate: Credit 75%, Cash 45%"). Cards on the low-end or high-end rates get a quieter tag ("low end" / "high end") in the tooltip only.
 - **Not in Edit in project view**, not on Completed cards, not on confirmed buys on the day page. An edited card (SAVE EDIT) keeps its own rate.
@@ -205,8 +206,9 @@ Then the totals with them. Nothing to confirm separately: the alert informs, CON
 ### 4.6 Fixed when confirmed
 
 - When a buy is confirmed (and when a collection is marked Paid/Ours, or a project converted to a buy), **each card's Cash and Credit rate is saved on the card**. Changing the settings later never changes a confirmed buy.
+- **Custom rates are forgotten there** (owner, 2026-10-15, decision 14): CONFIRM BUY and Convert to buy save each card's **default** rate (the Master Buy Percentages, or the low-end / high-end rates), not the buy's custom rates or a card's own; they only helped price it. Convert to project leaves the project, and its cards, with no rates.
 - Existing confirmed buys get their buy's rates copied onto their cards by the migration, so every past total stays exactly what it was.
-- REPRICE? (projects) works the rates out again, as it does the prices.
+- REPRICE? doesn't touch rates: a project has none.
 
 ### 4.7 Code
 
@@ -350,13 +352,14 @@ Each phase: build, `npm test`, `npm run build`, lint, the database test run afte
 
 **As built (2026-10-15):**
 - **Migration 0055** (dev): `buy_lines.custom_cash_pct / custom_credit_pct` (Set Rate) and `cash_pct / credit_pct` (kept). The rule is `internal.line_pct` (kept → own → the buy's custom rates, tiers off → low / high → base), the settings row `rate_tiers` read over the shipped defaults by `internal.rate_tiers`; totals by `internal.lines_totals`. The functions that log totals were re-created from their live definitions with only that changed: `buy_event` takes the totals, `collection_totals` is gone. Each past buy's rates were copied onto its cards; on dev every one of the 39 buys with kept rates totals exactly as before. Rehearsed in a rolled-back transaction first.
-- **Kept and cleared** (4.6): kept at CONFIRM BUY, Paid/Ours, Rejected and Convert to buy (a project's cards that came from a buy keep theirs); cleared when a collection goes back to Processing / Priced or is reopened from Rejected, and by REPRICE? for the cards it reprices. Set Rate on a kept card (a project's card from a buy) replaces what was kept.
+- **Kept and cleared** (4.6): kept at CONFIRM BUY, Paid/Ours, Rejected and Convert to buy; cleared when a collection goes back to Processing / Priced or is reopened from Rejected.
+- **Custom rates only help price** (owner, 2026-10-15; migration 0057): CONFIRM BUY and Convert to buy forget the buy's custom rates and its cards' own rates, keeping each card's default rate; Convert to project leaves the project and its cards with no rates; a project refuses custom rates and Set Rate (`project_rates`), and its list shows Cash (33%) / Credit (66%) as plain text with no right-click menu; REPRICE? leaves rates alone. The one project on dev that came from a buy forgot its rates (57 cards); no confirmed buy's totals changed. A customer collection keeps its custom rates and Set Rate, kept at Paid/Ours as before.
 - **Merging** (owner, 2026-10-15; migration 0056): the same card in the same condition still merges, own rate or not: added copies take the line's own rate, and an edited card merged into its copy keeps an own rate either had (each side on its own). 0055 had kept them apart; the owner: "I can't imagine a situation where I would actually want to treat it as a different rate."
-- **Set Rate**: right-click a card in the Buy list, a collection's or a project's list → **Set Rate** → Cash and Credit beside the card, each saved on blur or Enter like the list's rates, with what it would otherwise get beside the box ("high end 40%"); typing that back, or **Clear**, removes the card's own rate. Blocked (with why) in Edit in project view, on locked collections and on Completed cards. A collection's change is in the Changelog (**Card rate set**, Actions), with each rate's before and after.
+- **Set Rate**: right-click a card in the Buy list or a collection's list → **Set Rate** → Cash and Credit beside the card, each saved on blur or Enter like the list's rates, with what it would otherwise get beside the box ("high end 40%"); typing that back, or **Clear**, removes the card's own rate. Blocked (with why) in Edit in project view, on locked collections and on Completed cards. A collection's change is in the Changelog (**Card rate set**, Actions), with each rate's before and after.
 - **Totals**: rate by rate, so a list on one rate comes to exactly what it did. The labels keep the base rate; **mixed** beside them when some cards are on others ("Mixed rates: 8 cards at the low-end rates, 1 card at its own rate."). The day page uses the rates kept on each card.
 - **Priced's credit offer**: as before on one rate; with mixed rates, the cash offer × the cards' Credit ÷ their Cash, so it's still the same deal.
 - **The alert** (4.5) on CONFIRM BUY, Paid/Ours and Convert to buy: "⚠ 2 cards have their own rates", each with its own side(s) against the rate it would otherwise get.
-- Tests: `tests/rates.test.js` (10), a folded Changelog run; database test run 346 checks (25 new, "Individual rates"). The sections written before T2 run with the tiers out of the way, so their numbers stand.
+- Tests: `tests/rates.test.js` (10), a folded Changelog run; database test run 350 checks. The sections written before T2 run with the tiers out of the way, so their numbers stand.
 
 **Where to look**: a $1 card and a $40 card in one buy (their chips and the totals); Set Rate on one card (highlight, totals, the alert at CONFIRM BUY); custom rates on the buy (low/high rules off); a past buy's totals unchanged.
 

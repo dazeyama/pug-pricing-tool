@@ -345,8 +345,9 @@ function CollectionScreen({ id }) {
     add: col.add,
     update: col.update,
     remove: col.remove,
-    setRates: col.setRates,
-    setLineRate: col.setLineRate,
+    // A project has no rate controls (owner, 2026-10-15): it's the store's own cards.
+    setRates: buy?.project ? null : col.setRates,
+    setLineRate: buy?.project ? null : col.setLineRate,
   };
 
   if (col.loaded && col.missing && !seen.current && !deleting.current) {
