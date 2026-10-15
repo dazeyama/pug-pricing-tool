@@ -97,11 +97,22 @@ returns jsonb language sql immutable as $f$
                             'sell_basis', jsonb_build_object('test', 'dbtest'), 'link', p_link)
 $f$;
 
+-- A bulk line as the app sends it (bulk.js buildBulkLine; 0058).
+create function pg_temp.bulk(p_kind text, p_qty integer, p_value numeric)
+returns jsonb language sql immutable as $f$
+  select jsonb_build_object(
+    'game', case when p_kind like 'pkm%' then 'pokemon' else 'mtg' end, 'lang', 'en', 'bulk_kind', p_kind,
+    'name', 'DBTEST ' || p_kind, 'name_key', 'dbtest ' || p_kind, 'set_code', 'BULK', 'set_name', 'Bulk',
+    'collector_number', '', 'finish', case when p_kind like 'pkm%' then 'normal' else 'nonfoil' end,
+    'first_edition', false, 'treatments', '[]'::jsonb, 'condition', 'NM',
+    'quantity', p_qty, 'unit_price', p_value, 'market_price', p_value, 'price_source', 'bulk', 'priced_at', now())
+$f$;
+
 grant execute on function pg_temp.ok(text, text, boolean, text), pg_temp.err(text, text, text, text),
   pg_temp.crashed(text, text, text), pg_temp.put(text, text), pg_temp.id(text), pg_temp.version(uuid),
   pg_temp.line(text, text, text, integer, numeric, text, text, text),
   pg_temp.buy(uuid, uuid, text, text, jsonb[]), pg_temp.line_id(uuid, text, text),
-  pg_temp.match(uuid, text, numeric, text) to public;
+  pg_temp.match(uuid, text, numeric, text), pg_temp.bulk(text, integer, numeric) to public;
 
 
 -- ======================================================= Structure (as the owner)
@@ -921,6 +932,61 @@ begin
   perform collection_set_status(c, 'processing', u, a, null, null, null);
   perform pg_temp.ok(s, 'Unlocked again: worked out live, its own rate kept',
     (select cash_pct is null and credit_pct is null and custom_cash_pct = 45 from buy_lines where id = l_c));
+exception when others then
+  declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;
+  perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
+end $$;
+
+-- =========================================================== Bulk (0058)
+do $$
+declare
+  s text := 'Bulk';
+  u uuid := pg_temp.id('u1');
+  a uuid := pg_temp.id('devA');
+  b uuid;
+  l_card uuid;
+  l_bulk uuid;
+  v_id uuid;
+begin
+  b := draft_for_device(a, u);
+  l_card := draft_add_line(a, pg_temp.line('Dbtest Bulk Card', 'DBK', '001', 1, 5.00), u, true);
+  l_bulk := draft_add_line(a, pg_temp.bulk('mtg_100_common', 10, 1.50), u, true);
+  perform pg_temp.ok(s, 'Bulk is a line of its own, marked as bulk',
+    (select bulk_kind = 'mtg_100_common' and set_code = 'BULK' and price_source = 'bulk' and quantity = 10
+       from buy_lines where id = l_bulk));
+  v_id := draft_add_line(a, pg_temp.bulk('mtg_100_common', 5, 1.50), u, true);
+  perform pg_temp.ok(s, 'The same item again adds to its line',
+    v_id = l_bulk and (select quantity from buy_lines where id = l_bulk) = 15);
+  v_id := draft_add_line(a, pg_temp.bulk('mtg_10_fifty', 1, 1.50), u, true);
+  perform pg_temp.ok(s, '… another item at the same value is a line of its own', v_id <> l_bulk);
+  perform draft_remove_line(v_id, 1, u);
+  begin
+    perform draft_add_line(a, pg_temp.line('Dbtest Not Bulk', 'DBK', '002', 1, 1.00) || '{"price_source": "bulk"}', u, false);
+    raise exception 'dbt_no_error';
+  exception when others then
+    perform pg_temp.ok(s, 'Only bulk is priced as bulk', sqlstate = '23514', sqlerrm);
+  end;
+  begin
+    perform draft_add_line(a, pg_temp.bulk('mtg_100_rare', 1, 2.40) || '{"set_code": "DBK"}', u, false);
+    raise exception 'dbt_no_error';
+  exception when others then
+    perform pg_temp.ok(s, '… and bulk keeps its placeholders', sqlstate = '23514', sqlerrm);
+  end;
+  -- $1.50 is under the low end ($3): a card would get 25 / 50.
+  perform pg_temp.ok(s, 'Bulk never takes the low-end or high-end rates',
+    (select internal.line_pct(l, x, 'cash') = 50 and internal.line_pct(l, x, 'credit') = 65
+       from buy_lines l, buys x where l.id = l_bulk and x.id = b));
+
+  perform confirm_buy(b, u, 'DBTEST Bulk', '', 50, 65, null, 10, 'cash', '{}', '5550100022');
+  perform buy_mark_completed(b, 'mtg', u, a, true);
+  perform pg_temp.ok(s, 'Mark as completed leaves bulk out',
+    (select completed_at is null from buy_lines where id = l_bulk)
+    and (select completed_at is not null from buy_lines where id = l_card));
+  perform pg_temp.ok(s, '… and the buy is Completed: all its real cards are',
+    (select 'mtg' = any(completed_games) from buys_in_range(now() - interval '1 hour', now() + interval '1 hour') r
+      where r.id = b));
+  perform pg_temp.ok(s, 'The header search doesn''t find bulk',
+    not exists (select 1 from global_search('DBTEST mtg_100', null, null, null, true) g where g.line_id = l_bulk));
 exception when others then
   declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;
   perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
