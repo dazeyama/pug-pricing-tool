@@ -326,8 +326,8 @@ function Totals({
  * × is hidden too; a Paid/Ours collection keeps it (owner, 2026-09-29).
  *
  * Right-clicking a card (docs/TEAM_FEEDBACK.md 4.3) opens Set Rate
- * (`onSetLineRate`), blocked like the list's rates (`ratesLocked`, `locked`)
- * and on Completed cards. A card with its own rate is tinted, with a ✎ tag.
+ * (`onSetLineRate`), and Clear Rate on a card with its own rate, blocked like
+ * the list's rates (`ratesLocked`, `locked`) and on Completed cards. A card with its own rate is tinted, with a ✎ tag.
  */
 export default function BuyList({
   title = 'Buy list', lines, loaded, rates, master, ratesTitle, flashId, hits = null, editingId,
@@ -370,6 +370,17 @@ export default function BuyList({
     if (why) toast(`${why}.`, 'err');
     else if (!canEdit) editBlocked();
     else setRateFor(l.id);
+  }
+  /** Clear Rate (owner, 2026-10-15): straight from the menu, on a card with its own rate. */
+  async function clearRate(l) {
+    setRateMenu(null);
+    const why = rateBlocked(l);
+    if (why) toast(`${why}.`, 'err');
+    else if (!canEdit) editBlocked();
+    else {
+      await onSetLineRate(l, null, null);
+      onDone();
+    }
   }
   const closeRate = useCallback(() => {
     setRateFor(null);
@@ -540,6 +551,17 @@ export default function BuyList({
           >
             Set Rate
           </button>
+          {hasOwnRate(rateMenu.line) && (
+            <button
+              type="button"
+              role="menuitem"
+              className={rateBlocked(rateMenu.line) ? 'is-blocked' : ''}
+              title={rateBlocked(rateMenu.line) ?? `Back to Credit ${otherRate(rateMenu.line, rates).credit}%, Cash ${otherRate(rateMenu.line, rates).cash}%`}
+              onClick={() => clearRate(rateMenu.line)}
+            >
+              Clear Rate
+            </button>
+          )}
         </div>
       )}
       {rateLine && (
