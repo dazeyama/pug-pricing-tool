@@ -786,6 +786,16 @@ locks **automatically on the first card**.
     function: Undo's count down and the new scan's count up leave the number scanned as it was.
     Undo refused (the line gone, no user picked) sends nothing and says why; a card with no foil
     printing says so; no answer in 30 seconds, it gives up and says to check the list.
+  - **NONFOIL?** (owner: "do the same for nonfoil when the settings are reversed"): the same beside
+    Undo when the last card was added foil or etched: its copy off, the card sent again nonfoil
+    (`refinish(scan, toFoil)` does both ways).
+  - **+1** (owner: "adds another identical copy of the last scanned card. (So I don't have to wait
+    for the long scan now) Also have tapping on the video feed center run this +1 action as well"):
+    a small button beside Scan card, and a tap on the middle half of the picture (25–75% across and
+    down), send the last card scanned again as it was (its printing, finish and condition), nothing
+    read; "+1" shows over the picture as it goes. Only while that card is on its way or added (not
+    once undone, failed, skipped or waiting for a price), and not while its finish is being changed.
+    The picture takes taps without the double-tap zoom (`touch-action: manipulation`).
 - **New card or the same one:** the art (the middle of the art box at its locked place) as a 16 × 10
   thumbnail of true averages, brightness and contrast evened out (`artPrint`, `artDistance` with a
   one-cell shift). After a card is sent its art is held; **nothing is read while the art is under 12

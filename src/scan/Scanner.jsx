@@ -45,8 +45,10 @@ const CONDITION_KEY = 'pug.scan.condition';
 const FOIL_KEY = 'pug.scan.foil';
 // Auto scan on or off (owner, 2026-10-16: an "Auto?" checkbox), kept the same way.
 const AUTO_KEY = 'pug.scan.auto';
-// FOIL? gives up if the computer hasn't taken the normal copy off by then.
+// FOIL? / NONFOIL? gives up if the computer hasn't taken the old copy off by then.
 const FOIL_GIVE_UP_MS = 30_000;
+// +1 copies the last card scanned while it's on its way or added.
+const COPYABLE = new Set(['sent', 'pricing', 'added']);
 
 // scan_send's refusals, as the phone says them.
 const SEND_MESSAGES = {
@@ -159,43 +161,46 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     view.current.pending = null;   // auto scan starts afresh: two looks (or one sure one) again
   };
 
-  // FOIL? (owner, 2026-10-16: "tag the last card scanned as foil … edits the last card scanned to be
-  // a foil instead"): its copy taken off the computer's list, as Undo does, and once the computer
-  // says it's off, the card sent again as foil, priced as foil. The count of cards scanned stays.
-  const refoil = useRef(null);                     // { id, fields, seenUndo }
-  const [foiling, setFoiling] = useState(null);    // the scan being made foil
-  async function makeFoil(scan) {
-    if (foiling) return;
-    setFoiling(scan.id);
+  // FOIL? and NONFOIL? (owner, 2026-10-16: "tag the last card scanned as foil … edits the last card
+  // scanned to be a foil instead"; "do the same for nonfoil when the settings are reversed"): its
+  // copy taken off the computer's list, as Undo does, and once the computer says it's off, the card
+  // sent again in the other finish, priced as that. The count of cards scanned stays.
+  const swap = useRef(null);                       // { id, fields, seenUndo, was }
+  const [swapping, setSwapping] = useState(null);  // the scan whose finish is being changed
+  async function refinish(scan, toFoil) {
+    if (swapping) return;
+    const was = toFoil ? 'normal' : 'foil';
+    setSwapping(scan.id);
     try {
       const card = await scry.cardById(scan.scryfall_id);
-      const finish = card ? scanFinish(card, true) : null;
-      if (!card || finish === 'nonfoil' || finish === scan.finish) {
-        say('warn', card ? 'This card has no foil printing.' : "Couldn't find that card on Scryfall.", scanText(scan));
-        setFoiling(null);
+      const finish = card ? scanFinish(card, toFoil) : null;
+      if (!card || finish === scan.finish || (finish === 'nonfoil') !== !toFoil) {
+        say('warn', card ? `This card has no ${toFoil ? 'foil' : 'nonfoil'} printing.` : "Couldn't find that card on Scryfall.", scanText(scan));
+        setSwapping(null);
         return;
       }
       const e = await undo(scan.id);
       if (e) {
-        say('err', `Couldn't make it foil: ${e}`, scanText(scan));
-        setFoiling(null);
+        say('err', `Couldn't make it ${toFoil ? 'foil' : 'nonfoil'}: ${e}`, scanText(scan));
+        setSwapping(null);
         return;
       }
-      refoil.current = {
+      swap.current = {
         id: scan.id,
         fields: { ...cardFields(card), finish, condition: scan.condition, tier: scan.tier ?? 1 },
         seenUndo: false,
+        was,
       };
-      say('muted', `Making it foil: taking the normal copy off ${computer}…`, scanText(scan));
+      say('muted', `Making it ${toFoil ? 'foil' : 'nonfoil'}: taking the ${was} copy off ${computer}…`, scanText(scan));
       setTimeout(() => {
-        if (refoil.current?.id !== scan.id) return;
-        refoil.current = null;
-        setFoiling(null);
-        say('err', `${computer} didn't take the normal copy off: check the list there.`, scanText(scan));
+        if (swap.current?.id !== scan.id) return;
+        swap.current = null;
+        setSwapping(null);
+        say('err', `${computer} didn't take the ${was} copy off: check the list there.`, scanText(scan));
       }, FOIL_GIVE_UP_MS);
     } catch (e) {
-      say('err', `Couldn't make it foil: ${e.message}`, scanText(scan));
-      setFoiling(null);
+      say('err', `Couldn't change it: ${e.message}`, scanText(scan));
+      setSwapping(null);
     }
   }
   const say = (tone, text, title = null) => setLocal({ tone, text, title, at: Date.now() });
@@ -203,6 +208,38 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const blocked = blockedText(session);
   const needs = [...scans].reverse().find((s) => s.status === 'needs_price') ?? null;
   const latest = scans[0] ?? null;
+
+  // +1 (owner, 2026-10-16: "adds another identical copy of the last scanned card. (So I don't have
+  // to wait for the long scan now)"): the last card scanned sent again as it was (printing, finish,
+  // condition), nothing read; the button by Scan card, or a tap on the middle of the picture.
+  const lastCard = latest && COPYABLE.has(latest.status) ? latest : null;
+  const [plusAt, setPlusAt] = useState(0);         // when +1 last showed over the picture
+  async function plusOne() {
+    const s = lastCard;
+    if (!s || swapping) return;
+    if (blocked) {
+      say('warn', blocked);
+      play('error');
+      return;
+    }
+    setPlusAt(Date.now());
+    const r = await send({
+      scryfall_id: s.scryfall_id, name: s.name, set_code: s.set_code, collector_number: s.collector_number,
+      finish: s.finish, condition: s.condition, tier: s.tier ?? 1,
+    });
+    if (r.error) {
+      say('err', `Couldn't add another: ${SEND_MESSAGES[r.error] ?? r.error}`, scanText(s));
+      play('error');
+    }
+  }
+  /** A tap on the middle half of the picture is +1. */
+  function tapPicture(e) {
+    if (!camera.on) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width;
+    const y = (e.clientY - r.top) / r.height;
+    if (x > 0.25 && x < 0.75 && y > 0.25 && y < 0.75) plusOne();
+  }
 
   // When the latest scan last changed, by this phone's clock (the database's
   // may differ from it), so the strip can tell whether its own message is newer.
@@ -212,23 +249,23 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     if (latestKey) setLatestAt(Date.now());
   }, [latestKey]);
 
-  // FOIL?: the normal copy off, the foil one sent; Undo refused (the line gone, no user), nothing sent.
+  // FOIL? / NONFOIL?: the old copy off, the new one sent; Undo refused (the line gone, no user), nothing sent.
   useEffect(() => {
-    const r = refoil.current;
+    const r = swap.current;
     const s = r && scans.find((x) => x.id === r.id);
     if (!s) return;
     if (s.status === 'undo' || s.status === 'undoing') {
       r.seenUndo = true;
     } else if (s.status === 'undone') {
-      refoil.current = null;
+      swap.current = null;
       send(r.fields).then((res) => {
-        if (res.error) say('err', `Couldn't send the foil copy: ${SEND_MESSAGES[res.error] ?? res.error}`);
-        setFoiling(null);
+        if (res.error) say('err', `Couldn't send the new copy: ${SEND_MESSAGES[res.error] ?? res.error}`);
+        setSwapping(null);
       });
     } else if (s.status === 'added' && r.seenUndo) {
-      refoil.current = null;
-      setFoiling(null);
-      say('err', s.note ?? `${computer} couldn't take the normal copy off.`, scanText(s));
+      swap.current = null;
+      setSwapping(null);
+      say('err', s.note ?? `${computer} couldn't take the ${r.was} copy off.`, scanText(s));
     }
   }, [scans, send, computer]);
 
@@ -617,7 +654,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const shown = picture && room.w && room.h ? showPart(picture, part, room.w, room.h, lock ? 'contain' : 'cover') : null;
   const outline = !lock && seenCard && shown ? onScreen(shown, seenCard) : null;
   const showUndo = strip === stripOfLatest && latest?.status === 'added';
-  const showFoil = showUndo && latest.finish === 'nonfoil';
+  const toFoil = latest?.finish === 'nonfoil';
 
   return (
     <div className="scanner">
@@ -667,16 +704,18 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
             ↶ Undo
           </button>
         )}
-        {/* FOIL? (owner, 2026-10-16): the last card made foil. */}
-        {showFoil && (
+        {/* FOIL? on a normal card, NONFOIL? on a foil one (owner, 2026-10-16): the last card's finish changed. */}
+        {showUndo && (
           <button
             type="button"
-            className="btn small scan-make-foil"
-            disabled={Boolean(foiling)}
-            title="The last card is foil: take the normal copy off and add it as foil"
-            onClick={() => makeFoil(latest)}
+            className={`btn small scan-refinish${toFoil ? ' to-foil' : ''}`}
+            disabled={Boolean(swapping)}
+            title={toFoil
+              ? 'The last card is foil: take the normal copy off and add it as foil'
+              : 'The last card is normal: take the foil copy off and add it as nonfoil'}
+            onClick={() => refinish(latest, toFoil)}
           >
-            FOIL?
+            {toFoil ? 'FOIL?' : 'NONFOIL?'}
           </button>
         )}
       </div>
@@ -708,7 +747,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
 
       {/* The camera takes the space that's left; notices and sheets lie over it. */}
       <div className="scan-middle" ref={middle}>
-        <div className={`scan-stage${camera.on ? ' live' : ''}`}>
+        <div className={`scan-stage${camera.on ? ' live' : ''}`} onClick={tapPicture}>
           <video
             ref={videoRef}
             className="scan-video"
@@ -726,6 +765,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
             </div>
           )}
           {ocrLoading && <div className="scan-stage-note">Loading the card reader (first scan only)…</div>}
+          {plusAt > 0 && <div key={plusAt} className="scan-plus-flash" aria-hidden="true">+1</div>}
         </div>
         {(blocked || camera.error) && (
           <div className={`scan-notice ${camera.error ? 'err' : 'warn'} scan-over`} role="alert">{camera.error ?? blocked}</div>
@@ -753,16 +793,27 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
 
       {/* Scan card across the top; Auto?, Reset view, the light and Stop under it (owner, 2026-10-16). */}
       <div className="scan-actions">
-        <button
-          type="button"
-          className={`btn primary scan-now${reading ? ' reading' : ''}`}
-          disabled={!camera.on || reading || Boolean(needs) || Boolean(pick)}
-          aria-busy={reading}
-          onClick={scanCard}
-        >
-          {progress && <ScanBar progress={progress} />}
-          <span className="scan-now-label">{reading ? 'Reading…' : 'Scan card'}</span>
-        </button>
+        <div className="scan-now-row">
+          <button
+            type="button"
+            className={`btn primary scan-now${reading ? ' reading' : ''}`}
+            disabled={!camera.on || reading || Boolean(needs) || Boolean(pick)}
+            aria-busy={reading}
+            onClick={scanCard}
+          >
+            {progress && <ScanBar progress={progress} />}
+            <span className="scan-now-label">{reading ? 'Reading…' : 'Scan card'}</span>
+          </button>
+          <button
+            type="button"
+            className="btn scan-plus"
+            disabled={!lastCard || Boolean(swapping)}
+            title={lastCard ? `Another ${scanText(lastCard)} (or tap the middle of the picture)` : 'Scan a card first'}
+            onClick={plusOne}
+          >
+            +1
+          </button>
+        </div>
         <div className="scan-actions-row">
           <label className={`btn scan-auto${autoOn ? ' on' : ''}`} title="Scan cards by themselves">
             <input type="checkbox" checked={autoOn} onChange={(e) => setAuto(e.target.checked)} />

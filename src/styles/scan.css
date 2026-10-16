@@ -165,6 +165,26 @@ html[data-scan] .toast { max-width: none; }
   background: #fff;
 }
 .scan-stage:not(.live) .scan-video { visibility: hidden; }
+/* A tap on the middle of the picture is +1: no double-tap zoom in the way; "+1" shown as it's sent. */
+.scan-stage.live { touch-action: manipulation; cursor: pointer; }
+.scan-plus-flash {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  padding: 10px 22px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, .55);
+  color: #fff;
+  font-size: 30px;
+  font-weight: 800;
+  pointer-events: none;
+  animation: scan-plus-flash 700ms ease-out forwards;
+}
+@keyframes scan-plus-flash {
+  from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  to { opacity: 0; transform: translate(-50%, -70%) scale(1.15); }
+}
 .scan-stage-off {
   position: absolute;
   inset: 0;
@@ -196,7 +216,10 @@ html[data-scan] .toast { max-width: none; }
 .scan-actions-row .btn { flex: 1; }
 .scan-actions-row .scan-torch { flex: none; }
 .scan-actions .btn { min-height: 46px; font-size: 15px; font-weight: 600; white-space: nowrap; }
-.scan-now { position: relative; overflow: hidden; }
+/* Scan card and +1 (another copy of the last card) share the top row. */
+.scan-now-row { display: flex; gap: 8px; }
+.scan-now { flex: 1; position: relative; overflow: hidden; }
+.scan-plus { flex: none; min-width: 64px; font-size: 17px; }
 /* Auto?: auto scan on or off, a checkbox as a button. */
 .scan-auto { display: inline-flex; align-items: center; justify-content: center; gap: 7px; user-select: none; cursor: pointer; }
 .scan-auto.on { background: var(--accent-2); border-color: var(--accent-2); }
@@ -287,11 +310,9 @@ html[data-scan] .toast { max-width: none; }
 .scan-pick-set { font-size: 13px; font-weight: 600; text-align: center; line-height: 1.25; }
 .scan-pick-meta { font-size: 12px; color: var(--muted); }
 .scan-undo { flex: none; min-height: 38px; }
-/* FOIL?: the last card made foil, in the foil colours. */
-.scan-make-foil {
-  flex: none;
-  min-height: 38px;
-  font-weight: 700;
+/* FOIL? / NONFOIL?: the last card's finish changed; FOIL? in the foil colours. */
+.scan-refinish { flex: none; min-height: 38px; font-weight: 700; }
+.scan-refinish.to-foil {
   color: #fff;
   border-color: transparent;
   background: linear-gradient(115deg, #5a5bc4, #2f9dc4 40%, #b8459b 80%);
