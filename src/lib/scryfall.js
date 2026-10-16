@@ -271,8 +271,12 @@ export function hasBackFace(card) {
  * @param {string} number  as printed: "125", "263s", "4★"
  * @returns {Promise<object|null>}  a Scryfall card
  */
+const bySetNumberCache = memoryCache(DAY);
 export function cardBySetNumber(set, number) {
-  return transport.getJson(`${API}/cards/${encodeURIComponent(String(set).toLowerCase())}/${encodeURIComponent(number)}`);
+  const code = String(set).toLowerCase();
+  // Auto scan reads the same card again and again while it's in view: ask once.
+  return bySetNumberCache.get(`${code}/${number}`,
+    () => transport.getJson(`${API}/cards/${encodeURIComponent(code)}/${encodeURIComponent(number)}`));
 }
 
 const byIdCache = memoryCache(DAY / 4);

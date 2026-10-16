@@ -3,6 +3,7 @@ import { CONDITIONS } from '../lib/ladder.js';
 import { readSession, writeSession } from '../lib/local.js';
 import { formatMoney } from '../lib/money.js';
 import { scanFinish, scanText } from '../lib/scanPrice.js';
+import { useConnection } from '../state/connection.jsx';
 import { usePairing } from './usePairing.js';
 import { useScans } from './useScans.js';
 import { useCamera } from './camera.js';
@@ -11,6 +12,13 @@ import { HIGH, MEDIUM, locate, lookupReading, readCollectorLine, setCodePattern 
 import { ocrWorker, onOcrStatus } from './ocr.js';
 import { isMuted, play, setMuted, unlockSounds } from './sounds.js';
 import NeedsPriceSheet from './NeedsPriceSheet.jsx';
+
+// Auto scan (docs/SCAN_FUNCTION.md 6.3): the rest between one look at the
+// camera and the next, and the wait before the first.
+const REST_MS = 300;
+const FIRST_LOOK_MS = 800;
+// A scan still with the computer: auto scan waits for its outcome.
+const WITH_COMPUTER = new Set(['sent', 'pricing']);
 
 // The condition and finish for the next scans, kept for this tab (a reload keeps them).
 const CONDITION_KEY = 'pug.scan.condition';
@@ -73,6 +81,9 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const [local, setLocal] = useState(null);       // the phone's own message: { tone, title?, text, at }
   const [reading, setReading] = useState(false);
   const [ocrLoading, setOcrLoading] = useState(false);
+  // The card last sent is still in view (auto scan won't send it again).
+  const [sameCard, setSameCard] = useState(false);
+  const { offline } = useConnection();
   const busy = useRef(false);
   const lastSent = useRef(null);                  // the printing and finish last sent (6.3)
   const computer = session?.device_label ?? 'the computer';
@@ -90,6 +101,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const blocked = blockedText(session);
   const needs = [...scans].reverse().find((s) => s.status === 'needs_price') ?? null;
   const latest = scans[0] ?? null;
+  const withComputer = Boolean(latest && WITH_COMPUTER.has(latest.status));
 
   // A sound when the computer says how a scan went (not for scans already done when the page opened).
   const seen = useRef(null);
@@ -161,35 +173,48 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     unlockSounds();
     if (await camera.start()) {
       // Ready the reader and the set list while the card is being lined up.
-      ocrWorker().catch((e) => console.warn('The card reader failed to load', e));
+      ocrWorker()
+        .catch((e) => console.warn('The card reader failed to load', e))
+        .finally(() => setOcrLoading(false));
       setCodePattern().catch(() => {});
     }
   }
 
   /**
-   * Read the card in front of the camera and send it (6.1, 6.4). `manual`:
-   * Scan card, which takes a fair read and always sends, the same card again
-   * included (a second copy).
+   * Read the card in front of the camera and send it (6.1, 6.3, 6.4).
+   * `manual`: Scan card, which takes a fair read, says what went wrong, and
+   * always sends, the same card again included (a second copy). Auto scan
+   * takes only sure reads, drops the rest silently, and never sends the card
+   * it last sent.
    */
   async function scanFrame({ manual }) {
     if (busy.current || !camera.on) return;
     if (blocked) {
-      say('warn', blocked);
-      if (manual) play('error');
+      if (manual) {
+        say('warn', blocked);
+        play('error');
+      }
       return;
     }
     if (needs) {
-      say('warn', 'Answer the card that needs a price first.');
+      if (manual) say('warn', 'Answer the card that needs a price first.');
       return;
     }
     busy.current = true;
-    setReading(true);
-    if (manual) say('muted', 'Reading…');
+    if (manual) {
+      setReading(true);
+      say('muted', 'Reading…');
+    }
     try {
       const frame = camera.capture();
       if (!frame) return;
       const pattern = await setCodePattern();
       const blocks = locate(frame);
+      // Nothing like a collector line in view: no card (or it's been taken away).
+      if (!blocks.length && !manual) {
+        setSameCard(false);
+        return;
+      }
       const found = blocks.length
         ? await lookupReading(await readCollectorLine(frame, pattern, blocks), pattern, manual ? MEDIUM : HIGH)
         : null;
@@ -209,7 +234,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       const finish = scanFinish(card, foil);
       const key = `${card.id}:${finish}`;
       if (!manual && key === lastSent.current) {
-        say('muted', 'Same card: tap Scan card to add another copy.', scanText({ ...cardFields(card), finish, condition }));
+        setSameCard(true);
         return;
       }
       const r = await send({ ...cardFields(card), finish, condition, tier: 1 });
@@ -220,16 +245,44 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         return;
       }
       lastSent.current = key;
+      setSameCard(true);
       setLocal(null);
     } catch (e) {
       console.error('Scan failed', e);
-      say('err', `Couldn't read it: ${e.message}`);
-      if (manual) play('error');
+      if (manual) {
+        say('err', `Couldn't read it: ${e.message}`);
+        play('error');
+      }
     } finally {
       busy.current = false;
-      setReading(false);
+      if (manual) setReading(false);
     }
   }
+
+  // Auto scan (6.3): while the camera runs, look again and again, resting
+  // between looks; paused while the computer can't take cards, a card needs
+  // a price, the last scan is still with the computer (so sounds and the
+  // strip keep step with the list), the connection is down, or the page is
+  // hidden. Stop ends it with the camera.
+  const auto = useRef(null);
+  auto.current = { scanFrame, paused: Boolean(blocked) || Boolean(needs) || withComputer || offline };
+  useEffect(() => {
+    if (!camera.on) return undefined;
+    let alive = true;
+    let timer;
+    const look = async () => {
+      if (!alive) return;
+      if (!auto.current.paused && !busy.current && document.visibilityState === 'visible') {
+        await auto.current.scanFrame({ manual: false });
+      }
+      if (alive) timer = setTimeout(look, REST_MS);
+    };
+    timer = setTimeout(look, FIRST_LOOK_MS);
+    return () => {
+      alive = false;
+      clearTimeout(timer);
+    };
+  }, [camera.on]);
 
   // The strip: the phone's own message, or the latest scan's state, whichever is newer.
   const latestAt = latest ? Date.parse(latest.handled_at ?? latest.created_at) : 0;
@@ -334,6 +387,13 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           {strip.title && <strong>{strip.title}</strong>}
           <span>{strip.text}</span>
         </div>
+      )}
+      {camera.on && !needs && (
+        <p className="scan-hint">
+          {sameCard
+            ? 'Same card in view: it won’t be added again. Tap Scan card for another copy.'
+            : 'Cards are added by themselves when they read clearly. Scan card reads the one in view now.'}
+        </p>
       )}
     </div>
   );
