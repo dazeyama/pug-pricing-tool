@@ -11,8 +11,9 @@ import { onScreen, showPart } from './guide.js';
 import { HIGH, MEDIUM, locate, lookupReading, readCollectorLine, readPrepared, setCodePattern } from './read.js';
 import { findCard } from './cardEdges.js';
 import {
-  ART_CHANGED, anchorBlock, artDistance, artPrint, blockOnCard, collectorCutout, cropTo, makeLock, movedFrom, samePlace,
+  ART_CHANGED, anchorBlock, artDistance, artPrint, blockOnCard, cropTo, makeLock, movedFrom, samePlace,
 } from './lock.js';
+import { straightCutout } from './straighten.js';
 import { defaultCreateCanvas } from './recognition/canvasUtil.js';
 import { ocrWorker, onOcrStatus } from './ocr.js';
 import { isMuted, play, setMuted, unlockSounds } from './sounds.js';
@@ -354,7 +355,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       const min = manual ? MEDIUM : HIGH;
       let art = null;
       if (lock) {
-        const cut = collectorCutout(frame, lock, defaultCreateCanvas);
+        // This card's collector line, found in its zone and set level (owner, 2026-10-16).
+        const cut = straightCutout(frame, lock, defaultCreateCanvas).canvas;
         showCutout(cut);
         art = artPrint(frame, lock);
         const v = view.current;

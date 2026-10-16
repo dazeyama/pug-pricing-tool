@@ -684,6 +684,19 @@ locks **automatically on the first card**.
   (`collectorCutout`; a light corner is turned round first). **That cutout is read first**; if it
   doesn't read, the line is looked for on the card's crop. Older cards' titles are read from the
   locked card.
+- **The collector strip follows each card and is set level** (owner, 2026-10-16, after trying the
+  lock: the card's view must stay still, but the strip "could easily be more dynamic, it's frequently
+  going to need to be rotated a little … always … perfectly straight … And have it move around more
+  per card"; the inverted black on white kept). `src/scan/straighten.js`: every locked look finds the
+  collector line again in the card's bottom-left zone (−4% to 62% across, 83% to 103% down; the zone
+  set on a tall dark canvas, since mtgscan's locator ignores letters over 3% of its picture's
+  height), falling back to the corner found at the lock; measures its lean (`skewAngle`: the tilt, ±12°
+  in half degrees, at which its text pixels fall into the sharpest rows); turns it level about its
+  middle, enlarges its letters to ~48px and cleans it to black on white (mtgscan's threshold; a light
+  corner turned round first). That's what's shown and read first. Checked: locked on one straight
+  card, then the 17 modern cards each laid turned 2–5° and nudged 6–7px: the line found on every
+  card, the lean measured within 1° on all 17, all 17 read right. Tests:
+  `tests/scanStraighten.test.js`.
 - **New card or the same one:** the art (the middle of the art box at its locked place) as a 16 × 10
   thumbnail of true averages, brightness and contrast evened out (`artPrint`, `artDistance` with a
   one-cell shift). After a card is sent its art is held; **nothing is read while the art is under 12

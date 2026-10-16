@@ -1,15 +1,13 @@
 // The locked view (owner, 2026-10-16): once the first card is found, by its
 // edges and a collector line where a card's is, the view is locked to that
-// card, and so is its collector corner. From then on the screen shows just
-// the card, still; the corner is cut out, enlarged and cleaned to black on
-// white for the person scanning, and it's what's read first; and the card's
-// art, always at the same place, tells a new card from the same one. The
+// card. From then on the screen shows just the card, still; its collector
+// corner, found again on each card and set straight (straighten.js), is shown
+// enlarged under it and read first; and the card's art, always at the same
+// place, tells a new card from the same one. The
 // holder is snug, so each card lands where the last one did. If the camera
 // shifts (an iPhone switches lenses by itself), the view is locked again
 // once the card has clearly moved and stayed moved (owner's choice).
 // DOM-free: the canvas maker is passed in.
-
-import { binarizeCollectorText, extractCollectorTextRegion } from './recognition/textLocator.js';
 
 // On a modern card the collector block's left edge is 6.5% in and its top
 // 93.6% down (measured on 17 cards, docs/SCAN_LEARNINGS.md 2.2): a block
@@ -100,31 +98,6 @@ export function movedFrom(locked, now) {
 /** Two sightings of the card in one place (so a move has lasted)? */
 export function samePlace(a, b) {
   return centreGap(a, b) <= a.height * SAME_PLACE.centre && sizeGap(a, b) <= SAME_PLACE.size;
-}
-
-/**
- * The collector corner, enlarged (its letters about 48px tall) and cleaned
- * to black on white: what the person scanning sees under the card, and what
- * the reader reads first. White letters on a dark border (most cards), or
- * dark on a light one, either way round.
- */
-export function collectorCutout(frame, lock, createCanvas) {
-  const region = extractCollectorTextRegion(frame, { bounds: lock.collector, charHeight: lock.charHeight }, createCanvas);
-  const ctx = region.getContext('2d', { willReadFrequently: true });
-  const image = ctx.getImageData(0, 0, region.width, region.height);
-  const { data } = image;
-  let sum = 0;
-  for (let k = 0; k < data.length; k += 4) sum += 0.299 * data[k] + 0.587 * data[k + 1] + 0.114 * data[k + 2];
-  // mtgscan's cleaning reads light letters on dark: a light corner is turned round first.
-  if (sum / (data.length / 4) > 128) {
-    for (let k = 0; k < data.length; k += 4) {
-      data[k] = 255 - data[k];
-      data[k + 1] = 255 - data[k + 1];
-      data[k + 2] = 255 - data[k + 2];
-    }
-    ctx.putImageData(image, 0, 0);
-  }
-  return binarizeCollectorText(region, createCanvas);
 }
 
 /**

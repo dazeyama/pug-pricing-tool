@@ -154,7 +154,7 @@ html[data-scan] .toast { max-width: none; }
   box-shadow: 0 0 0 1px rgba(0, 0, 0, .45);
   pointer-events: none;
 }
-/* The collector corner, enlarged and cleaned to black on white (lock.js collectorCutout). */
+/* The collector corner, found on each card, set level, enlarged and cleaned to black on white (straighten.js). */
 .scan-cutout {
   flex: none;
   display: block;

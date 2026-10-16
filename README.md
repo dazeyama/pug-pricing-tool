@@ -1274,9 +1274,10 @@ Tap one to scan into it.
    sort the pile first, and switch between piles.
 2. **START CAMERA**, and allow the camera. The first scan loads the card reader (about 3 MB).
 3. Lay a card in the holder. A green outline shows the card once its edges are found, and the view
-   **locks onto it**: from then on the screen shows just that card, large and still, and under it the
-   card's **set code and number, enlarged** and cleaned up. The holder keeps every card in the same
-   spot, so the next cards are read from there.
+   **locks onto it**: from then on the screen shows just that card, large and still. Under it, each
+   card's **set code and number** are shown enlarged, set level even when the card lies a little
+   turned, and cleaned up to black on white. The holder keeps every card in the same spot, so the
+   next cards are read from there.
 4. Lay each card in turn. A card is added by itself, with a chime, once its picture has changed from
    the last card's and two reads agree on its printing.
 
