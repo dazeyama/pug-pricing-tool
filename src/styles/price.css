@@ -1245,13 +1245,14 @@
   cursor: pointer;
 }
 .buy-line-row:hover .line-x { opacity: 1; }
-/* A struck card (owner, 2026-10-16; lib/struck.js): crossed out and dimmed, kept as a record. */
+/* A struck card (owner, 2026-10-16; lib/struck.js): crossed out, kept as a record. The text
+   dims by its colour, not opacity, so the line stays a solid, thick white (owner: "too faint"). */
 .buy-line-row.struck .line-price,
 .buy-line-row.struck .buy-line {
-  text-decoration: line-through;
-  text-decoration-color: color-mix(in srgb, var(--bad) 75%, transparent);
-  opacity: .5;
+  color: color-mix(in srgb, var(--muted) 60%, transparent);
+  text-decoration: line-through 2px #fff;
 }
+.buy-line-row.struck .buy-line * { color: inherit; }
 .buy-line-row.struck .buy-line { cursor: default; }
 .line-x:hover { background: rgba(255, 107, 107, .15); opacity: 1; }
 .buy-line {

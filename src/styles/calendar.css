@@ -293,15 +293,16 @@ button.flag-chip:hover, button.flag-chip[aria-expanded="true"] { background: rgb
 .deck-table .cell-x { width: 1%; text-align: right; }
 .drow:hover { background: color-mix(in srgb, var(--bad) 7%, transparent); }
 .drow:hover .line-x { opacity: 1; }
-/* A struck card (owner, 2026-10-16): crossed out and dimmed; right-click → Restore, placed in .deck-wrap. */
+/* A struck card (owner, 2026-10-16): crossed out, the text dimmed by its colour so the line stays a
+   solid, thick white (owner: "too faint"); right-click → Restore, placed in .deck-wrap. */
 .deck-wrap { position: relative; }
 .drow.struck .cell-price,
 .drow.struck .cell-qty,
 .drow.struck .cell-name {
-  text-decoration: line-through;
-  text-decoration-color: color-mix(in srgb, var(--bad) 75%, transparent);
-  opacity: .5;
+  color: color-mix(in srgb, var(--muted) 60%, transparent);
+  text-decoration: line-through 2px #fff;
 }
+.drow.struck .cell-name * { color: inherit; }
 
 .buy-totals { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; }
 .buy-totals strong { margin-left: 4px; }
