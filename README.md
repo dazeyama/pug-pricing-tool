@@ -289,11 +289,12 @@ list every buy and collection holding a matching card.
 - **↓ ↑** move through results. **Enter** opens one. **Esc** closes the list.
 - Opening a buy goes to its day page. Opening a collection goes to its screen. The matching cards
   flash.
-- Placeholders are found by the name typed for them. Bulk and struck cards never show.
+- Placeholders are found by the name typed for them. Bulk never shows.
 
 By default it searches **Paid/Ours** only. **Show all** adds Processing, Priced, Completed and
-Rejected. Completed and Rejected results are faded. Show all switches itself off when the list
-closes.
+Rejected, and struck cards. Completed and Rejected results are faded. A struck card is crossed out
+with a grey **Struck** chip. Hovering it says who struck it and when. Show all switches itself off
+when the list closes.
 
 At most the newest 200 matching cards show. Adding a number or a set code narrows it.
 
@@ -351,7 +352,8 @@ Five counts. **Collections →** opens the Collections tab.
 | **Can't upload** | Cards waiting in Can't upload cards. Click to open it. |
 
 Under the counts are the open projects and the Paid/Ours collections, three at a time. Each shows
-its cards and their value. A collection says *ready to export*. A project says how old its oldest
+its cards and their value. Pointing at a name shows its cards by game. A collection says *ready
+to export*. A project says how old its oldest
 price is. That turns amber at 14 days: time for a **REPRICE?**. **+N more on Collections** shows
 the rest.
 
@@ -506,7 +508,9 @@ Three links open the card on other sites, each in its own pop-up window:
 ### Condition prices
 
 Five big buttons: **NM**, **LP**, **MP**, **HP** and **DMG**. Each shows that condition's price.
-Clicking one picks the condition. NM is picked for every new card.
+Clicking one picks the condition. NM is picked for every new card. Going back to a card starts it
+fresh too: picking another card forgets the condition, a manual price and Use TCGplayer / Use
+Cardmarket.
 
 - A price with no tag is JustTCG's own price.
 - **fallback** marks a price worked out from another one (see [How prices are worked out](#how-prices-are-worked-out)).
@@ -545,7 +549,7 @@ lists the reasons. Clicking keeps the list open. The reasons:
 
 | | |
 |---|---|
-| **Qty** | How many copies: 1 to 99. **Enter** in the box adds the card. |
+| **Qty** | How many copies: 1 to 99. **Enter** in the box adds the card. Qty goes back to 1 after each add. |
 | **CLEAR** | Empties the card area. The buy list stays. |
 | **ADD CARD** | Adds the card to the buy list. The new line flashes. The card area clears for the next card. |
 
@@ -643,7 +647,8 @@ yet. Search **bulk** or **placeholder** (any capitals) to find it.
 
 - **Click its name** (the dashed box) and type what the card is: *Team Rocket's, Meowth 117*. Left
   empty, it's *Placeholder*.
-- **Its price box starts empty**: type the card's market price. ADD CARD waits for it.
+- **Its price box starts empty**: type the card's market price, over $0. ADD CARD waits for it.
+- Picking another card forgets the name and price typed.
 - No condition or finish: write them into the name if they matter. **Qty** counts cards; the same
   name and price join one line.
 - It's paid like a card at that price (low end / high end, Set Rate), and the header search finds it
@@ -715,7 +720,7 @@ Every collection and project, in three tables.
 
 | Column | Shows |
 |---|---|
-| **Name** | The customer's or project's name. |
+| **Name** | The customer's or project's name. Pointing at it shows its cards by game: *MTG 42 cards + 1,000 bulk*. |
 | **Phone** | The phone number. Projects show a **Project** chip, Can't upload cards a **System** chip. |
 | **Status** | The status chip. |
 | **Created** | The date it was made. |
@@ -984,7 +989,8 @@ user, the time and its status.
 - A table of its cards: **Price**, **Qty**, **Card** and **×**. Hovering a row shows the card.
 - **Market**, **Cash** and **Credit** for this game's cards, at the buy's own rates.
 - **Paid**: what the customer was paid, for the whole buy (both games).
-- **Also has N Pokémon cards →** (or Magic) opens the other game's day page.
+- **Also has N Pokémon cards →** (or Magic) opens the other game's day page. Bulk counts apart:
+  *Also has 3 Pokémon cards + 100 bulk →*.
 
 **×** strikes cards first: see [Struck cards](#struck-cards). A struck card's **×** removes it.
 Removing the last card deletes the buy, after asking.
@@ -1000,8 +1006,9 @@ Once Completed, a buy is locked. Its prices show in green: those are its Sell Pr
 In a Paid/Ours buy or collection, the first **×** **strikes** a card (it asks how many). It stays on
 the list, crossed out, as a record that it went elsewhere: straight into the case, say.
 
-- A struck card is never exported, completed, printed, repriced or found by the header search, and
-  isn't in the card counts (*42 cards · 2 struck*). It **still counts in the totals**: it was bought.
+- A struck card is never exported, completed, printed or repriced, and isn't in the card counts
+  (*42 cards · 2 struck*). It **still counts in the totals**: it was bought.
+- The header search finds it only with **Show all**, crossed out with a **Struck** chip.
 - **×** on a struck card removes it for good. **Right-click → Restore** puts it back.
 - Hovering it shows who struck it and when. The Changelog records strikes and restores.
 - Projects and Can't upload cards don't strike: their **×** removes at once. **Convert to project**
@@ -1273,7 +1280,8 @@ lookups allowed per minute, and when the daily count resets (midnight UTC).
 ### Master Buy Percentages
 
 **Cash %** and **Credit %**: what the store pays, as a share of Market. Saved when she leaves the
-box. Changes apply at once to buys in progress and to unpaid collections. Confirmed buys and
+box. A value it can't use shows a red message, and the box goes back to what was saved. Changes
+apply at once to buys in progress and to unpaid collections. Confirmed buys and
 Paid/Ours collections keep the rates they had.
 
 ### Low-end and high-end rates
@@ -1349,7 +1357,7 @@ Buys downloads.
 |---|---|
 | **Time and headline** | When, and what happened. New things are green. Deleted things are red, with a cross on the line. |
 | **Name** | The buy, collection, day or month. Click to open it. A deleted one isn't a link. |
-| **+N / −N** | Cards added and removed. |
+| **+N / −N** | Cards added and removed, placeholders included. Bulk is counted apart in the words: *7 cards + 100 bulk bought*. |
 | **User** | Who did it, in her colour. |
 | **Market / Cash / Credit** | Totals, where they apply. |
 | **Card rows** | Each card added (+) or removed (−), with its price. |
