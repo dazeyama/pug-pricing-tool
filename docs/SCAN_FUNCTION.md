@@ -101,7 +101,7 @@ Appendix A has the detail. In short: cards printed **from Magic 2015 (July 2014)
 
 Nothing about prices, lines or lists is new. The computer's side reuses:
 
-- `src/lib/prices.js` → `lookupsFor`, `fetchPrices`, `priceResults` (the `prices` Edge Function, up to 200 lookups a call, by `scryfallId`), `conditionPrices`, `fallbackPrice`, `cardmarketPrice`, `priceWarnings`, and `src/lib/ladder.js` → `priceLadder` (spec 8.7); `src/lib/useEurUsd.js` for Cardmarket's dollars.
+- `src/lib/prices.js` → `lookupsFor`, `fetchPrices`, `priceResults` (the `prices` Edge Function, up to 200 lookups a call, by `scryfallId`), `conditionPrices`, `fallbackPrice`, `cardmarketPrice`, and `src/lib/ladder.js` → `priceLadder` (spec 8.7); `src/lib/useEurUsd.js` for Cardmarket's dollars.
 - `src/lib/buyLine.js` → `buildLine` (a `buy_lines` row from a Scryfall card, finish, condition, quantity, ladder and manual price); `src/lib/cardSearch.js` → `magicCandidate` (a Scryfall card in the shape `buildLine` takes).
 - `src/pages/price/useDraft.js` → `add` (`draft_add_line`, merging), and a collection's `useCollection` → `add` (`collection_add_line`, under the lock); `PricingScreen`'s `list.add` is the one door, and its flash.
 - `src/pages/collections/useCollectionLock.js`: the heartbeat-and-stale pattern (20 s beats, stale at 60 s, release on `pagehide` with `keepalive`) the scan session copies.
@@ -272,13 +272,13 @@ All on the phone, in `src/scan/` (the UI) and `src/scan/recognition/` (mtgscan's
 3. **Cardmarket**, only when steps 1–2 give the condition nothing: Cardmarket's euro price (`prices.eur` on the same Scryfall card) × the day's rate × the percentage, as if **Use Cardmarket** had been pressed (`price_source = 'cardmarket'`, `price_snapshot.override = 'cardmarket'`).
 4. **Nothing:** the scan becomes **needs a price** (7.3).
 
-One pure function, `scanQuote({ card, finish, condition, results, pct, cardmarketUsd })` in `src/lib/scanPrice.js`, returns the ladder, the override used, the entry for the condition, and **whether JustTCG is needed** (`results` is passed as `null` on the first call; a `needsJustTcg` answer makes the receiver fetch and call again). Tested for each step, for the finish that TCGplayer doesn't price while JustTCG does, and for "nothing". Built from `priceLadder`, `fallbackPrice`, `cardmarketPrice` and `priceWarnings`; nothing new in the arithmetic.
+One pure function, `scanQuote({ card, finish, condition, results, pct, cardmarketUsd })` in `src/lib/scanPrice.js`, returns the ladder, the override used, the entry for the condition, and **whether JustTCG is needed** (`results` is passed as `null` on the first call; a `needsJustTcg` answer makes the receiver fetch and call again). Tested for each step, for the finish that TCGplayer doesn't price while JustTCG does, and for "nothing". Built from `priceLadder`, `fallbackPrice` and `cardmarketPrice`; nothing new in the arithmetic.
 
 **What this means at the counter:** a scanned card's price is the TCGplayer price the stage shows with **Use TCGplayer** on (the condition buttons tagged "TCGplayer"), not JustTCG's condition prices. That's the trade the owner chose for bulk: free and unlimited over per-condition market data. The computer's operator can still open any line with SAVE EDIT and switch it to JustTCG's prices.
 
-### 7.2 Price warnings
+### 7.2 No price warnings
 
-The app's ⚠️ checks (spec 8.7) run on what the scan fetched: on a TCGplayer-priced scan only the **Cardmarket gap** check can run (both prices are on the Scryfall card); the JustTCG checks (TCGplayer vs JustTCG, out-of-order conditions) run only when JustTCG was asked (7.1 step 2). **The card is added anyway** (owner, 2026-10-16) and the warning is kept: `price_snapshot.warnings` holds the reasons (the same short lines the stage shows), and **the buy list shows ⚠️ before such a line's price**, with the reasons in its tooltip, so the computer's operator sees it without opening the card. Today no line has `warnings`; only scans write it. ◆ SAVE EDIT on that line clears it like any other re-price.
+The app's ⚠️ checks (spec 8.7) **aren't run on scans** (owner, 2026-10-16). Three of the four compare JustTCG's prices with something else, and a TCGplayer-priced scan never fetches JustTCG's, so only the Cardmarket-gap check could have run; not worth building for. A scanned line carries no `warnings`, and the buy list shows none. The stage still shows ⚠️ as before when a scanned line is opened with SAVE EDIT, since that fetches JustTCG's prices as any selection does.
 
 ### 7.3 Needs a price
 
@@ -521,7 +521,7 @@ Each phase ends with the owner checking it: the computer's side on `localhost`, 
 - **The licence first** (10.1): `LICENSE`, `package.json`, README line, then the copied modules with their headers (10.2). `tesseract.js`, the assets script, `public/tesseract/`.
 - `camera.js`, `ocr.js`, `tiers.js` (tier 1), the scanning screen's camera, guide, Scan card, Lighting, Stop, the strip, the sounds (5.3), the wake lock and visibility handling.
 - Migration S-2: `scans` (9.2), `scan_send`, `scan_resolve`, `scan_answer`; the publication; database test run section `scans` (send while paired / not paired / cannot add; resolve by the session only; answer by the phone only; needs_price → sent with a price; skipped).
-- The computer's receiver (8.3): the queue, `scanQuote` (7.1, with tests), `buildLine` with the scan mark, `list.add`, the flash, `scan_resolve`; the ⚠️ on scanned lines (7.2); `useStaff().touch()` (7.4); the chip's count.
+- The computer's receiver (8.3): the queue, `scanQuote` (7.1, with tests), `buildLine` with the scan mark, `list.add`, the flash, `scan_resolve`; `useStaff().touch()` (7.4); the chip's count.
 - The needs-a-price sheet (7.3).
 - `scripts/scan-benchmark.mjs` and the `scan-fixtures/` convention (11.3); run on the owner's tier 1 photos before hand-off.
 
@@ -535,7 +535,6 @@ Each phase ends with the owner checking it: the computer's side on `localhost`, 
 - [ ] Set LP and Foil, scan a card: the line is `[LP]` and `*F*`. A card with no foil printing scans as non-foil anyway.
 - [ ] Scan the same card again: the line's quantity becomes 2, the strip reads "Added · ×2".
 - [ ] Scan a card JustTCG and Scryfall have no price for (an obscure promo): the sheet asks for a price; type one, the line is added as a manual price (✎ on the laptop); Skip adds nothing.
-- [ ] A card whose Cardmarket price is far from TCGplayer's (the stage would show ⚠️ for it): it's added, and the list line shows ⚠️ with the reason in its tooltip.
 - [ ] A German or Japanese-printed card: "Not English".
 - [ ] Hold up a Pokémon card, or the card's back, and tap Scan card: "Couldn't read this card" with the buzz.
 - [ ] Sign the user out on the laptop: the phone says to pick a user; pick one and scanning resumes.
@@ -606,7 +605,7 @@ The owner's answers (2026-10-16, the clarification session before this document)
 | S2 | Licence | **Copy mtgscan's recognition code and put the repo under GPL-3.0** (owner, over "write our own" and "ask the author") |
 | S3 | Which cards | **2014+ by the collector line, exact; older cards by name + number (1998–2014) and by name with a pick on the phone (pre-1998)**. Name reading is less reliable and is gated by the benchmark (owner) |
 | S4 | Foil | **A Normal / Foil switch on the phone**, Normal by default, from then on (owner) |
-| S5 | Price warnings | **Add the card anyway and keep the ⚠️ on the line** for the computer to see (owner) |
+| S5 | Price warnings | First "add the card anyway and keep the ⚠️ on the line"; then, once TCGplayer became the main source (S14) and the JustTCG-based checks could no longer run, **no warnings on scans at all** (owner, 2026-10-16: "no longer worth the time to make") |
 | S6 | Phone sign-in | **The store password once on the phone**, the session kept (owner; over a pairing code) |
 | S7 | Detection | **Phones automatically (touch-first and narrow), plus `#/scan` on any device** (owner) |
 | S8 | Computers listed | **Every computer on a price screen**, Pokémon-only ones greyed with "switch it to Magic first" (owner) |
