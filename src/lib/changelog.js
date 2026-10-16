@@ -1,6 +1,7 @@
 import { formatInTimeZone } from 'date-fns-tz';
 import { STORE_TZ } from './time.js';
 import { roundDownPrice } from './money.js';
+import { countText } from './bulk.js';
 
 // The Changelog's rules (spec 12), kept apart from the page so they can be
 // tested: which category an entry is in, what it's called, how runs of adds
@@ -163,10 +164,16 @@ export function panelView(panel) {
   const lines = panel.events.flatMap((e) => e.lines ?? []);
   const rows = [...lines.filter((l) => l.sign === '+'), ...lines.filter((l) => l.sign !== '+')];
   const recount = panel.events.length > 1;
-  const count = (sign) => rows.filter((l) => (sign === '+' ? l.sign === '+' : l.sign !== '+'))
-    .reduce((n, l) => n + Number(l.qty), 0);
-  const added = recount ? count('+') : Number(first.added ?? 0);
-  const removed = recount ? count('-') : Number(first.removed ?? 0);
+  // Cards and bulk apart, as CONFIRM BUY counts them (owner, 2026-10-16;
+  // migration 0066): a bulk row carries bulk_per, the cards in one item. A
+  // placeholder is a card. added / removed are cards, as an entry's own are.
+  const count = (sign, bulk) => rows.filter((l) => (sign === '+' ? l.sign === '+' : l.sign !== '+'))
+    .filter((l) => (l.bulk_per != null) === bulk)
+    .reduce((n, l) => n + Number(l.qty) * (bulk ? Number(l.bulk_per) : 1), 0);
+  const added = recount ? count('+', false) : Number(first.added ?? 0);
+  const removed = recount ? count('-', false) : Number(first.removed ?? 0);
+  const addedBulk = recount ? count('+', true) : 0;
+  const removedBulk = recount ? count('-', true) : 0;
 
   let totals = first.totals ?? null;
   if (totals && recount) {
@@ -191,9 +198,22 @@ export function panelView(panel) {
     fields: first.fields ?? [],
     added,
     removed,
+    addedBulk,
+    removedBulk,
     totals,
     games,
   };
+}
+
+/**
+ * What a folded run adds up to: "7 cards added.", "2 cards + 100 bulk
+ * removed." A run is all adds or all removes (foldEvents).
+ * @param {ReturnType<typeof panelView>} view
+ */
+export function foldedSummary(view) {
+  const adding = view.added + view.addedBulk > 0;
+  const counts = adding ? { cards: view.added, bulk: view.addedBulk } : { cards: view.removed, bulk: view.removedBulk };
+  return `${countText(counts)} ${adding ? 'added' : 'removed'}.`;
 }
 
 /** "Today" or "Yesterday" in the store's calendar, else null. */

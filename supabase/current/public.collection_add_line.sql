@@ -50,12 +50,12 @@ begin
   -- The copies added, at the card's rate (and on the row, for a folded run's totals).
   select * into v_rec from buy_lines where id = v_line;
   v_rec.quantity := r.quantity;
-  perform collection_event(b, p_user, p_device, 'collection_cards_added', array[r.game], r.quantity, 0,
+  perform collection_event(b, p_user, p_device, 'collection_cards_added', array[r.game], (internal.line_counts(array[r])).cards, 0,
     internal.lines_totals(b, array[v_rec]),
-    jsonb_build_array(jsonb_build_object('sign', '+', 'qty', r.quantity, 'game', r.game,
+    jsonb_build_array(jsonb_build_object('sign', '+', 'qty', r.quantity, 'bulk_per', internal.bulk_per(r.bulk_kind), 'game', r.game,
       'unit_price', r.unit_price, 'text', coalesce(p_text, r.quantity || ' ' || r.name),
       'cash_pct', internal.line_pct(v_rec, b, 'cash'), 'credit_pct', internal.line_pct(v_rec, b, 'credit'))),
-    '[]', sentence(format('%s card%s added', r.quantity, case when r.quantity = 1 then '' else 's' end)));
+    '[]', sentence(internal.lines_count_text(array[r]) || ' added'));
   return v_line;
 end;
 $function$;

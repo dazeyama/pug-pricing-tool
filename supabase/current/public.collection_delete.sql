@@ -44,12 +44,11 @@ begin
     from buy_lines where buy_id = p_buy_id;
 
   perform collection_event(b, p_user, p_device, 'collection_deleted', coalesce(v_games, '{}'),
-    0, coalesce(v_count, 0), internal.lines_totals(b, array(select l from buy_lines l where l.buy_id = b.id)), coalesce(v_lines, '[]'::jsonb),
+    0, (internal.line_counts(array(select l from buy_lines l where l.buy_id = b.id))).cards, internal.lines_totals(b, array(select l from buy_lines l where l.buy_id = b.id)), coalesce(v_lines, '[]'::jsonb),
     jsonb_build_array(
       jsonb_build_object('field', 'name', 'before', b.customer_name, 'after', null),
       jsonb_build_object('field', 'phone', 'before', format_phone(b.phone), 'after', null)),
-    sentence(format('Collection deleted with %s card%s', coalesce(v_count, 0),
-                    case when coalesce(v_count, 0) = 1 then '' else 's' end)));
+    sentence('Collection deleted with ' || internal.lines_count_text(array(select l from buy_lines l where l.buy_id = b.id))));
 
   delete from buys where id = p_buy_id;
 end;

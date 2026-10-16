@@ -17,6 +17,10 @@ declare
   v_gone    integer := 0;
   v_struck  integer := 0;
   v_back    integer := 0;
+  v_edited_bulk integer := 0;   -- bulk counted apart, in cards (0066)
+  v_gone_bulk   integer := 0;
+  v_struck_bulk integer := 0;
+  v_back_bulk   integer := 0;
   v_n       integer;
   v_market  numeric;
 begin
@@ -62,7 +66,8 @@ begin
     v_rows := v_rows || jsonb_build_object('sign', '-', 'qty', v_old.quantity, 'game', v_old.game,
       'unit_price', v_old.unit_price, 'text', coalesce(v_item ->> 'text', v_old.quantity || ' ' || v_old.name));
     v_games := v_games || v_old.game;
-    v_gone := v_gone + v_old.quantity;
+    v_gone := v_gone + (internal.line_counts(array[v_old])).cards;
+    v_gone_bulk := v_gone_bulk + (internal.line_counts(array[v_old])).bulk;
     delete from buy_lines where id = v_old.id;
   end loop;
 
@@ -91,7 +96,12 @@ begin
       || jsonb_build_object('sign', '+', 'qty', r.quantity, 'game', r.game, 'unit_price', r.unit_price,
            'text', coalesce(v_item ->> 'new_text', r.quantity || ' ' || r.name));
     v_games := v_games || v_old.game || r.game;
-    v_edited := v_edited + 1;
+    -- A card line counts once; a bulk line as the bulk it now holds.
+    if internal.bulk_per(r.bulk_kind) is null then
+      v_edited := v_edited + 1;
+    else
+      v_edited_bulk := v_edited_bulk + (internal.line_counts(array[r])).bulk;
+    end if;
   end loop;
 
   -- Struck lines back, then copies struck (of the lines as edited).
@@ -104,7 +114,8 @@ begin
     v_rows := v_rows || jsonb_build_object('sign', '+', 'restored', true, 'qty', v_old.quantity, 'game', v_old.game,
       'unit_price', v_old.unit_price, 'text', coalesce(v_item ->> 'text', v_old.quantity || ' ' || v_old.name));
     v_games := v_games || v_old.game;
-    v_back := v_back + v_old.quantity;
+    v_back := v_back + (internal.line_counts(array[v_old])).cards;
+    v_back_bulk := v_back_bulk + (internal.line_counts(array[v_old])).bulk;
   end loop;
   for v_item in select value from jsonb_array_elements(p_struck) loop
     select * into v_old from buy_lines where id = (v_item ->> 'id')::uuid;
@@ -116,7 +127,8 @@ begin
     v_rows := v_rows || jsonb_build_object('sign', '-', 'struck', true, 'qty', v_n, 'game', v_old.game,
       'unit_price', v_old.unit_price, 'text', coalesce(v_item ->> 'text', v_n || ' ' || v_old.name));
     v_games := v_games || v_old.game;
-    v_struck := v_struck + v_n;
+    v_struck := v_struck + case when internal.bulk_per(v_old.bulk_kind) is null then v_n else 0 end;
+    v_struck_bulk := v_struck_bulk + coalesce(v_n * internal.bulk_per(v_old.bulk_kind), 0);
   end loop;
 
   update buys set version = version + 1, updated_at = now(), last_edited_by = p_user
@@ -128,14 +140,14 @@ begin
     array(select distinct g from unnest(v_games) g order by 1), v_gone,
     internal.lines_totals(b, array(select l from buy_lines l where l.buy_id = b.id)), v_rows,
     sentence(concat_ws('; ',
-      case when v_edited > 0
-           then format('%s card%s edited', v_edited, case when v_edited = 1 then '' else 's' end) end,
-      case when v_gone > 0
-           then format('%s card%s removed', v_gone, case when v_gone = 1 then '' else 's' end) end,
-      case when v_struck > 0
-           then format('%s card%s struck', v_struck, case when v_struck = 1 then '' else 's' end) end,
-      case when v_back > 0
-           then format('%s struck card%s restored', v_back, case when v_back = 1 then '' else 's' end) end)));
+      case when v_edited + v_edited_bulk > 0
+           then internal.count_text(v_edited, v_edited_bulk) || ' edited' end,
+      case when v_gone + v_gone_bulk > 0
+           then internal.count_text(v_gone, v_gone_bulk) || ' removed' end,
+      case when v_struck + v_struck_bulk > 0
+           then internal.count_text(v_struck, v_struck_bulk) || ' struck' end,
+      case when v_back + v_back_bulk > 0
+           then internal.count_text(v_back, v_back_bulk, 'struck') || ' restored' end)));
   return b.version;
 end;
 $function$;

@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  HEADLINES, actionsFor, categoryOf, dayHeading, entryWhen, foldEvents, panelView, headlineOf } from '../src/lib/changelog.js';
+  HEADLINES, actionsFor, categoryOf, dayHeading, entryWhen, foldEvents, foldedSummary, panelView, headlineOf,
+} from '../src/lib/changelog.js';
 
 let seq = 1000;
 const ev = (over) => ({
@@ -124,4 +125,23 @@ test('a project made reads "Project started", not "Collection created" (smoke te
 test("a buy edited in project view is a Buys entry, headlined Buy edited", () => {
   assert.equal(categoryOf('buy_edited'), 'buys');
   assert.equal(HEADLINES.buy_edited, 'Buy edited');
+});
+
+// Bulk counted apart, as CONFIRM BUY counts it (owner, 2026-10-16; migration 0066).
+test("a folded run counts bulk apart: rows with bulk_per are bulk, a placeholder's a card", () => {
+  const bulk = [{ sign: '+', qty: 1, bulk_per: 100, game: 'pokemon', unit_price: 0.75, text: '100 PKM Bulk' }];
+  const placeholder = [{ sign: '+', qty: 1, bulk_per: null, game: 'pokemon', unit_price: 0.5, text: '1 Meowth [Placeholder]' }];
+  const v = panelView(foldEvents([
+    ev({ at: min(0), lines: bulk, added: 0 }),
+    ev({ at: min(2), lines: placeholder }),
+    ev({ at: min(4) }),   // an older entry's row, without bulk_per: a card
+  ])[0]);
+  assert.equal(v.added, 2);
+  assert.equal(v.addedBulk, 100);
+  assert.equal(foldedSummary(v), '2 cards + 100 bulk added.');
+  const gone = panelView(foldEvents([
+    ev({ at: min(0), action: 'collection_cards_removed', added: 0, removed: 0, lines: bulk.map((l) => ({ ...l, sign: '-' })) }),
+    ev({ at: min(2), action: 'collection_cards_removed', added: 0, removed: 0, lines: bulk.map((l) => ({ ...l, sign: '-' })) }),
+  ])[0]);
+  assert.equal(foldedSummary(gone), '200 bulk removed.');
 });

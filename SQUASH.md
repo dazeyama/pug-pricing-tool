@@ -10,25 +10,28 @@ fingerprints came back the same as dev's.
 
 Read FABLE.md first (the gates apply here more than anywhere), then this.
 
-*Renumbered 2026-10-16 (FABLE_REPORT Phase 5):* migrations 0063–0065 landed
-on dev before the squash, so N is 0065, the baseline `0066_baseline.sql`,
-and the first migration after launch 0067. The generator and its rehearsal
-were run again then (92 functions, 4,281 lines; nine of nine the same).
+*Renumbered 2026-10-16 (FABLE_REPORT Phase 5), and again that day:* migrations
+0063–0066 landed on dev before the squash (0066: bulk counted apart in the
+Changelog, after the Phase 6 smoke test), so N is 0066, the baseline
+`0067_baseline.sql`, and the first migration after launch 0068. The
+generator and its rehearsal were last run at 0065 (92 functions, 4,281
+lines; nine of nine the same); dev has 96 functions now, so section 1 runs
+them again.
 
 ---
 
 ## 0. The shape of it
 
-Dev has 65 migrations (0001–0065), 14,229 lines, many rewriting the same
-function. Prod is empty and not live. The squash replaces the 65 files with
+Dev has 66 migrations (0001–0066), 15,237 lines, many rewriting the same
+function. Prod is empty and not live. The squash replaces the 66 files with
 **one baseline file that builds the database as dev has it**, applies it to
 prod, proves prod matches dev, and then tells dev's migration record that the
 baseline is what it has. Nothing in the app changes. Dev's data is never
 touched.
 
-**N** is the last migration on dev when the squash starts (today 0065). The
-baseline is `<N+1>_baseline.sql` (today `0066_baseline.sql`); the first
-migration after launch is N+2. Every command below uses 0065/0066; substitute
+**N** is the last migration on dev when the squash starts (today 0066). The
+baseline is `<N+1>_baseline.sql` (today `0067_baseline.sql`); the first
+migration after launch is N+2. Every command below uses 0066/0067; substitute
 if more migrations land first — and if they do, **start again from section 1**:
 a baseline written before the last migration is wrong by definition.
 
@@ -107,8 +110,8 @@ node scripts/db-test-run.mjs --save /c/ClaudeProjects/temp/pug-squash/dev-run.js
 
 ```bash
 cat supabase/.temp/project-ref                       # dev, still
-node scripts/db-baseline.mjs supabase/migrations/0066_baseline.sql
-cp supabase/migrations/0066_baseline.sql /c/ClaudeProjects/temp/pug-squash/
+node scripts/db-baseline.mjs supabase/migrations/0067_baseline.sql
+cp supabase/migrations/0067_baseline.sql /c/ClaudeProjects/temp/pug-squash/
 ```
 
 It prints the counts. On 2026-10-16: `17 tables, 184 columns, 1 sequence(s),
@@ -122,7 +125,7 @@ and these parts in full (the ones a catalog read can't check for you):
 
 | Section | Must show |
 |---|---|
-| header | "standing in for migrations 0001–0065"; "write migration 0067 and up" |
+| header | "standing in for migrations 0001–0066"; "write migration 0068 and up" |
 | Extensions | `create extension if not exists pg_trgm with schema extensions;` and nothing else (the other extensions on dev — pgcrypto, uuid-ossp, pg_stat_statements, supabase_vault — are Supabase's defaults; prod has them) |
 | Schemas | `create schema if not exists internal;` |
 | Sequences | `public.events_seq_seq` as bigint … start with 1; later `owned by public.events.seq` |
@@ -146,7 +149,7 @@ Nothing in the file is edited by hand. If something is wrong, fix
 ## 4. Rehearse it on dev (rolled back)
 
 ```bash
-node scripts/db-baseline.mjs --rehearse supabase/migrations/0066_baseline.sql
+node scripts/db-baseline.mjs --rehearse supabase/migrations/0067_baseline.sql
 ```
 
 What it does: one transaction on dev; `create schema scratch`; the baseline
@@ -194,20 +197,20 @@ section 8).
 
 ```bash
 mkdir -p supabase/migrations-archive
-git mv supabase/migrations/00{01..65}_*.sql supabase/migrations-archive/
-ls supabase/migrations            # exactly one file: 0066_baseline.sql
-ls supabase/migrations-archive | wc -l    # 65
+git mv supabase/migrations/00{01..66}_*.sql supabase/migrations-archive/
+ls supabase/migrations            # exactly one file: 0067_baseline.sql
+ls supabase/migrations-archive | wc -l    # 66
 ```
 
 Write `supabase/migrations-archive/README.md`:
 
 ```markdown
-# Archived migrations 0001–0065
+# Archived migrations 0001–0066
 
 History only: how the dev database was built between 2026-09-28 and the
-squash (DESIGN_SPEC decision 192). `supabase/migrations/0066_baseline.sql`
+squash (DESIGN_SPEC decision 192). `supabase/migrations/0067_baseline.sql`
 replaced them. The CLI does not read this folder. Never edit or run these;
-to change the database, write migration 0067 and up.
+to change the database, write migration 0068 and up.
 ```
 
 **Gate:** `supabase/migrations/` holds only the baseline. **From here to the
@@ -278,7 +281,7 @@ Prod has **data** (buys, staff users): **stop.** Someone used it. The owner
 decides whether it's disposable before anything is dropped.
 
 **Gate:** the probe reads as "untouched" (or was made so), `migration list`
-shows nothing on the remote side, and the local side lists only `0066`.
+shows nothing on the remote side, and the local side lists only `0067`.
 
 ---
 
@@ -286,9 +289,9 @@ shows nothing on the remote side, and the local side lists only `0066`.
 
 ```bash
 cat supabase/.temp/project-ref                    # prod
-npx supabase db push --dry-run --linked           # must list only 0066_baseline.sql
+npx supabase db push --dry-run --linked           # must list only 0067_baseline.sql
 npx supabase db push --linked --yes
-npx supabase migration list --linked              # 0066 on both sides, nothing else
+npx supabase migration list --linked              # 0067 on both sides, nothing else
 ```
 
 `db push` runs the file in one transaction: it either all lands or none of
@@ -297,7 +300,7 @@ hand), rewrite, rehearse, and because the transaction rolled back, push again
 without a reset. (If the push *did* land and something is still wrong, section
 8 finds it and section 6's reset path empties prod for another go.)
 
-**Gate:** push succeeded; the list shows 0066 and nothing else.
+**Gate:** push succeeded; the list shows 0067 and nothing else.
 
 ---
 
@@ -346,10 +349,10 @@ password). Then Claude:
 
 ```bash
 cat supabase/.temp/project-ref                    # dev
-npx supabase migration list --linked              # remote: 0001–0065; local: 0066 only
-npx supabase migration repair --linked --status reverted $(printf '%04d ' $(seq 1 65))
-npx supabase migration repair --linked --status applied 0066
-npx supabase migration list --linked              # 0066 on both sides, nothing else
+npx supabase migration list --linked              # remote: 0001–0066; local: 0067 only
+npx supabase migration repair --linked --status reverted $(printf '%04d ' $(seq 1 66))
+npx supabase migration repair --linked --status applied 0067
+npx supabase migration list --linked              # 0067 on both sides, nothing else
 npx supabase db push --dry-run --linked           # nothing to push
 node scripts/db-test-run.mjs --compare /c/ClaudeProjects/temp/pug-squash/dev-run.json
 ```
@@ -359,11 +362,11 @@ record of what was applied); dev's tables, functions and data don't change,
 and the last command proves it: every check passes and every fingerprint
 reads `✓ same` against the run saved in section 2.
 
-**Gate:** list shows 0066 only; dry run has nothing to push; test run same.
+**Gate:** list shows 0067 only; dry run has nothing to push; test run same.
 
 **If the repair went wrong** (a version missed, the wrong status): repair is
 idempotent — run the two commands again. Worst case, `--status applied` back
-for 0001–0065 and `--status reverted 0066` returns the record to where
+for 0001–0066 and `--status reverted 0067` returns the record to where
 section 1 found it, and `git checkout pre-squash -- supabase/migrations`
 returns the files.
 
@@ -373,7 +376,7 @@ returns the files.
 
 ```bash
 git add supabase/migrations supabase/migrations-archive SQUASH.md
-git commit   # "Migration squash: 0001–0065 → 0066_baseline.sql (decision 192)"
+git commit   # "Migration squash: 0001–0066 → 0067_baseline.sql (decision 192)"
 ```
 
 One commit, with the baseline, the moves, the archive README, and a line in
@@ -404,14 +407,14 @@ Then the launch steps outside the squash (spec, Phase 10 → Launch):
 
 ## 11. After the squash: how migrations work from now on
 
-- Files are numbered from **0067**. One behaviour per file (FABLE.md).
+- Files are numbered from **0068**. One behaviour per file (FABLE.md).
 - Every migration: rehearse `(echo "begin;"; cat f; echo "rollback;")` on
   dev → `db push` to dev → `node scripts/db-snapshot.mjs` (commit
   `supabase/current/` with the migration) → `node scripts/db-test-run.mjs
   --save <fresh dev run>` → (owner links prod) `db push` to prod →
   `node scripts/db-test-run.mjs --confirm zvxquzcfffmxwizonxuo --compare
   <that run>` when the store isn't using the app → (owner links dev again).
-- **The first one, 0067, is FABLE_REPORT A2 step 2**, once the pushed app is
+- **The first one, 0068, is FABLE_REPORT A2 step 2**, once the pushed app is
   live: `internal.buy_event`, `internal.collection_event`,
   `collection_log_call` and `buy_log_cash_download` become `security
   definer` (`search_path = public, internal, pg_temp`), then `authenticated`

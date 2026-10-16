@@ -338,6 +338,14 @@ begin
     and cc_condition_word('LP') = 'Lightly Played' and cc_condition_word('MP') = 'Moderately Played'
     and cc_condition_word('HP') = 'Heavily Played' and cc_condition_word('DMG') = 'Damaged');
   perform pg_temp.ok(s, 'cant_upload_note', length(cant_upload_note()) > 40);
+  perform pg_temp.ok(s, 'count_text: cards and bulk apart, as CONFIRM BUY says it (0066)',
+    internal.count_text(7, 100) = '7 cards + 100 bulk' and internal.count_text(1, 0) = '1 card'
+    and internal.count_text(0, 1500) = '1,500 bulk' and internal.count_text(0, 0) = '0 cards'
+    and internal.count_text(2, 0, 'struck') = '2 struck cards' and internal.count_text(0, 100, 'struck') = '100 struck bulk',
+    concat_ws(' · ', internal.count_text(7, 100), internal.count_text(0, 1500), internal.count_text(0, 100, 'struck')));
+  perform pg_temp.ok(s, 'bulk_per: cards in a bulk item; none for a card or a placeholder',
+    internal.bulk_per('mtg_100_common') = 100 and internal.bulk_per('pkm_10_fifty') = 10
+    and internal.bulk_per('pkm_placeholder') is null and internal.bulk_per(null) is null);
   perform pg_temp.ok(s, 'norm_number drops leading zeros', internal.norm_number('007') = '7'
     and internal.norm_number('SV-007') = 'sv-7' and internal.norm_number('TG07') = 'tg7'
     and internal.norm_number('0') = '0');
@@ -988,6 +996,22 @@ begin
       where r.id = b));
   perform pg_temp.ok(s, 'The header search doesn''t find bulk',
     not exists (select 1 from global_search('DBTEST mtg_100', null, null, null, true) g where g.line_id = l_bulk));
+
+  -- 0066: the Changelog counts bulk apart, as CONFIRM BUY's dialog does.
+  perform pg_temp.ok(s, 'Its Changelog entry: "1 card + 1,500 bulk bought…", added counting the card only',
+    exists (select 1 from events where action = 'buy_confirmed' and target_id = b and added = 1
+              and summary = '1 card + 1,500 bulk bought from DBTEST Bulk, (555) 010-0022; paid $10 in cash.'),
+    (select summary || ' added ' || added from events where action = 'buy_confirmed' and target_id = b));
+  perform buy_strike_line(l_bulk, 5, u, a, null, null);
+  perform pg_temp.ok(s, 'Struck bulk: "500 bulk struck…"',
+    exists (select 1 from events where action = 'buy_cards_struck' and target_id = b
+              and summary = '500 bulk struck: kept on the buy, crossed out, and never exported.'),
+    (select summary from events where action = 'buy_cards_struck' and target_id = b));
+  perform buy_remove_line(l_bulk, 1, u, a, null, null);
+  perform pg_temp.ok(s, 'Removed bulk: "100 bulk removed…", removing no cards',
+    exists (select 1 from events where action = 'buy_cards_removed' and target_id = b and removed = 0
+              and summary = '100 bulk removed from a confirmed buy.'),
+    (select summary || ' removed ' || removed from events where action = 'buy_cards_removed' and target_id = b));
 exception when others then
   declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;
   perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
@@ -1029,6 +1053,10 @@ begin
        from buy_lines l, buys x where l.id = l1 and x.id = b));
 
   perform confirm_buy(b, u, 'DBTEST Placeholder', '', 50, 65, null, 1, 'cash', '{}', '5550100025');
+  perform pg_temp.ok(s, 'Its Changelog entry counts placeholders as cards (0066)',
+    exists (select 1 from events where action = 'buy_confirmed' and target_id = b and added = 4
+              and summary = '4 cards bought from DBTEST Placeholder, (555) 010-0025; paid $1 in cash.'),
+    (select summary || ' added ' || added from events where action = 'buy_confirmed' and target_id = b));
   perform pg_temp.ok(s, 'The header search finds a placeholder by its name',
     exists (select 1 from global_search('dbtest meowth', null, null, null, false) g where g.line_id = l1));
   -- 0063: and says it's one (bulk_kind), so the app needn't guess from the set code.

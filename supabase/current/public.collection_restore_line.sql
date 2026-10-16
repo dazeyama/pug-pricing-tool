@@ -36,8 +36,7 @@ begin
     jsonb_build_array(jsonb_build_object('sign', '+', 'restored', true, 'qty', v_old.quantity, 'game', v_old.game,
       'unit_price', v_old.unit_price, 'text', coalesce(p_text, v_old.quantity || ' ' || v_old.name),
       'cash_pct', internal.line_pct(v_old, b, 'cash'), 'credit_pct', internal.line_pct(v_old, b, 'credit'))),
-    '[]', sentence(format('%s struck card%s restored', v_old.quantity,
-                          case when v_old.quantity = 1 then '' else 's' end)));
+    '[]', sentence(internal.lines_count_text(array[v_old], 'struck') || ' restored'));
   return v_id;
 end;
 $function$;

@@ -44,11 +44,11 @@ begin
   update buys set version = version + 1, updated_at = now(), last_edited_by = p_user where id = b.id;
 
   v_old.quantity := v_n;   -- the copies removed, at the card's rate (lines_totals)
-  perform buy_event(b, p_user, p_device, 'buy_cards_removed', v_target, array[v_old.game], v_n,
+  perform buy_event(b, p_user, p_device, 'buy_cards_removed', v_target, array[v_old.game], (internal.line_counts(array[v_old])).cards,
     internal.lines_totals(b, array[v_old]),
     jsonb_build_array(jsonb_build_object('sign', '-', 'qty', v_n, 'game', v_old.game,
       'unit_price', v_old.unit_price, 'text', coalesce(p_text, v_n || ' ' || v_old.name))),
-    sentence(format('%s card%s removed from a confirmed buy', v_n, case when v_n = 1 then '' else 's' end)));
+    sentence(internal.lines_count_text(array[v_old]) || ' removed from a confirmed buy'));
 end;
 $function$;
 

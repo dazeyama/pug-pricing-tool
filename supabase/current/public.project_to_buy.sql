@@ -101,12 +101,12 @@ begin
   insert into events (staff_user_id, staff_user_name, staff_user_color, device_id, kind, action,
                       target_id, target_name, games, added, totals, lines, fields, summary)
   values (p_user, v_user.name, v_user.color, p_device, 'buy', 'project_converted',
-          b.id, v_target, v_games, v_count,
+          b.id, v_target, v_games, (internal.line_counts(array(select l from buy_lines l where l.buy_id = b.id))).cards,
           internal.lines_totals(b, array(select l from buy_lines l where l.buy_id = b.id)),
           coalesce(v_lines, '[]'::jsonb),
           jsonb_build_array(jsonb_build_object('field', 'name', 'before', p.customer_name, 'after', v_customer)),
-          sentence(format('%s card%s from the project %s, bought from %s; paid %s in %s', v_count,
-                          case when v_count = 1 then '' else 's' end, p.customer_name,
+          sentence(format('%s from the project %s, bought from %s; paid %s in %s',
+                          internal.lines_count_text(array(select l from buy_lines l where l.buy_id = b.id)), p.customer_name,
                           concat_ws(', ', v_customer, format_phone(v_phone)),
                           money_text(p_paid_price), p_paid_method)));
 

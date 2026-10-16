@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
 import {
   CATEGORIES, DAY_ACTIONS, MONTH_ACTIONS, DEFAULT_CATEGORIES, GONE, MADE, MILESTONES, actionsFor, categoryOf, dayHeading, entryDay, headlineOf,
-  entryWhen, foldEvents, panelView,
+  entryWhen, foldEvents, foldedSummary, panelView,
 } from '../lib/changelog.js';
 import { storeDay } from '../lib/calendar.js';
 import { formatMoney } from '../lib/money.js';
@@ -380,9 +380,8 @@ function Entry({ view, side, targets, game, onFunnel }) {
   const gone = GONE.has(first.action);
   const to = linkFor(first, view, targets, game);
   const known = targets.has(first.target_id);
-  // A folded run says what it adds up to: "7 cards added."
-  const n = view.added || view.removed;
-  const summary = view.folded ? `${n} card${n === 1 ? '' : 's'} ${view.added ? 'added' : 'removed'}.` : first.summary;
+  // A folded run says what it adds up to: "7 cards added.", bulk apart.
+  const summary = view.folded ? foldedSummary(view) : first.summary;
   const t = view.totals;
   const user = first.staff_user_name ? { name: first.staff_user_name, color: first.staff_user_color } : null;
   // Magic indigo, Pokémon amber, both for a mixed buy; no cards: the category's colour.

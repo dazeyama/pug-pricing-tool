@@ -66,13 +66,16 @@ begin
 
   -- One entry: the cards added to the new project (owner, 2026-10-02).
   perform collection_event(p, p_user, p_device, 'buy_converted', coalesce(v_games, '{}'),
-    coalesce(v_count, 0), 0, internal.lines_totals(p, array(select l from buy_lines l where l.buy_id = p.id)),
+    (internal.line_counts(array(select l from buy_lines l where l.buy_id = p.id))).cards, 0, internal.lines_totals(p, array(select l from buy_lines l where l.buy_id = p.id)),
     (select coalesce(jsonb_agg(x || jsonb_build_object('sign', '+')), '[]'::jsonb) from jsonb_array_elements(v_lines) x)
       || coalesce(v_struck, '[]'::jsonb),
     jsonb_build_array(jsonb_build_object('field', 'name', 'before', null, 'after', v_name)),
     sentence(format('Project started from %s: %s', v_target, v_name)
-             || case when v_gone > 0 then format('; %s struck card%s left out', v_gone,
-                                                  case when v_gone = 1 then '' else 's' end) else '' end));
+             || case when v_gone > 0
+                     then '; ' || internal.lines_count_text(array(select l from buy_lines l
+                                                                  where l.buy_id = b.id and l.struck_at is not null),
+                                                            'struck') || ' left out'
+                     else '' end));
 
   delete from buys where id = b.id;
   return p.id;
