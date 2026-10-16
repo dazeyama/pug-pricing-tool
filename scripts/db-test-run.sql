@@ -1147,10 +1147,18 @@ begin
   v_id := buy_strike_line(l_b, 5, u, a, null, null);
   perform pg_temp.ok(s, 'Striking every copy strikes the card in place',
     v_id = l_b and (select quantity = 1 and struck_at is not null from buy_lines where id = l_b));
-  perform pg_temp.ok(s, 'The header search doesn''t find a struck card',
+  perform pg_temp.ok(s, 'The header search leaves a struck card out unless asked',
     not exists (select 1 from global_search('dbtest struck b', null, null, null, true) g where g.line_id = l_b)
-    and exists (select 1 from global_search('dbtest struck a', null, null, null, true) g where g.line_id = l_a));
+    and exists (select 1 from global_search('dbtest struck a', null, null, null, true) g
+                 where g.line_id = l_a and g.struck_at is null));
+  -- 0067: Show all asks for struck cards too, and they come marked.
+  perform pg_temp.ok(s, '… and Show all finds it, struck, by whom, not Completed while its game isn''t',
+    exists (select 1 from global_search('dbtest struck b', null, null, null, true, true) g
+             where g.line_id = l_b and g.struck_at is not null and g.struck_by = u and not g.completed));
   perform buy_mark_completed(b, 'mtg', u, a, true);
+  perform pg_temp.ok(s, 'A struck card found with Show all reads Completed once the rest of its game is',
+    exists (select 1 from global_search('dbtest struck b', null, null, null, true, true) g
+             where g.line_id = l_b and g.completed));
   perform pg_temp.ok(s, 'Mark as completed leaves a struck card out',
     (select completed_at is null from buy_lines where id = l_b)
     and (select completed_at is not null from buy_lines where id = l_a));

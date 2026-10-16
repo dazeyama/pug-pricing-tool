@@ -313,6 +313,9 @@ header h1 { margin: 0; font-size: 20px; font-weight: 600; }
 .result-btn .result-where .game-badge { margin-right: 6px; vertical-align: 1px; }
 .result-btn .result-where strong, .result-btn .result-where .user-tag { color: var(--text); }
 .result-btn .result-entry { display: block; padding: 1px 0; font-weight: 600; overflow-wrap: anywhere; }
+/* A struck card (Show all only, decision 275): crossed out as on the day page and buy list, with a Struck chip. */
+.result-btn .result-entry.struck .entry-text { color: var(--muted); text-decoration: line-through 2px #fff; }
+.result-btn .struck-chip { --tone: var(--muted); }
 .result-btn.active, .result-btn:hover { border-color: var(--accent); border-left-color: var(--c, var(--accent)); background: var(--bg); }
 
 /* ---- Tabs: equal-width, outlined; an idle tab lifts on hover. ---- */

@@ -77,3 +77,14 @@ test('a buy with matches in both games is a panel per game', () => {
 test('a Japanese printing is its own entry', () => {
   assert.notEqual(printingKey(line({ lang: 'ja' })), printingKey(line({ lang: 'en' })));
 });
+
+// Show all finds struck cards (decision 275, migration 0067): never added to the live copies.
+test('a struck card is an entry of its own, after the live copies of its printing', () => {
+  const [sec] = groupResults([
+    line({ line_id: 's', quantity: 2, struck_at: '2026-10-16T12:00:00Z', struck_by: 'u1' }),
+    line({ line_id: 'a', quantity: 1 }),
+    line({ line_id: 'b', quantity: 1, condition: 'LP' }),
+  ]);
+  assert.deepEqual(sec.panels[0].entries.map((e) => [e.condition, e.qty, e.struck]),
+    [['NM', 1, false], ['LP', 1, false], ['NM', 2, true]]);
+});

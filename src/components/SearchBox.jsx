@@ -5,6 +5,7 @@ import { dayDate, storeDay } from '../lib/calendar.js';
 import { formatTime } from '../lib/time.js';
 import { relativeDay } from '../lib/changelog.js';
 import { lineTextWithCondition } from '../lib/lineFormat.js';
+import { struckNote } from '../lib/struck.js';
 import { LINE_LIMIT, MIN_CHARS, flatRows, groupResults, searchArgs } from '../lib/globalSearch.js';
 import { statusText } from '../pages/collections/status.js';
 import { useStaff } from '../state/staff.jsx';
@@ -15,7 +16,8 @@ import { useDismiss } from '../lib/useDismiss.js';
 
 // The header's global search (spec 13), in CM's pill style: every stored line
 // in a Paid/Ours walk-in buy or collection matching what's typed, or with
-// "Show all" every status but drafts (owner, 2026-09-30): collections pinned
+// "Show all" every status but drafts (owner, 2026-09-30), and struck cards,
+// crossed out (decision 275): collections pinned
 // at the top, then buys filed under dates, a panel
 // per buy or collection listing its matching cards in full (owner,
 // 2026-09-30). ↓/↑ move, Enter opens, Esc closes.
@@ -86,8 +88,10 @@ export default function SearchBox({ wide }) {
     const timer = setTimeout(async () => {
       try {
         const plan = searchArgs(query, await knownCodes());
-        let lines = plan ? await lookUp({ ...plan.args, p_all: showAll }) : [];
-        if (plan && !lines.length && plan.retry) lines = await lookUp({ ...plan.retry, p_all: showAll });
+        // Show all also finds struck cards (decision 275, migration 0067).
+        const scope = { p_all: showAll, p_struck: showAll };
+        let lines = plan ? await lookUp({ ...plan.args, ...scope }) : [];
+        if (plan && !lines.length && plan.retry) lines = await lookUp({ ...plan.retry, ...scope });
         if (mine !== run.current) return;
         setFound({ status: 'done', sections: groupResults(lines), capped: lines.length >= LINE_LIMIT, error: null });
         setActive(0);
@@ -198,10 +202,13 @@ export default function SearchBox({ wide }) {
         {row.entries.map((entry) => (
           <span
             key={entry.key}
-            className="result-entry"
+            className={`result-entry${entry.struck ? ' struck' : ''}`}
+            title={entry.struck ? struckNote(entry.line, staff.byId) : undefined}
             onMouseEnter={(e) => setPreview(previewFor(entry.line.image_url, e.currentTarget, results.current, 'left'))}
           >
-            {lineTextWithCondition(entry.line, entry.qty)}
+            {/* Struck (Show all only): crossed out, as on its list, and said in words (decision 275). */}
+            <span className="entry-text">{lineTextWithCondition(entry.line, entry.qty)}</span>
+            {entry.struck && <span className="status-chip result-chip struck-chip">Struck</span>}
           </span>
         ))}
       </button>
@@ -242,7 +249,7 @@ export default function SearchBox({ wide }) {
                 type="button"
                 className={`scope-toggle${showAll ? ' on' : ''}`}
                 aria-pressed={showAll}
-                title={showAll ? 'Show Paid/Ours only' : 'Also show Processing, Priced, Completed and Rejected'}
+                title={showAll ? 'Show Paid/Ours only' : 'Also show Processing, Priced, Completed and Rejected, and struck cards'}
                 onMouseDown={(e) => e.preventDefault()}   // keep the typing in the box
                 onClick={() => setShowAll((v) => !v)}
               >

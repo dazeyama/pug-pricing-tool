@@ -15,7 +15,7 @@ The concrete fixes this review found (`FABLE_REPORT.md`, items A1–C6) were
 all made on 2026-10-16 and the report retired. It's in git history
 (`git show 0ef948c:FABLE_REPORT.md`): code comments that cite
 "FABLE_REPORT C1" and the like point there. What it left for later, the
-migration squash and locking the Changelog to the database (0068), is in
+migration squash and locking the Changelog to the database (0069), is in
 `SQUASH.md`; the rules it found are below. The same goes for the smoke
 test of its last phase: comments citing "TEST_PASS finding 1" point at
 `git show 4412187:TEST_PASS.md`, and its results are in `docs/TEST.md`.

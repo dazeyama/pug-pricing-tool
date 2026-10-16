@@ -5,9 +5,10 @@ import { formatShortDate } from './time.js';
 // walk-in buy or collection the first × strikes a card. It stays on the list,
 // crossed out, as a record (moved elsewhere: put straight into the case, say),
 // but it's treated as gone by everything that moves cards on: exports, Check
-// matches, COMPLETE, Mark as completed, printouts, the header search and the
-// card counts. It still counts in the totals: it was bought and paid for. A
-// second × removes it; right-click → Restore puts it back. Projects and Can't
+// matches, COMPLETE, Mark as completed, printouts, the header search (but
+// Show all finds it, crossed out: decision 275) and the card counts. It
+// still counts in the totals: it was bought and paid for. A second ×
+// removes it; right-click → Restore puts it back. Projects and Can't
 // upload cards don't strike: their × removes at once, and Convert to project
 // leaves a buy's struck cards out (crossed out in its Changelog entry).
 

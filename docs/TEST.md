@@ -342,3 +342,6 @@ New since 0.9.9.8-day1, worth a check:
       placeholder (its name back). Esc leaves each as it was.
 - [ ] **Strike one copy, not all:** striking every card of one game makes that side Completed (by design).
 - [ ] **The background** behind the Buy tab looks as before (re-encoded to 28 KB, `0ef948c`).
+- [ ] **Show all finds struck cards** (decision 275): strike a card, search it in the header. Paid/Ours only: not
+      there. Show all: crossed out with a grey **Struck** chip, its tooltip saying who and when, apart from the
+      card's live copies.

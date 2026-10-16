@@ -4,6 +4,7 @@
 import { storeDay } from './calendar.js';
 import { nameKey } from './normalize.js';
 import { normNumber, numericSize, parseQuery, withoutGuessedSetCode } from './query.js';
+import { isStruck } from './struck.js';
 
 /** Typing under this many characters doesn't search. */
 export const MIN_CHARS = 2;
@@ -86,10 +87,12 @@ export function groupResults(lines) {
     }
     const printing = printingKey(l);
     const condition = l.condition ?? 'NM';
-    const entryKey = `${printing}|${condition}`;
+    // A struck card (Show all only, decision 275) is an entry of its own, never added to the live copies.
+    const struck = isStruck(l);
+    const entryKey = `${printing}|${condition}${struck ? '|struck' : ''}`;
     let e = p.entries.get(entryKey);
     if (!e) {
-      e = { key: entryKey, printing, condition, line: l, qty: 0, lineIds: [], order: p.entries.size };
+      e = { key: entryKey, printing, condition, struck, line: l, qty: 0, lineIds: [], order: p.entries.size };
       p.entries.set(entryKey, e);
     }
     e.qty += l.quantity;
@@ -102,11 +105,11 @@ export function groupResults(lines) {
   const collections = [];
   const days = new Map();
   for (const p of panels.values()) {
-    // A printing's place is where it first came; its conditions best first.
+    // A printing's place is where it first came; its live copies before struck ones, conditions best first.
     const firstOf = new Map();
     for (const e of p.entries.values()) if (!firstOf.has(e.printing)) firstOf.set(e.printing, e.order);
     const entries = [...p.entries.values()].sort((a, b) =>
-      firstOf.get(a.printing) - firstOf.get(b.printing) || rank(a.condition) - rank(b.condition));
+      firstOf.get(a.printing) - firstOf.get(b.printing) || a.struck - b.struck || rank(a.condition) - rank(b.condition));
     const panel = { ...p, entries };
     if (p.kind === 'collection') {
       collections.push(panel);
