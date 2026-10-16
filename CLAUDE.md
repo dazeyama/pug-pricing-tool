@@ -2,6 +2,8 @@
 
 - The spec is docs/DESIGN_SPEC.md. Read the relevant sections before each task. Update it
   when the owner changes a decision.
+- Read FABLE.md once per session: how to scope, gather evidence, plan for what breaks and
+  verify here. FABLE_REPORT.md lists the open fixes, in order; work from it when asked.
 - Work only in C:\ClaudeProjects\pug-pricing-tool. collection-manager and audit-tool are
   READ-ONLY references: never edit, move or commit anything in them.
 - One phase at a time (spec Section 15). Don't start the next phase until the owner reports back.
