@@ -248,3 +248,5 @@ html[data-scan] .toast { max-width: none; }
 .scan-pick img { border-radius: 4px; background: var(--bg); }
 .scan-pick-set { font-size: 13px; font-weight: 600; text-align: center; line-height: 1.25; }
 .scan-pick-meta { font-size: 12px; color: var(--muted); }
+.scan-strip { position: relative; }
+.scan-undo { align-self: flex-start; margin-top: 4px; }

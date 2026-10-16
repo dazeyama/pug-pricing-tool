@@ -8,12 +8,13 @@ import { useConnection } from '../state/connection.jsx';
 // price. Read again when one changes (Realtime), and every 4 seconds while
 // one is still waiting on the computer, in case a message is missed.
 
-const WAITING = new Set(['sent', 'pricing']);
+const WAITING = new Set(['sent', 'pricing', 'undo', 'undoing']);
 const POLL_MS = 4_000;
 
 /**
  * @returns {{ scans: object[], send: (scan: object) => Promise<{ id?: string, error?: string }>,
- *   answer: (id: string, price: number|null) => Promise<string|null>, reload: () => Promise<void> }}
+ *   answer: (id: string, price: number|null) => Promise<string|null>, undo: (id: string) => Promise<string|null>,
+ *   reload: () => Promise<void> }}
  *   scans: this pairing's latest ten, newest first
  */
 export function useScans(computerId, phoneId) {
@@ -71,5 +72,12 @@ export function useScans(computerId, phoneId) {
     return error ? error.message : null;
   }, [phoneId, reload]);
 
-  return { scans, send, answer, reload };
+  /** Undo an added scan: the computer takes one copy off. An error message, or null. */
+  const undo = useCallback(async (id) => {
+    const { error } = await supabase.rpc('scan_undo', { p_id: id, p_phone: phoneId });
+    await reload();
+    return error ? error.message : null;
+  }, [phoneId, reload]);
+
+  return { scans, send, answer, undo, reload };
 }

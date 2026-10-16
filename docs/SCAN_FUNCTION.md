@@ -5,7 +5,7 @@
 | **Product** | PUG Pricing Tool: the SCAN function (a phone scans Magic cards straight into a computer's buy list) |
 | **Owner** | Players' Union Games (PUG) |
 | **Spec version** | 1.0 — 2026-10-16 |
-| **Status** | Approved for build, Phases S1–S5. The owner's answers are in Appendix B; the ◆ choices there are the engineer's and can be overturned |
+| **Status** | **Built, Phases S1–S5 (2026-10-16), on dev, not pushed**; waiting for the owner's check. Section 16 says where the build differs from the plan. The owner's answers are in Appendix B; the ◆ choices there are the engineer's and can be overturned |
 | **Extends** | `docs/DESIGN_SPEC.md` (Section 7.10 "Screen sizes" gains the phone's page; Section 8 the computer's side) |
 | **Project folder** | `C:\ClaudeProjects\pug-pricing-tool` |
 
@@ -18,7 +18,7 @@ This spec is written for an engineer building the scanner with Claude Code. It s
 1. **Read the whole document before starting**, and read `DESIGN_SPEC.md` Sections 4 (architecture), 6.1 (data model, above all `buy_lines` and line identity for merging), 7.3–7.4 (users and devices), 8.7–8.10 (prices, ADD CARD, the buy list, drafts), 9.4–9.6 (a collection's pricing screen and lock) and Appendix A (working rules), plus `SQUASH.md` Section 11 (how migrations are written now) and `FABLE.md` (the code's shape). Sections 1–14 here describe the finished scanner. Section 15 splits the build into five phases, S1–S5.
 2. **Build one phase at a time, in order.** Each phase ends at a state the owner can check on `localhost` and on a phone (Section 11). Don't start the next phase until the owner has reported back.
 3. **The owner is QA** (`DESIGN_SPEC.md` Appendix A). Build, run `npm run lint`, `npm test` and `npm run build`, fix errors, then hand off with the phase's "Where to look" list. The one exception is the recognition benchmark (Section 11.3), which the engineer runs on the owner's photos.
-4. **Migrations:** `SQUASH.md` Section 11 is the rule. The numbers `0068` (the baseline) and `0069` (the Changelog lock) are spoken for; the scanner's migrations take the **next free numbers** when each phase is built, and `SQUASH.md`'s count moves along. This document calls them S-1, S-2… Apply to **dev** only. Each new server function goes into `scripts/db-test-run.sql`.
+4. **Migrations:** `SQUASH.md` Section 11 is the rule. The scanner's migrations took the next free numbers (0068–0070, Section 16), and `SQUASH.md`'s numbers moved along (baseline 0071, Changelog lock 0072). This document calls them S-1, S-2… Apply to **dev** only. Each new server function goes into `scripts/db-test-run.sql`.
 5. **Licence:** the recognition code is copied from an open-source project under the **GPL-3.0** (Section 10). The owner has chosen to put the whole repo under that licence. Phase S2 does it; nothing of mtgscan's is committed before the licence file is.
 6. **No secrets in this document, the repo or the code** (`DESIGN_SPEC.md` 0.6). Card photos used as benchmark fixtures stay out of the repo too (Section 11.3).
 
@@ -584,6 +584,80 @@ Each phase ends with the owner checking it: the computer's side on `localhost`, 
 
 ---
 
+## 16. As built (2026-10-16)
+
+Phases S1–S5 were built in one unattended run, at the owner's request, for the owner to check all
+together. Where the build differs from Sections 1–15, this section wins.
+
+**Migrations (on dev):** `0068_scan_sessions.sql` (S1), `0069_scans.sql` (S2), `0070_scan_undo.sql`
+(S5). `SQUASH.md` is renumbered: N is 0070, the baseline `0071_baseline.sql`, the Changelog lock 0072.
+Database test run: **461 checks**, all passing (sections Scan sessions and Scans).
+
+**Data and functions (11):**
+- `scan_sessions` has `locked` (the screen's reason, "Paid/Ours: unlock it to edit") instead of
+  `blocked_reason`, and `can_add` is a generated column: a user picked, `locked` null, and `mtg` in
+  `games`. `scan_session_touch(p_device, p_kind, p_buy_id, p_name, p_games, p_user, p_locked)`.
+  A session touched after going stale loses its phone. `scan_pair` also refuses `cannot_scan` (Magic
+  off, or locked).
+- `scans.status`: `sent` → **`pricing`** (the computer's claim, `scan_claim`, so two tabs of one
+  computer can't both add it; a claim quiet for a minute can be taken again) → `added` /
+  `needs_price` / `failed`; `needs_price` → `sent` (a price) or `skipped`; **`added` → `undo` →
+  `undoing` → `undone`** (or back to `added` with a note). `line_qty` holds the line's quantity just
+  after, for "×2". Old scans are swept by `scan_send` (a week), not by `scan_session_touch`.
+- Functions: `scan_sessions_open`, `scan_session_touch`, `scan_session_end`, `scan_pair`,
+  `scan_phone_beat`, `scan_unpair`, `scan_send`, `scan_claim`, `scan_resolve`, `scan_answer`,
+  `scan_undo`.
+
+**Pairing (5.4):** a pairing doesn't time out. The chip reads "away" after a minute without the
+phone's beat; any phone pairing replaces the paired one at any time (no 10-minute rule).
+
+**The computer (8):** the chip sits on its own line under the list's heading (the heading row has no
+room beside the count). The receiver (`src/pages/price/useScanReceiver.js`) handles one scan at a
+time; a card by id is kept 6 hours in memory (not 7 days in storage); no batching, since most scans
+never reach JustTCG. Scanned lines carry `price_snapshot.scan` (`{ from: 'phone', phone, tier,
+scan_id, at }`). Price warnings: none (decision S5).
+
+**Recognition (6):**
+- `parsing.js` is copied **unchanged**: as mtgscan does, each reading is scored raw and cleaned and the
+  better kept, so its `S`→`5` cleaning never costs a set code (10.2's planned change wasn't needed).
+  The set-code pattern comes from the app's set list (paper sets, longest codes first).
+- A card printed `JP` whose printing is Japanese-only (Mystical Archive's Japanese art) is accepted;
+  any other language is refused.
+- **Auto scan (6.3)** doesn't read at all while the last scan is still with the computer; "same card"
+  is a hint line under the strip, so it never hides the "✓ Added" it follows. Set + number lookups
+  are remembered, so a card in view asks Scryfall once.
+- **Older cards (6.2):** the title is read as one line, then as a block if that names nothing, with
+  the title box's ruled lines removed first; the matcher may drop words at the title's end (a mana cost
+  misread as letters) and refuses a read much shorter than the name it matches. The "123/350" is looked
+  for in what the collector-line reading already read (on a black border the copyright line is light
+  text the locator finds), then in a bottom band. With a number: the printings of that name, number
+  and set size (several: the pick list). **Without one, the pick list holds every printing**, narrowed
+  to the copyright line's year when that was read: limiting it to pre-1998 printings would hide a
+  1998–2014 card whose number wasn't read. `AUTO_OLDER` is `false` (11.3).
+
+**Testing (10.3, 11):** Tesseract's files are copied into `public/tesseract/` by a Vite plugin when the
+dev server or a build starts (`vite.config.js` `vendorTesseract`, mtgscan's way), not by `postinstall`;
+the folder is git-ignored and ESLint skips it. The benchmark uses `@napi-rs/canvas` (prebuilt for
+Windows) rather than `canvas`. `npm run dev:lan` is `vite --host`, which turns the basic-ssl plugin on.
+
+**Benchmark (11.3), before the owner's photos:**
+
+| What | Photos | Result |
+|---|---|---|
+| Tier 1, collector lines | mtgscan's own 22 (`sandbox/test-images`: hand-held, foil, mostly German) | **21 of 22 read right, all 21 sure (95%)**, about 120 ms each on the laptop. The miss read OTP 51 as 651 |
+| Tiers 2–3, titles | Scryfall's own scans of 20 random older cards (Alpha to Return to Ravnica), clean | **15 of 20 named right (75%)**; 4 of 14 "123/350" numbers read |
+
+Clean scans are kinder than a phone's photos, so tier 1 should be re-measured on the store's own photos
+(Section 11.3) before relying on it, and older cards stay behind Scan card.
+
+**Also changed outside the scanner:**
+- `src/state/staff.jsx` `touch()`: a scan counts as use on the computer (7.4).
+- `src/state/session.jsx` `signOut(options)`: the phone's Sign out is `{ scope: 'local' }`, this phone only.
+- `loadSets` keeps `card_count` (cache key `.v4`).
+- The Help tab has a **Scanning from a phone** chapter (README), and Settings' credits a scanning line.
+
+---
+
 ## Appendix A: The collector line by era
 
 | Printed | Cards | At the bottom left | How the scanner names the printing |
@@ -627,9 +701,11 @@ The owner's answers (2026-10-16, the clarification session before this document)
 
 ## Appendix C: Open items
 
-1. **The benchmark figures** (11.3): tier 1 after S2, tiers 2/3 after S4; whether tiers 2/3 run by themselves.
+1. **The benchmark on the store's own photos** (11.3): Section 16 has the figures on mtgscan's and Scryfall's pictures; the store's photos decide whether older cards may scan by themselves (`AUTO_OLDER`).
 2. **Version name** for the first live scanner: the owner's call at S5.
 3. **Pokémon scanning:** not planned. Their line (`125/198` with a set abbreviation elsewhere on the card) would need its own locator.
 4. **The List and Mystery Booster** (Appendix A): a smarter lookup (try `plst` when the card has a List printing and the symbol is seen) if it matters in practice.
 5. **A "scanned from a phone" note in the Changelog** (Section 12): ask the owner if wanted.
 6. **Renaming a phone** without clearing its site data (Section 12).
+7. **An auto scan switch** on the phone (off: Scan card only), if someone wants to scan a card at a time without the phone adding cards by itself. Not built: not in the spec.
+8. **Settings → Sign out signs out every computer** (found while building the phone's own Sign out): `supabase.auth.signOut()` defaults to `scope: 'global'`, which ends the store account's session on every device, not just this one. The phone's uses `{ scope: 'local' }`; Settings' is unchanged, for the owner to decide.

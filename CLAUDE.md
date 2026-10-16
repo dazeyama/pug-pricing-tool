@@ -4,7 +4,7 @@
   when the owner changes a decision.
 - Read FABLE.md once per session: how to scope, gather evidence, plan for what breaks and
   verify here. The code review's fixes (FABLE_REPORT.md) are all done; the report is in git history.
-  What's left of it, the migration squash and the Changelog lock (0069), is in SQUASH.md.
+  What's left of it, the migration squash and the Changelog lock (0072), is in SQUASH.md.
 - Work only in C:\ClaudeProjects\pug-pricing-tool. collection-manager and audit-tool are
   READ-ONLY references: never edit, move or commit anything in them.
 - One phase at a time (spec Section 15). Don't start the next phase until the owner reports back.
@@ -34,5 +34,8 @@
   smoke test (results in docs/TEST.md) and its fixes (decisions 272–273, migration 0066), all on dev.
   Then pushed without a version change: Show all finds struck cards (decision 275, migration 0067, on dev)
   and cards by game on a collection's name (decision 276).
+  Then the phone scanner (docs/SCAN_FUNCTION.md Phases S1–S5, decisions 278–279, migrations 0068–0070 on dev;
+  the repo is GPL-3.0 since): built and committed, NOT pushed, waiting for the owner's check. The squash's
+  numbers moved on: baseline 0071, the Changelog lock 0072.
   Phase 10 launch (the migration squash, SQUASH.md, then prod) waits for the owner's go; the live site runs on the
   dev project until then. docs/TEST.md holds the smoke tests and the database test run.

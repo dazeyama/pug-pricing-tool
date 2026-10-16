@@ -13,6 +13,22 @@ begin
   if v.session_device_id <> p_device then
     raise exception 'not_session';
   end if;
+  -- An undo the computer took on: done (one copy fewer, the phone's count too), or not (back to added, saying why).
+  if v.status = 'undoing' then
+    if coalesce(p_status, '') not in ('undone', 'added') then
+      raise exception 'bad_status';
+    end if;
+    update scans
+       set status = p_status,
+           line_qty = (select quantity from buy_lines where id = v.line_id),
+           note = p_note,
+           handled_at = now()
+     where id = p_id;
+    if p_status = 'undone' then
+      update scan_sessions set scanned = greatest(scanned - 1, 0) where device_id = p_device;
+    end if;
+    return;
+  end if;
   if coalesce(p_status, '') not in ('added', 'needs_price', 'failed') or v.status <> 'pricing' then
     raise exception 'bad_status';
   end if;

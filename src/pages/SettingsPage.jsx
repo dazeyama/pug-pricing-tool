@@ -24,6 +24,8 @@ const CREDITS = [
   ['Pokémon cards TCGdex doesn\u2019t list yet', 'TCGplayer\u2019s catalogue, through JustTCG'],
   ['Cardmarket prices', 'Scryfall (Magic) and TCGdex (Pokémon)'],
   ['Euro to dollar rate', 'Frankfurter (European Central Bank)'],
+  // The phone scanner (docs/SCAN_FUNCTION.md 10.1): its recognition is mtgscan's (GPL-3.0), its OCR Tesseract.js.
+  ['Card scanning', 'mtgscan (GPL-3.0) and Tesseract.js'],
 ];
 
 // Settings (spec 11), each section in a panel, two columns across the page

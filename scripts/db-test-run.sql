@@ -2607,6 +2607,29 @@ begin
   perform scan_answer(v_id, ph, null);
   perform pg_temp.ok(s, 'No price skips it', (select status = 'skipped' from scans where id = v_id));
 
+  -- Undo last scan (0070): the phone asks, the computer takes one copy off and says so.
+  v_id := scan_send(a, ph, card);
+  perform scan_claim(v_id, a);
+  perform scan_resolve(v_id, a, 'added', v_line, 0.45, 'scryfall_fallback', null);
+  begin
+    perform scan_undo(v_id, ph2);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'Only its phone can undo a scan', sqlerrm, 'not_phone');
+  end;
+  perform scan_undo(v_id, ph);
+  perform pg_temp.ok(s, 'Undo asks the computer to take it off', (select status = 'undo' from scans where id = v_id));
+  v := scan_claim(v_id, a);
+  perform pg_temp.ok(s, '… which takes the undo on', v ->> 'status' = 'undoing', v::text);
+  perform draft_remove_line(v_line, 1, u);
+  perform scan_resolve(v_id, a, 'undone', null, null, null, null);
+  perform pg_temp.ok(s, 'Undone: one card fewer on the phone''s count',
+    (select status = 'undone' from scans where id = v_id) and (select scanned from scan_sessions where device_id = a) = 1);
+  begin
+    perform scan_undo(v_id, ph);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'A scan is undone once', sqlerrm, 'not_added');
+  end;
+
   v_id := scan_send(a, ph, card);
   perform scan_claim(v_id, a);
   perform pg_temp.ok(s, 'A claim is held while it''s fresh', scan_claim(v_id, a) is null);

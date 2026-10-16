@@ -22,6 +22,8 @@ import { useStaff } from '../../state/staff.jsx';
 // as ADD CARD builds a line, and added through the list's own `add`, so
 // merging, the draft, a collection's lock and version, the user recorded and
 // the flash are exactly ADD CARD's. Then the phone is told how it went.
+// The phone's Undo (S5) comes the same way: one copy of that card's line is
+// taken off, as × would, and the phone is told.
 // Looked for when a scan arrives, every 10 seconds while a phone is paired
 // (a missed message), and when the connection comes back.
 
@@ -33,7 +35,8 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
  * @param {string|null} p.deviceId  this computer
  * @param {string} p.label  its name, for the phone's messages
  * @param {object|null} p.session  its scan session (useScanSession)
- * @param {{ busy: boolean, add: (line: object, userId: string) => Promise<string|null> }} p.list
+ * @param {{ busy: boolean, lines: object[], add: (line: object, userId: string) => Promise<string|null>,
+ *   remove: (line: object, qty: number, userId: string) => Promise<unknown> }} p.list
  * @param {boolean} p.roundUp  a project: prices round up
  * @param {(lineId: string) => void} p.onAdded  flash the line
  */
@@ -145,7 +148,19 @@ export function useScanReceiver({ deviceId, label, session, list, roundUp, onAdd
     return { status: 'added', lineId: id, price: line.unit_price, source: line.price_source };
   }, []);
 
-  /** Every waiting scan, oldest first; again if more arrive meanwhile. */
+  /** The phone's Undo: one copy of the scan's line off the list. */
+  const undo = useCallback(async (scan) => {
+    const now = latest.current;
+    now.touch?.();
+    if (!now.user) return { status: 'added', note: `Pick a user on ${now.label}, then Undo again.` };
+    const line = now.list.lines.find((l) => l.id === scan.line_id);
+    if (!line) return { status: 'added', note: 'That card is no longer in the list.' };
+    for (let i = 0; i < 25 && latest.current.list.busy; i++) await sleep(200);
+    const ok = await latest.current.list.remove(line, 1, now.user.id);
+    return ok ? { status: 'undone' } : { status: 'added', note: `${now.label} couldn't take it off: its screen says why.` };
+  }, []);
+
+  /** Every waiting scan (or undo), oldest first; again if more arrive meanwhile. */
   const pump = useCallback(async () => {
     if (!deviceId) return;
     if (running.current) {
@@ -160,7 +175,7 @@ export function useScanReceiver({ deviceId, label, session, list, roundUp, onAdd
           .from('scans')
           .select('id')
           .eq('session_device_id', deviceId)
-          .in('status', ['sent', 'pricing'])
+          .in('status', ['sent', 'pricing', 'undo', 'undoing'])
           .order('created_at')
           .limit(20);
         if (error) {
@@ -172,7 +187,7 @@ export function useScanReceiver({ deviceId, label, session, list, roundUp, onAdd
           if (claimError || !scan) continue;   // another tab of this computer has it, or it's been answered
           let out;
           try {
-            out = await handle(scan);
+            out = scan.status === 'undoing' ? await undo(scan) : await handle(scan);
           } catch (e) {
             console.error('A scan failed', e);
             out = { status: 'failed', note: `Something went wrong on ${latest.current.label}: ${e.message}` };
@@ -192,7 +207,7 @@ export function useScanReceiver({ deviceId, label, session, list, roundUp, onAdd
     } finally {
       running.current = false;
     }
-  }, [deviceId, handle]);
+  }, [deviceId, handle, undo]);
 
   useEffect(() => {
     if (!deviceId || !paired) return undefined;
@@ -202,7 +217,7 @@ export function useScanReceiver({ deviceId, label, session, list, roundUp, onAdd
       .on('postgres_changes', {
         event: '*', schema: 'public', table: 'scans', filter: `session_device_id=eq.${deviceId}`,
       }, (payload) => {
-        if (payload.new?.status === 'sent') pump();
+        if (payload.new?.status === 'sent' || payload.new?.status === 'undo') pump();
       })
       .subscribe();
     const timer = setInterval(pump, POLL_MS);

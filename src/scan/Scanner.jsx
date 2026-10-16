@@ -24,7 +24,7 @@ const FIRST_LOOK_MS = 800;
 // store's own photos reads 80% of them right (docs/SCAN_FUNCTION.md 11.3).
 const AUTO_OLDER = false;
 // A scan still with the computer: auto scan waits for its outcome.
-const WITH_COMPUTER = new Set(['sent', 'pricing']);
+const WITH_COMPUTER = new Set(['sent', 'pricing', 'undo', 'undoing']);
 
 // The condition and finish for the next scans, kept for this tab (a reload keeps them).
 const CONDITION_KEY = 'pug.scan.condition';
@@ -63,6 +63,9 @@ function scanStrip(s, computer) {
     case 'needs_price': return { tone: 'warn', title: what, text: 'Needs a price: type one below.' };
     case 'failed': return { tone: 'err', title: what, text: `Couldn't add: ${s.note ?? 'unknown reason'}` };
     case 'skipped': return { tone: 'muted', title: what, text: 'Skipped: set it aside and add it on the computer.' };
+    case 'undo':
+    case 'undoing': return { tone: 'muted', title: what, text: `Taking it off ${computer}…` };
+    case 'undone': return { tone: 'muted', title: `↶ ${what}`, text: `Taken off ${computer}.` };
     default: return { tone: 'muted', title: what, text: s.status };
   }
 }
@@ -75,7 +78,7 @@ function scanStrip(s, computer) {
  */
 export default function Scanner({ computerId, phoneId, onEnd }) {
   const { session, unpair, check } = usePairing(computerId, phoneId, onEnd);
-  const { scans, send, answer } = useScans(computerId, phoneId);
+  const { scans, send, answer, undo } = useScans(computerId, phoneId);
   const videoRef = useRef(null);
   const camera = useCamera(videoRef);
   const [condition, setConditionState] = useState(() => {
@@ -110,6 +113,14 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const needs = [...scans].reverse().find((s) => s.status === 'needs_price') ?? null;
   const latest = scans[0] ?? null;
   const withComputer = Boolean(latest && WITH_COMPUTER.has(latest.status));
+
+  // When the latest scan last changed, by this phone's clock (the database's
+  // may differ from it), so the strip can tell whether its own message is newer.
+  const [latestAt, setLatestAt] = useState(0);
+  const latestKey = latest ? `${latest.id}:${latest.status}` : null;
+  useEffect(() => {
+    if (latestKey) setLatestAt(Date.now());
+  }, [latestKey]);
 
   // A sound when the computer says how a scan went (not for scans already done when the page opened).
   const seen = useRef(null);
@@ -307,8 +318,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   }, [camera.on]);
 
   // The strip: the phone's own message, or the latest scan's state, whichever is newer.
-  const latestAt = latest ? Date.parse(latest.handled_at ?? latest.created_at) : 0;
-  const strip = local && local.at >= latestAt ? local : latest ? scanStrip(latest, computer) : local;
+  const stripOfLatest = latest ? scanStrip(latest, computer) : null;
+  const strip = local && local.at >= latestAt ? local : stripOfLatest ?? local;
   const size = camera.size;
   const stageStyle = size
     ? { aspectRatio: `${size.w} / ${size.h}`, width: `min(100%, calc(60vh * ${size.w / size.h}))` }
@@ -421,6 +432,19 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         <div className={`scan-strip ${strip.tone}`} role="status">
           {strip.title && <strong>{strip.title}</strong>}
           <span>{strip.text}</span>
+          {/* Undo last scan (S5): one copy of it off the computer's list. */}
+          {strip === stripOfLatest && latest?.status === 'added' && (
+            <button
+              type="button"
+              className="btn small scan-undo"
+              onClick={async () => {
+                const e = await undo(latest.id);
+                if (e) say('err', `Couldn't undo it: ${e}`);
+              }}
+            >
+              ↶ Undo
+            </button>
+          )}
         </div>
       )}
       {camera.on && !needs && !pick && (

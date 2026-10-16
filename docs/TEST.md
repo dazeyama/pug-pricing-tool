@@ -350,3 +350,26 @@ New since 0.9.9.8-day1, worth a check:
       it isn't cut off on the table's last row.
 - [ ] **A Completed buy's names in grey** (decision 277): ⋯ → Mark as completed on a test buy: every card name turns
       the struck cards' grey (not faded); Mark Paid/Ours again: white again.
+
+**The phone scanner** (decisions 278–279, docs/SCAN_FUNCTION.md; every phase's "Where to look" list is in its
+Section 15). On a phone: `npm run dev:lan` on the laptop, the phone at `https://<laptop>:5180/#/scan` (docs/SETUP.md);
+without one, `#/scan` in a second browser on the laptop uses the webcam.
+- [ ] **Pairing:** the phone lists the laptop's Price tab, a project and a collection as they open and close;
+      Pokémon only or a Paid/Ours collection greys the row with why; tapping pairs, and the laptop's list shows
+      **📱 <phone> · 0 scanned** with ×; × or leaving the price screen sends the phone back to its list, saying why.
+- [ ] **Scan card, a modern card:** the strip goes Sending → Pricing → ✓ Added at $…, with a chime; the laptop's
+      line flashes in at the price the stage shows with **Use TCGplayer** on; clicking the line opens it with
+      Use TCGplayer on; JustTCG's usage in Settings hasn't moved.
+- [ ] **Condition, Foil, a second copy:** LP + Foil → `*F* [LP]`; a non-foil-only card stays non-foil; Scan card on
+      the same card → ×2.
+- [ ] **By itself:** cards laid in the frame one after another are added with a chime each; one left there is
+      added once ("Same card in view").
+- [ ] **No price:** an obscure promo → the phone asks; a price adds it as ✎ manual; Skip adds nothing.
+- [ ] **↶ Undo** takes one copy back off the laptop's list; the count goes down.
+- [ ] **Refused:** a German card ("Not English"); the back of a card ("Couldn't read"); the laptop's user signed out
+      ("Pick a user on …"), then picked again.
+- [ ] **An older card,** filling the frame, with Scan card: a 2005 card's printing, or its printings to pick from;
+      a 1995 card's printings to pick from by set symbol.
+- [ ] **The desktop app is unchanged** at 1200 × 650 and up; the Help tab has **Scanning from a phone**.
+- [ ] **The benchmark on the store's own photos:** put them in `scan-fixtures/` (docs/SCAN_FUNCTION.md 11.3) and run
+      `node scripts/scan-benchmark.mjs` (and `--titles` on old cards in a folder of their own).

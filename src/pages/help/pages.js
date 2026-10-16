@@ -195,6 +195,13 @@ export const PAGES = [
     images: [{ src: 'import-cc', caption: 'A Mass Create file' }, { src: 'import-tcg', caption: 'A TCGplayer file' }],
   },
 
+  // Scanning from a phone (docs/SCAN_FUNCTION.md)
+  { id: 'scanning', chapter: 'Scanning from a phone', start: 'Scanning from a phone', title: 'Scanning from a phone' },
+  {
+    id: 'scanning-prices', chapter: 'Scanning from a phone', start: 'Scanning from a phone > Prices',
+    title: 'Prices and older cards',
+  },
+
   // Settings
   {
     id: 'settings', chapter: 'Settings', start: 'Settings tab', title: 'Settings',

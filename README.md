@@ -160,6 +160,9 @@ There are three ways cards come in:
 Every card bought lands in one shared record. Magic cards then go to Crystal Commerce, the store's
 inventory and web shop, as a Mass Create file.
 
+For a big pile of Magic cards, a phone can **scan** them straight into a computer's open list (see
+**Scanning from a phone**).
+
 Six tabs do the work: **Home**, **Buy**, **Collections**, **Calendar**, **Settings** and
 **Changelog**.
 
@@ -1236,6 +1239,77 @@ The footer shows the cards, their value at the file's prices, and the rows skipp
 
 Prices are the file's. A TCGplayer file with no price uses TCGplayer's market price for that SKU.
 **REPRICE?** brings them up to today. Printings she picks are remembered for the next file.
+
+<br>
+
+---
+
+<br>
+
+# 📱 Scanning from a phone
+
+For big piles of Magic cards. A phone reads each card with its camera and the card goes straight into
+a computer's open buy list, priced. The computer stays free for anything else. Magic only.
+
+**On the phone,** open the app's address. A phone gets the scanner instead of the app: sign in with
+the store password once, then name the phone ("Dana's phone").
+
+### Pairing
+
+The phone lists every computer with a price screen open: the Buy tab, a project or a collection.
+Each shows the computer's name, what it's on, and its user (**Pick user** when no one is picked).
+Tap one to scan into it.
+
+- **Greyed out:** the computer is on Pokémon only, or its list can't take cards (Paid/Ours,
+  Completed, being edited on another computer). The reason is under its name.
+- **One phone per computer.** Pairing a second phone replaces the first, which says so.
+- The computer's list shows **📱 Dana's phone · 23 scanned** under its heading. **×** unpairs it.
+  After a minute without hearing from the phone, the chip says **away**.
+- The pairing ends when the computer leaves its price screen. CONFIRM BUY doesn't end it: the next
+  buy's cards go into the new list.
+
+### Scanning
+
+1. Set the **condition** (NM to DMG) and **Normal | Foil**. They apply to every card from now on:
+   sort the pile first, and switch between piles.
+2. **START CAMERA**, and allow the camera. The first scan loads the card reader (about 3 MB).
+3. Lay each card in the frame, bottom edge clear. Cards are added by themselves when they read
+   clearly, with a chime.
+
+- **Scan card** reads the card in view now. Use it for a second copy of the same card: the scanner
+  never adds the same card twice in a row by itself.
+- **↶ Undo** under the last card takes one copy back off the list.
+- **💡 Lighting** turns the phone's torch on, where the phone has one. **■ Stop** stops the camera.
+- 🔔 / 🔇 turns the sounds on or off on this phone.
+- A card printed in another language is refused: add it on the computer.
+- **Couldn't read this card:** set it aside and add it on the computer.
+- A printing that exists only in foil is added as foil, whatever the switch says.
+
+### Prices
+
+Each card is priced on the computer, without using JustTCG unless it has to:
+
+1. **TCGplayer**: its market price from Scryfall, as **Use TCGplayer** would price it (NM at the price,
+   the other conditions by the Master Fallback Percentages).
+2. **JustTCG**, only when TCGplayer has no price for that finish.
+3. **Cardmarket**, as **Use Cardmarket** would price it.
+4. **Nothing:** the phone stops and asks for a price. **Add at $…** adds it at that price, as a manual
+   price. **Skip this card** adds nothing.
+
+A project's prices round up, as usual. To use JustTCG's condition prices for a card, click its line on
+the computer: it opens with Use TCGplayer on.
+
+### Older cards
+
+Cards printed before 2014 have no set code at the bottom. **Scan card** reads them by their title
+instead, so fill the frame with the card.
+
+- **1998 to 2014:** the "123/350" in the copyright line names the printing, when it can be read.
+- **Before 1998,** or when the number can't be read: the phone lists the card's printings. Tap the one
+  whose set symbol matches.
+
+Older cards aren't read by themselves, only with **Scan card**. The List cards come in as their
+original set's printing: fix the set on the computer.
 
 <br>
 

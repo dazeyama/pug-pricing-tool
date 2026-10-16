@@ -6,9 +6,11 @@ AS $function$
 declare
   v jsonb;
 begin
-  update scans set status = 'pricing', handled_at = now()
+  update scans
+     set status = case when status in ('undo', 'undoing') then 'undoing' else 'pricing' end, handled_at = now()
    where id = p_id and session_device_id = p_device
-     and (status = 'sent' or (status = 'pricing' and handled_at < now() - interval '1 minute'))
+     and (status in ('sent', 'undo')
+          or (status in ('pricing', 'undoing') and handled_at < now() - interval '1 minute'))
   returning to_jsonb(scans.*) into v;
   return v;
 end;
