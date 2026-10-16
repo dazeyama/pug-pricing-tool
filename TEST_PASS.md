@@ -167,3 +167,8 @@ on a real customer's buy**.
 - [ ] Buy tab: the stage's areas sit where they did (the "space kept for later phases" boxes went, but nothing drew them).
 - [ ] A day page's buy table and an exported collection's list: prices and the Custom SKU chip as before.
 
+**5b. price.css split into its areas (C4b)** — the built stylesheet is byte-for-byte the same as before (compared when it was done), so this is a glance, not a hunt
+- [ ] The Buy tab looks as it did: search bar, the card with its foil sheen on a foil, suggestions, Finish & Details, the price table, the price panel, the buy list.
+- [ ] The local dev server serves the split files: no "Failed to load" in the console, and the Buy tab isn't unstyled for a moment after a reload.
+- [ ] A collection's screen (its flipped background and amber accent) and a project's look as they did.
+

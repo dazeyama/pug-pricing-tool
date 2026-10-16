@@ -1,4 +1,4 @@
-/** The magnifying glass's size and its clear rim's width, px (price.css .cz-lens), and how much it enlarges. */
+/** The magnifying glass's size and its clear rim's width, px (price/zoom.css .cz-lens), and how much it enlarges. */
 export const LENS = { size: 260, rim: 14, zoom: 2 };
 
 /**

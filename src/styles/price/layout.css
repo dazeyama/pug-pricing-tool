@@ -1,0 +1,92 @@
+/* ---- Below the search bar (owner's layout, 2026-09-29) -------------------
+     card    | info    | quote     (the selected price, Credit, Cash)
+     card    | thumbs  | side      (finish & details)
+     prices  | thumbs  | side
+     prices  | thumbs  | actions   (Qty · CLEAR · ADD CARD)
+   The condition prices span the last two rows and Finish & Details the
+   middle two (owner, 2026-10-01): the action row is only its own height,
+   so the prices never take room from Finish & Details on smaller screens. */
+.stage-body {
+  /* The info box's row is a fixed height, drawn with or without a card, so
+     the suggestions under it never move. */
+  --info-h: 170px;
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  /* The card's column widens on a tall window so the card fills it
+     (--card-grow, --side-give: src/lib/cardRoom.js; owner, 2026-10-14). */
+  grid-template-columns: calc(336px + var(--card-grow, 0px)) minmax(0, 1fr)
+    clamp(260px, calc(21vw / var(--ui-zoom)), calc(380px - var(--side-give, 0px)));
+  --actions-h: 64px;
+  grid-template-rows: var(--info-h) minmax(0, 1fr) auto var(--actions-h);
+  grid-template-areas:
+    "card   info   quote"
+    "card   thumbs side"
+    "prices thumbs side"
+    "prices thumbs actions";
+  gap: 16px 32px;
+}
+/* The card and thumbnail areas are size containers: their contents are sized
+   from the space the grid gives them (cqw/cqh), never the other way round. */
+.area-card { grid-area: card; min-height: 0; display: flex; flex-direction: column; container-type: size; }
+.area-info { grid-area: info; min-width: 0; }
+.area-thumbs { grid-area: thumbs; min-height: 0; display: flex; flex-direction: column; container-type: size; }
+.area-quote { grid-area: quote; min-width: 0; position: relative; }
+/* The warning list hangs below the panel; its top padding bridges the gap so
+   moving the mouse down onto it doesn't close it. */
+.quote-pop { position: absolute; top: 100%; left: 0; right: 0; z-index: 30; padding-top: 6px; }
+.area-side { grid-area: side; min-height: 0; display: flex; flex-direction: column; }
+/* Price warnings (owner, 2026-09-29): one short line per reason, in a box
+   that floats over Finish & Details from the price panel's warning line, so
+   nothing else ever loses room to it. */
+.price-warnings {
+  padding: 10px 14px 10px 12px;
+  border: 1px solid rgba(255, 204, 102, .55);
+  border-radius: 10px;
+  background: rgb(40, 32, 12);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, .55);
+}
+.price-warnings-head {
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--warn);
+}
+.price-warnings ul { margin: 0; padding-left: 18px; }
+.price-warnings li { font-size: 13px; line-height: 1.35; font-variant-numeric: tabular-nums; }
+.price-warnings li + li { margin-top: 3px; }
+/* How the price moved lately (PriceTrendBox), in the same box: green for a
+   rise, red for a fall (owner, 2026-10-14). */
+.price-trend-box {
+  padding: 10px 14px 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--trend) 55%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--trend) 14%, rgb(14, 17, 28));
+  box-shadow: 0 12px 28px rgba(0, 0, 0, .55);
+}
+.price-trend-box.up { --trend: var(--good); }
+.price-trend-box.down { --trend: var(--bad); }
+.price-trend-head {
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--trend);
+}
+.price-trend-box ul { margin: 0; padding-left: 18px; }
+.price-trend-box li { font-size: 13px; line-height: 1.35; font-variant-numeric: tabular-nums; }
+.price-trend-box li + li { margin-top: 3px; }
+.area-prices { grid-area: prices; }
+.area-actions { grid-area: actions; }
+
+.stage-label {
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}

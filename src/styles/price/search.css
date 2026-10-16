@@ -1,0 +1,64 @@
+/* ---- Main search bar: large, fixed at the top, never an overlay ---- */
+.main-search { flex: none; }
+.main-search-row { display: flex; gap: 12px; align-items: stretch; }
+.main-search-field { position: relative; flex: 1; }
+.main-search-icon {
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+}
+.main-search-field input {
+  margin: 0;
+  height: 56px;
+  font-size: 20px;
+  padding: 0 64px 0 52px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+}
+.main-search-field input:focus { border-color: var(--accent); }
+.main-search-field input::placeholder { color: var(--muted); font-size: 17px; }
+.jp-chip, .tag-jp {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: var(--pal-crimson);
+  color: #fff;
+}
+.jp-chip { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); }
+.lang-toggle {
+  display: flex;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--bg);
+}
+.lang-toggle button {
+  min-width: 58px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.lang-toggle button + button { border-left: 1px solid var(--border); }
+.lang-toggle button:hover { color: var(--text); }
+.lang-toggle button.on { background: var(--accent-2); color: #fff; }
+.lang-toggle button:disabled { opacity: .4; cursor: default; }
+.lang-toggle button:disabled:hover { color: var(--muted); }
+/* MTG | PKM: each game on or off, in its badge colours when on. The last one
+   on can't be switched off (owner, 2026-09-29). */
+.game-toggle button.mtg.on { background: var(--pal-indigo); color: #fff; }
+.game-toggle button.pokemon.on { background: var(--pal-amber); color: #1a1405; }
+.game-toggle button.last { cursor: default; }
+.search-note { margin: 6px 2px 0; min-height: 18px; font-size: 13px; color: var(--muted); }
+.search-note strong { color: var(--text); }
+/* A suggestion to switch EN | JP: the hint yellow of the Japanese search tip
+   (.jp-hint), so every search hint reads the same (owner, 2026-10-10). */
+.search-note .note-hint, .search-note .note-hint strong { color: var(--warn); }

@@ -1,0 +1,102 @@
+/* ---- The selected card, large (owner, 2026-10-14): clicked, it opens in a
+        panel in the middle of the dimmed screen, its name in bold above it,
+        and the cursor becomes a 2× magnifying glass (CardZoom). The card is
+        as tall as the window allows, up to Scryfall's PNG (1040 px). ---- */
+.card-box.zoomable { cursor: zoom-in; }
+.card-zoom {
+  --cz-card-h: min(calc(100vh - 132px), calc((100vw - 72px) * 680 / 488), 1040px);
+  --cz-card-w: calc(var(--cz-card-h) * 488 / 680);
+  position: fixed;
+  inset: 0;
+  z-index: 260;   /* over the screen and its menus; toasts (300) stay on top */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(4, 6, 12, .84);
+  outline: none;
+  cursor: none;
+  animation: cz-in .14s ease-out;
+}
+.card-zoom * { cursor: none; }
+@keyframes cz-in { from { opacity: 0; } }
+.cz-panel {
+  box-sizing: content-box;
+  width: var(--cz-card-w);
+  padding: 14px 18px 18px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .7);
+}
+.cz-name {
+  margin: 0 0 12px;
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 800;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cz-sub { margin-left: 10px; font-size: 15px; font-weight: 600; color: var(--muted); }
+.cz-card { position: relative; }
+.cz-card .card-wrap { height: var(--cz-card-h); width: var(--cz-card-w); }
+
+/* The magnifying glass, in place of the cursor (sized by CardZoom, from
+   lib/cardZoom.js): the card at 2× in a circle, a faint glassy sheen over
+   it, and a thick clear rim (--cz-rim) showing the screen behind it,
+   brightened and a little blurred, the way thick glass does. */
+.cz-lens {
+  position: fixed;
+  left: 0;
+  top: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  visibility: hidden;
+  will-change: transform;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, .55), 0 0 0 1px rgba(255, 255, 255, .35);
+}
+.cz-lens::before {   /* the rim's glass */
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(235, 244, 255, .08) 55%, rgba(235, 244, 255, .24) 100%);
+  -webkit-backdrop-filter: blur(1.5px) brightness(1.3);
+  backdrop-filter: blur(1.5px) brightness(1.3);
+}
+.cz-lens-zoom {
+  position: absolute;
+  inset: var(--cz-rim);
+  border-radius: 50%;
+  overflow: hidden;
+  background: #07090f;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, .5), 0 0 10px rgba(0, 0, 0, .5);
+}
+.cz-lens-view { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.cz-lens-zoom::after {   /* the faint sheen across the zoom */
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(ellipse 58% 40% at 32% 22%, rgba(255, 255, 255, .18), transparent 70%),
+    linear-gradient(140deg, rgba(200, 225, 255, .07), transparent 45%, transparent 72%, rgba(200, 225, 255, .05));
+  box-shadow: inset 0 0 18px rgba(190, 215, 255, .16);
+}
+.cz-lens::after {   /* the rim's highlights: light from above, shade below */
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow:
+    inset 0 2px 3px rgba(255, 255, 255, .55),
+    inset 0 -3px 6px rgba(0, 0, 0, .3),
+    inset 0 0 0 1px rgba(255, 255, 255, .22);
+}
+/* A touch screen keeps no cursor to replace. */
+@media (hover: none) {
+  .card-zoom, .card-zoom * { cursor: auto; }
+  .cz-lens { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .card-zoom { animation: none; } }

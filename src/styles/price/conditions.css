@@ -1,0 +1,83 @@
+/* ---- Condition / price table under the card (spec 8.7) ----
+   The most important thing on the screen (owner, 2026-09-29): big buttons,
+   big prices, a colour edge per condition (NM green → DMG red). */
+.price-table { display: flex; flex-direction: column; gap: 6px; }
+/* minmax(0, 1fr): a long label never widens a column past the table. */
+.price-buttons { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+.price-btn {
+  --cond: var(--border);
+  height: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 2px;
+  border: 2px solid var(--border);
+  border-top: 5px solid var(--cond);
+  border-radius: 9px;
+  background: rgba(24, 28, 46, .95);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+.price-btn.cond-nm { --cond: #3ecf8e; }
+.price-btn.cond-lp { --cond: #a3d65c; }
+.price-btn.cond-mp { --cond: #ffcc66; }
+.price-btn.cond-hp { --cond: #ff9f43; }
+.price-btn.cond-dmg { --cond: #ff6b6b; }
+.price-btn:hover:not(:disabled) { border-color: var(--accent); border-top-color: var(--cond); }
+.price-btn.on {
+  background: var(--accent-2);
+  border-color: #fff;
+  border-top-color: var(--cond);
+  box-shadow: 0 0 0 2px var(--accent);
+}
+.price-btn:disabled { cursor: default; opacity: .7; }
+.pc-cond { font-size: 16px; font-weight: 800; letter-spacing: .06em; }
+.pc-warn { margin-right: 4px; font-size: 14px; letter-spacing: 0; }
+.pc-manual { margin-right: 4px; font-size: 15px; letter-spacing: 0; color: var(--warn); }
+.price-btn.on .pc-manual { color: #fff; }
+.pc-price {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: var(--pc-size, 18px);
+  font-weight: 800;
+  line-height: 1.1;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.pc-price.muted { color: var(--muted); font-size: 18px; }
+.pc-price.manual b { font-weight: 800; }
+.pc-price.manual s { font-size: 11px; font-weight: 500; color: var(--muted); }
+.price-btn.on .pc-price.manual s, .price-btn.on .pc-price.muted { color: rgba(255, 255, 255, .7); }
+.fb-tag { font-size: 9.5px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; color: var(--warn); white-space: nowrap; }
+.pc-price.shimmer {
+  width: 70%;
+  height: 16px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #232842 25%, #343c60 50%, #232842 75%) 0 0 / 250% 100%;
+  animation: shimmer 1.2s linear infinite;
+}
+/* Use Fallback and ✎ Manual price centred under the buttons, the caption on
+   its own line below them (owner, 2026-09-29). */
+.price-foot { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.price-tools { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 26px; }
+/* Use Fallback, Use Cardmarket, ✎ Manual price and its × in 336px. */
+.price-tools .btn.small { padding: 5px 8px; white-space: nowrap; }
+.manual-btn.on, .override-btn.on { border-color: var(--warn); color: var(--warn); }
+.manual-edit { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; }
+.manual-edit input { width: 86px; margin: 0; padding: 4px 8px; font-size: 14px; }
+.price-caption {
+  max-width: 100%;
+  text-align: center;
+  font-size: 11.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.price-caption .muted { color: var(--muted); }
+.price-caption .warn { color: var(--warn); }
+.price-caption a { color: var(--accent); }
+.link-btn { background: none; border: none; padding: 0; color: var(--accent); font: inherit; text-decoration: underline; cursor: pointer; }

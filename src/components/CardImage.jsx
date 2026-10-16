@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import CardLoading from './CardLoading.jsx';
 
-/** .card-wrap's aspect-ratio (price.css): a picture of another shape sits inside it, centred. */
+/** .card-wrap's aspect-ratio (price/card.css): a picture of another shape sits inside it, centred. */
 const WRAP_ASPECT = 488 / 680;
 
 /**
@@ -28,7 +28,7 @@ function pictureBox(aspect) {
  * per image so each card starts fresh. Never crop or cover a card image
  * (Scryfall's image rules); the overlays are `shine` ('foil', 'pokemon-full',
  * or 'holo' / 'reverse' with a frame era like 'era-2007'), a see-through foil
- * sheen (price.css .card-shine), and for a vintage Pokémon card `overlay`,
+ * sheen (price/card.css .card-shine), and for a vintage Pokémon card `overlay`,
  * laid on the large picture once it's loaded, under the sheen, in a box the
  * picture's own shape (the 1st Edition stamp, painted out or drawn on).
  */

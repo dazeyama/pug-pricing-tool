@@ -1,6 +1,6 @@
 // Pokémon card frames, for the foil sheen (spec 8.4). Holo shines on the art
 // window and reverse holo everywhere else, and the art window moved as the
-// frame was redesigned, so each era has its own mask (price.css
+// frame was redesigned, so each era has its own mask (price/card.css
 // .card-shine.era-*). Eras by the set's release year (owner, 2026-09-29);
 // the odd set that breaks its era's frame is an accepted outlier.
 
@@ -134,7 +134,7 @@ export function isRuleBox(card, name) {
  * are 1st Edition ones, and Base Set's 1st Edition was printed shadowless;
  * its Unlimited prints have a drop shadow along the art frame's right and
  * bottom edges, as Base Set 2 and every later set do. So the Unlimited
- * versions get one drawn (a CSS box shadow, price.css .art-shadow, measured
+ * versions get one drawn (a CSS box shadow, price/card.css .art-shadow, measured
  * against Base Set 2's and made a little stronger, as the owner asked).
  * Pokémon only: Trainers don't have it. `BASE_SET_ART_FRAME` is the frame's
  * outer edge as fractions of the picture, the same on all 69 Pokémon scans.

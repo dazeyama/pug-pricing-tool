@@ -1,0 +1,392 @@
+/* ---- Buy list sidebar (Audit Tool list panel, docked right) ----
+   340px, plus the width the suggestions don't use (--list-extra, set by
+   useListRoom in price/useStageRoom.js; owner, 2026-09-29). */
+.buy-list {
+  position: relative;   /* Set Rate and its menu are placed in it */
+  flex: none;
+  width: calc(340px + var(--list-extra, 0px));
+  display: flex;
+  flex-direction: column;
+  background: rgba(24, 28, 46, .9);
+  border-left: 1px solid var(--border);
+}
+.list-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 16px 16px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.list-title { font-size: .78rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.list-count { font-size: 13px; color: var(--muted); }
+.list-empty { margin: 18px 16px; color: var(--muted); font-size: 13px; }
+/* No top padding on the scroller itself: the sticky game headers would stop
+   that far down, and rows scrolling past would show above them. */
+.list-body { flex: 1; min-height: 0; overflow-y: auto; padding: 0 0 10px; }
+.list-group:first-child { padding-top: 6px; }
+.list-group + .list-group { margin-top: 8px; }
+.group-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 8px 16px 4px;
+  background: rgb(24, 28, 46);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+/* The game's name in its badge colours, like the MTG | PKM toggle and the
+   game chips (owner, 2026-09-29). */
+.group-chip { display: inline-block; padding: 2px 9px; border-radius: 999px; }
+.group-chip.mtg { background: var(--pal-indigo); color: #fff; }
+.group-chip.pokemon { background: var(--pal-amber); color: #1a1405; }
+/* One line: plain text, wraps, the whole text the hit target; the accent
+   colour on hover (click to edit), and a red × at the end removes it
+   (owner, 2026-09-29). */
+.buy-line-row { display: flex; align-items: flex-start; padding-right: 8px; }
+/* The price picked, per card, before the line (owner, 2026-09-29): a
+   right-aligned column so the lines start level. Display only; the line
+   text itself stays Moxfield-style. */
+.line-price {
+  flex: none;
+  width: 4.6em;
+  padding: 3px 0 3px 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.buy-line-row.editing { background: color-mix(in srgb, var(--accent) 16%, transparent); box-shadow: inset 3px 0 0 var(--accent); }
+.buy-line-row.editing .buy-line { color: var(--accent); }
+.line-x {
+  flex: none;
+  padding: 2px 6px;
+  border: none;
+  border-radius: 5px;
+  background: none;
+  color: var(--bad);
+  font-size: 16px;
+  line-height: 1;
+  opacity: .55;
+  cursor: pointer;
+}
+.buy-line-row:hover .line-x { opacity: 1; }
+/* A struck card (owner, 2026-10-16; lib/struck.js): crossed out, kept as a record: solid grey
+   text under a solid, thick white line (owner: "too faint"; then the text 100% too, grey). */
+.buy-line-row.struck .line-price,
+.buy-line-row.struck .buy-line {
+  color: var(--muted);
+  text-decoration: line-through 2px #fff;
+}
+.buy-line-row.struck .buy-line * { color: inherit; }
+.buy-line-row.struck .buy-line { cursor: default; }
+.line-x:hover { background: rgba(255, 107, 107, .15); opacity: 1; }
+.buy-line {
+  display: block;
+  flex: 1;
+  min-width: 0;
+  padding: 3px 8px 3px 10px;
+  border: none;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.35;
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.buy-line:hover { color: var(--accent); }
+.buy-line-row.flash { animation: line-flash 1.6s ease-out; }
+/* Hovering a line shows its card beside the sidebar, the size of a search
+   suggestion (Scryfall's small image, 146 × 204). No foil effects. */
+.line-preview {
+  position: fixed;
+  z-index: 330;   /* above the header search's dropdown (320), which it can sit beside */
+  width: 146px;
+  aspect-ratio: 488 / 680;
+  border-radius: 7px;
+  overflow: hidden;
+  background: var(--panel-2);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, .6);
+  pointer-events: none;
+}
+.line-preview img { width: 100%; height: 100%; display: block; object-fit: contain; }
+/* A line a header search matched (spec 13): tinted, flashing on arrival. */
+.buy-line-row.search-hit {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  box-shadow: inset 3px 0 0 var(--accent);
+  animation: lineHit 2.4s ease;
+}
+@keyframes lineHit {
+  0%, 45% { background: color-mix(in srgb, var(--accent) 42%, transparent); }
+  100% { background: color-mix(in srgb, var(--accent) 16%, transparent); }
+}
+@keyframes line-flash {
+  0%, 30% { background: rgba(62, 207, 142, .28); }
+  100% { background: transparent; }
+}
+
+/* Totals, custom rates, CANCEL / CONFIRM BUY: the sidebar's foot. */
+.list-foot { flex: none; padding: 10px 16px 14px; border-top: 1px solid var(--border); }
+.totals { position: relative; margin-bottom: 10px; }
+.total-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 0;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+.total-row strong { font-size: 16px; }
+.pct-link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-decoration: underline dotted var(--muted);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.pct-link:hover { color: var(--accent); }
+.pct-link.custom, .custom-mark { color: var(--accent); }
+.total-row.cash, .total-row.cash .pct-link { color: var(--cash); }
+.total-row.credit, .total-row.credit .pct-link { color: var(--credit); }
+.total-row.cash .pct-link { text-decoration-color: color-mix(in srgb, var(--cash) 60%, transparent); }
+.total-row.credit .pct-link { text-decoration-color: color-mix(in srgb, var(--credit) 60%, transparent); }
+.rate-row.cash .rate-name { color: var(--cash); }
+.rate-row.credit .rate-name { color: var(--credit); }
+.rates-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 8px);
+  z-index: 20;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, .55);
+}
+.rates-head { margin-bottom: 8px; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.rates-note { margin: -2px 0 9px; font-size: 12px; line-height: 1.4; color: var(--muted); }
+.rate-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-size: 14px; }
+.rate-name { width: 52px; }
+.rate-row input { width: 64px; margin: 0; padding: 4px 8px; }
+.rate-master { margin-left: auto; font-size: 12px; color: var(--muted); }
+.rates-foot { display: flex; justify-content: space-between; margin-top: 8px; }
+
+/* Individual rates (docs/TEAM_FEEDBACK.md 4.3–4.4). A card with its own rate
+   (Set Rate) in the list: a small CUSTOM beside Cash and Credit, its tooltip
+   saying how many (owner, 2026-10-15; not for the low-end / high-end rates,
+   which almost every trade has). */
+.custom-rate-mark {
+  margin-left: 6px;
+  padding: 0 6px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  vertical-align: 2px;
+  opacity: .8;
+  cursor: help;
+}
+/* A card with its own rate: tinted, with ✎ Credit / Cash after its name. */
+.buy-line-row.own-rate { background: color-mix(in srgb, var(--accent) 9%, transparent); }
+.own-rate-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 6px;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.own-rate-tag .is-credit { color: var(--credit); }
+.own-rate-tag .is-cash { color: var(--cash); }
+.buy-line-row.rating { box-shadow: inset 3px 0 0 var(--accent); background: color-mix(in srgb, var(--accent) 16%, transparent); }
+/* Right-click on a card: Set Rate, where the pointer is. */
+.rate-menu {
+  position: absolute;
+  z-index: 40;
+  min-width: 140px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, .55);
+}
+.rate-menu button {
+  display: block;
+  width: 100%;
+  padding: 7px 10px;
+  border: none;
+  border-radius: 5px;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+.rate-menu button:hover { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); }
+.rate-menu button.is-blocked { color: var(--muted); }
+/* Set Rate: beside its card, just outside the sidebar. */
+.rates-panel.card-rate-panel { left: auto; right: calc(100% + 10px); bottom: auto; width: 300px; }
+.card-rate-name { text-transform: none; letter-spacing: 0; color: var(--text); }
+.rate-row.own .rate-name { font-weight: 700; }
+/* Maintain ratio (owner, 2026-10-15): ticked, Credit is twice Cash and can't be typed. */
+.rate-keep { display: flex; align-items: center; gap: 7px; margin: 0 0 8px; font-size: 13px; cursor: pointer; }
+.rate-keep input { margin: 0; }
+.rate-keep-note { color: var(--muted); font-size: 12px; }
+.card-rate-panel .rate-row input[readonly] { opacity: .65; cursor: default; }
+/* Cash above Credit: the Cash box red, and a warning under the boxes. */
+.card-rate-panel .rate-row input.is-warn {
+  border-color: var(--bad);
+  background: color-mix(in srgb, var(--bad) 16%, transparent);
+  box-shadow: 0 0 0 1px var(--bad);
+}
+.rate-warn { margin: 0 0 6px; color: var(--bad); font-size: 12.5px; font-weight: 600; }
+.list-buttons { display: flex; gap: 10px; align-items: stretch; }
+
+/* CLEAR / ADD CARD and CANCEL / CONFIRM BUY mirror each other (spec 8.9):
+   a smaller red button beside a large green one, about 64px tall. */
+.clear-btn, .cancel-btn {
+  flex: none;
+  padding: 0 16px;
+  border-color: var(--bad);
+  background: transparent;
+  color: var(--bad);
+  font-weight: 700;
+  letter-spacing: .04em;
+}
+.clear-btn:hover, .cancel-btn:hover:not(:disabled) { background: rgba(255, 107, 107, .12); border-color: var(--bad); }
+.add-btn, .confirm-btn {
+  flex: 1;
+  min-height: 64px;
+  white-space: nowrap;
+  border-color: var(--good);
+  background: var(--good);
+  color: #0d2418;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: .04em;
+}
+.add-btn:hover, .confirm-btn:hover { filter: brightness(1.08); border-color: var(--good); }
+/* SAVE EDIT: blue while a buy-list line is being edited (owner, 2026-09-29). */
+.add-btn.editing, .add-btn.editing:hover { border-color: var(--accent-2); background: var(--accent-2); color: #fff; }
+.add-btn.is-disabled, .confirm-btn.is-disabled { filter: saturate(.4); }
+.confirm-btn.small-confirm { flex: none; min-height: 0; font-size: 14px; padding: 8px 16px; }
+.action-row { display: flex; align-items: stretch; gap: 10px; height: var(--actions-h, 64px); }
+/* The row's own height, whatever it is (52px on a short window). */
+.action-row .add-btn { min-height: 0; }
+.qty-box {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.qty-box input { width: 64px; height: 100%; margin: 0; font-size: 20px; font-weight: 700; text-align: center; }
+.area-actions { align-self: end; }
+
+/* Remove and CONFIRM BUY dialogs. */
+.remove-qty { display: flex; align-items: center; gap: 8px; }
+.remove-qty input { width: 72px; margin: 0; }
+/* Convert to buy…'s sentence above the totals (owner, 2026-10-10). */
+.confirm-intro { margin: 0 0 12px; }
+/* CONFIRM BUY (and Convert to buy) may stand a little taller than other dialogs, so
+   an own-rate alert with one card fits without a scrollbar; two or more may scroll
+   (owner, 2026-10-15). */
+.confirm-modal .modal-box { max-height: calc(94vh / var(--ui-zoom)); }
+.confirm-totals { margin-bottom: 12px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; }
+.confirm-field { display: block; margin-bottom: 10px; }
+.confirm-field span { display: block; margin-bottom: 4px; font-size: 13px; color: var(--muted); }
+.confirm-field em { font-style: normal; opacity: .75; }
+.confirm-field input, .confirm-field textarea { width: 100%; margin: 0; }
+/* 🚩 Flag check for condition (owner, 2026-10-14): red when ticked. */
+.confirm-flag {
+  display: flex; align-items: flex-start; gap: 10px; margin: 2px 0 12px; padding: 9px 12px;
+  border: 1px solid var(--border); border-radius: 8px; cursor: pointer;
+}
+.confirm-flag input { width: auto; margin: 3px 0 0; accent-color: var(--bad); }
+.confirm-flag-text { display: flex; flex-direction: column; gap: 2px; font-weight: 700; color: var(--text); }
+.confirm-flag-text em { font-style: normal; font-weight: 400; font-size: 12px; color: var(--muted); }
+.confirm-flag.on { border-color: var(--bad); background: rgba(255, 107, 107, .1); }
+.confirm-field .field-error { width: auto; margin: 4px 0 0; font-size: 12px; color: var(--bad); }
+/* Purchase price: the Cash / Credit chips, then the amount (owner, 2026-09-30). */
+.confirm-paid .pay-method { margin: 0 0 8px; }
+.confirm-paid .deal-field { margin-bottom: 0; }
+.confirm-paid .deal-field > span:first-child { display: none; }
+.confirm-user { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
+
+/* Short windows (1366×768 laptops): tighter spacing; the card and thumbnails
+   size themselves to what's left. The owner checks the 1366×768 laptop (Phase 10 list). */
+@media (max-height: 820px) {
+  .stage { gap: 8px; padding-top: 10px; }
+  .main-search-field input { height: 48px; font-size: 18px; }
+  .card-info { padding: 12px 14px; }
+  .info-name { font-size: 19px; }
+  .placeholder-name input { font-size: 19px; }
+  /* Smaller windows (owner, 2026-10-01): a shorter info row, a lower finish
+     control and action row, tighter gaps, so Finish & Details fit. */
+  .stage-body { --info-h: 150px; --actions-h: 52px; gap: 12px 24px; }
+  .finish-panel { padding: 10px 12px 12px; }
+  .details-label { margin-top: 10px; }
+  .finish-segments { height: 48px; }
+  .finish-segments button { font-size: 15px; }
+  .foil-switch { height: 40px; }
+  .foil-knob { width: 30px; height: 30px; }
+  /* ADD CARD / SAVE EDIT on one line in the narrower side column (owner, 2026-10-14). */
+  .action-row .add-btn { padding: 0 10px; font-size: 17px; }
+  .action-row .clear-btn { padding: 0 12px; }
+  .qty-box input { width: 54px; }
+}
+/* One row of 5 suggestions on a shorter window (Suggestions.jsx): each sized
+   from the full height (36px for the line above, 22px for its label). */
+.thumbs.one-row {
+  --thumb-w: min(146px, calc((100cqw - 4 * 14px) / 5), calc((100cqh - 36px - 22px) * 0.7176));
+}
+/* Narrower windows: a slimmer card column and side column, smaller gaps. */
+@media (max-width: 1500px) {
+  .stage-body {
+    grid-template-columns: calc(300px + var(--card-grow, 0px)) minmax(0, 1fr)
+      clamp(240px, calc(21vw / var(--ui-zoom)), calc(340px - var(--side-give, 0px)));
+    column-gap: 24px;
+  }
+  .finish-segments button { font-size: 15px; letter-spacing: .02em; }
+  /* The three price buttons in the 300px column (they were 6px too wide; owner, 2026-10-14). */
+  .price-tools { gap: 4px; }
+  .price-tools .btn.small { padding: 5px 6px; }
+}
+
+/* CONFIRM BUY, Paid/Ours and Convert to buy: the cards with their own rate
+   and what each changes (docs/TEAM_FEEDBACK.md 4.5). It informs; the dialog
+   still confirms. */
+.own-rate-alert {
+  margin: 0 0 10px;
+  padding: 6px 11px;
+  border: 1px solid color-mix(in srgb, var(--warn) 60%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--warn) 10%, transparent);
+  font-size: 13px;
+}
+.own-rate-alert strong { display: block; margin-bottom: 1px; color: var(--warn); }
+.own-rate-alert ul { margin: 0; padding-left: 16px; }
+/* One line per card: the card in full — Credit · Cash, in their colours. */
+.own-rate-alert li { margin: 1px 0; line-height: 1.35; font-variant-numeric: tabular-nums; }
+.ora-card { font-weight: 600; }

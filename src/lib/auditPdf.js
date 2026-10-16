@@ -63,7 +63,7 @@ const BUCKET_RGB = {
   land: [191, 173, 150],
   unknown: [217, 217, 217],
 };
-// The condition chip's outline: the condition buttons' colours (price.css),
+// The condition chip's outline: the condition buttons' colours (price/conditions.css),
 // deepened to read as a thin line on paper.
 const CONDITION_RGB = {
   NM: [34, 150, 96], LP: [104, 154, 36], MP: [196, 142, 18], HP: [212, 106, 28], DMG: [204, 58, 58],

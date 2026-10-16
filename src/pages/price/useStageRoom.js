@@ -7,7 +7,7 @@ import { cardRoom } from '../../lib/cardRoom.js';
 
 // The list takes the width the suggestions don't use (owner, 2026-09-29).
 // A thumbnail is at most 146px wide and also limited by the area's height
-// (price.css .thumbs); on a wide screen that leaves empty space between the
+// (price/suggestions.css .thumbs); on a wide screen that leaves empty space between the
 // thumbnails and Finish & Details, which goes to the sidebar instead, up to
 // LIST_EXTRA_MAX. Measured, since the thumbnails' size depends on their column.
 const LIST_EXTRA_MAX = 220;

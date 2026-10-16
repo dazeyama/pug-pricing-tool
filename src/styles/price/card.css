@@ -1,0 +1,279 @@
+/* ---- The selected card: Scryfall's card-page size, 336 × 468, centred in
+        its column, empty or not (owner, 2026-09-29). It only shrinks when the
+        window is too short for it, and on a tall window it grows to fill
+        its area, its column widening with it (owner, 2026-10-14). ---- */
+.card-box { position: relative; align-self: center; }
+/* --card-h: the card's height, leaving room for the label above (26px) and
+   the finish line below (32px), and no wider than its column. */
+.area-card { --card-h: min(calc(100cqh - 58px), calc(100cqw / 0.7176)); }
+.card-box .card-wrap { height: var(--card-h); width: auto; }
+
+/* The finish named under the card, centred on it: one line whatever happens.
+   The font is sized from the label's own length (--tag-len, characters): as
+   large as fits the card's width at about .8em a character, up to 20px, so
+   "✦ FOIL" is big and "✦ REVERSE HOLO · MASTER BALL" still fits. */
+.finish-line {
+  flex: none;
+  align-self: center;
+  display: flex;
+  justify-content: center;
+  width: calc(var(--card-h) * .7176);
+  height: 26px;
+  margin-top: 6px;
+  align-items: center;
+  white-space: nowrap;
+  font-size: min(20px, calc(var(--card-h) * .7176 / (var(--tag-len) * .8)));
+  text-transform: uppercase;
+}
+
+.card-wrap {
+  position: relative;
+  aspect-ratio: 488 / 680;
+  border-radius: var(--card-radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  background: var(--panel-2);
+}
+/* contain: a card image is never stretched or cropped, whatever its box does. */
+.card-img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: contain; }
+.card-img.pending { opacity: 0; }
+/* Laid on the large picture, in a box its own shape, under the foil sheen
+   (CardImage overlay): the 1st Edition stamp painted out, or drawn on
+   (owner, 2026-10-12). Its pieces are placed in % of the picture. */
+.card-overlay { position: absolute; z-index: 1; pointer-events: none; container-type: inline-size; }
+.card-overlay > * { position: absolute; display: block; }
+.stamp-patch { image-rendering: auto; }
+.stamp-drawn { overflow: visible; }
+/* Base Set's art-frame shadow on its Unlimited prints (owner, 2026-10-12): an
+   empty box the frame's size casting a drop shadow down and right, in cqw
+   (1% of the picture's width) so it scales with the card. Measured against
+   Base Set 2's (a brown band hugging the frame's right edge, a thin one
+   under it), then made a little stronger, as the owner asked. */
+.art-shadow { box-shadow: 1.8cqw 0.8cqw 2cqw rgba(45, 18, 8, .78); }
+
+/* Foil sheen over the selected card (spec 8.4), like Moxfield's: a drifting
+   rainbow blended into the card, brighter and dimmer in diagonal bands, over
+   an area that depends on the finish (--shine-area):
+     foil     Magic foil/etched: the whole card, fading out above the bottom
+              (artist/copyright) strip, which Scryfall's rules keep clear.
+     holo     Pokémon holo: the art window only, like a real holo.
+     reverse  Pokémon reverse holo: everything except the art window.
+   The art window depends on the card's frame era (.era-*, below). */
+.card-wrap { isolation: isolate; }
+.card-shine {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(115deg, transparent 16%, rgba(255, 255, 255, .85) 28%, transparent 40%,
+      transparent 54%, rgba(255, 255, 255, .7) 64%, transparent 76%),
+    linear-gradient(115deg, #ff2d95, #ffd84d, #3dffb4, #38b6ff, #a45bff, #ff2d95);
+  background-size: 220% 220%, 300% 300%;
+  mix-blend-mode: color-dodge;
+  opacity: .31;                                   /* halved from .62 (owner, 2026-09-29) */
+  animation: foil-drift 9s ease-in-out infinite alternate;   /* half speed */
+  --ray-center: 50% 28.5%;
+  --shine-bands: linear-gradient(135deg, rgba(0, 0, 0, .55) 0%, #000 28%, rgba(0, 0, 0, .55) 52%, #000 76%, rgba(0, 0, 0, .55) 100%);
+  -webkit-mask-image: var(--shine-bands), var(--shine-area);
+  -webkit-mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-composite: source-in;
+  mask-image: var(--shine-bands), var(--shine-area);
+  mask-size: 100% 100%;
+  mask-repeat: no-repeat;
+  mask-composite: intersect;
+}
+.card-shine.foil { --shine-area: linear-gradient(to bottom, #000 86%, transparent 93%); }
+/* Art windows by frame era (owner, 2026-09-29): the art window moved as the
+   frame was redesigned, so holo (the art window) and reverse holo
+   (everything else) get the era's mask. Eras by the set's release year
+   (src/lib/pokemonFrames.js); a set that breaks its era's frame is an
+   accepted outlier (Sun & Moon before Cosmic Eclipse, HeartGold SoulSilver,
+   e-Card, Evolutions). Measured on TCGdex's full-size 600 × 825 scans: each
+   edge the strongest straight line near a first guess, the median over each
+   era's sample cards, checked against red outlines. */
+/* 1999: 10.83–89.33% across, 11.76–51.52% down (Base Set, Jungle, Gym Challenge, Neo Genesis, Neo Destiny) */
+.card-shine.era-1999 {
+  --holo-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Crect x='10.83' y='11.76' width='78.5' height='39.76'/%3E%3C/svg%3E");
+  --reverse-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M0 0H100V100H0Z M10.83 11.76H89.33V51.52H10.83Z'/%3E%3C/svg%3E");
+  --ray-center: 50% 31.64%;
+}
+/* 2003: 7.33–92.67% across, 9.45–46.18% down (Ruby & Sapphire, Hidden Legends, Emerald, Crystal Guardians, Power Keepers) */
+.card-shine.era-2003 {
+  --holo-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Crect x='7.33' y='9.45' width='85.33' height='36.73'/%3E%3C/svg%3E");
+  --reverse-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M0 0H100V100H0Z M7.33 9.45H92.67V46.18H7.33Z'/%3E%3C/svg%3E");
+  --ray-center: 50% 27.82%;
+}
+/* 2007: 6.83–93.33% across, 9.33–49.94% down (Diamond & Pearl, Mysterious Treasures (Gible 85), Majestic Dawn, Platinum, Arceus) */
+.card-shine.era-2007 {
+  --holo-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Crect x='6.83' y='9.33' width='86.5' height='40.61'/%3E%3C/svg%3E");
+  --reverse-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M0 0H100V100H0Z M6.83 9.33H93.33V49.94H6.83Z'/%3E%3C/svg%3E");
+  --ray-center: 50% 29.64%;
+}
+/* 2011: 8.67–91% across, 10.55–49.7% down (Black & White, Dark Explorers, Legendary Treasures, XY, Ancient Origins) */
+.card-shine.era-2011 {
+  --holo-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Crect x='8.67' y='10.55' width='82.33' height='39.15'/%3E%3C/svg%3E");
+  --reverse-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M0 0H100V100H0Z M8.67 10.55H91V49.7H8.67Z'/%3E%3C/svg%3E");
+  --ray-center: 50% 30.12%;
+}
+/* 2017: 7.83–92.5% across, 9.82–47.15% down (Cosmic Eclipse, Sword & Shield, Brilliant Stars, Silver Tempest) */
+.card-shine.era-2017 {
+  --holo-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Crect x='7.83' y='9.82' width='84.67' height='37.33'/%3E%3C/svg%3E");
+  --reverse-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M0 0H100V100H0Z M7.83 9.82H92.5V47.15H7.83Z'/%3E%3C/svg%3E");
+  --ray-center: 50% 28.48%;
+}
+/* 2023: 8–92.5% across, 9.82–47.15% down (Scarlet & Violet, Obsidian Flames, Twilight Masquerade, Surging Sparks, Destined Rivals) */
+.card-shine.era-2023 {
+  --holo-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Crect x='8' y='9.82' width='84.5' height='37.33'/%3E%3C/svg%3E");
+  --reverse-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M0 0H100V100H0Z M8 9.82H92.5V47.15H8Z'/%3E%3C/svg%3E");
+  --ray-center: 50% 28.48%;
+}
+/* Trainer cards (owner, 2026-10-11: Super Rod 188's mask was off): their
+   art window sits lower and runs taller than a Pokémon's, under the name,
+   so Items, Supporters, Stadiums and Tools get their own mask where it's
+   been measured (the same way, 24 cards an era). Other eras' Trainers keep
+   the Pokémon mask for now. */
+/* 2017 Trainer: 7.83–91.83% across, 14.18–56.12% down (Cosmic Eclipse, Sword & Shield, Darkness Ablaze, Chilling Reign, Brilliant Stars, Lost Origin, Silver Tempest) */
+.card-shine.era-2017.trainer {
+  --holo-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Crect x='7.83' y='14.18' width='84' height='41.94'/%3E%3C/svg%3E");
+  --reverse-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M0 0H100V100H0Z M7.83 14.18H91.83V56.12H7.83Z'/%3E%3C/svg%3E");
+  --ray-center: 50% 35.15%;
+}
+/* 2023 Trainer: 8–92.5% across, 14.18–56.12% down (Scarlet & Violet through Surging Sparks: Super Rod, Ultra Ball, Iono, Town Store…) */
+.card-shine.era-2023.trainer {
+  --holo-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Crect x='8' y='14.18' width='84.5' height='41.94'/%3E%3C/svg%3E");
+  --reverse-area: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath fill-rule='evenodd' d='M0 0H100V100H0Z M8 14.18H92.5V56.12H8Z'/%3E%3C/svg%3E");
+  --ray-center: 50% 35.15%;
+}
+.card-shine.holo { --shine-area: var(--holo-area); }
+.card-shine.reverse { --shine-area: var(--reverse-area); }
+/* Pokémon: stronger than Magic's sheen (owner, 2026-09-29), since holo only
+   covers part of the card. Full-art cards shine across the whole card.
+   hard-light, not color-dodge: Pokémon cards are mostly light (yellow and
+   silver frames, bright art), and dodging light colours bleaches the
+   rainbow to white. hard-light keeps its colours and still lifts the glints. */
+.card-shine.holo, .card-shine.reverse, .card-shine.pokemon-full { opacity: .45; mix-blend-mode: hard-light; }
+.card-shine.pokemon-full { --shine-area: linear-gradient(#000, #000); }
+/* Reverse holo: far more contrast (owner, 2026-09-29). The rainbow alternates
+   with deep navy/purple bands; under hard-light the dark bands darken the card
+   and the bright ones lift it, so it reads as reverse holo and dims a little. */
+.card-shine.reverse {
+  background:
+    linear-gradient(115deg, transparent 16%, rgba(255, 255, 255, .9) 28%, transparent 40%,
+      transparent 54%, rgba(255, 255, 255, .75) 64%, transparent 76%),
+    linear-gradient(115deg, #ff2d95 0%, #1a0b2e 10%, #ffd84d 20%, #0b1e2e 30%, #3dffb4 40%,
+      #0e0b2e 50%, #38b6ff 60%, #1a0b2e 70%, #a45bff 80%, #0b1e2e 90%, #ff2d95 100%);
+  background-size: 220% 220%, 300% 300%;
+  opacity: .6;
+}
+
+/* Holo: god rays out of the art box. The mask is the bands over (art window,
+   plus rays that fade with distance from the art's centre); the rays turn
+   slowly. Layers composite bottom-up: fade ∩ rays, ∪ art window, ∩ bands. */
+@property --ray-angle { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+.card-shine.holo {
+  --shine-rays: repeating-conic-gradient(from var(--ray-angle) at var(--ray-center),
+    #000 0deg 2.5deg, rgba(0, 0, 0, .12) 2.5deg 10deg);
+  --shine-ray-fade: radial-gradient(ellipse 80% 62% at var(--ray-center),
+    #000 18%, rgba(0, 0, 0, .5) 42%, transparent 74%);
+  -webkit-mask-image: var(--shine-bands), var(--shine-area), var(--shine-rays), var(--shine-ray-fade);
+  -webkit-mask-composite: source-in, source-over, source-in, source-over;
+  mask-image: var(--shine-bands), var(--shine-area), var(--shine-rays), var(--shine-ray-fade);
+  mask-composite: intersect, add, intersect, add;
+  animation: foil-drift 9s ease-in-out infinite alternate, ray-turn 40s linear infinite;
+}
+@keyframes ray-turn { to { --ray-angle: 360deg; } }
+@keyframes foil-drift {
+  from { background-position: 0% 0%, 0% 50%; }
+  to { background-position: 100% 100%, 100% 50%; }
+}
+/* The finish label's text, in the sheen's colours. */
+.finish-tag {
+  font-weight: 800;
+  letter-spacing: .1em;
+  background: linear-gradient(90deg, #ff2d95, #ffd84d, #3dffb4, #38b6ff, #a45bff, #ff2d95) 0 0 / 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: tag-drift 3s linear infinite;
+}
+@keyframes tag-drift { to { background-position: 200% 0; } }
+/* Standing still behind the card enlarged (CardZoom): one sheen moving at a time. */
+.finish-line.still .finish-tag { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) { .card-shine, .card-shine.holo, .finish-tag { animation: none; } }
+
+/* An image still on the way: a card-shaped shimmer with a spinner and
+   "Loading…", clearly different from the card back and from an empty slot. */
+.card-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  border: 1px solid var(--border);
+  border-radius: inherit;
+  background: linear-gradient(110deg, #1b2034 30%, #2f3656 50%, #1b2034 70%) 0 0 / 250% 100%;
+  animation: shimmer 1.3s linear infinite;
+}
+.card-loading .spinner { width: 18px; height: 18px; border-width: 2.5px; border-color: var(--accent); border-top-color: transparent; }
+@keyframes shimmer { from { background-position: 125% 0; } to { background-position: -125% 0; } }
+.card-thumb { filter: blur(5px) saturate(1.05); }
+.card-empty, .card-back {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  text-align: center;
+  color: var(--muted);
+  border: 2px dashed var(--border);
+  box-shadow: none;
+  background: rgba(15, 18, 32, .55);
+}
+.card-back {
+  border: 6px solid #2a3150;
+  background: linear-gradient(160deg, #20253a, #11152a);
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+.card-back-name { font-size: 18px; font-weight: 700; }
+.card-back-number { color: var(--muted); }
+.flip-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  background: rgba(15, 18, 32, .85);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.flip-btn:hover { border-color: var(--accent); }
+/* Poké Ball / Master Ball pattern reverse holos: the ball sits inside the
+   card's bottom-right corner, clear of the edges, sized with the card. */
+.pattern-badge {
+  position: absolute;
+  right: 6%;
+  bottom: 5%;
+  z-index: 3;
+  width: 15%;
+  height: auto;
+  aspect-ratio: 1;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, .6));
+}
+/* The Play! Pokémon logo in the same place: taller than wide, as drawn. */
+.play-badge { aspect-ratio: auto; }

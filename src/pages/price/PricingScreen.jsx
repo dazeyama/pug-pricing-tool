@@ -517,7 +517,7 @@ export default function PricingScreen({
 
           {/* Owner's layout (2026-09-29): card left with prices under it; info
               beside it with the suggestions below; finish & details beside the
-              suggestions with the action row under them. Grid areas in price.css. */}
+              suggestions with the action row under them. Grid areas in price/layout.css. */}
           <div className="stage-body">
             {bulk ? <BulkSelected c={bulk} name={placeholderName} onName={setPlaceholderName} /> : (
             <SelectedCard

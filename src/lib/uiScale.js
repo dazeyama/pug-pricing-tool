@@ -4,7 +4,7 @@
  * 80%, so more fits at once. Full size from 1500 × 812 up; 80% at 1200 × 650,
  * the smallest window the app takes (spec 7.10), and below; in between, the
  * tighter of the width and the height decides. Applied as CSS zoom (--ui-zoom
- * on <html>; price.css .shell, panels.css .modal-box and .toast-stack), so
+ * on <html>; price/screen.css .shell, panels.css .modal-box and .toast-stack), so
  * every size inside shrinks alike. A window 1200 × 650 is then laid out like
  * one 1500 × 812 at full size.
  */

@@ -1,4 +1,4 @@
-// The suggestions' grid (price.css .thumbs): a thumbnail is at most
+// The suggestions' grid (price/suggestions.css .thumbs): a thumbnail is at most
 // Scryfall's small image, 146 px wide, and shrinks to fit its columns across
 // and two rows down, with 36 px for the line above, 16 px between the rows,
 // 14 px between the columns and 22 px under each for its label.

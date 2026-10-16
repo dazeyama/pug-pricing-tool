@@ -141,7 +141,7 @@ export default function SelectedCard({ candidate: c, typedName, englishName, pok
   // where the art window is the card's frame era's (owner, 2026-09-29).
   // A Classic Collection reprint has its original's frame (owner, 2026-10-09).
   const classic = magic ? null : classicFrame(c.setId, c.number);
-  // A Trainer's art window is its own (owner, 2026-10-11): price.css .trainer.
+  // A Trainer's art window is its own (owner, 2026-10-11): price/card.css .trainer.
   const trainer = !magic && !classic && pokemon.card?.category === 'Trainer';
   // The oldest Japanese cards, found on TCGplayer by a "No." search (owner,
   // 2026-10-11: Neo Premium File 1's Typhlosion): 1996–2001, the vintage
@@ -325,7 +325,7 @@ export default function SelectedCard({ candidate: c, typedName, englishName, pok
             )}
           </p>
           {/* "View on" / "Find on" drop out when the box is too narrow for
-              all three links (price.css). Each opens in its site's reused
+              all three links (price/quote.css). Each opens in its site's reused
               pop-up window (lib/popup.js). */}
           <p className="info-links">
             {link && (
