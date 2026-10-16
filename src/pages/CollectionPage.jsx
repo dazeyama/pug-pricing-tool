@@ -25,6 +25,7 @@ import { useDevice } from '../state/device.jsx';
 import { useStaff } from '../state/staff.jsx';
 import { useConnection } from '../state/connection.jsx';
 import { useToast } from '../components/Toast.jsx';
+import { firstReason } from '../lib/blocked.js';
 
 // A collection's pricing screen (spec 9.4): the Price tab's screen with the
 // collection's list in the sidebar and its details at the sidebar's foot,
@@ -90,16 +91,22 @@ function CollectionScreen({ id }) {
   const holderLabel = lock.holder?.label ?? 'another computer';
   const viewOnly = lock.status === 'other';
 
+  // Why a button can't be used now, as [when, why] in order (lib/blocked.js);
+  // these two start several of the lists below.
+  const NO_USER = [!user, 'Pick a user first'];
+  const NO_CONNECTION = [offline, 'No connection'];
+
   // Why nothing in the list can change here (spec 9.5, 9.6), or null.
-  let locked = null;
-  if (!buy) locked = 'Loading the collection';
-  else if (lock.status === 'checking') locked = 'Checking who is editing this collection';
-  else if (viewOnly) locked = `View only: ${holderLabel} is editing this collection. Take over to edit`;
-  else if (system) locked = 'Cards arrive here from exports';
-  // A project stays editable while Paid/Ours (owner, 2026-10-01).
-  else if (buy.status === 'paid' && !buy.project) locked = 'Paid/Ours: unlock it to edit';
-  else if (buy.status === 'completed') locked = 'Completed: reopen it to edit';
-  else if (buy.status === 'rejected') locked = 'Rejected: reopen it to edit';
+  const locked = firstReason([
+    [!buy, 'Loading the collection'],
+    [lock.status === 'checking', 'Checking who is editing this collection'],
+    [viewOnly, `View only: ${holderLabel} is editing this collection. Take over to edit`],
+    [system, 'Cards arrive here from exports'],
+    // A project stays editable while Paid/Ours (owner, 2026-10-01).
+    [buy?.status === 'paid' && !buy.project, 'Paid/Ours: unlock it to edit'],
+    [buy?.status === 'completed', 'Completed: reopen it to edit'],
+    [buy?.status === 'rejected', 'Rejected: reopen it to edit'],
+  ]);
   // Cards can still be removed from a Paid/Ours collection, not a Completed
   // one (owner, 2026-09-29); adding and editing stay locked.
   const removeLocked = buy?.status === 'paid' && lock.status === 'held' ? null : locked;
@@ -107,24 +114,26 @@ function CollectionScreen({ id }) {
   // REPRICE? works where cards could be edited anyway (a project, Processing,
   // Priced), and on Can't upload cards beside its own EXPORT (owner,
   // 2026-10-01): why not now, or null.
-  let repriceBlocked = null;
-  if (!user) repriceBlocked = 'Pick a user first';
-  else if (offline) repriceBlocked = 'No connection';
-  else if (viewOnly) repriceBlocked = `View only: ${holderLabel} is editing this collection. Take over to reprice`;
-  else if (lock.status !== 'held') repriceBlocked = 'Checking who is editing this collection';
-  else if (locked && !system) repriceBlocked = locked;
-  else if (!col.lines.some((l) => !isStruck(l))) repriceBlocked = 'No cards to reprice';
+  const repriceBlocked = firstReason([
+    NO_USER,
+    NO_CONNECTION,
+    [viewOnly, `View only: ${holderLabel} is editing this collection. Take over to reprice`],
+    [lock.status !== 'held', 'Checking who is editing this collection'],
+    [locked && !system, locked],
+    [!col.lines.some((l) => !isStruck(l)), 'No cards to reprice'],
+  ]);
 
   // A CSV dropped on an empty collection or project imports into it (owner,
   // 2026-10-09; Import Collection's dialog): only one with no cards at all,
   // that this computer can edit. Why not here, or null.
-  let importBlocked = null;
-  if (!user) importBlocked = 'Pick a user first';
-  else if (offline) importBlocked = 'No connection';
-  else if (system) importBlocked = "Can't upload cards only takes cards from exports";
-  else if (locked) importBlocked = locked;
-  else if (!col.loaded) importBlocked = 'Loading the collection';
-  else if (col.lines.length) importBlocked = 'It already has cards: a file only goes into an empty collection or project';
+  const importBlocked = firstReason([
+    NO_USER,
+    NO_CONNECTION,
+    [system, "Can't upload cards only takes cards from exports"],
+    [locked, locked],
+    [!col.loaded, 'Loading the collection'],
+    [col.lines.length, 'It already has cards: a file only goes into an empty collection or project'],
+  ]);
 
   useEffect(() => {
     const files = (e) => [...(e.dataTransfer?.types ?? [])].includes('Files');
@@ -233,11 +242,13 @@ function CollectionScreen({ id }) {
   }
 
   // Why Print can't run now (its ⋯ shows it; printCollection says it too).
-  const printBlockedWhy = offline ? 'No connection'
-    : printing ? 'Printing…'
-      : buy?.status === 'rejected' ? 'Rejected: there is nothing to print'
-        : buy && !buy.system_key && !['paid', 'completed'].includes(buy.status) ? 'Mark it Paid/Ours first'
-          : !col.lines.some((l) => l.game === 'mtg' && movesOn(l)) ? 'No Magic cards here' : null;
+  const printBlockedWhy = firstReason([
+    NO_CONNECTION,
+    [printing, 'Printing…'],
+    [buy?.status === 'rejected', 'Rejected: there is nothing to print'],
+    [buy && !buy.system_key && !['paid', 'completed'].includes(buy.status), 'Mark it Paid/Ours first'],
+    [!col.lines.some((l) => l.game === 'mtg' && movesOn(l)), 'No Magic cards here'],
+  ]);
 
   /**
    * EXPORT ▾ → Print? (docs/TEAM_FEEDBACK.md 3.1): its Magic cards by Crystal
@@ -300,20 +311,25 @@ function CollectionScreen({ id }) {
 
   // The status can change while locked (that's how it unlocks), not while view-only.
   const canChangeStatus = Boolean(user) && !offline && lock.status === 'held' && Boolean(buy);
-  let statusBlocked = null;
-  if (!user) statusBlocked = 'Pick a user first';
-  else if (offline) statusBlocked = 'No connection';
-  else if (viewOnly) statusBlocked = 'View only: take over to change the status';
-  else if (lock.status !== 'held') statusBlocked = 'Checking who is editing this collection';
-  const deleteBlocked = viewOnly ? `${holderLabel} is editing this collection: take over first`
-    : offline ? 'No connection' : null;
+  const statusBlocked = firstReason([
+    NO_USER,
+    NO_CONNECTION,
+    [viewOnly, 'View only: take over to change the status'],
+    [lock.status !== 'held', 'Checking who is editing this collection'],
+  ]);
+  // Who's editing comes first here: deleting needs this computer to hold it.
+  const deleteBlocked = firstReason([
+    [viewOnly, `${holderLabel} is editing this collection: take over first`],
+    NO_CONNECTION,
+  ]);
   // Convert to buy… (owner, 2026-10-10): a project's cards, none exported yet.
-  let convertBlocked = null;
-  if (offline) convertBlocked = 'No connection';
-  else if (viewOnly) convertBlocked = `${holderLabel} is editing this project: take over first`;
-  else if (lock.status !== 'held') convertBlocked = 'Checking who is editing this project';
-  else if (buy?.status === 'completed') convertBlocked = "Completed: its cards were exported, so it can't become a buy";
-  else if (!col.lines.length) convertBlocked = 'No cards to convert';
+  const convertBlocked = firstReason([
+    NO_CONNECTION,
+    [viewOnly, `${holderLabel} is editing this project: take over first`],
+    [lock.status !== 'held', 'Checking who is editing this project'],
+    [buy?.status === 'completed', "Completed: its cards were exported, so it can't become a buy"],
+    [!col.lines.length, 'No cards to convert'],
+  ]);
 
   /**
    * Status changes (spec 9.5): Priced asks for the offer, Paid/Ours for the
