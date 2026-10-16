@@ -41,6 +41,7 @@ export default function RowAction({ id, action, onClose }) {
       toast('No cards to convert.', 'err');
       onClose();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- action is fixed for the dialog's life; onClose and toast are the caller's
   }, [col.loaded, col.missing, buy, col.lines.length]);
 
   if (!col.loaded || !buy) return null;

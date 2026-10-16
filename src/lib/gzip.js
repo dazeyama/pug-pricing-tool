@@ -3,8 +3,6 @@
 // a CSV packs down to a fraction of that, well under Supabase's 50 MB file
 // limit on the Free plan. No dependencies, so the tests run under Node.
 
-/* global CompressionStream, DecompressionStream */
-
 /** @param {Blob} blob @returns {Promise<Blob>} */
 export async function gzip(blob) {
   return new Response(blob.stream().pipeThrough(new CompressionStream('gzip'))).blob();

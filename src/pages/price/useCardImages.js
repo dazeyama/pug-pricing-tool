@@ -23,7 +23,7 @@ export function useCardImages(c) {
     return () => {
       alive = false;
     };
-    // Keyed by the card, not the object: results re-rank into new objects.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed by the card, not the object: results re-rank into new objects
   }, [c?.key, needsBackup]);
 
   if (!c) return { thumb: null, image: null, status: 'none' };

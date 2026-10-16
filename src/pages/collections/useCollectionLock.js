@@ -98,6 +98,7 @@ export function useCollectionLock(id, { deviceId, userId }) {
     if (status.current === 'held') {
       supabase.rpc('lock_heartbeat', { p_buy_id: id, p_device: deviceId, p_user: userId ?? null });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- only when the picked user changes; the effects above follow id and deviceId
   }, [userId]);
 
   // Another computer taking over, or the holder letting go: look again.

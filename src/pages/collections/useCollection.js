@@ -144,28 +144,32 @@ export function useCollection(id, { deviceId, onLockLost }) {
     }
   }, [reload, toast]);
 
-  const mine = (userId) => ({ p_user: userId, p_device: deviceId, p_expected_version: version.current });
+  // Who's writing, from where, against which version (read when called, so always the latest).
+  const mine = useCallback(
+    (userId) => ({ p_user: userId, p_device: deviceId, p_expected_version: version.current }),
+    [deviceId],
+  );
 
   const add = useCallback(async (line, userId) => {
     const r = await run('collection_add_line', {
       p_buy_id: id, p_line: line, p_merge: true, ...mine(userId), p_text: lineText(line),
     }, "Couldn't add the card");
     return r.ok ? r.data : null;
-  }, [id, run, deviceId]);
+  }, [id, run, mine]);
 
   const update = useCallback(async (old, line, userId) => {
     const r = await run('collection_update_line', {
       p_line_id: old.id, p_line: line, ...mine(userId), p_old_text: lineText(old), p_new_text: lineText(line),
     }, "Couldn't save the edit");
     return r.ok ? r.data : null;
-  }, [run, deviceId]);
+  }, [run, mine]);
 
   const remove = useCallback(async (line, qty, userId) => {
     const r = await run('collection_remove_line', {
       p_line_id: line.id, p_qty: qty, ...mine(userId), p_text: lineText(line, Math.min(qty, line.quantity)),
     }, "Couldn't remove the card");
     return r.ok;
-  }, [run, deviceId]);
+  }, [run, mine]);
 
   /** × in a Paid/Ours collection or project (owner, 2026-10-16): strike copies, kept crossed out. */
   const strike = useCallback(async (line, qty, userId) => {
@@ -173,7 +177,7 @@ export function useCollection(id, { deviceId, onLockLost }) {
       p_line_id: line.id, p_qty: qty, ...mine(userId), p_text: lineText(line, Math.min(qty, line.quantity)),
     }, "Couldn't strike the card");
     return r.ok;
-  }, [run, deviceId]);
+  }, [run, mine]);
 
   /** Right-click → Restore: a struck card back on the list. */
   const restore = useCallback(async (line, userId) => {
@@ -181,14 +185,14 @@ export function useCollection(id, { deviceId, onLockLost }) {
       p_line_id: line.id, ...mine(userId), p_text: lineText(line),
     }, "Couldn't restore the card");
     return r.ok;
-  }, [run, deviceId]);
+  }, [run, mine]);
 
   /** Name, phone, notes, custom rates: only the fields given. */
   const updateInfo = useCallback(async (fields, userId) => {
     const r = await run('collection_update_info', { p_buy_id: id, p_fields: fields, ...mine(userId) },
       "Couldn't save the change");
     return r.ok;
-  }, [id, run, deviceId]);
+  }, [id, run, mine]);
 
   const setRates = useCallback((cash, credit, userId) => updateInfo(
     { custom_cash_pct: cash, custom_credit_pct: credit }, userId,
@@ -200,7 +204,7 @@ export function useCollection(id, { deviceId, onLockLost }) {
       p_line_id: line.id, p_cash: cash, p_credit: credit, ...mine(userId), p_text: lineText(line),
     }, "Couldn't save the card's rate");
     return r.ok;
-  }, [run, deviceId]);
+  }, [run, mine]);
 
   /**
    * Processing / Priced / Paid/Ours / Completed / Rejected; `master` is the
@@ -222,14 +226,14 @@ export function useCollection(id, { deviceId, onLockLost }) {
       p_reason: deal.reason ?? null,
     }, "Couldn't change the status");
     return r.ok;
-  }, [id, run, deviceId]);
+  }, [id, run, mine]);
 
   /** REPRICE?: today's buy prices for many lines at once (reprice.js); { lines, before, after } or null. */
   const reprice = useCallback(async (updates, userId) => {
     const r = await run('collection_reprice', { p_buy_id: id, p_lines: updates, ...mine(userId) },
       "Couldn't reprice the collection");
     return r.ok ? r.data : null;
-  }, [id, run, deviceId]);
+  }, [id, run, mine]);
 
   /** Delete forever (spec 9.7); the server checks the typed name. */
   const destroy = useCallback(async (typedName, userId) => {

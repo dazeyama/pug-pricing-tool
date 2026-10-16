@@ -98,6 +98,7 @@ function Changelog() {
       }
       setLog({ events: data ?? [], total: count ?? 0, done: (data ?? []).length < CHUNK, loading: false, error: null });
     })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- filterKey stands for categories, game, query and target
   }, [filterKey]);
 
   const panels = useMemo(() => foldEvents(log.events), [log.events]);
@@ -119,12 +120,14 @@ function Changelog() {
         ...l, events: [...l.events, ...(data ?? [])], done: (data ?? []).length < CHUNK, loading: false,
       }));
     })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- the filters are this run's (new ones start a new run above); log.events.length is read, not watched
   }, [panels.length, page, log.loading, log.done]);
 
   const shown = panels.slice((page - 1) * PAGE, page * PAGE);
   const views = shown.map((p) => ({ panel: p, view: panelView(p) }));
   const pages = Math.max(1, Math.ceil(panels.length / PAGE));
   const hasNext = panels.length > page * PAGE || !log.done;
+  const shownKeys = shown.map((p) => p.key).join(',');
 
   // Which targets still exist (deleted ones aren't links), and when each buy
   // was confirmed (its day page).
@@ -143,7 +146,8 @@ function Changelog() {
     return () => {
       alive = false;
     };
-  }, [shown.map((p) => p.key).join(',')]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed by the panels shown; targets is what it fills in
+  }, [shownKeys]);
 
   // The foot row shows only when the page scrolls (spec 12.1).
   useEffect(() => {
@@ -307,7 +311,7 @@ function DayBlock({ items, targets, game, onFunnel }) {
           );
         }
         const cls = side++ % 2 === 0 ? 'left' : 'right';
-        return <Entry key={panel.key} panel={panel} view={view} side={cls} targets={targets} game={game} onFunnel={onFunnel} />;
+        return <Entry key={panel.key} view={view} side={cls} targets={targets} game={game} onFunnel={onFunnel} />;
       })}
     </>
   );
@@ -372,7 +376,7 @@ function FieldValue({ field, value, method, kind }) {
 }
 
 /** One panel on the line (spec 12.2), coloured by its game (owner, 2026-09-29). */
-function Entry({ panel, view, side, targets, game, onFunnel }) {
+function Entry({ view, side, targets, game, onFunnel }) {
   const { first } = view;
   const category = categoryOf(first.action);
   const made = MADE.has(first.action);

@@ -33,7 +33,7 @@ export default function PriceTable({
       setText(manual != null ? String(manual) : '');
       requestAnimationFrame(() => input.current?.select());
     }
-    // Only when it opens: typing mustn't be reset by later renders.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- only when it opens: typing mustn't be reset by later renders
   }, [manualOpen]);
 
   const loading = prices.status === 'loading' || prices.status === 'waiting';

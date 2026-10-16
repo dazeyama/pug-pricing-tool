@@ -15,7 +15,7 @@
 // - Etched Magic foils are their own TCGplayer product (Scryfall's
 //   tcgplayer_etched_id), priced through that product.
 import { callFunction } from './functions.js';
-import { formatEur, formatMoney, roundDownPrice } from './money.js';
+import { formatEur, formatMoney } from './money.js';
 import { cardId, fold } from './justtcgCards.js';
 import { normNumber } from './query.js';
 

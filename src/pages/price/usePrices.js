@@ -70,6 +70,7 @@ export function usePrices(selected, { pokemon, versions, jaName, waitName }) {
       alive = false;
       clearTimeout(timer);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- signature stands for the selected card's lookups; reachedLimit only reports
   }, [signature, attempt, offline]);
 
   const retry = useCallback(() => setAttempt((n) => n + 1), []);
@@ -111,6 +112,7 @@ export function usePokemonSiblings(selected, pokemon) {
       alive = false;
       clearTimeout(timer);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- key stands for the card; its name, number and size go with it
   }, [key, offline]);
 
   if (!key) return { cards: null, settled: true };

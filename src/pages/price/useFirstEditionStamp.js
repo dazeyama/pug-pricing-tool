@@ -18,6 +18,7 @@ export function useFirstEditionStamp(image, layout, shift = 0) {
     return () => {
       alive = false;
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- key stands for image, layout and shift
   }, [key]);
 
   return found.key === key ? found.result : null;

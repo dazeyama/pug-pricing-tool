@@ -93,6 +93,7 @@ export function useCardSearch(text, lang, games, oldest = false) {
       clearTimeout(timer);
       controller.abort();
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- gamesKey and bulkKey stand for games and bulkValues
   }, [text, lang, gamesKey, oldest, bulkKey]);
 
   const candidates = useMemo(

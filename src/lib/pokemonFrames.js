@@ -61,6 +61,7 @@ export function classicFrame(setId, number) {
 const RULE_STAGES = new Set(['VMAX', 'VSTAR', 'V-UNION', 'BREAK', 'LEVEL-UP', 'LV.X', 'MEGA']);
 const RULE_NAME = /(?:[\s-](?:ex|EX|GX|V|VMAX|VSTAR|V-UNION|LV\.X|LEGEND|BREAK)|◇|\bPrism Star)$/u;
 // Japanese names run the mark straight on: "リザードンex", "ピカチュウVMAX".
+// eslint-disable-next-line no-control-regex -- [^\u0000-\u007F] is "not ASCII": the Japanese letter before the mark
 const RULE_NAME_JA = /[^\u0000-\u007F](?:ex|EX|GX|V|VMAX|VSTAR|V-UNION|BREAK)$/u;
 
 // Rarities whose art covers the whole card, or whose foil does (owner,

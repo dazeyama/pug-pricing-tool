@@ -28,6 +28,7 @@ export function usePokemonDetail(c) {
     return () => {
       alive = false;
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed by the card, not the object: results re-rank into new objects
   }, [c?.key]);
   if (tcgplayerOnly) return { card: null, info: null, page: null, resolved: true };
   return detail.key === c?.key
@@ -59,6 +60,7 @@ export function useMagicSiblings(c) {
     return () => {
       alive = false;
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- group stands for the card's name and set; c.scryfall is read once per group
   }, [group]);
 
   return group && state.group === group ? state.siblings : null;

@@ -76,6 +76,7 @@ function CollectionScreen({ id }) {
       toast('This collection was deleted on another computer.', 'err');
       back();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- only when the collection loads or goes; back and toast don't change what it does
   }, [buy, col.missing]);
 
   // Rates (spec 8.9.1, 9.4): the Paid/Ours snapshot (kept while Completed),

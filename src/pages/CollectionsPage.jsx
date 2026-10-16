@@ -224,6 +224,7 @@ export default function CollectionsPage() {
       // The status filter is the customer collections' own.
       collection: rows.filter((c) => kindOf(c) === 'collection' && filter.match(c)),
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- COLUMNS is rebuilt each render from staff.byId (listed) and menu, whose handlers the sort doesn't read
   }, [all, status, query, sort, staff.byId]);
   const totals = {
     system: all.filter((c) => kindOf(c) === 'system').length,

@@ -29,6 +29,7 @@ export function useSuggestionCount(cols = 5) {
     query.addEventListener('change', onChange);
     setShort(query.matches);
     return () => query.removeEventListener('change', onChange);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- the same media query every render (FABLE_REPORT A10 moves it into the effect)
   }, []);
   return short ? 5 : 2 * cols;
 }

@@ -221,6 +221,7 @@ export default function PricingScreen({
     if (printing.key && printing.key !== selected?.key) {
       setPrinting({ key: null, finish: null, version: null });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- only when another card is selected; printing.key is what it compares with
   }, [selected?.key]);
 
   // Condition, manual price and override (spec 8.7): NM, none and none for
@@ -378,7 +379,7 @@ export default function PricingScreen({
     const index = cur ? found.findIndex((c) => c.key === cur.key) : -1;
     setSelected(index >= 0 ? found[index] : null);
     setHighlight(index >= 0 && index < shownCount ? index : -1);
-    // Runs once per finished search, not on every re-render of the same results.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- once per finished search, not on every re-render of the same results
   }, [search.runId, search.settled, editing?.key, editing?.found]);
 
   // The edited line's card is selected: put back what was saved with it (once).
@@ -414,11 +415,13 @@ export default function PricingScreen({
     });
     setQty(String(line.quantity));
     setEditing((e) => e && { ...e, restored: true });
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- versions.length stands for versions, a new array every render
   }, [editing, selected?.key, pokemon.resolved, versions.length, tcgSiblings.settled]);
 
   // The line being edited went (removed, confirmed, cancelled): stop editing.
   useEffect(() => {
     if (editing && list.loaded && !list.lines.some((l) => l.id === editing.line.id)) setEditing(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- watches the list, not the edit: an edit always starts on a line that's there
   }, [list.lines, list.loaded]);
 
   function focusSearch() {
@@ -492,6 +495,7 @@ export default function PricingScreen({
     clear();
     setGames(BOTH_GAMES);
     setOldest(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- only on a new resetKey; clear is rebuilt every render
   }, [resetKey]);
 
   /** Clicking a list line: load its card back to edit it (owner, 2026-09-29). */
