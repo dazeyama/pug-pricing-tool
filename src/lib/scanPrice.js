@@ -68,3 +68,24 @@ export function scanText({ name, set_code: set, collector_number: number, finish
   const cond = condition && condition !== 'NM' ? ` [${condition}]` : '';
   return `${name} (${String(set ?? '').toUpperCase()}) ${number ?? ''}${mark}${cond}`.replace(/\s+/g, ' ').trim();
 }
+
+/** Over this TCGplayer price a card gets the brighter chime when it's sent (owner, 2026-10-16). */
+export const PRICEY_USD = 3;
+
+/**
+ * The card's TCGplayer price for the finish, as Scryfall gives it on the
+ * card the phone read (prices.usd / usd_foil / usd_etched), before the
+ * condition and rounding the computer applies; null when Scryfall has none.
+ */
+export function scanTcgPrice(card, finish) {
+  const p = card?.prices ?? {};
+  const raw = { nonfoil: p.usd, foil: p.usd_foil, etched: p.usd_etched }[finish];
+  const price = raw != null ? Number(raw) : NaN;
+  return Number.isNaN(price) ? null : price;
+}
+
+/** Over $3 at TCGplayer for its finish: the phone's chime for it is the brighter one. */
+export function isPricey(card, finish) {
+  const price = scanTcgPrice(card, finish);
+  return price != null && price > PRICEY_USD;
+}

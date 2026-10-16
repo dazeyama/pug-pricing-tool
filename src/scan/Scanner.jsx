@@ -3,7 +3,7 @@ import { CONDITIONS } from '../lib/ladder.js';
 import { readSession, writeSession } from '../lib/local.js';
 import { formatMoney } from '../lib/money.js';
 import * as scry from '../lib/scryfall.js';
-import { scanFinish, scanText } from '../lib/scanPrice.js';
+import { isPricey, scanFinish, scanText } from '../lib/scanPrice.js';
 import { useConnection } from '../state/connection.jsx';
 import { usePairing } from './usePairing.js';
 import { useScans } from './useScans.js';
@@ -145,6 +145,16 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const { offline } = useConnection();
   const busy = useRef(false);
   const lastSent = useRef(null);                  // the printing and finish last sent (6.3)
+  // The Scryfall cards sent from this page, by id: +1's chime knows a copy's price from them.
+  const sentCards = useRef(new Map());
+  /**
+   * The chime the moment a card is sent, not when the computer has added it
+   * (owner, 2026-10-16): the brighter one over $3 at TCGplayer for its finish.
+   */
+  const chime = (card, finish) => {
+    if (card) sentCards.current.set(card.id, card);
+    play(card && isPricey(card, finish) ? 'pricey' : 'added');
+  };
   const computer = session?.device_label ?? 'the computer';
 
   const setCondition = (c) => {
@@ -187,6 +197,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       }
       swap.current = {
         id: scan.id,
+        card,
         fields: { ...cardFields(card), finish, condition: scan.condition, tier: scan.tier ?? 1 },
         seenUndo: false,
         was,
@@ -230,7 +241,9 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     if (r.error) {
       say('err', `Couldn't add another: ${SEND_MESSAGES[r.error] ?? r.error}`, scanText(s));
       play('error');
+      return;
     }
+    chime(sentCards.current.get(s.scryfall_id) ?? null, s.finish);
   }
   /** A tap on the middle half of the picture is +1. */
   function tapPicture(e) {
@@ -260,6 +273,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       swap.current = null;
       send(r.fields).then((res) => {
         if (res.error) say('err', `Couldn't send the new copy: ${SEND_MESSAGES[res.error] ?? res.error}`);
+        else chime(r.card, r.fields.finish);
         setSwapping(null);
       });
     } else if (s.status === 'added' && r.seenUndo) {
@@ -278,8 +292,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     for (const s of scans) {
       const was = before.get(s.id);
       if (!was || was === s.status) continue;
-      if (s.status === 'added') play('added');
-      else if (s.status === 'needs_price') play('needs_price');
+      // Added: no sound, the chime played when it was sent; these two are news.
+      if (s.status === 'needs_price') play('needs_price');
       else if (s.status === 'failed') play('error');
     }
   }, [scans]);
@@ -613,6 +627,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       check();
       return;
     }
+    chime(card, finish);
     lastSent.current = key;
     v.held = art;
     setLocal(null);

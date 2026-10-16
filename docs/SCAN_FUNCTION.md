@@ -796,6 +796,17 @@ locks **automatically on the first card**.
     read; "+1" shows over the picture as it goes. Only while that card is on its way or added (not
     once undone, failed, skipped or waiting for a price), and not while its finish is being changed.
     The picture takes taps without the double-tap zoom (`touch-action: manipulation`).
+- **The chime when it's sent, brighter over $3** (owner, 2026-10-16: "make a different sound if the
+  card scanned is over $3"; then, told the chime came only once the computer had added the card:
+  "build it that way"): the chime plays the moment a card is sent (auto scan, Scan card, a printing
+  picked, +1, FOIL? / NONFOIL?'s new copy), not when the computer has added it, which with no
+  waiting for the computer could be a card or two later. Over $3 at TCGplayer for the finish sent
+  (Scryfall's usd / usd_foil / usd_etched on the card the phone read; `scanPrice.js` `isPricey`) it's
+  a brighter three-note chime (E6 G6 C7, `sounds.js` `pricey`), otherwise the usual two notes.
+  The price is before the condition and rounding the computer applies; a card Scryfall has no
+  TCGplayer price for (priced from JustTCG or Cardmarket on the computer) gets the usual chime. The
+  computer's "added" no longer chimes; a card that needs a price and one it couldn't add still
+  sound when it says so.
 - **The card alone, its sides cut too** (owner, 2026-10-16: "we're only doing the height and leaving
   the sides of the picture which adds noise … also crop the left and right … and hopefully stop some
   of the recalibrating motion"):

@@ -1,7 +1,8 @@
 // The scanner's sounds (docs/SCAN_FUNCTION.md 5.3), made with the Web Audio
-// API, no files: a soft two-note chime when the computer has added a card,
-// a lower tone when a card needs a price, a short low buzz when a card
-// couldn't be read. A phone only plays sound after a tap, so START CAMERA
+// API, no files: a soft two-note chime the moment a card is sent, a
+// brighter three-note one when it's over $3 at TCGplayer (owner,
+// 2026-10-16), a lower tone when a card needs a price, a short low buzz
+// when a card couldn't be read or added. A phone only plays sound after a tap, so START CAMERA
 // unlocks them. Muted per phone (🔇, kept in localStorage).
 
 import { readLocal, writeLocal } from '../lib/local.js';
@@ -39,13 +40,17 @@ function note(freq, at, length, { type = 'sine', volume = 0.16 } = {}) {
   osc.stop(t + length + 0.02);
 }
 
-/** @param {'added'|'needs_price'|'error'} kind */
+/** @param {'added'|'pricey'|'needs_price'|'error'} kind  added: a card sent; pricey: one over $3 */
 export function play(kind) {
   if (!ctx || isMuted()) return;
   try {
     if (kind === 'added') {
       note(1046.5, 0, 0.11);          // C6
       note(1568, 0.085, 0.16);        // G6
+    } else if (kind === 'pricey') {
+      note(1318.5, 0, 0.1);           // E6
+      note(1568, 0.075, 0.1);         // G6
+      note(2093, 0.15, 0.22, { volume: 0.18 });   // C7, held
     } else if (kind === 'needs_price') {
       note(523.25, 0, 0.22, { volume: 0.18 });   // C5
     } else {
