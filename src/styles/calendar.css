@@ -303,6 +303,11 @@ button.flag-chip:hover, button.flag-chip[aria-expanded="true"] { background: rgb
   text-decoration: line-through 2px #fff;
 }
 .drow.struck .cell-name * { color: inherit; }
+/* A Completed buy (exported or marked by hand): its card names in the struck
+   cards' grey, so it reads as done. Not faded with opacity (owner, 2026-10-16,
+   decision 277); the prices keep their colours. */
+.buy-panel.completed .drow .cell-name { color: var(--muted); }
+.buy-panel.completed .drow .cell-name * { color: inherit; }
 
 .buy-totals { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; }
 .buy-totals strong { margin-left: 4px; }
