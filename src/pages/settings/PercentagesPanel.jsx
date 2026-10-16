@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react';
 import { useSettings } from '../../state/settings.jsx';
 import { useStaff } from '../../state/staff.jsx';
-import { useToast } from '../../components/Toast.jsx';
+import { useSettingField } from './useSettingField.js';
 
 const VALID = /^\d{1,3}(\.\d{1,2})?$/;
 
@@ -9,58 +8,21 @@ const VALID = /^\d{1,3}(\.\d{1,2})?$/;
 function PercentField({ label, settingKey }) {
   const { values, save } = useSettings();
   const { current } = useStaff();
-  const toast = useToast();
-  const stored = Number(values[settingKey]);
-  const [text, setText] = useState(String(stored));
-  const [editing, setEditing] = useState(false);
-  const [error, setError] = useState('');
-
-  // Follow changes from other computers, but never under the user's typing.
-  useEffect(() => {
-    if (!editing) setText(String(stored));
-  }, [stored, editing]);
-
-  async function commit() {
-    setEditing(false);
-    const raw = text.trim();
-    if (!VALID.test(raw) || Number(raw) > 100) {
-      setError('Enter a number from 0 to 100, with up to 2 decimals.');
-      setText(String(stored));
-      return;
-    }
-    setError('');
-    const next = Number(raw);
-    if (next === stored) return;
-    const err = await save(settingKey, next, current?.id);
-    if (err) {
-      toast(`Couldn't save ${label}: ${err}`, 'err');
-      setText(String(stored));
-    } else {
-      toast(`${label} saved: ${next}%.`, 'ok');
-    }
-  }
+  const box = useSettingField({
+    stored: Number(values[settingKey]),
+    problem: (raw, next) => (!VALID.test(raw) || next > 100 ? 'Enter a number from 0 to 100, with up to 2 decimals.' : null),
+    save: (next) => save(settingKey, next, current?.id),
+    saved: (next) => `${label} saved: ${next}%.`,
+    failed: `Couldn't save ${label}`,
+  });
 
   return (
     <div className={`pct-field ${settingKey === 'cash_pct' ? 'cash' : 'credit'}`}>
       <label htmlFor={`pct-${settingKey}`}>{label}</label>
       <div className="pct-input">
-        <input
-          id={`pct-${settingKey}`}
-          type="number"
-          min="0"
-          max="100"
-          step="0.01"
-          value={text}
-          onFocus={() => setEditing(true)}
-          onChange={(e) => setText(e.target.value)}
-          onBlur={commit}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') e.currentTarget.blur();
-          }}
-        />
+        <input id={`pct-${settingKey}`} type="number" min="0" max="100" step="0.01" {...box} />
         <span className="pct-sign">%</span>
       </div>
-      {error && <p className="field-error">{error}</p>}
     </div>
   );
 }

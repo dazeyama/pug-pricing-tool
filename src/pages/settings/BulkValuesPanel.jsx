@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react';
 import { useSettings } from '../../state/settings.jsx';
 import { useStaff } from '../../state/staff.jsx';
-import { useToast } from '../../components/Toast.jsx';
+import { useSettingField } from './useSettingField.js';
 import { formatMoney } from '../../lib/money.js';
 import { BULK_ITEMS, bulkValuesFrom } from '../../lib/bulk.js';
 import { GAMES } from '../../lib/games.js';
@@ -12,52 +11,19 @@ const VALID_MONEY = /^\d{1,6}(\.\d{1,2})?$/;
 function ValueBox({ item }) {
   const { values, save } = useSettings();
   const { current } = useStaff();
-  const toast = useToast();
   const all = bulkValuesFrom(values.bulk_values);
-  const stored = all[item.kind];
-  const [text, setText] = useState(String(stored));
-  const [editing, setEditing] = useState(false);
-
-  // Follow other computers' changes, but never under someone's typing.
-  useEffect(() => {
-    if (!editing) setText(String(stored));
-  }, [stored, editing]);
-
-  async function commit() {
-    setEditing(false);
-    const raw = text.trim().replace(/^\$/, '');
-    if (!VALID_MONEY.test(raw)) {
-      toast('Enter a dollar amount, with up to 2 decimals.', 'err');
-      setText(String(stored));
-      return;
-    }
-    const next = Number(raw);
-    if (next === stored) return;
-    const err = await save('bulk_values', { ...all, [item.kind]: next }, current?.id);
-    if (err) {
-      toast(`Couldn't save: ${err}`, 'err');
-      setText(String(stored));
-    } else {
-      toast(`${item.name} saved: ${formatMoney(next)} per ${item.per}.`, 'ok');
-    }
-  }
+  const box = useSettingField({
+    stored: all[item.kind],
+    clean: (t) => t.trim().replace(/^\$/, ''),
+    problem: (raw) => (VALID_MONEY.test(raw) ? null : 'Enter a dollar amount, with up to 2 decimals.'),
+    save: (next) => save('bulk_values', { ...all, [item.kind]: next }, current?.id),
+    saved: (next) => `${item.name} saved: ${formatMoney(next)} per ${item.per}.`,
+  });
 
   return (
     <span className="pct-input fb-box bulk-box">
       <span className="pct-sign">$</span>
-      <input
-        type="number"
-        min="0"
-        step="0.01"
-        aria-label={`${item.name}: dollars per item`}
-        value={text}
-        onFocus={() => setEditing(true)}
-        onChange={(e) => setText(e.target.value)}
-        onBlur={commit}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') e.currentTarget.blur();
-        }}
-      />
+      <input type="number" min="0" step="0.01" aria-label={`${item.name}: dollars per item`} {...box} />
     </span>
   );
 }

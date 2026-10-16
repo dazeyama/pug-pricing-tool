@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react';
 import { useSettings } from '../../state/settings.jsx';
 import { useStaff } from '../../state/staff.jsx';
-import { useToast } from '../../components/Toast.jsx';
+import { useSettingField } from './useSettingField.js';
 import { formatMoney } from '../../lib/money.js';
 import { tiersFrom } from '../../lib/rates.js';
 
@@ -15,63 +14,27 @@ const VALID_MONEY = /^\d{1,6}(\.\d{1,2})?$/;
 function TierBox({ tier, field, money = false, label }) {
   const { values, save } = useSettings();
   const { current } = useStaff();
-  const toast = useToast();
   const tiers = tiersFrom(values.rate_tiers);
-  const stored = tiers[tier][field];
-  const [text, setText] = useState(String(stored));
-  const [editing, setEditing] = useState(false);
-
-  // Follow other computers' changes, but never under someone's typing.
-  useEffect(() => {
-    if (!editing) setText(String(stored));
-  }, [stored, editing]);
-
-  async function commit() {
-    setEditing(false);
-    const raw = text.trim().replace(/^\$/, '');
-    const next = Number(raw);
-    let problem = null;
-    if (money) {
-      if (!VALID_MONEY.test(raw) || !(next > 0)) problem = 'Enter a dollar amount over $0, with up to 2 decimals.';
-      else if (tier === 'low' && next >= tiers.high.over) problem = `The low end has to stay below the high end (${formatMoney(tiers.high.over)}).`;
-      else if (tier === 'high' && next <= tiers.low.under) problem = `The high end has to stay above the low end (${formatMoney(tiers.low.under)}).`;
-    } else if (!VALID_PCT.test(raw) || next > 100) {
-      problem = 'Enter a number from 0 to 100, with up to 2 decimals.';
-    }
-    if (problem) {
-      toast(problem, 'err');
-      setText(String(stored));
-      return;
-    }
-    if (next === stored) return;
-    const value = { ...tiers, [tier]: { ...tiers[tier], [field]: next } };
-    const err = await save('rate_tiers', value, current?.id);
-    if (err) {
-      toast(`Couldn't save: ${err}`, 'err');
-      setText(String(stored));
-    } else {
-      toast(`${label} saved: ${money ? formatMoney(next) : `${next}%`}.`, 'ok');
-    }
-  }
+  const box = useSettingField({
+    stored: tiers[tier][field],
+    clean: (t) => t.trim().replace(/^\$/, ''),
+    problem: (raw, next) => {
+      if (!money) return !VALID_PCT.test(raw) || next > 100 ? 'Enter a number from 0 to 100, with up to 2 decimals.' : null;
+      if (!VALID_MONEY.test(raw) || !(next > 0)) return 'Enter a dollar amount over $0, with up to 2 decimals.';
+      if (tier === 'low' && next >= tiers.high.over) return `The low end has to stay below the high end (${formatMoney(tiers.high.over)}).`;
+      if (tier === 'high' && next <= tiers.low.under) return `The high end has to stay above the low end (${formatMoney(tiers.low.under)}).`;
+      return null;
+    },
+    // The whole setting is saved at once, with the box changed.
+    save: (next) => save('rate_tiers', { ...tiers, [tier]: { ...tiers[tier], [field]: next } }, current?.id),
+    saved: (next) => `${label} saved: ${money ? formatMoney(next) : `${next}%`}.`,
+  });
 
   return (
     // Credit and Cash boxes in their colours (owner, 2026-10-15).
     <span className={`pct-input fb-box${money ? ' tier-money' : ` tier-${field}`}`}>
       {money && <span className="pct-sign">$</span>}
-      <input
-        type="number"
-        min="0"
-        max={money ? undefined : 100}
-        step="0.01"
-        aria-label={label}
-        value={text}
-        onFocus={() => setEditing(true)}
-        onChange={(e) => setText(e.target.value)}
-        onBlur={commit}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') e.currentTarget.blur();
-        }}
-      />
+      <input type="number" min="0" max={money ? undefined : 100} step="0.01" aria-label={label} {...box} />
       {!money && <span className="pct-sign">%</span>}
     </span>
   );

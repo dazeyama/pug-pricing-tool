@@ -65,3 +65,19 @@ the right moments. Hover each button and read its tooltip.
 - [ ] **A project:** + Start Project `SMOKE P6 Project`, empty: ⋯ → Convert to buy… reads **No cards to convert**. Add a card: it's usable (open it, then Cancel).
 - [ ] Delete collection… and Delete project… open their dialogs (Cancel both for now; section 9 cleans up).
 - Not testable from one browser: "View only: … is editing", the delete/convert takeover wording, and "No connection" (two computers, or offline). Their words are the same strings as before.
+
+## 2. Settings boxes (B11, useSettingField)
+
+The four kinds of box share one hook now. Their checks and words are the
+same; the one difference is the owner's: Master Buy Percentages says a bad
+value in a **toast**, like the others, not under the box. Settings are
+shared by every computer and dev is the live store, so saving is only
+checked on the least-used boxes, and each value is typed back at once.
+
+- [ ] **Master Buy Percentages:** type `101` in Cash %, press Enter: a red toast **Enter a number from 0 to 100, with up to 2 decimals.** and the box shows the saved value again. Nothing appears under the box. Same with `abc` in Credit %.
+- [ ] Click into Cash % and out without typing: no toast (nothing changed).
+- [ ] **Low-end and high-end rates:** low end `$` box → type the high end's amount or more: **The low end has to stay below the high end ($…).**; high end → `0`: **Enter a dollar amount over $0, with up to 2 decimals.** Both put the value back.
+- [ ] **Master Fallback Percentages**, Pokémon **DMG**: note it (____), type one more, Enter: a green toast **Pokémon DMG fallback saved: …%.** Type the original back: saved again.
+- [ ] **Bulk values**, one Pokémon item: note it (____), type `$` and a new amount: **… saved: $… per ….** (the `$` is taken off). Type the original back.
+- [ ] Another tab on Settings sees the change arrive while you're not typing in that box (open a second preview tab; optional).
+

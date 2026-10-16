@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react';
 import { useSettings } from '../../state/settings.jsx';
 import { useStaff } from '../../state/staff.jsx';
-import { useToast } from '../../components/Toast.jsx';
+import { useSettingField } from './useSettingField.js';
 import { CONDITIONS } from '../../lib/prices.js';
 import { GAMES } from '../../lib/games.js';
 
@@ -13,52 +12,17 @@ const ROWS = GAMES.map((g) => ({ key: `fallback_pct_${g.key}`, name: g.name }));
 function PctBox({ game, code }) {
   const { values, save } = useSettings();
   const { current } = useStaff();
-  const toast = useToast();
   const all = values[game.key];
-  const stored = Number(all[code]);
-  const [text, setText] = useState(String(stored));
-  const [editing, setEditing] = useState(false);
-
-  // Follow other computers' changes, but never under someone's typing.
-  useEffect(() => {
-    if (!editing) setText(String(stored));
-  }, [stored, editing]);
-
-  async function commit() {
-    setEditing(false);
-    const raw = text.trim();
-    if (!VALID.test(raw) || Number(raw) > 100) {
-      toast('Enter a number from 0 to 100, with up to 2 decimals.', 'err');
-      setText(String(stored));
-      return;
-    }
-    const next = Number(raw);
-    if (next === stored) return;
-    const err = await save(game.key, { ...all, [code]: next }, current?.id);
-    if (err) {
-      toast(`Couldn't save: ${err}`, 'err');
-      setText(String(stored));
-    } else {
-      toast(`${game.name} ${code} fallback saved: ${next}%.`, 'ok');
-    }
-  }
+  const box = useSettingField({
+    stored: Number(all[code]),
+    problem: (raw, next) => (!VALID.test(raw) || next > 100 ? 'Enter a number from 0 to 100, with up to 2 decimals.' : null),
+    save: (next) => save(game.key, { ...all, [code]: next }, current?.id),
+    saved: (next) => `${game.name} ${code} fallback saved: ${next}%.`,
+  });
 
   return (
     <span className="pct-input fb-box">
-      <input
-        type="number"
-        min="0"
-        max="100"
-        step="0.01"
-        aria-label={`${game.name} ${code} fallback percentage`}
-        value={text}
-        onFocus={() => setEditing(true)}
-        onChange={(e) => setText(e.target.value)}
-        onBlur={commit}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') e.currentTarget.blur();
-        }}
-      />
+      <input type="number" min="0" max="100" step="0.01" aria-label={`${game.name} ${code} fallback percentage`} {...box} />
       <span className="pct-sign">%</span>
     </span>
   );
