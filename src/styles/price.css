@@ -1245,11 +1245,11 @@
   cursor: pointer;
 }
 .buy-line-row:hover .line-x { opacity: 1; }
-/* A struck card (owner, 2026-10-16; lib/struck.js): crossed out, kept as a record. The text
-   dims by its colour, not opacity, so the line stays a solid, thick white (owner: "too faint"). */
+/* A struck card (owner, 2026-10-16; lib/struck.js): crossed out, kept as a record: solid grey
+   text under a solid, thick white line (owner: "too faint"; then the text 100% too, grey). */
 .buy-line-row.struck .line-price,
 .buy-line-row.struck .buy-line {
-  color: color-mix(in srgb, var(--muted) 60%, transparent);
+  color: var(--muted);
   text-decoration: line-through 2px #fff;
 }
 .buy-line-row.struck .buy-line * { color: inherit; }

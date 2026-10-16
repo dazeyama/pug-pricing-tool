@@ -293,13 +293,13 @@ button.flag-chip:hover, button.flag-chip[aria-expanded="true"] { background: rgb
 .deck-table .cell-x { width: 1%; text-align: right; }
 .drow:hover { background: color-mix(in srgb, var(--bad) 7%, transparent); }
 .drow:hover .line-x { opacity: 1; }
-/* A struck card (owner, 2026-10-16): crossed out, the text dimmed by its colour so the line stays a
-   solid, thick white (owner: "too faint"); right-click → Restore, placed in .deck-wrap. */
+/* A struck card (owner, 2026-10-16): crossed out: solid grey text under a solid, thick white line
+   (owner: "too faint"; then the text 100% too, grey); right-click → Restore, placed in .deck-wrap. */
 .deck-wrap { position: relative; }
 .drow.struck .cell-price,
 .drow.struck .cell-qty,
 .drow.struck .cell-name {
-  color: color-mix(in srgb, var(--muted) 60%, transparent);
+  color: var(--muted);
   text-decoration: line-through 2px #fff;
 }
 .drow.struck .cell-name * { color: inherit; }
