@@ -1031,6 +1031,9 @@ begin
   perform confirm_buy(b, u, 'DBTEST Placeholder', '', 50, 65, null, 1, 'cash', '{}', '5550100025');
   perform pg_temp.ok(s, 'The header search finds a placeholder by its name',
     exists (select 1 from global_search('dbtest meowth', null, null, null, false) g where g.line_id = l1));
+  -- 0063: and says it's one (bulk_kind), so the app needn't guess from the set code.
+  perform pg_temp.ok(s, 'The header search says it is a placeholder',
+    (select g.bulk_kind = 'pkm_placeholder' from global_search('dbtest meowth', null, null, null, false) g where g.line_id = l1));
   perform buy_mark_completed(b, 'pokemon', u, a, true);
   perform pg_temp.ok(s, 'Mark as completed leaves it out, as bulk',
     (select completed_at is null from buy_lines where id = l1));
