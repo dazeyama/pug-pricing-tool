@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useCardRoom, useListRoom } from './useStageRoom.js';
 import { usePrinting } from './usePrinting.js';
+import { usePricing } from './usePricing.js';
 import SearchBar from './SearchBar.jsx';
 import SelectedCard from './SelectedCard.jsx';
 import Suggestions, { useSuggestionCount } from './Suggestions.jsx';
@@ -123,26 +124,11 @@ export default function PricingScreen({
   // The chosen finish (Magic) or version (Pokémon), and what they're chosen from (usePrinting.js).
   const { setPrinting, pokemon, siblings, magic, finish, tcgSiblings, versions, version } = usePrinting(selected, card);
 
-  // Condition, manual price and override (spec 8.7): NM, none and none for
-  // every new card. A manual price belongs to its condition: picking another
-  // condition clears it (owner, 2026-09-29). The override is Use Fallback
-  // ('fallback') or Use Cardmarket ('cardmarket'), never both.
-  const [pricing, setPricing] = useState({ key: null, condition: 'NM', manual: null, override: null });
-  const [manualOpen, setManualOpen] = useState(false);
-  const pricingOwn = pricing.key === selected?.key;
-  const condition = pricingOwn ? pricing.condition : 'NM';
-  const manual = pricingOwn ? pricing.manual : null;
-  const override = pricingOwn ? pricing.override : null;
-  const setCondition = (code) => setPricing({
-    key: selected?.key, condition: code, manual: code === condition ? manual : null, override,
-  });
-  const setManual = (value) => setPricing({ key: selected?.key, condition, manual: value, override });
-  const setOverride = (next) => setPricing({ key: selected?.key, condition, manual, override: next });
-  // A placeholder's name as typed (owner, 2026-10-16), kept with the selection like its price.
-  const [placeholder, setPlaceholder] = useState({ key: null, name: '' });
-  const placeholderName = placeholder.key === selected?.key ? placeholder.name : '';
-  const setPlaceholderName = (name) => setPlaceholder({ key: selected?.key, name });
-  useEffect(() => setManualOpen(false), [selected?.key]);
+  // Condition, manual price and override, the manual price box, a placeholder's name (usePricing.js).
+  const {
+    setPricing, condition, manual, override, setCondition, setManual, setOverride, manualOpen, setManualOpen,
+    setPlaceholder, placeholderName, setPlaceholderName,
+  } = usePricing(selected);
 
   // A Japanese card's English name (Pokédex number): shown beside the
   // Japanese one, and used for JustTCG, TCGplayer and Cardmarket searches.

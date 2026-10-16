@@ -108,3 +108,10 @@ keys) stayed where they were. Each part below names its commit.
 - [ ] A Base Set Pokémon (e.g. `Charizard 4/102 BS`): 1st Edition / Unlimited / Shadowless versions; Alt+F cycles finishes.
 - [ ] JP `025/165 SV2a`: its versions and prices load (Pokémon detail through usePrinting).
 
+**3c. Condition, manual price, override, placeholder name (C1c: usePricing.js)**
+- [ ] A Magic card: NM by default; Alt+2 → LP, Alt+5 → DMG, clicking a condition too; the big price follows.
+- [ ] Alt+M opens the manual price box; type `3.21`, Enter: "✎ manual" tag, $3.21. Pick another condition: the manual price is cleared.
+- [ ] Use Fallback, then Use Cardmarket (where it has a Cardmarket price): the tag reads fallback / cardmarket; only one is on at a time.
+- [ ] Select another card: NM, no manual price, no override, the manual box closed. Back to the first: its defaults too.
+- [ ] Search `placeholder`, pick the Pokémon one, type a name `SMOKE P6 Meowth 117` and a price: both stay while it's selected; pick something else and come back: empty again.
+
