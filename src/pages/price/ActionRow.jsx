@@ -26,7 +26,12 @@ export default function ActionRow({ qtyRef, qty, onQty, onClear, onAdd, blocked,
           aria-label="Quantity"
           value={qty}
           onChange={(e) => onQty(e.target.value)}
-          onBlur={() => onQty(String(parseQty(qty) ?? 1))}
+          // Only an unusable quantity goes back to 1. Writing the box's value back
+          // on every blur undid CLEAR's 1 when Enter here added the card and focus
+          // moved to the search (TEST_PASS finding 1: the next card went in ×3).
+          onBlur={(e) => {
+            if (parseQty(e.target.value) == null) onQty('1');
+          }}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               e.preventDefault();
