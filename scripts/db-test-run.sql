@@ -1,4 +1,4 @@
--- PUG Pricing Tool: the database test run (TEST.md, section 18).
+-- PUG Pricing Tool: the database test run (docs/TEST.md, section 18).
 --
 -- Calls every server function the app uses, as the app's own signed-in role
 -- (authenticated), and checks what each one does and what it refuses. It all

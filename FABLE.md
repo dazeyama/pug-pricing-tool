@@ -18,7 +18,7 @@ all made on 2026-10-16 and the report retired. It's in git history
 migration squash and locking the Changelog to the database (0068), is in
 `SQUASH.md`; the rules it found are below. The same goes for the smoke
 test of its last phase: comments citing "TEST_PASS finding 1" point at
-`git show 4412187:TEST_PASS.md`, and its results are in `TEST.md`.
+`git show 4412187:TEST_PASS.md`, and its results are in `docs/TEST.md`.
 
 ---
 
@@ -264,7 +264,7 @@ Report failures as failures, with the output. If a step was skipped, say so.
 **The one exception: a smoke pass the owner asks for.** On 2026-10-16 the
 owner had Claude drive a whole smoke test in the preview browser while
 they were away (TEST_PASS.md, in git history at `4412187`; its results are
-in TEST.md). If asked again, run it the same way:
+in docs/TEST.md). If asked again, run it the same way:
 
 - **Before the owner leaves, get everything in one go.** They sign in
   (never type the store password), name the computer, pick or add a

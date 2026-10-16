@@ -16,7 +16,7 @@
 
 1. **Read the whole document before starting**, and the parts of `DESIGN_SPEC.md` and `EXPORT_FUNCTION.md` each phase names. Sections 1–5 describe the finished result; Section 6 lists every database change; Section 7 splits the work into phases T1–T3.
 2. **One phase at a time, in order** (CLAUDE.md). Each phase ends at something the owner can check on `localhost`; don't start the next until the owner reports back.
-3. **The owner is QA.** Build, run `npm test` and `npm run build`, run the database test run after a migration (`node scripts/db-test-run.mjs`, TEST.md §18), fix what fails, then hand off with the phase's "Where to look".
+3. **The owner is QA.** Build, run `npm test` and `npm run build`, run the database test run after a migration (`node scripts/db-test-run.mjs`, docs/TEST.md §18), fix what fails, then hand off with the phase's "Where to look".
 4. **Database changes are new migration files, applied to the dev project only.** Rehearse SQL inside `begin … rollback` first; apply with `npx supabase db push`.
 5. **Where it says must, it's a requirement; should, use judgement.** If something here conflicts with the owner's later word, the owner wins: update this file so it doesn't come back.
 6. **No secrets, no customer data, no CSV files** in this document, the repo or the code.

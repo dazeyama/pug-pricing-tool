@@ -1,4 +1,4 @@
-// The database test run (TEST.md, section 18): runs scripts/db-test-run.sql
+// The database test run (docs/TEST.md, section 18): runs scripts/db-test-run.sql
 // on the linked Supabase project and prints what passed and what didn't.
 // Everything the test makes is rolled back; this checks afterwards that
 // nothing was left behind.
