@@ -472,6 +472,27 @@ export default function BuyList({
   // The menu goes on any click elsewhere, Esc or a scroll.
   useDismiss(() => setRateMenu(null), { inside: '.rate-menu', when: Boolean(rateMenu), scroll: true });
 
+  /** The right-click menu's items for a line: a struck card's Restore, else its rate or value. */
+  const menuItems = (line) => (isStruck(line)
+    ? [{ label: 'Restore', blocked: removeLocked, tip: 'Take the strike off: back on the list with its price and rate', run: () => restore(line) }]
+    : [
+      {
+        label: isValuedBulk(line) ? 'Set value' : 'Set Rate',
+        blocked: rateBlocked(line),
+        tip: isValuedBulk(line) ? 'Give this bulk its own value per item' : 'Give this card its own Cash and Credit rates',
+        run: () => startRate(line),
+      },
+      isValuedBulk(line) && line.price_source === 'manual' && {
+        label: 'Clear value', blocked: rateBlocked(line), tip: 'Back to the value in Settings → Bulk values', run: () => clearRate(line),
+      },
+      hasOwnRate(line) && {
+        label: 'Clear Rate',
+        blocked: rateBlocked(line),
+        tip: `Back to Credit ${otherRate(line, rates).credit}%, Cash ${otherRate(line, rates).cash}%`,
+        run: () => clearRate(line),
+      },
+    ].filter(Boolean));
+
   // Set Rate sits level with its card, outside the sidebar, and follows it as the list scrolls.
   useLayoutEffect(() => {
     if (!rateFor) return undefined;
@@ -532,7 +553,7 @@ export default function BuyList({
           return (
             <section key={g.key} className="list-group">
               <div className="group-head">
-                <span className={`group-chip ${g.key}`}>{g.name} ({countText({ ...cardCounts(mine), struck: 0 }).replace(/ cards?\b/, '')})</span>
+                <span className={`group-chip ${g.key}`}>{g.name} ({countText({ ...cardCounts(mine), struck: 0 }, { short: true })})</span>
               </div>
               {mine.map((l) => (
                 <div
@@ -615,53 +636,20 @@ export default function BuyList({
       </div>
 
       <LinePreview preview={preview} onHide={hidePreview} />
-      {rateMenu && isStruck(rateMenu.line) && (
+      {rateMenu && (
         <div className="rate-menu" role="menu" style={{ top: rateMenu.top, left: rateMenu.left }}>
-          <button
-            type="button"
-            role="menuitem"
-            className={removeLocked ? 'is-blocked' : ''}
-            title={removeLocked ?? 'Take the strike off: back on the list with its price and rate'}
-            onClick={() => restore(rateMenu.line)}
-          >
-            Restore
-          </button>
-        </div>
-      )}
-      {rateMenu && !isStruck(rateMenu.line) && (
-        <div className="rate-menu" role="menu" style={{ top: rateMenu.top, left: rateMenu.left }}>
-          <button
-            type="button"
-            role="menuitem"
-            className={rateBlocked(rateMenu.line) ? 'is-blocked' : ''}
-            title={rateBlocked(rateMenu.line)
-              ?? (isValuedBulk(rateMenu.line) ? 'Give this bulk its own value per item' : 'Give this card its own Cash and Credit rates')}
-            onClick={() => startRate(rateMenu.line)}
-          >
-            {isValuedBulk(rateMenu.line) ? 'Set value' : 'Set Rate'}
-          </button>
-          {isValuedBulk(rateMenu.line) && rateMenu.line.price_source === 'manual' && (
+          {menuItems(rateMenu.line).map((it) => (
             <button
+              key={it.label}
               type="button"
               role="menuitem"
-              className={rateBlocked(rateMenu.line) ? 'is-blocked' : ''}
-              title={rateBlocked(rateMenu.line) ?? 'Back to the value in Settings → Bulk values'}
-              onClick={() => clearRate(rateMenu.line)}
+              className={it.blocked ? 'is-blocked' : ''}
+              title={it.blocked ?? it.tip}
+              onClick={it.run}
             >
-              Clear value
+              {it.label}
             </button>
-          )}
-          {hasOwnRate(rateMenu.line) && (
-            <button
-              type="button"
-              role="menuitem"
-              className={rateBlocked(rateMenu.line) ? 'is-blocked' : ''}
-              title={rateBlocked(rateMenu.line) ?? `Back to Credit ${otherRate(rateMenu.line, rates).credit}%, Cash ${otherRate(rateMenu.line, rates).cash}%`}
-              onClick={() => clearRate(rateMenu.line)}
-            >
-              Clear Rate
-            </button>
-          )}
+          ))}
         </div>
       )}
       {rateLine && isValuedBulk(rateLine) && (

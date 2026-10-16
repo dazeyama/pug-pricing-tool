@@ -111,3 +111,10 @@ test('a placeholder: its name and price as typed, counted as a card', () => {
   assert.equal(kept.unit_price, 12.5);
   assert.equal(kept.kept, 'manual');
 });
+
+test("a game's chip: the cards without the word (countText's short)", () => {
+  assert.equal(countText({ cards: 42, bulk: 1000 }, { short: true }), '42 + 1,000 bulk');
+  assert.equal(countText({ cards: 1, bulk: 0 }, { short: true }), '1');
+  assert.equal(countText({ cards: 0, bulk: 100 }, { short: true }), '100 bulk');
+  assert.equal(countText({ cards: 3, bulk: 0 }), '3 cards');
+});

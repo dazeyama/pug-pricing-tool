@@ -172,9 +172,13 @@ export function cardCounts(lines) {
   return { cards, bulk, struck };
 }
 
-/** "42 cards + 1,000 bulk", "1 card", "1,000 bulk"; "42 cards · 2 struck". */
-export function countText({ cards, bulk, struck = 0 }) {
-  const c = `${cards.toLocaleString('en-US')} card${cards === 1 ? '' : 's'}`;
+/**
+ * "42 cards + 1,000 bulk", "1 card", "1,000 bulk"; "42 cards · 2 struck".
+ * `short`: the cards without the word, for a game's chip ("Magic (42 + 1,000 bulk)").
+ */
+export function countText({ cards, bulk, struck = 0 }, { short = false } = {}) {
+  const n = cards.toLocaleString('en-US');
+  const c = short ? n : `${n} card${cards === 1 ? '' : 's'}`;
   const b = `${bulk.toLocaleString('en-US')} bulk`;
   const both = !bulk ? c : cards ? `${c} + ${b}` : b;
   return struck ? `${both} · ${struck.toLocaleString('en-US')} struck` : both;
