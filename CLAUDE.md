@@ -9,6 +9,9 @@
 - One phase at a time (spec Section 15). Don't start the next phase until the owner reports back.
 - Don't add settings, features or dependencies beyond the spec without asking the owner
   first. New settings ideas are welcome: propose them, don't just build them.
+- Do ask about dependencies whenever one would help, rather than hand-rolling around it: stop,
+  name the package, what it's for and whether it ships to the site. Dev-only tools (lint, test,
+  build helpers) that never reach the site are usually a yes (owner, 2026-10-16).
 - Commit when a phase or fix is done. NEVER push unless the owner explicitly asks. Pushing
   to main deploys the live site.
 - Never put API keys, the Supabase secret key (sb_secret_…), customer data or CSV files in the repo,
