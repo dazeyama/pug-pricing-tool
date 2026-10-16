@@ -23,7 +23,7 @@ import { downloadMassCreate } from '../lib/ccExport.js';
 import { todaysPrices } from '../lib/todaysPrices.js';
 import { sellPriceFor } from '../lib/sellPrice.js';
 import { useSettings } from '../state/settings.jsx';
-import { RemoveModal } from './price/BuyList.jsx';
+import RemoveModal from '../components/RemoveModal.jsx';
 import { statusLabel, statusTone, walkInStatus } from './collections/status.js';
 import { useConnection } from '../state/connection.jsx';
 import { useDevice } from '../state/device.jsx';
