@@ -289,6 +289,7 @@ list every buy and collection holding a matching card.
 - **↓ ↑** move through results. **Enter** opens one. **Esc** closes the list.
 - Opening a buy goes to its day page. Opening a collection goes to its screen. The matching cards
   flash.
+- Placeholders are found by the name typed for them. Bulk and struck cards never show.
 
 By default it searches **Paid/Ours** only. **Show all** adds Processing, Priced, Completed and
 Rejected. Completed and Rejected results are faded. Show all switches itself off when the list
@@ -407,6 +408,12 @@ part can be left out. The sample text shows one: `Lightning Bolt 117/331 2X2`.
 | **EN \| JP** | English or Japanese Pokémon. EN to start, every time the screen opens. |
 
 Japanese cards are searched differently: see [Japanese searches](#japanese-searches).
+
+**Japanese Magic printings.** Magic is searched in English, but printings that only exist in
+Japanese come up too: the Mystical Archive's Japanese alternate art (*Cyclonic Rift SOA 79*), War of
+the Spark's Japanese planeswalkers, Japanese promos. They're marked **JP** on their suggestion and
+*[JP]* in the list. Where the set has the card in English as well, a **Japanese** checkbox in Card
+details flips between the two.
 
 ### Japanese searches
 
@@ -584,8 +591,8 @@ Clicking a percentage opens **Rates for this buy**. She can set a different Cash
 this buy only. A ✎ marks a custom rate. **Use master rates** goes back to the ones in Settings.
 **Done** closes it.
 
-**Custom rates only help price.** CONFIRM BUY forgets them: the confirmed buy keeps each card's
-default rate.
+**CONFIRM BUY keeps the rates the buy was priced at**, custom ones and each card's own included. Its
+day page shows the same Cash and Credit as the confirm window, with a ✎ on a custom rate.
 
 ### CANCEL and CONFIRM BUY
 
@@ -630,6 +637,19 @@ Eight items stand for unsorted bulk, priced in Settings → **Bulk values**:
 - Bulk is paid at the master or custom rates, never low end / high end.
 - **Bulk only helps price.** It's never exported, completed, printed or found by the header search.
   A buy counts as Completed once its real cards are.
+
+**Placeholders.** *1 BULK placeholder*, one for each game, stands in for a card the search can't find
+yet. Search **bulk** or **placeholder** (any capitals) to find it.
+
+- **Click its name** (the dashed box) and type what the card is: *Team Rocket's, Meowth 117*. Left
+  empty, it's *Placeholder*.
+- **Its price box starts empty**: type the card's market price. ADD CARD waits for it.
+- No condition or finish: write them into the name if they matter. **Qty** counts cards; the same
+  name and price join one line.
+- It's paid like a card at that price (low end / high end, Set Rate), and the header search finds it
+  by its name.
+- Like bulk, it's never exported, completed or printed. Lists show *1 Team Rocket's, Meowth 117
+  [Placeholder]*.
 
 ### Keyboard shortcuts
 
@@ -810,6 +830,9 @@ Crystal Commerce, the stock there is fixed by hand.
 | Ours (a project) | Yes | Yes |
 | Completed, Rejected | No | No |
 
+In Paid/Ours, **×** strikes a card first: see [Struck cards](#struck-cards). A project's and Can't
+upload cards' **×** removes at once.
+
 ### 📞 Calls
 
 On a Priced collection, **📞 (N)** sits beside the phone number. She clicks it after each call to
@@ -963,13 +986,27 @@ user, the time and its status.
 - **Paid**: what the customer was paid, for the whole buy (both games).
 - **Also has N Pokémon cards →** (or Magic) opens the other game's day page.
 
-**×** removes cards. It asks how many. Removing the last card deletes the buy, after asking.
+**×** strikes cards first: see [Struck cards](#struck-cards). A struck card's **×** removes it.
+Removing the last card deletes the buy, after asking.
 
 **🚩 Check condition.** A buy flagged at CONFIRM BUY shows a red chip. Clicking it asks **Condition
 checked?**; **Yes** turns it into a green **✅ Condition checked** for good. EXPORT, Export single buy
 and COMPLETE warn while a buy is flagged.
 
 Once Completed, a buy is locked. Its prices show in green: those are its Sell Prices.
+
+### Struck cards
+
+In a Paid/Ours buy or collection, the first **×** **strikes** a card (it asks how many). It stays on
+the list, crossed out, as a record that it went elsewhere: straight into the case, say.
+
+- A struck card is never exported, completed, printed, repriced or found by the header search, and
+  isn't in the card counts (*42 cards · 2 struck*). It **still counts in the totals**: it was bought.
+- **×** on a struck card removes it for good. **Right-click → Restore** puts it back.
+- Hovering it shows who struck it and when. The Changelog records strikes and restores.
+- Projects and Can't upload cards don't strike: their **×** removes at once. **Convert to project**
+  leaves a buy's struck cards out.
+- **Edit in project view** strikes and restores too, saved with **SAVE BUY**.
 
 ### A buy's ⋯ menu
 
