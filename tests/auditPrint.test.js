@@ -18,7 +18,8 @@ test('which cards print: not yet exported first; once all Completed, what the ex
   const byHand = line({ name: 'D', completed_at: '2026-10-14' });
   const pkm = line({ name: 'E', game: 'pokemon' });
   const bulk = line({ name: 'F', bulk_kind: 'mtg_100_common' });
-  assert.deepEqual(printLines([paid, exported, cant, byHand, pkm, bulk]).map((l) => l.name), ['A']);
+  const struck = line({ name: 'G', struck_at: '2026-10-16T18:00:00Z' });
+  assert.deepEqual(printLines([paid, exported, cant, byHand, pkm, bulk, struck]).map((l) => l.name), ['A']);
   assert.deepEqual(printLines([exported, cant, byHand, pkm]).map((l) => l.name), ['B', 'C']);
   assert.deepEqual(printLines([byHand]), []);
   assert.equal(savedCategory(exported), 'Zendikar');

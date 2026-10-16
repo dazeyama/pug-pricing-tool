@@ -447,7 +447,8 @@ function Entry({ panel, view, side, targets, game, onFunnel }) {
               {view.rows.map((l, i) => (
                 <div key={`r${i}`} className={`tl-row game-${l.game}`}>
                   <span className={`ch-mark ${l.sign === '+' ? 'add' : 'rem'}`}>{l.sign === '+' ? '+' : '−'}</span>
-                  <span className="tl-card">{l.text}</span>
+                  {/* A card struck (owner, 2026-10-16): crossed out, as on its list. */}
+                  <span className={`tl-card${l.struck ? ' is-struck' : ''}`}>{l.text}</span>
                   {l.unit_price != null && <span className="tl-price">{formatMoney(l.unit_price)}</span>}
                 </div>
               ))}

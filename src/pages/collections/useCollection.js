@@ -34,6 +34,11 @@ const MESSAGES = {
   bad_last4: 'The Last 4 ID is up to 4 letters or digits.',
   bad_pct: 'Enter a percentage from 0 to 100, with up to 2 decimals.',
   line_completed: "That card is Completed: its rate doesn't change.",
+  // Struck cards (owner, 2026-10-16).
+  line_struck: 'That card is struck: right-click → Restore it first.',
+  line_not_struck: 'That card was already restored.',
+  strike_paid_only: 'Only a Paid/Ours collection strikes cards: here × removes them.',
+  system_collection: "Can't upload cards doesn't strike: its × removes the card.",
   project_rates: "A project has no rates of its own: it's the store's own cards.",
   no_user: 'Pick a user first.',
   // Convert to buy… (owner, 2026-10-10): what CONFIRM BUY asks for, and a project that can't go.
@@ -161,6 +166,22 @@ export function useCollection(id, { deviceId, onLockLost }) {
     return r.ok;
   }, [run, deviceId]);
 
+  /** × in a Paid/Ours collection or project (owner, 2026-10-16): strike copies, kept crossed out. */
+  const strike = useCallback(async (line, qty, userId) => {
+    const r = await run('collection_strike_line', {
+      p_line_id: line.id, p_qty: qty, ...mine(userId), p_text: lineText(line, Math.min(qty, line.quantity)),
+    }, "Couldn't strike the card");
+    return r.ok;
+  }, [run, deviceId]);
+
+  /** Right-click → Restore: a struck card back on the list. */
+  const restore = useCallback(async (line, userId) => {
+    const r = await run('collection_restore_line', {
+      p_line_id: line.id, ...mine(userId), p_text: lineText(line),
+    }, "Couldn't restore the card");
+    return r.ok;
+  }, [run, deviceId]);
+
   /** Name, phone, notes, custom rates: only the fields given. */
   const updateInfo = useCallback(async (fields, userId) => {
     const r = await run('collection_update_info', { p_buy_id: id, p_fields: fields, ...mine(userId) },
@@ -276,6 +297,7 @@ export function useCollection(id, { deviceId, onLockLost }) {
   }, [id, deviceId, state.lines, toast, reload]);
 
   return {
-    ...state, busy, reload, add, update, remove, updateInfo, setRates, setLineRate, setStatus, reprice, destroy, toBuy,
+    ...state, busy, reload, add, update, remove, strike, restore, updateInfo, setRates, setLineRate, setStatus, reprice,
+    destroy, toBuy,
   };
 }

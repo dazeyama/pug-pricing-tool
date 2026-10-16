@@ -152,7 +152,7 @@ export function useAuditPrint() {
   const print = useCallback(async ({ lines, load, title, fileName }) => {
     if (printing) return;
     const nothing = (all) => {
-      const magic = (all ?? []).some((l) => l.game === 'mtg' && !l.bulk_kind);
+      const magic = (all ?? []).some((l) => l.game === 'mtg' && !l.bulk_kind && !l.struck_at);
       toast(magic
         ? 'Nothing to print: these cards were marked Completed without being exported.'
         : 'No Magic cards to print.', 'err');

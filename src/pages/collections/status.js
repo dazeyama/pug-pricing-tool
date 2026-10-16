@@ -1,4 +1,4 @@
-import { isBulk } from '../../lib/bulk.js';
+import { movesOn } from '../../lib/struck.js';
 
 // A collection's statuses (spec 9.5), in order. After Paid/Ours comes
 // Completed (owner, 2026-09-29): the cards have moved on, so it's locked and
@@ -72,11 +72,12 @@ export function statusTone(buy) {
 /**
  * A walk-in buy's status for one game's part (owner, 2026-09-30): 'completed'
  * once all its cards in that game are exported, else 'paid' (Paid/Ours).
- * Bulk is never exported (docs/TEAM_FEEDBACK.md 5.8): only real cards count.
+ * Bulk is never exported (docs/TEAM_FEEDBACK.md 5.8), nor a struck card
+ * (owner, 2026-10-16): only the cards that go on count.
  */
 export function walkInStatus(buy, game) {
   const lines = (buy.buy_lines ?? []).filter((l) => l.game === game);
-  return lines.length && lines.every((l) => l.completed_at || isBulk(l)) ? 'completed' : 'paid';
+  return lines.length && lines.every((l) => l.completed_at || !movesOn(l)) ? 'completed' : 'paid';
 }
 
 /** The table's filter chips (spec 9.1), the endings last. */

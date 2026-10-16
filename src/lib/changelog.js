@@ -21,9 +21,10 @@ export const CATEGORIES = [
     // a buy converted to a project, its cards added there (owner, 2026-10-02);
     // a project converted to a buy (owner, 2026-10-10); a buy's cards edited
     // in project view and saved (owner, 2026-10-13); flagged to have its
-    // cards' condition checked before export, and checked (owner, 2026-10-14).
+    // cards' condition checked before export, and checked (owner, 2026-10-14);
+    // cards struck (moved elsewhere, kept crossed out) and restored (owner, 2026-10-16).
     actions: ['buy_confirmed', 'buy_cards_removed', 'buy_deleted', 'buy_converted', 'project_converted', 'buy_edited',
-      'buy_flagged', 'buy_flag_cleared'],
+      'buy_flagged', 'buy_flag_cleared', 'buy_cards_struck', 'buy_cards_restored'],
   },
   {
     key: 'collections',
@@ -33,7 +34,9 @@ export const CATEGORIES = [
       // A file's cards imported (Import Collection, owner, 2026-10-09).
       'collection_imported',
       // Can't upload cards (export spec 9, 12): copied in, exported out, taken back.
-      'cant_upload_added', 'cant_upload_exported', 'cant_upload_returned'],
+      'cant_upload_added', 'cant_upload_exported', 'cant_upload_returned',
+      // Cards struck in a Paid/Ours collection or project, and restored (owner, 2026-10-16).
+      'collection_cards_struck', 'collection_cards_restored'],
   },
   {
     key: 'actions',
@@ -67,6 +70,8 @@ export function actionsFor(categories) {
 export const HEADLINES = {
   buy_confirmed: 'Buy confirmed',
   buy_cards_removed: 'Cards removed from buy',
+  buy_cards_struck: 'Cards struck in buy',
+  buy_cards_restored: 'Struck cards restored to buy',
   buy_edited: 'Buy edited',
   buy_flagged: '🚩 Buy flagged: check condition',
   buy_flag_cleared: 'Buy condition checked',
@@ -87,6 +92,8 @@ export const HEADLINES = {
   collection_line_edited: 'Card edited in collection',
   collection_line_rate: 'Card rate set',
   collection_cards_removed: 'Cards removed from collection',
+  collection_cards_struck: 'Cards struck in collection',
+  collection_cards_restored: 'Struck cards restored to collection',
   collection_info_edited: 'Collection details edited',
   collection_status_changed: 'Status changed',
   collection_deleted: 'Collection deleted',

@@ -1245,6 +1245,14 @@
   cursor: pointer;
 }
 .buy-line-row:hover .line-x { opacity: 1; }
+/* A struck card (owner, 2026-10-16; lib/struck.js): crossed out and dimmed, kept as a record. */
+.buy-line-row.struck .line-price,
+.buy-line-row.struck .buy-line {
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, var(--bad) 75%, transparent);
+  opacity: .5;
+}
+.buy-line-row.struck .buy-line { cursor: default; }
 .line-x:hover { background: rgba(255, 107, 107, .15); opacity: 1; }
 .buy-line {
   display: block;

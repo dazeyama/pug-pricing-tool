@@ -6,6 +6,7 @@ import { lineBody, lineText } from '../lib/lineFormat.js';
 import { formatMoney } from '../lib/money.js';
 import { rateTotals, tiersFrom } from '../lib/rates.js';
 import { bulkItem, cardCounts, countText, isBulk, perText } from '../lib/bulk.js';
+import { isStruck, movesOn, struckNote } from '../lib/struck.js';
 import CustomRateMark from '../components/CustomRateMark.jsx';
 import { formatPhone } from '../lib/phone.js';
 import { formatDateTime, formatTime } from '../lib/time.js';
@@ -38,6 +39,9 @@ const MESSAGES = {
   day_not_over: "Today can't be exported until it's over.",
   no_user: 'Pick a user first.',
   bad_name: 'Type a name for the project (up to 80 characters).',
+  // Struck cards (owner, 2026-10-16).
+  line_struck: 'That card was already struck.',
+  line_not_struck: 'That card was already restored.',
 };
 const CANT_UPLOAD_TIP = "Not matched to Crystal Commerce: pulled from the upload. It's in Can't upload cards.";
 const COMPLETED_LOCK = 'Completed (exported): its ⋯ → Mark Paid/Ours again, or the whole day\u2019s (⋯ next to EXPORT), to change it';
@@ -188,8 +192,8 @@ function DayScreen({ game, day }) {
   // EXPORT (n) on Magic days (owner, 2026-10-02): the cards to count in the
   // real pile first. The cards the export will take; once the day is all
   // Completed, every card that day.
-  // Bulk is never exported (docs/TEAM_FEEDBACK.md 5.8): real cards only.
-  const dayLines = mine.flatMap((b) => b.buy_lines).filter((l) => l.game === game && !isBulk(l));
+  // Bulk is never exported (docs/TEAM_FEEDBACK.md 5.8), nor struck cards (owner, 2026-10-16).
+  const dayLines = mine.flatMap((b) => b.buy_lines).filter((l) => l.game === game && movesOn(l));
   const toExport = dayLines.filter((l) => !l.completed_at);
   const pileCards = (toExport.length ? toExport : dayLines).reduce((n, l) => n + l.quantity, 0);
   // When and by whom the day was marked Completed, when it wasn't exported.
@@ -208,20 +212,40 @@ function DayScreen({ game, day }) {
     return true;
   };
 
-  /** × on a row: remove copies, or delete the buy if that's its last card (owner, 2026-09-29). */
+  /**
+   * × on a row (owner, 2026-10-16): strikes copies first, kept crossed out as
+   * a record (lib/struck.js); a struck card's × removes it, or deletes the buy
+   * if that's its last card (owner, 2026-09-29).
+   */
   function startRemove(buy, number, line) {
     if (line.completed_at) {
       toast(`${COMPLETED_LOCK}.`, 'err');
       return;
     }
     if (!guard()) return;
-    if (buy.buy_lines.length === 1 && line.quantity === 1) setDeleting({ buy, number, lastCard: true });
-    else setRemoving({ buy, number, line });
+    if (!isStruck(line)) setRemoving({ buy, number, line, mode: 'strike' });
+    else if (buy.buy_lines.length === 1 && line.quantity === 1) setDeleting({ buy, number, lastCard: true });
+    else setRemoving({ buy, number, line, mode: 'struck' });
   }
 
   async function remove(line, qty) {
-    const { buy, number } = removing;
+    const { buy, number, mode } = removing;
     setRemoving(null);
+    if (mode === 'strike') {
+      setBusy(true);
+      const { error } = await withLoading(() => supabase.rpc('buy_strike_line', {
+        p_line_id: line.id,
+        p_qty: qty,
+        p_user: user.id,
+        p_device: deviceId,
+        p_expected_version: buy.version,
+        p_text: lineText(line, Math.min(qty, line.quantity)),
+      }));
+      setBusy(false);
+      if (error) toast(messageFor(error, "Couldn't strike the card"), 'err');
+      await reload();
+      return;
+    }
     if (buy.buy_lines.length === 1 && qty >= line.quantity) {
       setDeleting({ buy, number, lastCard: true });
       return;
@@ -238,6 +262,22 @@ function DayScreen({ game, day }) {
     setBusy(false);
     if (error?.message?.includes('last_card')) setDeleting({ buy, number, lastCard: true });
     else if (error) toast(messageFor(error, "Couldn't remove the card"), 'err');
+    await reload();
+  }
+
+  /** Right-click → Restore on a struck card: back on the buy with its price and rate. */
+  async function restore(buy, line) {
+    if (!guard()) return;
+    setBusy(true);
+    const { error } = await withLoading(() => supabase.rpc('buy_restore_line', {
+      p_line_id: line.id,
+      p_user: user.id,
+      p_device: deviceId,
+      p_expected_version: buy.version,
+      p_text: lineText(line),
+    }));
+    setBusy(false);
+    if (error) toast(messageFor(error, "Couldn't restore the card"), 'err');
     await reload();
   }
 
@@ -384,7 +424,7 @@ function DayScreen({ game, day }) {
     // Today's Sell Prices first, worked out as the export does (owner,
     // 2026-10-09): shown in green once the day is Completed. Without today's
     // prices nothing is completed.
-    const cards = mine.flatMap((b) => b.buy_lines).filter((l) => l.game === game && !l.completed_at && !isBulk(l));
+    const cards = mine.flatMap((b) => b.buy_lines).filter((l) => l.game === game && !l.completed_at && movesOn(l));
     let prices;
     try {
       setCompleteStep("Fetching today's prices…");
@@ -607,6 +647,7 @@ function DayScreen({ game, day }) {
               hits={hits}
               flash={flashBuy === buy.id}
               onRemove={startRemove}
+              onRestore={restore}
               onDelete={(b, n) => guard() && setDeleting({ buy: b, number: n, lastCard: false })}
               onComplete={(b, n, complete) => guard() && markCompleted(b, n, complete)}
               onConvert={(b, n) => guard() && setConverting({ buy: b, number: n })}
@@ -654,6 +695,7 @@ function DayScreen({ game, day }) {
       {removing && (
         <RemoveModal
           line={removing.line}
+          mode={removing.mode}
           note="This buy was already confirmed."
           onClose={() => setRemoving(null)}
           onRemove={remove}
@@ -663,7 +705,7 @@ function DayScreen({ game, day }) {
         <ExportDialog
           mode="check"
           title={`Crystal Commerce matches: ${GAME_NAMES[game]}, ${dayDate(day)}`}
-          items={mine.flatMap((b, i) => b.buy_lines.filter((l) => l.game === 'mtg' && !isBulk(l)).map((line) => ({ line, where: `Buy ${i + 1}` })))}
+          items={mine.flatMap((b, i) => b.buy_lines.filter((l) => l.game === 'mtg' && movesOn(l)).map((line) => ({ line, where: `Buy ${i + 1}` })))}
           onClose={() => setChecking(false)}
         />
       )}
@@ -672,14 +714,14 @@ function DayScreen({ game, day }) {
           mode="export"
           title={`Export ${GAME_NAMES[game]} for ${dayDate(day)} to Crystal Commerce`}
           items={mine.flatMap((b, i) => b.buy_lines
-            .filter((l) => l.game === game && !l.completed_at && !isBulk(l))
+            .filter((l) => l.game === game && !l.completed_at && movesOn(l))
             .map((line) => ({ line, where: `Buy ${i + 1}` })))}
           target={{
             kind: 'day',
             day,
             game,
             versions: Object.fromEntries(mine
-              .filter((b) => b.buy_lines.some((l) => l.game === game && !l.completed_at && !isBulk(l)))
+              .filter((b) => b.buy_lines.some((l) => l.game === game && !l.completed_at && movesOn(l)))
               .map((b) => [b.id, b.version])),
           }}
           fileName={fileName}
@@ -750,7 +792,7 @@ function DayScreen({ game, day }) {
           mode="export"
           title={`Export Buy ${exportingBuy.number} (${GAME_NAMES[game]}, ${dayDate(day)}) to Crystal Commerce`}
           items={exportingBuy.buy.buy_lines
-            .filter((l) => l.game === game && !l.completed_at && !isBulk(l))
+            .filter((l) => l.game === game && !l.completed_at && movesOn(l))
             .map((line) => ({ line, where: `Buy ${exportingBuy.number}` }))}
           target={{ kind: 'buy', buy_id: exportingBuy.buy.id, game, version: exportingBuy.buy.version }}
           fileName={`cc-mass-create-${game === 'mtg' ? 'magic' : game}-${day}-buy-${exportingBuy.number}.csv`}
@@ -902,25 +944,58 @@ function ConditionChip({ buy, byId, blocked, onChecked }) {
 
 /** One buy on a day page (spec 10.2). */
 function BuyPanel({
-  buy, number, game, other, day, byId, busy, offline, hits, flash, onRemove, onDelete, onComplete, onConvert,
+  buy, number, game, other, day, byId, busy, offline, hits, flash, onRemove, onRestore, onDelete, onComplete, onConvert,
   onExport, onUnexport, onEditView, onPrint, printing, onFlag, tiers,
 }) {
   const [preview, setPreview] = useState(null);   // { src, top, left } while a line is hovered
   const hidePreview = useCallback(() => setPreview(null), []);
   const panel = useRef(null);
+  const table = useRef(null);
+  const [menu, setMenu] = useState(null);   // { line, top, left }: a struck card's right-click menu
   const user = byId(buy.confirmed_by);
   const lines = buy.buy_lines.filter((l) => l.game === game);
-  const others = buy.buy_lines.filter((l) => l.game === other).reduce((n, l) => n + l.quantity, 0);
+  const others = buy.buy_lines.filter((l) => l.game === other && !isStruck(l)).reduce((n, l) => n + l.quantity, 0);
   const t = totalsFor(lines, buy, tiers);
   // Paid/Ours, or Completed once exported (owner, 2026-09-30): locked like a Completed collection.
   const status = walkInStatus(buy, game);
   const completed = status === 'completed';
   const anyCompleted = buy.buy_lines.some((l) => l.completed_at);
   // Completed from this ⋯ rather than by an export (owner, 2026-10-02): it can go back on its own.
-  const byHand = completed && lines.every(markedByHand);
+  // Bulk and struck cards are never completed: only the others say how.
+  const byHand = completed && lines.filter(movesOn).every(markedByHand);
   const lockedWhy = (l) => (markedByHand(l) ? MARKED_LOCK : COMPLETED_LOCK);
   const locked = buy.buy_lines.find((l) => l.completed_at);
   const offOrBusy = offline ? 'No connection' : busy ? 'Saving…' : null;
+
+  /** Right-click on a struck card: Restore, where the pointer is (lib/struck.js). */
+  function openMenu(e, l) {
+    if (!isStruck(l) || !table.current) return;   // other cards: the browser's own menu
+    e.preventDefault();
+    hidePreview();
+    const zoom = table.current.currentCSSZoom ?? 1;
+    const b = table.current.getBoundingClientRect();
+    setMenu({ line: l, left: (e.clientX - b.left) / zoom, top: (e.clientY - b.top) / zoom });
+  }
+  // The menu goes on any click elsewhere, Esc or a scroll.
+  useEffect(() => {
+    if (!menu) return undefined;
+    const close = (e) => {
+      if (!e.target.closest?.('.rate-menu')) setMenu(null);
+    };
+    const onKey = (e) => {
+      if (e.key === 'Escape') setMenu(null);
+    };
+    const onScroll = () => setMenu(null);
+    document.addEventListener('mousedown', close);
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('scroll', onScroll, true);
+    return () => {
+      document.removeEventListener('mousedown', close);
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('scroll', onScroll, true);
+    };
+  }, [menu]);
+
   return (
     <article
       className={`cardpanel buy-panel${completed ? ' completed' : ''}${flash ? ' flash-target' : ''}`}
@@ -1011,58 +1086,78 @@ function BuyPanel({
             🚩 Check this buy&apos;s cards for condition before export. Click 🚩 Check condition when done.
           </p>
         )}
-        <table className="deck-table">
-          <thead>
-            <tr>
-              <th className="cell-price">Price</th>
-              <th className="cell-qty">Qty</th>
-              <th className="cell-name">Card</th>
-              <th aria-label="Remove" />
-            </tr>
-          </thead>
-          <tbody>
-            {lines.map((l) => (
-              <tr
-                key={l.id}
-                className={`drow${hits.has(l.id) ? ' search-hit' : ''}`}
-                // The card's picture beside the panel, level with the row, as on the
-                // Price sidebar (owner, 2026-09-30).
-                onMouseEnter={(e) => setPreview(previewFor(l.image_url, e.currentTarget, panel.current, 'right'))}
-                onMouseLeave={hidePreview}
-              >
-                {/* The same column before and after an export (owner, 2026-10-01): a Sell price is green. */}
-                <td
-                  className={`cell-price${l.cc_sell_price != null ? ' is-sell' : ''}`}
-                  title={l.cc_sell_price != null
-                    ? `Sell price ${l.cc_status ? 'from the export' : 'worked out at COMPLETE'} · bought at ${formatMoney(l.unit_price)}`
-                    : 'Price per card'}
-                >
-                  {formatMoney(shownPrice(l))}
-                </td>
-                <td className="cell-qty">
-                  {isBulk(l) ? (l.quantity * (bulkItem(l.bulk_kind)?.per ?? 1)).toLocaleString('en-US') : l.quantity}
-                </td>
-                <td className="cell-name" title={l.name_en ? l.name : undefined}>
-                  {lineBody(l)}
-                  {isBulk(l) && <span className="bulk-per">{perText(bulkItem(l.bulk_kind), Number(l.unit_price))}</span>}
-                  {l.cc_status === 'cant_upload' && <span className="cant-chip" title={CANT_UPLOAD_TIP}>Can't upload</span>}
-                </td>
-                <td className="cell-x">
-                  <button
-                    type="button"
-                    className="line-x"
-                    title={l.completed_at ? lockedWhy(l) : 'Remove'}
-                    aria-label={`Remove ${lineText(l)}`}
-                    disabled={busy || Boolean(l.completed_at)}
-                    onClick={() => onRemove(buy, number, l)}
-                  >
-                    ×
-                  </button>
-                </td>
+        <div className="deck-wrap" ref={table}>
+          <table className="deck-table">
+            <thead>
+              <tr>
+                <th className="cell-price">Price</th>
+                <th className="cell-qty">Qty</th>
+                <th className="cell-name">Card</th>
+                <th aria-label="Remove" />
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {lines.map((l) => (
+                <tr
+                  key={l.id}
+                  className={`drow${hits.has(l.id) ? ' search-hit' : ''}${isStruck(l) ? ' struck' : ''}`}
+                  title={isStruck(l) ? `${struckNote(l, byId)}.\nRight-click → Restore puts it back; × removes it for good.` : undefined}
+                  // The card's picture beside the panel, level with the row, as on the
+                  // Price sidebar (owner, 2026-09-30).
+                  onMouseEnter={(e) => setPreview(previewFor(l.image_url, e.currentTarget, panel.current, 'right'))}
+                  onMouseLeave={hidePreview}
+                  onContextMenu={(e) => openMenu(e, l)}
+                >
+                  {/* The same column before and after an export (owner, 2026-10-01): a Sell price is green. */}
+                  <td
+                    className={`cell-price${l.cc_sell_price != null ? ' is-sell' : ''}`}
+                    title={l.cc_sell_price != null
+                      ? `Sell price ${l.cc_status ? 'from the export' : 'worked out at COMPLETE'} · bought at ${formatMoney(l.unit_price)}`
+                      : 'Price per card'}
+                  >
+                    {formatMoney(shownPrice(l))}
+                  </td>
+                  <td className="cell-qty">
+                    {isBulk(l) ? (l.quantity * (bulkItem(l.bulk_kind)?.per ?? 1)).toLocaleString('en-US') : l.quantity}
+                  </td>
+                  <td className="cell-name" title={l.name_en ? l.name : undefined}>
+                    {lineBody(l)}
+                    {isBulk(l) && <span className="bulk-per">{perText(bulkItem(l.bulk_kind), Number(l.unit_price))}</span>}
+                    {l.cc_status === 'cant_upload' && <span className="cant-chip" title={CANT_UPLOAD_TIP}>Can't upload</span>}
+                  </td>
+                  <td className="cell-x">
+                    <button
+                      type="button"
+                      className="line-x"
+                      title={l.completed_at ? lockedWhy(l) : isStruck(l) ? 'Remove for good' : 'Strike: moved elsewhere, kept crossed out'}
+                      aria-label={`${isStruck(l) ? 'Remove for good' : 'Strike'} ${lineText(l)}`}
+                      disabled={busy || Boolean(l.completed_at)}
+                      onClick={() => onRemove(buy, number, l)}
+                    >
+                      ×
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {menu && (
+            <div className="rate-menu" role="menu" style={{ top: menu.top, left: menu.left }}>
+              <button
+                type="button"
+                role="menuitem"
+                className={offOrBusy ? 'is-blocked' : ''}
+                title={offOrBusy ?? 'Take the strike off: back on the buy with its price and rate'}
+                onClick={() => {
+                  setMenu(null);
+                  if (!offOrBusy) onRestore(buy, menu.line);
+                }}
+              >
+                Restore
+              </button>
+            </div>
+          )}
+        </div>
         <div className="buy-totals">
           <span title={completed ? (lines.some((l) => l.cc_status) ? 'From the Sell Prices written to the export file' : 'From the Sell Prices worked out at COMPLETE') : undefined}>
             {completed && lines.some((l) => l.cc_sell_price != null) ? 'Sell' : 'Market'} <strong>{formatMoney(t.market)}</strong>

@@ -118,26 +118,30 @@ export function bulkLineText(line, quantity = line.quantity) {
 }
 
 /**
- * Real cards and bulk, counted apart (5.5).
- * @returns {{ cards: number, bulk: number }}  bulk in cards (items × per)
+ * Real cards and bulk, counted apart (5.5); struck cards (lib/struck.js,
+ * owner 2026-10-16) apart again: they're treated as gone.
+ * @returns {{ cards: number, bulk: number, struck: number }}  bulk in cards (items × per)
  */
 export function cardCounts(lines) {
   let cards = 0;
   let bulk = 0;
+  let struck = 0;
   for (const l of lines ?? []) {
     const item = isBulk(l) ? bulkItem(l.bulk_kind) : null;
-    if (item) bulk += Number(l.quantity) * item.per;
-    else cards += Number(l.quantity);
+    const n = item ? Number(l.quantity) * item.per : Number(l.quantity);
+    if (l.struck_at) struck += n;
+    else if (item) bulk += n;
+    else cards += n;
   }
-  return { cards, bulk };
+  return { cards, bulk, struck };
 }
 
-/** "42 cards + 1,000 bulk", "1 card", "1,000 bulk". */
-export function countText({ cards, bulk }) {
+/** "42 cards + 1,000 bulk", "1 card", "1,000 bulk"; "42 cards · 2 struck". */
+export function countText({ cards, bulk, struck = 0 }) {
   const c = `${cards.toLocaleString('en-US')} card${cards === 1 ? '' : 's'}`;
-  if (!bulk) return c;
   const b = `${bulk.toLocaleString('en-US')} bulk`;
-  return cards ? `${c} + ${b}` : b;
+  const both = !bulk ? c : cards ? `${c} + ${b}` : b;
+  return struck ? `${both} · ${struck.toLocaleString('en-US')} struck` : both;
 }
 
 /**

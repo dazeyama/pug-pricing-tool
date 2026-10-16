@@ -69,7 +69,7 @@ test('cards and bulk are counted apart', () => {
     { quantity: 40 }, { quantity: 2 },
     { quantity: 10, bulk_kind: 'mtg_100_common' }, { quantity: 3, bulk_kind: 'pkm_10_fifty' },
   ];
-  assert.deepEqual(cardCounts(lines), { cards: 42, bulk: 1030 });
+  assert.deepEqual(cardCounts(lines), { cards: 42, bulk: 1030, struck: 0 });
   assert.equal(countText(cardCounts(lines)), '42 cards + 1,030 bulk');
   assert.equal(countText({ cards: 1, bulk: 0 }), '1 card');
   assert.equal(countText({ cards: 0, bulk: 100 }), '100 bulk');

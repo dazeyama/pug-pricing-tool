@@ -137,6 +137,8 @@ const JP_NO_MTG = 'Japanese is Pokémon only: switch to EN to search Magic';
  *   (setRates and setLineRate null: no rate controls at all, a project's list)
  *   setLineRate?: (line: object, cash: number|null, credit: number|null, userId: string) => Promise<unknown> }} p.list
  *   (setLineRate: right-click → Set Rate on a card, docs/TEAM_FEEDBACK.md 4.3)
+ *   (strike?, restore?: (line, qty, userId) / (line, userId): a Paid/Ours list's × strikes a card first,
+ *   right-click → Restore takes it back; owner, 2026-10-16, lib/struck.js)
  * @param {{ cash: number, credit: number, customCash: number|null, customCredit: number|null, tiers: object }} p.rates
  *   the list's base rates, its custom ones, and the low-end / high-end rates (lib/rates.js)
  * @param {{ cash: number, credit: number }} p.master  the Master Buy Percentages
@@ -840,6 +842,9 @@ export default function PricingScreen({
           removeBlocked={removeBlocked}
           onEdit={startEdit}
           onRemove={(line, n) => list.remove(line, n, user?.id)}
+          // Struck cards (owner, 2026-10-16): a Paid/Ours list's × strikes first; Restore takes it back.
+          onStrike={list.strike ? (line, n) => list.strike(line, n, user?.id) : null}
+          onRestore={list.restore ? (line) => list.restore(line, user?.id) : null}
           onSaveRates={list.setRates ? (cash, credit) => list.setRates(cash, credit, user?.id) : null}
           onSetLineRate={list.setLineRate ? (line, cash, credit) => list.setLineRate(line, cash, credit, user?.id) : null}
           onSetLineValue={setLineValue}

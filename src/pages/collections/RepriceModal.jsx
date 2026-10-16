@@ -4,18 +4,21 @@ import { useSettings } from '../../state/settings.jsx';
 import { todaysPrices } from '../../lib/todaysPrices.js';
 import { repricedLine } from '../../lib/reprice.js';
 import { bulkValuesFrom, cardCounts, countText, isBulk, repricedBulk } from '../../lib/bulk.js';
+import { isStruck } from '../../lib/struck.js';
 
 /**
  * REPRICE? (owner, 2026-10-01): asks first, then fetches today's prices for
  * every card (the export's way), works out each new buy price and saves them
- * all at once. Can't be closed while it works.
+ * all at once. Can't be closed while it works. Struck cards (lib/struck.js)
+ * keep the price they were bought at: they're gone from here.
  * @param {object} p
  * @param {object[]} p.lines  the collection's lines
  * @param {boolean} [p.roundUp]  a project: prices round up (ladder.js)
  * @param {(updates: object[], counts: { changed: number, manual: number, noPrice: number }) => Promise<boolean>} p.onReprice
  * @param {() => void} p.onClose
  */
-export default function RepriceModal({ lines, roundUp = false, onReprice, onClose }) {
+export default function RepriceModal({ lines: all, roundUp = false, onReprice, onClose }) {
+  const lines = all.filter((l) => !isStruck(l));
   const { values } = useSettings();
   const [phase, setPhase] = useState('ask');   // ask | working | error
   const [step, setStep] = useState('');

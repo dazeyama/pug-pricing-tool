@@ -14,7 +14,7 @@ import PricingScreen from './price/PricingScreen.jsx';
 import CollectionDetails from './collections/CollectionDetails.jsx';
 import { collectionRates, isClosed, statusLabel } from './collections/status.js';
 import { tiersFrom } from '../lib/rates.js';
-import { isBulk } from '../lib/bulk.js';
+import { isStruck, movesOn } from '../lib/struck.js';
 import { ConfirmModal, ConvertToBuyModal, DeleteCollectionModal, RejectModal } from './collections/CollectionModals.jsx';
 import { OfferModal, PaidModal } from './collections/DealModals.jsx';
 import { useCollection } from './collections/useCollection.js';
@@ -112,7 +112,7 @@ function CollectionScreen({ id }) {
   else if (viewOnly) repriceBlocked = `View only: ${holderLabel} is editing this collection. Take over to reprice`;
   else if (lock.status !== 'held') repriceBlocked = 'Checking who is editing this collection';
   else if (locked && !system) repriceBlocked = locked;
-  else if (!col.lines.length) repriceBlocked = 'No cards to reprice';
+  else if (!col.lines.some((l) => !isStruck(l))) repriceBlocked = 'No cards to reprice';
 
   // A CSV dropped on an empty collection or project imports into it (owner,
   // 2026-10-09; Import Collection's dialog): only one with no cards at all,
@@ -220,7 +220,8 @@ function CollectionScreen({ id }) {
       toast(viewOnly ? `${holderLabel} is editing this collection: take over to export.` : 'Checking who is editing this collection.', 'err');
       return;
     }
-    const magic = col.lines.some((l) => l.game === 'mtg');
+    // Bulk and struck cards are never exported (lib/struck.js).
+    const magic = col.lines.some((l) => l.game === 'mtg' && movesOn(l));
     if (system) {
       if (!magic) toast('No cards here to export.', 'err');
       else setExportStep('warn');
@@ -235,7 +236,7 @@ function CollectionScreen({ id }) {
     : printing ? 'Printing…'
       : buy?.status === 'rejected' ? 'Rejected: there is nothing to print'
         : buy && !buy.system_key && !['paid', 'completed'].includes(buy.status) ? 'Mark it Paid/Ours first'
-          : !col.lines.some((l) => l.game === 'mtg') ? 'No Magic cards here' : null;
+          : !col.lines.some((l) => l.game === 'mtg' && movesOn(l)) ? 'No Magic cards here' : null;
 
   /**
    * EXPORT ▾ → Print? (docs/TEAM_FEEDBACK.md 3.1): its Magic cards by Crystal
@@ -346,6 +347,11 @@ function CollectionScreen({ id }) {
     add: col.add,
     update: col.update,
     remove: col.remove,
+    // Struck cards (owner, 2026-10-16): a Paid/Ours collection's or project's ×
+    // strikes first; not Can't upload cards (its × removes at once). Restore
+    // wherever a struck card could be removed.
+    strike: buy?.status === 'paid' && !system ? col.strike : null,
+    restore: col.restore,
     // A project has no rate controls (owner, 2026-10-15): it's the store's own cards.
     setRates: buy?.project ? null : col.setRates,
     setLineRate: buy?.project ? null : col.setLineRate,
@@ -678,8 +684,8 @@ function CollectionScreen({ id }) {
               )}
             >
               <p>
-                This collection only has Pokémon cards, which can't be exported yet. Exporting it just marks it
-                <strong> Completed</strong>, with no file.
+                This collection has no Magic cards to export: Pokémon cards can't be exported yet, and bulk and
+                struck cards never are. Exporting it just marks it <strong>Completed</strong>, with no file.
               </p>
             </Modal>
           )}
@@ -687,7 +693,7 @@ function CollectionScreen({ id }) {
             <ExportDialog
               mode="export"
               title={`Export ${buy.customer_name} to Crystal Commerce`}
-              items={col.lines.filter((l) => l.game === 'mtg' && !isBulk(l)).map((line) => ({ line, where: '' }))}
+              items={col.lines.filter((l) => l.game === 'mtg' && movesOn(l)).map((line) => ({ line, where: '' }))}
               target={{ kind: 'collection', buy_id: buy.id, version: buy.version }}
               fileName={`cc-mass-create-${fileSafe(buy.customer_name)}-${fileStamp(new Date())}.csv`}
               onExported={exported}
@@ -720,7 +726,7 @@ function CollectionScreen({ id }) {
               mode="export"
               pullOut={false}
               title="Export Can't upload cards to Crystal Commerce"
-              items={col.lines.filter((l) => l.game === 'mtg' && !isBulk(l)).map((line) => ({ line, where: line.source_note ?? '' }))}
+              items={col.lines.filter((l) => l.game === 'mtg' && movesOn(l)).map((line) => ({ line, where: line.source_note ?? '' }))}
               target={{ kind: 'cant_upload', version: buy.version }}
               fileName={`cc-mass-create-cant-upload-${fileStamp(new Date())}.csv`}
               onExported={exported}

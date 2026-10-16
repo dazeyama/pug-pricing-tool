@@ -20,6 +20,8 @@ const MESSAGES = {
   stale_version: 'This buy changed on another computer since it opened: nothing was saved. Go back and open it again.',
   buy_gone: 'This buy was deleted: nothing was saved.',
   line_gone: 'A card of this buy was removed elsewhere: nothing was saved. Go back and open it again.',
+  line_struck: 'A card of this buy was struck elsewhere: nothing was saved. Go back and open it again.',
+  line_not_struck: 'A struck card of this buy was restored elsewhere: nothing was saved. Go back and open it again.',
   buy_completed: 'Some of its cards were Completed meanwhile: nothing was saved.',
   last_card: 'A buy keeps at least one card: to remove them all, use Delete buy… on the day page.',
   no_user: 'Pick a user first.',
@@ -42,6 +44,11 @@ const sameLine = (a, b) => COMPARED.every((k) => JSON.stringify(a[k] ?? null) ==
  * migration 0052) and goes back to the day page with the buy flashed. The
  * buy stays on its own day; its Changelog entry is now's. No cards are added
  * and the rates stay the buy's: the customer was paid already.
+ *
+ * Struck cards (owner, 2026-10-16; lib/struck.js): × strikes copies here too
+ * and right-click → Restore takes a strike off, both kept until SAVE BUY like
+ * the rest. A strike stays on its card (`strikes`, copies by line), shown as
+ * a struck row of its own under it; edits to the card go to those copies too.
  */
 export default function BuyEditPage() {
   const { game, date, id } = useParams();
@@ -57,6 +64,9 @@ export default function BuyEditPage() {
   const { values } = useSettings();
   const [state, setState] = useState({ buy: null, original: [], loaded: false });
   const [lines, setLines] = useState([]);
+  // Not saved yet: copies struck here ({ [lineId]: { n, at } }), and struck lines restored.
+  const [strikes, setStrikes] = useState({});
+  const [restored, setRestored] = useState(() => new Set());
   const [busy, setBusy] = useState(false);
   const [leaving, setLeaving] = useState(false);
   // SAVE BUY on a 🚩 flagged buy asks "✅ Condition checked?" first (owner, 2026-10-14).
@@ -92,7 +102,18 @@ export default function BuyEditPage() {
 
   const { buy, original } = state;
 
-  // What SAVE BUY would send: each changed line as it now is, and the lines taken out.
+  // The list as it will be: a card's copies struck here as a struck row of
+  // their own under it (id "<line>:struck"); a struck card restored here, live.
+  const shown = useMemo(() => lines.flatMap((l) => {
+    if (l.struck_at) return [restored.has(l.id) ? { ...l, struck_at: null, struck_by: null } : l];
+    const n = strikes[l.id]?.n ?? 0;
+    if (!n) return [l];
+    const copies = { ...l, id: `${l.id}:struck`, quantity: n, struck_at: strikes[l.id].at, struck_by: user?.id ?? null, staged: l.id };
+    return l.quantity > n ? [{ ...l, quantity: l.quantity - n }, copies] : [copies];
+  }), [lines, strikes, restored, user?.id]);
+
+  // What SAVE BUY would send: each changed line as it now is, the lines taken
+  // out, the copies struck (of the line as edited) and the struck lines restored.
   const changes = useMemo(() => {
     const now = new Map(lines.map((l) => [l.id, l]));
     const edits = [];
@@ -104,30 +125,68 @@ export default function BuyEditPage() {
         edits.push({ id: before.id, line: after, old_text: lineText(before), new_text: lineText(after) });
       }
     }
-    return { edits, removed };
-  }, [lines, original]);
-  const dirty = changes.edits.length + changes.removed.length;
+    const struck = Object.entries(strikes).filter(([id, x]) => x.n > 0 && now.has(id))
+      .map(([id, x]) => ({ id, qty: x.n, text: lineText(now.get(id), x.n) }));
+    const back = original.filter((l) => restored.has(l.id) && now.has(l.id))
+      .map((l) => ({ id: l.id, text: lineText(now.get(l.id)) }));
+    return { edits, removed, struck, restored: back };
+  }, [lines, original, strikes, restored]);
+  const dirty = changes.edits.length + changes.removed.length + changes.struck.length + changes.restored.length;
 
   const list = {
-    lines,
+    lines: shown,
     loaded: state.loaded,
     busy,
     add: async () => null,   // never: ADD CARD only saves an edit here (addLocked)
-    // SAVE EDIT: the card as edited, in its place, until SAVE BUY.
+    // SAVE EDIT: the card as edited, in its place, until SAVE BUY; its copies
+    // struck here go with it (the edit shows the card's live copies).
     update: async (old, line) => {
-      setLines((ls) => ls.map((l) => (l.id === old.id ? { ...l, ...line, id: l.id, buy_id: l.buy_id, position: l.position } : l)));
+      const n = strikes[old.id]?.n ?? 0;
+      setLines((ls) => ls.map((l) => (l.id === old.id
+        ? { ...l, ...line, quantity: line.quantity + n, id: l.id, buy_id: l.buy_id, position: l.position } : l)));
       return old.id;
     },
-    remove: async (line, n) => {
-      const left = lines.filter((l) => l.id !== line.id || n < l.quantity);
+    // × on a struck row: removes copies for good (a struck card's, or ones struck here).
+    remove: async (row, n) => {
+      const id = row.staged ?? row.id;
+      const line = lines.find((l) => l.id === id);
+      if (!line) return null;
+      const left = lines.filter((l) => l.id !== id || n < l.quantity);
       if (!left.length) {
         toast(MESSAGES.last_card, 'err');
         return null;
       }
+      if (row.staged) {
+        setStrikes((x) => ({ ...x, [id]: { ...x[id], n: Math.max(0, x[id].n - n) } }));
+      }
       setLines((ls) => ls.flatMap((l) => {
-        if (l.id !== line.id) return [l];
+        if (l.id !== id) return [l];
         return n >= l.quantity ? [] : [{ ...l, quantity: l.quantity - n }];
       }));
+      return true;
+    },
+    // × on a card: strike copies, until SAVE BUY. A struck card restored
+    // here goes back to struck, all of it.
+    strike: async (row, n) => {
+      if (restored.has(row.id)) {
+        setRestored((x) => new Set([...x].filter((id) => id !== row.id)));
+        return true;
+      }
+      const line = lines.find((l) => l.id === row.id);
+      if (!line) return null;
+      setStrikes((x) => ({
+        ...x,
+        [row.id]: { n: Math.min(line.quantity, (x[row.id]?.n ?? 0) + n), at: x[row.id]?.at ?? new Date().toISOString() },
+      }));
+      return true;
+    },
+    // Right-click → Restore: copies struck here back, or a struck card's strike taken off.
+    restore: async (row) => {
+      if (row.staged) {
+        setStrikes((x) => ({ ...x, [row.staged]: { ...x[row.staged], n: 0 } }));
+      } else {
+        setRestored((x) => new Set([...x, row.id]));
+      }
       return true;
     },
     setRates: async () => null,   // never: ratesLocked
@@ -171,6 +230,8 @@ export default function BuyEditPage() {
       p_expected_version: buy.version,
       p_lines: changes.edits,
       p_removed: changes.removed,
+      p_struck: changes.struck,
+      p_restored: changes.restored,
     });
     setBusy(false);
     if (error) {
@@ -181,6 +242,8 @@ export default function BuyEditPage() {
     const parts = [
       changes.edits.length && `${changes.edits.length} card${changes.edits.length === 1 ? '' : 's'} edited`,
       changes.removed.length && `${changes.removed.length} removed`,
+      changes.struck.length && `${changes.struck.reduce((n, x) => n + x.qty, 0)} struck`,
+      changes.restored.length && `${changes.restored.length} restored`,
     ].filter(Boolean).join(', ');
     const tick = checked && await markChecked() ? ' ✅ Condition checked.' : '';
     toast(`${number ? `Buy ${number}` : 'Buy'} saved: ${parts}.${tick}`, 'ok');

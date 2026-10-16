@@ -9,6 +9,8 @@ import {
 import { useToast } from '../../components/Toast.jsx';
 import { bulkItem, bulkShortText, cardCounts, countText, isBulk, perText } from '../../lib/bulk.js';
 import CustomRateMark from '../../components/CustomRateMark.jsx';
+import { isStruck, struckNote } from '../../lib/struck.js';
+import { useStaff } from '../../state/staff.jsx';
 
 const GROUPS = [
   { game: 'mtg', name: 'Magic' },
@@ -50,24 +52,42 @@ function otherLabel(why, which, rates, master) {
   return Number(rates[which]) === Number(master[which]) ? 'master' : 'buy rate';
 }
 
+// What the × does (owner, 2026-10-16): removes; or, in a Paid/Ours buy,
+// collection or project, strikes first (lib/struck.js); on a struck card,
+// removes it for good.
+const REMOVE_WORDS = {
+  remove: { title: 'Remove card?', verb: 'Remove', note: null },
+  strike: {
+    title: 'Strike card?',
+    verb: 'Strike',
+    note: 'It stays on the list, crossed out, as a record (moved elsewhere: into the case, say), and is never '
+      + 'exported. × again removes it; right-click → Restore puts it back.',
+  },
+  struck: { title: 'Remove for good?', verb: 'Remove', note: 'The struck card goes from the list; the Changelog keeps a record.' },
+};
+
 /**
  * "Remove card?" (spec 8.9): one copy, or how many of several. `note` adds a
  * line under the question (a day page: "This buy was already confirmed.").
+ * `mode`: 'remove', 'strike' (the first × in a Paid/Ours list) or 'struck'
+ * (a struck card's ×, for good).
  */
-export function RemoveModal({ line, note = null, onRemove, onClose }) {
+export function RemoveModal({ line, note = null, mode = 'remove', onRemove, onClose }) {
   const [qty, setQty] = useState(1);
   const many = line.quantity > 1;
+  const words = REMOVE_WORDS[mode] ?? REMOVE_WORDS.remove;
+  const tail = [note, words.note].filter(Boolean);
   return (
     <Modal
-      title="Remove card?"
+      title={words.title}
       onClose={onClose}
       footer={(
         <>
           <button type="button" className="btn ghost" onClick={onClose}>Cancel</button>
-          <button type="button" className="btn danger" onClick={() => onRemove(line, qty)}>Remove</button>
+          <button type="button" className="btn danger" onClick={() => onRemove(line, qty)}>{words.verb}</button>
           {many && (
             <button type="button" className="btn danger" onClick={() => onRemove(line, line.quantity)}>
-              Remove all {line.quantity}
+              {words.verb} all {line.quantity}
             </button>
           )}
         </>
@@ -75,7 +95,7 @@ export function RemoveModal({ line, note = null, onRemove, onClose }) {
     >
       {many ? (
         <>
-          <p>Remove how many of <strong>{lineText(line)}</strong>?</p>
+          <p>{words.verb} how many of <strong>{lineText(line)}</strong>?</p>
           <label className="remove-qty">
             <input
               type="number"
@@ -92,9 +112,9 @@ export function RemoveModal({ line, note = null, onRemove, onClose }) {
           </label>
         </>
       ) : (
-        <p>Remove <strong>{lineText(line)}</strong>?</p>
+        <p>{words.verb} <strong>{lineText(line)}</strong>?</p>
       )}
-      {note && <p className="hint">{note}</p>}
+      {tail.map((t) => <p key={t} className="hint">{t}</p>)}
     </Modal>
   );
 }
@@ -477,14 +497,20 @@ function Totals({
  * On a bulk line (docs/TEAM_FEEDBACK.md 5.6) the menu has Set value instead
  * (`onSetLineValue`, `bulkValues`: Settings' values), blocked only like any
  * change to the list.
+ *
+ * Struck cards (owner, 2026-10-16; lib/struck.js): with `onStrike` (a
+ * Paid/Ours list), × strikes a card first: crossed out, kept as a record.
+ * A struck card's × removes it for good, and right-clicking it offers
+ * Restore (`onRestore`), blocked like removing. It can't be edited or rated.
  */
 export default function BuyList({
   title = 'Buy list', lines, loaded, rates, master, ratesTitle, flashId, hits = null, editingId,
   canEdit, locked = null, editBlocked, canRemove = canEdit, removeLocked = locked, removeBlocked = editBlocked,
   onEdit, onRemove, onSaveRates, onSetLineRate = null, onSetLineValue = null, bulkValues = null, onDone, details,
-  footer, badge = null, ratesLocked = null,
+  footer, badge = null, ratesLocked = null, onStrike = null, onRestore = null,
 }) {
-  const [removing, setRemoving] = useState(null);
+  const [removing, setRemoving] = useState(null);  // { line, mode }: the × asking
+  const staff = useStaff();
   const [preview, setPreview] = useState(null);   // { src, top, left } while a line is hovered
   const [rateMenu, setRateMenu] = useState(null);  // { line, top, left }: the right-click menu
   const [rateFor, setRateFor] = useState(null);    // the card whose rate is being set (its id)
@@ -506,9 +532,9 @@ export default function BuyList({
     return { left: (x - b.left) / zoom, top: (y - b.top) / zoom };
   };
 
-  /** Right-click on a card: the Set Rate menu where the pointer is. */
+  /** Right-click on a card: the Set Rate menu where the pointer is (a struck card's: Restore). */
   function openRateMenu(e, l) {
-    if (!(isBulk(l) ? onSetLineValue : onSetLineRate)) return;   // none here: the browser's own menu
+    if (!(isStruck(l) ? onRestore : isBulk(l) ? onSetLineValue : onSetLineRate)) return;   // none here: the browser's own menu
     e.preventDefault();
     hidePreview();
     setRateMenu({ line: l, ...inAside(e.clientX, e.clientY) });
@@ -534,6 +560,20 @@ export default function BuyList({
       else await onSetLineRate(l, null, null);
       onDone();
     }
+  }
+  /** Restore (owner, 2026-10-16): a struck card back, blocked like removing. */
+  async function restore(l) {
+    setRateMenu(null);
+    if (!canRemove) removeBlocked();
+    else {
+      await onRestore(l);
+      onDone();
+    }
+  }
+  /** ×: strikes first in a Paid/Ours list; a struck card's removes it for good. */
+  function startRemove(l) {
+    if (!canRemove) removeBlocked();
+    else setRemoving({ line: l, mode: isStruck(l) ? 'struck' : onStrike ? 'strike' : 'remove' });
   }
   const closeRate = useCallback(() => {
     setRateFor(null);
@@ -620,13 +660,13 @@ export default function BuyList({
           return (
             <section key={g.game} className="list-group">
               <div className="group-head">
-                <span className={`group-chip ${g.game}`}>{g.name} ({countText(cardCounts(mine)).replace(/ cards?\b/, '')})</span>
+                <span className={`group-chip ${g.game}`}>{g.name} ({countText({ ...cardCounts(mine), struck: 0 }).replace(/ cards?\b/, '')})</span>
               </div>
               {mine.map((l) => (
                 <div
                   key={l.id}
                   data-line={l.id}
-                  className={`buy-line-row${l.id === flashId ? ' flash' : ''}${l.id === editingId ? ' editing' : ''}${hitSet.has(l.id) ? ' search-hit' : ''}${hasOwnRate(l) ? ' own-rate' : ''}${l.id === rateFor ? ' rating' : ''}`}
+                  className={`buy-line-row${l.id === flashId ? ' flash' : ''}${l.id === editingId ? ' editing' : ''}${hitSet.has(l.id) ? ' search-hit' : ''}${hasOwnRate(l) ? ' own-rate' : ''}${l.id === rateFor ? ' rating' : ''}${isStruck(l) ? ' struck' : ''}`}
                   // A small card picture left of the sidebar, level with the line (owner, 2026-09-29).
                   onMouseEnter={(e) => {
                     if (!rateFor) setPreview(previewFor(l.image_url, e.currentTarget, aside.current, 'left'));
@@ -647,8 +687,11 @@ export default function BuyList({
                     className="buy-line"
                     title={l.id === editingId
                       ? 'Being edited: SAVE EDIT saves the changes, Esc leaves it as it was'
-                      : `${l.name_en ? `${l.name} · ` : ''}${formatMoney(l.unit_price)} each${locked ? '' : ' · click to edit'}${rateNote(l, rates) ? `\n${rateNote(l, rates)}` : ''}`}
-                    onClick={() => (canEdit ? onEdit(l) : editBlocked())}
+                      : isStruck(l)
+                        ? `${struckNote(l, staff.byId)}.${onRestore ? '\nRight-click → Restore puts it back; × removes it for good.' : ''}`
+                        : `${l.name_en ? `${l.name} · ` : ''}${formatMoney(l.unit_price)} each${locked ? '' : ' · click to edit'}${rateNote(l, rates) ? `\n${rateNote(l, rates)}` : ''}`}
+                    // A struck card isn't edited: Restore it first.
+                    onClick={() => (isStruck(l) ? null : canEdit ? onEdit(l) : editBlocked())}
                   >
                     {lineText(l)}
                     {/* Its own rate (Set Rate): Credit / Cash, in their colours. */}
@@ -670,9 +713,9 @@ export default function BuyList({
                   <button
                     type="button"
                     className="line-x"
-                    title="Remove"
-                    aria-label={`Remove ${lineText(l)}`}
-                    onClick={() => (canRemove ? setRemoving(l) : removeBlocked())}
+                    title={isStruck(l) ? 'Remove for good' : onStrike ? 'Strike: moved elsewhere, kept crossed out' : 'Remove'}
+                    aria-label={`${isStruck(l) ? 'Remove for good' : onStrike ? 'Strike' : 'Remove'} ${lineText(l)}`}
+                    onClick={() => startRemove(l)}
                   >
                     ×
                   </button>
@@ -700,7 +743,20 @@ export default function BuyList({
       </div>
 
       <LinePreview preview={preview} onHide={hidePreview} />
-      {rateMenu && (
+      {rateMenu && isStruck(rateMenu.line) && (
+        <div className="rate-menu" role="menu" style={{ top: rateMenu.top, left: rateMenu.left }}>
+          <button
+            type="button"
+            role="menuitem"
+            className={removeLocked ? 'is-blocked' : ''}
+            title={removeLocked ?? 'Take the strike off: back on the list with its price and rate'}
+            onClick={() => restore(rateMenu.line)}
+          >
+            Restore
+          </button>
+        </div>
+      )}
+      {rateMenu && !isStruck(rateMenu.line) && (
         <div className="rate-menu" role="menu" style={{ top: rateMenu.top, left: rateMenu.left }}>
           <button
             type="button"
@@ -760,14 +816,17 @@ export default function BuyList({
       )}
       {removing && (
         <RemoveModal
-          line={removing}
+          line={removing.line}
+          mode={removing.mode}
           onClose={() => {
             setRemoving(null);
             onDone();
           }}
           onRemove={async (line, qty) => {
+            const { mode } = removing;
             setRemoving(null);
-            await onRemove(line, qty);
+            if (mode === 'strike') await onStrike(line, qty);
+            else await onRemove(line, qty);
             onDone();
           }}
         />

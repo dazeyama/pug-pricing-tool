@@ -49,8 +49,9 @@ const plural = (n, word) => `${n.toLocaleString()} ${word}${n === 1 ? '' : 's'}`
 const daysBetween = (from, to) => Math.round((Date.parse(`${to}T12:00:00Z`) - Date.parse(`${from}T12:00:00Z`)) / DAY_MS);
 const dayOf = (when) => formatInTimeZone(new Date(when), STORE_TZ, 'yyyy-MM-dd');
 const marketOf = (lines) => lines.reduce((s, l) => s + Number(l.cc_sell_price ?? l.unit_price) * l.quantity, 0);
-// Real cards only: bulk is counted on its own, and only where it's priced (docs/TEAM_FEEDBACK.md 5.5).
-const cardsIn = (lines) => lines.reduce((n, l) => n + (l.bulk_kind ? 0 : l.quantity), 0);
+// Real cards only: bulk is counted on its own, and only where it's priced (docs/TEAM_FEEDBACK.md 5.5);
+// struck cards are gone (lib/struck.js).
+const cardsIn = (lines) => lines.reduce((n, l) => n + (l.bulk_kind || l.struck_at ? 0 : l.quantity), 0);
 
 /** The store's date, kept current while the page stays open: checked each minute. */
 function useStoreDay() {
@@ -86,18 +87,19 @@ function HomeScreen({ today }) {
     .eq('game', 'mtg')
     .is('completed_at', null)
     .is('bulk_kind', null)   // bulk never waits to be exported
+    .is('struck_at', null)   // nor a struck card
     .eq('buys.kind', 'walk_in')
     .eq('buys.status', 'confirmed'));
   const todays = useLiveTable('buys', () => supabase
     .from('buys')
-    .select('id, paid_price, paid_method, buy_lines(game, quantity, bulk_kind)')
+    .select('id, paid_price, paid_method, buy_lines(game, quantity, bulk_kind, struck_at)')
     .eq('kind', 'walk_in')
     .eq('status', 'confirmed')
     .gte('confirmed_at', from.toISOString())
     .lt('confirmed_at', to.toISOString()));
   const open = useLiveTable('buys', () => supabase
     .from('buys')
-    .select('id, customer_name, status, project, system_key, updated_at, buy_lines(quantity, unit_price, cc_sell_price, priced_at, created_at, bulk_kind)')
+    .select('id, customer_name, status, project, system_key, updated_at, buy_lines(quantity, unit_price, cc_sell_price, priced_at, created_at, bulk_kind, struck_at)')
     .eq('kind', 'collection')
     .not('status', 'in', '(completed,rejected)'));
   const events = useLiveTable('events', () => supabase

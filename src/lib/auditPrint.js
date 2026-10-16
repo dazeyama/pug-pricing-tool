@@ -35,13 +35,13 @@ const collator = new Intl.Collator('en', { sensitivity: 'base', numeric: true })
 /**
  * The cards a printout takes (team plan 3.2): a batch's Magic cards not yet
  * exported, as EXPORT would take them; once every one is Completed, the ones
- * an export took (exported, or sent to Can't upload). Never bulk; never cards
+ * an export took (exported, or sent to Can't upload). Never bulk or struck cards; never cards
  * Completed by hand, which weren't exported and won't be.
  * @param {object[]} lines  buy_lines rows
  * @returns {object[]}
  */
 export function printLines(lines) {
-  const magic = (lines ?? []).filter((l) => l.game === 'mtg' && !l.bulk_kind);
+  const magic = (lines ?? []).filter((l) => l.game === 'mtg' && !l.bulk_kind && !l.struck_at);
   const pending = magic.filter((l) => !l.completed_at);
   return pending.length ? pending : magic.filter((l) => l.cc_status === 'exported' || l.cc_status === 'cant_upload');
 }

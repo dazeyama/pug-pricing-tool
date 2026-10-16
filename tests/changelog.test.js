@@ -26,6 +26,11 @@ test('categories', () => {
   assert.equal(categoryOf('day_exported'), 'actions');
   assert.equal(categoryOf('collection_info_edited'), 'actions');
   assert.equal(categoryOf('buy_cards_removed'), 'buys');
+  // Struck cards (owner, 2026-10-16): cards going out of a list, and back.
+  assert.equal(categoryOf('buy_cards_struck'), 'buys');
+  assert.equal(categoryOf('buy_cards_restored'), 'buys');
+  assert.equal(categoryOf('collection_cards_struck'), 'collections');
+  assert.equal(categoryOf('collection_cards_restored'), 'collections');
   assert.equal(categoryOf('collection_cards_added'), 'collections');
   assert.equal(categoryOf('collection_created'), 'collections');
   assert.equal(categoryOf('buy_converted'), 'buys');

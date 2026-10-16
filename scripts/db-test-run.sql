@@ -992,6 +992,172 @@ exception when others then
   perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
 end $$;
 
+-- ================================================== Struck cards (0059)
+do $$
+declare
+  s text := 'Struck cards';
+  u uuid := pg_temp.id('u1');
+  a uuid := pg_temp.id('devA');
+  bd uuid := pg_temp.id('devB');
+  b uuid;
+  c uuid;
+  p uuid;
+  l_a uuid;
+  l_b uuid;
+  l_x uuid;
+  l_c uuid;
+  v_id uuid;
+  v_id2 uuid;
+  v_before jsonb;
+  v jsonb;
+begin
+  b := pg_temp.buy(a, u, 'DBTEST Struck', '5550100023', array[
+    pg_temp.line('Dbtest Struck A', 'DST', '001', 3, 5.00),
+    pg_temp.line('Dbtest Struck B', 'DST', '002', 1, 10.00)]);
+  l_a := pg_temp.line_id(b, 'Dbtest Struck A');
+  l_b := pg_temp.line_id(b, 'Dbtest Struck B');
+  select internal.lines_totals(x, array(select l from buy_lines l where l.buy_id = x.id)) into v_before
+    from buys x where x.id = b;
+
+  begin
+    perform buy_strike_line(l_a, 1, null, a, null, null);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'Striking a card needs a user', sqlerrm, 'no_user');
+  end;
+  begin
+    perform buy_strike_line(l_a, 1, u, a, pg_temp.version(b) - 1, null);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, '… and the version it saw', sqlerrm, 'stale_version');
+  end;
+  v_id := buy_strike_line(l_a, 1, u, a, pg_temp.version(b), '1 Dbtest Struck A');
+  perform pg_temp.ok(s, 'Striking some copies splits them off, struck, just below the card',
+    v_id <> l_a
+    and (select quantity = 2 and struck_at is null from buy_lines where id = l_a)
+    and (select quantity = 1 and struck_at is not null and struck_by = u
+                and position = (select position + 1 from buy_lines where id = l_a)
+           from buy_lines where id = v_id)
+    and (select position from buy_lines where id = l_b) > (select position from buy_lines where id = v_id));
+  perform pg_temp.ok(s, '… logged, at the card''s rate',
+    exists (select 1 from events where action = 'buy_cards_struck' and target_id = b
+              and lines -> 0 ->> 'struck' = 'true' and lines -> 0 ->> 'text' = '1 Dbtest Struck A'
+              and (totals ->> 'market')::numeric = 5));
+  v_id2 := buy_strike_line(l_a, 1, u, a, null, null);
+  perform pg_temp.ok(s, 'Striking another copy adds it to the struck line',
+    v_id2 = v_id and (select quantity from buy_lines where id = v_id) = 2
+    and (select quantity from buy_lines where id = l_a) = 1);
+  perform pg_temp.ok(s, 'Struck cards still count in the totals',
+    (select internal.lines_totals(x, array(select l from buy_lines l where l.buy_id = x.id)) from buys x where x.id = b)
+      = v_before);
+  begin
+    perform buy_strike_line(v_id, 1, u, a, null, null);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'A struck card can''t be struck again', sqlerrm, 'line_struck');
+  end;
+  begin
+    perform buy_restore_line(l_a, u, a, null, null);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'Only a struck card is restored', sqlerrm, 'line_not_struck');
+  end;
+  v_id2 := buy_restore_line(v_id, u, a, pg_temp.version(b), '2 Dbtest Struck A');
+  perform pg_temp.ok(s, 'Restore puts the copies back on the card',
+    v_id2 = l_a and (select quantity from buy_lines where id = l_a) = 3
+    and not exists (select 1 from buy_lines where id = v_id));
+  perform pg_temp.ok(s, '… logged',
+    exists (select 1 from events where action = 'buy_cards_restored' and target_id = b
+              and lines -> 0 ->> 'restored' = 'true' and summary = '2 struck cards restored.'));
+
+  v_id := buy_strike_line(l_b, 5, u, a, null, null);
+  perform pg_temp.ok(s, 'Striking every copy strikes the card in place',
+    v_id = l_b and (select quantity = 1 and struck_at is not null from buy_lines where id = l_b));
+  perform pg_temp.ok(s, 'The header search doesn''t find a struck card',
+    not exists (select 1 from global_search('dbtest struck b', null, null, null, true) g where g.line_id = l_b)
+    and exists (select 1 from global_search('dbtest struck a', null, null, null, true) g where g.line_id = l_a));
+  perform buy_mark_completed(b, 'mtg', u, a, true);
+  perform pg_temp.ok(s, 'Mark as completed leaves a struck card out',
+    (select completed_at is null from buy_lines where id = l_b)
+    and (select completed_at is not null from buy_lines where id = l_a));
+  perform pg_temp.ok(s, '… and the buy is Completed: all its other cards are',
+    (select 'mtg' = any(completed_games) from buys_in_range(now() - interval '1 hour', now() + interval '1 hour') r
+      where r.id = b));
+  begin
+    perform buy_strike_line(l_a, 1, u, a, null, null);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'A Completed card can''t be struck', sqlerrm, 'buy_completed');
+  end;
+  perform buy_remove_line(l_b, 1, u, a, null, null);
+  perform pg_temp.ok(s, 'A second × removes the struck card',
+    not exists (select 1 from buy_lines where id = l_b));
+  perform buy_mark_completed(b, 'mtg', u, a, false);
+
+  -- Edit in project view: strikes and restores saved with SAVE BUY.
+  perform buy_save_edits(b, u, a, pg_temp.version(b),
+    jsonb_build_array(jsonb_build_object('id', l_a,
+      'line', (select to_jsonb(l) from buy_lines l where l.id = l_a) || '{"condition": "LP"}'::jsonb)),
+    '[]', jsonb_build_array(jsonb_build_object('id', l_a, 'qty', 1, 'text', '1 Dbtest Struck A [LP]')), '[]');
+  select id into v_id from buy_lines where buy_id = b and struck_at is not null;
+  perform pg_temp.ok(s, 'SAVE BUY strikes copies of the card as edited',
+    (select quantity = 2 and condition = 'LP' and struck_at is null from buy_lines where id = l_a)
+    and (select quantity = 1 and condition = 'LP' from buy_lines where id = v_id));
+  perform buy_save_edits(b, u, a, pg_temp.version(b), '[]', '[]', '[]',
+    jsonb_build_array(jsonb_build_object('id', v_id, 'text', '1 Dbtest Struck A [LP]')));
+  perform pg_temp.ok(s, '… and restores them',
+    (select quantity from buy_lines where id = l_a) = 3 and not exists (select 1 from buy_lines where id = v_id)
+    and exists (select 1 from events where action = 'buy_edited' and target_id = b
+                  and summary = '1 struck card restored.'));
+
+  -- A collection: Paid/Ours only.
+  c := collection_create('DBTEST Struck Collection', null, '', u, a);
+  v := lock_acquire(c, a, u);
+  l_c := collection_add_line(c, pg_temp.line('Dbtest Struck Coll', 'DST', '010', 2, 4.00), false, u, a, null, null);
+  begin
+    perform collection_strike_line(l_c, 1, u, a, null, null);
+    raise exception 'dbt_no_error';
+  exception when others then
+    perform pg_temp.err(s, 'A Processing collection''s card isn''t struck: × removes it', sqlerrm, 'strike_paid_only');
+  end;
+  perform collection_set_status(c, 'paid', u, a, 50, 65, null, p_paid_price => 3, p_paid_method => 'cash');
+  begin
+    perform collection_strike_line(l_c, 1, u, bd, null, null);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'Striking a collection''s card needs the lock', sqlerrm, 'not_lock_holder');
+  end;
+  v_id := collection_strike_line(l_c, 1, u, a, pg_temp.version(c), '1 Dbtest Struck Coll');
+  perform pg_temp.ok(s, 'A Paid/Ours collection''s card is struck, its rates kept',
+    (select quantity = 1 and struck_at is not null and cash_pct = 50 and credit_pct = 65 from buy_lines where id = v_id)
+    and exists (select 1 from events where action = 'collection_cards_struck' and target_id = c
+                  and (lines -> 0 ->> 'cash_pct')::numeric = 50));
+  perform collection_set_status(c, 'processing', u, a, null, null, null);
+  begin
+    perform collection_update_line(v_id, (select to_jsonb(l) from buy_lines l where l.id = v_id), u, a, null, null, null);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'A struck card can''t be edited', sqlerrm, 'line_struck');
+  end;
+  begin
+    perform collection_set_line_rate(v_id, 40, 60, u, a, null, null);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, '… or given a rate', sqlerrm, 'line_struck');
+  end;
+  v_id2 := collection_add_line(c, pg_temp.line('Dbtest Struck Coll', 'DST', '010', 1, 4.00), true, u, a, null, null);
+  perform pg_temp.ok(s, 'The same card added merges with the live card, never the struck one',
+    v_id2 = l_c and (select quantity from buy_lines where id = l_c) = 2
+    and (select quantity from buy_lines where id = v_id) = 1);
+  v_id2 := collection_restore_line(v_id, u, a, pg_temp.version(c), '1 Dbtest Struck Coll');
+  perform pg_temp.ok(s, 'Restore works wherever cards can be removed',
+    (select struck_at is null from buy_lines where id = v_id2)
+    and exists (select 1 from events where action = 'collection_cards_restored' and target_id = c));
+
+  -- A project (Ours) strikes too.
+  p := project_create('DBTEST Struck Project', '', u, a);
+  v := lock_acquire(p, a, u);
+  l_x := collection_add_line(p, pg_temp.line('Dbtest Struck Proj', 'DST', '020', 1, 2.00), false, u, a, null, null);
+  v_id := collection_strike_line(l_x, 1, u, a, null, null);
+  perform pg_temp.ok(s, 'A project''s card is struck', v_id = l_x
+    and (select struck_at is not null from buy_lines where id = l_x));
+exception when others then
+  declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;
+  perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
+end $$;
+
 -- ============================================ Convert to project, and back
 do $$
 declare
