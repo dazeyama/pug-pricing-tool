@@ -225,73 +225,56 @@ function DayScreen({ game, day }) {
     else setRemoving({ buy, number, line, mode: 'struck' });
   }
 
+  /**
+   * One write: busy while it runs; a refusal becomes a toast, led by
+   * `failure` (or by what a function of the error gives; null: no toast,
+   * the caller handles it). The caller reloads, or goes elsewhere.
+   * @returns {Promise<{ data: any, error: any }>}
+   */
+  async function run(fn, args, failure) {
+    setBusy(true);
+    const result = await withLoading(() => supabase.rpc(fn, args));
+    setBusy(false);
+    const lead = result.error && (typeof failure === 'function' ? failure(result.error) : failure);
+    if (lead) toast(messageFor(result.error, lead), 'err');
+    return result;
+  }
+
+  /** Who's writing, from where, and (given a buy) the version of it last read. */
+  const by = (buy = null) => ({ p_user: user.id, p_device: deviceId, ...(buy && { p_expected_version: buy.version }) });
+
   async function remove(line, qty) {
     const { buy, number, mode } = removing;
     setRemoving(null);
+    const args = { p_line_id: line.id, p_qty: qty, ...by(buy), p_text: lineText(line, Math.min(qty, line.quantity)) };
     if (mode === 'strike') {
-      setBusy(true);
-      const { error } = await withLoading(() => supabase.rpc('buy_strike_line', {
-        p_line_id: line.id,
-        p_qty: qty,
-        p_user: user.id,
-        p_device: deviceId,
-        p_expected_version: buy.version,
-        p_text: lineText(line, Math.min(qty, line.quantity)),
-      }));
-      setBusy(false);
-      if (error) toast(messageFor(error, "Couldn't strike the card"), 'err');
-      await reload();
-      return;
-    }
-    if (buy.buy_lines.length === 1 && qty >= line.quantity) {
+      await run('buy_strike_line', args, "Couldn't strike the card");
+    } else if (buy.buy_lines.length === 1 && qty >= line.quantity) {
       setDeleting({ buy, number, lastCard: true });
       return;
+    } else {
+      // The buy's last card: Delete buy… instead, no toast.
+      const lastCard = (e) => dbErrorCode(e) === 'last_card';
+      const { error } = await run('buy_remove_line', args, (e) => (lastCard(e) ? null : "Couldn't remove the card"));
+      if (lastCard(error)) setDeleting({ buy, number, lastCard: true });
     }
-    setBusy(true);
-    const { error } = await withLoading(() => supabase.rpc('buy_remove_line', {
-      p_line_id: line.id,
-      p_qty: qty,
-      p_user: user.id,
-      p_device: deviceId,
-      p_expected_version: buy.version,
-      p_text: lineText(line, Math.min(qty, line.quantity)),
-    }));
-    setBusy(false);
-    if (dbErrorCode(error) === 'last_card') setDeleting({ buy, number, lastCard: true });
-    else if (error) toast(messageFor(error, "Couldn't remove the card"), 'err');
     await reload();
   }
 
   /** Right-click → Restore on a struck card: back on the buy with its price and rate. */
   async function restore(buy, line) {
     if (!guard()) return;
-    setBusy(true);
-    const { error } = await withLoading(() => supabase.rpc('buy_restore_line', {
-      p_line_id: line.id,
-      p_user: user.id,
-      p_device: deviceId,
-      p_expected_version: buy.version,
-      p_text: lineText(line),
-    }));
-    setBusy(false);
-    if (error) toast(messageFor(error, "Couldn't restore the card"), 'err');
+    await run('buy_restore_line', { p_line_id: line.id, ...by(buy), p_text: lineText(line) }, "Couldn't restore the card");
     await reload();
   }
 
   async function destroy() {
     const { buy, number } = deleting;
-    setBusy(true);
-    const { error } = await withLoading(() => supabase.rpc('buy_delete', {
-      p_buy_id: buy.id,
-      p_user: user.id,
-      p_device: deviceId,
-      p_expected_version: buy.version,
-      p_line_texts: Object.fromEntries(buy.buy_lines.map((l) => [l.id, lineText(l)])),
-    }));
-    setBusy(false);
+    const { error } = await run('buy_delete', {
+      p_buy_id: buy.id, ...by(buy), p_line_texts: Object.fromEntries(buy.buy_lines.map((l) => [l.id, lineText(l)])),
+    }, "Couldn't delete the buy");
     setDeleting(null);
     if (error) {
-      toast(messageFor(error, "Couldn't delete the buy"), 'err');
       await reload();
       return;
     }
@@ -305,20 +288,11 @@ function DayScreen({ game, day }) {
     await reload();
   }
 
-  /**
-   * A buy's ⋯ → Mark as completed (owner, 2026-10-02): this game's cards
-   * Completed without exporting them, so they leave the header search and the
-   * day's export; or, marked that way, Paid/Ours again.
-   */
   /** A buy's 🚩 chip → Yes, or ⋯ → ✅ Condition checked: the flag off (owner, 2026-10-14). CONFIRM BUY flags. */
   async function setConditionFlag(buy, number, flag) {
-    setBusy(true);
-    const { error } = await withLoading(() => supabase.rpc('buy_set_condition_check', {
-      p_buy_id: buy.id, p_flag: flag, p_user: user.id, p_device: deviceId,
-    }));
-    setBusy(false);
-    if (error) toast(messageFor(error, flag ? "Couldn't flag the buy" : "Couldn't clear the flag"), 'err');
-    else toast(flag
+    const { error } = await run('buy_set_condition_check', { p_buy_id: buy.id, p_flag: flag, ...by() },
+      flag ? "Couldn't flag the buy" : "Couldn't clear the flag");
+    if (!error) toast(flag
       ? `🚩 Buy ${number} flagged: check its cards' condition before export.`
       : `Buy ${number}: condition checked, flag off.`, 'ok');
     await reload();
@@ -334,19 +308,15 @@ function DayScreen({ game, day }) {
     else go();
   }
 
+  /**
+   * A buy's ⋯ → Mark as completed (owner, 2026-10-02): this game's cards
+   * Completed without exporting them, so they leave the header search and the
+   * day's export; or, marked that way, Paid/Ours again.
+   */
   async function markCompleted(buy, number, complete) {
-    setBusy(true);
-    const { error } = await withLoading(() => supabase.rpc('buy_mark_completed', {
-      p_buy_id: buy.id,
-      p_game: game,
-      p_user: user.id,
-      p_device: deviceId,
-      p_complete: complete,
-      p_expected_version: buy.version,
-    }));
-    setBusy(false);
-    if (error) toast(messageFor(error, complete ? "Couldn't mark the buy Completed" : "Couldn't mark the buy Paid/Ours"), 'err');
-    else toast(complete
+    const { error } = await run('buy_mark_completed', { p_buy_id: buy.id, p_game: game, p_complete: complete, ...by(buy) },
+      complete ? "Couldn't mark the buy Completed" : "Couldn't mark the buy Paid/Ours");
+    if (!error) toast(complete
       ? `Buy ${number} marked Completed: left out of the search and of this day's export.`
       : `Buy ${number} marked Paid/Ours again.`, 'ok');
     await reload();
@@ -358,36 +328,21 @@ function DayScreen({ game, day }) {
    */
   async function unexportBuy() {
     const { buy, number } = unexportingBuy;
-    setBusy(true);
-    const { data, error } = await withLoading(() => supabase.rpc('buy_unexport', {
-      p_buy_id: buy.id,
-      p_game: game,
-      p_user: user.id,
-      p_device: deviceId,
-      p_expected_version: buy.version,
-    }));
-    setBusy(false);
+    const { data, error } = await run('buy_unexport', { p_buy_id: buy.id, p_game: game, ...by(buy) },
+      "Couldn't mark the buy Paid/Ours");
     setUnexportingBuy(null);
-    if (error) toast(messageFor(error, "Couldn't mark the buy Paid/Ours"), 'err');
-    else toast(`Buy ${number}'s ${Number(data ?? 0) === 1 ? 'card is' : 'cards are'} Paid/Ours again.`, 'ok');
+    if (!error) toast(`Buy ${number}'s ${Number(data ?? 0) === 1 ? 'card is' : 'cards are'} Paid/Ours again.`, 'ok');
     await reload();
   }
 
   /** A buy's ⋯ → Convert to project (owner, 2026-10-02): its cards go to a new project, the buy is deleted. */
   async function convert(name) {
     const { buy, number } = converting;
-    setBusy(true);
-    const { data, error } = await withLoading(() => supabase.rpc('buy_to_project', {
-      p_buy_id: buy.id,
-      p_name: name,
-      p_user: user.id,
-      p_device: deviceId,
-      p_expected_version: buy.version,
-      p_line_texts: Object.fromEntries(buy.buy_lines.map((l) => [l.id, lineText(l)])),
-    }));
-    setBusy(false);
+    const { data, error } = await run('buy_to_project', {
+      p_buy_id: buy.id, p_name: name, ...by(buy), p_line_texts: Object.fromEntries(buy.buy_lines.map((l) => [l.id, lineText(l)])),
+    }, "Couldn't convert the buy");
     if (error) {
-      toast(messageFor(error, "Couldn't convert the buy"), 'err');
+      // A bad name keeps the dialog open, to fix it there.
       if (dbErrorCode(error) !== 'bad_name') setConverting(null);
       await reload();
       return;
@@ -438,19 +393,11 @@ function DayScreen({ game, day }) {
       return;
     }
     setCompleteStep('Saving…');
-    const { data, error } = await withLoading(() => supabase.rpc('day_complete', {
-      p_day: day,
-      p_game: game,
-      p_user: user.id,
-      p_device: deviceId,
-      p_prices: prices,
-    }));
-    setBusy(false);
+    const { data, error } = await run('day_complete', { p_day: day, p_game: game, ...by(), p_prices: prices },
+      "Couldn't mark the buys Completed");
     setCompleteStep('');
     setCompleting(false);
-    if (error) {
-      toast(messageFor(error, "Couldn't mark the buys Completed"), 'err');
-    } else {
+    if (!error) {
       const n = Number(data ?? 0);
       toast(`${n} ${GAME_NAMES[game]} buy${n === 1 ? '' : 's'} marked Completed, with today's Sell Prices: out of the header search.`, 'ok');
     }
@@ -459,18 +406,10 @@ function DayScreen({ game, day }) {
 
   /** ⋯ → Mark Paid/Ours again: undo the export (export spec 9.4), stamps and all. */
   async function unexport() {
-    setBusy(true);
-    const { data, error } = await withLoading(() => supabase.rpc('export_undo_day', {
-      p_day: day,
-      p_game: game,
-      p_user: user.id,
-      p_device: deviceId,
-    }));
-    setBusy(false);
+    const { data, error } = await run('export_undo_day', { p_day: day, p_game: game, ...by() },
+      "Couldn't mark the buys Paid/Ours");
     setUnexporting(false);
-    if (error) {
-      toast(messageFor(error, "Couldn't mark the buys Paid/Ours"), 'err');
-    } else {
+    if (!error) {
       const n = Number(data ?? 0);
       toast(`${n} ${GAME_NAMES[game]} buy${n === 1 ? '' : 's'} marked Paid/Ours again.`, 'ok');
     }
