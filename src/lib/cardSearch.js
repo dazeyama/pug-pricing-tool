@@ -12,6 +12,7 @@ import {
 import { searchTcgplayer } from './prices.js';
 import { fold, guessSetCode, isSealed, justtcgCandidate, noNumberCards, plainSetName } from './justtcgCards.js';
 import { englishPokemonName } from './pokemonNames.js';
+import { magicKey, pokemonKey } from './candidateKey.js';
 
 /** First page of each source; beyond this, "refine your search". */
 export const PAGE = 175;
@@ -73,7 +74,7 @@ export async function otherLanguageSet(code, lang) {
 export function magicCandidate(card) {
   const set = scry.setByCode(card.set);
   return {
-    key: `mtg:${card.id}`,
+    key: magicKey(card.id),
     game: 'mtg',
     // A Japanese-only printing (Mystical Archive's alternate art; owner, 2026-10-16).
     lang: card.lang === 'ja' ? 'ja' : 'en',
@@ -248,7 +249,7 @@ async function pokemonCandidates(lang, q, signal, { tcgplayer = true, tcgplayerO
     const info = dex.setInfo(lang, setId);
     const brief = dex.setBrief(lang, setId)?.set;
     return {
-      key: `pokemon:${lang}:${b.id}`,
+      key: pokemonKey(lang, b.id),
       game: 'pokemon',
       lang,
       name: b.name,

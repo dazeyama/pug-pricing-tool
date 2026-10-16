@@ -10,6 +10,8 @@
 // Products"; printings "Normal", "Holofoil", "Reverse Holofoil", "1st Edition
 // Holofoil" (prices.js).
 
+import { justtcgKey } from './candidateKey.js';
+
 const lower = (s) => String(s ?? '').toLowerCase();
 /** Letters and digits only, for comparing names. */
 export const fold = (s) => lower(s).normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
@@ -324,7 +326,7 @@ export function justtcgCandidate(card, { lang = 'en', setCode, number: shown = n
   const { number, size } = shown ? { number: shown, size: null } : split;
   const id = cardId(card);
   return {
-    key: `pokemon:${lang}:jt:${id}`,
+    key: justtcgKey(lang, id),
     game: 'pokemon',
     lang,
     name,

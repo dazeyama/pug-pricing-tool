@@ -586,14 +586,22 @@ const lineKey = (line) => (isBulk(line) ? `bulk:${line.bulk_kind}` : line.game =
   : line.tcgdex_id ? `pokemon:${line.lang}:${line.tcgdex_id}` : `pokemon:${line.lang}:jt:${line.justtcg_card_id}`);
 ```
 The formats are produced in `cardSearch.js:76` (`mtg:`), `:251`
-(`pokemon:<lang>:<id>`), `:177` (`pokemon:dex:ja:<n>`), `bulk.js:98`
-(`bulk:`), `justtcgCards.js:327` (`pokemon:<lang>:jt:<id>`).
+(`pokemon:<lang>:<id>`), `bulk.js:98` (`bulk:`), `justtcgCards.js:327`
+(`pokemon:<lang>:jt:<id>`).
 
 **Why** The inverse mapping (saved line → the candidate it came from) is
-knowledge of the line builders, not of the screen. The `dex` format isn't
-covered, so a `No.`-searched Japanese card never highlights its line.
+knowledge of the line builders, not of the screen, and five places wrote
+the same four formats by hand. *(Corrected 2026-10-16: this first said a
+`No.`-searched Japanese card couldn't be found again. It can:
+`pokemon:dex:ja:<n>` at `cardSearch.js:177` keys the TCGplayer search,
+not a candidate; that search's cards are ordinary `pokemon:ja:jt:<id>` ones.)*
 
-**Fix** In `src/lib/buyLine.js` (which already maps candidate → line):
+**Done** (`3ad2874`'s successor): `src/lib/candidateKey.js` owns the four
+formats (`magicKey`, `pokemonKey`, `justtcgKey`, `bulkItemKey`) and
+`candidateKeyOf(line)`; cardSearch, justtcgCards, bulk and PricingScreen
+use it; `tests/candidateKey.test.js`. Not in `buyLine.js` as first
+suggested: that file loads the Supabase client, so a test can't import it.
+The suggestion as first written:
 ```js
 /** The search key of the candidate a saved line was built from (the inverse of buildLine/buildBulkLine). */
 export function candidateKeyOf(line) {

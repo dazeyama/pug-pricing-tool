@@ -39,6 +39,7 @@ import { BulkFinish, BulkPrice, BulkSelected } from './Bulk.jsx';
 import { useStaff } from '../../state/staff.jsx';
 import { useConnection } from '../../state/connection.jsx';
 import { useToast } from '../../components/Toast.jsx';
+import { candidateKeyOf } from '../../lib/candidateKey.js';
 
 const BACKGROUND = { '--stage-bg': `url(${import.meta.env.BASE_URL}background.webp)` };
 
@@ -90,11 +91,6 @@ function useCardRoom(screen) {
   }, [screen]);
   return room;
 }
-
-/** The search-bar key of a saved line's card (the candidate's key). */
-// A Pokémon card known only from TCGplayer has no TCGdex id: its JustTCG card's (owner, 2026-10-09).
-const lineKey = (line) => (isBulk(line) ? `bulk:${line.bulk_kind}` : line.game === 'mtg' ? `mtg:${line.scryfall_id}`
-  : line.tcgdex_id ? `pokemon:${line.lang}:${line.tcgdex_id}` : `pokemon:${line.lang}:jt:${line.justtcg_card_id}`);
 
 /**
  * A search line that finds exactly this saved card (spec 8.2's syntax):
@@ -505,7 +501,7 @@ export default function PricingScreen({
     if (line.game === 'mtg' && lang === 'ja') setLang('en');
     if (!games[line.game]) setGames({ ...games, [line.game]: true });
     const query = editQuery(line);
-    setEditing({ line, key: lineKey(line), query, found: false, restored: false });
+    setEditing({ line, key: candidateKeyOf(line), query, found: false, restored: false });
     setSelected(null);
     setHighlight(-1);
     setPrinting({ key: null, finish: null, version: null });

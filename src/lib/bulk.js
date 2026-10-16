@@ -1,5 +1,6 @@
 import { formatMoney } from './money.js';
 import { nameKey } from './normalize.js';
+import { bulkItemKey } from './candidateKey.js';
 
 // Bulk (docs/TEAM_FEEDBACK.md 5, Phase T3; owner, 2026-10-14): eight
 // "cards" that stand for unsorted bulk, priced from Settings → Bulk values,
@@ -95,7 +96,7 @@ export const perText = (item, value) => `${formatMoney(value)} per ${item.per}`;
 /** A bulk item as a search result (the selected "card"), its value from Settings (a placeholder: none). */
 export function bulkCandidate(item, value = null) {
   return {
-    key: `bulk:${item.kind}`,
+    key: bulkItemKey(item.kind),
     game: item.game,
     lang: 'en',
     bulk: item.kind,
