@@ -33,7 +33,7 @@ import { lineText } from '../../lib/lineFormat.js';
 import { dexNumberQuery } from '../../lib/query.js';
 import { lineRate, whyText } from '../../lib/rates.js';
 import {
-  PLACEHOLDER_NAME, buildBulkLine, buildPlaceholderLine, bulkItem, bulkValuesFrom, isBulk, isPlaceholder,
+  PLACEHOLDER_NAME, buildBulkLine, buildPlaceholderLine, bulkItem, bulkValuesFrom, isBulk, isPlaceholder, isValuedBulk,
 } from '../../lib/bulk.js';
 import { BulkFinish, BulkPrice, BulkSelected } from './Bulk.jsx';
 import { useStaff } from '../../state/staff.jsx';
@@ -682,6 +682,9 @@ export default function PricingScreen({
   // item, or null back to Settings → Bulk values; saved like an edit of it.
   const bulkValues = bulkValuesFrom(settingValues.bulk_values);
   const setLineValue = (line, value) => {
+    // Only valued bulk has a Settings value to set or go back to (the list offers Set value only there). A
+    // placeholder's price is typed, so SAVE EDIT changes it; built as bulk it would lose it (decision 270).
+    if (!isValuedBulk(line)) return Promise.resolve(null);
     const item = bulkItem(line.bulk_kind);
     return list.update(line, buildBulkLine(item, line.quantity, bulkValues[item.kind], value), user?.id);
   };
