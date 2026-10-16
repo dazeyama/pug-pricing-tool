@@ -26,13 +26,14 @@ export function loadSets() {
   // .v3: adds `parent_set_code` (a promo set's main set, for the export's
   // categories, export spec 7.3); .v2 added `digital`, so Arena-only set codes
   // aren't treated as sets.
-  try {
-    localStorage.removeItem('pug.scryfall.sets');   // the older copies
-    localStorage.removeItem('pug.scryfall.sets.v2');
-  } catch {
-    // storage blocked: nothing to clean up
-  }
   setsPromise ??= storedOrDownload('pug.scryfall.sets.v3', DAY, async () => {
+    // The older copies go when a new one downloads (once a day at most), not on every call.
+    try {
+      localStorage.removeItem('pug.scryfall.sets');
+      localStorage.removeItem('pug.scryfall.sets.v2');
+    } catch {
+      // storage blocked: nothing to clean up
+    }
     const data = await transport.getJson(`${API}/sets`);
     return data.data.map((s) => ({
       code: s.code,
