@@ -6,6 +6,7 @@
 | **Owner** | Players' Union Games (PUG) |
 | **Spec version** | 1.0 — 2026-10-16 |
 | **Status** | **Built, Phases S1–S5 (2026-10-16), on dev, not pushed**; waiting for the owner's check. Section 16 says where the build differs from the plan. The owner's answers are in Appendix B; the ◆ choices there are the engineer's and can be overturned |
+| **Learnings** | `docs/SCAN_LEARNINGS.md`: what the first attempt at auto scanning on the owner's iPhone taught us (rolled back to `e191f25` on 2026-10-16; that code is the local tag `scanner-attempt-1`) |
 | **Extends** | `docs/DESIGN_SPEC.md` (Section 7.10 "Screen sizes" gains the phone's page; Section 8 the computer's side) |
 | **Project folder** | `C:\ClaudeProjects\pug-pricing-tool` |
 

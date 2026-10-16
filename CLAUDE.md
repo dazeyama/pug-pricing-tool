@@ -25,6 +25,7 @@
 - The export's spec is docs/EXPORT_FUNCTION.md.
 - The team feedback plan (printout, individual rates, bulk; phases T1–T3) is docs/TEAM_FEEDBACK.md.
 - The phone scanner's spec (a phone scans Magic cards into a computer's buy list; phases S1–S5) is docs/SCAN_FUNCTION.md.
+  What its first attempt at auto scanning taught us (rolled back 2026-10-16) is docs/SCAN_LEARNINGS.md.
 - Current phase: docs/TEAM_FEEDBACK.md Phases T1 (audit printout) and T2 (individual rates, migrations
   0055–0057) and T3 (bulk, migration 0058) are done, live as v0.9.9.7-feedback.
   Then live as v0.9.9.8-day1: struck cards (DESIGN_SPEC decision 267, migrations 0059–0060), confirmed
