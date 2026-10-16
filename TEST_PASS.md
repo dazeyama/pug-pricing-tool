@@ -132,3 +132,14 @@ keys) stayed where they were. Each part below names its commit.
 - [ ] A misspelling (`Lightnig Bolt`): **Showing results for Lightning Bolt**.
 - [ ] After each switch, typing goes straight into the search field (focus came back).
 
+**3f. What ties the pieces together (stayed in PricingScreen)** — the most likely place for a seam to show
+- [ ] Type `Lightning Bolt 117/331 2X2`: the one match is selected by itself; Enter adds it; the new line flashes; the stage clears and the search is empty, focus in it.
+- [ ] Type `Lightning Bolt`: nothing selected; Enter says **Select a card first: ↓ picks the first suggestion.**; ↓ selects the first, ↑/↓ move, ↓ past the last highlights "… show all", Enter opens it; Esc closes it.
+- [ ] Alt+Q jumps to Qty; type 3, Enter adds 3.
+- [ ] CLEAR (or Esc in the search): stage empty, the list untouched.
+- [ ] Right-click a suggestion: its name becomes the search.
+- [ ] SAVE EDIT on a Pokémon line with a TCGplayer-only version: the version comes back once the TCGplayer search lands; change the condition, SAVE EDIT: the line updates in place (flashes), not a new line.
+- [ ] Remove the edited line with × while editing: the edit stops (the note goes).
+- [ ] **CONFIRM BUY** a walk-in `SMOKE P6 Ash`, `(555) 010-0601`, $1 cash: the stage resets, MTG | PKM both on, sort back to newest (the resetKey). Section 9 deletes this buy.
+- [ ] Console: no new errors or React warnings through all of section 3.
+
