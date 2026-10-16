@@ -154,6 +154,9 @@ const FAMILIES = [
   ['buyabox', 'Buy-a-Box Promo', /buy-a-box/i],
   ['bundle', 'Bundle Promo', /bundle/i],
   ['textless', 'Textless', /textless/i],
+  // A Japanese printing (owner, 2026-10-16): "Japanese Alternate Art", "Japanese", "(JP Exclusive)";
+  // not "Japan Showcase", an English card's frame.
+  ['japanese', 'Japanese', /japanese|\bjp\b/i],
 ];
 
 /** Our line's variant families, in CC's order. */

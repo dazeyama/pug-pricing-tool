@@ -21,6 +21,7 @@
 - Current phase: docs/TEAM_FEEDBACK.md Phases T1 (audit printout) and T2 (individual rates, migrations
   0055–0057) and T3 (bulk, migration 0058) are done, live as v0.9.9.7-feedback.
   Since then: struck cards (DESIGN_SPEC decision 267, migrations 0059–0060 on dev) and confirmed buys
-  keeping their custom rates (decision 268, migration 0061), built, waiting for the owner's check; not pushed.
+  keeping their custom rates (decision 268, migration 0061) and Japanese-only Magic printings in English
+  searches (decision 269), built, waiting for the owner's check; not pushed.
   Phase 10 launch (the migration squash, then prod) waits for the owner's go; the live site runs on the
   dev project until then. TEST.md holds the smoke tests and the database test run.

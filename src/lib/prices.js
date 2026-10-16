@@ -176,7 +176,11 @@ function printingFits(printing, { game, finish, firstEdition }) {
 export function conditionVariants(card, { game, lang, finish, firstEdition }) {
   const out = Object.fromEntries(CONDITIONS.map((c) => [c, null]));
   if (!card) return out;
-  const variants = (card.variants ?? []).filter((v) => (lang === 'ja' ? isJapanese(v) : isEnglish(v)));
+  let variants = (card.variants ?? []).filter((v) => (lang === 'ja' ? isJapanese(v) : isEnglish(v)));
+  // A Magic card is looked up as its own printing: when none of its listings
+  // say its language (a Japanese-only printing listed as English, or the
+  // other way), they're still its listings (owner, 2026-10-16).
+  if (game === 'mtg' && !variants.length) variants = card.variants ?? [];
   // Etched: prefer an "etched" printing on the card; the etched product's own
   // card only has plain printings, any of which is the etched price.
   let fits = variants.filter((v) => printingFits(v.printing, { game, finish, firstEdition }));

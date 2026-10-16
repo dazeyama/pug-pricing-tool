@@ -195,7 +195,12 @@ export async function todaysPrices(lines, { cards = null, onStep } = {}) {
   const empty = { market: {}, fallback: null, cardmarketUsd: null, cardmarketEur: null, rate, fetchedAt: null, result: null, variants: {} };
   const out = new Map(lines.map((l) => [l.id, empty]));
   for (const s of seen) {
-    const opts = { game: s.c.game, lang: s.c.game === 'mtg' ? 'en' : s.c.lang, finish: s.finish, firstEdition: s.version?.firstEdition };
+    const opts = {
+      game: s.c.game,
+      lang: s.c.game === 'mtg' ? (s.c.scryfall?.lang === 'ja' ? 'ja' : 'en') : s.c.lang,
+      finish: s.finish,
+      firstEdition: s.version?.firstEdition,
+    };
     const result = resultFor(s.c, results, { finish: s.finish, version: s.version, versions: s.versions }) ?? null;
     const eur = cardmarketPrice(s.c, { finish: s.finish, version: s.version });
     out.set(s.line.id, {

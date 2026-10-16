@@ -1151,6 +1151,7 @@
   line-height: 17px;
 }
 .thumb-label .game-badge { flex: none; font-size: 9.5px; padding: 1px 5px; }
+.thumb-label .tag-jp { flex: none; font-size: 9.5px; padding: 1px 5px; }
 .thumb-label-text { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* The show-all modal's grid: Scryfall's small-image width. */

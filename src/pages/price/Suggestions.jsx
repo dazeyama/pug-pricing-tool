@@ -119,6 +119,8 @@ function CardThumb({ c, highlighted, selected, onPick, onSearchName }) {
           name, and Scryfall's rules keep overlays off the bottom strip. */}
       <span className="thumb-label">
         <GameBadge game={c.game} />
+        {/* A Japanese-only Magic printing among the English ones (owner, 2026-10-16). */}
+        {c.game === 'mtg' && c.lang === 'ja' && <span className="tag-jp">JP</span>}
         <span className="thumb-label-text">{c.setCode} {/^No\./.test(c.number ?? '') ? c.number : `#${c.number}`}</span>
       </span>
     </button>

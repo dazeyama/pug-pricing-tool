@@ -103,6 +103,16 @@ export function numberTerm(number) {
 }
 
 /**
+ * The languages a Magic search keeps (owner, 2026-10-16). Searched with no
+ * language, Scryfall gives one card per printing: English where there is
+ * one, else the printing's own language. So the Japanese printings English
+ * packs carry (Mystical Archive's Japanese alternate art: "Cyclonic Rift SOA
+ * 79") come up in a plain English search, the Japanese copies of English
+ * cards don't, and other languages' own printings are left out.
+ */
+const keptLanguage = (card) => card.lang === 'en' || card.lang === 'ja';
+
+/**
  * Candidate printings for a query: `cards/search` with unique=prints, newest
  * first. First page only (up to 175).
  * @param {{ name: string, number: string|null, setCode: string|null }} q
@@ -116,11 +126,12 @@ export async function searchPrints(q, signal) {
   if (number) parts.push(number);
   if (q.setCode) parts.push(`set:${q.setCode.toLowerCase()}`);
   if (!parts.length) return { cards: [], total: 0, hasMore: false };
-  // English, paper only: Arena-only cards (e.g. Arena Anthology 3) can't be bought.
+  // Paper only: Arena-only cards (e.g. Arena Anthology 3) can't be bought.
+  // English, and Japanese-only printings (keptLanguage), so no lang: term.
   // No extras (tokens, emblems, art cards…; spec 1.4): Scryfall leaves them out
   // of a plain name search by itself, but a cn: or set: brings them back
   // ("2/184 S8b" found tokens and art cards, owner 2026-09-29), so say so.
-  parts.push('lang:en', 'game:paper', '-is:extra');
+  parts.push('game:paper', '-is:extra');
 
   // Newest first, or oldest first with the suggestions' sort toggle
   // (q.oldest): Scryfall sorts, so the first page is the right end of the list.
@@ -129,7 +140,7 @@ export async function searchPrints(q, signal) {
   });
   const data = await transport.getJson(`${API}/cards/search?${params}`, { signal });
   if (!data) return { cards: [], total: 0, hasMore: false };   // 404: nothing matched
-  return { cards: data.data, total: data.total_cards, hasMore: data.has_more };
+  return { cards: data.data.filter(keptLanguage), total: data.total_cards, hasMore: data.has_more };
 }
 
 /**
@@ -214,8 +225,9 @@ export async function cardsByTcgplayerIds(ids, onProgress) {
 
 const siblingCache = memoryCache(DAY);
 /**
- * Every English printing of a card in its set, extras and variations
- * included (spec 5.1): the siblings the details panel moves between.
+ * Every printing of a card in its set, English or Japanese-only
+ * (keptLanguage), extras and variations included (spec 5.1): the siblings
+ * the details panel moves between.
  * Reversible cards carry their oracle ID on the faces; failing that, the name.
  * @returns {Promise<any[]>} Scryfall cards, the given one among them
  */
@@ -223,13 +235,14 @@ export function fetchSiblings(card, signal) {
   const oracle = card.oracle_id ?? card.card_faces?.[0]?.oracle_id;
   return siblingCache.get(`${oracle ?? card.name}:${card.set}`, async () => {
     const q = oracle
-      ? `oracleid:${oracle} set:${card.set} lang:en game:paper`
-      : `!"${card.name.replace(/"/g, '')}" set:${card.set} lang:en game:paper`;
+      ? `oracleid:${oracle} set:${card.set} game:paper`
+      : `!"${card.name.replace(/"/g, '')}" set:${card.set} game:paper`;
     const params = new URLSearchParams({
       q, unique: 'prints', include_extras: 'true', include_variations: 'true', order: 'set',
     });
     const data = await transport.getJson(`${API}/cards/search?${params}`, { signal });
-    return data?.data?.length ? data.data : [card];
+    const kept = (data?.data ?? []).filter(keptLanguage);
+    return kept.length ? kept : [card];
   });
 }
 

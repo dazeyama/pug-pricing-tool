@@ -75,7 +75,8 @@ export function buildLine({
     return {
       ...common,
       game: 'mtg',
-      lang: 'en',
+      // A Japanese-only printing is a Japanese card: "[JP]" on the line (owner, 2026-10-16).
+      lang: card.lang === 'ja' ? 'ja' : 'en',
       name: card.name,
       name_en: null,
       name_key: nameKey(card.name),

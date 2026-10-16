@@ -24,10 +24,10 @@ const STAMPS = {
 };
 
 /** Fixed display order for the usual traits; special foils and stamps follow. */
-const ORDER = ['borderless', 'showcase', 'extendedart', 'fullart', 'retro', 'textless', 'serialized'];
+const ORDER = ['borderless', 'showcase', 'extendedart', 'fullart', 'retro', 'textless', 'serialized', 'japanese'];
 const TRAIT_LABELS = {
   borderless: 'Borderless', showcase: 'Showcase', extendedart: 'Extended art', fullart: 'Full art',
-  retro: 'Retro frame', textless: 'Textless', serialized: 'Serialized',
+  retro: 'Retro frame', textless: 'Textless', serialized: 'Serialized', japanese: 'Japanese',
 };
 
 function foilName(key) {
@@ -50,6 +50,8 @@ export function magicTraits(card) {
   if (['1993', '1997'].includes(card.frame) && (card.released_at ?? '') >= MODERN_FRAME_FROM) t.set('retro', TRAIT_LABELS.retro);
   if (card.textless) t.set('textless', TRAIT_LABELS.textless);
   if (promos.includes('serialized')) t.set('serialized', TRAIT_LABELS.serialized);
+  // A Japanese-only printing (owner, 2026-10-16): a checkbox beside the set's English one.
+  if (card.lang === 'ja') t.set('japanese', TRAIT_LABELS.japanese);
   for (const p of promos) {
     if (SPECIAL_FOILS[p] || /foil$/.test(p)) t.set(`foil:${p}`, foilName(p));
     if (STAMPS[p]) t.set(`stamp:${p}`, STAMPS[p]);

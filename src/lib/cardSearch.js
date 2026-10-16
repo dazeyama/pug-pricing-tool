@@ -75,7 +75,8 @@ export function magicCandidate(card) {
   return {
     key: `mtg:${card.id}`,
     game: 'mtg',
-    lang: 'en',
+    // A Japanese-only printing (Mystical Archive's alternate art; owner, 2026-10-16).
+    lang: card.lang === 'ja' ? 'ja' : 'en',
     name: card.name,
     setCode: card.set.toUpperCase(),
     setName: card.set_name,
@@ -395,7 +396,7 @@ function routeSetCode(parsed, lang) {
  * read; `onUpdate(game, result)` fires as each game changes. Resolves when
  * both are done; rejects only with AbortError.
  * @param {string} input
- * @param {'en'|'ja'} lang  Pokémon language (Magic is always English)
+ * @param {'en'|'ja'} lang  Pokémon language (Magic is English, with Japanese-only printings)
  * @param {{ mtg: boolean, pokemon: boolean }} games  which games to search
  * @param {boolean} oldest  oldest printings first (the sort toggle)
  * @param {AbortSignal} signal
