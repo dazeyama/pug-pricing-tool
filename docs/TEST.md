@@ -345,3 +345,6 @@ New since 0.9.9.8-day1, worth a check:
 - [ ] **Show all finds struck cards** (decision 275): strike a card, search it in the header. Paid/Ours only: not
       there. Show all: crossed out with a grey **Struck** chip, its tooltip saying who and when, apart from the
       card's live copies.
+- [ ] **Cards by game on a name** (decision 276): point at a collection's or project's name on the Collections tab
+      and on Home: a chip with a line per game ("MTG 4 cards", "PKM 3 cards + 100 bulk"), "No cards yet" when empty;
+      it isn't cut off on the table's last row.

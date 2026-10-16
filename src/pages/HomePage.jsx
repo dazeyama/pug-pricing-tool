@@ -8,6 +8,7 @@ import { STORE_TZ, formatTime } from '../lib/time.js';
 import { headlineOf } from '../lib/changelog.js';
 import { isValuedBulk } from '../lib/bulk.js';
 import GuardButton from '../components/GuardButton.jsx';
+import CardCountsName from '../components/CardCountsName.jsx';
 import { colorVar } from '../lib/palette.js';
 import { formatInTimeZone } from 'date-fns-tz';
 import { useStaff } from '../state/staff.jsx';
@@ -100,7 +101,7 @@ function HomeScreen({ today }) {
     .lt('confirmed_at', to.toISOString()));
   const open = useLiveTable('buys', () => supabase
     .from('buys')
-    .select('id, customer_name, status, project, system_key, updated_at, buy_lines(quantity, unit_price, cc_sell_price, priced_at, created_at, bulk_kind, struck_at)')
+    .select('id, customer_name, status, project, system_key, updated_at, buy_lines(game, quantity, unit_price, cc_sell_price, priced_at, created_at, bulk_kind, struck_at)')
     .eq('kind', 'collection')
     .not('status', 'in', '(completed,rejected)'));
   const events = useLiveTable('events', () => supabase
@@ -255,7 +256,8 @@ function HomeScreen({ today }) {
           <div className="home-list">
             {rows.slice(0, SHOW.rows).map(({ c, kind, note, warn }) => (
               <button key={c.id} type="button" className={`home-item kind-${kind}`} onClick={() => go(`/collections/${c.id}`)}>
-                <strong>{c.customer_name}</strong>
+                {/* Pointing at the name shows its cards by game (decision 276). */}
+                <strong><CardCountsName lines={c.buy_lines}>{c.customer_name}</CardCountsName></strong>
                 <span className="home-muted">
                   {kind === 'project' ? 'Project' : 'Paid/Ours'} · {plural(cardsIn(c.buy_lines), 'card')} · {formatMoney(marketOf(c.buy_lines))}
                 </span>

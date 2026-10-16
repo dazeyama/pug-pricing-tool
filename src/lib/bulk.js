@@ -1,6 +1,7 @@
 import { formatMoney } from './money.js';
 import { nameKey } from './normalize.js';
 import { bulkItemKey } from './candidateKey.js';
+import { GAMES } from './games.js';
 
 // Bulk (docs/TEAM_FEEDBACK.md 5, Phase T3; owner, 2026-10-14): eight
 // "cards" that stand for unsorted bulk, priced from Settings → Bulk values,
@@ -170,6 +171,16 @@ export function cardCounts(lines) {
     else cards += n;
   }
   return { cards, bulk, struck };
+}
+
+/**
+ * cardCounts for each game that has lines, in the games' usual order: a
+ * collection's name chip (decision 276).
+ * @returns {{ game: string, counts: { cards: number, bulk: number, struck: number } }[]}
+ */
+export function countsByGame(lines) {
+  return GAMES.map(({ key }) => ({ game: key, counts: cardCounts((lines ?? []).filter((l) => l.game === key)) }))
+    .filter(({ counts }) => counts.cards + counts.bulk + counts.struck > 0);
 }
 
 /**

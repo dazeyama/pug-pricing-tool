@@ -8,6 +8,7 @@ import { formatRecent, formatShortDate } from '../lib/time.js';
 import { withLoading } from '../lib/loading.js';
 import GuardButton from '../components/GuardButton.jsx';
 import UserTag from '../components/UserTag.jsx';
+import CardCountsName from '../components/CardCountsName.jsx';
 import { NewCollectionModal, NewProjectModal } from './collections/CollectionModals.jsx';
 import ImportDialog from './collections/ImportDialog.jsx';
 import RowAction from './collections/RowAction.jsx';
@@ -38,7 +39,8 @@ const columns = (by, menu) => [
     value: (c) => nameKey(c.customer_name),
     cell: (c, elsewhere) => (
       <td key="name" className="col-name">
-        {c.customer_name}
+        {/* Pointing at the name shows its cards by game (decision 276). */}
+        <CardCountsName lines={c.buy_lines}>{c.customer_name}</CardCountsName>
         {elsewhere && <span className="lock-line">✎ open on {elsewhere}</span>}
       </td>
     ),
@@ -132,7 +134,9 @@ export default function CollectionsPage() {
   const { data, loaded } = useLiveTable('buys', () => supabase
     .from('buys')
     .select('id, customer_name, phone, status, notes, created_at, updated_at, last_edited_by, '
-      + 'offer_cash, offer_credit, paid_price, paid_method, system_key, project')
+      + 'offer_cash, offer_credit, paid_price, paid_method, system_key, project, '
+      // Its cards, counted by game for the name's chip (decision 276).
+      + 'buy_lines(game, quantity, bulk_kind, struck_at)')
     .eq('kind', 'collection'));
   const locks = useLiveTable('collection_locks', () => supabase
     .from('collection_locks')

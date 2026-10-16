@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   BULK_ITEMS, DEFAULT_BULK_VALUES, bulkItem, bulkLineText, bulkSearch, bulkValuesFrom, buildBulkLine, cardCounts,
-  bulkShortText, buildPlaceholderLine, countText, isBulk, isPlaceholder, perText, repricedBulk, shortName,
+  bulkShortText, buildPlaceholderLine, countText, countsByGame, isBulk, isPlaceholder, perText, repricedBulk, shortName,
 } from '../src/lib/bulk.js';
 import { lineText, lineTextWithCondition } from '../src/lib/lineFormat.js';
 
@@ -128,4 +128,17 @@ test("the other game on a day page: its name first, bulk apart, a placeholder a 
   assert.equal(countText(cardCounts(lines), { game: 'Pokémon' }), '2 Pokémon cards + 100 bulk');
   assert.equal(countText({ cards: 1, bulk: 0 }, { game: 'Magic' }), '1 Magic card');
   assert.equal(countText({ cards: 0, bulk: 100 }, { game: 'Pokémon' }), '100 Pokémon bulk');
+});
+
+test("a collection's cards by game, for its name's chip: only games it has, bulk and struck apart", () => {
+  const lines = [
+    { game: 'pokemon', quantity: 1, bulk_kind: 'pkm_100' },
+    { game: 'mtg', quantity: 2, bulk_kind: null },
+    { game: 'mtg', quantity: 1, bulk_kind: null, struck_at: '2026-10-16T12:00:00Z' },
+    { game: 'pokemon', quantity: 3, bulk_kind: 'pkm_placeholder' },
+  ];
+  assert.deepEqual(countsByGame(lines).map(({ game, counts }) => [game, countText(counts)]),
+    [['mtg', '2 cards · 1 struck'], ['pokemon', '3 cards + 100 bulk']]);
+  assert.deepEqual(countsByGame([]), []);
+  assert.deepEqual(countsByGame(null), []);
 });
