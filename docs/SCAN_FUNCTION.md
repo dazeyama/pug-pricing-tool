@@ -769,6 +769,12 @@ locks **automatically on the first card**.
     known (the blocks found, the searches the readings call for); the bar at the share of that time
     done, creeping through the step under way up to 90% of it, never going back when more work turns
     up; drawn every frame, full for a moment at the end. Tests: `tests/scanThorough.test.js`.
+  - **"Auto?"** (owner, 2026-10-16: "when unchecked it does not automatically scan. When the Scan
+    Card button is pressed, uncheck this box, needing to be manually enabled again to go into fast
+    mode"): a checkbox beside Normal / Foil, ticked to begin with, kept for the tab like the
+    condition and finish (`pug.scan.auto`). Unticked, auto scan doesn't look at all; Scan card
+    unticks it. Ticking it again starts afresh (the held art and never the card last sent stand, so
+    the card left in the holder isn't added again).
 - **New card or the same one:** the art (the middle of the art box at its locked place) as a 16 × 10
   thumbnail of true averages, brightness and contrast evened out (`artPrint`, `artDistance` with a
   one-cell shift). After a card is sent its art is held; **nothing is read while the art is under 12
@@ -833,7 +839,7 @@ The owner's answers (2026-10-16, the clarification session before this document)
 4. **The List and Mystery Booster** (Appendix A): a smarter lookup (try `plst` when the card has a List printing and the symbol is seen) if it matters in practice.
 5. **A "scanned from a phone" note in the Changelog** (Section 12): ask the owner if wanted.
 6. **Renaming a phone** without clearing its site data (Section 12).
-7. **An auto scan switch** on the phone (off: Scan card only), if someone wants to scan a card at a time without the phone adding cards by itself. Not built: not in the spec.
+7. **An auto scan switch** on the phone: built 2026-10-16 as "Auto?" (Section 17).
 8. **Settings → Sign out signs out every computer** (found while building the phone's own Sign out): `supabase.auth.signOut()` defaults to `scope: 'global'`, which ends the store account's session on every device, not just this one. The phone's uses `{ scope: 'local' }`; Settings' is unchanged, for the owner to decide.
 9. **Scryfall's search limit** (found while building the resolver, 2026-10-16): Scryfall now
    documents `/cards/search` at two a second (500 ms; scryfall.com/docs/api/rate-limits), and one 429

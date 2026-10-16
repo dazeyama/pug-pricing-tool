@@ -42,6 +42,8 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // The condition and finish for the next scans, kept for this tab (a reload keeps them).
 const CONDITION_KEY = 'pug.scan.condition';
 const FOIL_KEY = 'pug.scan.foil';
+// Auto scan on or off (owner, 2026-10-16: an "Auto?" checkbox; Scan card unchecks it), kept the same way.
+const AUTO_KEY = 'pug.scan.auto';
 
 // scan_send's refusals, as the phone says them.
 const SEND_MESSAGES = {
@@ -112,6 +114,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     return CONDITIONS.includes(saved) ? saved : 'NM';
   });
   const [foil, setFoilState] = useState(() => readSession(FOIL_KEY) === '1');
+  const [autoOn, setAutoState] = useState(() => readSession(AUTO_KEY) !== '0');
   const [muted, setMutedState] = useState(isMuted);
   const [local, setLocal] = useState(null);       // the phone's own message: { tone, title?, text, at }
   const [reading, setReading] = useState(false);
@@ -146,6 +149,11 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const setFoil = (f) => {
     setFoilState(f);
     writeSession(FOIL_KEY, f ? '1' : null);
+  };
+  const setAuto = (on) => {
+    setAutoState(on);
+    writeSession(AUTO_KEY, on ? null : '0');
+    view.current.pending = null;   // auto scan starts afresh: two looks (or one sure one) again
   };
   const say = (tone, text, title = null) => setLocal({ tone, text, title, at: Date.now() });
 
@@ -449,6 +457,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   async function scanCard() {
     if (manualWaiting.current || reading) return;
     manualWaiting.current = true;
+    // Scan card turns auto scan off: "Auto?" has to be ticked again for the fast way (owner, 2026-10-16).
+    setAuto(false);
     const bar = createProgress();
     // The work as expected; each step re-planned as it's known (the blocks found, the searches asked).
     if (busy.current) bar.plan('wait', STEP_MS.ocr);
@@ -511,13 +521,13 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
 
   // Auto scan (6.3): while the camera runs, look again and again, resting
   // between looks; paused while the computer can't take cards, a card needs
-  // a price, the connection is down, Scan card is reading, or the page is
-  // hidden. It doesn't wait for the computer to price the last card (owner,
+  // a price, the connection is down, Scan card is reading, "Auto?" is
+  // unticked, or the page is hidden. It doesn't wait for the computer to price the last card (owner,
   // 2026-10-16: "the computer can load prices on it's own time while we
   // scan more cards"): the computer takes them in the order sent. Stop ends
   // it with the camera.
   const auto = useRef(null);
-  auto.current = { scanFrame, paused: Boolean(blocked) || Boolean(needs) || Boolean(pick) || offline };
+  auto.current = { scanFrame, paused: !autoOn || Boolean(blocked) || Boolean(needs) || Boolean(pick) || offline };
   useEffect(() => {
     if (!camera.on) return undefined;
     let alive = true;
@@ -612,13 +622,20 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
             </button>
           ))}
         </div>
-        <div className="scan-seg finish" role="radiogroup" aria-label="Finish for the next scans">
-          <button type="button" role="radio" aria-checked={!foil} className={`scan-seg-btn${!foil ? ' on' : ''}`} onClick={() => setFoil(false)}>
-            Normal
-          </button>
-          <button type="button" role="radio" aria-checked={foil} className={`scan-seg-btn foil${foil ? ' on' : ''}`} onClick={() => setFoil(true)}>
-            Foil
-          </button>
+        <div className="scan-row">
+          <div className="scan-seg finish" role="radiogroup" aria-label="Finish for the next scans">
+            <button type="button" role="radio" aria-checked={!foil} className={`scan-seg-btn${!foil ? ' on' : ''}`} onClick={() => setFoil(false)}>
+              Normal
+            </button>
+            <button type="button" role="radio" aria-checked={foil} className={`scan-seg-btn foil${foil ? ' on' : ''}`} onClick={() => setFoil(true)}>
+              Foil
+            </button>
+          </div>
+          {/* Auto scan on or off; Scan card turns it off (owner, 2026-10-16). */}
+          <label className={`scan-seg-btn scan-auto${autoOn ? ' on' : ''}`} title="Scan cards by themselves. Scan card turns this off.">
+            <input type="checkbox" checked={autoOn} onChange={(e) => setAuto(e.target.checked)} />
+            Auto?
+          </label>
         </div>
       </div>
 
