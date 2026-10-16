@@ -796,6 +796,17 @@ locks **automatically on the first card**.
     read; "+1" shows over the picture as it goes. Only while that card is on its way or added (not
     once undone, failed, skipped or waiting for a price), and not while its finish is being changed.
     The picture takes taps without the double-tap zoom (`touch-action: manipulation`).
+- **The card alone, its sides cut too** (owner, 2026-10-16: "we're only doing the height and leaving
+  the sides of the picture which adds noise … also crop the left and right … and hopefully stop some
+  of the recalibrating motion"):
+  - **Shown:** locked, the video is cut to the card and its 3% margin on all four sides
+    (`guide.js` `insetTo`, a CSS clip-path), so the stage's black lies either side of the card
+    instead of the rest of the picture.
+  - **Followed:** each locked look looks for the card only round where it's locked, the card and a
+    quarter of it each side (`lock.js` `findCardNear`), not over the whole picture: nothing beside
+    the holder can be taken for the card or start a re-lock. A card moved further than that stays
+    as it was locked: Reset view finds it. The strip and the art were already read from the card's
+    own place only.
 - **New card or the same one:** the art (the middle of the art box at its locked place) as a 16 × 10
   thumbnail of true averages, brightness and contrast evened out (`artPrint`, `artDistance` with a
   one-cell shift). After a card is sent its art is held; **nothing is read while the art is under 12

@@ -9,6 +9,8 @@
 // once the card has clearly moved and stayed moved (owner's choice).
 // DOM-free: the canvas maker is passed in.
 
+import { findCard } from './cardEdges.js';
+
 // On a modern card the collector block's left edge is 6.5% in and its top
 // 93.6% down (measured on 17 cards, docs/SCAN_LEARNINGS.md 2.2): a block
 // found near there, on the card, is its collector line.
@@ -18,6 +20,8 @@ const ART = { left: 0.15, right: 0.85, top: 0.15, bottom: 0.5 };
 // Room around the card on screen, and around the collector line in the
 // cutout (in its letters' heights), for the next card landing a little off.
 const VIEW_MARGIN = 0.03;
+// A moved card is looked for this share of the locked card's size each side of it, no further.
+const NEAR = 0.25;
 const CUTOUT_MARGIN = 1.2;
 // The art as a 16 × 10 thumbnail.
 const AW = 16;
@@ -159,6 +163,25 @@ export function artDistance(a, b) {
 }
 
 /** A part of the picture as a canvas of its own (the card, for finding its line when the corner misses). */
+/**
+ * The card, looked for only round where it's locked: the card and a
+ * quarter of it each side (owner, 2026-10-16: the picture's sides "add
+ * noise"), so whatever lies beside the holder can't be taken for it or set
+ * the view moving. A card moved further than that: Reset view.
+ * @param {{ width: number, height: number }} frame
+ * @param {{ x: number, y: number, width: number, height: number }} locked  the locked card
+ * @param {(w: number, h: number) => object} createCanvas
+ * @returns {{ x: number, y: number, width: number, height: number }|null}  in the picture's px
+ */
+export function findCardNear(frame, locked, createCanvas) {
+  const r = clampTo({
+    x: locked.x - locked.width * NEAR, y: locked.y - locked.height * NEAR,
+    width: locked.width * (1 + 2 * NEAR), height: locked.height * (1 + 2 * NEAR),
+  }, frame.width, frame.height);
+  const found = findCard(cropTo(frame, r, createCanvas), createCanvas);
+  return found && { x: found.x + r.x, y: found.y + r.y, width: found.width, height: found.height };
+}
+
 export function cropTo(frame, r, createCanvas) {
   const c = clampTo(r, frame.width, frame.height);
   const out = createCanvas(Math.max(1, Math.round(c.width)), Math.max(1, Math.round(c.height)));

@@ -47,6 +47,22 @@ export function showPart(picture, part, boxW, boxH, fit) {
   };
 }
 
+/**
+ * The video cut to the part of the picture shown (owner, 2026-10-16: "also
+ * crop the left and right of the video feed to the detected card"): a CSS
+ * clip-path inset, in the video box's own px.
+ * @param {{ scale: number, width: number, height: number }} shown  showPart's
+ * @param {{ x: number, y: number, width: number, height: number }} part  in the picture's px
+ */
+export function insetTo(shown, part) {
+  const px = (v) => `${Math.max(0, Math.round(v))}px`;
+  const top = part.y * shown.scale;
+  const left = part.x * shown.scale;
+  const bottom = shown.height - (part.y + part.height) * shown.scale;
+  const right = shown.width - (part.x + part.width) * shown.scale;
+  return `inset(${px(top)} ${px(right)} ${px(bottom)} ${px(left)})`;
+}
+
 /** A rectangle of the picture, where it lands in the box. */
 export function onScreen(shown, r) {
   return { left: shown.x + r.x * shown.scale, top: shown.y + r.y * shown.scale, width: r.width * shown.scale, height: r.height * shown.scale };

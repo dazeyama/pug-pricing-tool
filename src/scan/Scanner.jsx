@@ -8,13 +8,13 @@ import { useConnection } from '../state/connection.jsx';
 import { usePairing } from './usePairing.js';
 import { useScans } from './useScans.js';
 import { useCamera } from './camera.js';
-import { onScreen, showPart } from './guide.js';
+import { insetTo, onScreen, showPart } from './guide.js';
 import { locate, paperSetCodes, readCollectorLine, readPrepared, setCodePattern } from './read.js';
 import { resolveReadings, resolveThorough } from './resolve.js';
 import { STEP_MS, createProgress } from './progress.js';
 import { findCard } from './cardEdges.js';
 import {
-  ART_CHANGED, anchorBlock, artDistance, artPrint, blockOnCard, cropTo, makeLock, movedFrom, samePlace,
+  ART_CHANGED, anchorBlock, artDistance, artPrint, blockOnCard, cropTo, findCardNear, makeLock, movedFrom, samePlace,
 } from './lock.js';
 import { straightCutout } from './straighten.js';
 import { defaultCreateCanvas } from './recognition/canvasUtil.js';
@@ -390,7 +390,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
    * (owner's choice). Returns the lock to use for this look.
    */
   function followMove(frame, lock) {
-    const now = findCard(frame, defaultCreateCanvas);
+    // Looked for round the locked card only: nothing beside the holder sets the view moving.
+    const now = findCardNear(frame, lock.card, defaultCreateCanvas);
     if (!now || !movedFrom(lock.card, now)) {
       moving.current = null;
       return lock;
@@ -653,6 +654,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const part = lock?.view ?? (picture && { x: 0, y: 0, width: picture.width, height: picture.height });
   const shown = picture && room.w && room.h ? showPart(picture, part, room.w, room.h, lock ? 'contain' : 'cover') : null;
   const outline = !lock && seenCard && shown ? onScreen(shown, seenCard) : null;
+  // Locked: the picture cut to the card at its sides too, not just its top and bottom (owner, 2026-10-16).
+  const cut = lock && shown ? insetTo(shown, part) : null;
   const showUndo = strip === stripOfLatest && latest?.status === 'added';
   const toFoil = latest?.finish === 'nonfoil';
 
@@ -753,7 +756,10 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
             className="scan-video"
             playsInline
             muted
-            style={shown ? { left: shown.x, top: shown.y, width: shown.width, height: shown.height } : undefined}
+            style={shown ? {
+              left: shown.x, top: shown.y, width: shown.width, height: shown.height,
+              ...(cut ? { clipPath: cut, WebkitClipPath: cut } : {}),
+            } : undefined}
           />
           {camera.on && outline && <div className="scan-card-outline" style={outline} aria-hidden="true" />}
           {!camera.on && (

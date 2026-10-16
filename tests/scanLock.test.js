@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createCanvas } from '@napi-rs/canvas';
 import { findCard } from '../src/scan/cardEdges.js';
 import {
-  ART_CHANGED, anchorBlock, artDistance, artPrint, blockOnCard, makeLock, movedFrom, samePlace,
+  ART_CHANGED, anchorBlock, artDistance, artPrint, blockOnCard, findCardNear, makeLock, movedFrom, samePlace,
 } from '../src/scan/lock.js';
 
 // Owner, 2026-10-16: the view locks onto the first card found by its edges,
@@ -92,4 +92,18 @@ test('the lock: the corner and the art lie on the card, the view a little around
   assert.ok(lock.collector.x < card.x + 35 && lock.collector.y < card.y + 712);
   assert.ok(lock.art.x > card.x && lock.art.y > card.y && lock.art.y + lock.art.height < card.y + card.height);
   assert.ok(lock.view.x < card.x && lock.view.width > card.width);
+});
+
+test('locked, the card is looked for round its place only: a bigger dark thing beside the holder is not it', () => {
+  const { c, card } = holder({ withShadowEdge: false });
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#121212';
+  ctx.fillRect(60, 40, 200, 280);                  // card-shaped and dark, well away from the card
+  const near = findCardNear(c, card, make);
+  assert.ok(near, 'found');
+  for (const k of ['x', 'y', 'width', 'height']) assert.ok(Math.abs(near[k] - card[k]) < 12, `${k} ${near[k]} vs ${card[k]}`);
+  // Nudged a little: still found, at its new place.
+  const moved = holder({ x: 340, y: 560, withShadowEdge: false });
+  const there = findCardNear(moved.c, card, make);
+  assert.ok(there && Math.abs(there.x - 340) < 12 && Math.abs(there.y - 560) < 12, 'followed');
 });

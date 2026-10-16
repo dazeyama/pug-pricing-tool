@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { CARD_RATIO, guideRect, onScreen, showPart } from '../src/scan/guide.js';
+import { CARD_RATIO, guideRect, insetTo, onScreen, showPart } from '../src/scan/guide.js';
 
 // docs/SCAN_FUNCTION.md 5.3: how the camera's picture is shown, and the guide older cards are read from.
 
@@ -31,4 +31,11 @@ test('locked: the card, all of it, as large as fits, centred', () => {
   assert.ok(near(r.height, 344) || near(r.width, 364), 'as large as fits');
   assert.ok(near(r.left * 2 + r.width, 364) && near(r.top * 2 + r.height, 344), 'centred');
   assert.ok(near(s.width / s.height, 1080 / 1920), 'never stretched');
+});
+
+test('locked: the video cut to the card at its sides as well as its top and bottom', () => {
+  const picture = { width: 1000, height: 2000 };
+  const card = { x: 300, y: 500, width: 400, height: 560 };
+  const s = showPart(picture, card, 400, 280, 'contain');   // scale 0.5: the card 200 × 280
+  assert.equal(insetTo(s, card), 'inset(250px 150px 470px 150px)');
 });
