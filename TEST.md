@@ -308,3 +308,37 @@ uses start, load and finish).
 drops `master_inventory_add`. **Run 2, after it: all 297 checks pass** (the old upload's check went with it), about
 17 seconds, nothing kept. Fingerprints (dev): all of the structure together, `4d371f766e770cae5e7a48280472becf`. Any
 later migration changes them, so a fresh dev run is saved at the squash, after the freeze (DESIGN_SPEC Phase 10, "Migration squash at launch", step 2), and prod is compared with it (step 7).
+
+## Phase 6 smoke test: 2026-10-16
+
+Claude, in the preview browser on **dev**, unattended (the owner signed in, approved the run's writes and left),
+after the code review's Phase 6 split the Buy tab, the day page, the Settings boxes and price.css into smaller
+files. The checklist was TEST_PASS.md (in git history: `git show 4412187:TEST_PASS.md`).
+
+**Result: every section passed; no Phase 6 regression.** Not run: dragging a CSV onto a collection, the
+two-computer and offline messages, and the day's EXPORT / COMPLETE dialogs (blocked on today's page; other days'
+buys are real). JustTCG: 12 requests. All SMOKE P6 data deleted; Settings as they started.
+
+Four findings, all in the live build too, and the owner's calls:
+
+| # | Priority | What happened | Outcome |
+|---|---|---|---|
+| 1 | P2 | After Enter in Qty added a card, Qty kept its number, so the next card went in at that quantity. | ✅ fixed (`41c8ed0`) |
+| 2 | P3 | Going back to a card brought back its condition, manual price, Use TCGplayer / Cardmarket and a placeholder's name. | ✅ every card starts fresh (decision 272, `4fe0015`) |
+| 3 | P3 | Charizard 4/102 BS 1st Edition has no price at all. | Won't fix (owner): JustTCG has none; use a manual price |
+| 4 | P3 | "Also has 4 Pokémon cards" and the Changelog's "8 cards bought" counted a 100-card bulk item as a card. | ✅ bulk counted apart everywhere (decision 273, migration 0066, `d6934e7`, `5f20237`) |
+
+### For the next smoke test
+
+New since 0.9.9.8-day1, worth a check:
+- [ ] **Qty:** Alt+Q, type 3, Enter: 3 added, and Qty reads 1 again.
+- [ ] **Every card starts fresh:** Lightning Bolt, LP + Use Cardmarket; pick another card, then Bolt again: NM, no tag.
+      A placeholder's typed name and price are gone the same way. SAVE EDIT on a line still brings back its own.
+- [ ] **Bulk counted apart:** a walk-in with cards in both games plus a bulk item. The other game's day page says
+      "Also has 3 Pokémon cards + 100 bulk →"; its Changelog entry reads "… cards + 100 bulk bought …" and its
+      green chip counts cards only. A placeholder counts as a card.
+- [ ] **SAVE EDIT finds every kind of line:** Magic ("Lightning Bolt 117 2X2"), TCGdex Pokémon ("Charizard 4/102 BS"),
+      Japanese (JP switched on), a TCGplayer-only version (it comes back once loaded), bulk ("BULK pkm") and a
+      placeholder (its name back). Esc leaves each as it was.
+- [ ] **Strike one copy, not all:** striking every card of one game makes that side Completed (by design).
+- [ ] **The background** behind the Buy tab looks as before (re-encoded to 28 KB, `0ef948c`).

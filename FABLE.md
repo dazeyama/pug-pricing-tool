@@ -16,7 +16,9 @@ all made on 2026-10-16 and the report retired. It's in git history
 (`git show 0ef948c:FABLE_REPORT.md`): code comments that cite
 "FABLE_REPORT C1" and the like point there. What it left for later, the
 migration squash and locking the Changelog to the database (0068), is in
-`SQUASH.md`; the rules it found are below.
+`SQUASH.md`; the rules it found are below. The same goes for the smoke
+test of its last phase: comments citing "TEST_PASS finding 1" point at
+`git show 4412187:TEST_PASS.md`, and its results are in `TEST.md`.
 
 ---
 
@@ -259,6 +261,36 @@ Then the handoff, in this shape:
 
 Report failures as failures, with the output. If a step was skipped, say so.
 
+**The one exception: a smoke pass the owner asks for.** On 2026-10-16 the
+owner had Claude drive a whole smoke test in the preview browser while
+they were away (TEST_PASS.md, in git history at `4412187`; its results are
+in TEST.md). If asked again, run it the same way:
+
+- **Before the owner leaves, get everything in one go.** They sign in
+  (never type the store password), name the computer, pick or add a
+  `SMOKE …` user and download a backup. They approve in advance each kind
+  of write the run makes (test buys, status changes, CONFIRM BUY, Settings
+  edits typed straight back, the deletes at clean-up) and say what to do
+  on a P1 (note it and carry on).
+- **Test data is named `SMOKE …`**, with 555 phone numbers. Never touch a
+  real customer's buy or collection. Never confirm an EXPORT or COMPLETE:
+  they mark real buys.
+- **Note JustTCG usage and the Settings values** at the start, type a
+  changed value back at once, and compare both at the end.
+- **Nothing is fixed during the run.** Each finding gets steps, expected,
+  a priority (P1/P2/P3), and whether the live build has the same code, so
+  an old bug isn't reported as a regression.
+- **Clean up:** delete the SMOKE buy, collections, projects and user; stop
+  the preview; remove `.claude/launch.json` (config "pug-dev":
+  `npm run dev -- --port 5180 --strictPort`, port 5180).
+- **Preview gotchas.** On the app's zoomed pages a screenshot's
+  coordinates don't line up with the pointer: click by element ref
+  (`find` / `read_page`), not by coordinates. A "Failed to load resource"
+  404 from api.scryfall.com is Scryfall's normal "no cards found" for a
+  Pokémon query. The dev server inlines `styles/price/*.css` into one
+  `price.css` request. Today's EXPORT and COMPLETE are blocked until the
+  day is over, so their dialogs can only be opened on a past day.
+
 ---
 
 ## 3. What Opus repeatedly did here (and the rule for each)
@@ -366,6 +398,12 @@ From the review's appendix: things that look odd and are right.
 - Two "same line" rules on purpose: `internal.same_card` (a merge on add
   ignores rates) and `internal.same_line` (a strike or restore must land on
   an identical line, rates and all).
+- Striking every card of one game in a walk-in buy makes that side read
+  **Completed** with EXPORT (0): nothing is left to export (`walkInStatus`).
+  Restore puts it back.
+- A very rare printing can have no price at all, not even a fallback
+  (Charizard 4/102 BS 1st Edition: "no price: enter a manual price"):
+  JustTCG has none for it. The owner: fine, use a manual price (2026-10-16).
 
 **Removing CSS.** Class names built in template strings don't show up in a
 plain grep. These prefixes are used that way and must stay: `col-w-*`,
