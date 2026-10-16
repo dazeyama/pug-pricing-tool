@@ -32,7 +32,7 @@ Big buys of cheap Magic cards take too long on the keyboard: hundreds of cards, 
 
 ### 1.2 What SCAN does, in one paragraph
 
-A phone that opens the app's address is sent to a small **landing page** instead of the desktop app. It lists the store computers whose price screen is open (a walk-in buy list, or a project or collection) and the staff member taps the one they're working with: the phone is now **paired** with that computer's open list. The phone's **scanning screen** starts the camera, shows a guide and reads each card's collector line (set code and number, printed on every card since 2014; older cards by name and number) with OCR, on the phone itself. Each card recognised is sent to the paired computer, which looks it up, prices it exactly as ADD CARD would (JustTCG, then TCGplayer's price, then Cardmarket's), and adds it to the list, where it flashes in. When no price can be found the phone stops and asks for one. Cards are scanned by themselves when the read is sure, with a soft sound each time, never the same card twice in a row; a button scans on demand for a second copy. When the computer leaves its price screen, the pairing ends.
+A phone that opens the app's address is sent to a small **landing page** instead of the desktop app. It lists the store computers whose price screen is open (a walk-in buy list, or a project or collection) and the staff member taps the one they're working with: the phone is now **paired** with that computer's open list. The phone's **scanning screen** starts the camera, shows a guide and reads each card's collector line (set code and number, printed on every card since 2014; older cards by name and number) with OCR, on the phone itself. Each card recognised is sent to the paired computer, which looks it up, prices it from **TCGplayer's daily market price** (free, on the Scryfall card itself), asking JustTCG only for a card Scryfall can't price and Cardmarket after that, and adds it to the list with the price the card would get on the stage with Use TCGplayer pressed, where it flashes in. When no price can be found the phone stops and asks for one. Cards are scanned by themselves when the read is sure, with a soft sound each time, never the same card twice in a row; a button scans on demand for a second copy. When the computer leaves its price screen, the pairing ends.
 
 ### 1.3 Scope
 
@@ -120,7 +120,7 @@ Nothing about prices, lines or lists is new. The computer's side reuses:
   landing page: scan_sessions_open ◄────────  scan_sessions ◄──── heartbeat ── every 20s (walk-in / collection, games, user)
   tap "Front Counter · Buy list" ──────────►  scan_pair                        chip "📱 Dana's phone · 0 scanned"
   camera on; a card read: set + number ─────► Scryfall /cards/<set>/<number>
-  scan_send { scryfall_id, finish, cond } ──► scans (status sent) ── realtime ─► prices it (JustTCG → TCGplayer → Cardmarket)
+  scan_send { scryfall_id, finish, cond } ──► scans (status sent) ── realtime ─► prices it (TCGplayer → JustTCG → Cardmarket)
   "Added $0.45" ◄── realtime ◄─────────────── scans (status added) ◄──────────── list.add → the line flashes in; scan_resolve
   or: "No price: enter one" ◄──────────────── scans (needs_price) ◄───────────── nothing priced it
   type $1 → scan_answer ───────────────────►  scans (sent, manual_price) ─────► added as a manual price
@@ -265,22 +265,24 @@ All on the phone, in `src/scan/` (the UI) and `src/scan/recognition/` (mtgscan's
 
 ### 7.1 The rule
 
-**A scanned card is priced exactly as ADD CARD would price it for that printing, finish and condition, with one more step at the end: Cardmarket on its own when nothing else has a price.** In order (owner, 2026-10-16: "JustTCG then TCGplayer fallback, then cardmarket, then stop on the phone"):
+**A scanned card is priced from TCGplayer's daily market price first, and JustTCG is asked only for a card Scryfall can't price** (owner, 2026-10-16: "make the TCGplayer daily scryfall fallback price the main source and only ping JustTCG when scryfall doesn't have a price… TCGplayer > JustTCG > Cardmarket > manual"). The TCGplayer price comes **free with the Scryfall card** the computer fetches for the lookup anyway (`prices.usd` / `usd_foil` / `usd_etched`, refreshed by Scryfall once a day), so a scan costs **no JustTCG request** unless Scryfall has nothing. A big pile of cheap cards then spends none of the daily allowance; nothing has to be batched; and when JustTCG is asked, it's one card at a time, as the stage does. In order:
 
-1. **JustTCG's price for the condition** (`conditionPrices`), through the ladder's never-rise rule → `price_source = 'justtcg'`.
-2. **The ladder's fallback for the condition**: JustTCG's NM × the Master Fallback Percentage (`justtcg_fallback`), else **TCGplayer's market price** (Scryfall `prices.usd` / `usd_foil` / `usd_etched`) × the percentage (`scryfall_fallback`).
-3. **Cardmarket**, only when steps 1–2 give the condition nothing: Cardmarket's euro price × the day's rate × the percentage, the ladder run as if **Use Cardmarket** had been pressed (`price_source = 'cardmarket'`, `price_snapshot.override = 'cardmarket'`, so SAVE EDIT, REPRICE? and the export's Sell Price treat it as the app treats Use Cardmarket).
+1. **TCGplayer**: the Scryfall price for the finish, run through the ladder **as if Use TCGplayer had been pressed** (`priceLadder({}, fallback, pct)`: NM = the price × the NM percentage, the other conditions × theirs, the never-rise and step-down rules as always). `price_source = 'scryfall_fallback'`, `price_snapshot.override = 'fallback'`, so SAVE EDIT shows Use TCGplayer on, and REPRICE? and the export's Sell Price work the line out from today's TCGplayer price, as they do for any Use TCGplayer line. (The export's `ladderFor` honours that override only when JustTCG has prices to replace; for a card JustTCG never prices it falls through to the same Scryfall fallback, so the result is the same either way.)
+2. **JustTCG**, only when Scryfall has no price for that finish: one `fetchPrices` lookup for the card (cached by the page and by the server for 6 hours), then the ordinary ladder: JustTCG's price for the condition (`justtcg`), else JustTCG's NM × the percentage (`justtcg_fallback`). `price_snapshot.override = null`.
+3. **Cardmarket**, only when steps 1–2 give the condition nothing: Cardmarket's euro price (`prices.eur` on the same Scryfall card) × the day's rate × the percentage, as if **Use Cardmarket** had been pressed (`price_source = 'cardmarket'`, `price_snapshot.override = 'cardmarket'`).
 4. **Nothing:** the scan becomes **needs a price** (7.3).
 
-One pure function, `scanQuote({ card, finish, condition, results, pct, cardmarketUsd })` in `src/lib/scanPrice.js`, returns the ladder, the override used and the entry for the condition, and is tested for each step and for "nothing". It's built from `priceLadder`, `fallbackPrice`, `cardmarketPrice` and `priceWarnings`, nothing new in the arithmetic.
+One pure function, `scanQuote({ card, finish, condition, results, pct, cardmarketUsd })` in `src/lib/scanPrice.js`, returns the ladder, the override used, the entry for the condition, and **whether JustTCG is needed** (`results` is passed as `null` on the first call; a `needsJustTcg` answer makes the receiver fetch and call again). Tested for each step, for the finish that TCGplayer doesn't price while JustTCG does, and for "nothing". Built from `priceLadder`, `fallbackPrice`, `cardmarketPrice` and `priceWarnings`; nothing new in the arithmetic.
+
+**What this means at the counter:** a scanned card's price is the TCGplayer price the stage shows with **Use TCGplayer** on (the condition buttons tagged "TCGplayer"), not JustTCG's condition prices. That's the trade the owner chose for bulk: free and unlimited over per-condition market data. The computer's operator can still open any line with SAVE EDIT and switch it to JustTCG's prices.
 
 ### 7.2 Price warnings
 
-The app's ⚠️ checks (spec 8.7) run on the scan's prices too. **The card is added anyway** (owner, 2026-10-16) and the warning is kept: `price_snapshot.warnings` holds the reasons (the same short lines the stage shows), and **the buy list shows ⚠️ before such a line's price**, with the reasons in its tooltip, so the computer's operator sees it without opening the card. Today no line has `warnings`; only scans write it. ◆ SAVE EDIT on that line clears it like any other re-price.
+The app's ⚠️ checks (spec 8.7) run on what the scan fetched: on a TCGplayer-priced scan only the **Cardmarket gap** check can run (both prices are on the Scryfall card); the JustTCG checks (TCGplayer vs JustTCG, out-of-order conditions) run only when JustTCG was asked (7.1 step 2). **The card is added anyway** (owner, 2026-10-16) and the warning is kept: `price_snapshot.warnings` holds the reasons (the same short lines the stage shows), and **the buy list shows ⚠️ before such a line's price**, with the reasons in its tooltip, so the computer's operator sees it without opening the card. Today no line has `warnings`; only scans write it. ◆ SAVE EDIT on that line clears it like any other re-price.
 
 ### 7.3 Needs a price
 
-- The computer marks the scan `needs_price`; the phone shows the sheet: the card (name, set, number, the small picture), "No price found on JustTCG, TCGplayer or Cardmarket.", a **$ field** (two decimals, ≥ 0.01), **Add at this price** and **Skip** (the card is set aside; nothing is added; status `skipped`). Auto scan pauses meanwhile.
+- The computer marks the scan `needs_price`; the phone shows the sheet: the card (name, set, number, the small picture), "No price found on TCGplayer, JustTCG or Cardmarket.", a **$ field** (two decimals, ≥ 0.01), **Add at this price** and **Skip** (the card is set aside; nothing is added; status `skipped`). Auto scan pauses meanwhile.
 - **Add at this price** calls `scan_answer` with the price; the computer adds the line as a **manual price** (`price_source = 'manual'`, `market_price` null), exactly as ✎ Manual price would.
 - The sheet can't be dismissed by scanning past it: answer or skip.
 
@@ -309,9 +311,9 @@ The app's ⚠️ checks (spec 8.7) run on the scan's prices too. **The card is a
 
 ### 8.3 Receiving scans
 
-- `useScanReceiver(session, list, quote)` in `src/pages/price/`: subscribes to `scans` for this device's session (`INSERT`, and `UPDATE` for answered prices), keeps a **queue** in arrival order, and drains it **one scan at a time**: fetch the Scryfall card by id (`/cards/:id`, 7-day cache as other card data), its prices (`fetchPrices` with `lookupsFor`, so repeats cost nothing: the page's `priceResults` and the server's 6-hour cache), `scanQuote`, `buildLine` (with `price_snapshot.scan = { phone, tier, at }`), `list.add`, then `scan_resolve` with the outcome. Scans waiting together are priced in **one `fetchPrices` call** (the function takes up to 200 lookups), so a fast scanner doesn't multiply JustTCG requests. ◆
-- **Failures** are answered, never dropped: `list.add` refused (`stale_version`, the lock lost, `no_user`…) → `failed` with the app's own message, shown on the phone's strip and as the computer's usual toast; prices unreachable (quota, no key, offline) → `failed` with "Prices unavailable on Front Counter: <reason>", and the phone's auto scan pauses until the next scan succeeds.
-- **The JustTCG daily limit** (`PriceLimitProvider`): when it's reached, scans go on through steps 2–3 of 7.1 (TCGplayer and Cardmarket need no JustTCG request), as the stage does.
+- `useScanReceiver(session, list, quote)` in `src/pages/price/`: subscribes to `scans` for this device's session (`INSERT`, and `UPDATE` for answered prices), keeps a **queue** in arrival order, and drains it **one scan at a time**: fetch the Scryfall card by id (`/cards/:id`, 7-day cache as other card data; its TCGplayer and Cardmarket prices come with it), `scanQuote`; **only if it answers `needsJustTcg`**, one `fetchPrices` lookup (`lookupsFor`; the page's `priceResults` and the server's 6-hour cache make repeats free) and `scanQuote` again; then `buildLine` (with `price_snapshot.scan = { phone, tier, at }`), `list.add`, and `scan_resolve` with the outcome. No batching is needed (owner, 2026-10-16): most scans never reach JustTCG.
+- **Failures** are answered, never dropped: `list.add` refused (`stale_version`, the lock lost, `no_user`…) → `failed` with the app's own message, shown on the phone's strip and as the computer's usual toast; Scryfall unreachable → `failed` with "Card lookup unavailable on Front Counter: <reason>", and the phone's auto scan pauses until the next scan succeeds.
+- **The JustTCG daily limit** (`PriceLimitProvider`) or no key: a card that needs JustTCG goes on to Cardmarket, then needs a price; TCGplayer-priced scans aren't affected at all.
 - **Scans that arrive while the queue is busy** are answered in order; the phone waits for each outcome anyway (6.3).
 
 ### 8.4 Leaving
@@ -483,7 +485,7 @@ Every phase's list in Section 15 says which screen on which device. The owner ne
 
 - ADD CARD, the stage, the buy list, drafts, confirm, collections, locks, versions, merging, rates, the Changelog, exports, backups, the header search: unchanged. A scanned line is an ordinary line (`price_snapshot.scan` is the only mark).
 - The desktop app on a laptop or desktop: unchanged; `#/scan` is the only new route, and the phone redirect only fires on touch-first narrow screens.
-- The JustTCG budget rules (spec 5.3): scans use the same `prices` function, cache and limit handling.
+- The JustTCG budget rules (spec 5.3): the few scans that need JustTCG use the same `prices` function, cache and limit handling; the rest never touch it (7.1).
 
 ---
 
@@ -528,11 +530,12 @@ Each phase ends with the owner checking it: the computer's side on `localhost`, 
 
 **Where to look**
 - [ ] START CAMERA asks for permission, then shows the camera with the guide; Lighting shows only if the phone has a torch; Stop stops it.
-- [ ] Hold a modern card under the camera and tap **Scan card**: the strip reads the card, then **Added to <laptop>** with its price and NM; the laptop's list shows the line flashing, at the price the stage would give it.
+- [ ] Hold a modern card under the camera and tap **Scan card**: the strip reads the card, then **Added to <laptop>** with its price and NM; the laptop's list shows the line flashing, at the price the stage gives that card with **Use TCGplayer** on. Click the line: SAVE EDIT opens it with Use TCGplayer on. Settings → API Keys' JustTCG usage hasn't moved.
+- [ ] A card Scryfall has no price for (a very new set on release day, or a rare old printing) but JustTCG does: it's added at JustTCG's price, and the usage count moves by one.
 - [ ] Set LP and Foil, scan a card: the line is `[LP]` and `*F*`. A card with no foil printing scans as non-foil anyway.
 - [ ] Scan the same card again: the line's quantity becomes 2, the strip reads "Added · ×2".
 - [ ] Scan a card JustTCG and Scryfall have no price for (an obscure promo): the sheet asks for a price; type one, the line is added as a manual price (✎ on the laptop); Skip adds nothing.
-- [ ] A card whose JustTCG prices look wrong (the stage would show ⚠️): it's added, and the list line shows ⚠️ with the reasons in its tooltip.
+- [ ] A card whose Cardmarket price is far from TCGplayer's (the stage would show ⚠️ for it): it's added, and the list line shows ⚠️ with the reason in its tooltip.
 - [ ] A German or Japanese-printed card: "Not English".
 - [ ] Hold up a Pokémon card, or the card's back, and tap Scan card: "Couldn't read this card" with the buzz.
 - [ ] Sign the user out on the laptop: the phone says to pick a user; pick one and scanning resumes.
@@ -612,7 +615,7 @@ The owner's answers (2026-10-16, the clarification session before this document)
 | S11 | The computer's side | **A chip in the buy list with the phone, the count and Unpair; lines flash in; the stage is left alone** (owner) |
 | S12 | Phone testing | **An HTTPS dev server on the LAN** (`npm run dev:lan`, Vite's basic-ssl); nothing pushed for testing (owner) |
 | S13 | Phones per computer | **One**; a second replaces the first (owner) |
-| S14 | Price order | JustTCG for the condition → the ladder's fallback (JustTCG NM × %, else TCGplayer's price × %) → **Cardmarket × % on its own** → the phone asks for a price (owner's order; recorded as Use Cardmarket so the rest of the app treats it as one ◆) |
+| S14 | Price order | **TCGplayer's daily price (on the Scryfall card, free) × the condition's % → JustTCG only when Scryfall has no price → Cardmarket × % → the phone asks for a price** (owner, 2026-10-16, replacing the first order "JustTCG then TCGplayer fallback": a scan-by-scan JustTCG lookup would have spent the daily allowance on a bulk pile; this is free, needs no batching, and keeps the data live). Recorded as Use TCGplayer / Use Cardmarket so the rest of the app treats them as those ◆ |
 | S15 ◆ | Where the work happens | The phone recognises; **the computer prices and adds** through its own `list.add`, so everything downstream is unchanged |
 | S16 ◆ | How they talk | Two transient tables watched over Realtime (`scan_sessions`, `scans`), not broadcast channels: the app's existing pattern, nothing lost, testable |
 | S17 ◆ | Same-card key | The printing and finish; condition changes don't make it a new card |
