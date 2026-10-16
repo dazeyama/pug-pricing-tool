@@ -1,40 +1,44 @@
 // Reading a card's collector line (docs/SCAN_FUNCTION.md 6.1, tier 1): the
 // steps of mtgscan's processImage around its copied recognition modules
 // (./recognition/). Find the light-on-dark text blocks, OCR them best first
-// (stopping at a sure read), parse set code, number and language, and look
-// the printing up on Scryfall, trying the next reading on a miss.
+// (stopping at a sure read). What the text names is worked out by
+// resolve.js.
 
 import { locateCollectorTextBlocks } from './recognition/textLocator.js';
 import { generateDetectionVariants, MAX_CANDIDATES } from './recognition/pipeline.js';
-import { cleanOCRText, parseCollectorNumber, scoreCollectorNumberResult } from './recognition/parsing.js';
+import { cleanOCRText, scoreCollectorNumberResult } from './recognition/parsing.js';
 import { PSM_BLOCK, readText } from './ocr.js';
 import * as scry from '../lib/scryfall.js';
 
-/** A sure read (mtgscan's HIGH): auto scan takes only these. */
-export const HIGH = 80;
-/** A fair read (MEDIUM): Scan card takes these too, a person watching the result. */
-export const MEDIUM = 40;
+/** A sure read (mtgscan's HIGH): no more blocks are read after one. */
+const HIGH = 80;
 
-let patternPromise = null;
+let codesPromise = null;
 /**
- * mtgscan's set-code pattern (an alternation of every set code, named group
- * `collection`), from the app's own set list: paper sets only, longest
- * codes first so a code is never read as a shorter one inside it.
- * @returns {Promise<RegExp>}
+ * Every paper set's code, upper case, from the app's own set list (letters
+ * and digits only: what's printed on a card).
+ * @returns {Promise<Set<string>>}
  */
-export function setCodePattern() {
-  patternPromise ??= scry.loadSets()
-    .then((sets) => {
-      const codes = [...sets.values()].filter((s) => !s.digital).map((s) => s.code.toUpperCase())
-        .filter((c) => /^[A-Z0-9]+$/.test(c))
-        .sort((a, b) => b.length - a.length || a.localeCompare(b));
-      return new RegExp(`(?<collection>${codes.join('|')})`);
-    })
+export function paperSetCodes() {
+  codesPromise ??= scry.loadSets()
+    .then((sets) => new Set([...sets.values()].filter((s) => !s.digital).map((s) => s.code.toUpperCase())
+      .filter((c) => /^[A-Z0-9]+$/.test(c))))
     .catch((e) => {
-      patternPromise = null;
+      codesPromise = null;
       throw e;
     });
-  return patternPromise;
+  return codesPromise;
+}
+
+/**
+ * mtgscan's set-code pattern (an alternation of every set code, named group
+ * `collection`): longest codes first so a code is never read as a shorter
+ * one inside it.
+ * @returns {Promise<RegExp>}
+ */
+export async function setCodePattern() {
+  const codes = [...await paperSetCodes()].sort((a, b) => b.length - a.length || a.localeCompare(b));
+  return new RegExp(`(?<collection>${codes.join('|')})`);
 }
 
 /** The collector-text blocks in a frame, best first: cheap (no OCR), so auto scan looks before it reads. */
@@ -69,37 +73,16 @@ export async function readCollectorLine(canvas, pattern, blocks = locate(canvas)
 
 /**
  * Read one picture already cut out and cleaned (the locked view's collector
- * corner, lock.js): its text, scored as readCollectorLine scores.
+ * strip, straighten.js): the text as read first, its lines and letters kept
+ * for resolve.js (the rarity, the artist's name), then mtgscan's cleaned
+ * version of it, each scored as readCollectorLine scores.
  * @returns {Promise<{ text: string, score: number }[]>}
  */
 export async function readPrepared(canvas, pattern) {
   const raw = await readText(canvas, PSM_BLOCK);
   const cleaned = cleanOCRText(raw);
-  const rawScore = scoreCollectorNumberResult(raw, pattern);
-  const cleanedScore = scoreCollectorNumberResult(cleaned, pattern);
-  return [{ text: rawScore > cleanedScore ? raw : cleaned, score: Math.max(rawScore, cleanedScore) }];
-}
-
-/**
- * The printing the readings name: the best three with at least `min`, each
- * parsed and looked up on Scryfall until one is a card.
- * - A card printed in another language is refused ({ foreign: 'DE' }): its
- *   English printing isn't what's in hand. Except a Japanese-only printing
- *   (Mystical Archive's Japanese art), which the app knows (decision 269).
- * @returns {Promise<{ card: object, score: number }|{ foreign: string }|null>}
- */
-export async function lookupReading(attempts, pattern, min) {
-  for (const a of attempts.slice(0, 3)) {
-    if (!a.text || a.score < min) continue;
-    const parsed = parseCollectorNumber(a.text, pattern);
-    if (!parsed) continue;
-    const card = await scry.cardBySetNumber(parsed.setCode, parsed.collectorNumber);
-    if (parsed.language && parsed.language !== 'EN') {
-      if (parsed.language === 'JP' && card?.lang === 'ja') return { card, score: a.score };
-      if (card) return { foreign: parsed.language };
-      continue;
-    }
-    if (card) return { card, score: a.score };
-  }
-  return null;
+  return [
+    { text: raw, score: scoreCollectorNumberResult(raw, pattern) },
+    { text: cleaned, score: scoreCollectorNumberResult(cleaned, pattern) },
+  ];
 }

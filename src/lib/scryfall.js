@@ -267,22 +267,6 @@ export function hasBackFace(card) {
 
 // ---------------------------------------------------------------- scanning
 
-/**
- * The printing a phone's scan read off a card's collector line
- * (docs/SCAN_FUNCTION.md 6.1): `/cards/<set>/<number>`, English. Null when
- * Scryfall has no such card (a misread: the scanner tries its next reading).
- * @param {string} set  set code, any case
- * @param {string} number  as printed: "125", "263s", "4★"
- * @returns {Promise<object|null>}  a Scryfall card
- */
-const bySetNumberCache = memoryCache(DAY);
-export function cardBySetNumber(set, number) {
-  const code = String(set).toLowerCase();
-  // Auto scan reads the same card again and again while it's in view: ask once.
-  return bySetNumberCache.get(`${code}/${number}`,
-    () => transport.getJson(`${API}/cards/${encodeURIComponent(code)}/${encodeURIComponent(number)}`));
-}
-
 const byIdCache = memoryCache(DAY / 4);
 /**
  * A card by its Scryfall id (the computer pricing a scan, 8.3), kept for six
@@ -291,4 +275,33 @@ const byIdCache = memoryCache(DAY / 4);
  */
 export function cardById(id) {
   return byIdCache.get(id, () => transport.getJson(`${API}/cards/${encodeURIComponent(id)}`));
+}
+
+const quickCache = memoryCache(DAY / 4);
+// Scryfall takes two searches a second (scryfall.com/docs/api/rate-limits,
+// read 2026-10-16: /cards/search 500 ms; one 429 shuts the app out for 30
+// seconds), so the scanner's searches, asked two or three in a row, each
+// wait their turn.
+const QUICK_GAP_MS = 550;
+let quickTurnAt = 0;
+function quickTurn() {
+  const at = Math.max(Date.now(), quickTurnAt);
+  quickTurnAt = at + QUICK_GAP_MS;
+  return new Promise((r) => setTimeout(r, at - Date.now()));
+}
+/**
+ * One page of a search (up to 175 printings), paper, English or Japanese-
+ * only, kept six hours this page's life: the scanner's evidence searches
+ * (src/scan/resolve.js), the same query asked again by the next look costs
+ * nothing.
+ * @param {string} q  a Scryfall query
+ * @returns {Promise<object[]>}  Scryfall cards; none when nothing matched
+ */
+export function searchQuick(q) {
+  return quickCache.get(q, async () => {
+    await quickTurn();
+    const params = new URLSearchParams({ q: `${q} game:paper`, unique: 'prints', order: 'set' });
+    const data = await transport.getJson(`${API}/cards/search?${params}`);
+    return (data?.data ?? []).filter(keptLanguage);
+  });
 }

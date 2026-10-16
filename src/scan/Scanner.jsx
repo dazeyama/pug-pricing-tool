@@ -8,7 +8,8 @@ import { usePairing } from './usePairing.js';
 import { useScans } from './useScans.js';
 import { useCamera } from './camera.js';
 import { onScreen, showPart } from './guide.js';
-import { HIGH, MEDIUM, locate, lookupReading, readCollectorLine, readPrepared, setCodePattern } from './read.js';
+import { locate, paperSetCodes, readCollectorLine, readPrepared, setCodePattern } from './read.js';
+import { resolveReadings } from './resolve.js';
 import { findCard } from './cardEdges.js';
 import {
   ART_CHANGED, anchorBlock, artDistance, artPrint, blockOnCard, cropTo, makeLock, movedFrom, samePlace,
@@ -328,6 +329,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       const frame = camera.capture();
       if (!frame) return;
       const pattern = await setCodePattern();
+      const known = await paperSetCodes();
       let lock = lockRef.current;
       // The camera's picture changed shape: the lock no longer fits it.
       if (lock && (lock.frame.width !== frame.width || lock.frame.height !== frame.height)) {
@@ -352,7 +354,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
 
       let attempts = [];
       let found = null;
-      const min = manual ? MEDIUM : HIGH;
+      // What the text names, by elimination (resolve.js; owner, 2026-10-16).
+      const resolve = (readings) => resolveReadings(readings, known, { manual, pattern });
       let art = null;
       if (lock) {
         // This card's collector line, found in its zone and set level (owner, 2026-10-16).
@@ -367,19 +370,19 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           v.pending = null;
         }
         attempts = await readPrepared(cut, pattern);
-        found = await lookupReading(attempts, pattern, min);
+        found = await resolve(attempts);
         if (!found) {
           // The card a little off its spot: the line, looked for on the card itself.
           const onCard = cropTo(frame, lock.view, defaultCreateCanvas);
           const located = locate(onCard);
           const more = located.length ? await readCollectorLine(onCard, pattern, located) : [];
           attempts = [...attempts, ...more];
-          found = more.length ? await lookupReading(more, pattern, min) : null;
+          found = more.length ? await resolve(more) : null;
         }
       } else {
         // Scan card before the view is locked: the whole picture.
         attempts = blocks.length ? await readCollectorLine(frame, pattern, blocks) : [];
-        found = attempts.length ? await lookupReading(attempts, pattern, min) : null;
+        found = attempts.length ? await resolve(attempts) : null;
       }
 
       // No modern collector line: an older card, by its title (and "123/350" from 1998 on).

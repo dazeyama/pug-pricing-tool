@@ -697,6 +697,37 @@ locks **automatically on the first card**.
   card, then the 17 modern cards each laid turned 2–5° and nudged 6–7px: the line found on every
   card, the lean measured within 1° on all 17, all 17 read right. Tests:
   `tests/scanStraighten.test.js`.
+- **What the strip names, by elimination** (owner, 2026-10-16, after a clear strip of Stone-Giant of
+  High Pass, HOB 113, added Troop of Ponies, HOB 3: "We have rarity, collector number, set code, even
+  artist … try multiple interlocking quick scryfall queries of the info to find the card via process
+  of elimination"). `src/scan/resolve.js` replaces the one lookup of mtgscan's parse
+  (`/cards/<set>/<number>`), which kept a set code and a run of digits and nothing else ("R 0ll3",
+  113 with its ones read as L's, was card 3). The strip is read twice, as Tesseract gave it (its lines
+  kept) and as mtgscan cleans it; each text is read for every clue it holds, with its likely misreads
+  (`readClues`):
+  - the **set code**: as printed (weight 3), a letter read as its look-alike (2: 0/O/D, 1/I/L, 5/S,
+    8/B …), mtgscan's own repair (1.5), a letter off ("DMQ": DMU, DMC … 1);
+  - the **number**: letters read as digits ("0ll3", "OllO"), noughts of padding dropped, and each
+    digit's look-alikes (3/8, 1/7, 5/6 …);
+  - the **rarity** letter beside the number (not a stray mark on a line above it);
+  - the **language** code; the **artist's name**, the words after it.
+
+  Scryfall is then searched (`searchQuick`: one page, kept six hours, 550 ms apart, since Scryfall
+  takes two searches a second and one 429 shuts the app out for 30 seconds), cheapest question first:
+  the set and number clues together; if no card is clearly ahead, every card of that rarity in that
+  set; then that artist's cards. Every card named is scored on the clues it agrees with
+  (`scoreCard`): set up to 3 (−1 if none fits); number 3 as read, 1.5 a look-alike, 0.5 a digit lost
+  ("013" for 113, or just its last digits), −3 a clear number that isn't this card's (−1 for one
+  digit); rarity +1.5 / −1; artist up to +4, word by word (so "KARI CHRISTENSEN" isn't half "Chris
+  Seaman"), −2.5 for a clearly read name that isn't this card's. **Auto scan takes a card at 6 or
+  more, 1.5 ahead of the next; Scan card at 5, 1 ahead.** Nothing clearly ahead: nothing is added (the
+  next look tries again). The two looks that must agree, the held art and never the card last sent
+  all stand. Checked against Scryfall: the 17 modern cards' strips, read off the straightened cutout,
+  17 right; their real set, number, rarity and artist (and HOB 113's) as 180 texts damaged ten ways
+  (ones read as L, a digit lost, only the last digit, a look-alike digit, no artist, no rarity, no
+  number, the set a letter off, all on one line): **none wrong**, 166 right, 14 nothing (12 of them
+  with no number at all); mtgscan's parse alone reads HOB 113's damaged texts as HOB 3, 13 or 118.
+  Tests: `tests/scanResolve.test.js`.
 - **New card or the same one:** the art (the middle of the art box at its locked place) as a 16 × 10
   thumbnail of true averages, brightness and contrast evened out (`artPrint`, `artDistance` with a
   one-cell shift). After a card is sent its art is held; **nothing is read while the art is under 12
@@ -763,3 +794,9 @@ The owner's answers (2026-10-16, the clarification session before this document)
 6. **Renaming a phone** without clearing its site data (Section 12).
 7. **An auto scan switch** on the phone (off: Scan card only), if someone wants to scan a card at a time without the phone adding cards by itself. Not built: not in the spec.
 8. **Settings → Sign out signs out every computer** (found while building the phone's own Sign out): `supabase.auth.signOut()` defaults to `scope: 'global'`, which ends the store account's session on every device, not just this one. The phone's uses `{ scope: 'local' }`; Settings' is unchanged, for the owner to decide.
+9. **Scryfall's search limit** (found while building the resolver, 2026-10-16): Scryfall now
+   documents `/cards/search` at two a second (500 ms; scryfall.com/docs/api/rate-limits), and one 429
+   shuts the caller out for 30 seconds. The scanner's searches wait 550 ms (`searchQuick`); the app's
+   other searches (live search, a card's printings) go through the shared queue at 100 ms and back off
+   only after a 429. A typing pace hasn't hit it (the 2026-10-09 load test); the owner's call whether
+   to space every search.
