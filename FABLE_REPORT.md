@@ -219,11 +219,11 @@ change one, the other reloads.
 **Where** `src/pages/DayPage.jsx:335`
 `mine.indexOf(b) + 1` inside `unlessFlagged(buys, go)`.
 
-**Why** `buys` is whatever the caller passes; if a reload produced new
-objects between computing `buys` and calling this, `indexOf` is `-1`, the
-`filter((n) => n > 0)` drops it, and the "flagged for condition check"
-warning is silently skipped before an export. Identity is the wrong key
-for rows that get refetched.
+**Why** Identity is the wrong key for rows that get refetched: if `buys`
+ever came from another render than `mine`, `indexOf` would be `-1` and the
+warning would skip that buy. *(Corrected 2026-10-16: no caller does this
+today — `pending` and the ⋯ menu's buy come from the same render as
+`mine` — so it's hardening, not a live bug. Done in Phase 4.)*
 
 **Fix**
 ```js

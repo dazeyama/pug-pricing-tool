@@ -303,7 +303,9 @@ function DayScreen({ game, day }) {
    * export only if asked to anyway. `buys`: the buys it would take.
    */
   function unlessFlagged(buys, go) {
-    const numbers = buys.filter((b) => b.condition_check).map((b) => mine.indexOf(b) + 1).filter((n) => n > 0);
+    // By id, not by object: the numbers are the buys' places on this page (Buy 1, Buy 2…).
+    const numberOf = (b) => mine.findIndex((m) => m.id === b.id) + 1;
+    const numbers = buys.filter((b) => b.condition_check).map(numberOf).filter((n) => n > 0);
     if (numbers.length) setFlagWarning({ numbers, go });
     else go();
   }
