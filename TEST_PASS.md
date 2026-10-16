@@ -140,7 +140,7 @@ keys) stayed where they were. Each part below names its commit.
 - [ ] Right-click a suggestion: its name becomes the search.
 - [ ] SAVE EDIT on a Pokémon line with a TCGplayer-only version: the version comes back once the TCGplayer search lands; change the condition, SAVE EDIT: the line updates in place (flashes), not a new line.
 - [ ] Remove the edited line with × while editing: the edit stops (the note goes).
-- [ ] **CONFIRM BUY** a walk-in `SMOKE P6 Ash`, `(555) 010-0601`, $1 cash: the stage resets, MTG | PKM both on, sort back to newest (the resetKey). Section 9 deletes this buy.
+- [ ] **CONFIRM BUY** a walk-in `SMOKE P6 Ash`, `(555) 010-0601`, $1 cash, with **🚩 Flag check for condition** ticked: the stage resets, MTG | PKM both on, sort back to newest (the resetKey). Section 4 uses this buy; section 9 deletes it.
 - [ ] Console: no new errors or React warnings through all of section 3.
 
 ## 4. A day page (C2, DayPage in files)
@@ -151,12 +151,12 @@ DayPage's buy panel, its condition chip and its two dialogs moved to
 on a real customer's buy**.
 
 - [ ] Calendar → today → Magic: the SMOKE buy's panel shows its number, customer, phone, time, user, its cards with prices, and Market / Cash / Credit at the rates kept when it was confirmed.
-- [ ] Hover a card line: its picture shows beside the panel. Right-click a card: Set Rate isn't offered here; a struck card offers **Restore**.
+- [ ] Hover a card line: its picture shows beside the panel. Right-click a card: the browser's own menu (nothing of ours); right-click a struck card: **Restore**.
 - [ ] × on a card: **Strike card?**; Strike → crossed out, still in the totals; right-click → Restore → back.
-- [ ] ⋯ menu: its items are there (Edit, Convert to project…, Mark as completed, Delete buy…, Flag check for condition / Condition checked, Export single buy).
-- [ ] ⋯ → **🚩 Flag check for condition**: the chip shows; click it → **✅ Condition checked?** → click elsewhere: it closes; again → Yes: green ✅ with who and when.
+- [ ] ⋯ menu, while flagged: **✅ Condition checked** first, then Mark as completed, Export single buy, Print buy, Edit in project view, Convert to project, Delete buy….
+- [ ] The 🚩 chip (flagged at CONFIRM BUY in 3f): click it → **✅ Condition checked?** → click elsewhere: it closes; again → Yes: green ✅ with who and when, and ⋯ no longer offers ✅ Condition checked.
 - [ ] ⋯ → **Mark as completed** on the SMOKE buy: its cards lock, a × says **Completed (marked by hand, not exported): its ⋯ → Mark Paid/Ours again to change it**. ⋯ → Mark Paid/Ours again: unlocked.
-- [ ] ⋯ → **Convert to project…**: the name is the customer's; Cancel. ⋯ → **Delete buy…**: its card count; Cancel (section 9 deletes it).
+- [ ] ⋯ → **Convert to project**: the name is the customer's; Cancel. ⋯ → **Delete buy…**: its card count; Cancel (section 9 deletes it).
 - [ ] If the buy has both games: **Also has N Pokémon cards →** goes to that day's Pokémon page.
 - [ ] Day-page EXPORT and COMPLETE: open, check the counts, **Cancel** (never confirm: real buys).
 
