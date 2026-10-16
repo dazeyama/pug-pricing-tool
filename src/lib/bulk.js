@@ -113,6 +113,8 @@ export function bulkCandidate(item, value = null) {
  * other case lists the items first, then the cards as usual (the Magic card
  * Bulk Up); "BULK" in capitals lists only the items. Every other word narrows
  * them ("bulk rares", "BULK pkm", "bulk $1"). The MTG / PKM toggles apply.
+ * The word "placeholder" in any case (owner, 2026-10-16) lists the
+ * placeholders the same way, before the cards, with or without "bulk".
  * @param {string} text
  * @param {{ mtg: boolean, pokemon: boolean }} games
  * @param {Record<string, number>} values  bulkValuesFrom(settings)
@@ -121,11 +123,14 @@ export function bulkCandidate(item, value = null) {
 export function bulkSearch(text, games, values = DEFAULT_BULK_VALUES) {
   const words = String(text ?? '').trim().split(/\s+/).filter(Boolean);
   const at = words.findIndex((w) => w.toLowerCase() === 'bulk');
-  if (at < 0) return { items: [], only: false };
+  // "placeholder" alone: the placeholders only, whatever its case.
+  const ph = at < 0 ? words.findIndex((w) => /^placeholders?$/i.test(w)) : -1;
+  if (at < 0 && ph < 0) return { items: [], only: false };
   const only = words[at] === 'BULK';
-  const rest = words.filter((_, i) => i !== at).map((w) => w.toLowerCase().replace(/¢/g, 'c'));
+  const rest = words.filter((_, i) => i !== (at < 0 ? ph : at)).map((w) => w.toLowerCase().replace(/¢/g, 'c'));
   const items = BULK_ITEMS.filter((item) => {
     if (!games?.[item.game]) return false;
+    if (ph >= 0 && !item.placeholder) return false;
     const hay = `${item.name} ${item.words} ${GAME_WORDS[item.game]}`.toLowerCase().replace(/¢/g, 'c').split(/[\s/]+/);
     return rest.every((w) => hay.some((h) => h.startsWith(w)));
   });

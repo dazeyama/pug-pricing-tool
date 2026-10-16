@@ -36,6 +36,10 @@ test('more words narrow the items; the game toggles apply', () => {
   assert.deepEqual(kinds(bulkSearch('BULK pkm', both)),
     ['pkm_100', 'pkm_100_ex', 'pkm_10_dollar', 'pkm_10_fifty', 'pkm_placeholder']);
   assert.deepEqual(kinds(bulkSearch('bulk placeholder', both)), ['mtg_placeholder', 'pkm_placeholder']);
+  // "placeholder" in any case finds them too, before the cards (owner, 2026-10-16).
+  assert.deepEqual(kinds(bulkSearch('placeholder', both)), ['mtg_placeholder', 'pkm_placeholder']);
+  assert.deepEqual(kinds(bulkSearch('PlaceHolder pkm', both)), ['pkm_placeholder']);
+  assert.equal(bulkSearch('PLACEHOLDER', both).only, false);
   assert.deepEqual(kinds(bulkSearch('bulk $1', both)), ['mtg_10_dollar', 'pkm_10_dollar']);
   assert.deepEqual(kinds(bulkSearch('bulk 50¢ magic', both)), ['mtg_10_fifty']);
   assert.deepEqual(kinds(bulkSearch('bulk ex', both)), ['pkm_100_ex']);
