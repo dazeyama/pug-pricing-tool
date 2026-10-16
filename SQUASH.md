@@ -10,7 +10,7 @@ fingerprints came back the same as dev's.
 
 Read FABLE.md first (the gates apply here more than anywhere), then this.
 
-*Renumbered 2026-10-16 (FABLE_REPORT Phase 5), and again that day:* migrations
+*Renumbered 2026-10-16 (the code review's Phase 5), and again that day:* migrations
 0063–0066 landed on dev before the squash (0066: bulk counted apart in the
 Changelog, after the Phase 6 smoke test), so N is 0066, the baseline
 `0067_baseline.sql`, and the first migration after launch 0068. The
@@ -407,19 +407,23 @@ Then the launch steps outside the squash (spec, Phase 10 → Launch):
 
 ## 11. After the squash: how migrations work from now on
 
-- Files are numbered from **0068**. One behaviour per file (FABLE.md).
+- Files are numbered from **0068**. One behaviour per file (FABLE.md): one
+  function per file unless two must change together, as 0066's thirteen
+  event writers did for one wording rule. The header comment names the
+  decision and the *lines* that changed ("export_lines: the `where` gains
+  `and l.struck_at is null`").
+- Write a migration as a patch of `supabase/current/<schema>.<fn>.sql`
+  (the live body, refreshed by `db-snapshot.mjs`): a script that replaces
+  exact text, asserts each replacement matches once, and writes the
+  migration file. 0066's generator is the model. Never hand-copy a body
+  from an older migration.
 - Every migration: rehearse `(echo "begin;"; cat f; echo "rollback;")` on
   dev → `db push` to dev → `node scripts/db-snapshot.mjs` (commit
   `supabase/current/` with the migration) → `node scripts/db-test-run.mjs
   --save <fresh dev run>` → (owner links prod) `db push` to prod →
   `node scripts/db-test-run.mjs --confirm zvxquzcfffmxwizonxuo --compare
   <that run>` when the store isn't using the app → (owner links dev again).
-- **The first one, 0068, is FABLE_REPORT A2 step 2**, once the pushed app is
-  live: `internal.buy_event`, `internal.collection_event`,
-  `collection_log_call` and `buy_log_cash_download` become `security
-  definer` (`search_path = public, internal, pg_temp`), then `authenticated`
-  loses `insert` on `events` and the policy "store: append" goes. Not before
-  the push: the site live until then still inserts into `events` itself.
+- **The first one, 0068, locks the Changelog to the database** (section 11a).
 - `scripts/db-baseline.mjs` is **not run again** for prod: the baseline is
   history once applied. It stays useful two ways: `--rehearse` on a
   freshly written file is a free full-structure comparison between "what a
@@ -427,6 +431,58 @@ Then the launch steps outside the squash (spec, Phase 10 → Launch):
   helper it shares with `db-snapshot.mjs`.
 - `scripts/db-test-run.*` stays, as the spec says; its fingerprints are the
   dev–prod contract.
+
+---
+
+## 11a. 0068: the Changelog written only by the database
+
+*(Moved here from FABLE_REPORT.md item A2 when that report was retired,
+2026-10-16; DESIGN_SPEC decision 274.)*
+
+**Where it stands.** Step 1 is done: migration 0064 added
+`public.collection_log_call` (a collection's "Called") and
+`public.buy_log_cash_download` (the Cash buys file), and the app since then
+calls them, so the browser no longer writes Changelog entries itself. The
+live site keeps inserting into `events` directly until the app is pushed,
+so the store's role keeps that right until then.
+
+**Why step 2 isn't one line.** The event writers are security invoker:
+every entry the database writes is inserted *as the signed-in role*
+(`authenticated`), through the `insert` grant (`0002_rls.sql:56`) and the
+policy `"store: append"` (`0002_rls.sql:61`). Revoking those alone would
+stop every entry, not just the browser's. On dev at 0066 these functions
+insert into `events` themselves: `internal.buy_event`,
+`internal.collection_event`, `public.buy_log_cash_download`,
+`public.confirm_buy`, `public.project_to_buy`, `public.day_complete`,
+`public.export_lines`, `public.export_undo_day` (and `public.restore_backup`,
+already security definer). Check again with
+`grep -l "insert into events" supabase/current/*.sql` before writing it.
+
+**The migration, one file, in this order:**
+1. One `security definer` writer does the insert, `set search_path = public,
+   internal, pg_temp`, revoked from `public, anon` like every internal
+   helper. Either make `internal.buy_event` / `internal.collection_event`
+   definers and route the six direct inserts through a small definer
+   (`internal.insert_event`, say), or make each inserting function a
+   definer. The first keeps the definer list short; pick it unless a body
+   makes it awkward.
+2. Then `revoke insert on events from authenticated`, `drop policy
+   "store: append" on events`, and revoke `usage` on `events_seq_seq`
+   (`0002_rls.sql:57`), which only inserts need. `select` and the policy
+   "store: read" stay: the Changelog page reads it.
+
+**When.** Only after the pushed app is live (the site before that inserts
+directly), and after the squash, so it's 0068. The owner decides the day.
+
+**Verify** in `scripts/db-test-run.sql`:
+- Update the check "Only the expected functions run with the owner's
+  rights" (its list of definer functions) to the new list.
+- Add: signed in, a direct `insert into events` is refused (`42501`).
+- The existing checks that every action logs its entry keep passing:
+  Called, the Cash buys download, confirm, convert, COMPLETE, export and
+  undo, plus every buy and collection action.
+- In the app: a collection's Called and the Cash buys download still show
+  in the Changelog.
 
 ---
 
@@ -480,8 +536,8 @@ Then the launch steps outside the squash (spec, Phase 10 → Launch):
 - **A return-type change needs a `drop function` first** in any later
   migration (Postgres refuses `create or replace` with a different `RETURNS
   TABLE`); and a drop loses the grants — re-grant to `authenticated`. Not a
-  squash problem, but FABLE_REPORT A1 is the first migration after it and
-  does exactly this.
+  squash problem, but 0063 (`global_search` gaining `bulk_kind`) did exactly
+  this; copy its pattern.
 - **The baseline is never edited by hand.** If it needs to change, the
   generator changes and the file is rewritten and rehearsed. After it's on
   prod and dev's record is repaired, it is never rewritten at all.

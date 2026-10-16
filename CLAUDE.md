@@ -3,7 +3,8 @@
 - The spec is docs/DESIGN_SPEC.md. Read the relevant sections before each task. Update it
   when the owner changes a decision.
 - Read FABLE.md once per session: how to scope, gather evidence, plan for what breaks and
-  verify here. FABLE_REPORT.md lists the open fixes, in order; work from it when asked.
+  verify here. The code review's fixes (FABLE_REPORT.md) are all done; the report is in git history.
+  What's left of it, the migration squash and the Changelog lock (0068), is in SQUASH.md.
 - Work only in C:\ClaudeProjects\pug-pricing-tool. collection-manager and audit-tool are
   READ-ONLY references: never edit, move or commit anything in them.
 - One phase at a time (spec Section 15). Don't start the next phase until the owner reports back.
@@ -28,5 +29,7 @@
   Then live as v0.9.9.8-day1: struck cards (DESIGN_SPEC decision 267, migrations 0059–0060), confirmed
   buys keeping their custom rates (decision 268, migration 0061), Japanese-only Magic printings in English
   searches (decision 269) and placeholders (decision 270, migration 0062), all migrations on dev.
-  Phase 10 launch (the migration squash, then prod) waits for the owner's go; the live site runs on the
+  Since then, local and unpushed: the code review's fixes (migrations 0063–0065), the Phase 6 smoke
+  test (TEST_PASS.md) and its fixes (decisions 272–273, migration 0066), all on dev.
+  Phase 10 launch (the migration squash, SQUASH.md, then prod) waits for the owner's go; the live site runs on the
   dev project until then. TEST.md holds the smoke tests and the database test run.

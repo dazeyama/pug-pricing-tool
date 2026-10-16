@@ -9,8 +9,14 @@ how to think before touching code here, what to check, and what the last
 nineteen days show gets skipped.
 
 Read this once at the start of a session, then CLAUDE.md, then the part of
-`docs/DESIGN_SPEC.md` the task touches. `FABLE_REPORT.md` is the companion:
-the concrete fixes found on 2026-10-16, each with file:line evidence.
+`docs/DESIGN_SPEC.md` the task touches.
+
+The concrete fixes this review found (`FABLE_REPORT.md`, items A1–C6) were
+all made on 2026-10-16 and the report retired. It's in git history
+(`git show 0ef948c:FABLE_REPORT.md`): code comments that cite
+"FABLE_REPORT C1" and the like point there. What it left for later, the
+migration squash and locking the Changelog to the database (0068), is in
+`SQUASH.md`; the rules it found are below.
 
 ---
 
@@ -53,9 +59,9 @@ the layer it was shown and assumes the others agree. They don't, by default:
 
 | Layer | Where | What breaks when skipped |
 |---|---|---|
-| UI | `src/pages/**`, `src/components/**` | tooltips/blocked reasons go stale (`CollectionPage.jsx:93-126`) |
-| Pure logic | `src/lib/**` (tested under Node) | the same rule gets re-derived inline in a component (`PricingScreen.jsx:96-97` rebuilds the candidate keys that `cardSearch.js:76,251`, `bulk.js:98`, `justtcgCards.js:327` own) |
-| RPC contract | `supabase/migrations/00NN_*.sql`, `public.*` / `internal.*` | the function's return table lacks a column the app now needs, so the app infers it (`global_search` has no `bulk_kind`; `globalSearch.js:44 markPlaceholder` guesses from `set_code = 'BULK'`) |
+| UI | `src/pages/**`, `src/components/**` | tooltips/blocked reasons go stale (CollectionPage's did, until `lib/blocked.js`) |
+| Pure logic | `src/lib/**` (tested under Node) | the same rule gets re-derived inline in a component (PricingScreen rebuilt candidate keys three libs owned, until `lib/candidateKey.js`) |
+| RPC contract | `supabase/migrations/00NN_*.sql`, `public.*` / `internal.*` | the function's return table lacks a column the app now needs, so the app infers it (`global_search` lacked `bulk_kind` and the app guessed placeholders from `set_code = 'BULK'`, until 0063) |
 | Database test | `scripts/db-test-run.sql` | a new state (struck, placeholder) is never exercised against the real constraints |
 
 Rule: open all four before writing. If a change touches two layers it almost
@@ -72,10 +78,10 @@ tool outputs from earlier in the session count as disk; summaries don't.
 ### 1.4 Grep for the helper first
 
 This codebase already has most of what a feature needs. The cost of a
-duplicate is not the extra lines; it is the two copies drifting (five
-`MESSAGES` tables, four `GAMES`/`GAME_NAMES` constants, eleven hand-rolled
-Escape/outside-click effects — see FABLE_REPORT B2–B4). Before writing a
-helper, run these and read the hits:
+duplicate is not the extra lines; it is the two copies drifting (the review
+found six error-message tables, seven game-name constants and eleven
+hand-rolled Escape/outside-click effects; each is one module now). Before
+writing a helper, run these and read the hits:
 
 ```bash
 grep -rn "function <verb>" src/lib src/components src/pages
@@ -87,28 +93,38 @@ Things that exist and must be reused (not reimplemented):
 
 - `withLoading(fn)` (`src/lib/loading.js`) around every RPC; `GuardButton`
   for anything that needs a user; `Modal` for every dialog; `useToast`.
-- `errorMessage(error, failure)` in `src/pages/collections/useCollection.js:63`
-  — the pattern every RPC failure should go through (today it is copied).
-- `useLiveTable(table, query)` for realtime tables; its channel naming
-  (`live:${table}:${++channelSeq}`) is the model for the three
-  `Math.random()` channels in `DayPage.jsx:150`, `useCollection.js:118`,
-  `useCollectionLock.js:106`.
+- `dbMessage`, `dbErrorCode`, `DB_MESSAGES` (`src/lib/dbErrors.js`): every
+  RPC refusal's words, matched by its exact code. `errorMessage(error,
+  failure)` in `src/pages/collections/useCollection.js` is the toast built on it.
+- `useLiveTable(table, query)` for realtime tables; `channelName(prefix)`
+  (`src/lib/channels.js`) names every channel.
+- `useDismiss` (`src/lib/useDismiss.js`) for Escape and outside clicks;
+  `GAMES`, `GAME_NAMES`, `otherGame` (`src/lib/games.js`); `firstReason`
+  (`src/lib/blocked.js`) for a button's "why not"; `useSettingField`
+  (`src/pages/settings/`) for a Settings box; `RemoveModal`
+  (`src/components/`); `useBackupDownload` (`src/lib/`).
 - `isBulk`, `isValuedBulk`, `isPlaceholder`, `cardCounts`, `countText`,
   `bulkSearch` (`src/lib/bulk.js`); `isStruck`, `movesOn`, `struckNote`
   (`src/lib/struck.js`); `rateTotals`, `tiersFrom`, `customNote`
   (`src/lib/rates.js`); `conditionVariants`, `priceLadder`, `CONDITIONS`
   (`src/lib/prices.js`); `nameKey` (`src/lib/normalize.js`).
 - Changelog: actions are a registry in `src/lib/changelog.js` (`HEADLINES`);
-  new events are written by `internal.buy_event` / `internal.collection_event`
-  in SQL, never by a client-side `supabase.from('events').insert` (two legacy
-  sites still do: `CallChip.jsx:44`, `cashBuys.js:115`).
+  every entry is written in SQL (`internal.buy_event` /
+  `internal.collection_event`; a collection's Called and the Cash buys file
+  through `collection_log_call` / `buy_log_cash_download`, 0064), never by a
+  client-side `supabase.from('events').insert`. Counts say cards and bulk
+  apart (`internal.count_text`, 0066; `countText` in the app).
 - Candidate keys: `mtg:<scryfall_id>`, `pokemon:<lang>:<tcgdex_id>`,
   `pokemon:<lang>:jt:<justtcg_card_id>`, `pokemon:dex:ja:<n>`, `bulk:<kind>`.
-  They are owned by `cardSearch.js` / `bulk.js` / `justtcgCards.js`. Nothing
-  else may format one by hand.
-- SQL: `internal.same_line(a, b)`, `internal.strike_line`, `internal.restore_line`,
-  `internal.fix_line_rates(buy)`, `internal.collection_for_write`. A `public.*`
+  Built only by `src/lib/candidateKey.js` (`magicKey`, `pokemonKey`,
+  `justtcgKey`, `bulkItemKey`, `candidateKeyOf`; `editQuery` for SAVE
+  EDIT's search). Nothing else may format one by hand.
+- SQL: `internal.same_card(a, b)` (the merge rule, 0065), `internal.same_line(a, b)`
+  (strike/restore), `internal.strike_line`, `internal.restore_line`,
+  `internal.fix_line_rates(buy)`, `internal.collection_for_write`,
+  `internal.count_text` / `line_counts` / `bulk_per` (0066). A `public.*`
   function that calls one needs `set search_path = public, internal`.
+  Every function's live body is in `supabase/current/<schema>.<fn>.sql`.
 
 ---
 
@@ -143,9 +159,9 @@ Write (to yourself, or to the owner when it changes the diff) before coding:
 Before the first edit, you can point at:
 
 - The **current** definition of every function/RPC/component you'll change,
-  read this session. For SQL: the live body via `pg_get_functiondef` (or the
-  last migration that defined it — `grep -rn "create or replace function
-  public.<name>" supabase/migrations | tail -1`), not your memory of it.
+  read this session. For SQL: `supabase/current/<schema>.<fn>.sql`, the live
+  body as of the last `node scripts/db-snapshot.mjs`, not your memory of it
+  and not an older migration.
 - Every **caller** of what you're changing (`grep -rn "<name>(" src`). A
   signature change with an unread caller is a bug you've already written.
 - The **test** that covers it (`tests/*.test.js`, or the section of
@@ -191,6 +207,10 @@ each whether the change must handle it or is explicitly out of scope:
   mix in one display. `✎` marks custom.
 - `payout()` rounds down; totals are sums of rounded lines, never a rounded sum.
 - Cents as numbers compared with `Math.abs(a-b) >= 0.005`, never `===`.
+- **When a rule about money or exports flips**, list the rows created under
+  the old rule and say what happens to them *before* writing the migration.
+  0057 ("rates only price") was reversed by 0061 four migrations later, and
+  buys confirmed in between lost their custom rates for good.
 
 **Concurrency (when realtime or multi-computer is involved):**
 - Two computers on the same buy/collection: lock heartbeat, takeover, the
@@ -216,7 +236,7 @@ and check". What you do run, every time, before saying "done":
 
 ```bash
 export PATH="/c/Program Files/nodejs:$PATH"
-npx --yes eslint@9 -c <config> "src/**/*.{js,jsx}"   # see FABLE_REPORT C5: add the config to the repo
+npm run lint
 npm test
 npm run build
 ```
@@ -226,8 +246,9 @@ For a migration, in this order and never skipping the first:
 ```bash
 (echo "begin;"; cat supabase/migrations/00NN_name.sql; echo "rollback;") > /tmp/rehearse.sql
 npx supabase db query --linked -f /tmp/rehearse.sql     # must succeed with no errors
-npx supabase db push --yes
+npx supabase db push --linked --yes
 node scripts/db-test-run.mjs                            # all checks must pass; add checks for the new state first
+node scripts/db-snapshot.mjs                            # refresh supabase/current/; commit it with the migration
 ```
 
 Then the handoff, in this shape:
@@ -243,7 +264,8 @@ Report failures as failures, with the output. If a step was skipped, say so.
 ## 3. What Opus repeatedly did here (and the rule for each)
 
 These are the patterns found in the code and the history, not hypotheticals.
-Each has a concrete item in FABLE_REPORT.
+Each was fixed by that review; the evidence is as it stood before, and the
+rule is what keeps it from coming back.
 
 | Pattern seen | Evidence | Rule |
 |---|---|---|
@@ -253,11 +275,11 @@ Each has a concrete item in FABLE_REPORT.
 | Repeats a 10-line RPC-call ritual per action | Ten `setBusy(true)→withLoading(rpc)→setBusy(false)→toast→reload` blocks in `DayPage.jsx:235-465` while `useCollection` already has `run()` | One `run(name, args, failure)` per page/hook; the action functions become one line each. |
 | Lets a component accrete every concern | `PricingScreen.jsx` 900 lines, 17 props, ~25 `useState`; `DayPage.jsx` 1277 lines with three modals and a panel inline | A component over ~300 lines or with a second unrelated `useEffect` cluster gets split: pure logic to `lib/`, state to a hook, sub-views to files. |
 | Re-derives a value that is already in scope | `PricingScreen.jsx:545` rebuilds `variantOpts` (L254); L556 recomputes `conditionVariants` though `marketVariants` (L301) exists | Before computing, scroll up. If the same inputs are already combined, use that binding. |
-| Re-emits whole SQL function bodies to change one line | `collection_set_status` defined 8×, `export_lines` 7×, `draft_add_line`/`draft_update_line`/`collection_add_line`/`collection_update_line` 6× each; `0055` is 1,871 lines | Unavoidable with `create or replace`, so: (a) one function per migration unless they must move together; (b) keep a generated `supabase/current/<fn>.sql` snapshot so diffs are reviewable (FABLE_REPORT C3). |
+| Re-emits whole SQL function bodies to change one line | `collection_set_status` defined 8×, `export_lines` 7×, `draft_add_line`/`draft_update_line`/`collection_add_line`/`collection_update_line` 6× each; `0055` is 1,871 lines | Unavoidable with `create or replace`, so: (a) one function per migration unless they must move together; (b) write it as a patch of the `supabase/current/<fn>.sql` snapshot, so the diff is reviewable (SQUASH.md section 11). |
 | Duplicates the merge predicate in four functions | `0062_placeholders.sql:65-70,124-129,212-217,297-302` (and `internal.same_line`) | One `internal.same_card(a, b)` predicate; four callers. Any new "same line" rule changes one place. |
 | Infers in the app what the RPC should return | `markPlaceholder` from `set_code = 'BULK'` because `global_search`'s return table lacks `bulk_kind` | Change the contract, not the consumer: add the column to the return table. |
 | Nested ternaries in JSX | `PricingScreen.jsx:763-766`; `QuotePanel.jsx:86-89` | Two levels max. Beyond that, a named `const` or a small function above the `return`. |
-| Dates as provenance in comments | 495 `(owner, 2026-MM-DD …)` comments in `src/` | Comments say *why*; `docs/DESIGN_SPEC.md` decision numbers say *who/when*. Cite the number: `// decision 269`. |
+| Dates as provenance in comments | 495 `(owner, 2026-MM-DD …)` comments in `src/` | Comments say *why*; `docs/DESIGN_SPEC.md` decision numbers say *who/when*. Cite the number: `// decision 269`. A policy, not a sweep: convert a dated comment when you edit its line, and give a spec entry a decision number when it lacks one. |
 | Big-bang commits | `da24b3b` 61 files, `3455cd2` 43, `13e6544` 32, `f81276d` 26 | One behaviour per commit, tests in the same commit. The owner can revert one slice without losing the day. |
 | Spec/README churn | `docs/DESIGN_SPEC.md` touched in 285 of 414 commits; README updated in batches on request | Spec: a numbered decision per change, in the change's commit, nothing else. README/Help: only when asked. |
 | Verifying visuals itself | A static mock + headless screenshot for the struck row (2026-10-16), corrected by the owner | Never. Describe where to look. |
@@ -298,9 +320,9 @@ writing verification scripts the owner said not to write.
 - Don't restate the request, the plan, or the summary; act.
 - One answer, one recommendation. No menus of options unless asked.
 - No "let me verify by building a mock". No end-to-end repro scripts.
-- When a migration needs the live body: fetch it once into the scratchpad as
-  JSON, patch it with a script, and keep that script — the next migration on
-  the same function starts from it.
+- When a migration needs the live body: start from
+  `supabase/current/<fn>.sql` and patch it with a script that asserts each
+  replacement matches once (0066's generator is the model).
 
 ---
 
@@ -318,3 +340,41 @@ writing verification scripts the owner said not to write.
       `db push` · `db-test-run`) all green, output seen.
 - [ ] Committed with the attribution trailer. Not pushed.
 - [ ] Handoff: done / where to look / not covered / numbers.
+
+---
+
+## 7. Checked and found sound (don't "fix" these)
+
+From the review's appendix: things that look odd and are right.
+
+- `byHand = completed && lines.filter(movesOn).every(markedByHand)` in the
+  day page's buy panel: correct since struck cards (decision 267).
+- Rates captured at confirm (0061): `coalesce(b.custom_cash_pct,
+  p_cash_pct)`, then `internal.fix_line_rates(b)`. Displayed Cash/Credit on
+  a confirmed buy are stored values; `✎` marks custom. Buys confirmed
+  between 0057 and 0061 lost their custom rates; not recoverable.
+- `useCollection.js`'s ticket/version refs and `useLiveTable.js`'s
+  stale-result handling.
+- `let alive = true` / `live` cleanups in `RestoreModal`, `ProductsModal`,
+  `ImportDialog`, and `CustomerNameInput`'s `run` counter.
+- `todaysPrices.js`'s raw `fetch` with its own retry and `Retry-After` loop:
+  it POSTs, and `createTransport` (`transport.js`) only has `getJson`. Add a
+  `postJson` to the transport when a second POST appears; until then, leave it.
+- `pdfSafe` (`auditPdf.js`), the `pokemonImages.js` fallbacks,
+  `transport.js`'s spacing and retries, and the `keptLanguage` filter.
+- `scryfall.js` queries without `lang:`, plus `keptLanguage`: decision 269.
+- Two "same line" rules on purpose: `internal.same_card` (a merge on add
+  ignores rates) and `internal.same_line` (a strike or restore must land on
+  an identical line, rates and all).
+
+**Removing CSS.** Class names built in template strings don't show up in a
+plain grep. These prefixes are used that way and must stay: `col-w-*`,
+`era-*`, `tier-*`, `k-*`, `r-*` (rarity), `cond-*`, `is-*`.
+To list candidates, then read each hit before deleting:
+
+```bash
+cd src/styles && for c in $(grep -ohE "^\.[a-z][a-z0-9-]*" *.css price/*.css | sort -u | sed 's/^\.//'); do
+  case "$c" in col-w-*|era-*|tier-*|k-*|r-*|cond-*|is-*|on|off) continue;; esac
+  grep -rqE "[\"'\` ]$c[\"'\` ]|\b$c\b" ../ --include="*.jsx" --include="*.js" || echo "$c"
+done
+```
