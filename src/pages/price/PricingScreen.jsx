@@ -324,7 +324,9 @@ export default function PricingScreen({
   }
   else if (bulk) {
     // Bulk: a quantity of items, nothing to wait for. A placeholder's price is always typed in.
-    if (bulk.item.placeholder && !(unitPrice > 0)) addBlocked = "Type its price: a placeholder has none of its own";
+    if (bulk.item.placeholder && unitPrice == null) addBlocked = "Type its price: a placeholder has none of its own";
+    // Typed, but $0: say so, rather than asking for a price that's there (FABLE_REPORT A7).
+    else if (bulk.item.placeholder && !(unitPrice > 0)) addBlocked = "A placeholder's price has to be over $0";
     else if (parseQty(qty) == null) addBlocked = 'Quantity must be 1 to 99';
     else if (offline) addBlocked = 'No connection';
   }
