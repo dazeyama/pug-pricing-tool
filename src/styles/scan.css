@@ -117,11 +117,6 @@ html[data-scan] .toast { max-width: none; }
 .scan-seg-btn.cond-mp { --c: #ffcc66; }
 .scan-seg-btn.cond-hp { --c: #ff9f43; }
 .scan-seg-btn.cond-dmg { --c: #ff6b6b; }
-/* The finish and "Auto?" (auto scan on or off) share a row. */
-.scan-row { display: flex; gap: 6px; }
-.scan-row .scan-seg.finish { flex: 2; }
-.scan-auto { display: flex; align-items: center; justify-content: center; gap: 7px; user-select: none; }
-.scan-auto input { width: 18px; height: 18px; margin: 0; accent-color: #fff; cursor: pointer; }
 .scan-seg-btn.foil.on {
   background: linear-gradient(115deg, #5a5bc4, #2f9dc4 40%, #b8459b 80%);
   border-color: transparent;
@@ -195,9 +190,17 @@ html[data-scan] .toast { max-width: none; }
   font-size: 13px;
   text-align: center;
 }
-.scan-actions { flex: none; display: flex; gap: 8px; }
+/* Scan card across the top; Auto?, Reset view, the light and Stop in a row under it. */
+.scan-actions { flex: none; display: flex; flex-direction: column; gap: 8px; }
+.scan-actions-row { display: flex; gap: 8px; }
+.scan-actions-row .btn { flex: 1; }
+.scan-actions-row .scan-torch { flex: none; }
 .scan-actions .btn { min-height: 46px; font-size: 15px; font-weight: 600; white-space: nowrap; }
-.scan-now { flex: 1; position: relative; overflow: hidden; }
+.scan-now { position: relative; overflow: hidden; }
+/* Auto?: auto scan on or off, a checkbox as a button. */
+.scan-auto { display: inline-flex; align-items: center; justify-content: center; gap: 7px; user-select: none; cursor: pointer; }
+.scan-auto.on { background: var(--accent-2); border-color: var(--accent-2); }
+.scan-auto input { width: 18px; height: 18px; margin: 0; accent-color: #fff; cursor: pointer; }
 /* Scan card's loading bar, filling the button behind its label while it reads (progress.js). */
 .scan-now-bar {
   position: absolute;
@@ -284,6 +287,15 @@ html[data-scan] .toast { max-width: none; }
 .scan-pick-set { font-size: 13px; font-weight: 600; text-align: center; line-height: 1.25; }
 .scan-pick-meta { font-size: 12px; color: var(--muted); }
 .scan-undo { flex: none; min-height: 38px; }
+/* FOIL?: the last card made foil, in the foil colours. */
+.scan-make-foil {
+  flex: none;
+  min-height: 38px;
+  font-weight: 700;
+  color: #fff;
+  border-color: transparent;
+  background: linear-gradient(115deg, #5a5bc4, #2f9dc4 40%, #b8459b 80%);
+}
 
 /* ---- Scanning: the whole screen, nothing scrolls (owner, 2026-10-16) ----
    The camera takes the height the rest leaves (.scan-middle; Scanner.jsx

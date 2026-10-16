@@ -769,12 +769,23 @@ locks **automatically on the first card**.
     known (the blocks found, the searches the readings call for); the bar at the share of that time
     done, creeping through the step under way up to 90% of it, never going back when more work turns
     up; drawn every frame, full for a moment at the end. Tests: `tests/scanThorough.test.js`.
-  - **"Auto?"** (owner, 2026-10-16: "when unchecked it does not automatically scan. When the Scan
-    Card button is pressed, uncheck this box, needing to be manually enabled again to go into fast
-    mode"): a checkbox beside Normal / Foil, ticked to begin with, kept for the tab like the
-    condition and finish (`pug.scan.auto`). Unticked, auto scan doesn't look at all; Scan card
-    unticks it. Ticking it again starts afresh (the held art and never the card last sent stand, so
-    the card left in the holder isn't added again).
+  - **"Auto?"** (owner, 2026-10-16: "when unchecked it does not automatically scan"): a checkbox
+    styled as a button, ticked to begin with, kept for the tab like the condition and finish
+    (`pug.scan.auto`). Unticked, auto scan doesn't look at all. Ticking it again starts afresh (the
+    held art and never the card last sent stand, so the card left in the holder isn't added again).
+    Scan card leaves it as it is (the owner's second thought: "it's not needed"), and nothing
+    interrupts Scan card: auto scan holds off from the press to the end.
+  - **The buttons in two rows** (owner: "keeping just the Scan Card button on the top row, full width
+    and the other 4 buttons below it"): Scan card across the top; Auto?, Reset view, the light and
+    Stop under it.
+  - **FOIL?** (owner: "a "FOIL?" button by the undo button to tag the last card scanned as foil …
+    it edits the last card scanned to be a foil instead"): beside Undo while the last card is added
+    and not foil. Its copy is taken off the computer's list as Undo does (`scan_undo`); once the
+    computer says it's off (`undone`), the card is sent again as foil (`scanFinish(card, true)`:
+    etched when it has no foil), and the computer prices and adds it as any scan. No new database
+    function: Undo's count down and the new scan's count up leave the number scanned as it was.
+    Undo refused (the line gone, no user picked) sends nothing and says why; a card with no foil
+    printing says so; no answer in 30 seconds, it gives up and says to check the list.
 - **New card or the same one:** the art (the middle of the art box at its locked place) as a 16 × 10
   thumbnail of true averages, brightness and contrast evened out (`artPrint`, `artDistance` with a
   one-cell shift). After a card is sent its art is held; **nothing is read while the art is under 12

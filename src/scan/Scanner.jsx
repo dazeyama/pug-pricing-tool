@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { CONDITIONS } from '../lib/ladder.js';
 import { readSession, writeSession } from '../lib/local.js';
 import { formatMoney } from '../lib/money.js';
+import * as scry from '../lib/scryfall.js';
 import { scanFinish, scanText } from '../lib/scanPrice.js';
 import { useConnection } from '../state/connection.jsx';
 import { usePairing } from './usePairing.js';
@@ -42,8 +43,10 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // The condition and finish for the next scans, kept for this tab (a reload keeps them).
 const CONDITION_KEY = 'pug.scan.condition';
 const FOIL_KEY = 'pug.scan.foil';
-// Auto scan on or off (owner, 2026-10-16: an "Auto?" checkbox; Scan card unchecks it), kept the same way.
+// Auto scan on or off (owner, 2026-10-16: an "Auto?" checkbox), kept the same way.
 const AUTO_KEY = 'pug.scan.auto';
+// FOIL? gives up if the computer hasn't taken the normal copy off by then.
+const FOIL_GIVE_UP_MS = 30_000;
 
 // scan_send's refusals, as the phone says them.
 const SEND_MESSAGES = {
@@ -155,6 +158,46 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     writeSession(AUTO_KEY, on ? null : '0');
     view.current.pending = null;   // auto scan starts afresh: two looks (or one sure one) again
   };
+
+  // FOIL? (owner, 2026-10-16: "tag the last card scanned as foil … edits the last card scanned to be
+  // a foil instead"): its copy taken off the computer's list, as Undo does, and once the computer
+  // says it's off, the card sent again as foil, priced as foil. The count of cards scanned stays.
+  const refoil = useRef(null);                     // { id, fields, seenUndo }
+  const [foiling, setFoiling] = useState(null);    // the scan being made foil
+  async function makeFoil(scan) {
+    if (foiling) return;
+    setFoiling(scan.id);
+    try {
+      const card = await scry.cardById(scan.scryfall_id);
+      const finish = card ? scanFinish(card, true) : null;
+      if (!card || finish === 'nonfoil' || finish === scan.finish) {
+        say('warn', card ? 'This card has no foil printing.' : "Couldn't find that card on Scryfall.", scanText(scan));
+        setFoiling(null);
+        return;
+      }
+      const e = await undo(scan.id);
+      if (e) {
+        say('err', `Couldn't make it foil: ${e}`, scanText(scan));
+        setFoiling(null);
+        return;
+      }
+      refoil.current = {
+        id: scan.id,
+        fields: { ...cardFields(card), finish, condition: scan.condition, tier: scan.tier ?? 1 },
+        seenUndo: false,
+      };
+      say('muted', `Making it foil: taking the normal copy off ${computer}…`, scanText(scan));
+      setTimeout(() => {
+        if (refoil.current?.id !== scan.id) return;
+        refoil.current = null;
+        setFoiling(null);
+        say('err', `${computer} didn't take the normal copy off: check the list there.`, scanText(scan));
+      }, FOIL_GIVE_UP_MS);
+    } catch (e) {
+      say('err', `Couldn't make it foil: ${e.message}`, scanText(scan));
+      setFoiling(null);
+    }
+  }
   const say = (tone, text, title = null) => setLocal({ tone, text, title, at: Date.now() });
 
   const blocked = blockedText(session);
@@ -168,6 +211,26 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   useEffect(() => {
     if (latestKey) setLatestAt(Date.now());
   }, [latestKey]);
+
+  // FOIL?: the normal copy off, the foil one sent; Undo refused (the line gone, no user), nothing sent.
+  useEffect(() => {
+    const r = refoil.current;
+    const s = r && scans.find((x) => x.id === r.id);
+    if (!s) return;
+    if (s.status === 'undo' || s.status === 'undoing') {
+      r.seenUndo = true;
+    } else if (s.status === 'undone') {
+      refoil.current = null;
+      send(r.fields).then((res) => {
+        if (res.error) say('err', `Couldn't send the foil copy: ${SEND_MESSAGES[res.error] ?? res.error}`);
+        setFoiling(null);
+      });
+    } else if (s.status === 'added' && r.seenUndo) {
+      refoil.current = null;
+      setFoiling(null);
+      say('err', s.note ?? `${computer} couldn't take the normal copy off.`, scanText(s));
+    }
+  }, [scans, send, computer]);
 
   // A sound when the computer says how a scan went (not for scans already done when the page opened).
   const seen = useRef(null);
@@ -456,9 +519,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
    */
   async function scanCard() {
     if (manualWaiting.current || reading) return;
-    manualWaiting.current = true;
-    // Scan card turns auto scan off: "Auto?" has to be ticked again for the fast way (owner, 2026-10-16).
-    setAuto(false);
+    manualWaiting.current = true;   // auto scan holds off till Scan card is done: nothing interrupts it
     const bar = createProgress();
     // The work as expected; each step re-planned as it's known (the blocks found, the searches asked).
     if (busy.current) bar.plan('wait', STEP_MS.ocr);
@@ -521,8 +582,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
 
   // Auto scan (6.3): while the camera runs, look again and again, resting
   // between looks; paused while the computer can't take cards, a card needs
-  // a price, the connection is down, Scan card is reading, "Auto?" is
-  // unticked, or the page is hidden. It doesn't wait for the computer to price the last card (owner,
+  // a price, the connection is down, Scan card is reading (from the press
+  // to the end), "Auto?" is unticked, or the page is hidden. It doesn't wait for the computer to price the last card (owner,
   // 2026-10-16: "the computer can load prices on it's own time while we
   // scan more cards"): the computer takes them in the order sent. Stop ends
   // it with the camera.
@@ -556,6 +617,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const shown = picture && room.w && room.h ? showPart(picture, part, room.w, room.h, lock ? 'contain' : 'cover') : null;
   const outline = !lock && seenCard && shown ? onScreen(shown, seenCard) : null;
   const showUndo = strip === stripOfLatest && latest?.status === 'added';
+  const showFoil = showUndo && latest.finish === 'nonfoil';
 
   return (
     <div className="scanner">
@@ -605,6 +667,18 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
             ↶ Undo
           </button>
         )}
+        {/* FOIL? (owner, 2026-10-16): the last card made foil. */}
+        {showFoil && (
+          <button
+            type="button"
+            className="btn small scan-make-foil"
+            disabled={Boolean(foiling)}
+            title="The last card is foil: take the normal copy off and add it as foil"
+            onClick={() => makeFoil(latest)}
+          >
+            FOIL?
+          </button>
+        )}
       </div>
 
       <div className="scan-controls">
@@ -622,20 +696,13 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
             </button>
           ))}
         </div>
-        <div className="scan-row">
-          <div className="scan-seg finish" role="radiogroup" aria-label="Finish for the next scans">
-            <button type="button" role="radio" aria-checked={!foil} className={`scan-seg-btn${!foil ? ' on' : ''}`} onClick={() => setFoil(false)}>
-              Normal
-            </button>
-            <button type="button" role="radio" aria-checked={foil} className={`scan-seg-btn foil${foil ? ' on' : ''}`} onClick={() => setFoil(true)}>
-              Foil
-            </button>
-          </div>
-          {/* Auto scan on or off; Scan card turns it off (owner, 2026-10-16). */}
-          <label className={`scan-seg-btn scan-auto${autoOn ? ' on' : ''}`} title="Scan cards by themselves. Scan card turns this off.">
-            <input type="checkbox" checked={autoOn} onChange={(e) => setAuto(e.target.checked)} />
-            Auto?
-          </label>
+        <div className="scan-seg finish" role="radiogroup" aria-label="Finish for the next scans">
+          <button type="button" role="radio" aria-checked={!foil} className={`scan-seg-btn${!foil ? ' on' : ''}`} onClick={() => setFoil(false)}>
+            Normal
+          </button>
+          <button type="button" role="radio" aria-checked={foil} className={`scan-seg-btn foil${foil ? ' on' : ''}`} onClick={() => setFoil(true)}>
+            Foil
+          </button>
         </div>
       </div>
 
@@ -684,6 +751,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       {/* The collector corner, enlarged and cleaned, for the person scanning (owner, 2026-10-16). */}
       {lock && camera.on && <canvas ref={cutoutRef} className="scan-cutout" aria-label="The set code and number, enlarged" />}
 
+      {/* Scan card across the top; Auto?, Reset view, the light and Stop under it (owner, 2026-10-16). */}
       <div className="scan-actions">
         <button
           type="button"
@@ -695,28 +763,34 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           {progress && <ScanBar progress={progress} />}
           <span className="scan-now-label">{reading ? 'Reading…' : 'Scan card'}</span>
         </button>
-        <button
-          type="button"
-          className="btn scan-reset"
-          disabled={!camera.on || !lock}
-          title="Find the card again and lock the view onto it"
-          onClick={resetView}
-        >
-          Reset view
-        </button>
-        {camera.torch != null && (
+        <div className="scan-actions-row">
+          <label className={`btn scan-auto${autoOn ? ' on' : ''}`} title="Scan cards by themselves">
+            <input type="checkbox" checked={autoOn} onChange={(e) => setAuto(e.target.checked)} />
+            Auto?
+          </label>
           <button
             type="button"
-            className={`btn scan-torch${camera.torch ? ' on' : ''}`}
-            aria-pressed={camera.torch}
-            aria-label="Light"
-            title="Light"
-            onClick={camera.toggleTorch}
+            className="btn scan-reset"
+            disabled={!camera.on || !lock}
+            title="Find the card again and lock the view onto it"
+            onClick={resetView}
           >
-            💡
+            Reset view
           </button>
-        )}
-        <button type="button" className="btn scan-stop" disabled={!camera.on} onClick={camera.stop}>■ Stop</button>
+          {camera.torch != null && (
+            <button
+              type="button"
+              className={`btn scan-torch${camera.torch ? ' on' : ''}`}
+              aria-pressed={camera.torch}
+              aria-label="Light"
+              title="Light"
+              onClick={camera.toggleTorch}
+            >
+              💡
+            </button>
+          )}
+          <button type="button" className="btn scan-stop" disabled={!camera.on} onClick={camera.stop}>■ Stop</button>
+        </div>
       </div>
     </div>
   );
