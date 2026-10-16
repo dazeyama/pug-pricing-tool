@@ -3,6 +3,7 @@ import { formatMoney, payout } from '../../lib/money.js';
 import PriceWarnings from './PriceWarnings.jsx';
 import PriceTrendBox from './PriceTrendBox.jsx';
 import { trendIcon, trendText } from '../../lib/priceTrend.js';
+import { useDismiss } from '../../lib/useDismiss.js';
 
 /**
  * The price panel beside the card info (owner, 2026-09-29): the selected
@@ -34,14 +35,7 @@ export default function QuotePanel({
   }, [candidate?.key]);
 
   // Pinned open: any click outside the panel closes it.
-  useEffect(() => {
-    if (!pinned) return undefined;
-    const close = (e) => {
-      if (!box.current?.contains(e.target)) setPinned(null);
-    };
-    document.addEventListener('mousedown', close);
-    return () => document.removeEventListener('mousedown', close);
-  }, [pinned]);
+  useDismiss(() => setPinned(null), { ref: box, when: Boolean(pinned), escape: false });
 
   if (!candidate) {
     return (

@@ -11,6 +11,7 @@ import { useStaff } from '../state/staff.jsx';
 import GameBadge from './GameBadge.jsx';
 import UserTag from './UserTag.jsx';
 import LinePreview, { previewFor } from './LinePreview.jsx';
+import { useDismiss } from '../lib/useDismiss.js';
 
 // The header's global search (spec 13), in CM's pill style: every stored line
 // in a Paid/Ours walk-in buy or collection matching what's typed, or with
@@ -98,15 +99,8 @@ export default function SearchBox({ wide }) {
     return () => clearTimeout(timer);
   }, [text, showAll]);
 
-  // A click anywhere else closes the results.
-  useEffect(() => {
-    if (!open) return undefined;
-    const onDown = (e) => {
-      if (!wrap.current?.contains(e.target)) setOpen(false);
-    };
-    document.addEventListener('mousedown', onDown);
-    return () => document.removeEventListener('mousedown', onDown);
-  }, [open]);
+  // A click anywhere else closes the results (Esc is the field's own: it closes them, then leaves the field).
+  useDismiss(() => setOpen(false), { ref: wrap, when: open, escape: false });
 
   const rows = useMemo(() => flatRows(found.sections), [found.sections]);
   const index = useMemo(() => new Map(rows.map((r, i) => [r.key, i])), [rows]);

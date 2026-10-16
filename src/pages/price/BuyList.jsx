@@ -12,6 +12,7 @@ import CustomRateMark from '../../components/CustomRateMark.jsx';
 import { isStruck, struckNote } from '../../lib/struck.js';
 import { useStaff } from '../../state/staff.jsx';
 import { GAMES } from '../../lib/games.js';
+import { useDismiss } from '../../lib/useDismiss.js';
 
 const VALID_PCT = /^\d{1,3}(\.\d{1,2})?$/;
 
@@ -129,20 +130,8 @@ function RatesPanel({ title, rates, master, onSave, onClose }) {
     setText({ cash: String(rates.cash), credit: String(rates.credit) });
   }, [rates.cash, rates.credit]);
 
-  useEffect(() => {
-    const onKey = (e) => {
-      if (e.key === 'Escape') onClose();
-    };
-    const onDown = (e) => {
-      if (!box.current?.contains(e.target) && !e.target.closest?.('.pct-link')) onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    document.addEventListener('mousedown', onDown);
-    return () => {
-      window.removeEventListener('keydown', onKey);
-      document.removeEventListener('mousedown', onDown);
-    };
-  }, [onClose]);
+  // Its own link (.pct-link) toggles it, so a click there isn't "outside".
+  useDismiss(onClose, { ref: box, inside: '.pct-link' });
 
   function commit(which) {
     const raw = text[which].trim();
@@ -223,23 +212,8 @@ function CardRatePanel({ line, rates, master, top, onSave, onClose }) {
     setText({ cash: String(mine.cash), credit: String(mine.credit) });
   }, [mine.cash, mine.credit]);
 
-  useEffect(() => {
-    const onKey = (e) => {
-      if (e.key === 'Escape') onClose();
-    };
-    // A click elsewhere saves what's typed (the box's blur), then closes.
-    const onDown = (e) => {
-      if (box.current?.contains(e.target)) return;
-      if (box.current?.contains(document.activeElement)) document.activeElement.blur();
-      onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    document.addEventListener('mousedown', onDown);
-    return () => {
-      window.removeEventListener('keydown', onKey);
-      document.removeEventListener('mousedown', onDown);
-    };
-  }, [onClose]);
+  // A click elsewhere saves what's typed (the box's blur), then closes.
+  useDismiss(onClose, { ref: box, blurFirst: true });
 
   const own = {
     cash: line.custom_cash_pct != null ? Number(line.custom_cash_pct) : null,
@@ -352,23 +326,8 @@ function BulkValuePanel({ line, rates, value, top, onSave, onClose }) {
   const toast = useToast();
   const box = useRef(null);
   useEffect(() => setText(shown.toFixed(2)), [shown]);
-  useEffect(() => {
-    const onKey = (e) => {
-      if (e.key === 'Escape') onClose();
-    };
-    // A click elsewhere saves what's typed (the box's blur), then closes.
-    const onDown = (e) => {
-      if (box.current?.contains(e.target)) return;
-      if (box.current?.contains(document.activeElement)) document.activeElement.blur();
-      onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    document.addEventListener('mousedown', onDown);
-    return () => {
-      window.removeEventListener('keydown', onKey);
-      document.removeEventListener('mousedown', onDown);
-    };
-  }, [onClose]);
+  // A click elsewhere saves what's typed (the box's blur), then closes.
+  useDismiss(onClose, { ref: box, blurFirst: true });
 
   const typed = /^\d{1,6}(\.\d{1,2})?$/.test(text.trim().replace(/^\$/, '')) ? Number(text.trim().replace(/^\$/, '')) : null;
   const live = rateTotals([{ ...line, unit_price: typed ?? shown, cc_sell_price: null }], rates);
@@ -578,24 +537,7 @@ export default function BuyList({
   }, [onDone]);
 
   // The menu goes on any click elsewhere, Esc or a scroll.
-  useEffect(() => {
-    if (!rateMenu) return undefined;
-    const close = (e) => {
-      if (!e.target.closest?.('.rate-menu')) setRateMenu(null);
-    };
-    const onKey = (e) => {
-      if (e.key === 'Escape') setRateMenu(null);
-    };
-    const onScroll = () => setRateMenu(null);
-    document.addEventListener('mousedown', close);
-    window.addEventListener('keydown', onKey);
-    window.addEventListener('scroll', onScroll, true);
-    return () => {
-      document.removeEventListener('mousedown', close);
-      window.removeEventListener('keydown', onKey);
-      window.removeEventListener('scroll', onScroll, true);
-    };
-  }, [rateMenu]);
+  useDismiss(() => setRateMenu(null), { inside: '.rate-menu', when: Boolean(rateMenu), scroll: true });
 
   // Set Rate sits level with its card, outside the sidebar, and follows it as the list scrolls.
   useLayoutEffect(() => {

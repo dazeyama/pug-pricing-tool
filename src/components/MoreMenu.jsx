@@ -1,5 +1,6 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import GuardButton from './GuardButton.jsx';
+import { useDismiss } from '../lib/useDismiss.js';
 
 /**
  * A ⋯ menu for actions kept away from everyday controls (Delete collection…,
@@ -43,21 +44,7 @@ export default function MoreMenu({ items, up = false, float = false }) {
       setPlace(null);
     };
   }, [open, float]);
-  useEffect(() => {
-    if (!open) return undefined;
-    const onDown = (e) => {
-      if (!wrap.current?.contains(e.target)) setOpen(false);
-    };
-    const onKey = (e) => {
-      if (e.key === 'Escape') setOpen(false);
-    };
-    document.addEventListener('mousedown', onDown);
-    window.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onDown);
-      window.removeEventListener('keydown', onKey);
-    };
-  }, [open]);
+  useDismiss(() => setOpen(false), { ref: wrap, when: open });
   return (
     <span className="more-menu" ref={wrap}>
       <button

@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
+import { useDismiss } from '../lib/useDismiss.js';
 
 /**
  * The blue EXPORT button (docs/EXPORT_FUNCTION.md 8): on the day pages and a
@@ -21,21 +22,7 @@ export default function ExportButton({
   const wrap = useRef(null);
   const menu = Boolean(onPrint);
 
-  useEffect(() => {
-    if (!open) return undefined;
-    const onDown = (e) => {
-      if (!wrap.current?.contains(e.target)) setOpen(false);
-    };
-    const onKey = (e) => {
-      if (e.key === 'Escape') setOpen(false);
-    };
-    document.addEventListener('mousedown', onDown);
-    window.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onDown);
-      window.removeEventListener('keydown', onKey);
-    };
-  }, [open]);
+  useDismiss(() => setOpen(false), { ref: wrap, when: open });
 
   const button = (
     <button

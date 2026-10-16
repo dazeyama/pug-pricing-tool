@@ -31,6 +31,7 @@ import { useStaff } from '../state/staff.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { GAME_NAMES, otherGame } from '../lib/games.js';
 import { DB_MESSAGES, dbErrorCode, dbMessage } from '../lib/dbErrors.js';
+import { useDismiss } from '../lib/useDismiss.js';
 
 const MESSAGES = {
   ...DB_MESSAGES,
@@ -876,21 +877,7 @@ function totalsFor(lines, buy, tiers) {
 function ConditionChip({ buy, byId, blocked, onChecked }) {
   const [asking, setAsking] = useState(false);
   const wrap = useRef(null);
-  useEffect(() => {
-    if (!asking) return undefined;
-    const onDown = (e) => {
-      if (!wrap.current?.contains(e.target)) setAsking(false);
-    };
-    const onKey = (e) => {
-      if (e.key === 'Escape') setAsking(false);
-    };
-    document.addEventListener('mousedown', onDown);
-    window.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onDown);
-      window.removeEventListener('keydown', onKey);
-    };
-  }, [asking]);
+  useDismiss(() => setAsking(false), { ref: wrap, when: asking });
 
   if (buy.condition_check) {
     return (
@@ -972,24 +959,7 @@ function BuyPanel({
     setMenu({ line: l, left: (e.clientX - b.left) / zoom, top: (e.clientY - b.top) / zoom });
   }
   // The menu goes on any click elsewhere, Esc or a scroll.
-  useEffect(() => {
-    if (!menu) return undefined;
-    const close = (e) => {
-      if (!e.target.closest?.('.rate-menu')) setMenu(null);
-    };
-    const onKey = (e) => {
-      if (e.key === 'Escape') setMenu(null);
-    };
-    const onScroll = () => setMenu(null);
-    document.addEventListener('mousedown', close);
-    window.addEventListener('keydown', onKey);
-    window.addEventListener('scroll', onScroll, true);
-    return () => {
-      document.removeEventListener('mousedown', close);
-      window.removeEventListener('keydown', onKey);
-      window.removeEventListener('scroll', onScroll, true);
-    };
-  }, [menu]);
+  useDismiss(() => setMenu(null), { inside: '.rate-menu', when: Boolean(menu), scroll: true });
 
   return (
     <article

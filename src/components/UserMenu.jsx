@@ -3,6 +3,7 @@ import { useStaff } from '../state/staff.jsx';
 import { useToast } from './Toast.jsx';
 import { PALETTE, colorVar, textOn } from '../lib/palette.js';
 import Modal from './Modal.jsx';
+import { useDismiss } from '../lib/useDismiss.js';
 
 // The staff-user button and menu (spec 7.3), left of the header search.
 // Pick a user, add one (colour auto-assigned), or use ⋯ to change a user's
@@ -29,21 +30,7 @@ export default function UserMenu() {
   }
 
   // Click outside or Esc closes the menu.
-  useEffect(() => {
-    if (!open) return undefined;
-    const onDown = (e) => {
-      if (!wrap.current?.contains(e.target)) close();
-    };
-    const onKey = (e) => {
-      if (e.key === 'Escape') close();
-    };
-    document.addEventListener('mousedown', onDown);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onDown);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [open]);
+  useDismiss(close, { ref: wrap, when: open });
 
   // Something needed a user and none is picked: pulse the button.
   useEffect(() => {
