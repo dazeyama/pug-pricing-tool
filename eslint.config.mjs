@@ -9,7 +9,8 @@ import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
 
 export default [
-  { ignores: ['dist/', 'node_modules/', 'supabase/functions/', 'supabase/.temp/'] },
+  // public/tesseract/: the scanner's OCR files, copied minified from node_modules (vite.config.js).
+  { ignores: ['dist/', 'node_modules/', 'supabase/functions/', 'supabase/.temp/', 'public/tesseract/'] },
   js.configs.recommended,
   {
     files: ['**/*.{js,jsx,mjs}'],

@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase.js';
 import { readSession, writeLocal, writeSession } from '../lib/local.js';
 import { useToast } from '../components/Toast.jsx';
@@ -58,15 +58,21 @@ export function StaffProvider({ children }) {
   // An unused tab forgets its user (owner, 2026-10-11). Checked every 30
   // seconds and whenever the tab comes back into view, from the last time
   // anyone touched it, so a background tab's slowed timers can't miss it.
+  // A card arriving from a paired phone counts as use too (`touch`;
+  // docs/SCAN_FUNCTION.md 7.4): the scanner is working at this computer.
   const picked = Boolean(currentId);
+  const lastSeen = useRef(Date.now());
+  const touch = useCallback(() => {
+    lastSeen.current = Date.now();
+  }, []);
   useEffect(() => {
     if (!picked) return undefined;
-    let last = Date.now();
+    lastSeen.current = Date.now();
     const seen = () => {
-      last = Date.now();
+      lastSeen.current = Date.now();
     };
     const check = () => {
-      if (Date.now() - last >= IDLE_MINUTES * 60_000) {
+      if (Date.now() - lastSeen.current >= IDLE_MINUTES * 60_000) {
         forget(`No one used this tab for ${IDLE_MINUTES} minutes: pick your user again.`);
       }
     };
@@ -124,7 +130,7 @@ export function StaffProvider({ children }) {
   const pulse = useCallback(() => setPulseKey((n) => n + 1), []);
 
   const value = {
-    loaded, all, active, current, byId, select, forget, add, setColor, remove, pulse, pulseKey,
+    loaded, all, active, current, byId, select, forget, add, setColor, remove, pulse, pulseKey, touch,
   };
   return <StaffContext.Provider value={value}>{children}</StaffContext.Provider>;
 }

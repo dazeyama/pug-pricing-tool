@@ -16,6 +16,11 @@
   Every computer in the store sees the same buys, collections and settings, as they change.</em>
 </p>
 
+<p align="center">
+  <sub>Licensed under the GPL-3.0 (see <a href="LICENSE">LICENSE</a>). The phone scanner's card recognition
+  comes from <a href="https://github.com/GrimbiXcode/mtgscan">GrimbiXcode/mtgscan</a>, GPL-3.0.</sub>
+</p>
+
 ---
 
 # 📜 About the app

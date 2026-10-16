@@ -45,3 +45,9 @@ supabase.txt
 # --- Misc ---
 *.tmp
 .cache/
+
+# The scanner's OCR files, copied from node_modules by vite.config.js (vendorTesseract)
+public/tesseract/
+
+# The scanner benchmark's photos (docs/SCAN_FUNCTION.md 11.3)
+scan-fixtures/

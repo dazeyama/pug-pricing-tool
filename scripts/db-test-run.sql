@@ -2515,6 +2515,122 @@ exception when others then
   perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
 end $$;
 
+-- ============================================================ Scans (0069)
+do $$
+declare
+  s text := 'Scans';
+  u uuid := pg_temp.id('u1');
+  a uuid := pg_temp.id('devA');
+  ph uuid := gen_random_uuid();
+  ph2 uuid := gen_random_uuid();
+  card jsonb := '{"scryfall_id": "dbtest-scan-1", "name": "DBTEST Bolt", "set_code": "DBT",
+                  "collector_number": "7", "finish": "nonfoil", "condition": "LP", "tier": 1}';
+  v_id uuid;
+  v_line uuid;
+  v jsonb;
+begin
+  insert into devices (id, label) values (ph, 'DBTEST Scan Phone'), (ph2, 'DBTEST Scan Phone Two');
+  perform scan_session_touch(a, 'walk_in', null, 'Buy list', '{mtg}', u, null);
+  perform scan_pair(a, ph);
+
+  v_id := scan_send(a, ph, card);
+  perform pg_temp.ok(s, 'The paired phone sends a card; it waits for the computer',
+    (select status = 'sent' and finish = 'nonfoil' and condition = 'LP' and tier = 1 and name = 'DBTEST Bolt'
+       from scans where id = v_id));
+  begin
+    perform scan_send(a, ph2, card);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'Only the paired phone can send', sqlerrm, 'not_paired');
+  end;
+  begin
+    perform scan_send(a, ph, card || '{"finish": "shiny"}');
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'A scan needs a finish the app knows', sqlerrm, 'bad_scan');
+  end;
+  begin
+    perform scan_send(a, ph, card - 'scryfall_id');
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, '… and a printing', sqlerrm, 'bad_scan');
+  end;
+  perform scan_session_touch(a, 'walk_in', null, 'Buy list', '{mtg}', null, null);
+  begin
+    perform scan_send(a, ph, card);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'Nothing is sent while the computer has no user picked', sqlerrm, 'cannot_add');
+  end;
+  perform scan_session_touch(a, 'walk_in', null, 'Buy list', '{mtg}', u, null);
+
+  v := scan_claim(v_id, a);
+  perform pg_temp.ok(s, 'The computer claims it to price it', v ->> 'status' = 'pricing', v::text);
+  perform pg_temp.ok(s, '… once', scan_claim(v_id, a) is null);
+  begin
+    perform scan_resolve(v_id, ph, 'failed', null, null, null, 'x');
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'Only its computer says how it went', sqlerrm, 'not_session');
+  end;
+  perform draft_for_device(a, u);
+  v_line := draft_add_line(a, pg_temp.line('DBTEST Bolt', 'DBT', '7', 1, 0.45), u, true);
+  perform scan_resolve(v_id, a, 'added', v_line, 0.45, 'scryfall_fallback', null);
+  perform pg_temp.ok(s, 'Added: the line and its quantity, the price, and the phone''s count',
+    (select status = 'added' and line_id = v_line and line_qty = 1 and price = 0.45 and price_source = 'scryfall_fallback'
+       from scans where id = v_id)
+    and (select scanned from scan_sessions where device_id = a) = 1);
+  begin
+    perform scan_resolve(v_id, a, 'failed', null, null, null, 'x');
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'A scan is resolved once', sqlerrm, 'bad_status');
+  end;
+
+  v_id := scan_send(a, ph, card);
+  perform scan_claim(v_id, a);
+  perform scan_resolve(v_id, a, 'needs_price', null, null, null, null);
+  begin
+    perform scan_answer(v_id, ph2, 1);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'Only its phone answers a scan with no price', sqlerrm, 'not_phone');
+  end;
+  begin
+    perform scan_answer(v_id, ph, 0);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, '… with a price over $0', sqlerrm, 'bad_price');
+  end;
+  perform scan_answer(v_id, ph, 2.50);
+  perform pg_temp.ok(s, 'A price sends it back to the computer',
+    (select status = 'sent' and manual_price = 2.50 from scans where id = v_id));
+  begin
+    perform scan_answer(v_id, ph, 3);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, '… answered once', sqlerrm, 'not_waiting');
+  end;
+  perform scan_claim(v_id, a);
+  perform scan_resolve(v_id, a, 'needs_price', null, null, null, null);
+  perform scan_answer(v_id, ph, null);
+  perform pg_temp.ok(s, 'No price skips it', (select status = 'skipped' from scans where id = v_id));
+
+  v_id := scan_send(a, ph, card);
+  perform scan_claim(v_id, a);
+  perform pg_temp.ok(s, 'A claim is held while it''s fresh', scan_claim(v_id, a) is null);
+  update scans set handled_at = now() - interval '2 minutes' where id = v_id;
+  perform pg_temp.ok(s, '… and can be claimed again once it''s gone quiet for a minute', scan_claim(v_id, a) is not null);
+
+  update scan_sessions set heartbeat_at = now() - interval '2 minutes' where device_id = a;
+  begin
+    perform scan_send(a, ph, card);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'Nothing is sent to a computer that''s gone quiet', sqlerrm, 'session_stale');
+  end;
+  perform scan_session_end(a);
+  perform pg_temp.ok(s, 'A session''s scans end with it', not exists (select 1 from scans where session_device_id = a));
+  begin
+    perform scan_send(a, ph, card);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, '… and nothing more can be sent', sqlerrm, 'session_gone');
+  end;
+exception when others then
+  declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;
+  perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
+end $$;
+
 -- ======================================================= Backup and restore
 -- The restore resets the Changelog's numbering; it's set back after.
 reset role;

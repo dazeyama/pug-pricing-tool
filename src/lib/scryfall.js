@@ -260,3 +260,27 @@ export function cardImage(card, size, face = 0) {
 export function hasBackFace(card) {
   return Boolean(!card.image_uris && card.card_faces?.[1]?.image_uris);
 }
+
+// ---------------------------------------------------------------- scanning
+
+/**
+ * The printing a phone's scan read off a card's collector line
+ * (docs/SCAN_FUNCTION.md 6.1): `/cards/<set>/<number>`, English. Null when
+ * Scryfall has no such card (a misread: the scanner tries its next reading).
+ * @param {string} set  set code, any case
+ * @param {string} number  as printed: "125", "263s", "4★"
+ * @returns {Promise<object|null>}  a Scryfall card
+ */
+export function cardBySetNumber(set, number) {
+  return transport.getJson(`${API}/cards/${encodeURIComponent(String(set).toLowerCase())}/${encodeURIComponent(number)}`);
+}
+
+const byIdCache = memoryCache(DAY / 4);
+/**
+ * A card by its Scryfall id (the computer pricing a scan, 8.3), kept for six
+ * hours this page's life: Scryfall's prices change once a day.
+ * @returns {Promise<object|null>}
+ */
+export function cardById(id) {
+  return byIdCache.get(id, () => transport.getJson(`${API}/cards/${encodeURIComponent(id)}`));
+}

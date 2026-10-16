@@ -30,6 +30,7 @@ import { useConnection } from '../../state/connection.jsx';
 import { useToast } from '../../components/Toast.jsx';
 import { useDevice } from '../../state/device.jsx';
 import { useScanSession } from './useScanSession.js';
+import { useScanReceiver } from './useScanReceiver.js';
 import ScanChip from './ScanChip.jsx';
 import { candidateKeyOf, editQuery } from '../../lib/candidateKey.js';
 
@@ -140,7 +141,7 @@ export default function PricingScreen({
   const { current: user, pulse } = useStaff();
   const { offline } = useConnection();
   const toast = useToast();
-  const { deviceId } = useDevice();
+  const { deviceId, label: deviceLabel } = useDevice();
   // Open for a phone to scan into (docs/SCAN_FUNCTION.md 8.1): what this
   // screen is on, its games, its user, and why it can't take cards, if it can't.
   const scan = useScanSession(scanTarget && deviceId ? {
@@ -155,10 +156,25 @@ export default function PricingScreen({
   const [qty, setQty] = useState('1');
   const qtyRef = useRef(null);
   const [flashId, setFlashId] = useState(null);
+  /** Flash a list line that was just added or changed (1.6 seconds). */
+  const flash = (id) => {
+    setFlashId(id);
+    setTimeout(() => setFlashId((f) => (f === id ? null : f)), 1600);
+  };
   // Editing a list line (owner, 2026-09-29): its card is searched for and
   // selected (found), then its saved choices put back (restored); SAVE EDIT
   // saves over it. { line, key, query, found, restored } or null.
   const [editing, setEditing] = useState(null);
+  // Cards from the paired phone, added as ADD CARD adds them and flashed the same way;
+  // the stage is left alone (docs/SCAN_FUNCTION.md 8.3).
+  useScanReceiver({
+    deviceId: scanTarget ? deviceId : null,
+    label: deviceLabel ?? 'The computer',
+    session: scan.session,
+    list,
+    roundUp,
+    onAdded: flash,
+  });
   const images = useCardImages(card);   // a Pokémon thumbnail for the line (backups too)
 
   // ADD CARD's requirements (spec 8.8), besides a user (GuardButton).
@@ -384,8 +400,7 @@ export default function PricingScreen({
     const save = async (line) => {
       const id = editing ? await list.update(editing.line, line, user.id) : await list.add(line, user.id);
       if (!id) return;
-      setFlashId(id);
-      setTimeout(() => setFlashId((f) => (f === id ? null : f)), 1600);
+      flash(id);
       clear();
     };
     if (bulk) {
