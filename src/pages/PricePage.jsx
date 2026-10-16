@@ -11,6 +11,7 @@ import { useSettings } from '../state/settings.jsx';
 import { useDevice } from '../state/device.jsx';
 import { useStaff } from '../state/staff.jsx';
 import { useToast } from '../components/Toast.jsx';
+import { GAME_NAMES } from '../lib/games.js';
 
 // The Price tab (spec 8): the pricing screen with this computer's walk-in
 // draft as its list, added to with ADD CARD and finished with CONFIRM BUY
@@ -67,7 +68,7 @@ export default function PricePage() {
     });
     if (!done) return;
     setConfirming(false);
-    const names = done.games.map((g) => (g === 'mtg' ? 'Magic' : 'Pokémon')).join(' + ');
+    const names = done.games.map((g) => GAME_NAMES[g]).join(' + ');
     // 🚩 Flag check for condition (owner, 2026-10-14): set once it's confirmed.
     let flagged = '';
     if (flagCondition && buyId) {

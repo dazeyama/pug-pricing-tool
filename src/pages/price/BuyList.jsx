@@ -11,11 +11,8 @@ import { bulkItem, bulkShortText, cardCounts, countText, isValuedBulk, perText }
 import CustomRateMark from '../../components/CustomRateMark.jsx';
 import { isStruck, struckNote } from '../../lib/struck.js';
 import { useStaff } from '../../state/staff.jsx';
+import { GAMES } from '../../lib/games.js';
 
-const GROUPS = [
-  { game: 'mtg', name: 'Magic' },
-  { game: 'pokemon', name: 'Pokémon' },
-];
 const VALID_PCT = /^\d{1,3}(\.\d{1,2})?$/;
 
 /**
@@ -654,13 +651,13 @@ export default function BuyList({
 
       <div className="list-body" ref={list}>
         {loaded && !lines.length && <p className="list-empty">Cards you add will appear here.</p>}
-        {GROUPS.map((g) => {
-          const mine = lines.filter((l) => l.game === g.game);
+        {GAMES.map((g) => {
+          const mine = lines.filter((l) => l.game === g.key);
           if (!mine.length) return null;
           return (
-            <section key={g.game} className="list-group">
+            <section key={g.key} className="list-group">
               <div className="group-head">
-                <span className={`group-chip ${g.game}`}>{g.name} ({countText({ ...cardCounts(mine), struck: 0 }).replace(/ cards?\b/, '')})</span>
+                <span className={`group-chip ${g.key}`}>{g.name} ({countText({ ...cardCounts(mine), struck: 0 }).replace(/ cards?\b/, '')})</span>
               </div>
               {mine.map((l) => (
                 <div

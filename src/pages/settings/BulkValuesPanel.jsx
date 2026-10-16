@@ -4,12 +4,9 @@ import { useStaff } from '../../state/staff.jsx';
 import { useToast } from '../../components/Toast.jsx';
 import { formatMoney } from '../../lib/money.js';
 import { BULK_ITEMS, bulkValuesFrom } from '../../lib/bulk.js';
+import { GAMES } from '../../lib/games.js';
 
 const VALID_MONEY = /^\d{1,6}(\.\d{1,2})?$/;
-const GAMES = [
-  { game: 'mtg', name: 'Magic' },
-  { game: 'pokemon', name: 'Pokémon' },
-];
 
 /** One item's value: dollars, up to 2 decimals, saved when the box loses focus. */
 function ValueBox({ item }) {
@@ -81,12 +78,12 @@ export default function BulkValuesPanel() {
         </p>
         <div className="bulk-tables">
           {GAMES.map((g) => (
-            <table key={g.game} className="fb-table bulk-table">
+            <table key={g.key} className="fb-table bulk-table">
               <thead>
                 <tr><th colSpan={2}>{g.name}</th></tr>
               </thead>
               <tbody>
-                {BULK_ITEMS.filter((i) => i.game === g.game && !i.placeholder).map((item) => (
+                {BULK_ITEMS.filter((i) => i.game === g.key && !i.placeholder).map((item) => (
                   <tr key={item.kind}>
                     <th scope="row">{item.per} · {item.label}</th>
                     <td><ValueBox item={item} /></td>

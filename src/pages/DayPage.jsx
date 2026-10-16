@@ -29,8 +29,8 @@ import { useConnection } from '../state/connection.jsx';
 import { useDevice } from '../state/device.jsx';
 import { useStaff } from '../state/staff.jsx';
 import { useToast } from '../components/Toast.jsx';
+import { GAME_NAMES, otherGame } from '../lib/games.js';
 
-const GAME_NAMES = { mtg: 'Magic', pokemon: 'Pokémon' };
 const MESSAGES = {
   stale_version: 'This buy changed on another computer — reloaded.',
   line_gone: 'That card was already removed.',
@@ -111,7 +111,7 @@ function DayScreen({ game, day }) {
   const [checking, setChecking] = useState(false);       // ⋯ → Check Crystal Commerce matches (export spec E2)
   const [busy, setBusy] = useState(false);
   const ticket = useRef(0);
-  const other = game === 'mtg' ? 'pokemon' : 'mtg';
+  const other = otherGame(game);
   const back = () => navigate(`/calendar?month=${day.slice(0, 7)}`);
 
   const reload = useCallback(async () => {

@@ -3,12 +3,11 @@ import { useSettings } from '../../state/settings.jsx';
 import { useStaff } from '../../state/staff.jsx';
 import { useToast } from '../../components/Toast.jsx';
 import { CONDITIONS } from '../../lib/prices.js';
+import { GAMES } from '../../lib/games.js';
 
 const VALID = /^\d{1,3}(\.\d{1,2})?$/;
-const GAMES = [
-  { key: 'fallback_pct_mtg', name: 'Magic' },
-  { key: 'fallback_pct_pokemon', name: 'Pokémon' },
-];
+// Each game's row: its setting's key and its name.
+const ROWS = GAMES.map((g) => ({ key: `fallback_pct_${g.key}`, name: g.name }));
 
 /** One percentage box: 0–100, up to 2 decimals, saved when it loses focus. */
 function PctBox({ game, code }) {
@@ -89,7 +88,7 @@ export default function FallbackPanel() {
             </tr>
           </thead>
           <tbody>
-            {GAMES.map((g) => (
+            {ROWS.map((g) => (
               <tr key={g.key}>
                 <th scope="row">{g.name}</th>
                 {CONDITIONS.map((c) => (

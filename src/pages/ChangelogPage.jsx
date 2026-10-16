@@ -12,17 +12,14 @@ import GameBadge from '../components/GameBadge.jsx';
 import { statusTone } from './collections/status.js';
 import { colorVar } from '../lib/palette.js';
 import UserTag from '../components/UserTag.jsx';
+import { GAMES, GAME_NAMES } from '../lib/games.js';
 
 const PAGE = 20;      // panels per page (CM's CHANGE_PAGE)
 const CHUNK = 200;    // entries fetched at a time
 // What a panel needs (not the search columns, which only the filter uses).
 const COLUMNS = 'seq, at, staff_user_id, staff_user_name, staff_user_color, kind, action, target_id, '
   + 'target_name, games, day, added, removed, totals, lines, fields, summary';
-const GAMES = [
-  { value: 'all', label: 'All' },
-  { value: 'mtg', label: 'Magic' },
-  { value: 'pokemon', label: 'Pokémon' },
-];
+const GAME_FILTERS = [{ value: 'all', label: 'All' }, ...GAMES.map((g) => ({ value: g.key, label: g.name }))];
 
 /**
  * The Changelog tab (spec 12): every recorded change as CM's timeline,
@@ -214,7 +211,7 @@ function Changelog() {
           ))}
         </div>
         <div className="ch-games" role="group" aria-label="Game">
-          {GAMES.map((g) => (
+          {GAME_FILTERS.map((g) => (
             <button
               key={g.value}
               type="button"
@@ -243,7 +240,7 @@ function Changelog() {
             Showing{' '}
             {[
               target && <strong key="t">{target.name}</strong>,
-              game !== 'all' && <span key="g">{game === 'mtg' ? 'Magic' : 'Pokémon'} entries</span>,
+              game !== 'all' && <span key="g">{GAME_NAMES[game]} entries</span>,
               query && <span key="q">entries matching <strong>{query}</strong></span>,
             ].filter(Boolean).reduce((out, part, i) => (i ? [...out, ', ', part] : [part]), [])}
             {' '}only

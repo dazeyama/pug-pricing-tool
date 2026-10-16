@@ -4,6 +4,7 @@ import CardLoading from '../../components/CardLoading.jsx';
 import { useCardImages } from './useCardImages.js';
 import { POKEMON_CARD_BACK } from '../../lib/pokemonImages.js';
 import { BulkThumb } from './Bulk.jsx';
+import { GAME_LABELS, GAME_NAMES, otherGame } from '../../lib/games.js';
 
 /** Suggestions shown at once: 2 rows of 5 (owner's layout, 2026-09-29). */
 export const ROW = 10;
@@ -161,7 +162,7 @@ function Status({ search, lang }) {
       <span key="none" className="no-match">
         No cards match. Check the number and set code.
         {search.tried && <> Also tried <strong>{search.tried}</strong>.</>}
-        {off && <> Only {off === 'mtg' ? 'Pokémon' : 'Magic'} is being searched ({off === 'mtg' ? 'MTG' : 'PKM'} is off).</>}
+        {off && <> Only {GAME_NAMES[otherGame(off)]} is being searched ({GAME_LABELS[off]} is off).</>}
       </span>,
     );
   }

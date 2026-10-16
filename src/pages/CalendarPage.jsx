@@ -14,11 +14,8 @@ import { useToast } from '../components/Toast.jsx';
 import { useConnection } from '../state/connection.jsx';
 import { useDevice } from '../state/device.jsx';
 import { useStaff } from '../state/staff.jsx';
+import { GAMES } from '../lib/games.js';
 
-const GAMES = [
-  { game: 'mtg', name: 'Magic' },
-  { game: 'pokemon', name: 'Pokémon' },
-];
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 // Two rows of six dot spots (owner, 2026-09-30): up to 12 buys, a dot each;
 // more, 11 dots and a plus in the 12th spot (drawn, so it's dead centre).
@@ -170,7 +167,7 @@ function CalendarMonth({ month }) {
 
   return (
     <div className="cal-grid">
-      {GAMES.map(({ game, name }) => (
+      {GAMES.map(({ key: game, name }) => (
         <section key={game} className={`cal-game ${game}`} aria-label={`${name} buys`}>
           <div className="cal-game-head">
             <span className={`group-chip ${game}`}>{name}</span>

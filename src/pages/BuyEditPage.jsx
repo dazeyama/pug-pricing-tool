@@ -14,8 +14,8 @@ import { useDevice } from '../state/device.jsx';
 import { useStaff } from '../state/staff.jsx';
 import { useConnection } from '../state/connection.jsx';
 import { useToast } from '../components/Toast.jsx';
+import { GAME_NAMES } from '../lib/games.js';
 
-const GAME_NAMES = { mtg: 'Magic', pokemon: 'Pokémon' };
 const MESSAGES = {
   stale_version: 'This buy changed on another computer since it opened: nothing was saved. Go back and open it again.',
   buy_gone: 'This buy was deleted: nothing was saved.',

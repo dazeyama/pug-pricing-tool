@@ -4,15 +4,12 @@
 // `lead` goes before the field (a collection's < BACK). `blocked` switches
 // the field off and says why in it (Can't upload cards: cards only arrive
 // from exports).
+import { GAMES } from '../../lib/games.js';
+
 // The field's sample text; with JP on, how Japanese cards are found instead
 // (owner, 2026-10-02): by number and set code, or "No. 32" for the oldest sets.
 // A real printing (smoke test 2026-10-02 #4): Double Masters 2022's Lightning Bolt is #117 of 331.
 const HINT = { en: "Type what's printed on the card: Lightning Bolt 117/331 2X2", ja: 'Type the number and set code: 025/165 SV2a · oldest sets: No. 32' };
-
-const GAMES = [
-  { key: 'mtg', label: 'MTG', name: 'Magic' },
-  { key: 'pokemon', label: 'PKM', name: 'Pokémon' },
-];
 
 export default function SearchBar({
   inputRef, value, onChange, onKeyDown, lang, onLang, games, onGames, note, lead, blocked = null, gameBlocked = {},

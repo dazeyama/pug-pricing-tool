@@ -3,6 +3,7 @@ import GameBadge from '../../components/GameBadge.jsx';
 import { POKEMON_CARD_BACK } from '../../lib/pokemonImages.js';
 import { formatMoney, payout } from '../../lib/money.js';
 import { PLACEHOLDER_NAME, perText, shortName } from '../../lib/bulk.js';
+import { GAME_NAMES } from '../../lib/games.js';
 
 // Bulk on the Price screen (docs/TEAM_FEEDBACK.md 5.4, Phase T3): a bulk item
 // is drawn as a stack of its game's card backs with a short label, priced
@@ -83,7 +84,7 @@ function PlaceholderName({ value, onChange }) {
 export function BulkSelected({ c, name = '', onName }) {
   const placeholder = Boolean(c.item.placeholder);
   const tag = placeholder ? '✦ PLACEHOLDER' : '✦ BULK';
-  const game = c.game === 'mtg' ? 'Magic' : 'Pokémon';
+  const game = GAME_NAMES[c.game];
   return (
     <>
       <div className="area-card">
@@ -108,7 +109,7 @@ export function BulkSelected({ c, name = '', onName }) {
         <div className="card-info">
           <h2 className="info-name" title={c.name}>{c.name}</h2>
           <p className="info-set">
-            <span className="info-set-name">{c.item.per} {c.game === 'mtg' ? 'Magic' : 'Pokémon'} cards per item</span>
+            <span className="info-set-name">{c.item.per} {GAME_NAMES[c.game]} cards per item</span>
           </p>
           <p className="info-number">
             {perText(c.item, c.value)}
