@@ -596,7 +596,7 @@ the same four formats by hand. *(Corrected 2026-10-16: this first said a
 `pokemon:dex:ja:<n>` at `cardSearch.js:177` keys the TCGplayer search,
 not a candidate; that search's cards are ordinary `pokemon:ja:jt:<id>` ones.)*
 
-**Done** (`3ad2874`'s successor): `src/lib/candidateKey.js` owns the four
+**Done** (`8a1e4dd`): `src/lib/candidateKey.js` owns the four
 formats (`magicKey`, `pokemonKey`, `justtcgKey`, `bulkItemKey`) and
 `candidateKeyOf(line)`; cardSearch, justtcgCards, bulk and PricingScreen
 use it; `tests/candidateKey.test.js`. Not in `buyLine.js` as first
