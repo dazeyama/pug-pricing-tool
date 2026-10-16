@@ -42,6 +42,7 @@ finding points at one commit to fix or revert.
 - [ ] The owner signs in. The computer has a name; a user is picked (add `SMOKE P6 Ash` if needed).
 - [ ] The console shows no errors on load (Claude reads it).
 - [ ] Note JustTCG usage: ________ and Settings values that sections change: Cash % ____, Credit % ____.
+- [ ] **Download backup** (Settings → Backups): a JSON file saves; keep it until the run is over.
 
 <!-- Sections are added below as each Phase 6 commit lands. -->
 
@@ -63,7 +64,7 @@ the right moments. Hover each button and read its tooltip.
 - [ ] Unlock it → back to Priced → **Reject**: Print?'s tooltip **Rejected: there is nothing to print**; editing says **Rejected: reopen it to edit**. Reopen it.
 - [ ] **Can't upload cards** (Collections → System): the search field reads **Cards arrive here from exports: they can't be added by hand**; holding a CSV over it says **Can't upload cards only takes cards from exports.**
 - [ ] **A project:** + Start Project `SMOKE P6 Project`, empty: ⋯ → Convert to buy… reads **No cards to convert**. Add a card: it's usable (open it, then Cancel).
-- [ ] Delete collection… and Delete project… open their dialogs (Cancel both for now; section 9 cleans up).
+- [ ] Delete collection… and Delete project… open their dialogs (Cancel both for now; section 6 cleans up).
 - Not testable from one browser: "View only: … is editing", the delete/convert takeover wording, and "No connection" (two computers, or offline). Their words are the same strings as before.
 
 ## 2. Settings boxes (B11, useSettingField)
@@ -140,7 +141,7 @@ keys) stayed where they were. Each part below names its commit.
 - [ ] Right-click a suggestion: its name becomes the search.
 - [ ] SAVE EDIT on a Pokémon line with a TCGplayer-only version: the version comes back once the TCGplayer search lands; change the condition, SAVE EDIT: the line updates in place (flashes), not a new line.
 - [ ] Remove the edited line with × while editing: the edit stops (the note goes).
-- [ ] **CONFIRM BUY** a walk-in `SMOKE P6 Ash`, `(555) 010-0601`, $1 cash, with **🚩 Flag check for condition** ticked: the stage resets, MTG | PKM both on, sort back to newest (the resetKey). Section 4 uses this buy; section 9 deletes it.
+- [ ] **CONFIRM BUY** a walk-in `SMOKE P6 Ash`, `(555) 010-0601`, $1 cash, with **🚩 Flag check for condition** ticked: the stage resets, MTG | PKM both on, sort back to newest (the resetKey). Section 4 uses this buy; section 6 deletes it.
 - [ ] Console: no new errors or React warnings through all of section 3.
 
 ## 4. A day page (C2, DayPage in files)
@@ -156,7 +157,7 @@ on a real customer's buy**.
 - [ ] ⋯ menu, while flagged: **✅ Condition checked** first, then Mark as completed, Export single buy, Print buy, Edit in project view, Convert to project, Delete buy….
 - [ ] The 🚩 chip (flagged at CONFIRM BUY in 3f): click it → **✅ Condition checked?** → click elsewhere: it closes; again → Yes: green ✅ with who and when, and ⋯ no longer offers ✅ Condition checked.
 - [ ] ⋯ → **Mark as completed** on the SMOKE buy: its cards lock, a × says **Completed (marked by hand, not exported): its ⋯ → Mark Paid/Ours again to change it**. ⋯ → Mark Paid/Ours again: unlocked.
-- [ ] ⋯ → **Convert to project**: the name is the customer's; Cancel. ⋯ → **Delete buy…**: its card count; Cancel (section 9 deletes it).
+- [ ] ⋯ → **Convert to project**: the name is the customer's; Cancel. ⋯ → **Delete buy…**: its card count; Cancel (section 6 deletes it).
 - [ ] If the buy has both games: **Also has N Pokémon cards →** goes to that day's Pokémon page.
 - [ ] Day-page EXPORT and COMPLETE: open, check the counts, **Cancel** (never confirm: real buys).
 
@@ -171,4 +172,25 @@ on a real customer's buy**.
 - [ ] The Buy tab looks as it did: search bar, the card with its foil sheen on a foil, suggestions, Finish & Details, the price table, the price panel, the buy list.
 - [ ] The local dev server serves the split files: no "Failed to load" in the console, and the Buy tab isn't unstyled for a moment after a reload.
 - [ ] A collection's screen (its flipped background and amber accent) and a project's look as they did.
+
+## 6. Clean up
+
+- [ ] Day page (today, Magic): the `SMOKE P6 Ash` buy → ⋯ → **Delete buy…** → delete. (Its customer stays in Past customers: there's no delete for those, as after the last smoke test.)
+- [ ] Collections: `SMOKE P6 Collection` → Delete collection… (type its name); `SMOKE P6 Project` → Delete project….
+- [ ] Settings: the fallback % and bulk value from section 2 read what they did at the start (noted in section 0).
+- [ ] The user `SMOKE P6 Ash`, if added: remove from the user list.
+- [ ] Note JustTCG usage at the end: ________ (well under 60 requests since the start).
+- [ ] Claude stops the preview server and removes `.claude/launch.json` (unless the owner wants to keep it for next time).
+- [ ] The Changelog keeps the run's entries (history is never deleted).
+
+## Findings
+
+| # | Priority | Section | Commit | What happened | Expected | Steps |
+|---|---|---|---|---|---|---|
+| | | | | | | |
+
+## Sign-off
+
+- [ ] Every section passed, or its findings are listed above.
+- [ ] Owner's call: push Phase 6 with Phases 1–5 (33 + Phase 6 commits ahead of `origin/main`), fix findings first, or revert a commit (each section names its own).
 
