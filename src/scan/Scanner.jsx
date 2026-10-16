@@ -25,6 +25,8 @@ import PickPrintingSheet from './PickPrintingSheet.jsx';
 // Auto scan (docs/SCAN_FUNCTION.md 6.3): the rest between one look at the
 // camera and the next, and the wait before the first.
 const REST_MS = 300;
+/** A first read waiting for the second look that must agree: taken straight away, not after a rest. */
+const CONFIRM_MS = 50;
 const FIRST_LOOK_MS = 800;
 // Older cards (tiers 2 and 3, 6.2) are read by their title, which is less
 // sure than a collector line: only on Scan card until the benchmark on the
@@ -371,8 +373,10 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         }
         attempts = await readPrepared(cut, pattern);
         found = await resolve(attempts);
-        if (!found) {
-          // The card a little off its spot: the line, looked for on the card itself.
+        if (!found && manual) {
+          // The card a little off its spot: the line, looked for on the card itself. Scan card
+          // only: auto scan looks again instead (several more reads would keep it busy while a
+          // new card is laid in; the strip is found on each card already, straighten.js).
           const onCard = cropTo(frame, lock.view, defaultCreateCanvas);
           const located = locate(onCard);
           const more = located.length ? await readCollectorLine(onCard, pattern, located) : [];
@@ -472,7 +476,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       if (!auto.current.paused && !busy.current && document.visibilityState === 'visible') {
         await auto.current.scanFrame({ manual: false });
       }
-      if (alive) timer = setTimeout(look, REST_MS);
+      if (alive) timer = setTimeout(look, view.current.pending ? CONFIRM_MS : REST_MS);
     };
     timer = setTimeout(look, FIRST_LOOK_MS);
     return () => {

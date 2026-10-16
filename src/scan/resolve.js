@@ -8,6 +8,12 @@
 // allow, cheapest question first; and each card it names is scored on how
 // many clues it agrees with: set, number, rarity and the artist's name. A
 // card is taken only when it's clearly ahead.
+//
+// Quick first (owner, 2026-10-16: "too slow … if that matches what our new
+// scryfall searcher is detecting, auto take that one quickly"): the printing
+// the set and number point at is looked up directly, as before the
+// searches, and taken at once when every other clue read (the rarity, the
+// artist) agrees with it. Only when it doesn't are the searches asked.
 
 import * as scry from '../lib/scryfall.js';
 import { parseCollectorNumber } from './recognition/parsing.js';
@@ -35,6 +41,8 @@ const AS_LETTER = { 0: 'O', 1: 'I', 5: 'S', 8: 'B', 6: 'G', 2: 'Z' };
  * right card further and sink the wrong ones.
  */
 const TAKE = { auto: { score: 6, lead: 1.5 }, manual: { score: 5, lead: 1 } };
+/** The quick way's card must score this much too: set and number as read, and the rarity or the artist. */
+const QUICK = 7.5;
 
 const plainNumber = (n) => String(n).toLowerCase().replace(/^0+(?=\d)/, '');
 
@@ -261,6 +269,20 @@ export function scoreCard(card, clues) {
   return s;
 }
 
+/**
+ * Every clue read, besides its set and number, agrees with this card: its
+ * rarity, if read, and its artist, if read (most of the name theirs), and
+ * at least one of the two was read. Pure, for tests.
+ */
+export function confirms(card, clues) {
+  const rarityRead = Boolean(clues.rarity);
+  const artistRead = nameLetters(clues.artist).length >= 4;
+  if (!card || (!rarityRead && !artistRead)) return false;
+  if (rarityRead && card.rarity !== clues.rarity) return false;
+  if (artistRead && !(card.artist && nameLikeness(clues.artist, card.artist) >= 0.75)) return false;
+  return true;
+}
+
 /** The best card of a pool, if it's clearly ahead: { card, score } or null. */
 function pickBest(pool, clues, take) {
   const ranked = [...pool.values()].map((card) => ({ card, score: scoreCard(card, clues) })).sort((a, b) => b.score - a.score);
@@ -281,13 +303,17 @@ const remembered = new Map();   // the strip's text → what it was found to be,
  * except a Japanese-only printing the app knows.
  * @param {string} text  what the OCR read
  * @param {Set<string>} known  every set code, upper case
- * @param {{ manual?: boolean, pattern?: RegExp, search?: (q: string) => Promise<object[]> }} [opts]
+ * @param {{ manual?: boolean, pattern?: RegExp, search?: (q: string) => Promise<object[]>,
+ *   lookup?: (set: string, number: string) => Promise<object|null> }} [opts]
  *   manual: Scan card takes a card a little less clearly ahead; pattern: mtgscan's set-code
- *   pattern, whose own parse is a clue too (a set code run into its number: "HOB0113"); search:
- *   Scryfall's (tests pass their own)
- * @returns {Promise<{ card: object, score: number }|{ foreign: string }|null>}
+ *   pattern, whose own parse is a clue too (a set code run into its number: "HOB0113"); search
+ *   and lookup: Scryfall's (tests pass their own)
+ * @returns {Promise<{ card: object, score: number, quick?: boolean }|{ foreign: string }|null>}
+ *   quick: taken on the direct lookup, no search asked
  */
-export async function resolveText(text, known, { manual = false, pattern = null, search = scry.searchQuick } = {}) {
+export async function resolveText(text, known, {
+  manual = false, pattern = null, search = scry.searchQuick, lookup = scry.cardBySetNumber,
+} = {}) {
   const key = `${manual ? 'm' : 'a'}:${String(text).trim()}`;
   if (remembered.has(key)) return remembered.get(key);
   const clues = readClues(text, known);
@@ -311,18 +337,41 @@ export async function resolveText(text, known, { manual = false, pattern = null,
   };
   const sets = clues.sets.map((s) => s.toLowerCase());
   let found = null;
-  if (sets.length && clues.numbers.length) {
+
+  // The quick way: the printing the set read as printed and the number point at, and mtgscan's own
+  // reading of the line (the detection before the searches), looked up directly; taken when the
+  // rarity and artist read agree with it (and only one such card).
+  const direct = new Map();
+  const top = clues.sets.find((s) => clues.setWeight[s] === 3);
+  if (top && clues.numbers[0]) direct.set(`${top}/${clues.numbers[0]}`, [top, clues.numbers[0]]);
+  if (parsed?.setCode && parsedNumber) direct.set(`${parsed.setCode}/${parsedNumber}`, [parsed.setCode, parsedNumber]);
+  const looked = await Promise.all([...direct.values()].map(async ([set, number]) => {
+    try {
+      return await lookup(set, number);
+    } catch (e) {
+      failed = true;
+      console.warn('A Scryfall lookup for the scanner failed', set, number, e);
+      return null;
+    }
+  }));
+  const agreed = [...new Map(looked.filter((c) => confirms(c, clues)).map((c) => [c.id, c])).values()];
+  const quick = agreed.length === 1 ? scoreCard(agreed[0], clues) : 0;
+  if (quick >= QUICK) found = { card: agreed[0], score: quick, quick: true };
+
+  if (!found && sets.length && clues.numbers.length) {
     await ask(`(${sets.map((s) => `set:${s}`).join(' or ')}) (${clues.numbers.map((n) => `cn:${quote(n)}`).join(' or ')})`);
     found = pickBest(pool, clues, take);
   }
+  // Still no card clearly ahead: that set's cards of that rarity, and the artist's cards, in one search.
   const likely = clues.sets.filter((s) => clues.setWeight[s] >= 2);
-  if (!found && likely.length && clues.rarity) {
-    await ask(`set:${likely[0].toLowerCase()} r:${clues.rarity}`);
-    found = pickBest(pool, clues, take);
-  }
   const word = clues.artist.split(/\s+/).map(nameLetters).sort((a, b) => b.length - a.length)[0] ?? '';
-  if (!found && word.length >= 4) {
-    await ask(`a:${quote(word.toLowerCase())}${sets.length ? ` (${sets.map((s) => `set:${s}`).join(' or ')})` : ''}`);
+  const wider = [];
+  if (likely.length && clues.rarity) wider.push(`(set:${likely[0].toLowerCase()} r:${clues.rarity})`);
+  if (word.length >= 4) {
+    wider.push(`(a:${quote(word.toLowerCase())}${sets.length ? ` (${sets.map((s) => `set:${s}`).join(' or ')})` : ''})`);
+  }
+  if (!found && wider.length) {
+    await ask(wider.join(' or '));
     found = pickBest(pool, clues, take);
   }
   let out = found;

@@ -267,6 +267,23 @@ export function hasBackFace(card) {
 
 // ---------------------------------------------------------------- scanning
 
+/**
+ * The printing a phone's scan read off a card's collector line:
+ * `/cards/<set>/<number>`, English, kept a day this page's life. Not a
+ * search: Scryfall takes ten of these a second, against two searches, and
+ * answers them faster (src/scan/resolve.js asks this first). Null when
+ * Scryfall has no such card.
+ * @param {string} set  set code, any case
+ * @param {string} number  as printed: "125", "263s", "4★"
+ * @returns {Promise<object|null>}  a Scryfall card
+ */
+const bySetNumberCache = memoryCache(DAY);
+export function cardBySetNumber(set, number) {
+  const code = String(set).toLowerCase();
+  return bySetNumberCache.get(`${code}/${number}`,
+    () => transport.getJson(`${API}/cards/${encodeURIComponent(code)}/${encodeURIComponent(number)}`));
+}
+
 const byIdCache = memoryCache(DAY / 4);
 /**
  * A card by its Scryfall id (the computer pricing a scan, 8.3), kept for six

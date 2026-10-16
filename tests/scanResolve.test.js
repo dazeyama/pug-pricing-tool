@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { nameLikeness, readClues, resolveText, scoreCard } from '../src/scan/resolve.js';
+import { confirms, nameLikeness, readClues, resolveText, scoreCard } from '../src/scan/resolve.js';
 
 // Owner, 2026-10-16: the collector strip's text, every clue in it, and the card found by elimination.
 
@@ -63,11 +63,14 @@ const PONIES = card('ponies', 'hob', '3', 'common', 'Third Painter');
 const NEIGHBOUR = card('neighbour', 'hob', '118', 'rare', 'Fourth Painter');
 const HOB = [GIANT, GARRISON, PONIES, NEIGHBOUR];
 
-/** A pretend Scryfall over a few cards: set:, cn: (any of), r: and a:. Records what was asked. */
+/**
+ * A pretend Scryfall over a few cards. search: set:, cn: (any of), r: and a:, and groups joined
+ * by ") or (". lookup: a set and number. Records what was asked of each.
+ */
 function fakeSearch(cards) {
   const asked = [];
-  const search = async (q) => {
-    asked.push(q);
+  const looked = [];
+  const matches = (q) => {
     const sets = [...q.matchAll(/set:(\w+)/g)].map((m) => m[1]);
     const numbers = [...q.matchAll(/cn:"(\w+)"/g)].map((m) => m[1]);
     const rarity = /r:(\w+)/.exec(q)?.[1];
@@ -75,9 +78,17 @@ function fakeSearch(cards) {
     return cards.filter((c) => (!sets.length || sets.includes(c.set))
       && (!numbers.length || numbers.includes(c.collector_number))
       && (!rarity || c.rarity === rarity)
-      && (!artist || c.artist.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().includes(artist)));
+      && (!artist || c.artist.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes(artist)));
   };
-  return { search, asked };
+  const search = async (q) => {
+    asked.push(q);
+    return [...new Set(q.split(/\) or \(/).flatMap(matches))];
+  };
+  const lookup = async (set, number) => {
+    looked.push(`${set.toLowerCase()}/${number}`);
+    return cards.find((c) => c.set === set.toLowerCase() && c.collector_number === number) ?? null;
+  };
+  return { search, lookup, asked, looked };
 }
 
 test('the right card scores well ahead of its neighbours', () => {
@@ -86,70 +97,84 @@ test('the right card scores well ahead of its neighbours', () => {
   for (const other of [GARRISON, PONIES, NEIGHBOUR]) assert.ok(giant - scoreCard(other, clues) >= 4, other.id);
 });
 
-test('read exactly: one search, the card', async () => {
-  const { search, asked } = fakeSearch(HOB);
-  const found = await resolveText('R 0113\nHOB • EN ⟿ MIKLOS LIGETI', KNOWN, { search });
+test('read exactly: the quick way, looked up directly, no search', async () => {
+  const { search, lookup, asked, looked } = fakeSearch(HOB);
+  const found = await resolveText('R 0113\nHOB • EN ⟿ MIKLOS LIGETI', KNOWN, { search, lookup });
   assert.equal(found.card.id, 'giant');
-  assert.equal(asked.length, 1);
-  assert.match(asked[0], /set:hob/);
-  assert.match(asked[0], /cn:"113"/);
+  assert.equal(found.quick, true);
+  assert.deepEqual(looked, ['hob/113']);
+  assert.equal(asked.length, 0);
+});
+
+test('the quick way refuses a card the rarity or artist contradicts', () => {
+  const clues = readClues('R 0113\nHOB • EN ⟿ MIKLOS LIGETI', KNOWN);
+  assert.equal(confirms(GIANT, clues), true);
+  assert.equal(confirms(GARRISON, clues), false);
+  assert.equal(confirms(card('x', 'hob', '113', 'rare', 'Another Painter'), clues), false);
+  assert.equal(confirms(GIANT, readClues('HOB 113', KNOWN)), false, 'nothing but set and number read');
 });
 
 test('a digit lost (013): the rarity and the artist find it, not HOB 13', async () => {
-  const { search, asked } = fakeSearch(HOB);
-  const found = await resolveText('R 013\nHOB • EN ⟿ MIKLOS LIGETI', KNOWN, { search });
+  const { search, lookup, asked, looked } = fakeSearch(HOB);
+  const found = await resolveText('R 013\nHOB • EN ⟿ MIKLOS LIGETI', KNOWN, { search, lookup });
   assert.equal(found.card.id, 'giant');
-  assert.ok(asked.some((q) => /r:rare/.test(q)), asked.join(' | '));
+  assert.deepEqual(looked, ['hob/13'], 'HOB 13 looked up, and refused');
+  // The rarity's cards and the artist's, asked in one search after the set and number's.
+  assert.equal(asked.length, 2);
+  assert.match(asked[1], /r:rare/);
+  assert.match(asked[1], /a:"(ligeti|miklos)"/);
 });
 
 test('only the last digit read (3): not Troop of Ponies HOB 3, a common', async () => {
-  const { search } = fakeSearch(HOB);
-  const found = await resolveText('R 3\nHOB EN MIKLOS LIGETI', KNOWN, { search });
+  const { search, lookup } = fakeSearch(HOB);
+  const found = await resolveText('R 3\nHOB EN MIKLOS LIGETI', KNOWN, { search, lookup });
   assert.equal(found.card.id, 'giant');
 });
 
 test('set and number alone, read clearly: taken; with a wrong rarity: not by auto scan', async () => {
-  const { search } = fakeSearch(HOB);
-  assert.equal((await resolveText('HOB 113', KNOWN, { search })).card.id, 'giant');
-  assert.equal(await resolveText('C 0113\nHOB', KNOWN, { search }), null);
+  const { search, lookup } = fakeSearch(HOB);
+  assert.equal((await resolveText('HOB 113', KNOWN, { search, lookup })).card.id, 'giant');
+  assert.equal(await resolveText('C 0113\nHOB', KNOWN, { search, lookup }), null);
 });
 
 test('the number unreadable: the artist and the rarity, in that set', async () => {
-  const { search, asked } = fakeSearch(HOB);
-  const found = await resolveText('R\nHOB • EN ⟿ MIKLOS LIGETI', KNOWN, { search });
+  const { search, lookup, asked, looked } = fakeSearch(HOB);
+  const found = await resolveText('R\nHOB • EN ⟿ MIKLOS LIGETI', KNOWN, { search, lookup });
   assert.equal(found.card.id, 'giant');
   assert.ok(asked.some((q) => /a:"ligeti"|a:"miklos"/.test(q)) || asked.some((q) => /r:rare/.test(q)));
+  assert.deepEqual(looked, [], 'no number: nothing to look up directly');
 });
 
 test('a number read as another card, the artist clearly not theirs: the card by the artist read', async () => {
   const shove = card('shove', 'blb', '145', 'uncommon', 'Zoltan Boros');
   const talent = card('talent', 'blb', '5', 'uncommon', 'Ovidio Cartagena');
-  const { search } = fakeSearch([shove, talent]);
-  assert.equal((await resolveText('U 5\nBLB EN ZOLTAN BOROS', KNOWN, { search })).card.id, 'shove');
+  const { search, lookup } = fakeSearch([shove, talent]);
+  assert.equal((await resolveText('U 5\nBLB EN ZOLTAN BOROS', KNOWN, { search, lookup })).card.id, 'shove');
 });
 
 test('a set code a letter off: the number, rarity and artist find the card', async () => {
   const geyser = card('geyser', 'dmu', '71', 'common', 'Olivier Bernard');
-  const { search } = fakeSearch([geyser, card('other', 'dmu', '17', 'common', 'Someone Else')]);
-  assert.equal((await resolveText('C 0071\nDMQ EN OLIVIER BERNARD', KNOWN, { search })).card.id, 'geyser');
+  const { search, lookup } = fakeSearch([geyser, card('other', 'dmu', '17', 'common', 'Someone Else')]);
+  assert.equal((await resolveText('C 0071\nDMQ EN OLIVIER BERNARD', KNOWN, { search, lookup })).card.id, 'geyser');
 });
 
 test('one digit read: the card whose number ends in it, not one a digit away', async () => {
   const fog = card('fog', 'xln', '177', 'common', 'Igor Kieryluk');
   const other = card('other', 'xln', '8', 'common', 'Igor Kieryluk');
-  const { search } = fakeSearch([fog, other]);
-  assert.equal((await resolveText('C 7\nXLN EN IGOR KIERYLUK', KNOWN, { search })).card.id, 'fog');
+  const { search, lookup } = fakeSearch([fog, other]);
+  assert.equal((await resolveText('C 7\nXLN EN IGOR KIERYLUK', KNOWN, { search, lookup })).card.id, 'fog');
 });
 
 test('two cards equally likely: neither is taken', async () => {
-  const twins = [card('a', 'hob', '113', 'rare', 'Same Painter'), card('b', 'hob', '113', 'rare', 'Same Painter')];
-  const { search } = fakeSearch(twins);
-  assert.equal(await resolveText('R 0113\nHOB EN SAME PAINTER', KNOWN, { search }), null);
+  // 110 read; 116 and 118 each a digit's look-alike away, and alike in everything else.
+  const twins = [card('a', 'hob', '116', 'rare', 'Same Painter'), card('b', 'hob', '118', 'rare', 'Same Painter')];
+  const { search, lookup } = fakeSearch(twins);
+  assert.equal(await resolveText('R 0110\nHOB EN SAME PAINTER', KNOWN, { search, lookup }), null);
 });
 
 test('another language: refused, not its English printing', async () => {
-  const { search } = fakeSearch(HOB);
-  assert.deepEqual(await resolveText('R 0113\nHOB • DE ⟿ MIKLOS LIGETI', KNOWN, { search }), { foreign: 'DE' });
+  const { search, lookup } = fakeSearch(HOB);
+  assert.deepEqual(await resolveText('R 0113\nHOB • DE ⟿ MIKLOS LIGETI', KNOWN, { search, lookup }), { foreign: 'DE' });
 });
 
 test('a search that fails is not remembered', async () => {
@@ -158,7 +183,11 @@ test('a search that fails is not remembered', async () => {
     if (!online) throw new Error('offline');
     return [GIANT];
   };
-  assert.equal(await resolveText('R 0113\nHOB EN MIKLOS LIGETI X', KNOWN, { search }), null);
+  const lookup = async () => {
+    if (!online) throw new Error('offline');
+    return GIANT;
+  };
+  assert.equal(await resolveText('R 0113\nHOB EN MIKLOS LIGETI X', KNOWN, { search, lookup }), null);
   online = true;
-  assert.equal((await resolveText('R 0113\nHOB EN MIKLOS LIGETI X', KNOWN, { search })).card.id, 'giant');
+  assert.equal((await resolveText('R 0113\nHOB EN MIKLOS LIGETI X', KNOWN, { search, lookup })).card.id, 'giant');
 });

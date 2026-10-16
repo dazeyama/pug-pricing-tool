@@ -728,6 +728,23 @@ locks **automatically on the first card**.
   number, the set a letter off, all on one line): **none wrong**, 166 right, 14 nothing (12 of them
   with no number at all); mtgscan's parse alone reads HOB 113's damaged texts as HOB 3, 13 or 118.
   Tests: `tests/scanResolve.test.js`.
+- **Quick when it can be** (owner, 2026-10-16: "now that we've nailed accuracy we need to optimize
+  this for speed … if that matches what our new scryfall searcher is detecting, auto take that one
+  quickly"):
+  - **The quick way first.** The printing the set (as printed) and number point at, and mtgscan's
+    own reading of the line, are looked up directly (`cardBySetNumber`: Scryfall's
+    `/cards/<set>/<number>`, ten a second against two searches, about 0.25 s against 0.4 s, kept a
+    day). A card is taken at once when every other clue read agrees with it (`confirms`: the rarity
+    if read, the artist if read, at least one of the two) and it scores 7.5 or more, and only one
+    such card. Anything else goes on to the searches, as before.
+  - **One wider search, not two.** When the set and number search leaves no card clearly ahead, that
+    set's cards of the rarity and the artist's cards are asked in one search (a 550 ms turn saved).
+  - **The second look straight away.** A first read waiting for the look that must agree is looked
+    at again after 50 ms, not the 300 ms rest (`CONFIRM_MS`). Two looks still have to agree.
+  - **No second reading of the whole card in auto scan.** When the strip doesn't resolve (a card
+    being laid in, a hand in the way), auto scan looks again instead of reading the card's crop as
+    well (several more OCR passes, which kept it busy as the next card landed). Scan card still does.
+  - Checked against Scryfall: the 17 modern cards' straightened strips, still 17 right, **all 17 the quick way** (one direct lookup each, no search); the 180 damaged texts, still none wrong and 166 right, 103 of them the quick way. Tests: `tests/scanResolve.test.js`.
 - **New card or the same one:** the art (the middle of the art box at its locked place) as a 16 × 10
   thumbnail of true averages, brightness and contrast evened out (`artPrint`, `artDistance` with a
   one-cell shift). After a card is sent its art is held; **nothing is read while the art is under 12
