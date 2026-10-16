@@ -24,10 +24,12 @@ real data. The live site uses the **prod** project.
 A phone's camera only works on an HTTPS page, so for the scanner the dev server
 has a second way to start, reachable from the shop's Wi-Fi:
 
-1. Stop `start.bat` if it's running (both use port 5180).
-2. In the project folder: `npm run dev:lan`. It prints a **Network** address such
-   as `https://192.168.1.23:5180/`. (Or find the laptop's address with `ipconfig`:
+1. Double-click **`start-phone.bat`**. It stops `start.bat`'s server if it's running
+   (both use port 5180), starts `npm run dev:lan`, opens the laptop's page, and
+   prints the phone's address, such as `https://192.168.1.23:5180/#/scan`. SPACE
+   stops it. (By hand: `npm run dev:lan`, and the laptop's address from `ipconfig`,
    the Wi-Fi adapter's IPv4 address.)
+2. If Windows Firewall asks about Node.js the first time, allow it on private networks.
 3. On the phone, on the same Wi-Fi, open that address followed by `#/scan`, e.g.
    `https://192.168.1.23:5180/#/scan`. The certificate is the dev server's own, so
    the browser warns once: Chrome → **Advanced → Proceed**; Safari → **Show
