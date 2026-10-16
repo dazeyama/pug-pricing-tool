@@ -10,7 +10,7 @@ const transport = createTransport({ spacingMs: 100 });
 const bulkSearches = createTransport({ spacingMs: 550 });
 
 /**
- * @typedef {{ code: string, name: string, printed_size: number|null,
+ * @typedef {{ code: string, name: string, printed_size: number|null, card_count: number|null,
  *   released_at: string|null, set_type: string, icon_svg_uri: string|null }} ScryfallSet
  */
 
@@ -23,14 +23,17 @@ let setsByCode = null;
  * @returns {Promise<Map<string, ScryfallSet>>}  keyed by lower-case code
  */
 export function loadSets() {
-  // .v3: adds `parent_set_code` (a promo set's main set, for the export's
-  // categories, export spec 7.3); .v2 added `digital`, so Arena-only set codes
-  // aren't treated as sets.
-  setsPromise ??= storedOrDownload('pug.scryfall.sets.v3', DAY, async () => {
+  // .v4: adds `card_count` (an old card's "123/350" names its set's size,
+  // which Scryfall gives as printed_size only where they differ; scanner
+  // tier 2, docs/SCAN_FUNCTION.md 6.2). .v3 added `parent_set_code` (a promo
+  // set's main set, for the export's categories, export spec 7.3); .v2
+  // `digital`, so Arena-only set codes aren't treated as sets.
+  setsPromise ??= storedOrDownload('pug.scryfall.sets.v4', DAY, async () => {
     // The older copies go when a new one downloads (once a day at most), not on every call.
     try {
       localStorage.removeItem('pug.scryfall.sets');
       localStorage.removeItem('pug.scryfall.sets.v2');
+      localStorage.removeItem('pug.scryfall.sets.v3');
     } catch {
       // storage blocked: nothing to clean up
     }
@@ -39,6 +42,7 @@ export function loadSets() {
       code: s.code,
       name: s.name,
       printed_size: s.printed_size ?? null,
+      card_count: s.card_count ?? null,
       released_at: s.released_at ?? null,
       set_type: s.set_type,
       parent_set_code: s.parent_set_code ?? null,

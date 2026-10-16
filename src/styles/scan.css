@@ -226,3 +226,25 @@ html[data-scan] .toast { max-width: none; }
 .scan-sheet-error { margin: 0; color: var(--bad); font-size: 13px; }
 .scan-sheet-foot { display: flex; justify-content: flex-end; }
 .scan-hint { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.4; text-align: center; }
+
+/* ---- An older card's printings, to pick from ---- */
+.scan-sheet.pick { border-color: var(--accent); }
+.scan-pick-title { font-size: 15px; }
+.scan-pick-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; max-height: 52vh; overflow-y: auto; }
+.scan-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 6px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-2);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+.scan-pick:active { border-color: var(--accent); }
+.scan-pick img { border-radius: 4px; background: var(--bg); }
+.scan-pick-set { font-size: 13px; font-weight: 600; text-align: center; line-height: 1.25; }
+.scan-pick-meta { font-size: 12px; color: var(--muted); }

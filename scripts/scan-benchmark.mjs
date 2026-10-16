@@ -114,29 +114,57 @@ if (!titles) {
   console.log(`\nRead right: ${right}/${total}; sure (score ≥ ${HIGH}, auto scan): ${sure}/${total} = ${Math.round((sure / total) * 100)}%;`
     + ` fair (≥ ${MEDIUM}, Scan card): ${fair}/${total}; ${Math.round(ms / total)} ms a photo here.`);
 } else {
-  const { readTitle } = await import('../src/scan/titles.js');
+  const { parseOldNumber, readBottom, readTitle } = await import('../src/scan/titles.js');
   const { matchName } = await import('../src/scan/nameMatch.js');
   const names = (await (await fetch('https://api.scryfall.com/catalog/card-names', { headers: SCRYFALL_HEADERS })).json()).data;
   console.log(`Titles: ${files.length} photos in ${folder}\n`);
+  let numbered = 0;
+  let numberRight = 0;
   const read = (canvas) => worker.recognize(canvas.toBuffer('image/png')).then(({ data }) => data.text ?? '');
   for (const file of files) {
-    const want = path.parse(file).name.split('__')[1]?.trim() ?? null;
+    const [head, tail] = path.parse(file).name.split('__');
+    const want = tail?.trim() ?? null;
+    // "SET-NUM__Name": NUM is the "123/350" number a 1998–2014 card has, "x" for none.
+    const num = head?.split('-')[1] ?? '';
+    const wantNumber = /^\d+$/.test(num) ? num.replace(/^0+(?=\d)/, '') : null;
     const image = await loadImage(fs.readFileSync(path.join(folder, file)));
     const canvas = createCanvas(image.width, image.height);
     canvas.getContext('2d').drawImage(image, 0, 0);
     const t0 = performance.now();
+    // As the phone does (src/scan/older.js): one line, then a block if that names nothing.
     await worker.setParameters({ tessedit_pageseg_mode: '7' });
-    const text = await readTitle(canvas, read, make, { wholeFrame: true });
+    let text = await readTitle(canvas, read, make, { wholeFrame: true });
     await worker.setParameters({ tessedit_pageseg_mode: '6' });
-    const match = matchName(text, names);
+    let match = matchName(text, names);
+    if (!match) {
+      const second = await readTitle(canvas, read, make, { wholeFrame: true });
+      match = matchName(second, names);
+      text = `${text.trim()}" / "${second.trim()}`;
+    }
+    // As the phone does: the "123/350" in what the collector-line reading read, else the bottom band.
+    const { attempts } = await readLine(canvas);
+    let bottom = attempts.map((a) => a.text).find((t) => parseOldNumber(t)) ?? null;
+    if (!bottom) {
+      await worker.setParameters({ tessedit_pageseg_mode: '6' });
+      bottom = await readBottom(canvas, read, make, { wholeFrame: true });
+    }
+    const old = parseOldNumber(bottom);
     const took = performance.now() - t0;
     ms += took;
     total += 1;
     const ok = Boolean(want) && match?.name?.toLowerCase() === want.toLowerCase();
     if (ok) right += 1;
-    console.log(`${ok ? '✓' : '✗'} ${file.padEnd(40)} read "${text.trim()}" → ${match?.name ?? '(no name)'}  ${Math.round(took)} ms`);
+    let numberNote = '';
+    if (wantNumber) {
+      numbered += 1;
+      const numberOk = old?.number === wantNumber;
+      if (numberOk) numberRight += 1;
+      numberNote = `  number ${numberOk ? '✓' : '✗'} ${old ? `${old.number}/${old.size}` : `(read "${bottom.trim().slice(0, 50)}")`}`;
+    }
+    console.log(`${ok ? '✓' : '✗'} ${file.padEnd(40)} read "${text.trim()}" → ${match?.name ?? '(no name)'}${numberNote}  ${Math.round(took)} ms`);
   }
-  console.log(`\nNamed right: ${right}/${total} = ${Math.round((right / total) * 100)}%; ${Math.round(ms / total)} ms a photo here.`);
+  console.log(`\nNamed right: ${right}/${total} = ${Math.round((right / total) * 100)}%;`
+    + ` numbers read right: ${numberRight}/${numbered}; ${Math.round(ms / total)} ms a photo here.`);
 }
 
 await worker.terminate();

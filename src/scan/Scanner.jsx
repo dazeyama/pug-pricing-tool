@@ -11,12 +11,18 @@ import { guideStyle } from './guide.js';
 import { HIGH, MEDIUM, locate, lookupReading, readCollectorLine, setCodePattern } from './read.js';
 import { ocrWorker, onOcrStatus } from './ocr.js';
 import { isMuted, play, setMuted, unlockSounds } from './sounds.js';
+import { readOlderCard } from './older.js';
 import NeedsPriceSheet from './NeedsPriceSheet.jsx';
+import PickPrintingSheet from './PickPrintingSheet.jsx';
 
 // Auto scan (docs/SCAN_FUNCTION.md 6.3): the rest between one look at the
 // camera and the next, and the wait before the first.
 const REST_MS = 300;
 const FIRST_LOOK_MS = 800;
+// Older cards (tiers 2 and 3, 6.2) are read by their title, which is less
+// sure than a collector line: only on Scan card until the benchmark on the
+// store's own photos reads 80% of them right (docs/SCAN_FUNCTION.md 11.3).
+const AUTO_OLDER = false;
 // A scan still with the computer: auto scan waits for its outcome.
 const WITH_COMPUTER = new Set(['sent', 'pricing']);
 
@@ -83,6 +89,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const [ocrLoading, setOcrLoading] = useState(false);
   // The card last sent is still in view (auto scan won't send it again).
   const [sameCard, setSameCard] = useState(false);
+  // An older card that could be several printings: { tier, name, cards } to pick from.
+  const [pick, setPick] = useState(null);
   const { offline } = useConnection();
   const busy = useRef(false);
   const lastSent = useRef(null);                  // the printing and finish last sent (6.3)
@@ -196,8 +204,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       }
       return;
     }
-    if (needs) {
-      if (manual) say('warn', 'Answer the card that needs a price first.');
+    if (needs || pick) {
+      if (manual) say('warn', needs ? 'Answer the card that needs a price first.' : 'Pick the printing first.');
       return;
     }
     busy.current = true;
@@ -215,9 +223,19 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         setSameCard(false);
         return;
       }
-      const found = blocks.length
-        ? await lookupReading(await readCollectorLine(frame, pattern, blocks), pattern, manual ? MEDIUM : HIGH)
-        : null;
+      const attempts = blocks.length ? await readCollectorLine(frame, pattern, blocks) : [];
+      let found = attempts.length ? await lookupReading(attempts, pattern, manual ? MEDIUM : HIGH) : null;
+      // No modern collector line: an older card, by its title (and "123/350" from 1998 on).
+      if (!found && (manual || AUTO_OLDER)) {
+        if (manual) say('muted', 'No set code at the bottom: reading the title…');
+        const old = await readOlderCard(frame, { texts: attempts.map((a) => a.text) });
+        if (old?.cards.length === 1) found = { card: old.cards[0], tier: old.tier };
+        else if (old) {
+          setPick(old);
+          say('muted', `${old.name}: pick its printing.`);
+          return;
+        }
+      }
       if (!found) {
         if (manual) {
           say('err', "Couldn't read this card: set it aside and add it on the computer.");
@@ -230,23 +248,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         if (manual) play('error');
         return;
       }
-      const { card } = found;
-      const finish = scanFinish(card, foil);
-      const key = `${card.id}:${finish}`;
-      if (!manual && key === lastSent.current) {
-        setSameCard(true);
-        return;
-      }
-      const r = await send({ ...cardFields(card), finish, condition, tier: 1 });
-      if (r.error) {
-        say('err', SEND_MESSAGES[r.error] ?? `Couldn't send it: ${r.error}`);
-        play('error');
-        check();
-        return;
-      }
-      lastSent.current = key;
-      setSameCard(true);
-      setLocal(null);
+      await sendCard(found.card, { tier: found.tier ?? 1, manual });
     } catch (e) {
       console.error('Scan failed', e);
       if (manual) {
@@ -259,13 +261,33 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     }
   }
 
+  /** Send a recognised card, unless auto scan sees the card it last sent. */
+  async function sendCard(card, { tier, manual }) {
+    const finish = scanFinish(card, foil);
+    const key = `${card.id}:${finish}`;
+    if (!manual && key === lastSent.current) {
+      setSameCard(true);
+      return;
+    }
+    const r = await send({ ...cardFields(card), finish, condition, tier });
+    if (r.error) {
+      say('err', SEND_MESSAGES[r.error] ?? `Couldn't send it: ${r.error}`);
+      play('error');
+      check();
+      return;
+    }
+    lastSent.current = key;
+    setSameCard(true);
+    setLocal(null);
+  }
+
   // Auto scan (6.3): while the camera runs, look again and again, resting
   // between looks; paused while the computer can't take cards, a card needs
   // a price, the last scan is still with the computer (so sounds and the
   // strip keep step with the list), the connection is down, or the page is
   // hidden. Stop ends it with the camera.
   const auto = useRef(null);
-  auto.current = { scanFrame, paused: Boolean(blocked) || Boolean(needs) || withComputer || offline };
+  auto.current = { scanFrame, paused: Boolean(blocked) || Boolean(needs) || Boolean(pick) || withComputer || offline };
   useEffect(() => {
     if (!camera.on) return undefined;
     let alive = true;
@@ -367,7 +389,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         <button
           type="button"
           className="btn primary scan-now"
-          disabled={!camera.on || reading || Boolean(needs)}
+          disabled={!camera.on || reading || Boolean(needs) || Boolean(pick)}
           onClick={() => scanFrame({ manual: true })}
         >
           {reading ? 'Reading…' : 'Scan card'}
@@ -382,13 +404,26 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
 
       {needs ? (
         <NeedsPriceSheet key={needs.id} scan={needs} onAnswer={(price) => answer(needs.id, price)} />
+      ) : pick ? (
+        <PickPrintingSheet
+          pick={pick}
+          onPick={(card) => {
+            const { tier } = pick;
+            setPick(null);
+            sendCard(card, { tier, manual: true });
+          }}
+          onSkip={() => {
+            setPick(null);
+            say('muted', 'Skipped: set it aside and add it on the computer.');
+          }}
+        />
       ) : strip && (
         <div className={`scan-strip ${strip.tone}`} role="status">
           {strip.title && <strong>{strip.title}</strong>}
           <span>{strip.text}</span>
         </div>
       )}
-      {camera.on && !needs && (
+      {camera.on && !needs && !pick && (
         <p className="scan-hint">
           {sameCard
             ? 'Same card in view: it won’t be added again. Tap Scan card for another copy.'
