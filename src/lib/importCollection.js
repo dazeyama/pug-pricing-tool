@@ -5,7 +5,7 @@
 
 import Papa from 'papaparse';
 import { supabase } from './supabase.js';
-import { cardImage, cardsByTcgplayerIds, loadSets, searchAll } from './scryfall.js';
+import { cardImage, cardsByTcgplayerIds, keptLanguage, loadSets, searchAll } from './scryfall.js';
 import { fetchPrices } from './prices.js';
 import { inChunks } from './inChunks.js';
 import { scryfallCards, scryfallCollection } from './todaysPrices.js';
@@ -19,6 +19,15 @@ import {
   cardsForRow, categorySets, choosePrinting, fileFormat, finishOf, finishOfPrinting, importKey, missingColumns,
   namesFor, readRows, readTcgplayerRows,
 } from './importMatch.js';
+
+/**
+ * Every printing a Scryfall search finds, in the languages the Buy tab's
+ * searches keep (decision 271): English, and the Japanese-only printings
+ * English packs carry (Mystical Archive's Japanese alternate art), never the
+ * Japanese copies of English cards. No lang: term, so Scryfall gives each
+ * printing once, in English where there is one.
+ */
+const printings = async (q, opts) => (await searchAll(q, opts)).filter(keptLanguage);
 
 const fail = (error, what) => {
   if (error) throw new Error(`${what}: ${error.message}`);
@@ -174,7 +183,7 @@ async function matchSkus(rows, onStep) {
     && !byProduct.has(String(r.jt.tcgplayerId ?? '')));
   const named2 = new Map();
   for (const name of [...new Set(lost.map((r) => plainName(r.jt.name)))]) {
-    named2.set(name, await searchAll(`!"${name.replace(/"/g, '')}" lang:en game:paper`, { maxPages: 1 }));
+    named2.set(name, await printings(`!"${name.replace(/"/g, '')}" game:paper`, { maxPages: 1 }));
   }
 
   return named.map((row) => {
@@ -311,7 +320,7 @@ export async function matchImport(rows, onStep, format = 'cc') {
   for (const [i, q] of queries.entries()) {
     onStep?.(`Looking up printings: ${i + 1} of ${queries.length}…`);
     const setTerms = [...q.codes].map((c) => `set:${c}`).join(' or ');
-    pool.push(...await searchAll(`(${setTerms}) (${[...q.terms].join(' or ')}) lang:en game:paper`));
+    pool.push(...await printings(`(${setTerms}) (${[...q.terms].join(' or ')}) game:paper`));
   }
   const inItsSets = (row) => {
     const codes = new Set(back.get(fold(row.category)) ?? []);
@@ -328,7 +337,7 @@ export async function matchImport(rows, onStep, format = 'cc') {
     const chunks = nameChunks(names);
     for (const [i, chunk] of chunks.entries()) {
       onStep?.(`Looking further for ${missing.length} card${missing.length === 1 ? '' : 's'}: ${i + 1} of ${chunks.length}…`);
-      everywhere.push(...await searchAll(`(${chunk.join(' or ')}) lang:en game:paper`, { maxPages: FALLBACK_PAGES }));
+      everywhere.push(...await printings(`(${chunk.join(' or ')}) game:paper`, { maxPages: FALLBACK_PAGES }));
     }
   }
 
@@ -370,7 +379,8 @@ export function importLines(chosen, sets, fileName) {
     }
     out.set(key, {
       game: 'mtg',
-      lang: 'en',
+      // A Japanese-only printing is a Japanese card: "[JP]" on the line, as on the Buy tab (decision 269).
+      lang: card.lang === 'ja' ? 'ja' : 'en',
       name: card.name,
       name_key: nameKey(card.name),
       set_code: card.set.toUpperCase(),
@@ -465,5 +475,5 @@ export async function saveImport({ target, name, lines, fileName, userId, device
 export async function findPrintings(text) {
   const name = String(text ?? '').trim();
   if (name.length < 2) return [];
-  return searchAll(`${name.split(/\s+/).map((w) => `"${w.replace(/"/g, '')}"`).join(' ')} lang:en game:paper`, { maxPages: 1 });
+  return printings(`${name.split(/\s+/).map((w) => `"${w.replace(/"/g, '')}"`).join(' ')} game:paper`, { maxPages: 1 });
 }

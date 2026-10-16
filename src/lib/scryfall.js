@@ -110,7 +110,7 @@ export function numberTerm(number) {
  * 79") come up in a plain English search, the Japanese copies of English
  * cards don't, and other languages' own printings are left out.
  */
-const keptLanguage = (card) => card.lang === 'en' || card.lang === 'ja';
+export const keptLanguage = (card) => card.lang === 'en' || card.lang === 'ja';
 
 /**
  * Candidate printings for a query: `cards/search` with unique=prints, newest
