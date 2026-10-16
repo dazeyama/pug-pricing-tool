@@ -60,8 +60,9 @@ export default function PricePage() {
       notes,
       paidPrice,
       paidMethod,
-      cashPct: master.cash,
-      creditPct: master.credit,
+      // The rates it was priced at, custom ones included: kept on the buy (owner, 2026-10-16; 0061).
+      cashPct: rates.cash,
+      creditPct: rates.credit,
       lineTexts: Object.fromEntries(draft.lines.map((l) => [l.id, lineText(l)])),
     });
     if (!done) return;

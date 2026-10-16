@@ -1163,11 +1163,12 @@ function BuyPanel({
             {completed && lines.some((l) => l.cc_sell_price != null) ? 'Sell' : 'Market'} <strong>{formatMoney(t.market)}</strong>
           </span>
           <span className="is-cash">
-            Cash ({Number(buy.cash_pct)}%)<CustomRateMark totals={t} />
+            {/* The rates it was priced at, ✎ when custom (owner, 2026-10-16). */}
+            Cash ({Number(buy.cash_pct)}%{buy.custom_cash_pct != null && ' ✎'})<CustomRateMark totals={t} />
             {' '}<strong>{formatMoney(t.cash)}</strong>
           </span>
           <span className="is-credit">
-            Credit ({Number(buy.credit_pct)}%)<CustomRateMark totals={t} />
+            Credit ({Number(buy.credit_pct)}%{buy.custom_credit_pct != null && ' ✎'})<CustomRateMark totals={t} />
             {' '}<strong>{formatMoney(t.credit)}</strong>
           </span>
         </div>

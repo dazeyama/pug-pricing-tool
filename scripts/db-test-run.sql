@@ -854,28 +854,29 @@ begin
   perform pg_temp.ok(s, '… but not a card''s own rate',
     (select internal.line_pct(l, x, 'credit') = 80 from buy_lines l, buys x where l.id = l_own and x.id = b));
 
-  -- Confirmed with its custom rates (45 cash) and a card's own (80 credit) still set.
+  -- Confirmed with its custom rates (45 cash) and a card's own (80 credit) still set; the
+  -- app sending the master rates, as before 0061.
   perform confirm_buy(b, u, 'DBTEST Rates', '', 50, 65, null, 20, 'cash', '{}', '5550100021');
-  perform pg_temp.ok(s, 'CONFIRM BUY forgets custom and own rates: the buy on the default rates (0057)',
-    (select cash_pct = 50 and credit_pct = 65 and custom_cash_pct is null and custom_credit_pct is null
+  perform pg_temp.ok(s, 'CONFIRM BUY keeps the rates it was priced at: custom and own (0061)',
+    (select cash_pct = 45 and credit_pct = 65 and custom_cash_pct = 45 and custom_credit_pct is null
        from buys where id = b)
-    and not exists (select 1 from buy_lines where buy_id = b and (custom_cash_pct is not null or custom_credit_pct is not null)));
-  perform pg_temp.ok(s, '… and keeps each card''s default rate on it',
-    (select bool_and(case id when l_low then cash_pct = 25 and credit_pct = 50
-                             when l_mid then cash_pct = 50 and credit_pct = 65
-                             when l_high then cash_pct = 40 and credit_pct = 70
-                             when l_own then cash_pct = 50 and credit_pct = 65 end)
+    and (select custom_credit_pct = 80 from buy_lines where id = l_own));
+  perform pg_temp.ok(s, '… each card''s rate as priced kept on it (custom rates: no low/high end)',
+    (select bool_and(case id when l_low then cash_pct = 45 and credit_pct = 65
+                             when l_mid then cash_pct = 45 and credit_pct = 65
+                             when l_high then cash_pct = 45 and credit_pct = 65
+                             when l_own then cash_pct = 45 and credit_pct = 80 end)
        from buy_lines where buy_id = b));
-  -- $2 + $3 + $40 + $10 = $55; Cash 0.50 + 1.50 + 16 + 5 = 23; Credit 1 + 1.95 + 28 + 6.50 = 37.45 → $37.
+  -- $2 + $3 + $40 + $10 = $55; Cash 45% = 24.75 → $24; Credit 65% of 45 + 80% of 10 = 37.25 → $37.
   select totals into t from events where action = 'buy_confirmed' and target_id = b;
   perform pg_temp.ok(s, 'The Changelog''s totals: each card at its rate, rounded down once',
-    (t ->> 'market')::numeric = 55 and (t ->> 'cash')::numeric = 23 and (t ->> 'credit')::numeric = 37
-    and (t ->> 'cash_pct')::numeric = 50 and (t ->> 'credit_pct')::numeric = 65, t::text);
+    (t ->> 'market')::numeric = 55 and (t ->> 'cash')::numeric = 24 and (t ->> 'credit')::numeric = 37
+    and (t ->> 'cash_pct')::numeric = 45 and (t ->> 'credit_pct')::numeric = 65, t::text);
   update settings set value = '{"low": {"under": 50, "credit": 10, "cash": 5}, "high": {"over": 35, "credit": 70, "cash": 40}}'
    where key = 'rate_tiers';
   update settings set value = '20' where key = 'cash_pct';
   perform pg_temp.ok(s, 'Changing the settings later changes nothing on a confirmed buy',
-    (select (internal.lines_totals(x, array(select l from buy_lines l where l.buy_id = x.id)) ->> 'cash')::numeric = 23
+    (select (internal.lines_totals(x, array(select l from buy_lines l where l.buy_id = x.id)) ->> 'cash')::numeric = 24
        from buys x where x.id = b));
   update settings set value = '50' where key = 'cash_pct';
   update settings set value = '{"low": {"under": 3, "credit": 50, "cash": 25}, "high": {"over": 35, "credit": 70, "cash": 40}}'
@@ -888,8 +889,8 @@ begin
   perform buy_remove_line(l_low, 1, u, a, null, null);
   perform pg_temp.ok(s, 'Cards removed from a buy: their totals at the card''s rate',
     exists (select 1 from events where action = 'buy_cards_removed' and target_id = b
-              and (totals ->> 'market')::numeric = 1 and (totals ->> 'cash')::numeric = 0.25
-              and (totals ->> 'credit')::numeric = 0.5));
+              and (totals ->> 'market')::numeric = 1 and (totals ->> 'cash')::numeric = 0.45
+              and (totals ->> 'credit')::numeric = 0.65));
 
   -- A collection.
   c := collection_create('DBTEST Rate Collection', null, '', u, a);
@@ -1196,8 +1197,8 @@ begin
   perform draft_add_line(a, pg_temp.line('Dbtest Bolt', 'DBT', '001', 2, 1.00), u, true);
   perform draft_add_line(a, pg_temp.line('Dbtestchu', 'DBTP', '025', 1, 4.00, 'pokemon'), u, true);
   perform confirm_buy(v_b, u, 'DBTEST Brock', '', 50, 65, null, 3, 'cash', '{}', '5550100003');
-  perform pg_temp.ok(s, 'Confirmed, a buy forgets its custom rates: the master ones (0057)',
-    (select cash_pct = 50 and credit_pct = 65 and custom_cash_pct is null from buys where id = v_b));
+  perform pg_temp.ok(s, 'Confirmed, a buy keeps its custom rates (0061)',
+    (select cash_pct = 40 and credit_pct = 60 and custom_cash_pct = 40 from buys where id = v_b));
 
   begin
     perform buy_to_project(v_b, '   ', u, a);
