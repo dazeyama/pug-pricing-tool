@@ -115,3 +115,13 @@ keys) stayed where they were. Each part below names its commit.
 - [ ] Select another card: NM, no manual price, no override, the manual box closed. Back to the first: its defaults too.
 - [ ] Search `placeholder`, pick the Pokémon one, type a name `SMOKE P6 Meowth 117` and a price: both stay while it's selected; pick something else and come back: empty again.
 
+**3d. Prices (C1d: usePriceQuote.js)** — the ladder, fallbacks, Cardmarket, warnings and trends, unchanged
+- [ ] A Magic card with JustTCG prices: five conditions, each at or below the one above, rounded down; the price panel's Credit and Cash at the card's rate.
+- [ ] A Pokémon card with JustTCG prices: the same. A 1st Edition version shows its prices, and ⚠️ if they look off against the Unlimited one.
+- [ ] A card with no JustTCG price for a condition: "fallback" on it (NM × the Master Fallback %).
+- [ ] JP `025/165 SV2a` with no JustTCG prices: Cardmarket in dollars on its own ("cardmarket" tag); the English name shows beside the Japanese one.
+- [ ] Use TCGplayer / "TCGplayer" tag where every price is TCGplayer's (as before).
+- [ ] 📈 / 📉 beside a price that moved sharply (if one turns up; not every card has one). Hovering it opens its box.
+- [ ] A project (`SMOKE P6 Project`): prices round **up**.
+- [ ] ADD CARD a priced card, then open the line (SAVE EDIT): the same price, condition and source come back.
+
