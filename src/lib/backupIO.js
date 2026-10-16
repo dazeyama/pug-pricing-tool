@@ -4,6 +4,7 @@
 import { supabase } from './supabase.js';
 import { withLoading } from './loading.js';
 import { backupFileName } from './backup.js';
+import { dbMessage } from './dbErrors.js';
 
 /* global __APP_VERSION__ */
 
@@ -67,7 +68,7 @@ export async function restoreBackup(data, fileName, userId, deviceId) {
     p_device: deviceId,
     p_typed: 'RESTORE',
   }));
-  if (error) throw new Error(RESTORE_ERRORS[error.message] ?? `The restore failed, and nothing was changed: ${error.message}`);
+  if (error) throw new Error(dbMessage(error, 'The restore failed, and nothing was changed', RESTORE_ERRORS));
   // A backup made before Can't upload cards existed (export spec 9.5): make it again.
   const { error: ensureError } = await supabase.rpc('cant_upload_ensure');
   if (ensureError) console.error("Couldn't make Can't upload cards again", ensureError);

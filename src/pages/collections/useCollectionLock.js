@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase.js';
 import { useSession } from '../../state/session.jsx';
 import { useStaff } from '../../state/staff.jsx';
 import { useToast } from '../../components/Toast.jsx';
+import { dbErrorCode } from '../../lib/dbErrors.js';
 
 // One computer edits a collection at a time (spec 9.6). Opening it tries to
 // take the lock; the holder sends a heartbeat every 20s and lets go when it
@@ -39,7 +40,7 @@ export function useCollectionLock(id, { deviceId, userId }) {
       p_buy_id: id, p_device: deviceId, p_user: user.current ?? null, p_force: force,
     });
     if (error) {
-      if (error.message?.includes('collection_gone')) {
+      if (dbErrorCode(error) === 'collection_gone') {
         status.current = 'gone';
         setLock({ status: 'gone', holder: null });
       } else {

@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase.js';
 import { lineText } from '../../lib/lineFormat.js';
 import { useConnection } from '../../state/connection.jsx';
 import { useToast } from '../../components/Toast.jsx';
+import { DB_MESSAGES, dbMessage, knownCode } from '../../lib/dbErrors.js';
 
 // One collection and its lines (spec 9.4), kept live through Realtime: every
 // write bumps the collection's row, so watching `buys` catches added and
@@ -12,6 +13,7 @@ import { useToast } from '../../components/Toast.jsx';
 
 /** What the database's refusals mean to the person at the counter. */
 const MESSAGES = {
+  ...DB_MESSAGES,
   stale_version: 'This collection changed on another computer — reloaded.',
   not_lock_holder: 'Another computer is editing this collection now. Take over to edit.',
   collection_paid: 'This collection is Paid/Ours: unlock it to add or edit cards.',
@@ -26,25 +28,20 @@ const MESSAGES = {
   complete_by_export: 'EXPORT marks a collection Completed: it can’t be set by hand.',
   project_status: 'A project is only ever Paid/Ours, until EXPORT marks it Completed.',
   collection_gone: 'This collection was deleted.',
-  line_gone: 'That card was already removed.',
   locked_elsewhere: 'Another computer is editing this collection: take over first.',
   name_mismatch: "The name you typed doesn't match.",
   bad_name: 'The name must be 1 to 80 characters.',
   bad_phone: 'Enter a 10-digit US phone number.',
   bad_last4: 'The Last 4 ID is up to 4 letters or digits.',
-  bad_pct: 'Enter a percentage from 0 to 100, with up to 2 decimals.',
   line_completed: "That card is Completed: its rate doesn't change.",
   // Struck cards (owner, 2026-10-16).
   line_struck: 'That card is struck: right-click → Restore it first.',
-  line_not_struck: 'That card was already restored.',
   strike_paid_only: 'Only a Paid/Ours collection strikes cards: here × removes them.',
   system_collection: "Can't upload cards doesn't strike: its × removes the card.",
   project_no_strike: "A project doesn't strike: its × removes the card.",
   project_rates: "A project has no rates of its own: it's the store's own cards.",
-  no_user: 'Pick a user first.',
-  // Convert to buy… (owner, 2026-10-10): what CONFIRM BUY asks for, and a project that can't go.
-  name_needed: "Enter the customer's name.",
-  phone_needed: 'Enter a phone number.',
+  // Convert to buy… (owner, 2026-10-10): a project that can't go (the name and phone CONFIRM BUY
+  // asks for are DB_MESSAGES').
   project_completed: "This project is Completed: its cards were exported, so it can't become a buy.",
   empty_buy: 'There are no cards to convert.',
   // Import Collection (owner, 2026-10-09).
@@ -56,13 +53,12 @@ const MESSAGES = {
 
 /** The code in a function's error ("not_lock_holder"), or null. */
 export function errorCode(error) {
-  return Object.keys(MESSAGES).find((code) => error?.message?.includes(code)) ?? null;
+  return knownCode(error, MESSAGES);
 }
 
 /** A toast-ready sentence for a failed collection write. */
 export function errorMessage(error, failure) {
-  const code = errorCode(error);
-  return code ? MESSAGES[code] : `${failure}: ${error.message}`;
+  return dbMessage(error, failure, MESSAGES);
 }
 
 /**

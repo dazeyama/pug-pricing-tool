@@ -15,8 +15,10 @@ import { useStaff } from '../state/staff.jsx';
 import { useConnection } from '../state/connection.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { GAME_NAMES } from '../lib/games.js';
+import { DB_MESSAGES, dbMessage } from '../lib/dbErrors.js';
 
 const MESSAGES = {
+  ...DB_MESSAGES,
   stale_version: 'This buy changed on another computer since it opened: nothing was saved. Go back and open it again.',
   buy_gone: 'This buy was deleted: nothing was saved.',
   line_gone: 'A card of this buy was removed elsewhere: nothing was saved. Go back and open it again.',
@@ -24,7 +26,6 @@ const MESSAGES = {
   line_not_struck: 'A struck card of this buy was restored elsewhere: nothing was saved. Go back and open it again.',
   buy_completed: 'Some of its cards were Completed meanwhile: nothing was saved.',
   last_card: 'A buy keeps at least one card: to remove them all, use Delete buy… on the day page.',
-  no_user: 'Pick a user first.',
 };
 
 // What makes a line a different card, condition, amount or price: an edit
@@ -235,8 +236,7 @@ export default function BuyEditPage() {
     });
     setBusy(false);
     if (error) {
-      const code = Object.keys(MESSAGES).find((k) => error.message?.includes(k));
-      toast(code ? MESSAGES[code] : `Couldn't save the buy: ${error.message}`, 'err');
+      toast(dbMessage(error, "Couldn't save the buy", MESSAGES), 'err');
       return;
     }
     const parts = [

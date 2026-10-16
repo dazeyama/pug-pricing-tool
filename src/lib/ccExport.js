@@ -10,6 +10,7 @@ import { scryfallCards, todaysPrices } from './todaysPrices.js';
 import { sellPriceFor } from './sellPrice.js';
 import { massCreateCsv, massCreateRows } from './massCreate.js';
 import { inChunks } from './inChunks.js';
+import { DB_MESSAGES, knownCode } from './dbErrors.js';
 
 // Full Scryfall cards by id now live with today's prices (todaysPrices.js).
 export { scryfallCards };
@@ -184,16 +185,15 @@ export async function sellPrices(lines, cards, pct, onStep) {
 // ------------------------------------------------------------ the export
 
 const EXPORT_ERRORS = {
+  ...DB_MESSAGES,
   stale_version: 'Something changed on another computer since this opened: nothing was exported. Try again.',
   stale_inventory: 'The Master Crystal Inventory was replaced while this was open: matching again.',
   no_inventory: 'Upload the Master Crystal Inventory in Settings first: no products are loaded for export.',
-  day_not_over: "Today can't be exported until it's over.",
   pokemon_export_unavailable: "Pokémon export isn't available yet.",
   nothing_to_export: 'Nothing is left to export here: it was already exported.',
   bad_price: 'A Sell Price was missing: nothing was exported.',
   collection_not_paid: 'Mark it Paid/Ours first.',
   not_lock_holder: 'Another computer is editing this collection now: take over to export.',
-  no_user: 'Pick a user first.',
 };
 
 /**
@@ -211,7 +211,7 @@ export async function saveExport({ target, matches, cant, setMaps, userId, devic
     p_device: deviceId,
   });
   if (error) {
-    const code = Object.keys(EXPORT_ERRORS).find((c) => error.message?.includes(c)) ?? null;
+    const code = knownCode(error, EXPORT_ERRORS);
     const e = new Error(code ? EXPORT_ERRORS[code] : `Couldn't export: ${error.message}`);
     e.code = code;
     throw e;

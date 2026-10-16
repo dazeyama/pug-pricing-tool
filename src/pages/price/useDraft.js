@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../../lib/supabase.js';
 import { useConnection } from '../../state/connection.jsx';
 import { useToast } from '../../components/Toast.jsx';
+import { DB_MESSAGES, dbErrorCode, knownCode } from '../../lib/dbErrors.js';
 
 // This computer's walk-in draft (spec 8.10): one per device, saved on every
 // change, so a refresh or crash loses nothing. Only this device edits it, so
@@ -12,13 +13,10 @@ import { useToast } from '../../components/Toast.jsx';
 const STALE = 'This buy changed on another computer — reloaded.';
 // CONFIRM BUY's refusals (migration 0020), should the dialog's own checks be bypassed.
 const CODES = {
-  name_needed: "Enter the customer's name.",
-  phone_needed: 'Enter a phone number.',
+  ...DB_MESSAGES,
   bad_phone: 'Enter a 10-digit phone number.',
   paid_price_needed: 'Enter the purchase price.',
   paid_method_needed: 'Choose Cash or Credit.',
-  bad_pct: 'Enter a percentage from 0 to 100, with up to 2 decimals.',
-  line_gone: 'That card was already removed.',
 };
 
 /**
@@ -72,8 +70,8 @@ export function useDraft(deviceId) {
     try {
       const { data, error } = await supabase.rpc(fn, args);
       if (error) {
-        const code = Object.keys(CODES).find((c) => error.message?.includes(c));
-        if (/stale_version/.test(error.message)) toast(STALE, 'err');
+        const code = knownCode(error, CODES);
+        if (dbErrorCode(error) === 'stale_version') toast(STALE, 'err');
         else if (code) toast(`${failure}: ${CODES[code]}`, 'err');
         else {
           console.error(`${fn} failed`, error);

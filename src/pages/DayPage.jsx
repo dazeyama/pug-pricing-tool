@@ -30,18 +30,16 @@ import { useDevice } from '../state/device.jsx';
 import { useStaff } from '../state/staff.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { GAME_NAMES, otherGame } from '../lib/games.js';
+import { DB_MESSAGES, dbErrorCode, dbMessage } from '../lib/dbErrors.js';
 
 const MESSAGES = {
+  ...DB_MESSAGES,
   stale_version: 'This buy changed on another computer — reloaded.',
-  line_gone: 'That card was already removed.',
   buy_gone: 'That buy was already deleted.',
   buy_completed: 'That buy is Completed (exported): mark it Paid/Ours again (its ⋯) to change it.',
-  day_not_over: "Today can't be exported until it's over.",
-  no_user: 'Pick a user first.',
   bad_name: 'Type a name for the project (up to 80 characters).',
   // Struck cards (owner, 2026-10-16).
   line_struck: 'That card was already struck.',
-  line_not_struck: 'That card was already restored.',
 };
 const CANT_UPLOAD_TIP = "Not matched to Crystal Commerce: pulled from the upload. It's in Can't upload cards.";
 const COMPLETED_LOCK = 'Completed (exported): its ⋯ → Mark Paid/Ours again, or the whole day\u2019s (⋯ next to EXPORT), to change it';
@@ -54,10 +52,7 @@ const NOT_OVER = "Today can't be exported until it's over: buys confirmed later 
 // Pokémon can't be exported yet (export spec 1.3): its days are marked Completed
 // instead, with COMPLETE (owner, 2026-10-02), only once over, like EXPORT.
 const NOT_OVER_COMPLETE = "Today can't be marked Completed until it's over: buys confirmed later would be missed";
-const messageFor = (error, failure) => {
-  const code = Object.keys(MESSAGES).find((c) => error?.message?.includes(c));
-  return code ? MESSAGES[code] : `${failure}: ${error.message}`;
-};
+const messageFor = (error, failure) => dbMessage(error, failure, MESSAGES);
 
 /**
  * A day page (spec 10.2): that game's part of every walk-in buy confirmed on
@@ -260,7 +255,7 @@ function DayScreen({ game, day }) {
       p_text: lineText(line, Math.min(qty, line.quantity)),
     }));
     setBusy(false);
-    if (error?.message?.includes('last_card')) setDeleting({ buy, number, lastCard: true });
+    if (dbErrorCode(error) === 'last_card') setDeleting({ buy, number, lastCard: true });
     else if (error) toast(messageFor(error, "Couldn't remove the card"), 'err');
     await reload();
   }
@@ -391,7 +386,7 @@ function DayScreen({ game, day }) {
     setBusy(false);
     if (error) {
       toast(messageFor(error, "Couldn't convert the buy"), 'err');
-      if (!error.message?.includes('bad_name')) setConverting(null);
+      if (dbErrorCode(error) !== 'bad_name') setConverting(null);
       await reload();
       return;
     }
