@@ -65,6 +65,8 @@ export default function ExportDialog({
   const [preview, setPreview] = useState(null);
   const hidePreview = useCallback(() => setPreview(null), []);
   const box = useRef(null);
+  // Off only where staff unticked it: "always pick this for the set" starts ticked.
+  const alwaysOf = (id) => always.get(id) ?? true;
 
   const lines = useMemo(() => items.map((i) => i.line), [items]);
   const whereOf = useMemo(() => new Map(items.map((i) => [i.line.id, i.where])), [items]);
@@ -152,7 +154,7 @@ export default function ExportDialog({
     }
     try {
       await saveLink(r.line, product, staff.current?.id);
-      if (!r.category && (always.get(r.line.id) ?? true)) {
+      if (!r.category && alwaysOf(r.line.id)) {
         await saveSetMap(r.set.code, r.promo, product.category, staff.current?.id);
       }
     } catch (e) {
@@ -222,7 +224,7 @@ export default function ExportDialog({
       };
     });
     const setMaps = groups.matched
-      .filter((r) => stateOf(r).by === 'staff' && !r.category && (always.get(r.line.id) ?? true))
+      .filter((r) => stateOf(r).by === 'staff' && !r.category && alwaysOf(r.line.id))
       .map((r) => ({ scryfall_set: r.set.code, promo_kind: r.promo ?? '', category: stateOf(r).product.category }));
     try {
       const result = await saveExport({
@@ -298,7 +300,7 @@ export default function ExportDialog({
         return next;
       });
     },
-    always: always.get(r.line.id) ?? true,
+    always: alwaysOf(r.line.id),
     onAlways: (v) => setAlways((m) => new Map(m).set(r.line.id, v)),
     onPick: (product) => pick(r, product),
     onNone: () => chooseNone(r),
@@ -384,12 +386,7 @@ export default function ExportDialog({
               <section className="xd-group choose">
                 <h4>Needs a choice <span className="xd-count">{groups.choose.length}</span></h4>
                 {groups.choose.map((r) => (
-                  <ChooseRow
-                    key={r.line.id}
-                    r={r}
-                    label={lineLabel(r)}
-                    {...rowProps(r)}
-                  />
+                  <ChooseRow key={r.line.id} {...rowProps(r)} />
                 ))}
               </section>
             )}
