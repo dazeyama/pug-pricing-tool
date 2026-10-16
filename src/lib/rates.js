@@ -1,5 +1,5 @@
 import { creditOfferFor, formatMoney, roundDownPrice } from './money.js';
-import { isBulk } from './bulk.js';
+import { isValuedBulk } from './bulk.js';
 
 // Individual rates (docs/TEAM_FEEDBACK.md 4, owner 2026-10-14): which Cash and
 // Credit rate each card gets, and the totals from them. Every total in the
@@ -53,8 +53,9 @@ export const hasCustom = (rates) => rates?.customCash != null || rates?.customCr
 export function lineRate(line, rates) {
   const tiers = rates?.tiers ?? DEFAULT_TIERS;
   const price = Number(line?.unit_price ?? 0);
-  // Bulk: never the low-end or high-end rates (docs/TEAM_FEEDBACK.md 5.6).
-  const bulk = isBulk(line);
+  // Bulk: never the low-end or high-end rates (docs/TEAM_FEEDBACK.md 5.6);
+  // a placeholder takes them by its price, like a card (owner, 2026-10-16).
+  const bulk = isValuedBulk(line);
   const out = { why: {} };
   for (const side of SIDES) {
     const fixed = num(line?.[`${side}_pct`]);

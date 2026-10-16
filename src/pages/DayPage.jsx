@@ -5,7 +5,7 @@ import { dayDate, dayRange, dayTitle, parseDay, storeDay } from '../lib/calendar
 import { lineBody, lineText } from '../lib/lineFormat.js';
 import { formatMoney } from '../lib/money.js';
 import { rateTotals, tiersFrom } from '../lib/rates.js';
-import { bulkItem, cardCounts, countText, isBulk, perText } from '../lib/bulk.js';
+import { bulkItem, cardCounts, countText, isBulk, isValuedBulk, perText } from '../lib/bulk.js';
 import { isStruck, movesOn, struckNote } from '../lib/struck.js';
 import CustomRateMark from '../components/CustomRateMark.jsx';
 import { formatPhone } from '../lib/phone.js';
@@ -1122,7 +1122,7 @@ function BuyPanel({
                   </td>
                   <td className="cell-name" title={l.name_en ? l.name : undefined}>
                     {lineBody(l)}
-                    {isBulk(l) && <span className="bulk-per">{perText(bulkItem(l.bulk_kind), Number(l.unit_price))}</span>}
+                    {isValuedBulk(l) && <span className="bulk-per">{perText(bulkItem(l.bulk_kind), Number(l.unit_price))}</span>}
                     {l.cc_status === 'cant_upload' && <span className="cant-chip" title={CANT_UPLOAD_TIP}>Can't upload</span>}
                   </td>
                   <td className="cell-x">

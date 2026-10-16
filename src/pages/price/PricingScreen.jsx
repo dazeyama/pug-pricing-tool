@@ -32,7 +32,9 @@ import { buildLine } from '../../lib/buyLine.js';
 import { lineText } from '../../lib/lineFormat.js';
 import { dexNumberQuery } from '../../lib/query.js';
 import { lineRate, whyText } from '../../lib/rates.js';
-import { buildBulkLine, bulkItem, bulkValuesFrom, isBulk } from '../../lib/bulk.js';
+import {
+  PLACEHOLDER_NAME, buildBulkLine, buildPlaceholderLine, bulkItem, bulkValuesFrom, isBulk, isPlaceholder,
+} from '../../lib/bulk.js';
 import { BulkFinish, BulkPrice, BulkSelected } from './Bulk.jsx';
 import { useStaff } from '../../state/staff.jsx';
 import { useConnection } from '../../state/connection.jsx';
@@ -236,6 +238,10 @@ export default function PricingScreen({
   });
   const setManual = (value) => setPricing({ key: selected?.key, condition, manual: value, override });
   const setOverride = (next) => setPricing({ key: selected?.key, condition, manual, override: next });
+  // A placeholder's name as typed (owner, 2026-10-16), kept with the selection like its price.
+  const [placeholder, setPlaceholder] = useState({ key: null, name: '' });
+  const placeholderName = placeholder.key === selected?.key ? placeholder.name : '';
+  const setPlaceholderName = (name) => setPlaceholder({ key: selected?.key, name });
   useEffect(() => setManualOpen(false), [selected?.key]);
 
   // A Japanese card's English name (Pokédex number): shown beside the
@@ -320,8 +326,9 @@ export default function PricingScreen({
     addBlocked = search.candidates.length ? 'Select a card first: ↓ picks the first suggestion' : 'Select a card first';
   }
   else if (bulk) {
-    // Bulk: a quantity of items, nothing to wait for.
-    if (parseQty(qty) == null) addBlocked = 'Quantity must be 1 to 99';
+    // Bulk: a quantity of items, nothing to wait for. A placeholder's price is always typed in.
+    if (bulk.item.placeholder && !(unitPrice > 0)) addBlocked = "Type its price: a placeholder has none of its own";
+    else if (parseQty(qty) == null) addBlocked = 'Quantity must be 1 to 99';
     else if (offline) addBlocked = 'No connection';
   }
   else if (magic ? !finish : !version) addBlocked = "Waiting for the card's versions";
@@ -382,6 +389,7 @@ export default function PricingScreen({
       setPricing({
         key: editing.key, condition: 'NM', manual: line.price_source === 'manual' ? Number(line.unit_price) : null, override: null,
       });
+      if (isPlaceholder(line)) setPlaceholder({ key: editing.key, name: line.name === PLACEHOLDER_NAME ? '' : line.name });
       setQty(String(line.quantity));
       setEditing((e) => e && { ...e, restored: true });
       return;
@@ -469,6 +477,7 @@ export default function PricingScreen({
     setHighlight(-1);
     setPrinting({ key: null, finish: null, version: null });
     setPricing({ key: null, condition: 'NM', manual: null, override: null });
+    setPlaceholder({ key: null, name: '' });
     setManualOpen(false);
     setQty('1');
     setEditing(null);
@@ -497,6 +506,7 @@ export default function PricingScreen({
     setHighlight(-1);
     setPrinting({ key: null, finish: null, version: null });
     setPricing({ key: null, condition: 'NM', manual: null, override: null });
+    setPlaceholder({ key: null, name: '' });
     setManualOpen(false);
     setText(query);
     focusSearch();
@@ -520,8 +530,11 @@ export default function PricingScreen({
     }
     if (list.busy) return;
     if (bulk) {
-      // A bulk item (docs/TEAM_FEEDBACK.md 5.7): Qty counts items, at its Settings value (or its own).
-      const line = buildBulkLine(bulk.item, parseQty(qty), bulk.value, manual);
+      // A bulk item (docs/TEAM_FEEDBACK.md 5.7): Qty counts items, at its Settings value (or its own);
+      // a placeholder: its name and price as typed (owner, 2026-10-16).
+      const line = bulk.item.placeholder
+        ? buildPlaceholderLine(bulk.item, parseQty(qty), manual, placeholderName)
+        : buildBulkLine(bulk.item, parseQty(qty), bulk.value, manual);
       const id = editing ? await list.update(editing.line, line, user.id) : await list.add(line, user.id);
       if (!id) return;
       setFlashId(id);
@@ -713,7 +726,7 @@ export default function PricingScreen({
               beside it with the suggestions below; finish & details beside the
               suggestions with the action row under them. Grid areas in price.css. */}
           <div className="stage-body">
-            {bulk ? <BulkSelected c={bulk} /> : (
+            {bulk ? <BulkSelected c={bulk} name={placeholderName} onName={setPlaceholderName} /> : (
             <SelectedCard
               candidate={selected}
               typedName={search.parsed?.name}
@@ -745,7 +758,8 @@ export default function PricingScreen({
               loading={prices.status === 'loading' || prices.status === 'waiting'}
               condition={condition}
               price={unitPrice}
-              bulkPer={bulk?.item.per ?? null}
+              bulkPer={bulk && !bulk.item.placeholder ? bulk.item.per : null}
+              placeholder={Boolean(bulk?.item.placeholder)}
               source={manual != null ? 'manual' : bulk ? null
                 : ladder[condition].base?.from === 'Cardmarket' && ladder[condition].source === 'fallback' ? 'cardmarket'
                   : showsTcgplayer(ladder, condition, fallbackPct?.[condition]) ? 'tcgplayer'
@@ -759,7 +773,7 @@ export default function PricingScreen({
               onDone={focusSearch}
             />
             <div className="area-side">
-              {bulk ? <BulkFinish /> : (
+              {bulk ? <BulkFinish c={bulk} /> : (
               <FinishPanel
                 candidate={selected}
                 finish={finish}
@@ -780,7 +794,18 @@ export default function PricingScreen({
               )}
             </div>
             <div className="area-prices">
-              {bulk ? <BulkPrice c={bulk} manual={manual} onManual={setManual} rate={quoteRate} onDone={focusSearch} /> : (
+              {bulk ? (
+                <BulkPrice
+                  c={bulk}
+                  manual={manual}
+                  onManual={setManual}
+                  rate={quoteRate}
+                  // A placeholder's rates are a card's at the price typed (owner, 2026-10-16).
+                  rateFor={bulk.item.placeholder
+                    ? (price) => lineRate({ ...editLine, unit_price: price, bulk_kind: bulk.bulk }, rates) : null}
+                  onDone={focusSearch}
+                />
+              ) : (
               <PriceTable
                 candidate={selected}
                 prices={prices}

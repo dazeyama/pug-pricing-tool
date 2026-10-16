@@ -5,8 +5,9 @@
 // owner 2026-09-29), else the Japanese name TCGdex gave.
 // Used by the buy list, the changelog (confirm_buy stores these) and later
 // the day pages and export. A bulk line reads in the cards it stands for:
-// "1,000 MTG Bulk commons/uncommons" (docs/TEAM_FEEDBACK.md 5.5).
-import { bulkItem, bulkLineText, isBulk } from './bulk.js';
+// "1,000 MTG Bulk commons/uncommons" (docs/TEAM_FEEDBACK.md 5.5); a
+// placeholder by its name: "1 Team Rocket's, Meowth 117 [Placeholder]".
+import { bulkItem, bulkLineText, isBulk, isPlaceholder, placeholderBody } from './bulk.js';
 
 const FINISH_MARKERS = { foil: '*F*', etched: '*E*', holo: '*H*', reverse: '*RH*' };
 const PATTERNS = { 'pokeball-pattern': 'Poké Ball', 'masterball-pattern': 'Master Ball' };
@@ -47,6 +48,7 @@ export function lineTags(line) {
  *   treatments?: string[] }} line  a buy_lines row
  */
 export function lineBody(line) {
+  if (isPlaceholder(line)) return placeholderBody(line);
   if (isBulk(line)) return bulkItem(line.bulk_kind)?.unit ?? line.name;
   const parts = [`${line.name_en || line.name} (${line.set_code}) ${line.collector_number}`];
   const marker = FINISH_MARKERS[line.finish];

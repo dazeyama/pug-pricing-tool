@@ -5,7 +5,7 @@ import { dayDate, storeDay } from '../lib/calendar.js';
 import { formatTime } from '../lib/time.js';
 import { relativeDay } from '../lib/changelog.js';
 import { lineTextWithCondition } from '../lib/lineFormat.js';
-import { LINE_LIMIT, MIN_CHARS, flatRows, groupResults, searchArgs } from '../lib/globalSearch.js';
+import { LINE_LIMIT, MIN_CHARS, flatRows, groupResults, markPlaceholder, searchArgs } from '../lib/globalSearch.js';
 import { statusText } from '../pages/collections/status.js';
 import { useStaff } from '../state/staff.jsx';
 import GameBadge from './GameBadge.jsx';
@@ -48,7 +48,7 @@ async function knownCodes() {
 async function lookUp(args) {
   const { data, error } = await supabase.rpc('global_search', args);
   if (error) throw new Error(error.message);
-  return data ?? [];
+  return (data ?? []).map(markPlaceholder);
 }
 
 export default function SearchBox({ wide }) {

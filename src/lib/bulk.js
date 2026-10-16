@@ -1,4 +1,5 @@
 import { formatMoney } from './money.js';
+import { nameKey } from './normalize.js';
 
 // Bulk (docs/TEAM_FEEDBACK.md 5, Phase T3; owner, 2026-10-14): eight
 // "cards" that stand for unsorted bulk, priced from Settings → Bulk values,
@@ -6,6 +7,13 @@ import { formatMoney } from './money.js';
 // (bulk_kind set; quantity = items, unit_price = value per item) that only
 // helps price a buy: exports, COMPLETE, Mark as completed, printouts and the
 // header search treat it as if it weren't there (5.8).
+//
+// Placeholders (owner, 2026-10-16): "1 BULK placeholder", one for each game,
+// for a card the search can't find yet. Bulk in most ways (found by "bulk",
+// never exported, completed or printed), but a card in others: its own name
+// as typed ("Team Rocket's, Meowth 117", else "Placeholder"), a price always
+// typed in (none in Settings), one card per item, a card's rates (low end /
+// high end, Set Rate), and the header search finds it by its name.
 
 /**
  * The eight items (5.1). `per`: cards in one item; `unit`: the line's words
@@ -22,6 +30,8 @@ export const BULK_ITEMS = Object.freeze([
     unit: 'MTG Bulk $1 cards', label: '$1 cards', short: '$1', words: '$1 1 dollar dollars' },
   { kind: 'mtg_10_fifty', game: 'mtg', per: 10, name: 'MTG 10 Bulk 50¢ cards',
     unit: 'MTG Bulk 50¢ cards', label: '50¢ cards', short: '50¢', words: '50¢ 50c 50 fifty cents' },
+  { kind: 'mtg_placeholder', game: 'mtg', per: 1, name: 'MTG Placeholder', unit: 'Placeholder', label: 'Placeholder',
+    short: 'placeholder', words: 'placeholder missing card', placeholder: true },
   { kind: 'pkm_100', game: 'pokemon', per: 100, name: 'PKM 100 Bulk',
     unit: 'PKM Bulk', label: 'Bulk', short: '', words: 'commons' },
   { kind: 'pkm_100_ex', game: 'pokemon', per: 100, name: 'PKM 100 Bulk EXs',
@@ -30,9 +40,14 @@ export const BULK_ITEMS = Object.freeze([
     unit: 'PKM Bulk $1 cards', label: '$1 cards', short: '$1', words: '$1 1 dollar dollars' },
   { kind: 'pkm_10_fifty', game: 'pokemon', per: 10, name: 'PKM 10 Bulk 50¢ cards',
     unit: 'PKM Bulk 50¢ cards', label: '50¢ cards', short: '50¢', words: '50¢ 50c 50 fifty cents' },
+  { kind: 'pkm_placeholder', game: 'pokemon', per: 1, name: 'PKM Placeholder', unit: 'Placeholder', label: 'Placeholder',
+    short: 'placeholder', words: 'placeholder missing card', placeholder: true },
 ].map(Object.freeze));
 
-/** Settings → Bulk values as shipped (6.2): market value per item, in dollars. */
+/** A placeholder's name until one is typed. */
+export const PLACEHOLDER_NAME = 'Placeholder';
+
+/** Settings → Bulk values as shipped (6.2): market value per item, in dollars. Placeholders have none. */
 export const DEFAULT_BULK_VALUES = Object.freeze({
   mtg_100_common: 1.5, mtg_100_rare: 2.4, mtg_10_dollar: 8, mtg_10_fifty: 3,
   pkm_100: 0.75, pkm_100_ex: 2.4, pkm_10_dollar: 7, pkm_10_fifty: 2.5,
@@ -44,13 +59,20 @@ const GAME_WORDS = { mtg: 'mtg magic', pokemon: 'pkm pokemon pokémon' };
 /** One of the eight, by its key; null for anything else. */
 export const bulkItem = (kind) => BY_KIND.get(kind) ?? null;
 
-/** A bulk line (bulk_kind set), not a real card. */
+/** A bulk line (bulk_kind set), not a real card; placeholders too. */
 export const isBulk = (line) => line?.bulk_kind != null;
+
+/** A placeholder line (owner, 2026-10-16): bulk, but named, priced and rated like a card. */
+export const isPlaceholder = (line) => bulkItem(line?.bulk_kind)?.placeholder === true;
+
+/** Bulk proper: an item with a value per item (Set value), not a placeholder. */
+export const isValuedBulk = (line) => isBulk(line) && !isPlaceholder(line);
 
 /** The settings' values (possibly partial) over the defaults, as numbers. */
 export function bulkValuesFrom(value) {
   const out = {};
   for (const item of BULK_ITEMS) {
+    if (item.placeholder) continue;   // always priced by hand
     const v = Number(value?.[item.kind]);
     out[item.kind] = Number.isFinite(v) && v >= 0 ? v : DEFAULT_BULK_VALUES[item.kind];
   }
@@ -63,22 +85,22 @@ export const shortName = (item) => `${item.per} BULK${item.short ? ` ${item.shor
 /** A bulk line in short: "1,000 BULK c/u" (its cards, then its short name). */
 export function bulkShortText(line, quantity = line.quantity) {
   const item = bulkItem(line.bulk_kind);
-  if (!item) return `${quantity} ${line.name}`;
+  if (!item || item.placeholder) return `${quantity} ${line.name}`;
   return `${(quantity * item.per).toLocaleString('en-US')} BULK${item.short ? ` ${item.short}` : ''}`;
 }
 
 /** "$1.50 per 100". */
 export const perText = (item, value) => `${formatMoney(value)} per ${item.per}`;
 
-/** A bulk item as a search result (the selected "card"), its value from Settings. */
-export function bulkCandidate(item, value) {
+/** A bulk item as a search result (the selected "card"), its value from Settings (a placeholder: none). */
+export function bulkCandidate(item, value = null) {
   return {
     key: `bulk:${item.kind}`,
     game: item.game,
     lang: 'en',
     bulk: item.kind,
     item,
-    value,
+    value: item.placeholder ? null : value,
     name: item.name,
     setCode: 'BULK',
     setName: 'Bulk',
@@ -107,19 +129,27 @@ export function bulkSearch(text, games, values = DEFAULT_BULK_VALUES) {
     const hay = `${item.name} ${item.words} ${GAME_WORDS[item.game]}`.toLowerCase().replace(/¢/g, 'c').split(/[\s/]+/);
     return rest.every((w) => hay.some((h) => h.startsWith(w)));
   });
-  return { items: items.map((item) => bulkCandidate(item, values[item.kind])), only };
+  return { items: items.map((item) => bulkCandidate(item, values[item.kind] ?? null)), only };
 }
 
-/** "1,000 MTG Bulk commons/uncommons": the cards it stands for, not the items. */
+/**
+ * "1,000 MTG Bulk commons/uncommons": the cards it stands for, not the
+ * items. A placeholder: its name, marked ("1 Team Rocket's, Meowth 117 [Placeholder]").
+ */
 export function bulkLineText(line, quantity = line.quantity) {
   const item = bulkItem(line.bulk_kind);
+  if (item?.placeholder) return `${quantity} ${placeholderBody(line)}`;
   if (!item) return `${quantity} ${line.name}`;
   return `${(quantity * item.per).toLocaleString('en-US')} ${item.unit}`;
 }
 
+/** A placeholder without its quantity: "Team Rocket's, Meowth 117 [Placeholder]". */
+export const placeholderBody = (line) => `${line.name || PLACEHOLDER_NAME} [Placeholder]`;
+
 /**
  * Real cards and bulk, counted apart (5.5); struck cards (lib/struck.js,
- * owner 2026-10-16) apart again: they're treated as gone.
+ * owner 2026-10-16) apart again: they're treated as gone. A placeholder is a
+ * card.
  * @returns {{ cards: number, bulk: number, struck: number }}  bulk in cards (items × per)
  */
 export function cardCounts(lines) {
@@ -130,7 +160,7 @@ export function cardCounts(lines) {
     const item = isBulk(l) ? bulkItem(l.bulk_kind) : null;
     const n = item ? Number(l.quantity) * item.per : Number(l.quantity);
     if (l.struck_at) struck += n;
-    else if (item) bulk += n;
+    else if (item && !item.placeholder) bulk += n;
     else cards += n;
   }
   return { cards, bulk, struck };
@@ -183,6 +213,21 @@ export function buildBulkLine(item, quantity, value, manual = null) {
 }
 
 /**
+ * A placeholder as a buy line (owner, 2026-10-16): its name as typed (else
+ * "Placeholder") and its price typed in; one card per item.
+ */
+export function buildPlaceholderLine(item, quantity, price, name) {
+  const named = String(name ?? '').replace(/\s+/g, ' ').trim() || PLACEHOLDER_NAME;
+  return {
+    ...buildBulkLine(item, quantity, price, price),
+    name: named,
+    name_key: nameKey(named),
+    market_price: price,
+    price_snapshot: { placeholder: { kind: item.kind } },
+  };
+}
+
+/**
  * REPRICE? for a bulk line (5.2): back to its Settings value, as collection_reprice
  * saves it; a value of its own (Set value) is kept, as a manual price is.
  * @returns {{ line_id: string, kept: 'manual'|null, unit_price: number, market_price: number,
@@ -191,7 +236,8 @@ export function buildBulkLine(item, quantity, value, manual = null) {
  */
 export function repricedBulk(line, values) {
   const item = bulkItem(line.bulk_kind);
-  const value = values[line.bulk_kind];
+  // A placeholder has no value but its own: kept, as a manual price is.
+  const value = item?.placeholder ? Number(line.market_price ?? line.unit_price) : values[line.bulk_kind];
   const manual = line.price_source === 'manual';
   return {
     line_id: line.id,

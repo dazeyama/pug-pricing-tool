@@ -6,6 +6,7 @@ import { dayDate, dayRange, storeDay } from '../lib/calendar.js';
 import { formatMoney } from '../lib/money.js';
 import { STORE_TZ, formatTime } from '../lib/time.js';
 import { headlineOf } from '../lib/changelog.js';
+import { isValuedBulk } from '../lib/bulk.js';
 import GuardButton from '../components/GuardButton.jsx';
 import { colorVar } from '../lib/palette.js';
 import { formatInTimeZone } from 'date-fns-tz';
@@ -50,8 +51,8 @@ const daysBetween = (from, to) => Math.round((Date.parse(`${to}T12:00:00Z`) - Da
 const dayOf = (when) => formatInTimeZone(new Date(when), STORE_TZ, 'yyyy-MM-dd');
 const marketOf = (lines) => lines.reduce((s, l) => s + Number(l.cc_sell_price ?? l.unit_price) * l.quantity, 0);
 // Real cards only: bulk is counted on its own, and only where it's priced (docs/TEAM_FEEDBACK.md 5.5);
-// struck cards are gone (lib/struck.js).
-const cardsIn = (lines) => lines.reduce((n, l) => n + (l.bulk_kind || l.struck_at ? 0 : l.quantity), 0);
+// struck cards are gone (lib/struck.js); a placeholder is a card (owner, 2026-10-16).
+const cardsIn = (lines) => lines.reduce((n, l) => n + (isValuedBulk(l) || l.struck_at ? 0 : l.quantity), 0);
 
 /** The store's date, kept current while the page stays open: checked each minute. */
 function useStoreDay() {

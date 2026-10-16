@@ -86,7 +86,7 @@ export default function BulkValuesPanel() {
                 <tr><th colSpan={2}>{g.name}</th></tr>
               </thead>
               <tbody>
-                {BULK_ITEMS.filter((i) => i.game === g.game).map((item) => (
+                {BULK_ITEMS.filter((i) => i.game === g.game && !i.placeholder).map((item) => (
                   <tr key={item.kind}>
                     <th scope="row">{item.per} · {item.label}</th>
                     <td><ValueBox item={item} /></td>

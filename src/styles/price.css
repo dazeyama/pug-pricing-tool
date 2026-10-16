@@ -708,6 +708,27 @@
 .card-info p, .info-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .card-info p { margin: 0 0 6px; }
 .info-name { margin: 0 0 6px; font-size: 22px; line-height: 1.2; }
+/* A placeholder's name (owner, 2026-10-16): the heading as a box to type in, clearly clickable. */
+.placeholder-name { position: relative; display: block; margin: 0 0 6px; cursor: text; }
+.placeholder-name input {
+  width: 100%;
+  padding: 2px 30px 3px 8px;
+  border: 1px dashed color-mix(in srgb, var(--accent) 60%, var(--border));
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+  color: var(--text);
+  font: inherit;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.placeholder-name input::placeholder { color: var(--muted); font-weight: 600; }
+.placeholder-name input:hover, .placeholder-name input:focus {
+  border-style: solid;
+  border-color: var(--accent);
+  outline: none;
+}
+.placeholder-name-pen { position: absolute; right: 9px; top: 50%; transform: translateY(-50%); color: var(--accent); pointer-events: none; }
 .info-set { display: flex; align-items: center; gap: 6px; }
 .info-set-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .set-icon { width: 18px; height: 18px; flex: none; filter: invert(1); opacity: .85; }
@@ -1513,6 +1534,7 @@
   .main-search-field input { height: 48px; font-size: 18px; }
   .card-info { padding: 12px 14px; }
   .info-name { font-size: 19px; }
+  .placeholder-name input { font-size: 19px; }
   .area-prices .stage-slot, .area-actions .stage-slot { height: 80px; }
   /* Smaller windows (owner, 2026-10-01): a shorter info row, a lower finish
      control and action row, tighter gaps, so Finish & Details fit. */

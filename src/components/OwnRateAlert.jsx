@@ -1,6 +1,6 @@
 import { lineText } from '../lib/lineFormat.js';
 import { hasOwnRate, lineRate } from '../lib/rates.js';
-import { bulkItem, isBulk, perText } from '../lib/bulk.js';
+import { bulkItem, isValuedBulk, perText } from '../lib/bulk.js';
 
 /**
  * The alert when confirming (docs/TEAM_FEEDBACK.md 4.5): every card with its
@@ -14,7 +14,8 @@ import { bulkItem, isBulk, perText } from '../lib/bulk.js';
  */
 export default function OwnRateAlert({ lines, rates }) {
   const own = lines.filter(hasOwnRate);
-  const valued = lines.filter((l) => isBulk(l) && l.price_source === 'manual');
+  // A placeholder's price is always typed in: not an own value (owner, 2026-10-16).
+  const valued = lines.filter((l) => isValuedBulk(l) && l.price_source === 'manual');
   if (!own.length && !valued.length) return null;
   const n = own.length;
   const m = valued.length;

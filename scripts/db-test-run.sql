@@ -993,6 +993,52 @@ exception when others then
   perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
 end $$;
 
+-- ====================================================== Placeholders (0062)
+do $$
+declare
+  s text := 'Placeholders';
+  u uuid := pg_temp.id('u1');
+  a uuid := pg_temp.id('devA');
+  b uuid;
+  l1 uuid;
+  l2 uuid;
+  v_id uuid;
+begin
+  b := draft_for_device(a, u);
+  l1 := draft_add_line(a, pg_temp.bulk('pkm_placeholder', 1, 1.00)
+    || '{"name": "DBTEST Meowth 117", "name_key": "dbtest meowth 117", "price_source": "manual"}', u, true);
+  perform pg_temp.ok(s, 'A placeholder is a line of its own, by the name typed',
+    (select bulk_kind = 'pkm_placeholder' and name = 'DBTEST Meowth 117' and price_source = 'manual' and set_code = 'BULK'
+       from buy_lines where id = l1));
+  v_id := draft_add_line(a, pg_temp.bulk('pkm_placeholder', 2, 1.00)
+    || '{"name": "DBTEST Meowth 117", "name_key": "dbtest meowth 117", "price_source": "manual"}', u, true);
+  perform pg_temp.ok(s, 'The same name and price add to its line',
+    v_id = l1 and (select quantity from buy_lines where id = l1) = 3);
+  l2 := draft_add_line(a, pg_temp.bulk('pkm_placeholder', 1, 1.00)
+    || '{"name": "DBTEST Vulpix 37", "name_key": "dbtest vulpix 37", "price_source": "manual"}', u, true);
+  perform pg_temp.ok(s, '… another name is a line of its own', l2 <> l1);
+  begin
+    perform draft_add_line(a, pg_temp.bulk('mtg_placeholder', 1, 5.00), u, false);
+    raise exception 'dbt_no_error';
+  exception when others then
+    perform pg_temp.ok(s, 'A placeholder''s price is always typed in', sqlstate = '23514', sqlerrm);
+  end;
+  -- $1 is under the low end ($3): 25 / 50, as a card at $1 (bulk gets the master rates).
+  perform pg_temp.ok(s, 'A placeholder takes the low-end / high-end rates by its price, like a card',
+    (select internal.line_pct(l, x, 'cash') = 25 and internal.line_pct(l, x, 'credit') = 50
+       from buy_lines l, buys x where l.id = l1 and x.id = b));
+
+  perform confirm_buy(b, u, 'DBTEST Placeholder', '', 50, 65, null, 1, 'cash', '{}', '5550100025');
+  perform pg_temp.ok(s, 'The header search finds a placeholder by its name',
+    exists (select 1 from global_search('dbtest meowth', null, null, null, false) g where g.line_id = l1));
+  perform buy_mark_completed(b, 'pokemon', u, a, true);
+  perform pg_temp.ok(s, 'Mark as completed leaves it out, as bulk',
+    (select completed_at is null from buy_lines where id = l1));
+exception when others then
+  declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;
+  perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
+end $$;
+
 -- ================================================== Struck cards (0059)
 do $$
 declare

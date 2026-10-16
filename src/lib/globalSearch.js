@@ -36,11 +36,22 @@ export function searchArgs(text, knownCodes) {
   return { args, retry: other ? toArgs(other) : null };
 }
 
-/** One printing: game, language, set, number, finish, 1st Edition and treatments. */
+/**
+ * A placeholder among the results (owner, 2026-10-16): the only bulk the
+ * search returns, known by its set BULK, so marked as one (bulk_kind) to
+ * read as "1 Team Rocket's, Meowth 117 [Placeholder]".
+ */
+export function markPlaceholder(line) {
+  if (String(line.set_code).toUpperCase() !== 'BULK' || line.bulk_kind) return line;
+  return { ...line, bulk_kind: line.game === 'mtg' ? 'mtg_placeholder' : 'pkm_placeholder' };
+}
+
+/** One printing: game, language, set, number, finish, 1st Edition and treatments; a placeholder's name. */
 export function printingKey(line) {
   return [
     line.game, line.lang ?? 'en', String(line.set_code).toLowerCase(), normNumber(line.collector_number),
     line.finish, line.first_edition ? '1' : '0', [...(line.treatments ?? [])].sort().join('+'),
+    ...(line.bulk_kind ? [nameKey(line.name)] : []),
   ].join('|');
 }
 

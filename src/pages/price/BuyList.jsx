@@ -7,7 +7,7 @@ import {
   hasOwnRate, lineRate, otherRate, rateTotals, whyText,
 } from '../../lib/rates.js';
 import { useToast } from '../../components/Toast.jsx';
-import { bulkItem, bulkShortText, cardCounts, countText, isBulk, perText } from '../../lib/bulk.js';
+import { bulkItem, bulkShortText, cardCounts, countText, isValuedBulk, perText } from '../../lib/bulk.js';
 import CustomRateMark from '../../components/CustomRateMark.jsx';
 import { isStruck, struckNote } from '../../lib/struck.js';
 import { useStaff } from '../../state/staff.jsx';
@@ -534,13 +534,13 @@ export default function BuyList({
 
   /** Right-click on a card: the Set Rate menu where the pointer is (a struck card's: Restore). */
   function openRateMenu(e, l) {
-    if (!(isStruck(l) ? onRestore : isBulk(l) ? onSetLineValue : onSetLineRate)) return;   // none here: the browser's own menu
+    if (!(isStruck(l) ? onRestore : isValuedBulk(l) ? onSetLineValue : onSetLineRate)) return;   // none here: the browser's own menu
     e.preventDefault();
     hidePreview();
     setRateMenu({ line: l, ...inAside(e.clientX, e.clientY) });
   }
   // Bulk's value is a price, not a rate: only what blocks any change to the list.
-  const rateBlocked = (l) => (isBulk(l) ? null : ratesLocked) ?? locked
+  const rateBlocked = (l) => (isValuedBulk(l) ? null : ratesLocked) ?? locked
     ?? (l.completed_at ? "A Completed card's rate doesn't change" : null);
   function startRate(l) {
     setRateMenu(null);
@@ -556,7 +556,7 @@ export default function BuyList({
     if (why) toast(`${why}.`, 'err');
     else if (!canEdit) editBlocked();
     else {
-      if (isBulk(l)) await onSetLineValue(l, null);
+      if (isValuedBulk(l)) await onSetLineValue(l, null);
       else await onSetLineRate(l, null, null);
       onDone();
     }
@@ -678,7 +678,7 @@ export default function BuyList({
                   <span
                     className={`line-price${l.cc_sell_price != null ? ' is-sell' : ''}`}
                     title={l.cc_sell_price != null ? `Sell price from the export · bought at ${formatMoney(l.unit_price)}`
-                      : isBulk(l) ? `Value per item (${bulkItem(l.bulk_kind)?.per} cards)` : 'Price per card'}
+                      : isValuedBulk(l) ? `Value per item (${bulkItem(l.bulk_kind)?.per} cards)` : 'Price per card'}
                   >
                     {formatMoney(l.cc_sell_price ?? l.unit_price)}
                   </span>
@@ -697,7 +697,7 @@ export default function BuyList({
                     {/* Its own rate (Set Rate): Credit / Cash, in their colours. */}
                     {hasOwnRate(l) && <OwnRateTag line={l} rates={rates} />}
                     {/* Bulk: its value per item beside it, ✎ when it's the line's own (Set value). */}
-                    {isBulk(l) && (
+                    {isValuedBulk(l) && (
                       <span className={`bulk-per${l.price_source === 'manual' ? ' own' : ''}`}>
                         {l.price_source === 'manual' && '✎ '}{perText(bulkItem(l.bulk_kind), Number(l.unit_price))}
                       </span>
@@ -763,12 +763,12 @@ export default function BuyList({
             role="menuitem"
             className={rateBlocked(rateMenu.line) ? 'is-blocked' : ''}
             title={rateBlocked(rateMenu.line)
-              ?? (isBulk(rateMenu.line) ? 'Give this bulk its own value per item' : 'Give this card its own Cash and Credit rates')}
+              ?? (isValuedBulk(rateMenu.line) ? 'Give this bulk its own value per item' : 'Give this card its own Cash and Credit rates')}
             onClick={() => startRate(rateMenu.line)}
           >
-            {isBulk(rateMenu.line) ? 'Set value' : 'Set Rate'}
+            {isValuedBulk(rateMenu.line) ? 'Set value' : 'Set Rate'}
           </button>
-          {isBulk(rateMenu.line) && rateMenu.line.price_source === 'manual' && (
+          {isValuedBulk(rateMenu.line) && rateMenu.line.price_source === 'manual' && (
             <button
               type="button"
               role="menuitem"
@@ -792,7 +792,7 @@ export default function BuyList({
           )}
         </div>
       )}
-      {rateLine && isBulk(rateLine) && (
+      {rateLine && isValuedBulk(rateLine) && (
         <BulkValuePanel
           key={rateLine.id}
           line={rateLine}
@@ -803,7 +803,7 @@ export default function BuyList({
           onClose={closeRate}
         />
       )}
-      {rateLine && !isBulk(rateLine) && (
+      {rateLine && !isValuedBulk(rateLine) && (
         <CardRatePanel
           key={rateLine.id}
           line={rateLine}
