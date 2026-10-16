@@ -30,7 +30,7 @@ has a second way to start, reachable from the shop's Wi-Fi:
    stops it. (By hand: `npm run dev:lan`, and the laptop's address from `ipconfig`,
    the Wi-Fi adapter's IPv4 address.)
 2. If Windows Firewall asks about Node.js the first time, allow it on private networks.
-3. On the phone, on the same Wi-Fi, open that address followed by `#/scan`, e.g.
+3. On the phone, on the same Wi-Fi, open the address it printed, e.g.
    `https://192.168.1.23:5180/#/scan`. The certificate is the dev server's own, so
    the browser warns once: Chrome → **Advanced → Proceed**; Safari → **Show
    Details → visit this website**.
