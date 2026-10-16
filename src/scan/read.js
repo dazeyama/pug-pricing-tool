@@ -68,6 +68,19 @@ export async function readCollectorLine(canvas, pattern, blocks = locate(canvas)
 }
 
 /**
+ * Read one picture already cut out and cleaned (the locked view's collector
+ * corner, lock.js): its text, scored as readCollectorLine scores.
+ * @returns {Promise<{ text: string, score: number }[]>}
+ */
+export async function readPrepared(canvas, pattern) {
+  const raw = await readText(canvas, PSM_BLOCK);
+  const cleaned = cleanOCRText(raw);
+  const rawScore = scoreCollectorNumberResult(raw, pattern);
+  const cleanedScore = scoreCollectorNumberResult(cleaned, pattern);
+  return [{ text: rawScore > cleanedScore ? raw : cleaned, score: Math.max(rawScore, cleanedScore) }];
+}
+
+/**
  * The printing the readings name: the best three with at least `min`, each
  * parsed and looked up on Scryfall until one is a card.
  * - A card printed in another language is refused ({ foreign: 'DE' }): its

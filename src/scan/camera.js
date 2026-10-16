@@ -95,15 +95,25 @@ export function useCamera(videoRef) {
     return canvas;
   }, [videoRef]);
 
-  // Turning the phone changes the picture's shape.
+  // The picture's shape can change after the camera starts (turning the
+  // phone; an iPhone settling on another format): followed on the video's
+  // events, and checked every second, since an iPhone doesn't always say.
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return undefined;
-    const onResize = () => {
-      if (video.videoWidth) setState((s) => ({ ...s, size: { w: video.videoWidth, h: video.videoHeight } }));
+    const follow = () => {
+      if (!video.videoWidth) return;
+      setState((s) => (s.size?.w === video.videoWidth && s.size?.h === video.videoHeight
+        ? s : { ...s, size: { w: video.videoWidth, h: video.videoHeight } }));
     };
-    video.addEventListener('resize', onResize);
-    return () => video.removeEventListener('resize', onResize);
+    video.addEventListener('resize', follow);
+    video.addEventListener('loadedmetadata', follow);
+    const timer = setInterval(follow, 1000);
+    return () => {
+      video.removeEventListener('resize', follow);
+      video.removeEventListener('loadedmetadata', follow);
+      clearInterval(timer);
+    };
   }, [videoRef]);
 
   // Off when the screen goes.

@@ -7,8 +7,13 @@ import { useConnection } from '../state/connection.jsx';
 import { usePairing } from './usePairing.js';
 import { useScans } from './useScans.js';
 import { useCamera } from './camera.js';
-import { guideStyle } from './guide.js';
-import { HIGH, MEDIUM, locate, lookupReading, readCollectorLine, setCodePattern } from './read.js';
+import { onScreen, showPart } from './guide.js';
+import { HIGH, MEDIUM, locate, lookupReading, readCollectorLine, readPrepared, setCodePattern } from './read.js';
+import { findCard } from './cardEdges.js';
+import {
+  ART_CHANGED, anchorBlock, artDistance, artPrint, blockOnCard, collectorCutout, cropTo, makeLock, movedFrom, samePlace,
+} from './lock.js';
+import { defaultCreateCanvas } from './recognition/canvasUtil.js';
 import { ocrWorker, onOcrStatus } from './ocr.js';
 import { isMuted, play, setMuted, unlockSounds } from './sounds.js';
 import { readOlderCard } from './older.js';
@@ -23,6 +28,8 @@ const FIRST_LOOK_MS = 800;
 // sure than a collector line: only on Scan card until the benchmark on the
 // store's own photos reads 80% of them right (docs/SCAN_FUNCTION.md 11.3).
 const AUTO_OLDER = false;
+// The card clearly moved for this long (the camera shifted): the view locks onto it again.
+const RELOCK_MS = 2000;
 // A scan still with the computer: auto scan waits for its outcome.
 const WITH_COMPUTER = new Set(['sent', 'pricing', 'undo', 'undoing']);
 
@@ -103,8 +110,19 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const [local, setLocal] = useState(null);       // the phone's own message: { tone, title?, text, at }
   const [reading, setReading] = useState(false);
   const [ocrLoading, setOcrLoading] = useState(false);
-  // The card last sent is still in view (auto scan won't send it again).
-  const [sameCard, setSameCard] = useState(false);
+  // The locked view (lock.js): the card, its collector corner and its art,
+  // where they are in the picture; null till the first card is found.
+  const lockRef = useRef(null);
+  const [lock, setLockState] = useState(null);
+  // The card found before the view is locked, outlined on the picture.
+  const [seenCard, setSeenCard] = useState(null);
+  // The enlarged collector corner, under the card.
+  const cutoutRef = useRef(null);
+  // The card seen elsewhere than locked: { card, since }, till it's lasted RELOCK_MS.
+  const moving = useRef(null);
+  // Auto scan: `held`, the art of the card last sent (nothing's read while it's
+  // still there); `pending`, the printing the last look read, for the next to agree with.
+  const view = useRef({ held: null, pending: null });
   // An older card that could be several printings: { tier, name, cards } to pick from.
   const [pick, setPick] = useState(null);
   const { offline } = useConnection();
@@ -201,6 +219,13 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, []);
 
+  useEffect(() => {
+    if (camera.on) return;
+    lockRef.current = null;
+    setLockState(null);
+    setSeenCard(null);
+  }, [camera.on]);
+
   async function startCamera() {
     unlockSounds();
     if (await camera.start()) {
@@ -212,12 +237,73 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     }
   }
 
+  /** Lock the view onto a card (null: unlock); anything held about the last card goes. */
+  function setLock(next, keep = null) {
+    lockRef.current = next;
+    setLockState(next);
+    moving.current = null;
+    view.current = { held: keep, pending: null };
+  }
+
+  /** Reset view: unlocked, and the next card found locks it again. */
+  function resetView() {
+    setLock(null);
+    setSeenCard(null);
+  }
+
+  /** The enlarged, cleaned collector corner, drawn into the strip under the card. */
+  function showCutout(src) {
+    const el = cutoutRef.current;
+    if (!el || !src) return;
+    const dpr = window.devicePixelRatio || 1;
+    const w = Math.max(1, Math.round(el.clientWidth * dpr));
+    const h = Math.max(1, Math.round(el.clientHeight * dpr));
+    if (el.width !== w) el.width = w;
+    if (el.height !== h) el.height = h;
+    const ctx = el.getContext('2d');
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, w, h);
+    const k = Math.min(w / src.width, h / src.height);
+    ctx.drawImage(src, (w - src.width * k) / 2, (h - src.height * k) / 2, src.width * k, src.height * k);
+  }
+
+  /**
+   * The camera shifted (an iPhone switching lenses): when the card has
+   * clearly moved from the locked place and stayed in its new one for two
+   * seconds, with its collector line where a card's is, lock onto it there
+   * (owner's choice). Returns the lock to use for this look.
+   */
+  function followMove(frame, lock) {
+    const now = findCard(frame, defaultCreateCanvas);
+    if (!now || !movedFrom(lock.card, now)) {
+      moving.current = null;
+      return lock;
+    }
+    const m = moving.current;
+    if (!m || !samePlace(m.card, now)) {
+      moving.current = { card: now, since: Date.now() };
+      return lock;
+    }
+    if (Date.now() - m.since < RELOCK_MS) return lock;
+    moving.current = null;
+    const anchor = anchorBlock(locate(frame));
+    if (!anchor || !blockOnCard(anchor, now)) return lock;
+    const next = makeLock(now, anchor, frame);
+    // The same card, now seen at its new place: still held.
+    setLock(next, view.current.held ? artPrint(frame, next) : null);
+    return next;
+  }
+
   /**
    * Read the card in front of the camera and send it (6.1, 6.3, 6.4).
-   * `manual`: Scan card, which takes a fair read, says what went wrong, and
-   * always sends, the same card again included (a second copy). Auto scan
-   * takes only sure reads, drops the rest silently, and never sends the card
-   * it last sent.
+   * Until the view is locked, a look searches for the card to lock onto: its
+   * edges, and a collector line where a card's is (owner, 2026-10-16); auto
+   * scan starts once it's locked. Locked, the enlarged collector corner is
+   * read first, then the line looked for on the card itself. `manual`: Scan
+   * card, which takes a fair read, says what went wrong, and always sends,
+   * the same card again included (a second copy). Auto scan reads only once
+   * the card's art has changed from the card last sent, and sends only when
+   * two looks in a row agree.
    */
   async function scanFrame({ manual }) {
     if (busy.current || !camera.on) return;
@@ -241,18 +327,63 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       const frame = camera.capture();
       if (!frame) return;
       const pattern = await setCodePattern();
-      const blocks = locate(frame);
-      // Nothing like a collector line in view: no card (or it's been taken away).
-      if (!blocks.length && !manual) {
-        setSameCard(false);
-        return;
+      let lock = lockRef.current;
+      // The camera's picture changed shape: the lock no longer fits it.
+      if (lock && (lock.frame.width !== frame.width || lock.frame.height !== frame.height)) {
+        resetView();
+        lock = null;
       }
-      const attempts = blocks.length ? await readCollectorLine(frame, pattern, blocks) : [];
-      let found = attempts.length ? await lookupReading(attempts, pattern, manual ? MEDIUM : HIGH) : null;
+      let blocks = null;
+      if (!lock) {
+        const card = findCard(frame, defaultCreateCanvas);
+        setSeenCard(card);
+        blocks = locate(frame);
+        const anchor = anchorBlock(blocks);
+        if (card && anchor && blockOnCard(anchor, card)) {
+          lock = makeLock(card, anchor, frame);
+          setLock(lock);
+        } else if (!manual) {
+          return;   // auto scan starts once the view is locked
+        }
+      } else if (!manual) {
+        lock = followMove(frame, lock);
+      }
+
+      let attempts = [];
+      let found = null;
+      const min = manual ? MEDIUM : HIGH;
+      let art = null;
+      if (lock) {
+        const cut = collectorCutout(frame, lock, defaultCreateCanvas);
+        showCutout(cut);
+        art = artPrint(frame, lock);
+        const v = view.current;
+        if (!manual && v.held) {
+          // The card last sent, still there: nothing to read, so a misread of it can't be sent.
+          if (artDistance(v.held, art) < ART_CHANGED) return;
+          v.held = null;
+          v.pending = null;
+        }
+        attempts = await readPrepared(cut, pattern);
+        found = await lookupReading(attempts, pattern, min);
+        if (!found) {
+          // The card a little off its spot: the line, looked for on the card itself.
+          const onCard = cropTo(frame, lock.view, defaultCreateCanvas);
+          const located = locate(onCard);
+          const more = located.length ? await readCollectorLine(onCard, pattern, located) : [];
+          attempts = [...attempts, ...more];
+          found = more.length ? await lookupReading(more, pattern, min) : null;
+        }
+      } else {
+        // Scan card before the view is locked: the whole picture.
+        attempts = blocks.length ? await readCollectorLine(frame, pattern, blocks) : [];
+        found = attempts.length ? await lookupReading(attempts, pattern, min) : null;
+      }
+
       // No modern collector line: an older card, by its title (and "123/350" from 1998 on).
       if (!found && (manual || AUTO_OLDER)) {
         if (manual) say('muted', 'No set code at the bottom: reading the title…');
-        const old = await readOlderCard(frame, { texts: attempts.map((a) => a.text) });
+        const old = await readOlderCard(frame, { texts: attempts.map((a) => a.text), card: lock?.card ?? null });
         if (old?.cards.length === 1) found = { card: old.cards[0], tier: old.tier };
         else if (old) {
           setPick(old);
@@ -261,6 +392,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         }
       }
       if (!found) {
+        if (!manual) view.current.pending = null;
         if (manual) {
           say('err', "Couldn't read this card: set it aside and add it on the computer.");
           play('error');
@@ -272,7 +404,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         if (manual) play('error');
         return;
       }
-      await sendCard(found.card, { tier: found.tier ?? 1, manual });
+      await sendCard(found.card, { tier: found.tier ?? 1, manual, art });
     } catch (e) {
       console.error('Scan failed', e);
       if (manual) {
@@ -285,14 +417,28 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     }
   }
 
-  /** Send a recognised card, unless auto scan sees the card it last sent. */
-  async function sendCard(card, { tier, manual }) {
+  /**
+   * Send a recognised card. Auto scan: never the card it last sent, and only
+   * once two looks in a row have read this same printing. Once sent, the
+   * card's art is held: nothing is read again till it changes.
+   * @param {{ tier: number, manual: boolean, art?: Float32Array|null }} opts  art: the card's (lock.js artPrint)
+   */
+  async function sendCard(card, { tier, manual, art = null }) {
+    const v = view.current;
     const finish = scanFinish(card, foil);
     const key = `${card.id}:${finish}`;
-    if (!manual && key === lastSent.current) {
-      setSameCard(true);
-      return;
+    if (!manual) {
+      if (key === lastSent.current) {
+        v.held = art;
+        v.pending = null;
+        return;
+      }
+      if (v.pending !== key) {
+        v.pending = key;
+        return;
+      }
     }
+    v.pending = null;
     const r = await send({ ...cardFields(card), finish, condition, tier });
     if (r.error) {
       say('err', SEND_MESSAGES[r.error] ?? `Couldn't send it: ${r.error}`);
@@ -301,7 +447,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       return;
     }
     lastSent.current = key;
-    setSameCard(true);
+    v.held = art;
     setLocal(null);
   }
 
@@ -333,16 +479,12 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   // The strip: the phone's own message, or the latest scan's state, whichever is newer.
   const stripOfLatest = latest ? scanStrip(latest, computer) : null;
   const strip = local && local.at >= latestAt ? local : stripOfLatest ?? local;
-  const size = camera.size;
-  // The picture as big as the space between the controls and the buttons
-  // allows, its own shape kept, so the guide drawn over it is where it reads.
-  const fit = size && room.w && room.h
-    ? (() => {
-      const ratio = size.w / size.h;
-      const width = Math.min(room.w, room.h * ratio);
-      return { width: `${Math.floor(width)}px`, height: `${Math.floor(width / ratio)}px` };
-    })()
-    : undefined;
+  // Before the lock: the whole picture, filling the space, the card found
+  // outlined. Locked: just the card, as large as fits, still (owner, 2026-10-16).
+  const picture = camera.size ? { width: camera.size.w, height: camera.size.h } : null;
+  const part = lock?.view ?? (picture && { x: 0, y: 0, width: picture.width, height: picture.height });
+  const shown = picture && room.w && room.h ? showPart(picture, part, room.w, room.h, lock ? 'contain' : 'cover') : null;
+  const outline = !lock && seenCard && shown ? onScreen(shown, seenCard) : null;
   const showUndo = strip === stripOfLatest && latest?.status === 'added';
 
   return (
@@ -422,25 +564,24 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
 
       {/* The camera takes the space that's left; notices and sheets lie over it. */}
       <div className="scan-middle" ref={middle}>
-        <div className={`scan-stage${camera.on ? ' live' : ''}`} style={fit}>
-          <video ref={videoRef} className="scan-video" playsInline muted />
-          {camera.on && size && (
-            <div className="scan-guide" style={guideStyle(size.w, size.h)} aria-hidden="true">
-              <i className="v1" /><i className="v2" /><i className="h1" /><i className="h2" />
-            </div>
-          )}
+        <div className={`scan-stage${camera.on ? ' live' : ''}`}>
+          <video
+            ref={videoRef}
+            className="scan-video"
+            playsInline
+            muted
+            style={shown ? { left: shown.x, top: shown.y, width: shown.width, height: shown.height } : undefined}
+          />
+          {camera.on && outline && <div className="scan-card-outline" style={outline} aria-hidden="true" />}
           {!camera.on && (
             <div className="scan-stage-off">
               <button type="button" className="btn primary scan-start" disabled={camera.starting} onClick={startCamera}>
                 {camera.starting ? 'Starting…' : 'START CAMERA'}
               </button>
-              <p>Fill the frame with the card, its bottom edge clear: the reader looks for the set code and number there.</p>
+              <p>Lay a card in the holder. The view locks onto the first card it finds; Reset view finds it again.</p>
             </div>
           )}
-          {ocrLoading ? <div className="scan-stage-note">Loading the card reader (first scan only)…</div>
-            : camera.on && sameCard && !needs && !pick && (
-              <div className="scan-stage-note">Same card in view: Scan card adds another copy.</div>
-            )}
+          {ocrLoading && <div className="scan-stage-note">Loading the card reader (first scan only)…</div>}
         </div>
         {(blocked || camera.error) && (
           <div className={`scan-notice ${camera.error ? 'err' : 'warn'} scan-over`} role="alert">{camera.error ?? blocked}</div>
@@ -463,6 +604,9 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         )}
       </div>
 
+      {/* The collector corner, enlarged and cleaned, for the person scanning (owner, 2026-10-16). */}
+      {lock && camera.on && <canvas ref={cutoutRef} className="scan-cutout" aria-label="The set code and number, enlarged" />}
+
       <div className="scan-actions">
         <button
           type="button"
@@ -472,9 +616,25 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         >
           {reading ? 'Reading…' : 'Scan card'}
         </button>
+        <button
+          type="button"
+          className="btn scan-reset"
+          disabled={!camera.on || !lock}
+          title="Find the card again and lock the view onto it"
+          onClick={resetView}
+        >
+          Reset view
+        </button>
         {camera.torch != null && (
-          <button type="button" className={`btn scan-torch${camera.torch ? ' on' : ''}`} aria-pressed={camera.torch} onClick={camera.toggleTorch}>
-            💡 Light
+          <button
+            type="button"
+            className={`btn scan-torch${camera.torch ? ' on' : ''}`}
+            aria-pressed={camera.torch}
+            aria-label="Light"
+            title="Light"
+            onClick={camera.toggleTorch}
+          >
+            💡
           </button>
         )}
         <button type="button" className="btn scan-stop" disabled={!camera.on} onClick={camera.stop}>■ Stop</button>

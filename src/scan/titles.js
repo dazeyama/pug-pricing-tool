@@ -75,7 +75,7 @@ function band(frame, card, where, height, createCanvas) {
 }
 
 /** The card's rectangle in the frame: the guide's, or the whole frame when the photo is the card. */
-const cardIn = (frame, wholeFrame) => (wholeFrame
+const cardIn = (frame, wholeFrame, card) => card ?? (wholeFrame
   ? { x: 0, y: 0, width: frame.width, height: frame.height }
   : guideRect(frame.width, frame.height));
 
@@ -84,18 +84,19 @@ const cardIn = (frame, wholeFrame) => (wholeFrame
  * @param {object} frame  a canvas: the camera's picture
  * @param {(canvas: object) => Promise<string>} read  OCR, one line (PSM 7)
  * @param {(w: number, h: number) => object} createCanvas
- * @param {{ wholeFrame?: boolean }} [opts]
+ * @param {{ wholeFrame?: boolean, card?: { x: number, y: number, width: number, height: number } }} [opts]
+ *   card: where the card is (the locked view's); else the guide's place, or the whole picture
  */
-export function readTitle(frame, read, createCanvas, { wholeFrame = false } = {}) {
-  return read(band(frame, cardIn(frame, wholeFrame), TITLE, BAND_HEIGHT.title, createCanvas));
+export function readTitle(frame, read, createCanvas, { wholeFrame = false, card = null } = {}) {
+  return read(band(frame, cardIn(frame, wholeFrame, card), TITLE, BAND_HEIGHT.title, createCanvas));
 }
 
 /**
  * The text along the card's bottom border, where 1998–2014 cards print "123/350".
  * @param {(canvas: object) => Promise<string>} read  OCR, a block (PSM 6)
  */
-export function readBottom(frame, read, createCanvas, { wholeFrame = false } = {}) {
-  return read(band(frame, cardIn(frame, wholeFrame), BOTTOM, BAND_HEIGHT.bottom, createCanvas));
+export function readBottom(frame, read, createCanvas, { wholeFrame = false, card = null } = {}) {
+  return read(band(frame, cardIn(frame, wholeFrame, card), BOTTOM, BAND_HEIGHT.bottom, createCanvas));
 }
 
 /**

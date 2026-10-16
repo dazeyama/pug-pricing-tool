@@ -657,6 +657,46 @@ Clean scans are kinder than a phone's photos, so tier 1 should be re-measured on
 - `loadSets` keeps `card_count` (cache key `.v4`).
 - The Help tab has a **Scanning from a phone** chapter (README), and Settings' credits a scanning line.
 
+## 17. The locked view (2026-10-16, after the rollback)
+
+The first attempt at auto scanning on the owner's iPhone is in `docs/SCAN_LEARNINGS.md` (rolled back to
+`e191f25`; the code is the local tag `scanner-attempt-1`). The owner's second approach: "after the
+first card is detected in a scan, use edge detection to crop the view to those edges and from there on
+just show that part of the picture, never moving or changing unless manually reset … and then …
+only scan that part", with "a cutout of the spot on the card that show collector number and set code
+info shown separately, magnified, processed to make clearer and larger". The owner's answers: the
+holder is **snug** (every card lands in the same spot); if the camera shifts, **re-lock by itself**
+when the card has clearly moved; a new card is **its art changing plus two matching reads**; the view
+locks **automatically on the first card**.
+
+**As built (`src/scan/cardEdges.js`, `lock.js`, `Scanner.jsx`):**
+- **Before the lock** the whole picture fills the space (`guide.js` `showPart`, `cover`; the video's
+  box sized and placed in px, never stretched), and a card found is outlined in green. Each look:
+  `findCard` (the largest card-shaped patch of dark, on a 320px copy: darker than both Otsu's split
+  and 55% of the picture's middle brightness, not touching the picture's edge, width ÷ height 0.62–0.84,
+  20–97% of the picture's height, at least 10% filled) and the collector locator; when the anchor
+  block (the left-most on the best row) is where a card's collector line is on that card (6.5% in,
+  93.6% down, give or take), **the view locks** (`makeLock`). Auto scan doesn't add cards before the
+  lock; Scan card reads the whole picture then.
+- **Locked**, the screen shows just the card with 3% around it, as large as fits (`contain`), still.
+  Under it a strip shows **the collector corner** (the block with 1.2 letters' room each way), enlarged
+  to 48px letters and cleaned to black on white with mtgscan's own crop and threshold
+  (`collectorCutout`; a light corner is turned round first). **That cutout is read first**; if it
+  doesn't read, the line is looked for on the card's crop. Older cards' titles are read from the
+  locked card.
+- **New card or the same one:** the art (the middle of the art box at its locked place) as a 16 × 10
+  thumbnail of true averages, brightness and contrast evened out (`artPrint`, `artDistance` with a
+  one-cell shift). After a card is sent its art is held; **nothing is read while the art is under 12
+  apart** (`ART_CHANGED`), so a misread of the card in the holder can't be sent; once it's changed,
+  two looks in a row must read the same printing; and never the card last sent.
+- **Re-locking:** each locked look also finds the card's edges; when they're clearly elsewhere (the
+  centre 6% of the card's height away, or the size 10% different) at the same new place for **2
+  seconds**, with a collector line on it, the view locks there (the held art carried over). **Reset
+  view** (a button) unlocks; Stop unlocks too; a camera picture of a new shape unlocks.
+- **Checked end to end** on Scryfall's scans of 17 modern cards (2017–2025) laid in a simulated holder:
+  card 40% of the picture's height: edges 17/17, locked 17/17, the cutout read right 17/17; 30%:
+  17, 16 and 16. Tests: `tests/scanLock.test.js`, `tests/scanGuide.test.js`.
+
 ---
 
 ## Appendix A: The collector line by era

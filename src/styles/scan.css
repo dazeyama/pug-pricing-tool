@@ -122,7 +122,7 @@ html[data-scan] .toast { max-width: none; }
   border-color: transparent;
 }
 
-/* ---- The camera, its guide, and the buttons under it ---- */
+/* ---- The camera, the locked card, its collector corner, and the buttons ---- */
 .scan-stage {
   position: relative;
   width: 100%;
@@ -133,7 +133,37 @@ html[data-scan] .toast { max-width: none; }
   border-radius: 10px;
   background: #05060b;
 }
-.scan-video { display: block; width: 100%; height: 100%; object-fit: fill; }
+/* Sized and placed in px by Scanner.jsx in the picture's own shape (guide.js
+   showPart): an iPhone doesn't size a video the way percentages and object-fit
+   ask (docs/SCAN_LEARNINGS.md 2.3). Filling the space till the shape is known. */
+.scan-video {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  display: block;
+  object-fit: cover;
+}
+/* The card found before the view locks onto it. */
+.scan-card-outline {
+  position: absolute;
+  border: 2px solid var(--good);
+  border-radius: 4.75% / 3.5%;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, .45);
+  pointer-events: none;
+}
+/* The collector corner, enlarged and cleaned to black on white (lock.js collectorCutout). */
+.scan-cutout {
+  flex: none;
+  display: block;
+  width: 100%;
+  height: 64px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+}
 .scan-stage:not(.live) .scan-video { visibility: hidden; }
 .scan-stage-off {
   position: absolute;
@@ -160,26 +190,11 @@ html[data-scan] .toast { max-width: none; }
   font-size: 13px;
   text-align: center;
 }
-/* The card-shaped guide with its 3 × 3 grid (the demo's "line the card up with the lines"). */
-.scan-guide {
-  position: absolute;
-  border: 2px dashed rgba(255, 255, 255, .85);
-  border-radius: 4.75% / 3.5%;
-  box-shadow: 0 0 0 9999px rgba(0, 0, 0, .28);
-  pointer-events: none;
-}
-.scan-guide i { position: absolute; border: 0 dashed rgba(255, 255, 255, .4); }
-.scan-guide .v1, .scan-guide .v2 { top: 0; bottom: 0; border-left-width: 1px; }
-.scan-guide .h1, .scan-guide .h2 { left: 0; right: 0; border-top-width: 1px; }
-.scan-guide .v1 { left: 33.33%; }
-.scan-guide .v2 { left: 66.67%; }
-.scan-guide .h1 { top: 33.33%; }
-.scan-guide .h2 { top: 66.67%; }
-
 .scan-actions { flex: none; display: flex; gap: 8px; }
 .scan-actions .btn { min-height: 46px; font-size: 15px; font-weight: 600; white-space: nowrap; }
 .scan-now { flex: 1; }
 .scan-torch.on { background: var(--warn); border-color: var(--warn); color: #1d1606; }
+.scan-actions .scan-torch { font-size: 18px; padding: 8px 12px; }
 .scan-mute { font-size: 15px; }
 
 /* ---- The last scan, and what became of it: one fixed-height row ---- */

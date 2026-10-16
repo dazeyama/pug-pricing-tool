@@ -31,16 +31,16 @@ async function printingsOf(name) {
  * @returns {Promise<{ tier: 2|3, name: string, number: string|null, cards: object[] }|null>}
  *   null: the title couldn't be named clearly; cards: oldest first, one or more
  */
-export async function readOlderCard(frame, { texts = [] } = {}) {
+export async function readOlderCard(frame, { texts = [], card = null } = {}) {
   const names = await scry.loadNames();
   // As one line first; if that names nothing clearly, as a block (it copes with a stray mark better).
-  let match = matchName(await readTitle(frame, (c) => readText(c, PSM_LINE), defaultCreateCanvas), names);
-  match ??= matchName(await readTitle(frame, (c) => readText(c, PSM_BLOCK), defaultCreateCanvas), names);
+  let match = matchName(await readTitle(frame, (c) => readText(c, PSM_LINE), defaultCreateCanvas, { card }), names);
+  match ??= matchName(await readTitle(frame, (c) => readText(c, PSM_BLOCK), defaultCreateCanvas, { card }), names);
   if (!match) return null;
   const bottoms = [...texts];
   let old = bottoms.map(parseOldNumber).find(Boolean) ?? null;
   if (!old) {
-    bottoms.push(await readBottom(frame, (c) => readText(c, PSM_BLOCK), defaultCreateCanvas));
+    bottoms.push(await readBottom(frame, (c) => readText(c, PSM_BLOCK), defaultCreateCanvas, { card }));
     old = parseOldNumber(bottoms.at(-1));
   }
   const printings = await printingsOf(match.name);
