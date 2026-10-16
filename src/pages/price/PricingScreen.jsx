@@ -28,6 +28,9 @@ import { BulkFinish, BulkPrice, BulkSelected } from './Bulk.jsx';
 import { useStaff } from '../../state/staff.jsx';
 import { useConnection } from '../../state/connection.jsx';
 import { useToast } from '../../components/Toast.jsx';
+import { useDevice } from '../../state/device.jsx';
+import { useScanSession } from './useScanSession.js';
+import ScanChip from './ScanChip.jsx';
 import { candidateKeyOf, editQuery } from '../../lib/candidateKey.js';
 
 const BACKGROUND = { '--stage-bg': `url(${import.meta.env.BASE_URL}background.webp)` };
@@ -80,11 +83,14 @@ const JP_NO_MTG = 'Japanese is Pokémon only: switch to EN to search Magic';
  * @param {string|null} [p.addLocked]  why ADD CARD can't add a new card, though list lines can still be
  *   edited (a confirmed buy in project view; owner, 2026-10-13), or null
  * @param {string|null} [p.ratesLocked]  why the list's rates can't change (the same), or null
+ * @param {{ kind: 'walk_in'|'collection', buyId: string|null, name: string }|null} [p.scanTarget]
+ *   this list takes cards from a paired phone (docs/SCAN_FUNCTION.md 8): what the phone shows it as;
+ *   null for none (a confirmed buy in project view, Can't upload cards)
  */
 export default function PricingScreen({
   list, rates, master, locked = null, removeLocked = locked, listTitle, ratesTitle,
   renderListDetails, renderListFooter, resetKey = 0, searchLead = null, className = '', hits = null,
-  searchBlocked = null, listBadge = null, roundUp = false, addLocked = null, ratesLocked = null,
+  searchBlocked = null, listBadge = null, roundUp = false, addLocked = null, ratesLocked = null, scanTarget = null,
 }) {
   const [text, setText] = useState('');
   // EN | JP for Pokémon: EN every time a screen opens, not remembered
@@ -134,6 +140,18 @@ export default function PricingScreen({
   const { current: user, pulse } = useStaff();
   const { offline } = useConnection();
   const toast = useToast();
+  const { deviceId } = useDevice();
+  // Open for a phone to scan into (docs/SCAN_FUNCTION.md 8.1): what this
+  // screen is on, its games, its user, and why it can't take cards, if it can't.
+  const scan = useScanSession(scanTarget && deviceId ? {
+    deviceId,
+    kind: scanTarget.kind,
+    buyId: scanTarget.buyId ?? null,
+    name: scanTarget.name,
+    games: Object.keys(searchGames).filter((g) => searchGames[g]),
+    userId: user?.id ?? null,
+    locked: locked ?? addLocked ?? null,
+  } : null);
   const [qty, setQty] = useState('1');
   const qtyRef = useRef(null);
   const [flashId, setFlashId] = useState(null);
@@ -669,6 +687,8 @@ export default function PricingScreen({
           footer={renderListFooter?.(api)}
           badge={listBadge}
           ratesLocked={ratesLocked}
+          // The paired phone (docs/SCAN_FUNCTION.md 8.2), while Magic is on.
+          scanChip={searchGames.mtg ? <ScanChip session={scan.session} onUnpair={scan.unpair} /> : null}
         />
 
         {showAll && (

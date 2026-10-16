@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:lan": "vite --host",
     "build": "vite build",
     "preview": "vite preview",
     "test": "node --test \"tests/*.test.js\"",
@@ -12,6 +13,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",
+    "@tesseract.js-data/eng": "^1.0.0",
     "date-fns": "^4.4.0",
     "date-fns-tz": "^3.2.0",
     "fuse.js": "^7.5.0",
@@ -19,10 +21,12 @@
     "papaparse": "^5.7.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
-    "react-router-dom": "^7.18.4"
+    "react-router-dom": "^7.18.4",
+    "tesseract.js": "^5.1.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
+    "@vitejs/plugin-basic-ssl": "^2.3.0",
     "@vitejs/plugin-react": "^6.1.1",
     "eslint": "^9.39.5",
     "eslint-plugin-react": "^7.37.5",

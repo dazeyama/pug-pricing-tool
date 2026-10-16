@@ -390,3 +390,34 @@
 /* One line per card: the card in full — Credit · Cash, in their colours. */
 .own-rate-alert li { margin: 1px 0; line-height: 1.35; font-variant-numeric: tabular-nums; }
 .ora-card { font-weight: 600; }
+
+/* ---- The paired phone (docs/SCAN_FUNCTION.md 8.2), under the heading ---- */
+.list-scan { padding: 8px 16px; border-bottom: 1px solid var(--border); }
+.scan-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 3px 4px 3px 10px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: rgba(108, 140, 255, .14);
+  font-size: 13px;
+  color: var(--text);
+}
+.scan-chip.away { border-color: var(--border); background: transparent; color: var(--muted); }
+.scan-chip-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.scan-chip-count { color: var(--muted); white-space: nowrap; }
+.scan-chip-x {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+.scan-chip-x:hover { background: rgba(255, 107, 107, .18); color: var(--bad); }

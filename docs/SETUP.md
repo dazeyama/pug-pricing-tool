@@ -19,6 +19,27 @@ Needs Node.js LTS (`winget install OpenJS.NodeJS.LTS`).
 `localhost` uses the **dev** Supabase project, so testing never touches the store's
 real data. The live site uses the **prod** project.
 
+### Testing the phone scanner (docs/SCAN_FUNCTION.md)
+
+A phone's camera only works on an HTTPS page, so for the scanner the dev server
+has a second way to start, reachable from the shop's Wi-Fi:
+
+1. Stop `start.bat` if it's running (both use port 5180).
+2. In the project folder: `npm run dev:lan`. It prints a **Network** address such
+   as `https://192.168.1.23:5180/`. (Or find the laptop's address with `ipconfig`:
+   the Wi-Fi adapter's IPv4 address.)
+3. On the phone, on the same Wi-Fi, open that address followed by `#/scan`, e.g.
+   `https://192.168.1.23:5180/#/scan`. The certificate is the dev server's own, so
+   the browser warns once: Chrome → **Advanced → Proceed**; Safari → **Show
+   Details → visit this website**.
+4. Sign in with the store password and name the phone. On the laptop, open the
+   Price tab (or a collection) at `https://localhost:5180/`, accepting the same
+   warning once: while `dev:lan` runs, the dev server is HTTPS only.
+
+Like `localhost`, this uses the **dev** project: test scans land in dev's buys.
+Without a phone, `#/scan` on the laptop opens the same page and **START CAMERA**
+uses the webcam (`http://localhost:5180/#/scan` needs no certificate).
+
 ## Configuration
 
 Two git-ignored files hold each project's public settings:

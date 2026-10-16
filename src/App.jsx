@@ -24,6 +24,8 @@ import BuyEditPage from './pages/BuyEditPage.jsx';
 import SettingsPage from './pages/SettingsPage.jsx';
 import ChangelogPage from './pages/ChangelogPage.jsx';
 import HelpPage from './pages/HelpPage.jsx';
+import ScanApp from './scan/ScanApp.jsx';
+import { isPhone } from './lib/mobile.js';
 
 /**
  * Header, then the current tab. The tab's panel is keyed by tab so it fades in
@@ -58,6 +60,8 @@ function AuthGate() {
   if (session === undefined) return null;   // reading the stored session: a blink at most
   if (!session) return <LoginPage />;
   // Shared data loads only once signed in: Row Level Security allows nothing before.
+  // A phone gets the scanner and nothing else (docs/SCAN_FUNCTION.md 5.1).
+  const phone = isPhone();
   return (
     <ConnectionProvider>
       <StaffProvider>
@@ -65,6 +69,9 @@ function AuthGate() {
           <InventoryProvider>
             <PriceLimitProvider>
               <Routes>
+                {/* The scanner, outside the desktop layout: on a phone, and #/scan anywhere. */}
+                <Route path="/scan" element={<ScanApp />} />
+                {phone ? <Route path="*" element={<Navigate to="/scan" replace />} /> : (
                 <Route element={<Layout />}>
                   <Route path="/home" element={<HomePage />} />
                   <Route path="/price" element={<PricePage />} />
@@ -80,6 +87,7 @@ function AuthGate() {
                   {/* Home is the first tab and where the app opens (owner, 2026-10-01). */}
                   <Route path="*" element={<Navigate to="/home" replace />} />
                 </Route>
+                )}
               </Routes>
             </PriceLimitProvider>
           </InventoryProvider>

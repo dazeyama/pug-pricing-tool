@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { HashRouter } from 'react-router-dom';
 import App from './App.jsx';
 import { watchUiZoom } from './lib/uiScale.js';
+import { watchScanMode } from './lib/mobile.js';
 
 import './styles/tokens.css';
 import './styles/base.css';
@@ -17,9 +18,12 @@ import './styles/changelog.css';
 import './styles/export.css';
 import './styles/home.css';
 import './styles/help.css';
+import './styles/scan.css';
 
 // Smaller on a small screen, down to 80% (lib/uiScale.js).
 watchUiZoom();
+// A phone (or #/scan) is the scanner: no desktop-only notice, no laptop zoom (lib/mobile.js).
+watchScanMode();
 
 // HashRouter: GitHub Pages can't rewrite deep links, and #/routes survive a refresh.
 createRoot(document.getElementById('root')).render(

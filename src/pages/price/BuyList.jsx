@@ -391,12 +391,15 @@ function Totals({
  * Paid/Ours list), × strikes a card first: crossed out, kept as a record.
  * A struck card's × removes it for good, and right-clicking it offers
  * Restore (`onRestore`), blocked like removing. It can't be edited or rated.
+ *
+ * `scanChip`, under the heading: the phone paired with this screen
+ * (docs/SCAN_FUNCTION.md 8.2), when there is one.
  */
 export default function BuyList({
   title = 'Buy list', lines, loaded, rates, master, ratesTitle, flashId, hits = null, editingId,
   canEdit, locked = null, editBlocked, canRemove = canEdit, removeLocked = locked, removeBlocked = editBlocked,
   onEdit, onRemove, onSaveRates, onSetLineRate = null, onSetLineValue = null, bulkValues = null, onDone, details,
-  footer, badge = null, ratesLocked = null, onStrike = null, onRestore = null,
+  footer, badge = null, ratesLocked = null, onStrike = null, onRestore = null, scanChip = null,
 }) {
   const [removing, setRemoving] = useState(null);  // { line, mode }: the × asking
   const staff = useStaff();
@@ -544,6 +547,7 @@ export default function BuyList({
         {badge}
         <span className="list-count">{countText(counts)}</span>
       </div>
+      {scanChip && <div className="list-scan">{scanChip}</div>}
 
       <div className="list-body" ref={list}>
         {loaded && !lines.length && <p className="list-empty">Cards you add will appear here.</p>}

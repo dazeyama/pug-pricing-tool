@@ -2397,6 +2397,124 @@ exception when others then
   perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
 end $$;
 
+-- ===================================================== Scan sessions (0068)
+do $$
+declare
+  s text := 'Scan sessions';
+  u uuid := pg_temp.id('u1');
+  a uuid := pg_temp.id('devA');
+  b uuid := pg_temp.id('devB');
+  ph uuid := gen_random_uuid();
+  ph2 uuid := gen_random_uuid();
+  c uuid;
+  v jsonb;
+begin
+  insert into devices (id, label) values (ph, 'DBTEST Phone'), (ph2, 'DBTEST Phone Two');
+  v := scan_session_touch(a, 'walk_in', null, 'Buy list', '{mtg,pokemon}', null, null);
+  perform pg_temp.ok(s, 'A price screen opens a session; with no user picked it can''t take cards',
+    v ->> 'device_label' = 'DBTEST Computer A' and v ->> 'target_name' = 'Buy list'
+    and (v ->> 'can_add')::boolean = false, v::text);
+  v := scan_session_touch(a, 'walk_in', null, 'Buy list', '{mtg,pokemon}', u, null);
+  perform pg_temp.ok(s, '… with a user picked and Magic on, it can',
+    (v ->> 'can_add')::boolean and v ->> 'staff_user_name' = 'DBTEST Cashier', v::text);
+  v := scan_session_touch(a, 'walk_in', null, 'Buy list', '{pokemon}', u, null);
+  perform pg_temp.ok(s, '… not with only Pokémon on', (v ->> 'can_add')::boolean = false, v::text);
+  v := scan_session_touch(a, 'walk_in', null, 'Buy list', '{mtg}', u, 'Paid/Ours: unlock it to edit');
+  perform pg_temp.ok(s, '… nor while its list is locked, which says why',
+    (v ->> 'can_add')::boolean = false and v ->> 'locked' = 'Paid/Ours: unlock it to edit', v::text);
+  perform scan_session_touch(a, 'walk_in', null, 'Buy list', '{mtg,pokemon}', u, '  ');
+  perform pg_temp.ok(s, 'Phones see it listed', exists (select 1 from scan_sessions_open() o where o.device_id = a and o.can_add));
+
+  v := scan_pair(a, ph);
+  perform pg_temp.ok(s, 'A phone pairs with it', v ->> 'phone_label' = 'DBTEST Phone' and (v ->> 'scanned')::integer = 0, v::text);
+  perform pg_temp.ok(s, 'The paired phone''s heartbeat is answered', scan_phone_beat(a, ph));
+  perform pg_temp.ok(s, '… another phone''s isn''t', not scan_phone_beat(a, ph2));
+  begin
+    perform scan_pair(a, a);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'A computer can''t pair with itself', sqlerrm, 'not_a_device');
+  end;
+  begin
+    perform scan_pair(a, gen_random_uuid());
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'A phone has to be a named device', sqlerrm, 'not_a_device');
+  end;
+  begin
+    perform scan_pair(b, ph2);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'A computer with no price screen open can''t be paired', sqlerrm, 'session_gone');
+  end;
+  perform scan_session_touch(b, 'walk_in', null, 'Buy list', '{pokemon}', u, null);
+  begin
+    perform scan_pair(b, ph2);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, '… nor one on Pokémon only', sqlerrm, 'cannot_scan');
+  end;
+
+  v := scan_pair(a, ph2);
+  perform pg_temp.ok(s, 'A second phone replaces the first (one phone per computer)',
+    v ->> 'phone_label' = 'DBTEST Phone Two' and not scan_phone_beat(a, ph), v::text);
+  perform scan_session_touch(b, 'walk_in', null, 'Buy list', '{mtg}', u, null);
+  perform scan_pair(b, ph2);
+  perform pg_temp.ok(s, 'A phone pairing elsewhere leaves the first computer (one computer per phone)',
+    (select phone_device_id is null from scan_sessions where device_id = a)
+    and (select phone_device_id = ph2 from scan_sessions where device_id = b));
+  update scan_sessions set scanned = 5 where device_id = b;
+  perform scan_pair(b, ph2);
+  perform pg_temp.ok(s, 'The same phone pairing again keeps its count', (select scanned from scan_sessions where device_id = b) = 5);
+  perform scan_pair(b, ph);
+  perform pg_temp.ok(s, '… a new phone starts it again', (select scanned from scan_sessions where device_id = b) = 0);
+
+  c := collection_create('DBTEST Scan Target', null, '', u, a);
+  v := scan_session_touch(a, 'collection', c, 'DBTEST Scan Target', '{mtg,pokemon}', u, null);
+  perform pg_temp.ok(s, 'A collection''s screen is a session too',
+    v ->> 'target_kind' = 'collection' and (v ->> 'buy_id')::uuid = c, v::text);
+  begin
+    perform scan_session_touch(a, 'collection', null, 'x', '{mtg}', u, null);
+    raise exception 'dbt_no_error';
+  exception when others then
+    perform pg_temp.ok(s, 'A collection session names its collection', sqlstate = '23514', sqlerrm);
+  end;
+
+  update scan_sessions set heartbeat_at = now() - interval '2 minutes' where device_id = b;
+  perform pg_temp.ok(s, 'A session with no beat for a minute isn''t listed',
+    not exists (select 1 from scan_sessions_open() o where o.device_id = b));
+  perform pg_temp.ok(s, '… and its phone''s heartbeat isn''t answered', not scan_phone_beat(b, ph));
+  begin
+    perform scan_pair(b, ph2);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, '… nor can it be paired', sqlerrm, 'session_stale');
+  end;
+  v := scan_session_touch(b, 'walk_in', null, 'Buy list', '{mtg}', u, null);
+  perform pg_temp.ok(s, 'Back again, it has lost its phone', v ->> 'phone_device_id' is null, v::text);
+
+  perform scan_pair(a, ph);
+  perform scan_unpair(a, ph2);
+  perform pg_temp.ok(s, 'A phone that isn''t paired can''t unpair another',
+    (select phone_device_id = ph from scan_sessions where device_id = a));
+  perform scan_unpair(a, null);
+  perform pg_temp.ok(s, 'The computer''s Unpair lets its phone go',
+    (select phone_device_id is null and paired_at is null from scan_sessions where device_id = a));
+  begin
+    perform scan_unpair(gen_random_uuid(), null);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'Unpairing a session that''s gone is refused', sqlerrm, 'session_gone');
+  end;
+  begin
+    perform scan_session_touch(gen_random_uuid(), 'walk_in', null, 'Buy list', '{mtg}', u, null);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'An unnamed computer can''t open a session', sqlerrm, 'no_device');
+  end;
+  perform scan_pair(a, ph);
+  perform collection_delete(c, u, a, 'DBTEST Scan Target');
+  perform pg_temp.ok(s, 'Deleting the collection ends its session', not exists (select 1 from scan_sessions where device_id = a));
+  perform scan_session_end(b);
+  perform pg_temp.ok(s, 'Leaving the price screen ends the session', not exists (select 1 from scan_sessions where device_id = b));
+exception when others then
+  declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;
+  perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
+end $$;
+
 -- ======================================================= Backup and restore
 -- The restore resets the Changelog's numbering; it's set back after.
 reset role;

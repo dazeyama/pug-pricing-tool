@@ -397,6 +397,8 @@ function CollectionScreen({ id }) {
       hits={hits}
       listTitle="Collection list"
       ratesTitle="Rates for this collection"
+      // A phone can scan into it (docs/SCAN_FUNCTION.md), but not into Can't upload cards.
+      scanTarget={buy && !system ? { kind: 'collection', buyId: buy.id, name: buy.customer_name ?? '' } : null}
       searchBlocked={system ? "Cards arrive here from exports: they can't be added by hand" : null}
       // The export's code, labelled very clearly (export spec 4.4), in the list's heading (owner, 2026-10-01).
       listBadge={buy?.status === 'completed' && skus.length > 0 ? (

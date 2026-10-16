@@ -13,6 +13,9 @@ import { useStaff } from '../state/staff.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { GAME_NAMES } from '../lib/games.js';
 
+// What a phone sees this screen as (docs/SCAN_FUNCTION.md 5.2).
+const SCAN_TARGET = { kind: 'walk_in', buyId: null, name: 'Buy list' };
+
 // The Price tab (spec 8): the pricing screen with this computer's walk-in
 // draft as its list, added to with ADD CARD and finished with CONFIRM BUY
 // (Phase 6). Confirming or cancelling starts the next buy afresh.
@@ -98,6 +101,8 @@ export default function PricePage() {
       master={master}
       listTitle="Buy list"
       ratesTitle="Rates for this buy"
+      // A phone can scan into this computer's buy (docs/SCAN_FUNCTION.md).
+      scanTarget={SCAN_TARGET}
       resetKey={resetKey}
       renderListFooter={({ focusSearch, canEdit, editBlocked }) => (
         <>

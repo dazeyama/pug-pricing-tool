@@ -45,8 +45,12 @@ export function SessionProvider({ children }) {
     return error ? describeAuthError(error) : null;
   }
 
-  async function signOut() {
-    await withLoading(() => supabase.auth.signOut());
+  /**
+   * @param {{ scope?: 'global'|'local' }} [options]  supabase-js's own; a phone
+   *   signs out only itself ('local', docs/SCAN_FUNCTION.md 5.2)
+   */
+  async function signOut(options) {
+    await withLoading(() => supabase.auth.signOut(options));
   }
 
   return (

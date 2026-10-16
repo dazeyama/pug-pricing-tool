@@ -1,0 +1,123 @@
+/* The scanner (docs/SCAN_FUNCTION.md 5): a phone's whole app, and #/scan on
+   any device. Phone first: one column, 16px gutters, thumb-sized targets
+   (44px and up), nothing zoomed. <html data-scan> is set while the page is
+   the scanner's (lib/mobile.js). */
+
+/* No desktop-only notice and no laptop zoom here (spec 7.10, lib/uiScale.js). */
+html[data-scan] { --ui-zoom: 1 !important; }
+@media (max-width: 1199px) {
+  html[data-scan] .app { display: block !important; }
+  html[data-scan] .modal { display: flex !important; }
+  html[data-scan] .toast-stack { display: flex !important; }
+  html[data-scan] .too-small { display: none; }
+}
+/* A phone zooms into any field under 16px when it's tapped. */
+html[data-scan] input, html[data-scan] select, html[data-scan] textarea { font-size: 16px; }
+html[data-scan] .toast-stack { left: 12px; right: 12px; bottom: 12px; }
+html[data-scan] .toast { max-width: none; }
+
+.scan-app {
+  max-width: 640px;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 12px 16px calc(20px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.scan-brand { display: flex; align-items: center; gap: 10px; }
+.scan-brand img { flex: none; }
+.scan-brand div { display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
+.scan-brand strong { font-size: 16px; }
+.scan-brand span { color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.scan-heading {
+  margin: 4px 0 0;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.scan-notice {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  background: var(--panel-2);
+  font-size: 14px;
+  line-height: 1.4;
+}
+.scan-notice.err { border-left-color: var(--bad); }
+.scan-notice.warn { border-left-color: var(--warn); }
+.scan-empty { color: var(--muted); font-size: 14px; line-height: 1.5; margin: 4px 0; }
+
+/* ---- The landing page: one big button per computer ---- */
+.scan-landing { display: flex; flex-direction: column; gap: 10px; }
+.scan-computers { display: flex; flex-direction: column; gap: 10px; }
+.scan-computer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  min-height: 64px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.scan-computer:active { border-color: var(--accent); }
+.scan-computer.mine { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.scan-computer.dim { opacity: .55; cursor: not-allowed; }
+.scan-computer-name { font-size: 17px; font-weight: 700; }
+.scan-computer-what { font-size: 14px; color: var(--muted); }
+.scan-computer-why { font-size: 13px; color: var(--muted); font-style: italic; }
+.scan-computer-go { font-size: 14px; font-weight: 600; color: var(--accent); }
+.scan-pick-user { color: var(--warn); font-weight: 600; }
+.scan-landing-foot { display: flex; justify-content: flex-end; margin-top: 8px; }
+
+/* ---- The scanning screen ---- */
+.scanner { display: flex; flex-direction: column; gap: 10px; }
+.scan-paired {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel);
+}
+.scan-paired-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.scan-paired-text strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; }
+.scan-paired-text span { color: var(--muted); font-size: 13px; }
+
+.scan-controls { display: flex; flex-direction: column; gap: 8px; }
+.scan-seg { display: flex; gap: 6px; }
+.scan-seg-btn {
+  flex: 1;
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--c, var(--border));
+  border-radius: 8px;
+  background: var(--panel-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.scan-seg-btn.on { background: var(--accent-2); border-color: var(--accent-2); border-top-color: var(--c, var(--accent-2)); }
+/* The condition colours of the price table (price/quote.css). */
+.scan-seg-btn.cond-nm { --c: #3ecf8e; }
+.scan-seg-btn.cond-lp { --c: #a3d65c; }
+.scan-seg-btn.cond-mp { --c: #ffcc66; }
+.scan-seg-btn.cond-hp { --c: #ff9f43; }
+.scan-seg-btn.cond-dmg { --c: #ff6b6b; }
+.scan-seg-btn.foil.on {
+  background: linear-gradient(115deg, #5a5bc4, #2f9dc4 40%, #b8459b 80%);
+  border-color: transparent;
+}
