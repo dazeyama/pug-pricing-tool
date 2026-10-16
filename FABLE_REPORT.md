@@ -180,6 +180,18 @@ can no longer `insert` into `events` directly: `0002_rls.sql:56` grants
 `insert`, `:61` is the policy `"store: append"`. Revoke the grant and drop
 the policy only after both RPCs are live, or Called/cash-download break.
 
+*(Status 2026-10-16.)* **Step 1 done:** migration 0064
+(`collection_log_call`, `buy_log_cash_download`) and the app calling them;
+the browser no longer inserts into `events`. **Step 2 is bigger than written
+above:** `internal.buy_event` and `internal.collection_event` are security
+invoker, so every Changelog entry the database writes inserts *as the
+signed-in role*, through the same `"store: append"` policy. Revoking it
+alone would stop every entry. Step 2 has to make the event writers (and
+the two new functions) `security definer` with `search_path = public,
+internal, pg_temp` first, then revoke `insert` and drop the policy, and it
+can only land after the app that calls 0064 is pushed (the live site still
+inserts directly until then). Owner's decision when.
+
 **Verify** db-test: call both RPCs and assert one `events` row each with
 the expected `action`; Changelog page shows "Called" on a collection and
 the cash-download entry under Buys.

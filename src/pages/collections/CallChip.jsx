@@ -41,21 +41,12 @@ export default function CallChip({ buy }) {
     const offer = [buy.offer_cash != null && `${formatMoney(buy.offer_cash)} cash`,
       buy.offer_credit != null && `${formatMoney(buy.offer_credit)} credit`].filter(Boolean).join(' / ');
     setBusy(true);
-    const { error } = await supabase.from('events').insert({
-      staff_user_id: user.id,
-      staff_user_name: user.name,
-      staff_user_color: user.color,
-      device_id: deviceId,
-      kind: 'collection',
-      action: CALLED,
-      target_id: buy.id,
-      target_name: buy.customer_name,
-      games: [],
-      added: 0,
-      removed: 0,
-      lines: [],
-      fields: [],
-      summary: `Called ${buy.customer_name} about their collection${offer ? ` (offer ${offer})` : ''}.`,
+    // The database writes the entry (migration 0064): who, the collection, the action CALLED.
+    const { error } = await supabase.rpc('collection_log_call', {
+      p_buy_id: buy.id,
+      p_user: user.id,
+      p_device: deviceId,
+      p_summary: `Called ${buy.customer_name} about their collection${offer ? ` (offer ${offer})` : ''}.`,
     });
     setBusy(false);
     if (error) toast(`Couldn't save the call: ${error.message}`, 'err');

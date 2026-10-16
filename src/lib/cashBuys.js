@@ -109,23 +109,17 @@ export function saveCashBuys(csv, month) {
   setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
-/** Log a download (the Changelog's Buys), which also marks the month downloaded. */
+/**
+ * Log a download (the Changelog's Buys), which also marks the month
+ * downloaded. The database writes the entry (migration 0064): who, the
+ * action CASH_DOWNLOADED, "Cash buys · October 2026", the month's first day.
+ */
 export function recordCashDownload(month, rows, user, deviceId) {
   const paid = rows.reduce((s, r) => s + r.paid, 0);
-  return supabase.from('events').insert({
-    staff_user_id: user.id,
-    staff_user_name: user.name,
-    staff_user_color: user.color,
-    device_id: deviceId,
-    kind: 'buy',
-    action: CASH_DOWNLOADED,
-    target_name: `Cash buys · ${monthTitle(month)}`,
-    games: [],
-    day: `${month}-01`,
-    added: 0,
-    removed: 0,
-    lines: [],
-    fields: [],
-    summary: `Cash buys for ${monthTitle(month)} downloaded: ${rows.length} buy${rows.length === 1 ? '' : 's'}, ${formatMoney(paid)} paid in cash.`,
+  return supabase.rpc('buy_log_cash_download', {
+    p_month: `${month}-01`,
+    p_user: user.id,
+    p_device: deviceId,
+    p_summary: `Cash buys for ${monthTitle(month)} downloaded: ${rows.length} buy${rows.length === 1 ? '' : 's'}, ${formatMoney(paid)} paid in cash.`,
   });
 }

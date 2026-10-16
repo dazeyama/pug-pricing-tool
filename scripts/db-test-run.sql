@@ -2317,6 +2317,50 @@ exception when others then
   perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
 end $$;
 
+-- ================================= Changelog entries the app asks for (0064)
+do $$
+declare
+  s text := 'Changelog entries';
+  u uuid := pg_temp.id('u1');
+  a uuid := pg_temp.id('devA');
+  c uuid;
+begin
+  c := collection_create('DBTEST Called', null, '', u, a);
+  perform collection_log_call(c, u, a, 'Called DBTEST Called about their collection.');
+  perform pg_temp.ok(s, 'Called: a collection entry, signed with the user as staff_users has them',
+    exists (select 1 from events e join staff_users su on su.id = u
+             where e.action = 'collection_called' and e.kind = 'collection' and e.target_id = c
+               and e.target_name = 'DBTEST Called' and e.staff_user_name = su.name
+               and e.staff_user_color = su.color and e.device_id = a
+               and e.summary = 'Called DBTEST Called about their collection.'));
+  begin
+    perform collection_log_call(c, null, a, 'x');
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'A call with no user is refused', sqlerrm, 'no_user');
+  end;
+  begin
+    perform collection_log_call(gen_random_uuid(), u, a, 'x');
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'A call on a collection that''s gone is refused', sqlerrm, 'collection_gone');
+  end;
+
+  perform buy_log_cash_download('2026-09-17', u, a, 'Cash buys for September 2026 downloaded: 0 buys, $0.00 paid in cash.');
+  perform pg_temp.ok(s, 'Cash buys downloaded: a buy entry on the month''s first day, titled by the database',
+    exists (select 1 from events
+             where action = 'cash_buys_downloaded' and kind = 'buy' and day = '2026-09-01'
+               and target_name = 'Cash buys · September 2026' and target_id is null
+               and staff_user_id = u and device_id = a
+               and summary = 'Cash buys for September 2026 downloaded: 0 buys, $0.00 paid in cash.'));
+  begin
+    perform buy_log_cash_download('2026-09-01', null, a, 'x');
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'A download with no user is refused', sqlerrm, 'no_user');
+  end;
+exception when others then
+  declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;
+  perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
+end $$;
+
 -- ======================================================= Backup and restore
 -- The restore resets the Changelog's numbering; it's set back after.
 reset role;
