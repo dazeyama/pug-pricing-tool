@@ -10,20 +10,25 @@ fingerprints came back the same as dev's.
 
 Read FABLE.md first (the gates apply here more than anywhere), then this.
 
+*Renumbered 2026-10-16 (FABLE_REPORT Phase 5):* migrations 0063–0065 landed
+on dev before the squash, so N is 0065, the baseline `0066_baseline.sql`,
+and the first migration after launch 0067. The generator and its rehearsal
+were run again then (92 functions, 4,281 lines; nine of nine the same).
+
 ---
 
 ## 0. The shape of it
 
-Dev has 62 migrations (0001–0062), 13,814 lines, many rewriting the same
-function. Prod is empty and not live. The squash replaces the 62 files with
+Dev has 65 migrations (0001–0065), 14,229 lines, many rewriting the same
+function. Prod is empty and not live. The squash replaces the 65 files with
 **one baseline file that builds the database as dev has it**, applies it to
 prod, proves prod matches dev, and then tells dev's migration record that the
 baseline is what it has. Nothing in the app changes. Dev's data is never
 touched.
 
-**N** is the last migration on dev when the squash starts (today 0062). The
-baseline is `<N+1>_baseline.sql` (today `0063_baseline.sql`); the first
-migration after launch is N+2. Every command below uses 0062/0063; substitute
+**N** is the last migration on dev when the squash starts (today 0065). The
+baseline is `<N+1>_baseline.sql` (today `0066_baseline.sql`); the first
+migration after launch is N+2. Every command below uses 0065/0066; substitute
 if more migrations land first — and if they do, **start again from section 1**:
 a baseline written before the last migration is wrong by definition.
 
@@ -43,8 +48,8 @@ a baseline written before the last migration is wrong by definition.
    back**, with `public.`/`internal.` renamed to scratch schemas, then compares
    the scratch copy's structure fingerprints with dev's (the same formulas
    `db-test-run.sql` uses). It proves the file end to end — syntax, order,
-   all 89 function signatures, 78 constraints, 16 indexes, the trigger, 17
-   policies, every grant — without a prod attempt. Passed 2026-10-16 in 3.3 s,
+   all 92 function signatures, 78 constraints, 16 indexes, the trigger, 17
+   policies, every grant — without a prod attempt. Passed 2026-10-16 in under 4 s,
    nine of nine the same.
 3. **Prod is inspected before it's touched** (section 6). The spec assumes
    prod has no tables; the step here checks, and says what to do if it has.
@@ -102,13 +107,13 @@ node scripts/db-test-run.mjs --save /c/ClaudeProjects/temp/pug-squash/dev-run.js
 
 ```bash
 cat supabase/.temp/project-ref                       # dev, still
-node scripts/db-baseline.mjs supabase/migrations/0063_baseline.sql
-cp supabase/migrations/0063_baseline.sql /c/ClaudeProjects/temp/pug-squash/
+node scripts/db-baseline.mjs supabase/migrations/0066_baseline.sql
+cp supabase/migrations/0066_baseline.sql /c/ClaudeProjects/temp/pug-squash/
 ```
 
 It prints the counts. On 2026-10-16: `17 tables, 184 columns, 1 sequence(s),
-89 functions, 78 constraints, 16 indexes, 1 trigger(s), 21 policies, 8
-realtime tables, 1 bucket(s)` — 4,258 lines. If a `Note:` lists objects with
+92 functions, 78 constraints, 16 indexes, 1 trigger(s), 21 policies, 8
+realtime tables, 1 bucket(s)` — 4,281 lines. If a `Note:` lists objects with
 default privileges, that is dev's state (none today after 0051) and the
 baseline keeps it; mention it in the handoff.
 
@@ -117,12 +122,12 @@ and these parts in full (the ones a catalog read can't check for you):
 
 | Section | Must show |
 |---|---|
-| header | "standing in for migrations 0001–0062"; "write migration 0064 and up" |
+| header | "standing in for migrations 0001–0065"; "write migration 0067 and up" |
 | Extensions | `create extension if not exists pg_trgm with schema extensions;` and nothing else (the other extensions on dev — pgcrypto, uuid-ossp, pg_stat_statements, supabase_vault — are Supabase's defaults; prod has them) |
 | Schemas | `create schema if not exists internal;` |
 | Sequences | `public.events_seq_seq` as bigint … start with 1; later `owned by public.events.seq` |
 | Tables | 17 `create table` blocks, columns only — defaults come after the functions |
-| Functions | `CREATE OR REPLACE FUNCTION …` ×89, `internal.remember_customer` first (the trigger's); every one with `SET search_path TO 'public', 'internal'` (five security-definer ones also `'pg_temp'`) |
+| Functions | `CREATE OR REPLACE FUNCTION …` ×92, `internal.remember_customer` first (the trigger's); every one with `SET search_path TO 'public', 'internal'` (five security-definer ones also `'pg_temp'`) |
 | Indexes | `gin_trgm_ops` written `extensions.gin_trgm_ops` (3 indexes) |
 | Triggers | `… ON public.buys FOR EACH ROW EXECUTE FUNCTION internal.remember_customer()` |
 | Row security | `enable row level security` ×17; 17 policies, all `to authenticated`; `secrets` has none |
@@ -141,7 +146,7 @@ Nothing in the file is edited by hand. If something is wrong, fix
 ## 4. Rehearse it on dev (rolled back)
 
 ```bash
-node scripts/db-baseline.mjs --rehearse supabase/migrations/0063_baseline.sql
+node scripts/db-baseline.mjs --rehearse supabase/migrations/0066_baseline.sql
 ```
 
 What it does: one transaction on dev; `create schema scratch`; the baseline
@@ -154,7 +159,7 @@ transaction holds no locks on them.
 Expected, exactly:
 
 ```
-The whole baseline ran on dev in scratch schemas and was rolled back (3.3s). Its structure against dev's:
+The whole baseline ran on dev in scratch schemas and was rolled back (about 4s). Its structure against dev's:
   ✓ same  Server functions
   ✓ same  Tables and columns
   ✓ same  Constraints
@@ -189,20 +194,20 @@ section 8).
 
 ```bash
 mkdir -p supabase/migrations-archive
-git mv supabase/migrations/00{01..62}_*.sql supabase/migrations-archive/
-ls supabase/migrations            # exactly one file: 0063_baseline.sql
-ls supabase/migrations-archive | wc -l    # 62
+git mv supabase/migrations/00{01..65}_*.sql supabase/migrations-archive/
+ls supabase/migrations            # exactly one file: 0066_baseline.sql
+ls supabase/migrations-archive | wc -l    # 65
 ```
 
 Write `supabase/migrations-archive/README.md`:
 
 ```markdown
-# Archived migrations 0001–0062
+# Archived migrations 0001–0065
 
 History only: how the dev database was built between 2026-09-28 and the
-squash (DESIGN_SPEC decision 192). `supabase/migrations/0063_baseline.sql`
+squash (DESIGN_SPEC decision 192). `supabase/migrations/0066_baseline.sql`
 replaced them. The CLI does not read this folder. Never edit or run these;
-to change the database, write migration 0064 and up.
+to change the database, write migration 0067 and up.
 ```
 
 **Gate:** `supabase/migrations/` holds only the baseline. **From here to the
@@ -273,7 +278,7 @@ Prod has **data** (buys, staff users): **stop.** Someone used it. The owner
 decides whether it's disposable before anything is dropped.
 
 **Gate:** the probe reads as "untouched" (or was made so), `migration list`
-shows nothing on the remote side, and the local side lists only `0063`.
+shows nothing on the remote side, and the local side lists only `0066`.
 
 ---
 
@@ -281,9 +286,9 @@ shows nothing on the remote side, and the local side lists only `0063`.
 
 ```bash
 cat supabase/.temp/project-ref                    # prod
-npx supabase db push --dry-run --linked           # must list only 0063_baseline.sql
+npx supabase db push --dry-run --linked           # must list only 0066_baseline.sql
 npx supabase db push --linked --yes
-npx supabase migration list --linked              # 0063 on both sides, nothing else
+npx supabase migration list --linked              # 0066 on both sides, nothing else
 ```
 
 `db push` runs the file in one transaction: it either all lands or none of
@@ -292,7 +297,7 @@ hand), rewrite, rehearse, and because the transaction rolled back, push again
 without a reset. (If the push *did* land and something is still wrong, section
 8 finds it and section 6's reset path empties prod for another go.)
 
-**Gate:** push succeeded; the list shows 0063 and nothing else.
+**Gate:** push succeeded; the list shows 0066 and nothing else.
 
 ---
 
@@ -341,10 +346,10 @@ password). Then Claude:
 
 ```bash
 cat supabase/.temp/project-ref                    # dev
-npx supabase migration list --linked              # remote: 0001–0062; local: 0063 only
-npx supabase migration repair --linked --status reverted $(printf '%04d ' $(seq 1 62))
-npx supabase migration repair --linked --status applied 0063
-npx supabase migration list --linked              # 0063 on both sides, nothing else
+npx supabase migration list --linked              # remote: 0001–0065; local: 0066 only
+npx supabase migration repair --linked --status reverted $(printf '%04d ' $(seq 1 65))
+npx supabase migration repair --linked --status applied 0066
+npx supabase migration list --linked              # 0066 on both sides, nothing else
 npx supabase db push --dry-run --linked           # nothing to push
 node scripts/db-test-run.mjs --compare /c/ClaudeProjects/temp/pug-squash/dev-run.json
 ```
@@ -354,11 +359,11 @@ record of what was applied); dev's tables, functions and data don't change,
 and the last command proves it: every check passes and every fingerprint
 reads `✓ same` against the run saved in section 2.
 
-**Gate:** list shows 0063 only; dry run has nothing to push; test run same.
+**Gate:** list shows 0066 only; dry run has nothing to push; test run same.
 
 **If the repair went wrong** (a version missed, the wrong status): repair is
 idempotent — run the two commands again. Worst case, `--status applied` back
-for 0001–0062 and `--status reverted 0063` returns the record to where
+for 0001–0065 and `--status reverted 0066` returns the record to where
 section 1 found it, and `git checkout pre-squash -- supabase/migrations`
 returns the files.
 
@@ -368,7 +373,7 @@ returns the files.
 
 ```bash
 git add supabase/migrations supabase/migrations-archive SQUASH.md
-git commit   # "Migration squash: 0001–0062 → 0063_baseline.sql (decision 192)"
+git commit   # "Migration squash: 0001–0065 → 0066_baseline.sql (decision 192)"
 ```
 
 One commit, with the baseline, the moves, the archive README, and a line in
@@ -399,17 +404,24 @@ Then the launch steps outside the squash (spec, Phase 10 → Launch):
 
 ## 11. After the squash: how migrations work from now on
 
-- Files are numbered from **0064**. One behaviour per file (FABLE.md).
+- Files are numbered from **0067**. One behaviour per file (FABLE.md).
 - Every migration: rehearse `(echo "begin;"; cat f; echo "rollback;")` on
-  dev → `db push` to dev → `node scripts/db-test-run.mjs --save <fresh dev run>`
-  → (owner links prod) `db push` to prod → `node scripts/db-test-run.mjs
-  --confirm zvxquzcfffmxwizonxuo --compare <that run>` when the store isn't
-  using the app → (owner links dev again).
+  dev → `db push` to dev → `node scripts/db-snapshot.mjs` (commit
+  `supabase/current/` with the migration) → `node scripts/db-test-run.mjs
+  --save <fresh dev run>` → (owner links prod) `db push` to prod →
+  `node scripts/db-test-run.mjs --confirm zvxquzcfffmxwizonxuo --compare
+  <that run>` when the store isn't using the app → (owner links dev again).
+- **The first one, 0067, is FABLE_REPORT A2 step 2**, once the pushed app is
+  live: `internal.buy_event`, `internal.collection_event`,
+  `collection_log_call` and `buy_log_cash_download` become `security
+  definer` (`search_path = public, internal, pg_temp`), then `authenticated`
+  loses `insert` on `events` and the policy "store: append" goes. Not before
+  the push: the site live until then still inserts into `events` itself.
 - `scripts/db-baseline.mjs` is **not run again** for prod: the baseline is
   history once applied. It stays useful two ways: `--rehearse` on a
   freshly written file is a free full-structure comparison between "what a
-  file builds" and "what dev has", and FABLE_REPORT C3b's `supabase/current/`
-  snapshot can be generated from the same queries.
+  file builds" and "what dev has", and `scripts/lib/linked.mjs` is the query
+  helper it shares with `db-snapshot.mjs`.
 - `scripts/db-test-run.*` stays, as the spec says; its fingerprints are the
   dev–prod contract.
 
@@ -440,7 +452,7 @@ Then the launch steps outside the squash (spec, Phase 10 → Launch):
   the file.** The Management API doesn't wrap for you; the rehearsal and
   the test run both write them explicitly.
 - **`set check_function_bodies = off;`** heads the baseline, as pg_dump's
-  output does, so function order doesn't matter (89 functions referencing
+  output does, so function order doesn't matter (92 functions referencing
   each other and tables). Row-typed signatures (`internal.same_line(a
   buy_lines, b buy_lines)`, `internal.buy_event(b buys, …)`) still need the
   tables first — that's why tables come before functions, and column
