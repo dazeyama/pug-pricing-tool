@@ -175,11 +175,14 @@ export function cardCounts(lines) {
 /**
  * "42 cards + 1,000 bulk", "1 card", "1,000 bulk"; "42 cards · 2 struck".
  * `short`: the cards without the word, for a game's chip ("Magic (42 + 1,000 bulk)").
+ * `game`: its name before the first count, for a day page's other game
+ * ("3 Pokémon cards + 100 bulk", "100 Pokémon bulk").
  */
-export function countText({ cards, bulk, struck = 0 }, { short = false } = {}) {
+export function countText({ cards, bulk, struck = 0 }, { short = false, game = null } = {}) {
   const n = cards.toLocaleString('en-US');
-  const c = short ? n : `${n} card${cards === 1 ? '' : 's'}`;
-  const b = `${bulk.toLocaleString('en-US')} bulk`;
+  const g = game ? `${game} ` : '';
+  const c = short ? n : `${n} ${g}card${cards === 1 ? '' : 's'}`;
+  const b = `${bulk.toLocaleString('en-US')} ${cards ? '' : g}bulk`;
   const both = !bulk ? c : cards ? `${c} + ${b}` : b;
   return struck ? `${both} · ${struck.toLocaleString('en-US')} struck` : both;
 }

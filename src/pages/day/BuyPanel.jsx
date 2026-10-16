@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { lineBody, lineText } from '../../lib/lineFormat.js';
 import { formatMoney } from '../../lib/money.js';
 import { rateTotals } from '../../lib/rates.js';
-import { bulkItem, isBulk, isValuedBulk, perText } from '../../lib/bulk.js';
+import { bulkItem, cardCounts, countText, isBulk, isValuedBulk, perText } from '../../lib/bulk.js';
 import { isStruck, movesOn, struckNote } from '../../lib/struck.js';
 import CustomRateMark from '../../components/CustomRateMark.jsx';
 import { formatPhone } from '../../lib/phone.js';
@@ -108,7 +108,9 @@ export default function BuyPanel({
   const [menu, setMenu] = useState(null);   // { line, top, left }: a struck card's right-click menu
   const user = byId(buy.confirmed_by);
   const lines = buy.buy_lines.filter((l) => l.game === game);
-  const others = buy.buy_lines.filter((l) => l.game === other && !isStruck(l)).reduce((n, l) => n + l.quantity, 0);
+  // The other game's cards, bulk apart as CONFIRM BUY counts them; a placeholder is a card (owner, 2026-10-16).
+  const otherCounts = cardCounts(buy.buy_lines.filter((l) => l.game === other && !isStruck(l)));
+  const others = otherCounts.cards + otherCounts.bulk;
   const t = totalsFor(lines, buy, tiers);
   // Paid/Ours, or Completed once exported (owner, 2026-09-30): locked like a Completed collection.
   const status = walkInStatus(buy, game);
@@ -320,7 +322,7 @@ export default function BuyPanel({
         )}
         {others > 0 && (
           <Link className="buy-other" to={`/calendar/${other}/${day}`}>
-            Also has {others} {GAME_NAMES[other]} card{others === 1 ? '' : 's'} →
+            Also has {countText(otherCounts, { game: GAME_NAMES[other] })} →
           </Link>
         )}
       </div>

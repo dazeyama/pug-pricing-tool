@@ -118,3 +118,14 @@ test("a game's chip: the cards without the word (countText's short)", () => {
   assert.equal(countText({ cards: 0, bulk: 100 }, { short: true }), '100 bulk');
   assert.equal(countText({ cards: 3, bulk: 0 }), '3 cards');
 });
+
+test("the other game on a day page: its name first, bulk apart, a placeholder a card (countText's game)", () => {
+  const lines = [
+    { game: 'pokemon', quantity: 1, bulk_kind: null },
+    { game: 'pokemon', quantity: 1, bulk_kind: 'pkm_placeholder' },
+    { game: 'pokemon', quantity: 1, bulk_kind: 'pkm_100' },
+  ];
+  assert.equal(countText(cardCounts(lines), { game: 'Pokémon' }), '2 Pokémon cards + 100 bulk');
+  assert.equal(countText({ cards: 1, bulk: 0 }, { game: 'Magic' }), '1 Magic card');
+  assert.equal(countText({ cards: 0, bulk: 100 }, { game: 'Pokémon' }), '100 Pokémon bulk');
+});
