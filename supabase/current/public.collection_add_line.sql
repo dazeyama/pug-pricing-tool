@@ -1,0 +1,63 @@
+CREATE OR REPLACE FUNCTION public.collection_add_line(p_buy_id uuid, p_line jsonb, p_merge boolean, p_user uuid, p_device uuid, p_expected_version integer, p_text text)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SET search_path TO 'public', 'internal'
+AS $function$
+declare
+  b      buys;
+  r      buy_lines;
+  v_line uuid;
+  v_rec  buy_lines;
+begin
+  if p_user is null then
+    raise exception 'no_user';
+  end if;
+  b := collection_for_write(p_buy_id, p_device, p_expected_version, true);
+  r := jsonb_populate_record(null::buy_lines, p_line);
+  if r.quantity is null or r.quantity < 1 then
+    raise exception 'quantity must be at least 1';
+  end if;
+
+  if p_merge then
+    select id into v_line from buy_lines l
+     where l.buy_id = p_buy_id
+       and internal.same_card(l, r)   -- the same printing at the same price (0065)
+       and l.struck_at is null   -- never into a struck line
+     limit 1;   -- the same card, own rate or not: the copies take the line's rate (owner, 2026-10-15)
+  end if;
+
+  if v_line is not null then
+    update buy_lines set quantity = quantity + r.quantity where id = v_line;
+  else
+    insert into buy_lines (
+      buy_id, position, game, lang, name, name_en, name_key, set_code, set_name, source_set_id,
+      collector_number, printed_size, rarity, finish, first_edition, treatments, condition,
+      quantity, unit_price, market_price, price_source, price_snapshot, priced_at,
+      scryfall_id, oracle_id, tcgdex_id, tcgplayer_id, justtcg_card_id, justtcg_variant_id, image_url, bulk_kind)
+    values (
+      p_buy_id,
+      (select coalesce(max(position), 0) + 1 from buy_lines where buy_id = p_buy_id),
+      r.game, r.lang, r.name, r.name_en, r.name_key, r.set_code, r.set_name, r.source_set_id,
+      r.collector_number, r.printed_size, r.rarity, r.finish, coalesce(r.first_edition, false),
+      coalesce(r.treatments, '[]'::jsonb), r.condition, r.quantity, r.unit_price, r.market_price,
+      r.price_source, r.price_snapshot, r.priced_at, r.scryfall_id, r.oracle_id, r.tcgdex_id,
+      r.tcgplayer_id, r.justtcg_card_id, r.justtcg_variant_id, r.image_url, r.bulk_kind)
+    returning id into v_line;
+  end if;
+
+  update buys set version = version + 1, updated_at = now(), last_edited_by = p_user where id = p_buy_id;
+
+  -- The copies added, at the card's rate (and on the row, for a folded run's totals).
+  select * into v_rec from buy_lines where id = v_line;
+  v_rec.quantity := r.quantity;
+  perform collection_event(b, p_user, p_device, 'collection_cards_added', array[r.game], r.quantity, 0,
+    internal.lines_totals(b, array[v_rec]),
+    jsonb_build_array(jsonb_build_object('sign', '+', 'qty', r.quantity, 'game', r.game,
+      'unit_price', r.unit_price, 'text', coalesce(p_text, r.quantity || ' ' || r.name),
+      'cash_pct', internal.line_pct(v_rec, b, 'cash'), 'credit_pct', internal.line_pct(v_rec, b, 'credit'))),
+    '[]', sentence(format('%s card%s added', r.quantity, case when r.quantity = 1 then '' else 's' end)));
+  return v_line;
+end;
+$function$;
+
+-- Granted: {postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}
