@@ -125,3 +125,10 @@ keys) stayed where they were. Each part below names its commit.
 - [ ] A project (`SMOKE P6 Project`): prices round **up**.
 - [ ] ADD CARD a priced card, then open the line (SAVE EDIT): the same price, condition and source come back.
 
+**3e. The line under the search bar (C1e: useSearchNote.jsx)**
+- [ ] Open a list line (SAVE EDIT): **Editing 1 Lightning Bolt … : SAVE EDIT saves the changes, Esc leaves it as it was.** Esc: the note goes.
+- [ ] With EN on, type `No. 121`: **No. 121 finds old Japanese Pokémon cards by Pokédex number: switch to JP**; click it: JP is on and the search runs.
+- [ ] Back to EN, type `2/184 S8b`: **S8b is a Japanese Pokémon set: switch to JP**; click it: JP on. With JP on, an English set code (`4/102 BS`): **… is an English Pokémon set: switch to EN**.
+- [ ] A misspelling (`Lightnig Bolt`): **Showing results for Lightning Bolt**.
+- [ ] After each switch, typing goes straight into the search field (focus came back).
+

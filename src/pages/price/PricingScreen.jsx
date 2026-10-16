@@ -3,6 +3,7 @@ import { useCardRoom, useListRoom } from './useStageRoom.js';
 import { usePrinting } from './usePrinting.js';
 import { usePricing } from './usePricing.js';
 import { usePriceQuote } from './usePriceQuote.js';
+import { useSearchNote } from './useSearchNote.jsx';
 import SearchBar from './SearchBar.jsx';
 import SelectedCard from './SelectedCard.jsx';
 import Suggestions, { useSuggestionCount } from './Suggestions.jsx';
@@ -14,13 +15,11 @@ import ActionRow, { parseQty } from './ActionRow.jsx';
 import BuyList from './BuyList.jsx';
 import { useCardSearch } from './useCardSearch.js';
 import { useCardImages } from './useCardImages.js';
-import { warmUp, magicCandidate, otherLanguageSet } from '../../lib/cardSearch.js';
+import { warmUp, magicCandidate } from '../../lib/cardSearch.js';
 import { magicFinishes, POKEMON_FINISHES } from '../../lib/printings.js';
 import { CONDITIONS } from '../../lib/prices.js';
 import { showsTcgplayer } from '../../lib/ladder.js';
 import { buildLine } from '../../lib/buyLine.js';
-import { lineText } from '../../lib/lineFormat.js';
-import { dexNumberQuery } from '../../lib/query.js';
 import { lineRate, whyText } from '../../lib/rates.js';
 import {
   PLACEHOLDER_NAME, buildBulkLine, buildPlaceholderLine, bulkItem, bulkValuesFrom, isBulk, isPlaceholder, isValuedBulk,
@@ -445,65 +444,14 @@ export default function PricingScreen({
     }
   }
 
-  // A set code from the other Pokémon language ("2/184 S8b" with EN on):
-  // say so, with a one-click switch (owner, 2026-09-29).
-  const typedSet = search.parsed?.setCode ?? null;
-  const [langHint, setLangHint] = useState(null);
-  useEffect(() => {
-    let alive = true;
-    setLangHint(null);
-    if (typedSet) otherLanguageSet(typedSet, lang).then((other) => alive && other && setLangHint({ code: typedSet, lang: other }));
-    return () => {
-      alive = false;
-    };
-  }, [typedSet, lang]);
-
-  // "No. 121" with EN on: a Pokédex number search, which only JP does (owner, 2026-10-10).
-  const dexTyped = lang !== 'ja' ? dexNumberQuery(text) : null;
-
-  let note = null;
-  if (editing) {
-    note = (
-      <>
-        Editing <strong>{lineText(editing.line)}</strong>: SAVE EDIT saves the changes, Esc leaves it as it was.
-      </>
-    );
-  } else if (dexTyped) {
-    note = (
-      <span className="note-hint">
-        <strong>No. {dexTyped}</strong> finds old Japanese Pokémon cards by Pokédex number:{' '}
-        <button
-          type="button"
-          className="link-btn"
-          onClick={() => {
-            setLang('ja');
-            focusSearch();
-          }}
-        >
-          switch to JP
-        </button>
-      </span>
-    );
-  } else if (langHint) {
-    const jp = langHint.lang === 'ja';
-    note = (
-      <span className="note-hint">
-        <strong>{langHint.code}</strong> is {jp ? 'a Japanese' : 'an English'} Pokémon set:{' '}
-        <button
-          type="button"
-          className="link-btn"
-          onClick={() => {
-            setLang(langHint.lang);
-            focusSearch();
-          }}
-        >
-          switch to {jp ? 'JP' : 'EN'}
-        </button>
-      </span>
-    );
-  } else if (search.correction) {
-    note = <>Showing results for <strong>{search.correction.name}</strong></>;
-  }
+  // The line under the search bar: the edit, or a hint to switch language, or a spelling fix (useSearchNote.jsx).
+  const note = useSearchNote({
+    search, lang, text, editing,
+    switchTo: (l) => {
+      setLang(l);
+      focusSearch();
+    },
+  });
 
   // The price panel's Credit and Cash: the rate this card gets at this price
   // (docs/TEAM_FEEDBACK.md 4.4), a card being edited with its own or kept rates.
