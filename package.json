@@ -1,7 +1,7 @@
 {
   "name": "pug-pricing-tool",
   "private": true,
-  "version": "0.9.9.8-day1",
+  "version": "0.9.9.9-fable",
   "type": "module",
   "scripts": {
     "dev": "vite",
