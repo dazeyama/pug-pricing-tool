@@ -1146,13 +1146,29 @@ begin
     (select struck_at is null from buy_lines where id = v_id2)
     and exists (select 1 from events where action = 'collection_cards_restored' and target_id = c));
 
-  -- A project (Ours) strikes too.
+  -- A project doesn't strike: its × removes (owner, 2026-10-16; 0060).
   p := project_create('DBTEST Struck Project', '', u, a);
   v := lock_acquire(p, a, u);
   l_x := collection_add_line(p, pg_temp.line('Dbtest Struck Proj', 'DST', '020', 1, 2.00), false, u, a, null, null);
-  v_id := collection_strike_line(l_x, 1, u, a, null, null);
-  perform pg_temp.ok(s, 'A project''s card is struck', v_id = l_x
-    and (select struck_at is not null from buy_lines where id = l_x));
+  begin
+    perform collection_strike_line(l_x, 1, u, a, null, null);
+    raise exception 'dbt_no_error';
+  exception when others then
+    perform pg_temp.err(s, 'A project''s card isn''t struck: × removes it', sqlerrm, 'project_no_strike');
+  end;
+  -- Convert to project leaves a buy's struck cards out, crossed out in its entry.
+  b := pg_temp.buy(a, u, 'DBTEST Struck Convert', '5550100024', array[
+    pg_temp.line('Dbtest Struck C', 'DST', '030', 2, 3.00),
+    pg_temp.line('Dbtest Struck D', 'DST', '031', 1, 4.00)]);
+  perform buy_strike_line(pg_temp.line_id(b, 'Dbtest Struck D'), 1, u, a, null, null);
+  p := buy_to_project(b, 'DBTEST Struck Convert', u, a);
+  perform pg_temp.ok(s, 'Convert to project leaves struck cards out',
+    (select count(*) = 1 and sum(quantity) = 2 from buy_lines where buy_id = p)
+    and not exists (select 1 from buy_lines where buy_id = p and struck_at is not null));
+  perform pg_temp.ok(s, '… listed crossed out in its Changelog entry',
+    exists (select 1 from events where action = 'buy_converted' and target_id = p
+              and lines @> '[{"struck": true, "qty": 1}]'::jsonb
+              and summary like '%; 1 struck card left out.'));
 exception when others then
   declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;
   perform pg_temp.crashed(s, sqlerrm, v_ctx); end;

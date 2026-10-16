@@ -39,6 +39,7 @@ const MESSAGES = {
   line_not_struck: 'That card was already restored.',
   strike_paid_only: 'Only a Paid/Ours collection strikes cards: here × removes them.',
   system_collection: "Can't upload cards doesn't strike: its × removes the card.",
+  project_no_strike: "A project doesn't strike: its × removes the card.",
   project_rates: "A project has no rates of its own: it's the store's own cards.",
   no_user: 'Pick a user first.',
   // Convert to buy… (owner, 2026-10-10): what CONFIRM BUY asks for, and a project that can't go.

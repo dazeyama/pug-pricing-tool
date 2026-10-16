@@ -1,14 +1,15 @@
 import { isBulk } from './bulk.js';
 import { formatShortDate } from './time.js';
 
-// Struck cards (owner, 2026-10-16; migration 0059): in a Paid/Ours buy,
-// collection or project the first × strikes a card. It stays on the list,
+// Struck cards (owner, 2026-10-16; migrations 0059, 0060): in a Paid/Ours
+// walk-in buy or collection the first × strikes a card. It stays on the list,
 // crossed out, as a record (moved elsewhere: put straight into the case, say),
 // but it's treated as gone by everything that moves cards on: exports, Check
 // matches, COMPLETE, Mark as completed, printouts, the header search and the
 // card counts. It still counts in the totals: it was bought and paid for. A
-// second × removes it; right-click → Restore puts it back. Can't upload cards
-// doesn't strike: its × removes at once.
+// second × removes it; right-click → Restore puts it back. Projects and Can't
+// upload cards don't strike: their × removes at once, and Convert to project
+// leaves a buy's struck cards out (crossed out in its Changelog entry).
 
 /** A struck card. */
 export const isStruck = (line) => Boolean(line?.struck_at);

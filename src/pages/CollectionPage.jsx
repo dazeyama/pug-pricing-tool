@@ -347,10 +347,10 @@ function CollectionScreen({ id }) {
     add: col.add,
     update: col.update,
     remove: col.remove,
-    // Struck cards (owner, 2026-10-16): a Paid/Ours collection's or project's ×
-    // strikes first; not Can't upload cards (its × removes at once). Restore
-    // wherever a struck card could be removed.
-    strike: buy?.status === 'paid' && !system ? col.strike : null,
+    // Struck cards (owner, 2026-10-16): a Paid/Ours collection's × strikes
+    // first; not a project's or Can't upload cards' (× removes at once).
+    // Restore wherever a struck card could be removed.
+    strike: buy?.status === 'paid' && !system && !buy?.project ? col.strike : null,
     restore: col.restore,
     // A project has no rate controls (owner, 2026-10-15): it's the store's own cards.
     setRates: buy?.project ? null : col.setRates,

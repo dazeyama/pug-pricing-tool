@@ -1199,10 +1199,11 @@ function BuyPanel({
 function ConvertBuyModal({ buy, number, day, byId, busy, onClose, onConvert }) {
   const [name, setName] = useState(() => (buy.customer_name || `Buy ${number} · ${dayDate(day)}`).slice(0, 80));
   const counts = cardCounts(buy.buy_lines);
-  const bothGames = new Set(buy.buy_lines.map((l) => l.game)).size > 1;
+  const bothGames = new Set(buy.buy_lines.filter((l) => !isStruck(l)).map((l) => l.game)).size > 1;
   // "its 1 card" / "all 12 cards, both games" (smoke test 2026-10-02 #8); bulk apart (T3).
+  // Struck cards stay out: a project doesn't strike (owner, 2026-10-16).
   const single = counts.cards === 1 && !counts.bulk;
-  const cards = single ? 'its 1 card' : `all ${countText(counts)}`;
+  const cards = single ? 'its 1 card' : `all ${countText({ ...counts, struck: 0 })}`;
   const who = byId(buy.confirmed_by)?.name ?? 'someone';
   const ready = name.trim().length > 0;
   return (
@@ -1227,6 +1228,10 @@ function ConvertBuyModal({ buy, number, day, byId, busy, onClose, onConvert }) {
         <strong>Buy {number}</strong> ({who}, {formatTime(buy.confirmed_at)}) becomes a new <strong>project</strong>:{' '}
         <strong>{cards}</strong>{bothGames ? ', both games,' : ''} {single ? 'moves' : 'move'} there as{' '}
         {single ? 'it is' : 'they are'}, with the buy's notes (a project has no rates), and the buy is deleted from this day.
+        {counts.struck > 0 && (
+          <> Its <strong>{counts.struck} struck card{counts.struck === 1 ? '' : 's'}</strong> stay out of the project:
+            the Changelog keeps {counts.struck === 1 ? 'it' : 'them'}, crossed out.</>
+        )}
       </p>
       <label className="field">
         <span>Project name</span>
