@@ -58,8 +58,6 @@ textarea { resize: vertical; }
 .btn.danger-ghost { background: transparent; border-color: var(--bad); color: var(--bad); }
 .btn.danger-ghost:hover:not(:disabled) { background: rgba(255, 107, 107, .12); border-color: var(--bad); }
 /* Outlined green, its additive counterpart. */
-.btn.good-ghost { background: transparent; border-color: var(--good); color: var(--good); }
-.btn.good-ghost:hover:not(:disabled) { background: rgba(62, 207, 142, .12); border-color: var(--good); }
 
 .icon-btn {
   flex: none;

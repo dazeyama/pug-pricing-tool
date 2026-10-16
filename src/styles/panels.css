@@ -23,7 +23,6 @@
   border-bottom: 1px solid var(--border);
 }
 .cardpanel-body { padding: 12px; }
-.setting-value { margin: 0 0 14px; font-size: 15px; }
 
 /* ---- Past customers under a name field (owner, 2026-10-09): over everything, dialogs included ---- */
 .name-suggest {

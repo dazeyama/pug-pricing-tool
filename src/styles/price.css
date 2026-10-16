@@ -749,19 +749,6 @@
   .link-verb { display: none; }
 }
 
-/* Space kept for later phases, so the layout already sits where it will. */
-.stage-slot {
-  border: 1px dashed var(--border);
-  border-radius: 10px;
-  color: var(--muted);
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 10px;
-  background: rgba(15, 18, 32, .35);
-}
 /* ---- Finish and details (spec 8.5–8.6), the right column ---- */
 /* A faint dark box with a clear frame, like the preview slots. The finish
    control stays put; only the details list scrolls. */
@@ -895,7 +882,6 @@
 .detail-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .detail-chips .trait-chip { align-self: auto; }
 .versions legend { padding: 0; margin-bottom: 4px; font-size: 12px; color: var(--muted); }
-.area-prices .stage-slot, .area-actions .stage-slot { height: 96px; }
 
 /* ---- Condition / price table under the card (spec 8.7) ----
    The most important thing on the screen (owner, 2026-09-29): big buttons,
@@ -1535,7 +1521,6 @@
   .card-info { padding: 12px 14px; }
   .info-name { font-size: 19px; }
   .placeholder-name input { font-size: 19px; }
-  .area-prices .stage-slot, .area-actions .stage-slot { height: 80px; }
   /* Smaller windows (owner, 2026-10-01): a shorter info row, a lower finish
      control and action row, tighter gaps, so Finish & Details fit. */
   .stage-body { --info-h: 150px; --actions-h: 52px; gap: 12px 24px; }

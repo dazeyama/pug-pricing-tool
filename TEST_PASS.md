@@ -160,3 +160,10 @@ on a real customer's buy**.
 - [ ] If the buy has both games: **Also has N Pokémon cards →** goes to that day's Pokémon page.
 - [ ] Day-page EXPORT and COMPLETE: open, check the counts, **Cancel** (never confirm: real buys).
 
+## 5. Styles (C4)
+
+**5a. Dead rules removed (C4a)** — seven classes no code had used since late September; nothing should look different
+- [ ] Changelog: a panel's card lines show their **+** in green and **−** in red (the `.ch-mark` rules stayed).
+- [ ] Buy tab: the stage's areas sit where they did (the "space kept for later phases" boxes went, but nothing drew them).
+- [ ] A day page's buy table and an exported collection's list: prices and the Custom SKU chip as before.
+

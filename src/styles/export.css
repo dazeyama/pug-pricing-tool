@@ -110,18 +110,6 @@
 /* A Sell price sits in the same column as a buy price, same size and place;
    only its colour differs (owner, 2026-10-01: the table mustn't move). */
 .deck-table .cell-price.is-sell { color: var(--good); }
-.sell-tag {
-  margin-right: 5px;
-  padding: 0 5px;
-  border-radius: 4px;
-  background: color-mix(in srgb, var(--good) 18%, transparent);
-  color: var(--good);
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: .04em;
-  text-transform: uppercase;
-  vertical-align: 1px;
-}
 .cant-chip {
   margin-left: 8px;
   padding: 0 8px;
