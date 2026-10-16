@@ -99,3 +99,12 @@ keys) stayed where they were. Each part below names its commit.
   - [ ] a bulk item: "BULK mtg" or "BULK pkm"; a placeholder: the same, with its typed name back.
   - Then CANCEL each (Esc): the line stays as it was.
 
+**3b. Finish and version (C1b: usePrinting.js)**
+- [ ] Magic `Lightning Bolt 117/331 2X2`: NON-FOIL by default; FOIL switches it, and Alt+F toggles back and forth; the price table follows.
+- [ ] A card with an etched printing (e.g. `Sol Ring 472 CMR` → its etched sibling in Details): Alt+F leaves etched alone.
+- [ ] Details: click another printing of the same card in the set; it's selected with the finish you clicked, and the suggestion highlight moves.
+- [ ] Select a different card, then the first again: back on its defaults (a choice is forgotten once another card is picked).
+- [ ] Pokémon `Pikachu 027 SVP`: TCGdex's holo is the default; the version list includes TCGplayer-only ones once they load; picking one changes the prices.
+- [ ] A Base Set Pokémon (e.g. `Charizard 4/102 BS`): 1st Edition / Unlimited / Shadowless versions; Alt+F cycles finishes.
+- [ ] JP `025/165 SV2a`: its versions and prices load (Pokémon detail through usePrinting).
+

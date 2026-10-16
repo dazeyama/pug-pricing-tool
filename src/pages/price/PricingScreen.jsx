@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useCardRoom, useListRoom } from './useStageRoom.js';
+import { usePrinting } from './usePrinting.js';
 import SearchBar from './SearchBar.jsx';
 import SelectedCard from './SelectedCard.jsx';
 import Suggestions, { useSuggestionCount } from './Suggestions.jsx';
@@ -10,15 +11,11 @@ import PriceTable from './PriceTable.jsx';
 import QuotePanel from './QuotePanel.jsx';
 import ActionRow, { parseQty } from './ActionRow.jsx';
 import BuyList from './BuyList.jsx';
-import { usePokemonSiblings, usePrices } from './usePrices.js';
+import { usePrices } from './usePrices.js';
 import { useCardSearch } from './useCardSearch.js';
-import { usePokemonDetail, useMagicSiblings } from './usePrintingDetail.js';
-import { justtcgVersions, withTcgplayerVersions } from '../../lib/justtcgCards.js';
 import { useCardImages } from './useCardImages.js';
 import { warmUp, magicCandidate, otherLanguageSet } from '../../lib/cardSearch.js';
-import {
-  defaultMagicFinish, magicFinishes, pokemonVersions, defaultPokemonVersion, POKEMON_FINISHES,
-} from '../../lib/printings.js';
+import { magicFinishes, POKEMON_FINISHES } from '../../lib/printings.js';
 import {
   CONDITIONS, cardmarketPrice, conditionPrices, conditionVariants, fallbackPrice, priceLadder, priceWarnings,
   resultFor,
@@ -123,35 +120,8 @@ export default function PricingScreen({
 
   useEffect(() => warmUp(lang), [lang]);
 
-  // The chosen finish (Magic) or version (Pokémon) of the selected card. Tied
-  // to the card's key, so a newly selected card starts on its defaults.
-  const [printing, setPrinting] = useState({ key: null, finish: null, version: null });
-  const pokemon = usePokemonDetail(card);
-  const siblings = useMagicSiblings(card);
-  const magic = card?.game === 'mtg' ? card.scryfall : null;
-  const own = printing.key === selected?.key;
-  const finish = magic ? (own && printing.finish) || defaultMagicFinish(magic) : null;
-  // Pokémon versions: TCGdex's, or for a card known only from TCGplayer its
-  // printings there; plus TCGplayer-only products with the same name and
-  // number (Cosmos Holo, stamped…; owner, 2026-10-09).
-  const tcgSiblings = usePokemonSiblings(card, pokemon);
-  const ownVersions = card?.game !== 'pokemon' ? []
-    : card.source === 'justtcg' ? justtcgVersions(card.justtcg, card.suffix, card.lang) : pokemonVersions(pokemon.card);
-  const versions = tcgSiblings.cards?.length
-    ? withTcgplayerVersions(ownVersions, tcgSiblings.cards, card)
-    : ownVersions;
-  const version = versions.find((v) => own && v.id === printing.version) ?? defaultPokemonVersion(versions);
-
-  // Every card starts on its defaults (owner's decision, 2026-09-29): a choice
-  // is forgotten as soon as another card is selected, so coming back to a card
-  // doesn't bring back an old finish. A Details jump sets the new printing's
-  // finish in the same step, so it survives.
-  useEffect(() => {
-    if (printing.key && printing.key !== selected?.key) {
-      setPrinting({ key: null, finish: null, version: null });
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- only when another card is selected; printing.key is what it compares with
-  }, [selected?.key]);
+  // The chosen finish (Magic) or version (Pokémon), and what they're chosen from (usePrinting.js).
+  const { setPrinting, pokemon, siblings, magic, finish, tcgSiblings, versions, version } = usePrinting(selected, card);
 
   // Condition, manual price and override (spec 8.7): NM, none and none for
   // every new card. A manual price belongs to its condition: picking another
