@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
+import { useCardRoom, useListRoom } from './useStageRoom.js';
 import SearchBar from './SearchBar.jsx';
 import SelectedCard from './SelectedCard.jsx';
 import Suggestions, { useSuggestionCount } from './Suggestions.jsx';
-import { suggestionRoom } from '../../lib/thumbGrid.js';
-import { cardRoom } from '../../lib/cardRoom.js';
 import { priceTrend } from '../../lib/priceTrend.js';
 import ShowAllModal from './ShowAllModal.jsx';
 import FinishPanel from './FinishPanel.jsx';
@@ -39,75 +38,9 @@ import { BulkFinish, BulkPrice, BulkSelected } from './Bulk.jsx';
 import { useStaff } from '../../state/staff.jsx';
 import { useConnection } from '../../state/connection.jsx';
 import { useToast } from '../../components/Toast.jsx';
-import { candidateKeyOf } from '../../lib/candidateKey.js';
+import { candidateKeyOf, editQuery } from '../../lib/candidateKey.js';
 
 const BACKGROUND = { '--stage-bg': `url(${import.meta.env.BASE_URL}background.webp)` };
-
-// The list takes the width the suggestions don't use (owner, 2026-09-29).
-// A thumbnail is at most 146px wide and also limited by the area's height
-// (price.css .thumbs); on a wide screen that leaves empty space between the
-// thumbnails and Finish & Details, which goes to the sidebar instead, up to
-// LIST_EXTRA_MAX. Measured, since the thumbnails' size depends on their column.
-const LIST_EXTRA_MAX = 220;
-
-// It also picks the suggestions' columns: 5, or 4 on a laptop's window,
-// where the column is narrow but tall (lib/thumbGrid.js; owner, 2026-10-14).
-function useListRoom(screen) {
-  const [room, setRoom] = useState({ extra: 0, cols: 5 });
-  const current = useRef(0);
-  useEffect(() => {
-    const area = screen.current?.querySelector('.area-thumbs');
-    if (!area) return undefined;
-    const measure = () => {
-      // The same sums as .thumbs' --thumb-w (thumbGrid.js).
-      const { cols, extra } = suggestionRoom(area.clientWidth, area.clientHeight, current.current, LIST_EXTRA_MAX);
-      current.current = extra;
-      setRoom((r) => (r.extra === extra && r.cols === cols ? r : { extra, cols }));
-    };
-    const observer = new ResizeObserver(measure);
-    observer.observe(area);
-    return () => observer.disconnect();
-  }, [screen]);
-  return room;
-}
-
-// The selected card fills its area's height on a tall window: its column
-// widens, Finish & Details and the suggestions narrowing (lib/cardRoom.js;
-// owner, 2026-10-14). Measured, like the list's room.
-function useCardRoom(screen) {
-  const [room, setRoom] = useState({ grow: 0, side: 0 });
-  const current = useRef(0);
-  useEffect(() => {
-    const area = screen.current?.querySelector('.area-card');
-    if (!area) return undefined;
-    const measure = () => {
-      const next = cardRoom(area.clientWidth, area.clientHeight, current.current);
-      current.current = next.grow;
-      setRoom((r) => (r.grow === next.grow ? r : next));
-    };
-    const observer = new ResizeObserver(measure);
-    observer.observe(area);
-    return () => observer.disconnect();
-  }, [screen]);
-  return room;
-}
-
-/**
- * A search line that finds exactly this saved card (spec 8.2's syntax):
- * "Sol Ring 472 CMR", "Charizard 4/102 BS", Japanese "025/165 SV2a".
- */
-function editQuery(line) {
-  // Bulk: its game's items, found by "BULK" alone (docs/TEAM_FEEDBACK.md 5.3).
-  if (isBulk(line)) return `BULK ${line.game === 'mtg' ? 'mtg' : 'pkm'}`;
-  const size = line.printed_size ? `/${line.printed_size}` : '';
-  if (line.game === 'mtg') return `${line.name} ${line.collector_number} ${line.set_code}`;
-  // An unnumbered old Japanese card found through TCGplayer: its "No." search again.
-  if (line.lang === 'ja' && /^No\./.test(line.collector_number ?? '')) return line.collector_number;
-  if (line.lang === 'ja') return `${line.collector_number}${size} ${line.set_code}`;
-  // From TCGplayer: its set code may be one TCGdex doesn't know; name and number find it.
-  if (!line.tcgdex_id) return `${line.name} ${line.collector_number}${size}`;
-  return `${line.name} ${line.collector_number}${size} ${line.set_code}`;
-}
 
 // MTG | PKM (owner, 2026-09-29): which games search asks, both by default.
 // Kept while this screen is open (the whole walk-in buy, or one visit to a

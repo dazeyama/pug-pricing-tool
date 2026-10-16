@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { bulkItemKey, candidateKeyOf, justtcgKey, magicKey, pokemonKey } from '../src/lib/candidateKey.js';
+import { bulkItemKey, candidateKeyOf, editQuery, justtcgKey, magicKey, pokemonKey } from '../src/lib/candidateKey.js';
 import { bulkCandidate, bulkItem, buildBulkLine, buildPlaceholderLine } from '../src/lib/bulk.js';
 import { cardId, justtcgCandidate } from '../src/lib/justtcgCards.js';
 
@@ -32,4 +32,16 @@ test('a bulk line and a placeholder line find their items', () => {
   assert.equal(candidateKeyOf(buildBulkLine(bulk, 10, 1.5)), bulkCandidate(bulk).key);
   const placeholder = bulkItem('pkm_placeholder');
   assert.equal(candidateKeyOf(buildPlaceholderLine(placeholder, 1, 4, 'Meowth 117')), bulkCandidate(placeholder).key);
+});
+
+// SAVE EDIT searches for the line's card again (editQuery), then finds it by its key.
+test("a saved line's search finds its own card", () => {
+  assert.equal(editQuery({ game: 'mtg', name: 'Sol Ring', collector_number: '472', set_code: 'CMR' }), 'Sol Ring 472 CMR');
+  assert.equal(editQuery({ game: 'pokemon', lang: 'en', name: 'Charizard', collector_number: '4', printed_size: 102, set_code: 'BS', tcgdex_id: 'base1-4' }), 'Charizard 4/102 BS');
+  assert.equal(editQuery({ game: 'pokemon', lang: 'ja', name: 'ピカチュウ', collector_number: '025', printed_size: 165, set_code: 'SV2a', tcgdex_id: 'x' }), '025/165 SV2a');
+  assert.equal(editQuery({ game: 'pokemon', lang: 'ja', name: 'Misty', collector_number: 'No. 121', set_code: 'CGD', tcgdex_id: null }), 'No. 121');
+  // Known only from TCGplayer: name and number, its set code may be one TCGdex doesn't know.
+  assert.equal(editQuery({ game: 'pokemon', lang: 'en', name: 'Gengar', collector_number: '060', printed_size: 162, set_code: 'XYP', tcgdex_id: null }), 'Gengar 060/162');
+  assert.equal(editQuery({ game: 'mtg', bulk_kind: 'mtg_100_common' }), 'BULK mtg');
+  assert.equal(editQuery({ game: 'pokemon', bulk_kind: 'pkm_placeholder' }), 'BULK pkm');
 });

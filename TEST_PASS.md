@@ -81,3 +81,21 @@ checked on the least-used boxes, and each value is typed back at once.
 - [ ] **Bulk values**, one Pokémon item: note it (____), type `$` and a new amount: **… saved: $… per ….** (the `$` is taken off). Type the original back.
 - [ ] Another tab on Settings sees the change arrive while you're not typing in that box (open a second preview tab; optional).
 
+## 3. The Buy tab (C1, PricingScreen in five pieces)
+
+PricingScreen was split into hooks, each a block of it called at the same
+spot, so its effects still run in the same order. The parts that tie the
+blocks together (selecting a card, editing a line, CLEAR, ADD CARD, the
+keys) stayed where they were. Each part below names its commit.
+
+**3a. Layout and SAVE EDIT's search (C1a: useStageRoom.js, editQuery)**
+- [ ] Buy tab at the preview's full size: the list sidebar is wider than 340px when the suggestions leave room; two rows of suggestions.
+- [ ] Resize the preview to 1200 × 650 (a laptop): 2 rows of 4, the list narrower; back to full size: as before. At under 650px tall: one row of 5.
+- [ ] On a tall window the selected card grows to fill its column.
+- [ ] SAVE EDIT finds each kind of line again (click the line in the list; the search bar shows its search and the card is selected):
+  - [ ] a Magic card: "Lightning Bolt 117 2X2";
+  - [ ] an English Pokémon card from TCGdex (e.g. `Charizard 4/102 BS`): "Charizard 4/102 BS";
+  - [ ] a Japanese Pokémon card (JP, `025/165 SV2a`): "025/165 SV2a", JP switched on;
+  - [ ] a bulk item: "BULK mtg" or "BULK pkm"; a placeholder: the same, with its typed name back.
+  - Then CANCEL each (Esc): the line stays as it was.
+

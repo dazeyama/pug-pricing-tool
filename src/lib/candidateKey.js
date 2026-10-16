@@ -20,3 +20,20 @@ export function candidateKeyOf(line) {
   if (line.game === 'mtg') return magicKey(line.scryfall_id);
   return line.tcgdex_id ? pokemonKey(line.lang, line.tcgdex_id) : justtcgKey(line.lang, line.justtcg_card_id);
 }
+
+/**
+ * A search line that finds exactly this saved card (spec 8.2's syntax):
+ * "Sol Ring 472 CMR", "Charizard 4/102 BS", Japanese "025/165 SV2a".
+ */
+export function editQuery(line) {
+  // Bulk: its game's items, found by "BULK" alone (docs/TEAM_FEEDBACK.md 5.3).
+  if (line.bulk_kind != null) return `BULK ${line.game === 'mtg' ? 'mtg' : 'pkm'}`;
+  const size = line.printed_size ? `/${line.printed_size}` : '';
+  if (line.game === 'mtg') return `${line.name} ${line.collector_number} ${line.set_code}`;
+  // An unnumbered old Japanese card found through TCGplayer: its "No." search again.
+  if (line.lang === 'ja' && /^No\./.test(line.collector_number ?? '')) return line.collector_number;
+  if (line.lang === 'ja') return `${line.collector_number}${size} ${line.set_code}`;
+  // From TCGplayer: its set code may be one TCGdex doesn't know; name and number find it.
+  if (!line.tcgdex_id) return `${line.name} ${line.collector_number}${size}`;
+  return `${line.name} ${line.collector_number}${size} ${line.set_code}`;
+}

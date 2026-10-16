@@ -22,7 +22,7 @@ export function suggestionColumns(width, height) {
 
 /**
  * The suggestions' columns, and the width the Buy list takes from them
- * (PricingScreen's useListRoom: the list gets what the thumbnails don't use,
+ * (price/useStageRoom.js useListRoom: the list gets what the thumbnails don't use,
  * up to `max`), from their area as it is now, `width` × `height` px, with
  * `extra` already given to the list. The columns are chosen from the area's
  * width with nothing given away (`width + extra`): chosen from what's left,

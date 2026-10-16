@@ -1193,7 +1193,7 @@
 
 /* ---- Buy list sidebar (Audit Tool list panel, docked right) ----
    340px, plus the width the suggestions don't use (--list-extra, set by
-   PricePage's useListRoom; owner, 2026-09-29). */
+   useListRoom in price/useStageRoom.js; owner, 2026-09-29). */
 .buy-list {
   position: relative;   /* Set Rate and its menu are placed in it */
   flex: none;
