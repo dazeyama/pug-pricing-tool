@@ -156,25 +156,28 @@ main { width: 100%; padding: 24px; max-width: 1400px; margin: 0 auto; }
 .game-badge.pokemon { background: var(--pal-amber); color: #1a1405; }
 
 /* A collection's or project's cards by game, on pointing at its name
-   (decision 276; CardCountsName). Floats above the page, so a table can't clip it. */
+   (decision 276; CardCountsName): above the name, clear of the pointer
+   (owner, 2026-10-16), and big enough to read at a glance. Floats above the
+   page, so a table can't clip it. */
 .counts-chip {
   position: fixed;
   z-index: 330;
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  padding: 7px 10px;
+  gap: 7px;
+  padding: 10px 14px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--panel-2);
   box-shadow: 0 8px 22px rgba(0, 0, 0, .5);
   color: var(--text);
-  font-size: 12.5px;
+  font-size: 15px;
   font-weight: 600;
   white-space: nowrap;
   pointer-events: none;
 }
-.counts-chip .game-badge { margin-right: 6px; }
+.counts-chip.above { transform: translateY(-100%); }
+.counts-chip .game-badge { margin-right: 8px; padding: 3px 7px; font-size: 12px; }
 .game-badge.off { background: var(--panel-2); color: var(--muted); }
 
 .hidden { display: none !important; }
