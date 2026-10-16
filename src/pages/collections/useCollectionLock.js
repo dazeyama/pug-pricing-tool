@@ -4,6 +4,7 @@ import { useSession } from '../../state/session.jsx';
 import { useStaff } from '../../state/staff.jsx';
 import { useToast } from '../../components/Toast.jsx';
 import { dbErrorCode } from '../../lib/dbErrors.js';
+import { channelName } from '../../lib/channels.js';
 
 // One computer edits a collection at a time (spec 9.6). Opening it tries to
 // take the lock; the holder sends a heartbeat every 20s and lets go when it
@@ -105,7 +106,7 @@ export function useCollectionLock(id, { deviceId, userId }) {
   // Another computer taking over, or the holder letting go: look again.
   useEffect(() => {
     const channel = supabase
-      .channel(`lock:${id}:${Math.random().toString(36).slice(2)}`)
+      .channel(channelName('lock', id))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'collection_locks' }, (payload) => {
         if ((payload.new?.buy_id ?? payload.old?.buy_id) !== id) return;
         // Our own heartbeat, or the holder's while we view: nothing to do.

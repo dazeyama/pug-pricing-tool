@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from './supabase.js';
 import { useConnection } from '../state/connection.jsx';
-
-let channelSeq = 0;
+import { channelName } from './channels.js';
 
 /**
  * Load a query and reload it whenever its table changes on any computer
@@ -38,7 +37,7 @@ export function useLiveTable(table, query) {
 
   useEffect(() => {
     const channel = supabase
-      .channel(`live:${table}:${++channelSeq}`)
+      .channel(channelName('live', table))
       .on('postgres_changes', { event: '*', schema: 'public', table }, () => reload())
       .subscribe();
     return () => {

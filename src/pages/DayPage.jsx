@@ -32,6 +32,7 @@ import { useToast } from '../components/Toast.jsx';
 import { GAME_NAMES, otherGame } from '../lib/games.js';
 import { DB_MESSAGES, dbErrorCode, dbMessage } from '../lib/dbErrors.js';
 import { useDismiss } from '../lib/useDismiss.js';
+import { channelName } from '../lib/channels.js';
 
 const MESSAGES = {
   ...DB_MESSAGES,
@@ -143,7 +144,7 @@ function DayScreen({ game, day }) {
   // Live: a buy confirmed, changed or deleted anywhere reloads the day.
   useEffect(() => {
     const channel = supabase
-      .channel(`day:${game}:${day}:${Math.random().toString(36).slice(2)}`)
+      .channel(channelName('day', game, day))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'buys' }, () => reload())
       .subscribe();
     return () => {

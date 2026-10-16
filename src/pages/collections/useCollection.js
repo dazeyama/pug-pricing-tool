@@ -4,6 +4,7 @@ import { lineText } from '../../lib/lineFormat.js';
 import { useConnection } from '../../state/connection.jsx';
 import { useToast } from '../../components/Toast.jsx';
 import { DB_MESSAGES, dbMessage, knownCode } from '../../lib/dbErrors.js';
+import { channelName } from '../../lib/channels.js';
 
 // One collection and its lines (spec 9.4), kept live through Realtime: every
 // write bumps the collection's row, so watching `buys` catches added and
@@ -111,7 +112,7 @@ export function useCollection(id, { deviceId, onLockLost }) {
   // Any change to this collection's row (every write bumps it), or its deletion.
   useEffect(() => {
     const channel = supabase
-      .channel(`collection:${id}:${Math.random().toString(36).slice(2)}`)
+      .channel(channelName('collection', id))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'buys' }, (payload) => {
         if ((payload.new?.id ?? payload.old?.id) === id) reload();
       })
