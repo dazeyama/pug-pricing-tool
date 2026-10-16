@@ -14,9 +14,15 @@
 // the set and number point at is looked up directly, as before the
 // searches, and taken at once when every other clue read (the rarity, the
 // artist) agrees with it. Only when it doesn't are the searches asked.
+//
+// Scan card takes its time instead (owner, 2026-10-16: "do it the slow way,
+// running all the scans and searches for best possible accuracy"):
+// resolveThorough asks every lookup and search every reading calls for and
+// picks from all the cards found together.
 
 import * as scry from '../lib/scryfall.js';
 import { parseCollectorNumber } from './recognition/parsing.js';
+import { STEP_MS } from './progress.js';
 
 /** Language codes printed after the set code. */
 const LANGS = new Set(['EN', 'DE', 'FR', 'ES', 'IT', 'PT', 'JP', 'JA', 'KO', 'RU', 'ZH', 'CS', 'CT', 'PH']);
@@ -296,26 +302,13 @@ const quote = (v) => `"${String(v).replace(/"/g, '')}"`;
 const remembered = new Map();   // the strip's text → what it was found to be, this page's life
 
 /**
- * The card a collector strip's text names, by elimination: Scryfall asked
- * for the set and number clues together; then, if no card is clearly
- * ahead, every card of that rarity in that set; then the artist's cards.
- * A card printed in another language is refused ({ foreign }), as before,
- * except a Japanese-only printing the app knows.
- * @param {string} text  what the OCR read
- * @param {Set<string>} known  every set code, upper case
- * @param {{ manual?: boolean, pattern?: RegExp, search?: (q: string) => Promise<object[]>,
- *   lookup?: (set: string, number: string) => Promise<object|null> }} [opts]
- *   manual: Scan card takes a card a little less clearly ahead; pattern: mtgscan's set-code
- *   pattern, whose own parse is a clue too (a set code run into its number: "HOB0113"); search
- *   and lookup: Scryfall's (tests pass their own)
- * @returns {Promise<{ card: object, score: number, quick?: boolean }|{ foreign: string }|null>}
- *   quick: taken on the direct lookup, no search asked
+ * A text's clues (mtgscan's own parse added to them) and what to ask
+ * Scryfall for them: the printings to look up directly (the set read as
+ * printed with the number, and mtgscan's reading), the set and number
+ * search, and the wider search (the set's cards of that rarity, the
+ * artist's cards).
  */
-export async function resolveText(text, known, {
-  manual = false, pattern = null, search = scry.searchQuick, lookup = scry.cardBySetNumber,
-} = {}) {
-  const key = `${manual ? 'm' : 'a'}:${String(text).trim()}`;
-  if (remembered.has(key)) return remembered.get(key);
+function planFor(text, known, pattern) {
   const clues = readClues(text, known);
   const parsed = pattern ? parseCollectorNumber(text, pattern) : null;
   if (parsed?.setCode && !clues.sets.includes(parsed.setCode)) {
@@ -324,6 +317,82 @@ export async function resolveText(text, known, {
   }
   const parsedNumber = parsed?.collectorNumber ? plainNumber(parsed.collectorNumber) : null;
   if (parsedNumber && !clues.numbers.includes(parsedNumber)) clues.numbers.push(parsedNumber);
+
+  const direct = new Map();
+  const top = clues.sets.find((s) => clues.setWeight[s] === 3) ?? null;
+  if (top && clues.numbers[0]) direct.set(`${top}/${clues.numbers[0]}`, [top, clues.numbers[0]]);
+  if (parsed?.setCode && parsedNumber) direct.set(`${parsed.setCode}/${parsedNumber}`, [parsed.setCode, parsedNumber]);
+
+  const sets = clues.sets.map((s) => s.toLowerCase());
+  const narrow = sets.length && clues.numbers.length
+    ? `(${sets.map((s) => `set:${s}`).join(' or ')}) (${clues.numbers.map((n) => `cn:${quote(n)}`).join(' or ')})`
+    : null;
+  const likely = clues.sets.filter((s) => clues.setWeight[s] >= 2);
+  const word = clues.artist.split(/\s+/).map(nameLetters).sort((a, b) => b.length - a.length)[0] ?? '';
+  const parts = [];
+  if (likely.length && clues.rarity) parts.push(`(set:${likely[0].toLowerCase()} r:${clues.rarity})`);
+  if (word.length >= 4) {
+    parts.push(`(a:${quote(word.toLowerCase())}${sets.length ? ` (${sets.map((s) => `set:${s}`).join(' or ')})` : ''})`);
+  }
+  return { clues, top, direct: [...direct.values()], narrow, wider: parts.length ? parts.join(' or ') : null };
+}
+
+/**
+ * Every clue on the strip agrees with this card, so one look is enough
+ * (owner, 2026-10-16: "Let's try it with just one"): its set read as
+ * printed, its number as read, its rarity read, and its artist's name read
+ * clearly (six letters or more) and theirs. Pure, for tests.
+ */
+export function isSure(card, clues, top) {
+  return Boolean(card) && String(card.set).toUpperCase() === top
+    && plainNumber(card.collector_number) === clues.numbers[0]
+    && Boolean(clues.rarity) && card.rarity === clues.rarity
+    && nameLetters(clues.artist).length >= 6 && nameLikeness(clues.artist, card.artist) >= 0.75;
+}
+
+/** A card in another language refused ({ foreign }), except a Japanese-only printing the app knows. */
+function refuseForeign(found, clues) {
+  if (found && clues.lang && clues.lang !== 'EN' && !(found.card.lang === 'ja' && /^J[PA]$/.test(clues.lang))) {
+    return { foreign: clues.lang };
+  }
+  return found;
+}
+
+/** Look a printing up, a failure as no card. */
+async function lookUp(lookup, [set, number], onFail) {
+  try {
+    return await lookup(set, number);
+  } catch (e) {
+    onFail();
+    console.warn('A Scryfall lookup for the scanner failed', set, number, e);
+    return null;
+  }
+}
+
+/**
+ * The card a collector strip's text names, by elimination: the quick way
+ * first (the printing looked up directly, taken when the rarity and artist
+ * read agree with it); then Scryfall asked for the set and number clues
+ * together; then, if no card is clearly ahead, that set's cards of the
+ * rarity and the artist's cards. A card printed in another language is
+ * refused ({ foreign }), as before, except a Japanese-only printing the app
+ * knows.
+ * @param {string} text  what the OCR read
+ * @param {Set<string>} known  every set code, upper case
+ * @param {{ manual?: boolean, pattern?: RegExp, search?: (q: string) => Promise<object[]>,
+ *   lookup?: (set: string, number: string) => Promise<object|null> }} [opts]
+ *   manual: a card a little less clearly ahead is taken; pattern: mtgscan's set-code pattern,
+ *   whose own parse is a clue too (a set code run into its number: "HOB0113"); search and
+ *   lookup: Scryfall's (tests pass their own)
+ * @returns {Promise<{ card: object, score: number, quick?: boolean, sure?: boolean }|{ foreign: string }|null>}
+ *   quick: taken on the direct lookup, no search asked; sure: every clue agrees (isSure)
+ */
+export async function resolveText(text, known, {
+  manual = false, pattern = null, search = scry.searchQuick, lookup = scry.cardBySetNumber,
+} = {}) {
+  const key = `${manual ? 'm' : 'a'}:${String(text).trim()}`;
+  if (remembered.has(key)) return remembered.get(key);
+  const { clues, top, direct, narrow, wider } = planFor(text, known, pattern);
   const take = manual ? TAKE.manual : TAKE.auto;
   const pool = new Map();
   let failed = false;
@@ -335,49 +404,25 @@ export async function resolveText(text, known, {
       console.warn('A Scryfall search for the scanner failed', q, e);
     }
   };
-  const sets = clues.sets.map((s) => s.toLowerCase());
   let found = null;
 
-  // The quick way: the printing the set read as printed and the number point at, and mtgscan's own
-  // reading of the line (the detection before the searches), looked up directly; taken when the
-  // rarity and artist read agree with it (and only one such card).
-  const direct = new Map();
-  const top = clues.sets.find((s) => clues.setWeight[s] === 3);
-  if (top && clues.numbers[0]) direct.set(`${top}/${clues.numbers[0]}`, [top, clues.numbers[0]]);
-  if (parsed?.setCode && parsedNumber) direct.set(`${parsed.setCode}/${parsedNumber}`, [parsed.setCode, parsedNumber]);
-  const looked = await Promise.all([...direct.values()].map(async ([set, number]) => {
-    try {
-      return await lookup(set, number);
-    } catch (e) {
-      failed = true;
-      console.warn('A Scryfall lookup for the scanner failed', set, number, e);
-      return null;
-    }
-  }));
+  // The quick way: the printings looked up directly; taken when the rarity and artist read agree
+  // with it (and only one such card).
+  const looked = await Promise.all(direct.map((d) => lookUp(lookup, d, () => { failed = true; })));
   const agreed = [...new Map(looked.filter((c) => confirms(c, clues)).map((c) => [c.id, c])).values()];
   const quick = agreed.length === 1 ? scoreCard(agreed[0], clues) : 0;
-  if (quick >= QUICK) found = { card: agreed[0], score: quick, quick: true };
+  if (quick >= QUICK) found = { card: agreed[0], score: quick, quick: true, sure: isSure(agreed[0], clues, top) };
 
-  if (!found && sets.length && clues.numbers.length) {
-    await ask(`(${sets.map((s) => `set:${s}`).join(' or ')}) (${clues.numbers.map((n) => `cn:${quote(n)}`).join(' or ')})`);
+  if (!found && narrow) {
+    await ask(narrow);
     found = pickBest(pool, clues, take);
   }
   // Still no card clearly ahead: that set's cards of that rarity, and the artist's cards, in one search.
-  const likely = clues.sets.filter((s) => clues.setWeight[s] >= 2);
-  const word = clues.artist.split(/\s+/).map(nameLetters).sort((a, b) => b.length - a.length)[0] ?? '';
-  const wider = [];
-  if (likely.length && clues.rarity) wider.push(`(set:${likely[0].toLowerCase()} r:${clues.rarity})`);
-  if (word.length >= 4) {
-    wider.push(`(a:${quote(word.toLowerCase())}${sets.length ? ` (${sets.map((s) => `set:${s}`).join(' or ')})` : ''})`);
-  }
-  if (!found && wider.length) {
-    await ask(wider.join(' or '));
+  if (!found && wider) {
+    await ask(wider);
     found = pickBest(pool, clues, take);
   }
-  let out = found;
-  if (found && clues.lang && clues.lang !== 'EN' && !(found.card.lang === 'ja' && /^J[PA]$/.test(clues.lang))) {
-    out = { foreign: clues.lang };
-  }
+  const out = refuseForeign(found, clues);
   if (!failed) remembered.set(key, out);
   return out;
 }
@@ -396,4 +441,62 @@ export async function resolveReadings(attempts, known, opts) {
     if (found) return found;
   }
   return null;
+}
+
+/**
+ * Scan card's way, for best accuracy: every reading's clues; every
+ * printing they point at looked up and every search they call for asked
+ * (none skipped because a card was already found); all the cards found
+ * scored together, each by the reading it fits best; the best taken when
+ * it's ahead by Scan card's measure (5, and 1 ahead). Steps go on the
+ * loading bar as they're planned and done (progress.js), and the `resolve`
+ * step planned before the readings were known is dropped.
+ * @param {string[]} texts  the readings: the strip's, the card's line's
+ * @param {Set<string>} known
+ * @param {{ pattern?: RegExp, search?: Function, lookup?: Function, progress?: object }} [opts]
+ * @returns {Promise<{ card: object, score: number }|{ foreign: string }|null>}
+ */
+export async function resolveThorough(texts, known, {
+  pattern = null, search = scry.searchQuick, lookup = scry.cardBySetNumber, progress = null,
+} = {}) {
+  const plans = [...new Set(texts.map((t) => String(t ?? '').trim()))]
+    .filter((t) => /\d/.test(t))
+    .map((t) => planFor(t, known, pattern));
+  const direct = new Map(plans.flatMap((p) => p.direct.map(([set, n]) => [`${set}/${n}`.toLowerCase(), [set, n]])));
+  const queries = [...new Set(plans.flatMap((p) => [p.narrow, p.wider]).filter(Boolean))];
+  progress?.drop('resolve');
+  if (direct.size) progress?.plan('lookups', STEP_MS.lookup * Math.ceil(direct.size / 3));
+  queries.forEach((q, i) => progress?.plan(`search-${i}`, STEP_MS.search));
+  if (!plans.length) return null;
+
+  const pool = new Map();
+  if (direct.size) {
+    progress?.start('lookups');
+    const looked = await Promise.all([...direct.values()].map((d) => lookUp(lookup, d, () => {})));
+    for (const c of looked) if (c) pool.set(c.id, c);
+    progress?.finish('lookups');
+  }
+  for (const [i, q] of queries.entries()) {
+    progress?.start(`search-${i}`);
+    try {
+      for (const c of await search(q)) pool.set(c.id, c);
+    } catch (e) {
+      console.warn('A Scryfall search for the scanner failed', q, e);
+    }
+    progress?.finish(`search-${i}`);
+  }
+
+  // Each card by the reading it fits best.
+  const ranked = [...pool.values()].map((card) => {
+    let best = { card, score: -Infinity, clues: null };
+    for (const p of plans) {
+      const score = scoreCard(card, p.clues);
+      if (score > best.score) best = { card, score, clues: p.clues };
+    }
+    return best;
+  }).sort((a, b) => b.score - a.score);
+  const [first, next] = ranked;
+  if (!first || first.score < TAKE.manual.score) return null;
+  if (next && first.score - next.score < TAKE.manual.lead) return null;
+  return refuseForeign({ card: first.card, score: first.score }, first.clues);
 }

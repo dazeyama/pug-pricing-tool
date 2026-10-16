@@ -9,7 +9,8 @@ import { useScans } from './useScans.js';
 import { useCamera } from './camera.js';
 import { onScreen, showPart } from './guide.js';
 import { locate, paperSetCodes, readCollectorLine, readPrepared, setCodePattern } from './read.js';
-import { resolveReadings } from './resolve.js';
+import { resolveReadings, resolveThorough } from './resolve.js';
+import { STEP_MS, createProgress } from './progress.js';
 import { findCard } from './cardEdges.js';
 import {
   ART_CHANGED, anchorBlock, artDistance, artPrint, blockOnCard, cropTo, makeLock, movedFrom, samePlace,
@@ -34,8 +35,9 @@ const FIRST_LOOK_MS = 800;
 const AUTO_OLDER = false;
 // The card clearly moved for this long (the camera shifted): the view locks onto it again.
 const RELOCK_MS = 2000;
-// A scan still with the computer: auto scan waits for its outcome.
-const WITH_COMPUTER = new Set(['sent', 'pricing', 'undo', 'undoing']);
+// Scan card's loading bar stays full this long once it's done.
+const BAR_DONE_MS = 250;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // The condition and finish for the next scans, kept for this tab (a reload keeps them).
 const CONDITION_KEY = 'pug.scan.condition';
@@ -113,6 +115,9 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const [muted, setMutedState] = useState(isMuted);
   const [local, setLocal] = useState(null);       // the phone's own message: { tone, title?, text, at }
   const [reading, setReading] = useState(false);
+  // Scan card's loading bar (progress.js), while it reads; and Scan card waiting for an auto look to end.
+  const [progress, setProgress] = useState(null);
+  const manualWaiting = useRef(false);
   const [ocrLoading, setOcrLoading] = useState(false);
   // The locked view (lock.js): the card, its collector corner and its art,
   // where they are in the picture; null till the first card is found.
@@ -147,7 +152,6 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const blocked = blockedText(session);
   const needs = [...scans].reverse().find((s) => s.status === 'needs_price') ?? null;
   const latest = scans[0] ?? null;
-  const withComputer = Boolean(latest && WITH_COMPUTER.has(latest.status));
 
   // When the latest scan last changed, by this phone's clock (the database's
   // may differ from it), so the strip can tell whether its own message is newer.
@@ -302,14 +306,18 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
    * Read the card in front of the camera and send it (6.1, 6.3, 6.4).
    * Until the view is locked, a look searches for the card to lock onto: its
    * edges, and a collector line where a card's is (owner, 2026-10-16); auto
-   * scan starts once it's locked. Locked, the enlarged collector corner is
-   * read first, then the line looked for on the card itself. `manual`: Scan
-   * card, which takes a fair read, says what went wrong, and always sends,
-   * the same card again included (a second copy). Auto scan reads only once
-   * the card's art has changed from the card last sent, and sends only when
-   * two looks in a row agree.
+   * scan starts once it's locked. Auto scan, for speed: the enlarged
+   * collector strip only, resolved the quick way first (resolve.js); it
+   * reads only once the card's art has changed from the card last sent, and
+   * sends when two looks in a row agree, or on one look when every clue on
+   * the strip agrees (owner, 2026-10-16). `manual`: Scan card, for accuracy
+   * (owner, 2026-10-16: "do it the slow way"): the strip and the line on the
+   * card itself read, every block, every search asked (resolveThorough),
+   * its steps on the loading bar (`progress`); it takes a fair read, says
+   * what went wrong, and always sends, the same card again included (a
+   * second copy).
    */
-  async function scanFrame({ manual }) {
+  async function scanFrame({ manual, progress = null }) {
     if (busy.current || !camera.on) return;
     if (blocked) {
       if (manual) {
@@ -323,10 +331,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       return;
     }
     busy.current = true;
-    if (manual) {
-      setReading(true);
-      say('muted', 'Reading…');
-    }
+    if (manual) say('muted', 'Reading…');
     try {
       const frame = camera.capture();
       if (!frame) return;
@@ -356,8 +361,6 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
 
       let attempts = [];
       let found = null;
-      // What the text names, by elimination (resolve.js; owner, 2026-10-16).
-      const resolve = (readings) => resolveReadings(readings, known, { manual, pattern });
       let art = null;
       if (lock) {
         // This card's collector line, found in its zone and set level (owner, 2026-10-16).
@@ -371,28 +374,40 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           v.held = null;
           v.pending = null;
         }
+        progress?.start('strip');
         attempts = await readPrepared(cut, pattern);
-        found = await resolve(attempts);
-        if (!found && manual) {
-          // The card a little off its spot: the line, looked for on the card itself. Scan card
-          // only: auto scan looks again instead (several more reads would keep it busy while a
-          // new card is laid in; the strip is found on each card already, straighten.js).
+        progress?.finish('strip');
+        if (manual) {
+          // Scan card: the line looked for on the card itself too, every block read; then all of it
+          // weighed together. Auto scan looks again instead (several more reads would keep it busy
+          // while a new card is laid in; the strip is found on each card already, straighten.js).
           const onCard = cropTo(frame, lock.view, defaultCreateCanvas);
           const located = locate(onCard);
-          const more = located.length ? await readCollectorLine(onCard, pattern, located) : [];
+          progress?.drop('card');
+          located.forEach((_, i) => progress?.plan(`located-${i + 1}`, STEP_MS.ocr));
+          const more = located.length ? await readCollectorLine(onCard, pattern, located, { all: true, progress }) : [];
           attempts = [...attempts, ...more];
-          found = more.length ? await resolve(more) : null;
+          found = await resolveThorough(attempts.map((a) => a.text), known, { pattern, progress });
+        } else {
+          // What the strip names, the quick way first (resolve.js; owner, 2026-10-16).
+          found = await resolveReadings(attempts, known, { pattern });
         }
       } else {
-        // Scan card before the view is locked: the whole picture.
-        attempts = blocks.length ? await readCollectorLine(frame, pattern, blocks) : [];
-        found = attempts.length ? await resolve(attempts) : null;
+        // Scan card before the view is locked: the whole picture, every block read.
+        progress?.drop('strip');
+        progress?.drop('card');
+        blocks.forEach((_, i) => progress?.plan(`located-${i + 1}`, STEP_MS.ocr));
+        attempts = blocks.length ? await readCollectorLine(frame, pattern, blocks, { all: true, progress }) : [];
+        found = await resolveThorough(attempts.map((a) => a.text), known, { pattern, progress });
       }
 
       // No modern collector line: an older card, by its title (and "123/350" from 1998 on).
       if (!found && (manual || AUTO_OLDER)) {
         if (manual) say('muted', 'No set code at the bottom: reading the title…');
+        progress?.plan('older', STEP_MS.older);
+        progress?.start('older');
         const old = await readOlderCard(frame, { texts: attempts.map((a) => a.text), card: lock?.card ?? null });
+        progress?.finish('older');
         if (old?.cards.length === 1) found = { card: old.cards[0], tier: old.tier };
         else if (old) {
           setPick(old);
@@ -413,7 +428,9 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         if (manual) play('error');
         return;
       }
-      await sendCard(found.card, { tier: found.tier ?? 1, manual, art });
+      progress?.start('send');
+      await sendCard(found.card, { tier: found.tier ?? 1, manual, art, sure: Boolean(found.sure) });
+      progress?.finish('send');
     } catch (e) {
       console.error('Scan failed', e);
       if (manual) {
@@ -422,17 +439,49 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       }
     } finally {
       busy.current = false;
-      if (manual) setReading(false);
+    }
+  }
+
+  /**
+   * Scan card: the thorough read with its loading bar. Pressed during an
+   * auto look, it waits for the look to end (auto scan holding off).
+   */
+  async function scanCard() {
+    if (manualWaiting.current || reading) return;
+    manualWaiting.current = true;
+    const bar = createProgress();
+    // The work as expected; each step re-planned as it's known (the blocks found, the searches asked).
+    if (busy.current) bar.plan('wait', STEP_MS.ocr);
+    bar.plan('strip', STEP_MS.ocr);
+    bar.plan('card', 2 * STEP_MS.ocr);
+    bar.plan('resolve', STEP_MS.lookup + 2 * STEP_MS.search);
+    bar.plan('send', STEP_MS.send);
+    setProgress(bar);
+    setReading(true);
+    try {
+      bar.start('wait');
+      while (busy.current) await sleep(40);
+      bar.finish('wait');
+      await scanFrame({ manual: true, progress: bar });
+    } finally {
+      manualWaiting.current = false;
+      bar.complete();
+      await sleep(BAR_DONE_MS);
+      setProgress(null);
+      setReading(false);
     }
   }
 
   /**
    * Send a recognised card. Auto scan: never the card it last sent, and only
-   * once two looks in a row have read this same printing. Once sent, the
-   * card's art is held: nothing is read again till it changes.
-   * @param {{ tier: number, manual: boolean, art?: Float32Array|null }} opts  art: the card's (lock.js artPrint)
+   * once two looks in a row have read this same printing, or on one look
+   * when every clue on the strip agrees with it (`sure`, resolve.js isSure;
+   * owner, 2026-10-16: "Let's try it with just one"). Once sent, the card's
+   * art is held: nothing is read again till it changes.
+   * @param {{ tier: number, manual: boolean, art?: Float32Array|null, sure?: boolean }} opts
+   *   art: the card's (lock.js artPrint)
    */
-  async function sendCard(card, { tier, manual, art = null }) {
+  async function sendCard(card, { tier, manual, art = null, sure = false }) {
     const v = view.current;
     const finish = scanFinish(card, foil);
     const key = `${card.id}:${finish}`;
@@ -442,7 +491,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         v.pending = null;
         return;
       }
-      if (v.pending !== key) {
+      if (!sure && v.pending !== key) {
         v.pending = key;
         return;
       }
@@ -462,18 +511,20 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
 
   // Auto scan (6.3): while the camera runs, look again and again, resting
   // between looks; paused while the computer can't take cards, a card needs
-  // a price, the last scan is still with the computer (so sounds and the
-  // strip keep step with the list), the connection is down, or the page is
-  // hidden. Stop ends it with the camera.
+  // a price, the connection is down, Scan card is reading, or the page is
+  // hidden. It doesn't wait for the computer to price the last card (owner,
+  // 2026-10-16: "the computer can load prices on it's own time while we
+  // scan more cards"): the computer takes them in the order sent. Stop ends
+  // it with the camera.
   const auto = useRef(null);
-  auto.current = { scanFrame, paused: Boolean(blocked) || Boolean(needs) || Boolean(pick) || withComputer || offline };
+  auto.current = { scanFrame, paused: Boolean(blocked) || Boolean(needs) || Boolean(pick) || offline };
   useEffect(() => {
     if (!camera.on) return undefined;
     let alive = true;
     let timer;
     const look = async () => {
       if (!alive) return;
-      if (!auto.current.paused && !busy.current && document.visibilityState === 'visible') {
+      if (!auto.current.paused && !manualWaiting.current && !busy.current && document.visibilityState === 'visible') {
         await auto.current.scanFrame({ manual: false });
       }
       if (alive) timer = setTimeout(look, view.current.pending ? CONFIRM_MS : REST_MS);
@@ -619,11 +670,13 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       <div className="scan-actions">
         <button
           type="button"
-          className="btn primary scan-now"
+          className={`btn primary scan-now${reading ? ' reading' : ''}`}
           disabled={!camera.on || reading || Boolean(needs) || Boolean(pick)}
-          onClick={() => scanFrame({ manual: true })}
+          aria-busy={reading}
+          onClick={scanCard}
         >
-          {reading ? 'Reading…' : 'Scan card'}
+          {progress && <ScanBar progress={progress} />}
+          <span className="scan-now-label">{reading ? 'Reading…' : 'Scan card'}</span>
         </button>
         <button
           type="button"
@@ -650,6 +703,21 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       </div>
     </div>
   );
+}
+
+/** Scan card's loading bar, filling the button behind its label as the thorough read goes (progress.js). */
+function ScanBar({ progress }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    let frame;
+    const draw = () => {
+      if (ref.current) ref.current.style.transform = `scaleX(${progress.value()})`;
+      frame = requestAnimationFrame(draw);
+    };
+    draw();
+    return () => cancelAnimationFrame(frame);
+  }, [progress]);
+  return <span ref={ref} className="scan-now-bar" aria-hidden="true" />;
 }
 
 /** What a scan says about its card, from the Scryfall card. */

@@ -192,7 +192,19 @@ html[data-scan] .toast { max-width: none; }
 }
 .scan-actions { flex: none; display: flex; gap: 8px; }
 .scan-actions .btn { min-height: 46px; font-size: 15px; font-weight: 600; white-space: nowrap; }
-.scan-now { flex: 1; }
+.scan-now { flex: 1; position: relative; overflow: hidden; }
+/* Scan card's loading bar, filling the button behind its label while it reads (progress.js). */
+.scan-now-bar {
+  position: absolute;
+  inset: 0;
+  transform: scaleX(0);
+  transform-origin: left center;
+  background: rgba(255, 255, 255, .3);
+  transition: transform 120ms linear;
+  pointer-events: none;
+}
+.scan-now-label { position: relative; }
+.scan-now.reading:disabled { opacity: 1; }
 .scan-torch.on { background: var(--warn); border-color: var(--warn); color: #1d1606; }
 .scan-actions .scan-torch { font-size: 18px; padding: 8px 12px; }
 .scan-mute { font-size: 15px; }

@@ -740,11 +740,35 @@ locks **automatically on the first card**.
   - **One wider search, not two.** When the set and number search leaves no card clearly ahead, that
     set's cards of the rarity and the artist's cards are asked in one search (a 550 ms turn saved).
   - **The second look straight away.** A first read waiting for the look that must agree is looked
-    at again after 50 ms, not the 300 ms rest (`CONFIRM_MS`). Two looks still have to agree.
+    at again after 50 ms, not the 300 ms rest (`CONFIRM_MS`).
   - **No second reading of the whole card in auto scan.** When the strip doesn't resolve (a card
     being laid in, a hand in the way), auto scan looks again instead of reading the card's crop as
     well (several more OCR passes, which kept it busy as the next card landed). Scan card still does.
   - Checked against Scryfall: the 17 modern cards' straightened strips, still 17 right, **all 17 the quick way** (one direct lookup each, no search); the 180 damaged texts, still none wrong and 166 right, 103 of them the quick way. Tests: `tests/scanResolve.test.js`.
+- **Faster still, and Scan card for accuracy** (owner, 2026-10-16, untested on the phone):
+  - **One look when every clue agrees** ("Let's try it with just one"): a card taken the quick way
+    whose set (as printed), number, rarity and artist (six letters or more, most of the name theirs)
+    were all read and all agree with it is sent on that one look (`isSure`; `sure` on the result).
+    Anything less still needs two looks in a row to agree. The held art and never the card last sent
+    stand.
+  - **No waiting for the computer** ("the computer can load prices on it's own time while we scan
+    more cards"): auto scan no longer pauses while the last scan is sent, pricing or being undone
+    (the `WITH_COMPUTER` pause is gone). The computer takes the scans in the order sent (8.3); the
+    strip shows the latest, and each card's sound plays when the computer says how it went. A card
+    needing a price still pauses it.
+  - **Scan card the slow way** ("do it the slow way, running all the scans and searches for best
+    possible accuracy … show an accurate smooth loading bar … Only do this for manual"): the strip
+    read, then the line on the card itself, every block (`readCollectorLine` `all`, both the text as
+    read and cleaned); every printing the readings point at looked up and every search they call for
+    asked, none skipped (`resolveThorough`); all the cards found scored together, each by the reading
+    it fits best, the best taken at 5 and 1 ahead. Then the older card's title, if nothing was found.
+    Pressed during an auto look, it waits for the look to end.
+  - **The loading bar** fills the Scan card button behind "Reading…" (no room taken from the
+    camera). `src/scan/progress.js`: the work as steps with expected times (an OCR pass 600 ms, a
+    lookup 300 ms, a search 600 ms, an older card's title 2.5 s, sending 400 ms), re-planned as it's
+    known (the blocks found, the searches the readings call for); the bar at the share of that time
+    done, creeping through the step under way up to 90% of it, never going back when more work turns
+    up; drawn every frame, full for a moment at the end. Tests: `tests/scanThorough.test.js`.
 - **New card or the same one:** the art (the middle of the art box at its locked place) as a 16 × 10
   thumbnail of true averages, brightness and contrast evened out (`artPrint`, `artDistance` with a
   one-cell shift). After a card is sent its art is held; **nothing is read while the art is under 12

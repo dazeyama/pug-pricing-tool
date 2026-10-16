@@ -49,22 +49,32 @@ export function locate(canvas) {
 /**
  * OCR the blocks best first, stopping at a sure read (mtgscan's
  * performCollectorNumberOCRWithFallback): each reading scored raw and
- * cleaned, the better kept.
+ * cleaned, the better kept. `all`: every block read, no stopping, and both
+ * texts kept (Scan card's thorough way); `progress`: each read a step on its loading bar,
+ * named as the block's variant ("located-1" …).
  * @returns {Promise<{ text: string, score: number }[]>}  best first
  */
-export async function readCollectorLine(canvas, pattern, blocks = locate(canvas)) {
+export async function readCollectorLine(canvas, pattern, blocks = locate(canvas), { all = false, progress = null } = {}) {
   const attempts = [];
   for (const variant of generateDetectionVariants(canvas, undefined, blocks)) {
+    progress?.start(variant.name);
     let raw;
     try {
       raw = await readText(variant.canvas, PSM_BLOCK);
     } catch (e) {
       console.warn(`OCR failed on ${variant.name}`, e);
+      progress?.finish(variant.name);
       continue;
     }
+    progress?.finish(variant.name);
     const cleaned = cleanOCRText(raw);
     const rawScore = scoreCollectorNumberResult(raw, pattern);
     const cleanedScore = scoreCollectorNumberResult(cleaned, pattern);
+    if (all) {
+      // Both, for resolve.js to weigh: the text as read keeps its lines (the rarity, the artist).
+      attempts.push({ text: raw, score: rawScore }, { text: cleaned, score: cleanedScore });
+      continue;
+    }
     attempts.push({ text: rawScore > cleanedScore ? raw : cleaned, score: Math.max(rawScore, cleanedScore) });
     if (Math.max(rawScore, cleanedScore) >= HIGH) break;
   }
