@@ -15,6 +15,8 @@ export const ROW = 10;
 // had (the column's width, not its height, sets it). So one row only on a
 // window shorter than that, where even 80% leaves less than 812px.
 const SHORT = '(max-height: 649px)';
+/** That media query, or null where there's none (the tests, under Node). */
+const shortQuery = () => (typeof window !== 'undefined' && window.matchMedia ? window.matchMedia(SHORT) : null);
 
 /**
  * How many suggestions show: two rows of `cols` (5, or 4 on a laptop's
@@ -22,15 +24,14 @@ const SHORT = '(max-height: 649px)';
  * resizing.
  */
 export function useSuggestionCount(cols = 5) {
-  const query = typeof window !== 'undefined' && window.matchMedia ? window.matchMedia(SHORT) : null;
-  const [short, setShort] = useState(() => Boolean(query?.matches));
+  const [short, setShort] = useState(() => Boolean(shortQuery()?.matches));
   useEffect(() => {
+    const query = shortQuery();
     if (!query) return undefined;
     const onChange = (e) => setShort(e.matches);
     query.addEventListener('change', onChange);
     setShort(query.matches);
     return () => query.removeEventListener('change', onChange);
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- the same media query every render (FABLE_REPORT A10 moves it into the effect)
   }, []);
   return short ? 5 : 2 * cols;
 }

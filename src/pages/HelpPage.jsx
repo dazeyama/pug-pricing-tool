@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import readme from '../../README.md?raw';
 import Modal from '../components/Modal.jsx';
@@ -40,7 +40,10 @@ export default function HelpPage() {
     }
     return out;
   }, []);
-  const go = (id, anchor = null) => navigate(`/help/${id}`, anchor ? { state: { anchor } } : undefined);
+  const go = useCallback(
+    (id, anchor = null) => navigate(`/help/${id}`, anchor ? { state: { anchor } } : undefined),
+    [navigate],
+  );
 
   // A new page starts at its top, or at the heading a link pointed to; its
   // contents entry stays in view.
@@ -68,7 +71,7 @@ export default function HelpPage() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  });
+  }, [prev, next, zoom, go]);
 
   /**
    * A README link ("#how-prices-are-worked-out") goes to the page and place
