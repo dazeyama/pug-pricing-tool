@@ -4,11 +4,9 @@ import { useInventory } from '../state/inventory.jsx';
 import { useConnection } from '../state/connection.jsx';
 import { usePriceLimit } from '../state/priceLimit.jsx';
 import { useSettings } from '../state/settings.jsx';
-import { useStaff } from '../state/staff.jsx';
-import { useToast } from './Toast.jsx';
 import { formatTime } from '../lib/time.js';
 import { backupDue, daysSince } from '../lib/backup.js';
-import { saveBackup } from '../lib/backupIO.js';
+import { useBackupDownload } from '../lib/useBackupDownload.js';
 
 // Banners below the header, above the tab content (spec 7.5).
 
@@ -29,26 +27,12 @@ function readDismissed() {
  */
 function BackupReminder() {
   const { loaded, values } = useSettings();
-  const staff = useStaff();
   const { offline } = useConnection();
-  const toast = useToast();
   const [dismissed, setDismissed] = useState(readDismissed);
-  const [busy, setBusy] = useState(false);
+  const { busy, download } = useBackupDownload();
   const last = values.last_backup_at ?? null;
   if (!loaded || dismissed || !backupDue(last)) return null;
   const days = daysSince(last);
-
-  async function download() {
-    setBusy(true);
-    try {
-      const name = await saveBackup({ userId: staff.current?.id ?? null });
-      toast(`Backup saved: ${name}`, 'ok');
-    } catch (e) {
-      toast(e.message, 'err');
-    } finally {
-      setBusy(false);
-    }
-  }
 
   return (
     <div className="banner warn banner-row">

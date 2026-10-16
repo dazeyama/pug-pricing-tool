@@ -8,6 +8,7 @@ import { useConnection } from '../../state/connection.jsx';
 import { useToast } from '../../components/Toast.jsx';
 import { CLOUD_BACKUPS, REMINDER_DAYS, checkBackup, daysSince } from '../../lib/backup.js';
 import { currentCounts, restoreBackup, saveBackup } from '../../lib/backupIO.js';
+import { useBackupDownload } from '../../lib/useBackupDownload.js';
 import { formatDateTime, timeAgo } from '../../lib/time.js';
 
 // Settings → Backups (spec 11.5), a row of its own: download a backup file,
@@ -24,27 +25,14 @@ const ROWS = [
 
 export default function BackupsPanel() {
   const { values } = useSettings();
-  const staff = useStaff();
   const { offline } = useConnection();
   const toast = useToast();
   const picker = useRef(null);
-  const [busy, setBusy] = useState(false);
+  const { busy, download } = useBackupDownload();
   const [restoring, setRestoring] = useState(null);   // { fileName, data, check }
 
   const last = values.last_backup_at ?? null;
   const days = daysSince(last);
-
-  async function download() {
-    setBusy(true);
-    try {
-      const name = await saveBackup({ userId: staff.current?.id ?? null });
-      toast(`Backup saved: ${name}`, 'ok');
-    } catch (e) {
-      toast(e.message, 'err');
-    } finally {
-      setBusy(false);
-    }
-  }
 
   async function onPicked(e) {
     const file = e.target.files?.[0];
