@@ -529,20 +529,23 @@ export default function PricingScreen({
       return;
     }
     if (list.busy) return;
+    /** Save the built line over the one being edited, or as a new one; flash it; clear the card. */
+    const save = async (line) => {
+      const id = editing ? await list.update(editing.line, line, user.id) : await list.add(line, user.id);
+      if (!id) return;
+      setFlashId(id);
+      setTimeout(() => setFlashId((f) => (f === id ? null : f)), 1600);
+      clear();
+    };
     if (bulk) {
       // A bulk item (docs/TEAM_FEEDBACK.md 5.7): Qty counts items, at its Settings value (or its own);
       // a placeholder: its name and price as typed (owner, 2026-10-16).
       const line = bulk.item.placeholder
         ? buildPlaceholderLine(bulk.item, parseQty(qty), manual, placeholderName)
         : buildBulkLine(bulk.item, parseQty(qty), bulk.value, manual);
-      const id = editing ? await list.update(editing.line, line, user.id) : await list.add(line, user.id);
-      if (!id) return;
-      setFlashId(id);
-      setTimeout(() => setFlashId((f) => (f === id ? null : f)), 1600);
-      clear();
+      await save(line);
       return;
     }
-    const opts = { game: selected.game, lang: selected.lang, finish: magic ? finish : version.finish, firstEdition: version?.firstEdition };
     const line = buildLine({
       candidate: selected,
       finish,
@@ -553,7 +556,8 @@ export default function PricingScreen({
       ladder,
       manual,
       result,
-      variant: ladder[condition]?.source === 'justtcg' ? conditionVariants(result?.card, opts)[condition] : null,
+      // The card's variants for its finish, already worked out above (selected is `card` here: not bulk).
+      variant: ladder[condition]?.source === 'justtcg' ? marketVariants[condition] ?? null : null,
       imageUrl: magic ? null : images.thumb,
       englishName,
       snapshot: {
@@ -570,13 +574,7 @@ export default function PricingScreen({
           : null,
       },
     });
-    const id = editing
-      ? await list.update(editing.line, line, user.id)
-      : await list.add(line, user.id);
-    if (!id) return;
-    setFlashId(id);
-    setTimeout(() => setFlashId((f) => (f === id ? null : f)), 1600);
-    clear();
+    await save(line);
   }
 
   // Focus stays in the search bar; these keys drive everything (spec 8.11).
@@ -688,6 +686,16 @@ export default function PricingScreen({
     return list.update(line, buildBulkLine(item, line.quantity, bulkValues[item.kind], value), user?.id);
   };
 
+  /** Which source the price panel names for the chosen condition (QuotePanel's `source`). */
+  function quoteSource() {
+    if (manual != null) return 'manual';
+    if (bulk) return null;
+    const step = ladder[condition];
+    if (step.base?.from === 'Cardmarket' && step.source === 'fallback') return 'cardmarket';
+    if (showsTcgplayer(ladder, condition, fallbackPct?.[condition])) return 'tcgplayer';
+    return step.source;
+  }
+
   // What the page's own parts (a collection's details, the list's buttons) need.
   const api = { focusSearch, canEdit, editBlocked };
 
@@ -760,10 +768,7 @@ export default function PricingScreen({
               price={unitPrice}
               bulkPer={bulk && !bulk.item.placeholder ? bulk.item.per : null}
               placeholder={Boolean(bulk?.item.placeholder)}
-              source={manual != null ? 'manual' : bulk ? null
-                : ladder[condition].base?.from === 'Cardmarket' && ladder[condition].source === 'fallback' ? 'cardmarket'
-                  : showsTcgplayer(ladder, condition, fallbackPct?.[condition]) ? 'tcgplayer'
-                    : ladder[condition].source}
+              source={quoteSource()}
               cashPct={quoteRate.cash}
               creditPct={quoteRate.credit}
               cashWhy={whyText(quoteRate.why.cash, rates)}
