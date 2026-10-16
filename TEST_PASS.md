@@ -192,5 +192,5 @@ on a real customer's buy**.
 ## Sign-off
 
 - [ ] Every section passed, or its findings are listed above.
-- [ ] Owner's call: push Phase 6 with Phases 1–5 (33 + Phase 6 commits ahead of `origin/main`), fix findings first, or revert a commit (each section names its own).
+- [ ] Owner's call: push Phases 1–6 together (43 commits ahead of `origin/main` when Phase 6 was done, `5d275e7`), fix findings first, or revert a commit (each section names its own).
 
