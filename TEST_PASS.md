@@ -227,6 +227,12 @@ None is a Phase 6 regression: each is in the live build `77d8c84` too.
 | 3 | P3, data | 3b / 3d | before Phase 6 | Charizard 4/102 BS **1st Edition** has no price in any condition and no fallback ("no price: enter a manual price"). Unlimited prices fine ($950 NM). | A price, or at least a fallback. JustTCG seems to have no 1st Edition match for it. | Search `Charizard 4/102 BS`, Details → 1st Edition. |
 | 4 | P3 | 4 | before Phase 6 | Counts that include a bulk item call it one card: "Also has 4 Pokémon cards →" (3 cards + 1 bulk line), and the changelog's "8 cards bought". CONFIRM BUY and Delete buy say "7 cards + 100 bulk". | Bulk counted as bulk, as CONFIRM BUY does. | A walk-in with cards in both games plus a bulk item; open the other game's day page. |
 
+**The owner's calls (2026-10-16), all committed locally, unpushed:**
+- #1 fixed: Qty goes back to 1 after Enter adds (`41c8ed0`).
+- #2 "always start fresh": picking another card forgets its condition, manual price, override and placeholder name (`4fe0015`, decision 272).
+- #3 left as is: a printing that rare can go without a price; use a manual price.
+- #4 bulk counted apart everywhere, placeholders as cards: the day page's "Also has" (`d6934e7`) and the Changelog's sentences, chips and folded runs (`5f20237`, migration 0066 on dev, decision 273).
+
 ## Sign-off
 
 - [x] Every section passed, or its findings are listed above.
