@@ -81,6 +81,19 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const { scans, send, answer, undo } = useScans(computerId, phoneId);
   const videoRef = useRef(null);
   const camera = useCamera(videoRef);
+  // The space the camera has (the screen less the controls and buttons), measured.
+  const middle = useRef(null);
+  const [room, setRoom] = useState({ w: 0, h: 0 });
+  useEffect(() => {
+    const el = middle.current;
+    if (!el) return undefined;
+    const measure = () => setRoom((r) => (r.w === el.clientWidth && r.h === el.clientHeight
+      ? r : { w: el.clientWidth, h: el.clientHeight }));
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    measure();
+    return () => observer.disconnect();
+  }, []);
   const [condition, setConditionState] = useState(() => {
     const saved = readSession(CONDITION_KEY);
     return CONDITIONS.includes(saved) ? saved : 'NM';
@@ -321,9 +334,16 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const stripOfLatest = latest ? scanStrip(latest, computer) : null;
   const strip = local && local.at >= latestAt ? local : stripOfLatest ?? local;
   const size = camera.size;
-  const stageStyle = size
-    ? { aspectRatio: `${size.w} / ${size.h}`, width: `min(100%, calc(60vh * ${size.w / size.h}))` }
+  // The picture as big as the space between the controls and the buttons
+  // allows, its own shape kept, so the guide drawn over it is where it reads.
+  const fit = size && room.w && room.h
+    ? (() => {
+      const ratio = size.w / size.h;
+      const width = Math.min(room.w, room.h * ratio);
+      return { width: `${Math.floor(width)}px`, height: `${Math.floor(width / ratio)}px` };
+    })()
     : undefined;
+  const showUndo = strip === stripOfLatest && latest?.status === 'added';
 
   return (
     <div className="scanner">
@@ -348,6 +368,31 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           {muted ? '🔇' : '🔔'}
         </button>
         <button type="button" className="btn small" onClick={unpair}>Unpair</button>
+      </div>
+
+      {/* The last scan and what became of it, always in view (owner, 2026-10-16). */}
+      <div className={`scan-strip ${strip?.tone ?? 'muted'}`} role="status">
+        <div className="scan-strip-text">
+          {strip ? (
+            <>
+              {strip.title && <strong>{strip.title}</strong>}
+              <span>{strip.text}</span>
+            </>
+          ) : <span>Cards you scan show here.</span>}
+        </div>
+        {/* Undo last scan (S5): one copy of it off the computer's list. */}
+        {showUndo && (
+          <button
+            type="button"
+            className="btn small scan-undo"
+            onClick={async () => {
+              const e = await undo(latest.id);
+              if (e) say('err', `Couldn't undo it: ${e}`);
+            }}
+          >
+            ↶ Undo
+          </button>
+        )}
       </div>
 
       <div className="scan-controls">
@@ -375,26 +420,48 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         </div>
       </div>
 
-      {blocked && <div className="scan-notice warn" role="status">{blocked}</div>}
-
-      <div className={`scan-stage${camera.on ? ' live' : ''}`} style={stageStyle}>
-        <video ref={videoRef} className="scan-video" playsInline muted />
-        {camera.on && size && (
-          <div className="scan-guide" style={guideStyle(size.w, size.h)} aria-hidden="true">
-            <i className="v1" /><i className="v2" /><i className="h1" /><i className="h2" />
-          </div>
+      {/* The camera takes the space that's left; notices and sheets lie over it. */}
+      <div className="scan-middle" ref={middle}>
+        <div className={`scan-stage${camera.on ? ' live' : ''}`} style={fit}>
+          <video ref={videoRef} className="scan-video" playsInline muted />
+          {camera.on && size && (
+            <div className="scan-guide" style={guideStyle(size.w, size.h)} aria-hidden="true">
+              <i className="v1" /><i className="v2" /><i className="h1" /><i className="h2" />
+            </div>
+          )}
+          {!camera.on && (
+            <div className="scan-stage-off">
+              <button type="button" className="btn primary scan-start" disabled={camera.starting} onClick={startCamera}>
+                {camera.starting ? 'Starting…' : 'START CAMERA'}
+              </button>
+              <p>Fill the frame with the card, its bottom edge clear: the reader looks for the set code and number there.</p>
+            </div>
+          )}
+          {ocrLoading ? <div className="scan-stage-note">Loading the card reader (first scan only)…</div>
+            : camera.on && sameCard && !needs && !pick && (
+              <div className="scan-stage-note">Same card in view: Scan card adds another copy.</div>
+            )}
+        </div>
+        {(blocked || camera.error) && (
+          <div className={`scan-notice ${camera.error ? 'err' : 'warn'} scan-over`} role="alert">{camera.error ?? blocked}</div>
         )}
-        {!camera.on && (
-          <div className="scan-stage-off">
-            <button type="button" className="btn primary scan-start" disabled={camera.starting} onClick={startCamera}>
-              {camera.starting ? 'Starting…' : 'START CAMERA'}
-            </button>
-            <p>Fill the frame with the card, its bottom edge clear: the reader looks for the set code and number there.</p>
-          </div>
+        {needs ? (
+          <NeedsPriceSheet key={needs.id} scan={needs} onAnswer={(price) => answer(needs.id, price)} />
+        ) : pick && (
+          <PickPrintingSheet
+            pick={pick}
+            onPick={(card) => {
+              const { tier } = pick;
+              setPick(null);
+              sendCard(card, { tier, manual: true });
+            }}
+            onSkip={() => {
+              setPick(null);
+              say('muted', 'Skipped: set it aside and add it on the computer.');
+            }}
+          />
         )}
-        {ocrLoading && <div className="scan-stage-note">Loading the card reader (first scan only)…</div>}
       </div>
-      {camera.error && <div className="scan-notice err" role="alert">{camera.error}</div>}
 
       <div className="scan-actions">
         <button
@@ -407,53 +474,11 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         </button>
         {camera.torch != null && (
           <button type="button" className={`btn scan-torch${camera.torch ? ' on' : ''}`} aria-pressed={camera.torch} onClick={camera.toggleTorch}>
-            💡 Lighting
+            💡 Light
           </button>
         )}
         <button type="button" className="btn scan-stop" disabled={!camera.on} onClick={camera.stop}>■ Stop</button>
       </div>
-
-      {needs ? (
-        <NeedsPriceSheet key={needs.id} scan={needs} onAnswer={(price) => answer(needs.id, price)} />
-      ) : pick ? (
-        <PickPrintingSheet
-          pick={pick}
-          onPick={(card) => {
-            const { tier } = pick;
-            setPick(null);
-            sendCard(card, { tier, manual: true });
-          }}
-          onSkip={() => {
-            setPick(null);
-            say('muted', 'Skipped: set it aside and add it on the computer.');
-          }}
-        />
-      ) : strip && (
-        <div className={`scan-strip ${strip.tone}`} role="status">
-          {strip.title && <strong>{strip.title}</strong>}
-          <span>{strip.text}</span>
-          {/* Undo last scan (S5): one copy of it off the computer's list. */}
-          {strip === stripOfLatest && latest?.status === 'added' && (
-            <button
-              type="button"
-              className="btn small scan-undo"
-              onClick={async () => {
-                const e = await undo(latest.id);
-                if (e) say('err', `Couldn't undo it: ${e}`);
-              }}
-            >
-              ↶ Undo
-            </button>
-          )}
-        </div>
-      )}
-      {camera.on && !needs && !pick && (
-        <p className="scan-hint">
-          {sameCard
-            ? 'Same card in view: it won’t be added again. Tap Scan card for another copy.'
-            : 'Cards are added by themselves when they read clearly. Scan card reads the one in view now.'}
-        </p>
-      )}
     </div>
   );
 }

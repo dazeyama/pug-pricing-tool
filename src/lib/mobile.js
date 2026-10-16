@@ -23,6 +23,18 @@ export function isPhone() {
   return isPhoneLike({ coarse, width: window.screen?.width ?? window.innerWidth, height: window.screen?.height ?? window.innerHeight });
 }
 
+/**
+ * Safari on an iPhone or iPad, not as a home-screen app: its toolbar floats
+ * over the bottom of the page (iOS 26), so a page that must show everything
+ * keeps that much room free (styles/scan.css .ios-bar).
+ */
+export function hasFloatingToolbar() {
+  if (typeof navigator === 'undefined') return false;
+  const ios = /iPhone|iPod/.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  return ios && !navigator.standalone;
+}
+
 /** Is the page on the scanner (a phone anywhere, or #/scan on any device)? */
 export function inScanMode(hash = typeof window === 'undefined' ? '' : window.location.hash) {
   return isPhone() || /^#\/scan(\/|$|\?)/.test(hash);

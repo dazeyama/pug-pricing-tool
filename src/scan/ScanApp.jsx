@@ -4,6 +4,7 @@ import DeviceNameModal from '../components/DeviceNameModal.jsx';
 import DeviceSaveModal from '../components/DeviceSaveModal.jsx';
 import LandingPage from './LandingPage.jsx';
 import Scanner from './Scanner.jsx';
+import { hasFloatingToolbar } from '../lib/mobile.js';
 
 const LOGO = `${import.meta.env.BASE_URL}pug-logo.webp`;
 
@@ -46,15 +47,20 @@ export default function ScanApp() {
     );
   }
 
+  // Scanning, everything fits the screen with no scrolling (owner, 2026-10-16):
+  // no brand header, and room kept for Safari's floating toolbar on an iPhone.
+  const scanning = Boolean(computer && label && saved);
   return (
-    <div className="scan-app">
-      <header className="scan-brand">
-        <img src={LOGO} alt="" width="36" height="36" />
-        <div>
-          <strong>PUG Pricing Tool</strong>
-          <span>{label ? `Card scanner · ${label}` : 'Card scanner'}</span>
-        </div>
-      </header>
+    <div className={`scan-app${scanning ? ' scanning' : ''}${scanning && hasFloatingToolbar() ? ' ios-bar' : ''}`}>
+      {!scanning && (
+        <header className="scan-brand">
+          <img src={LOGO} alt="" width="36" height="36" />
+          <div>
+            <strong>PUG Pricing Tool</strong>
+            <span>{label ? `Card scanner · ${label}` : 'Card scanner'}</span>
+          </div>
+        </header>
+      )}
       {body}
     </div>
   );
