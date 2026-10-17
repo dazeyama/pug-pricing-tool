@@ -45,7 +45,7 @@ export default function DeviceNameModal({ phone = false }) {
           type="text"
           autoFocus
           maxLength={40}
-          placeholder={phone ? "Dana's phone" : 'Front Counter'}
+          placeholder={phone ? "Chase's phone" : 'Front Counter'}
           value={name}
           onChange={(e) => setName(e.target.value)}
           aria-label={phone ? 'Phone name' : 'Computer name'}

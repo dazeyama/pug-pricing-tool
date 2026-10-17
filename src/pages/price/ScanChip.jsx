@@ -7,7 +7,7 @@ const AWAY_MS = 60_000;
 
 /**
  * The paired phone, in the list's heading (docs/SCAN_FUNCTION.md 8.2):
- * "📱 Dana's phone · 23 scanned", with × to let it go. Muted, "away", when
+ * "📱 Chase's phone · 23 scanned", with × to let it go. Muted, "away", when
  * the phone hasn't been heard from for a minute. Nothing when no phone is paired.
  * @param {{ session: object|null, onUnpair: () => void }} props
  */

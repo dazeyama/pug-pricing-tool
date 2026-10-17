@@ -941,7 +941,7 @@ Under the finish control and details panel, at the bottom of the right column (S
 Styled as AT's list panel, docked right.
 
 - **Heading:** "BUY LIST" (small caps) with a count ("12 cards", the sum of quantities).
-- **A paired phone** (decision 278; `docs/SCAN_FUNCTION.md` 8): while Magic is on, a chip under the heading, **📱 Dana's phone · 23 scanned** with **×** to unpair it (muted, "away", when the phone hasn't been heard from for a minute). Cards it scans are added through ADD CARD's own path and flash in; the stage is left alone. The Price tab and a collection's screen (not Can't upload cards, not Edit in project view) are open to phones while they're shown.
+- **A paired phone** (decision 278; `docs/SCAN_FUNCTION.md` 8): while Magic is on, a chip under the heading, **📱 Chase's phone · 23 scanned** with **×** to unpair it (muted, "away", when the phone hasn't been heard from for a minute). Cards it scans are added through ADD CARD's own path and flash in; the stage is left alone. The Price tab and a collection's screen (not Can't upload cards, not Edit in project view) are open to phones while they're shown.
 - **Grouped by game** (owner's decision): a "Magic (9)" header, then its lines; a "Pokémon (3)" header, then its lines. The headers are chips in the game's badge colors, indigo for Magic and amber for Pokémon, like the MTG | PKM toggle (owner, 2026-09-29). A group is hidden when empty. Within a group, lines are in the **order added, newest at the bottom** (owner's decision). A newly added line scrolls into view.
 - **Line text** (plain text, Moxfield-style, from `src/lib/lineFormat.js`):
 

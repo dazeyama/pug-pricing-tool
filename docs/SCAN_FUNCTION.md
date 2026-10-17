@@ -119,7 +119,7 @@ Nothing about prices, lines or lists is new. The computer's side reuses:
   ──────────────                              ────────                        ───────────────────────────────────────
   sign in (store password, once) ──────────►  Auth                            on a price screen: scan_session_touch
   landing page: scan_sessions_open ◄────────  scan_sessions ◄──── heartbeat ── every 20s (walk-in / collection, games, user)
-  tap "Front Counter · Buy list" ──────────►  scan_pair                        chip "📱 Dana's phone · 0 scanned"
+  tap "Front Counter · Buy list" ──────────►  scan_pair                        chip "📱 Chase's phone · 0 scanned"
   camera on; a card read: set + number ─────► Scryfall /cards/<set>/<number>
   scan_send { scryfall_id, finish, cond } ──► scans (status sent) ── realtime ─► prices it (TCGplayer → JustTCG → Cardmarket)
   "Added $0.45" ◄── realtime ◄─────────────── scans (status added) ◄──────────── list.add → the line flashes in; scan_resolve
@@ -141,7 +141,7 @@ Nothing about prices, lines or lists is new. The computer's side reuses:
 - **Detection** (owner, 2026-10-16): the app opens on the landing page when the device is **touch-first and narrow**: `matchMedia('(pointer: coarse)')` matches and the screen's shorter side is under 900 CSS px (`src/lib/mobile.js`, `isPhone()`, tested with fake values). Any hash route on such a device goes to `#/scan` (a `<Navigate>` in `AuthGate`, before the desktop `Layout`). **`#/scan` opens the same page on any device** (a laptop, for testing), full-width, no header or tabs.
 - **The "too small" notice** (`base.css` `.too-small`, spec 7.10) isn't shown on the scan route: `<html data-scan>` turns the rule off. A phone today sees that notice; after S1 it sees the landing page.
 - **Sign-in** (owner, 2026-10-16): the ordinary login screen, the store password, once per phone; supabase-js keeps the session as on a computer. `login.css` gets a phone layout (the 380 px panel becomes full-width with 16 px gutters; the logo smaller). Settings' Sign out isn't reachable from the phone; the landing page's footer has **Sign out** instead.
-- **"Name this phone":** the device-name modal with the phone's wording (title, text, placeholder "Dana's phone"); it's saved to `devices` like a computer's. The computer's chip and the Changelog's device column show that label.
+- **"Name this phone":** the device-name modal with the phone's wording (title, text, placeholder "Chase's phone"); it's saved to `devices` like a computer's. The computer's chip and the Changelog's device column show that label.
 - **Not for the phone:** the rest of the app. The scan route is the only thing a phone gets; every other route redirects to it.
 
 ### 5.2 The landing page
@@ -305,7 +305,7 @@ The app's ⚠️ checks (spec 8.7) **aren't run on scans** (owner, 2026-10-16). 
 
 ### 8.2 The chip (owner, 2026-10-16: "a chip in the buy list, lines flash in")
 
-- In the list's heading, right of the count: **📱 Dana's phone · 23 scanned** with an **Unpair** (×) button, while a phone is paired; **📱 Phone away** (muted) when its last beat is over a minute old; nothing when no phone is paired. Hovering it: "Scanning from Dana's phone since 2:14 PM".
+- In the list's heading, right of the count: **📱 Chase's phone · 23 scanned** with an **Unpair** (×) button, while a phone is paired; **📱 Phone away** (muted) when its last beat is over a minute old; nothing when no phone is paired. Hovering it: "Scanning from Chase's phone since 2:14 PM".
 - **Only on Magic:** when the MTG toggle is off the chip hides and the session says `games` without `mtg`; the phone shows the computer greyed.
 - **A scanned line flashes** exactly as an ADD CARD line does (`flashId`, 1.6 s) and scrolls into view. The stage is left alone (owner, 2026-10-16): the operator can keep searching and adding by hand at the same time. A card added by hand and a scan of the same card merge like any two adds.
 - **Unpair** ends the pairing (the phone goes back to its landing page) and leaves the session open for the next phone.

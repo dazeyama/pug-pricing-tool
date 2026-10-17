@@ -1272,7 +1272,7 @@ For big piles of Magic cards. A phone reads each card with its camera and the ca
 a computer's open buy list, priced. The computer stays free for anything else. Magic only.
 
 **On the phone,** open the app's address. A phone gets the scanner instead of the app: sign in with
-the store password once, then name the phone ("Dana's phone").
+the store password once, then name the phone ("Chase's phone").
 
 ### Pairing
 
@@ -1285,7 +1285,7 @@ Tap one to scan into it.
 - The computer doesn't wait between cards: it prices each one as it comes, in the order sent, while
   the phone goes on scanning.
 - **One phone per computer.** Pairing a second phone replaces the first, which says so.
-- The computer's list shows **📱 Dana's phone · 23 scanned** under its heading. **×** unpairs it.
+- The computer's list shows **📱 Chase's phone · 23 scanned** under its heading. **×** unpairs it.
   After a minute without hearing from the phone, the chip says **away**.
 - The pairing ends when the computer leaves its price screen. CONFIRM BUY doesn't end it: the next
   buy's cards go into the new list.
@@ -1505,7 +1505,7 @@ Buys downloads.
 | **+N / −N** | Cards added and removed, placeholders included. Bulk is counted apart in the words: *7 cards + 100 bulk bought*. |
 | **User** | Who did it, in her colour. |
 | **Market / Cash / Credit** | Totals, where they apply. |
-| **Card rows** | Each card added (+) or removed (−), with its price. A card a phone scanned into a collection ends *· 📱 scanned on Dana's phone*. |
+| **Card rows** | Each card added (+) or removed (−), with its price. A card a phone scanned into a collection ends *· 📱 scanned on Chase's phone*. |
 | **Field rows** | Each detail changed, before → after. |
 
 Cards added to one collection by one user, each within 15 minutes of the last, show as one panel.
