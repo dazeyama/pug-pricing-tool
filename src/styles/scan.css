@@ -331,8 +331,10 @@ html[data-scan] .toast { max-width: none; }
   padding: 8px 12px 10px;
   gap: 0;
 }
-/* Safari's toolbar floats over the bottom of an iPhone's screen (lib/mobile.js). */
-.scan-app.scanning.ios-bar { padding-bottom: 86px; }
+/* Safari's toolbar floats over the bottom of an iPhone's screen (lib/mobile.js), but iOS 26
+   Safari's 100dvh already ends above it: the 86px once kept free here left about 100px empty
+   under the buttons (owner's screenshot, 2026-10-16), now given to the camera. */
+.scan-app.scanning.ios-bar { padding-bottom: 10px; }
 .scan-app.scanning .scanner { flex: 1; min-height: 0; gap: 7px; }
 .scan-app.scanning .scan-paired { flex: none; padding: 5px 6px 5px 10px; border-radius: 8px; }
 .scan-app.scanning .scan-paired-text strong { font-size: 14px; }

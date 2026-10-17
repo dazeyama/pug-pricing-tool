@@ -807,6 +807,12 @@ locks **automatically on the first card**.
   TCGplayer price for (priced from JustTCG or Cardmarket on the computer) gets the usual chime. The
   computer's "added" no longer chimes; a card that needs a price and one it couldn't add still
   sound when it says so.
+- **The camera taller** (owner, 2026-10-16: "There's still empty space on my phone under the
+  buttons, about 280px worth … Make the default video size that much taller and scale the cropped
+  card to fit in it"): the 86px kept free under the buttons for Safari's floating toolbar is now
+  10px, since iOS 26 Safari's 100dvh already ends above the toolbar (the screenshot showed about
+  100 CSS px empty). The camera's space grows by that much; the picture, sized in its own shape
+  (`showPart`), and the locked card in it (`contain`) grow with it, never stretched.
 - **The card alone, its sides cut too** (owner, 2026-10-16: "we're only doing the height and leaving
   the sides of the picture which adds noise … also crop the left and right … and hopefully stop some
   of the recalibrating motion"):
