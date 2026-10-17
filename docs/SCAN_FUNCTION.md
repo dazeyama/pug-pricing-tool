@@ -1082,7 +1082,7 @@ The owner's answers (2026-10-16, the clarification session before this document)
 4. **The List and Mystery Booster**: done 2026-10-16, by their planeswalker mark (Section 17).
    The outline a little off the card: closed 2026-10-16. The 27/28 run was of an earlier detector; the committed one finds 28/28 at 1% and 2% (Section 17's figures), and the owner calls it "great as-is".
 5. **A "scanned from a phone" note in the Changelog**: done 2026-10-16 (Section 12).
-6. **Renaming a phone** without clearing its site data (Section 12).
+6. **Renaming a phone** without clearing its site data (Section 12): not fixing (owner, 2026-10-16). Clearing the phone's site data stays the way to rename it.
 7. **An auto scan switch** on the phone: built 2026-10-16 as "Auto?" (Section 17).
 8. **Settings → Sign out signs out every computer**: done 2026-10-16 (owner: "make sign out per computer"): `session.signOut` now defaults to `scope: 'local'`, so Settings' Sign out and the phone's sign out only their own device.
 9. **Scryfall's search limit**: done 2026-10-16 (owner: "fix this, yes"): every `/cards/search`, of
