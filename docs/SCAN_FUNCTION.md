@@ -1080,6 +1080,7 @@ The owner's answers (2026-10-16, the clarification session before this document)
 2. **Version name** for the first live scanner: the owner's call at S5.
 3. **Pokémon scanning:** not planned. Their line (`125/198` with a set abbreviation elsewhere on the card) would need its own locator.
 4. **The List and Mystery Booster**: done 2026-10-16, by their planeswalker mark (Section 17).
+   **Open:** the mark when the card's outline sits a little off the card. A run nudging the outline 1% found 27/28 List cards (28/28 when it's right on) and flagged 2/643 other cards (1/643 on). The run stopped before the 2% step.
 5. **A "scanned from a phone" note in the Changelog**: done 2026-10-16 (Section 12).
 6. **Renaming a phone** without clearing its site data (Section 12).
 7. **An auto scan switch** on the phone: built 2026-10-16 as "Auto?" (Section 17).
