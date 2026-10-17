@@ -170,12 +170,15 @@ export default function PricingScreen({
   const [editing, setEditing] = useState(null);
   const editingRef = useRef(null);
   editingRef.current = editing;
-  // The card the phone last added, shown in the Selected card frame but not selected: nothing's
-  // searched or priced for it (owner, 2026-10-16). The card that was selected is deselected
-  // ("it feels natural to click the selected card again to get it back"), unless a list line's
-  // being edited. Gone at a click anywhere else (the details panel too), a card picked, or a
-  // new search.
+  // The card the phone last added, peeking over the Selected card frame (owner, 2026-10-16, the
+  // "peek" agreed): its picture and details over the card's; nothing selected, searched or priced
+  // for it; the card that was selected left exactly as it was underneath. Not while a list line's
+  // being edited or a dialog's open (the line just flashes). Gone at a click anywhere outside it,
+  // left or right, which does nothing else ("Should the dismissing click do nothing else? yes"),
+  // at its ×, at Esc, or at any other key, which goes on to do its work (typing a search). No
+  // timeout ("Should it disappear by itself? Off").
   const [phoneCard, setPhoneCard] = useState(null);   // { candidate, finish }
+  const swallowUntil = useRef(0);
   // Cards from the paired phone, added as ADD CARD adds them and flashed the same way
   // (docs/SCAN_FUNCTION.md 8.3).
   useScanReceiver({
@@ -186,23 +189,52 @@ export default function PricingScreen({
     roundUp,
     onAdded: (id, added) => {
       flash(id);
-      if (!added?.card) return;
+      if (!added?.card || editingRef.current || document.querySelector('[role="dialog"]')) return;
       setPhoneCard({ candidate: magicCandidate(added.card), finish: added.finish });
-      if (!editingRef.current) {
-        setSelected(null);
-        setHighlight(-1);
-      }
     },
   });
-  // A click anywhere but on the phone's card picture (or its enlarged view) puts it away.
+  // Inside the peek: its picture (a click enlarges it, a right-click searches it), its ×, its
+  // enlarged view, and its details' links. Anything else is outside.
   useEffect(() => {
     if (!phoneCard) return undefined;
-    const away = (e) => {
-      if (!e.target.closest?.('[data-phone-card], .card-zoom')) setPhoneCard(null);
+    const inside = (t) => Boolean(t.closest?.('[data-phone-card], .card-zoom') || (t.closest?.('[data-phone-info]') && t.closest('a')));
+    const press = (e) => {
+      if (inside(e.target)) return;
+      // Put away, and the press that did it goes no further: no focus, no menu, no click.
+      e.preventDefault();
+      e.stopPropagation();
+      swallowUntil.current = Date.now() + 800;
+      setPhoneCard(null);
     };
-    document.addEventListener('pointerdown', away, true);
-    return () => document.removeEventListener('pointerdown', away, true);
+    const key = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        setPhoneCard(null);
+      } else if (!['Shift', 'Control', 'Alt', 'Meta', 'CapsLock'].includes(e.key)) {
+        setPhoneCard(null);   // and the key goes on to do its work
+      }
+    };
+    document.addEventListener('pointerdown', press, true);
+    document.addEventListener('keydown', key, true);
+    return () => {
+      document.removeEventListener('pointerdown', press, true);
+      document.removeEventListener('keydown', key, true);
+    };
   }, [phoneCard]);
+  // The rest of a press that put the peek away (its mouseup, click or right-click menu) is
+  // swallowed too; listening always, since the peek's gone by the time they come.
+  useEffect(() => {
+    const swallow = (e) => {
+      if (Date.now() >= swallowUntil.current) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.type === 'click' || e.type === 'contextmenu') swallowUntil.current = 0;
+    };
+    const types = ['mousedown', 'mouseup', 'click', 'auxclick', 'contextmenu'];
+    types.forEach((t) => document.addEventListener(t, swallow, true));
+    return () => types.forEach((t) => document.removeEventListener(t, swallow, true));
+  }, []);
   // A new search puts it away too (a card picked does, in pick()).
   useEffect(() => setPhoneCard(null), [text]);
   const images = useCardImages(card);   // a Pokémon thumbnail for the line (backups too)
@@ -584,7 +616,7 @@ export default function PricingScreen({
           {/* Owner's layout (2026-09-29): card left with prices under it; info
               beside it with the suggestions below; finish & details beside the
               suggestions with the action row under them. Grid areas in price/layout.css. */}
-          <div className="stage-body">
+          <div className={`stage-body${phoneCard ? ' peeking' : ''}`}>
             {phoneCard ? (
               <SelectedCard
                 candidate={phoneCard.candidate}
@@ -593,6 +625,7 @@ export default function PricingScreen({
                 pokemonVersion={null}
                 fromPhone
                 onSearch={() => searchName(`${phoneCard.candidate.name} ${phoneCard.candidate.number}`)}
+                onDismiss={() => setPhoneCard(null)}
               />
             ) : bulk ? <BulkSelected c={bulk} name={placeholderName} onName={setPlaceholderName} /> : (
             <SelectedCard
