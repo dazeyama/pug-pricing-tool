@@ -819,9 +819,15 @@ locks **automatically on the first card**.
   0.72–0.80); the owner's foil from a phone screenshot, a star (0.78 high; its points blurred in,
   filling 0.64). Every strip read (auto scan and Scan card, locked) sends foil on a star, nonfoil
   otherwise (`scanFinish`, so a card with only one finish keeps it); a misjudged look differs in
-  its finish and so can't agree with the next. **Normal / Foil** now sets only cards with no mark to
-  go by: older cards read by their title, and Scan card before the view's locked. FOIL? and
-  NONFOIL? still correct the last card. Tests: `tests/scanFoilMark.test.js`.
+  its finish and so can't agree with the next. FOIL? and NONFOIL? still correct the last card.
+  Tests: `tests/scanFoilMark.test.js`.
+  - **Detect / Normal / Foil** (owner, the same day: "a 3rd foil state button Detect / Normal / Foil
+    and when it's on detect it runs this detection, but when set to foil or normal it overrides
+    trying to guess and sets it to that treatment flat"): the finish row has three buttons,
+    **Detect** to begin with, kept for the tab (`pug.scan.finish`). Detect: the star decides, and a
+    card with no strip to go by (an older card read by its title, Scan card before the lock) is
+    nonfoil. Normal or Foil: every card so, whatever the strip shows (`scanFinish`, so a card with
+    only one finish keeps it).
 - **The camera taller** (owner, 2026-10-16: "There's still empty space on my phone under the
   buttons, about 280px worth … Make the default video size that much taller and scale the cropped
   card to fit in it"): the 86px kept free under the buttons for Safari's floating toolbar is now

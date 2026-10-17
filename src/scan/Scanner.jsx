@@ -48,7 +48,10 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // The condition and finish for the next scans, kept for this tab (a reload keeps them).
 const CONDITION_KEY = 'pug.scan.condition';
-const FOIL_KEY = 'pug.scan.foil';
+// The finish for the next scans (owner, 2026-10-16: "a 3rd foil state button Detect / Normal /
+// Foil"): Detect goes by the strip's foil star (foilMark.js), Normal and Foil set every card flat.
+const FINISH_KEY = 'pug.scan.finish';
+const FINISHES = [['detect', 'Detect'], ['normal', 'Normal'], ['foil', 'Foil']];
 // Auto scan on or off (owner, 2026-10-16: an "Auto?" checkbox), kept the same way.
 const AUTO_KEY = 'pug.scan.auto';
 // FOIL? / NONFOIL? gives up if the computer hasn't taken the old copy off by then.
@@ -124,7 +127,10 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     const saved = readSession(CONDITION_KEY);
     return CONDITIONS.includes(saved) ? saved : 'NM';
   });
-  const [foil, setFoilState] = useState(() => readSession(FOIL_KEY) === '1');
+  const [finishMode, setFinishState] = useState(() => {
+    const saved = readSession(FINISH_KEY);
+    return FINISHES.some(([k]) => k === saved) ? saved : 'detect';
+  });
   const [autoOn, setAutoState] = useState(() => readSession(AUTO_KEY) !== '0');
   const [muted, setMutedState] = useState(isMuted);
   const [local, setLocal] = useState(null);       // the phone's own message: { tone, title?, text, at }
@@ -169,9 +175,9 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     setConditionState(c);
     writeSession(CONDITION_KEY, c);
   };
-  const setFoil = (f) => {
-    setFoilState(f);
-    writeSession(FOIL_KEY, f ? '1' : null);
+  const setFinishMode = (mode) => {
+    setFinishState(mode);
+    writeSession(FINISH_KEY, mode === 'detect' ? null : mode);
   };
   const setAuto = (on) => {
     setAutoState(on);
@@ -497,8 +503,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           return;
         }
         blurryLooks.current = 0;
-        // The foil star between the set code and the language, or not (owner, 2026-10-16).
-        foilSeen = stripShowsFoil(cut);
+        // The foil star between the set code and the language, or not (owner, 2026-10-16): on Detect only.
+        if (finishMode === 'detect') foilSeen = stripShowsFoil(cut);
         progress?.start('strip');
         attempts = await readPrepared(cut, pattern);
         progress?.finish('strip');
@@ -603,15 +609,15 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
    * once two looks in a row have read this same printing, or on one look
    * when every clue on the strip agrees with it (`sure`, resolve.js isSure;
    * owner, 2026-10-16: "Let's try it with just one"). Once sent, the card's
-   * art is held: nothing is read again till it changes. Its finish: what
-   * the strip shows (`foilSeen`: the star, foil; else not), or the Normal /
-   * Foil setting when there was no strip to go by (an older card).
+   * art is held: nothing is read again till it changes. Its finish: Normal
+   * or Foil, flat, when set; on Detect, what the strip shows (`foilSeen`:
+   * the star, foil), nonfoil when there's no star or no strip to go by.
    * @param {{ tier: number, manual: boolean, art?: Float32Array|null, sure?: boolean, foilSeen?: boolean }} opts
    *   art: the card's (lock.js artPrint)
    */
   async function sendCard(card, { tier, manual, art = null, sure = false, foilSeen }) {
     const v = view.current;
-    const finish = scanFinish(card, foilSeen ?? foil);
+    const finish = scanFinish(card, finishMode === 'foil' ? true : finishMode === 'normal' ? false : Boolean(foilSeen));
     const key = `${card.id}:${finish}`;
     if (!manual) {
       if (key === lastSent.current) {
@@ -760,14 +766,21 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
             </button>
           ))}
         </div>
-        {/* The finish for cards with no foil star to go by (older cards); a strip read decides it itself. */}
-        <div className="scan-seg finish" role="radiogroup" aria-label="Finish for cards with no foil mark (older cards)">
-          <button type="button" role="radio" aria-checked={!foil} className={`scan-seg-btn${!foil ? ' on' : ''}`} onClick={() => setFoil(false)}>
-            Normal
-          </button>
-          <button type="button" role="radio" aria-checked={foil} className={`scan-seg-btn foil${foil ? ' on' : ''}`} onClick={() => setFoil(true)}>
-            Foil
-          </button>
+        {/* Detect: the strip's foil star decides; Normal or Foil: every card so, flat (owner, 2026-10-16). */}
+        <div className="scan-seg finish" role="radiogroup" aria-label="Finish for the next scans">
+          {FINISHES.map(([mode, label]) => (
+            <button
+              key={mode}
+              type="button"
+              role="radio"
+              aria-checked={finishMode === mode}
+              className={`scan-seg-btn${mode === 'foil' ? ' foil' : ''}${finishMode === mode ? ' on' : ''}`}
+              title={mode === 'detect' ? 'Foil when the card shows the foil star (★) after its set code, else normal' : undefined}
+              onClick={() => setFinishMode(mode)}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       </div>
 
