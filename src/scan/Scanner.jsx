@@ -10,7 +10,7 @@ import { useScans } from './useScans.js';
 import { useCamera } from './camera.js';
 import { insetTo, onScreen, showPart } from './guide.js';
 import { locate, paperSetCodes, readCollectorLine, readPrepared, setCodePattern } from './read.js';
-import { resolveReadings, resolveThorough } from './resolve.js';
+import { readClues, resolveReadings, resolveThorough } from './resolve.js';
 import { STEP_MS, createProgress } from './progress.js';
 import { findCard } from './cardEdges.js';
 import {
@@ -22,6 +22,7 @@ import { defaultCreateCanvas } from './recognition/canvasUtil.js';
 import { ocrWorker, onOcrStatus } from './ocr.js';
 import { isMuted, play, setMuted, unlockSounds } from './sounds.js';
 import { readOlderCard } from './older.js';
+import { inkShare, titleCutout } from './titles.js';
 import NeedsPriceSheet from './NeedsPriceSheet.jsx';
 import PickPrintingSheet from './PickPrintingSheet.jsx';
 
@@ -31,10 +32,15 @@ const REST_MS = 300;
 /** A first read waiting for the second look that must agree: taken straight away, not after a rest. */
 const CONFIRM_MS = 50;
 const FIRST_LOOK_MS = 800;
-// Older cards (tiers 2 and 3, 6.2) are read by their title, which is less
-// sure than a collector line: only on Scan card until the benchmark on the
-// store's own photos reads 80% of them right (docs/SCAN_FUNCTION.md 11.3).
-const AUTO_OLDER = false;
+// Older cards (tiers 2 and 3, 6.2) are read by their title. Auto scan
+// takes a card for an older one after this many looks in a row with no set
+// code at its bottom (owner, 2026-10-16: "When it's detected that it's
+// changing very rapidly like this shift to 2014 mode and focus the info box
+// on the card name instead, resetting to the normal bottom position upon
+// the next card"); then it reads the title, two looks naming the same card.
+const OLDER_AFTER = 3;
+// A blank strip with this much ink in the title band is a card (a white-bordered older one), not an empty holder.
+const TITLE_INK = 0.02;
 // Focus (owner, 2026-10-16): a collector strip under this sharpness
 // (straighten.js; in focus about 5–7, a slight blur about 3, out of focus
 // about 1) isn't read by auto scan; this many such looks in a row and the
@@ -152,7 +158,10 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const blurryLooks = useRef(0);
   const lastRefocus = useRef(0);
   // Auto scan: `held`, the art of the card last sent (nothing's read while it's
-  // still there); `pending`, the printing the last look read, for the next to agree with.
+  // still there); `pending`, the printing the last look read, for the next to agree with;
+  // the older-card mode: `noLine`, looks in a row with no set code at the bottom (`lineArt`, the
+  // card's art when they began), `older`, read by its title now, `pendingOld`, the name the last
+  // title read gave, for the next to agree with.
   const view = useRef({ held: null, pending: null });
   // An older card that could be several printings: { tier, name, cards } to pick from.
   const [pick, setPick] = useState(null);
@@ -389,6 +398,24 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     view.current = { held: null, pending: null };
   }
 
+  /** One more look with no set code at the bottom; enough of them, and it's read as an older card. */
+  function noLineAgain(v, art) {
+    v.noLine = (v.noLine ?? 0) + 1;
+    v.lineArt ??= art;
+    if (!v.older && v.noLine >= OLDER_AFTER) {
+      v.older = true;
+      say('muted', 'An older card: reading its title…');
+    }
+  }
+
+  /** Back to the bottom strip: a card with a set code, or the next card. */
+  function leaveOlder(v) {
+    v.noLine = 0;
+    v.lineArt = null;
+    v.older = false;
+    v.pendingOld = null;
+  }
+
   /** Reset view: unlocked, and the next card found locks it again. */
   function resetView() {
     setLock(null);
@@ -470,6 +497,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       // Locked, the view stays as it is till Reset view (owner, 2026-10-16: "more confident in the
       // viewport … relying on the user to press Reset if something major changes NOT moving around
       // on it's own"): nothing seen in the picture moves it.
+      const v = view.current;   // (setLock, above, may have just replaced it)
       let attempts = [];
       let found = null;
       let art = null;
@@ -479,18 +507,25 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         // This card's collector line, found in its zone and set level (owner, 2026-10-16).
         const strip = straightCutout(frame, lock, defaultCreateCanvas);
         const cut = strip.canvas;
-        showCutout(cut);
+        art = artPrint(frame, lock);
+        // Another card in: back to its bottom strip (the older mode was the last card's).
+        if (v.lineArt && artDistance(v.lineArt, art) >= ART_CHANGED) leaveOlder(v);
+        // The info box: the bottom strip, or an older card's title.
+        showCutout(v.older ? titleCutout(frame, lock.card, defaultCreateCanvas) : cut);
         const outOfFocus = strip.sharpness > 0 && strip.sharpness < BLUR_BELOW;
         setBlurry(outOfFocus);
-        art = artPrint(frame, lock);
-        const v = view.current;
         if (!manual && v.held) {
           // The card last sent, still there: nothing to read, so a misread of it can't be sent.
           if (artDistance(v.held, art) < ART_CHANGED) return;
           v.held = null;
           v.pending = null;
+          leaveOlder(v);
         }
-        if (!manual && strip.sharpness === 0) return;   // nothing in the strip (the holder empty)
+        if (!manual && strip.sharpness === 0 && !v.older) {
+          // Nothing in the strip: the holder empty, or a white-bordered older card (ink in its title).
+          if (inkShare(titleCutout(frame, lock.card, defaultCreateCanvas)) > TITLE_INK) noLineAgain(v, art);
+          if (!v.older) return;
+        }
         if (!manual && outOfFocus) {
           // Out of focus: not read (a misread is likelier than a read). Several looks in a row,
           // the camera opened afresh so the phone's autofocus starts over (owner, 2026-10-16).
@@ -505,9 +540,13 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         blurryLooks.current = 0;
         // The foil star between the set code and the language, or not (owner, 2026-10-16): on Detect only.
         if (finishMode === 'detect') foilSeen = stripShowsFoil(cut);
-        progress?.start('strip');
-        attempts = await readPrepared(cut, pattern);
-        progress?.finish('strip');
+        if (!manual && v.older) {
+          // An older card: its title's read below, not the strip.
+        } else {
+          progress?.start('strip');
+          attempts = await readPrepared(cut, pattern);
+          progress?.finish('strip');
+        }
         if (manual) {
           // Scan card: the line looked for on the card itself too, every block read; then all of it
           // weighed together. Auto scan looks again instead (several more reads would keep it busy
@@ -519,9 +558,12 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           const more = located.length ? await readCollectorLine(onCard, pattern, located, { all: true, progress }) : [];
           attempts = [...attempts, ...more];
           found = await resolveThorough(attempts.map((a) => a.text), known, { pattern, progress });
-        } else {
+        } else if (!v.older) {
           // What the strip names, the quick way first (resolve.js; owner, 2026-10-16).
           found = await resolveReadings(attempts, known, { pattern });
+          if (found) leaveOlder(v);
+          // No set code read at the bottom: once more towards the older-card mode.
+          else if (!attempts.some((a) => readClues(a.text, known).sets.length)) noLineAgain(v, art);
         }
       } else {
         // Scan card before the view is locked: the whole picture, every block read.
@@ -532,23 +574,32 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         found = await resolveThorough(attempts.map((a) => a.text), known, { pattern, progress });
       }
 
-      // No modern collector line: an older card, by its title (and "123/350" from 1998 on).
-      if (!found && (manual || AUTO_OLDER)) {
+      // No modern collector line: an older card, by its title (and "123/350" from 1998 on). Scan
+      // card always tries it; auto scan in the older-card mode, two looks naming the same card.
+      if (!found && (manual || (lock && v.older))) {
         if (manual) say('muted', 'No set code at the bottom: reading the title…');
         progress?.plan('older', STEP_MS.older);
         progress?.start('older');
         const old = await readOlderCard(frame, { texts: attempts.map((a) => a.text), card: lock?.card ?? null });
         progress?.finish('older');
         foilSeen = undefined;   // an older card, read by its title: no mark to go by
-        if (old?.cards.length === 1) found = { card: old.cards[0], tier: old.tier };
+        if (!manual) {
+          if (!old || v.pendingOld !== old.name) {
+            v.pendingOld = old?.name ?? null;
+            return;
+          }
+          v.pendingOld = null;
+        }
+        // Two looks have named it: one printing, sent on this look.
+        if (old?.cards.length === 1) found = { card: old.cards[0], tier: old.tier, sure: true };
         else if (old) {
-          setPick(old);
+          setPick({ ...old, art });
           say('muted', `${old.name}: pick its printing.`);
           return;
         }
       }
       if (!found) {
-        if (!manual) view.current.pending = null;
+        if (!manual) v.pending = null;
         if (manual) {
           say('err', "Couldn't read this card: set it aside and add it on the computer.");
           play('error');
@@ -819,11 +870,13 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
             key={`${pick.name}:${pick.cards[0]?.id ?? ''}`}
             pick={pick}
             onPick={(card) => {
-              const { tier } = pick;
+              const { tier, art } = pick;
               setPick(null);
-              sendCard(card, { tier, manual: true });
+              sendCard(card, { tier, manual: true, art: art ?? null });
             }}
             onSkip={() => {
+              // Skipped: held, so auto scan doesn't ask about the card still in the holder again.
+              view.current.held = pick.art ?? null;
               setPick(null);
               say('muted', 'Skipped: set it aside and add it on the computer.');
             }}

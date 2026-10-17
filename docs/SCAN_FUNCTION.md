@@ -634,7 +634,8 @@ scan_id, at }`). Price warnings: none (decision S5).
   text the locator finds), then in a bottom band. With a number: the printings of that name, number
   and set size (several: the pick list). **Without one, the pick list holds every printing**, narrowed
   to the copyright line's year when that was read: limiting it to pre-1998 printings would hide a
-  1998–2014 card whose number wasn't read. `AUTO_OLDER` is `false` (11.3).
+  1998–2014 card whose number wasn't read. `AUTO_OLDER` is `false` (11.3); replaced 2026-10-16 by
+  the older-card mode (Section 17).
 
 **Testing (10.3, 11):** Tesseract's files are copied into `public/tesseract/` by a Vite plugin when the
 dev server or a build starts (`vite.config.js` `vendorTesseract`, mtgscan's way), not by `postinstall`;
@@ -828,6 +829,20 @@ locks **automatically on the first card**.
     card with no strip to go by (an older card read by its title, Scan card before the lock) is
     nonfoil. Normal or Foil: every card so, whatever the strip shows (`scanFinish`, so a card with
     only one finish keeps it).
+- **The older-card mode** (owner, 2026-10-16, a 2014 Courser of Kruphix: "When you put in a pre-2014
+  card the detection for collectors number changes rapidly to card text. When it's detected that
+  it's changing very rapidly like this shift to 2014 mode and focus the info box on the card name
+  instead, resetting to the normal bottom position upon the next card"): auto scan counts the looks
+  in a row whose strip names no set code (`readClues`), or whose strip is blank while the title band
+  holds ink (a white-bordered card, not an empty holder); at three (`OLDER_AFTER`) the card's taken
+  for an older one. Then the info box under the card shows its **title** (`titles.js`
+  `titleCutout`, the band the title reader reads), the strip isn't read, and each look reads the
+  title (and the "123/350" from 1998 on: `readOlderCard`); two looks naming the same card, it's sent
+  when it has one printing that fits, or the printing picker opens. The next card (its art changed
+  from the one the mode began on, or the card sent) puts it back on the bottom strip, as does a
+  strip that reads. What's picked or skipped in the picker is held like a card sent, so the card
+  left in the holder isn't asked about again. Replaces `AUTO_OLDER` (older cards on Scan card
+  only); Scan card still tries the title whenever the strip names nothing.
 - **An older card's printings: View all** (owner, 2026-10-16: "The "Which <cardname>? Match the set
   symbol." menu panel is good, but doesn't offer enough options, there needs to be a "view all"
   button … and when viewing all, show them oldest to newest"): the pick list opens on **one row**
@@ -957,7 +972,7 @@ The owner's answers (2026-10-16, the clarification session before this document)
 
 ## Appendix C: Open items
 
-1. **The benchmark on the store's own photos** (11.3): Section 16 has the figures on mtgscan's and Scryfall's pictures; the store's photos decide whether older cards may scan by themselves (`AUTO_OLDER`).
+1. **The benchmark on the store's own photos** (11.3): Section 16 has the figures on mtgscan's and Scryfall's pictures; the store's photos decide whether older cards may scan by themselves (`AUTO_OLDER`; since 2026-10-16 they do, in the older-card mode, Section 17).
 2. **Version name** for the first live scanner: the owner's call at S5.
 3. **Pokémon scanning:** not planned. Their line (`125/198` with a set abbreviation elsewhere on the card) would need its own locator.
 4. **The List and Mystery Booster** (Appendix A): a smarter lookup (try `plst` when the card has a List printing and the symbol is seen) if it matters in practice.

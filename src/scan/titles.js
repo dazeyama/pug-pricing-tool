@@ -74,6 +74,24 @@ function band(frame, card, where, height, createCanvas) {
   return out;
 }
 
+/**
+ * The card's title as the reader sees it (black on white, its box's ruled
+ * lines taken out), for the info box under the card when it's an older
+ * card (owner, 2026-10-16: "focus the info box on the card name instead").
+ * @param {{ x: number, y: number, width: number, height: number }} card  where the card is
+ */
+export function titleCutout(frame, card, createCanvas) {
+  return band(frame, card, TITLE, BAND_HEIGHT.title, createCanvas);
+}
+
+/** The share of a black-on-white canvas that's ink: next to none, the band's blank. */
+export function inkShare(canvas) {
+  const { data } = canvas.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, canvas.width, canvas.height);
+  let ink = 0;
+  for (let k = 0; k < data.length; k += 4) if (data[k] < 128) ink += 1;
+  return ink / (data.length / 4);
+}
+
 /** The card's rectangle in the frame: the guide's, or the whole frame when the photo is the card. */
 const cardIn = (frame, wholeFrame, card) => card ?? (wholeFrame
   ? { x: 0, y: 0, width: frame.width, height: frame.height }
