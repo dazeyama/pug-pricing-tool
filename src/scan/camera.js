@@ -23,9 +23,24 @@ const CONSTRAINTS = {
 // camera, as does an iPhone if the 1× lens won't open.
 const SWITCHING_CAMERA = /triple camera/i;
 const ONE_X = /^back camera$/i;
+// The 1× lens asked for the most pixels it gives (owner, 2026-10-16), so a
+// card read from a little further away, where the lens focuses, has letters
+// as large as before.
+const ONE_X_SIZE = { width: { ideal: 3840 }, height: { ideal: 2160 } };
+
+// What the camera was last opened with, so a restart (the page shown again,
+// a refocus) opens the same lens straight away.
+let chosen = null;
 
 /** The camera to scan with: the 1× lens alone where the default one switches lenses, else the default. */
 async function openCamera() {
+  if (chosen) {
+    try {
+      return await navigator.mediaDevices.getUserMedia(chosen);
+    } catch {
+      chosen = null;   // that lens is gone or busy: choose again
+    }
+  }
   const first = await navigator.mediaDevices.getUserMedia(CONSTRAINTS);
   let lens = null;
   try {
@@ -34,15 +49,19 @@ async function openCamera() {
   } catch {
     lens = null;
   }
-  if (!lens) return first;
+  if (!lens) {
+    chosen = CONSTRAINTS;
+    return first;
+  }
   first.getTracks().forEach((t) => t.stop());
+  const want = { audio: false, video: { deviceId: { exact: lens.deviceId }, ...ONE_X_SIZE } };
   try {
-    return await navigator.mediaDevices.getUserMedia({
-      audio: false,
-      video: { deviceId: { exact: lens.deviceId }, width: CONSTRAINTS.video.width, height: CONSTRAINTS.video.height },
-    });
+    const s = await navigator.mediaDevices.getUserMedia(want);
+    chosen = want;
+    return s;
   } catch (e) {
     console.warn('The 1× lens would not open: the default camera instead', e);
+    chosen = CONSTRAINTS;
     return navigator.mediaDevices.getUserMedia(CONSTRAINTS);
   }
 }
@@ -64,7 +83,8 @@ function cameraError(e) {
  * @param {import('react').RefObject<HTMLVideoElement>} videoRef
  * @returns {{ on: boolean, starting: boolean, error: string|null, torch: boolean|null,
  *   size: { w: number, h: number }|null, start: () => Promise<boolean>, stop: () => void,
- *   toggleTorch: () => Promise<void>, capture: () => HTMLCanvasElement|null }}
+ *   toggleTorch: () => Promise<void>, capture: () => HTMLCanvasElement|null,
+ *   refocus: () => Promise<void>, focusInfo: () => object|null, setFocus: (distance: number|null) => Promise<string|null> }}
  *   torch: null when the camera has none, else whether it's lit
  */
 export function useCamera(videoRef) {
@@ -109,6 +129,63 @@ export function useCamera(videoRef) {
       return false;
     }
   }, [videoRef]);
+
+  /**
+   * Refocus (owner, 2026-10-16): the camera opened afresh, the same lens, so
+   * the phone's autofocus starts over. The picture stops for a moment.
+   */
+  const refocusing = useRef(false);
+  const refocus = useCallback(async () => {
+    const video = videoRef.current;
+    if (!stream.current || !video || refocusing.current) return;
+    refocusing.current = true;
+    try {
+      stream.current.getTracks().forEach((t) => t.stop());
+      stream.current = null;
+      const s = await openCamera();
+      stream.current = s;
+      video.srcObject = s;
+      await video.play().catch(() => {});
+      setState((st) => ({ ...st, torch: st.torch == null ? null : false }));
+    } catch (e) {
+      console.warn('Refocusing failed', e);
+      setState((st) => ({ ...st, on: false, error: cameraError(e) }));
+    } finally {
+      refocusing.current = false;
+    }
+  }, [videoRef]);
+
+  /**
+   * What the camera says about itself, for the focus test (owner,
+   * 2026-10-16): its name, its settings and what can be set, focus
+   * included if this phone lets a page set it.
+   */
+  const focusInfo = useCallback(() => {
+    const track = stream.current?.getVideoTracks()[0];
+    if (!track) return null;
+    return {
+      label: track.label,
+      settings: track.getSettings?.() ?? {},
+      capabilities: track.getCapabilities?.() ?? {},
+    };
+  }, []);
+
+  /**
+   * Focus fixed at a distance (the phone's own units), or back to automatic
+   * (null), where the phone lets a page do it. An error message, or null.
+   */
+  const setFocus = useCallback(async (distance) => {
+    const track = stream.current?.getVideoTracks()[0];
+    if (!track) return 'The camera is off.';
+    try {
+      await track.applyConstraints(distance == null
+        ? { advanced: [{ focusMode: 'continuous' }] }
+        : { advanced: [{ focusMode: 'manual', focusDistance: distance }] });
+      return null;
+    } catch (e) {
+      return e?.message ?? String(e);
+    }
+  }, []);
 
   const toggleTorch = useCallback(async () => {
     const track = stream.current?.getVideoTracks()[0];
@@ -159,5 +236,5 @@ export function useCamera(videoRef) {
     stream.current = null;
   }, []);
 
-  return { ...state, start, stop, toggleTorch, capture };
+  return { ...state, start, stop, toggleTorch, capture, refocus, focusInfo, setFocus };
 }

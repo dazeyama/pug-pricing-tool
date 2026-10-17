@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { CONDITIONS } from '../lib/ladder.js';
 import { readSession, writeSession } from '../lib/local.js';
 import { formatMoney } from '../lib/money.js';
@@ -23,6 +23,7 @@ import { isMuted, play, setMuted, unlockSounds } from './sounds.js';
 import { readOlderCard } from './older.js';
 import NeedsPriceSheet from './NeedsPriceSheet.jsx';
 import PickPrintingSheet from './PickPrintingSheet.jsx';
+import FocusTest from './FocusTest.jsx';
 
 // Auto scan (docs/SCAN_FUNCTION.md 6.3): the rest between one look at the
 // camera and the next, and the wait before the first.
@@ -34,6 +35,13 @@ const FIRST_LOOK_MS = 800;
 // sure than a collector line: only on Scan card until the benchmark on the
 // store's own photos reads 80% of them right (docs/SCAN_FUNCTION.md 11.3).
 const AUTO_OLDER = false;
+// Focus (owner, 2026-10-16): a collector strip under this sharpness
+// (straighten.js; in focus about 5–7, a slight blur about 3, out of focus
+// about 1) isn't read by auto scan; this many such looks in a row and the
+// camera refocuses, no more often than this.
+const BLUR_BELOW = 2;
+const REFOCUS_AFTER = 4;
+const REFOCUS_GAP_MS = 6000;
 // Scan card's loading bar stays full this long once it's done.
 const BAR_DONE_MS = 250;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -133,6 +141,12 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const [seenCard, setSeenCard] = useState(null);
   // The enlarged collector corner, under the card.
   const cutoutRef = useRef(null);
+  // Focus: whether the strip's blurry (its border turns amber), blurry looks in a row, the last
+  // refocus; and the focus test open.
+  const [blurry, setBlurry] = useState(false);
+  const blurryLooks = useRef(0);
+  const lastRefocus = useRef(0);
+  const [focusTest, setFocusTest] = useState(false);
   // Auto scan: `held`, the art of the card last sent (nothing's read while it's
   // still there); `pending`, the printing the last look read, for the next to agree with.
   const view = useRef({ held: null, pending: null });
@@ -371,6 +385,14 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     view.current = { held: null, pending: null };
   }
 
+  /** The focus test's reading: the strip's sharpness in the picture now, null till the view is locked. */
+  const measureSharpness = useCallback(() => {
+    const lock = lockRef.current;
+    const frame = cam.current.capture();
+    if (!lock || !frame) return null;
+    return straightCutout(frame, rescaleLock(lock, frame), defaultCreateCanvas).sharpness;
+  }, []);
+
   /** Reset view: unlocked, and the next card found locks it again. */
   function resetView() {
     setLock(null);
@@ -457,8 +479,11 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       let art = null;
       if (lock) {
         // This card's collector line, found in its zone and set level (owner, 2026-10-16).
-        const cut = straightCutout(frame, lock, defaultCreateCanvas).canvas;
+        const strip = straightCutout(frame, lock, defaultCreateCanvas);
+        const cut = strip.canvas;
         showCutout(cut);
+        const outOfFocus = strip.sharpness > 0 && strip.sharpness < BLUR_BELOW;
+        setBlurry(outOfFocus);
         art = artPrint(frame, lock);
         const v = view.current;
         if (!manual && v.held) {
@@ -467,6 +492,19 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           v.held = null;
           v.pending = null;
         }
+        if (!manual && strip.sharpness === 0) return;   // nothing in the strip (the holder empty)
+        if (!manual && outOfFocus) {
+          // Out of focus: not read (a misread is likelier than a read). Several looks in a row,
+          // the camera opened afresh so the phone's autofocus starts over (owner, 2026-10-16).
+          blurryLooks.current += 1;
+          if (blurryLooks.current >= REFOCUS_AFTER && Date.now() - lastRefocus.current > REFOCUS_GAP_MS) {
+            blurryLooks.current = 0;
+            lastRefocus.current = Date.now();
+            await camera.refocus();
+          }
+          return;
+        }
+        blurryLooks.current = 0;
         progress?.start('strip');
         attempts = await readPrepared(cut, pattern);
         progress?.finish('strip');
@@ -611,7 +649,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   // scan more cards"): the computer takes them in the order sent. Stop ends
   // it with the camera.
   const auto = useRef(null);
-  auto.current = { scanFrame, paused: !autoOn || Boolean(blocked) || Boolean(needs) || Boolean(pick) || offline };
+  auto.current = { scanFrame, paused: !autoOn || focusTest || Boolean(blocked) || Boolean(needs) || Boolean(pick) || offline };
   useEffect(() => {
     if (!camera.on) return undefined;
     let alive = true;
@@ -755,6 +793,17 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
                 {camera.starting ? 'Starting…' : 'START CAMERA'}
               </button>
               <p>Lay a card in the holder. The view locks onto the first card it finds; Reset view finds it again.</p>
+              <button
+                type="button"
+                className="btn small scan-focus-open"
+                disabled={camera.starting}
+                onClick={async () => {
+                  setFocusTest(true);
+                  await startCamera();
+                }}
+              >
+                Focus test
+              </button>
             </div>
           )}
           {ocrLoading && <div className="scan-stage-note">Loading the card reader (first scan only)…</div>}
@@ -762,6 +811,15 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         </div>
         {(blocked || camera.error) && (
           <div className={`scan-notice ${camera.error ? 'err' : 'warn'} scan-over`} role="alert">{camera.error ?? blocked}</div>
+        )}
+        {focusTest && (
+          <FocusTest
+            focusInfo={camera.focusInfo}
+            setFocus={camera.setFocus}
+            measure={measureSharpness}
+            blurBelow={BLUR_BELOW}
+            onClose={() => setFocusTest(false)}
+          />
         )}
         {needs ? (
           <NeedsPriceSheet key={needs.id} scan={needs} onAnswer={(price) => answer(needs.id, price)} />
@@ -782,7 +840,13 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       </div>
 
       {/* The collector corner, enlarged and cleaned, for the person scanning (owner, 2026-10-16). */}
-      {lock && camera.on && <canvas ref={cutoutRef} className="scan-cutout" aria-label="The set code and number, enlarged" />}
+      {lock && camera.on && (
+        <canvas
+          ref={cutoutRef}
+          className={`scan-cutout${blurry ? ' blurry' : ''}`}
+          aria-label={blurry ? 'The set code and number, enlarged: out of focus' : 'The set code and number, enlarged'}
+        />
+      )}
 
       {/* Scan card across the top; Auto?, Reset view, the light and Stop under it (owner, 2026-10-16). */}
       <div className="scan-actions">

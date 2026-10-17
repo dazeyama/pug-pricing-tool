@@ -845,6 +845,25 @@ locks **automatically on the first card**.
   use the "normal" lens only, and we just need to work on the focusing issue" (it's sometimes
   perfectly sharp, sometimes blurry at the holder's distance, near its closest focus). Any other
   phone, or the 1× lens refusing to open, keeps the default camera.
+- **Focus on the 1× lens** (owner, 2026-10-16: "do 2, 3 and 4, and the focus test for 5"):
+  - **More pixels:** the 1× lens is asked for up to 3840 × 2160 (`ONE_X_SIZE`), so the phone can
+    stand a little higher, past the lens's closest focus, with the letters as large as before. The
+    lens chosen is remembered for restarts (`chosen`).
+  - **Blurry strips aren't read by auto scan:** each look measures the collector strip's sharpness
+    (`straighten.js` `sharpness`: its steepest brightness steps over its contrast, times the letters'
+    height, so it reads the same at any picture size). On Scryfall's scans in a simulated holder: in
+    focus 5–7, a slight blur about 3, out of focus about 1, alike at 1080 × 1920 and 2160 × 3840.
+    Under 2 (`BLUR_BELOW`) the strip's border turns amber and auto scan doesn't read it; a blank
+    strip (no card) isn't read either. Scan card still reads whatever it sees.
+  - **Refocus:** four blurry looks in a row (`REFOCUS_AFTER`), no more than once every 6 seconds,
+    the camera is opened afresh, the same lens (`camera.js` `refocus`), so the phone's autofocus
+    starts over; the picture stops for a moment.
+  - **The focus test:** a "Focus test" button under START CAMERA starts the camera with a panel over
+    the bottom of the picture (auto scan waits while it's open): the strip's sharpness live against
+    the blurry line, the lens, the picture's size, and the focus modes, focus distance and zoom this
+    phone lets a page set, with everything else it reports. If it offers a focus distance, a slider
+    fixes the focus there (and Auto puts it back): the way to find whether a fixed focus at the
+    holder's distance works. Close ends it. `src/scan/FocusTest.jsx`.
 - **Checked end to end** on Scryfall's scans of 17 modern cards (2017–2025) laid in a simulated holder:
   card 40% of the picture's height: edges 17/17, locked 17/17, the cutout read right 17/17; 30%:
   17, 16 and 16. Tests: `tests/scanLock.test.js`, `tests/scanGuide.test.js`.

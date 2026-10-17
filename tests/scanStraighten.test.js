@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createCanvas } from '@napi-rs/canvas';
-import { skewAngle, straightCutout } from '../src/scan/straighten.js';
+import { sharpness, skewAngle, straightCutout } from '../src/scan/straighten.js';
 
 // Owner, 2026-10-16: the collector corner, found on each card and set straight.
 
@@ -58,4 +58,24 @@ test('on a card in the holder: the line is found where it is on this card, and s
   assert.equal(out.found, true, 'found on this card');
   assert.ok(Math.abs(out.tilt - 4) <= 1, `tilt ${out.tilt}`);
   assert.ok(out.canvas.width > 160 && out.canvas.height > 40, 'enlarged');
+});
+
+test('sharpness: letters in focus score well above 2, the same blurred well below, a blank patch 0', () => {
+  const draw = (blur) => {
+    const c = createCanvas(420, 160);
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#111';
+    ctx.fillRect(0, 0, 420, 160);
+    if (blur) ctx.filter = `blur(${blur}px)`;
+    drawLines(ctx, { x: 40, y: 50, letter: 18, deg: 0, cx: 210, cy: 80 });
+    ctx.filter = 'none';
+    return c;
+  };
+  const sharp = sharpness(greys(draw(0)), 420, 160, 18);
+  const soft = sharpness(greys(draw(6)), 420, 160, 18);
+  assert.ok(sharp > 3, `in focus ${sharp}`);
+  assert.ok(soft < 2, `blurred ${soft}`);
+  const blank = createCanvas(100, 40);
+  blank.getContext('2d').fillRect(0, 0, 100, 40);
+  assert.equal(sharpness(greys(blank), 100, 40, 10), 0);
 });

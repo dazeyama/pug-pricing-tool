@@ -86,6 +86,32 @@ function greysOf(canvas) {
 }
 
 /**
+ * How sharp the collector strip is (owner, 2026-10-16: the 1× lens is
+ * "sometimes perfectly sharp", sometimes blurry): its steepest brightness
+ * steps between neighbouring pixels (the 98th percentile) over its contrast
+ * (the 98th less the 2nd percentile of brightness), times the letters'
+ * height in px. A blur so many letter-heights wide reads the same at any
+ * picture size; letters in focus have edges a pixel or two wide, out of
+ * focus several. Pure, for tests.
+ * @param {Float32Array} gray  brightness, row by row
+ */
+export function sharpness(gray, w, h, charHeight) {
+  if (w < 3 || h < 3) return 0;
+  const steps = [];
+  for (let y = 0; y < h - 1; y++) {
+    for (let x = 0; x < w - 1; x++) {
+      const k = y * w + x;
+      steps.push(Math.max(Math.abs(gray[k + 1] - gray[k]), Math.abs(gray[k + w] - gray[k])));
+    }
+  }
+  steps.sort((a, b) => a - b);
+  const levels = Float32Array.from(gray).sort();
+  const contrast = levels[Math.floor(levels.length * 0.98)] - levels[Math.floor(levels.length * 0.02)];
+  if (contrast < 20) return 0;   // a blank patch: nothing to judge
+  return (steps[Math.floor(steps.length * 0.98)] / contrast) * charHeight;
+}
+
+/**
  * This card's collector line, found in its bottom-left zone: { bounds,
  * charHeight } in the picture's px, or null.
  * @param {object} frame  the camera's picture (a canvas)
@@ -166,5 +192,10 @@ export function straightCutout(frame, lock, createCanvas) {
     }
     ctx.putImageData(image, 0, 0);
   }
-  return { canvas: binarizeCollectorText(level, createCanvas), tilt, found: Boolean(hit) };
+  return {
+    canvas: binarizeCollectorText(level, createCanvas),
+    tilt,
+    found: Boolean(hit),
+    sharpness: sharpness(gray, raw.width, raw.height, charHeight),
+  };
 }

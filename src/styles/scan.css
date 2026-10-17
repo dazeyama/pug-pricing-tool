@@ -164,6 +164,38 @@ html[data-scan] .toast { max-width: none; }
   border-radius: 8px;
   background: #fff;
 }
+/* Out of focus: auto scan doesn't read it (Scanner.jsx BLUR_BELOW). */
+.scan-cutout.blurry { border: 3px solid var(--warn); }
+
+/* ---- The focus test: over the bottom of the picture, the card left in view ---- */
+.scan-focus-open { margin-top: 4px; }
+.scan-middle > .scan-focus-test {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  max-height: 62%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  background: rgba(16, 18, 30, .92);
+  font-size: 13px;
+}
+.scan-focus-head { display: flex; align-items: center; justify-content: space-between; }
+.scan-focus-facts { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; margin: 0; }
+.scan-focus-facts dt { color: var(--muted); }
+.scan-focus-facts dd { margin: 0; overflow-wrap: anywhere; }
+.scan-focus-facts dd span { color: var(--muted); }
+.scan-focus-facts dd.good { color: var(--good); }
+.scan-focus-facts dd.warn { color: var(--warn); }
+.scan-focus-set { display: flex; align-items: center; gap: 10px; }
+.scan-focus-set input { flex: 1; }
+.scan-focus-test pre { margin: 6px 0 0; font-size: 11px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .scan-stage:not(.live) .scan-video { visibility: hidden; }
 /* A tap on the middle of the picture is +1: no double-tap zoom in the way; "+1" shown as it's sent. */
 .scan-stage.live { touch-action: manipulation; cursor: pointer; }
