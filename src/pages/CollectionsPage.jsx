@@ -172,13 +172,11 @@ export default function CollectionsPage() {
     return [
       // Print (owner, 2026-10-14; docs/TEAM_FEEDBACK.md 3), as on its screen: its cards
       // fetched once the printout's tab is open. Reading only, so another computer editing it doesn't matter.
+      // In any status, as on its screen (team feedback, 2026-10-16: printing "should always" be allowed).
       {
         label: c.project ? 'Print project' : 'Print collection',
         needsUser: false,
-        blocked: offline ? 'No connection'
-          : printing ? 'Printing…'
-            : c.status === 'rejected' ? 'Rejected: there is nothing to print'
-              : !['paid', 'completed'].includes(c.status) ? 'Mark it Paid/Ours first' : null,
+        blocked: offline ? 'No connection' : printing ? 'Printing…' : null,
         title: `A PDF of this ${what}'s Magic cards by Crystal Commerce category, to check them by hand. Changes nothing.`,
         onClick: () => print({
           load: async () => {
