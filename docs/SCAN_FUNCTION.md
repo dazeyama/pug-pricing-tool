@@ -797,6 +797,15 @@ locks **automatically on the first card**.
     read; "+1" shows over the picture as it goes. Only while that card is on its way or added (not
     once undone, failed, skipped or waiting for a price), and not while its finish is being changed.
     The picture takes taps without the double-tap zoom (`touch-action: manipulation`).
+- **The phone's card on the computer's Selected card frame** (owner, 2026-10-16: "When a card is
+  added to the computer from the phone, show it's picture/details in the Selected Card image frame,
+  but do not actually search or select it fully (that would fetch prices and waste api credits)"):
+  each card the phone adds is shown there (`useScanReceiver` hands the Scryfall card it already
+  fetched to `PricingScreen`, `phoneCard`), over whatever's selected, without selecting it:
+  nothing's searched, priced or looked up. Labelled "Added from the phone", with a 📱 badge where a
+  Poké Ball's goes (`.phone-badge`). A click anywhere but on it (or its enlarged view), another card
+  selected, or a new search puts it away, the selected card back underneath. A right-click on its
+  picture searches its name and number ("Wild Growth 342").
 - **The chime when it's sent, brighter for a foil** (owner, later the same day: "Instead of >$3 (we no
   longer need to collect this info at all) I want the alternate sound to be used for Foil and the
   normal sound for normal nonfoil. This will aide workers doing quick detection more than a price

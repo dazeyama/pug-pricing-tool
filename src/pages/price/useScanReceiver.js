@@ -38,7 +38,8 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
  * @param {{ busy: boolean, lines: object[], add: (line: object, userId: string) => Promise<string|null>,
  *   remove: (line: object, qty: number, userId: string) => Promise<unknown> }} p.list
  * @param {boolean} p.roundUp  a project: prices round up
- * @param {(lineId: string) => void} p.onAdded  flash the line
+ * @param {(lineId: string, added: { card: object, finish: string }) => void} p.onAdded  flash the line,
+ *   and show the card (its Scryfall card and finish) in the Selected card frame
  */
 export function useScanReceiver({ deviceId, label, session, list, roundUp, onAdded }) {
   const { epoch } = useConnection();
@@ -144,7 +145,7 @@ export function useScanReceiver({ deviceId, label, session, list, roundUp, onAdd
     for (let i = 0; i < 25 && latest.current.list.busy; i++) await sleep(200);
     const id = await latest.current.list.add(line, user.id);
     if (!id) return { status: 'failed', note: `${now.label} couldn't add it: its screen says why.` };
-    latest.current.onAdded(id);
+    latest.current.onAdded(id, { card, finish });
     return { status: 'added', lineId: id, price: line.unit_price, source: line.price_source };
   }, []);
 

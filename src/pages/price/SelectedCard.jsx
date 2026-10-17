@@ -83,8 +83,13 @@ function cardmarketLink(c, magic, searchName) {
  * chosen Magic finish; `pokemonVersion` the chosen Pokémon version (shine,
  * finish label, the Poké Ball / Master Ball badge, and the 1st Edition stamp:
  * `hasFirstEdition` when one of the card's versions is 1st Edition).
+ * `fromPhone`: the card the paired phone just added, shown but not selected
+ * (owner, 2026-10-16): a 📱 badge where a Poké Ball's goes, and a right-click
+ * on it searches its name and number (`onSearch`).
  */
-export default function SelectedCard({ candidate: c, typedName, englishName, pokemon, finish, pokemonVersion, hasFirstEdition = false }) {
+export default function SelectedCard({
+  candidate: c, typedName, englishName, pokemon, finish, pokemonVersion, hasFirstEdition = false, fromPhone = false, onSearch = null,
+}) {
   const pokemonFinish = pokemonVersion?.finish;
   const [face, setFace] = useState(0);
   // The card, large, with a magnifying glass (CardZoom): where the click that opened it was.
@@ -256,6 +261,9 @@ export default function SelectedCard({ candidate: c, typedName, englishName, pok
         {centerStamp && (
           <img src={CENTER_LOGO} className="pattern-badge" alt="Pokémon Center stamp" title="Pokémon Center stamp" />
         )}
+        {fromPhone && (
+          <span className="pattern-badge phone-badge" role="img" aria-label="Added from the phone" title="Added from the phone">📱</span>
+        )}
       </>
     );
   };
@@ -266,11 +274,16 @@ export default function SelectedCard({ candidate: c, typedName, englishName, pok
 
   return (
     <>
-      <div className="area-card">
-        <div className="stage-label">Selected card</div>
+      <div className="area-card" data-phone-card={fromPhone || undefined}>
+        <div className="stage-label">{fromPhone ? 'Added from the phone' : 'Selected card'}</div>
         <div
           className={`card-box${zoomable ? ' zoomable' : ''}`}
           onClick={zoomable ? (e) => setZoom({ x: e.clientX, y: e.clientY }) : undefined}
+          title={fromPhone && onSearch ? `Right-click to search for ${c.name} ${c.number}` : undefined}
+          onContextMenu={fromPhone && onSearch ? (e) => {
+            e.preventDefault();
+            onSearch();
+          } : undefined}
         >
           {picture(false)}
           {flippable && (
@@ -301,7 +314,7 @@ export default function SelectedCard({ candidate: c, typedName, englishName, pok
 
       {/* A fixed height for every card (see .area-info), so the suggestions
           below never shift: one line each, long text ends in "…". */}
-      <aside className="area-info">
+      <aside className="area-info" data-phone-card={fromPhone || undefined}>
         <div className="card-info">
           <h2 className="info-name" title={englishName ? `${name} (${englishName})` : name}>
             {name}

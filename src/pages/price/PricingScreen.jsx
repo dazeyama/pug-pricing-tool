@@ -47,6 +47,9 @@ const BOTH_GAMES = { mtg: true, pokemon: true };
 const PKM_ONLY = { mtg: false, pokemon: true };
 const JP_NO_MTG = 'Japanese is Pokémon only: switch to EN to search Magic';
 
+// The phone's card has no Pokémon detail to show (it's Magic, and nothing's looked up for it).
+const NO_POKEMON = { resolved: true, card: null, info: null, page: null };
+
 /**
  * The pricing screen (spec 8): search, suggestions, the selected card with
  * its finish, details and prices, the action row, and the list sidebar. The
@@ -165,16 +168,34 @@ export default function PricingScreen({
   // selected (found), then its saved choices put back (restored); SAVE EDIT
   // saves over it. { line, key, query, found, restored } or null.
   const [editing, setEditing] = useState(null);
-  // Cards from the paired phone, added as ADD CARD adds them and flashed the same way;
-  // the stage is left alone (docs/SCAN_FUNCTION.md 8.3).
+  // The card the phone last added, shown in the Selected card frame over whatever's selected,
+  // but not selected: nothing's searched or priced for it (owner, 2026-10-16). Gone at a click
+  // anywhere else, a card picked, or a new search; the selected card's back underneath.
+  const [phoneCard, setPhoneCard] = useState(null);   // { candidate, finish }
+  // Cards from the paired phone, added as ADD CARD adds them and flashed the same way
+  // (docs/SCAN_FUNCTION.md 8.3).
   useScanReceiver({
     deviceId: scanTarget ? deviceId : null,
     label: deviceLabel ?? 'The computer',
     session: scan.session,
     list,
     roundUp,
-    onAdded: flash,
+    onAdded: (id, added) => {
+      flash(id);
+      if (added?.card) setPhoneCard({ candidate: magicCandidate(added.card), finish: added.finish });
+    },
   });
+  // A click anywhere but on the phone's card (or its enlarged view) puts it away.
+  useEffect(() => {
+    if (!phoneCard) return undefined;
+    const away = (e) => {
+      if (!e.target.closest?.('[data-phone-card], .card-zoom')) setPhoneCard(null);
+    };
+    document.addEventListener('pointerdown', away, true);
+    return () => document.removeEventListener('pointerdown', away, true);
+  }, [phoneCard]);
+  // A new search, or another card selected, puts it away too.
+  useEffect(() => setPhoneCard(null), [text, selected?.key]);
   const images = useCardImages(card);   // a Pokémon thumbnail for the line (backups too)
 
   // ADD CARD's requirements (spec 8.8), besides a user (GuardButton).
@@ -552,7 +573,16 @@ export default function PricingScreen({
               beside it with the suggestions below; finish & details beside the
               suggestions with the action row under them. Grid areas in price/layout.css. */}
           <div className="stage-body">
-            {bulk ? <BulkSelected c={bulk} name={placeholderName} onName={setPlaceholderName} /> : (
+            {phoneCard ? (
+              <SelectedCard
+                candidate={phoneCard.candidate}
+                pokemon={NO_POKEMON}
+                finish={phoneCard.finish}
+                pokemonVersion={null}
+                fromPhone
+                onSearch={() => searchName(`${phoneCard.candidate.name} ${phoneCard.candidate.number}`)}
+              />
+            ) : bulk ? <BulkSelected c={bulk} name={placeholderName} onName={setPlaceholderName} /> : (
             <SelectedCard
               candidate={selected}
               typedName={search.parsed?.name}
