@@ -353,4 +353,14 @@ html[data-scan] .toast { max-width: none; }
 }
 .scan-over { position: absolute; top: 8px; left: 8px; right: 8px; z-index: 2; }
 .scan-middle > .scan-sheet { position: absolute; inset: 0; z-index: 3; overflow-y: auto; }
-.scan-middle > .scan-sheet .scan-pick-list { max-height: none; }
+/* Over the camera the whole sheet scrolls, the list in it at full length (it once scrolled on its
+   own, one row showing and the rest out of sight); View all and Skip stay at the bottom. */
+.scan-middle > .scan-sheet .scan-pick-list { max-height: none; overflow: visible; flex: none; }
+.scan-middle > .scan-sheet.pick .scan-sheet-foot {
+  position: sticky;
+  bottom: -12px;
+  margin: 0 -12px -12px;
+  padding: 10px 12px 12px;
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+}

@@ -830,11 +830,13 @@ locks **automatically on the first card**.
     only one finish keeps it).
 - **An older card's printings: View all** (owner, 2026-10-16: "The "Which <cardname>? Match the set
   symbol." menu panel is good, but doesn't offer enough options, there needs to be a "view all"
-  button … and when viewing all, show them oldest to newest"): the pick list still opens on the
-  likely printings (those with the number read, or of the copyright year, at most 12, oldest
-  first); **View all (N)** beside Skip shows every English paper printing of that name, oldest to
-  newest ("Likely ones only" goes back). `older.js` returns them as `all`, fetched up to four
-  pages (700 printings) where it was two.
+  button … and when viewing all, show them oldest to newest"): the pick list opens on **one row**
+  of the likeliest printings (those with the number read, or of the copyright year, oldest first,
+  three of them); **View all (N)** beside Skip shows every English paper printing of that name,
+  oldest to newest ("Fewer" goes back). `older.js` returns them as `all`, fetched up to four pages
+  (700 printings) where it was two. The first try showed all twelve of Utopia Sprawl's in a list
+  that scrolled on its own, one row in sight and no View all (the list was already all of them):
+  now the sheet scrolls as a whole, its foot (View all, Skip) stuck to the bottom.
 - **The camera taller** (owner, 2026-10-16: "There's still empty space on my phone under the
   buttons, about 280px worth … Make the default video size that much taller and scale the cropped
   card to fit in it"): the 86px kept free under the buttons for Safari's floating toolbar is now

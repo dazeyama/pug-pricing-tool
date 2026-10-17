@@ -1,6 +1,11 @@
 import { useState } from 'react';
 import { cardImage } from '../lib/scryfall.js';
 
+// The pick list opens on one row of the likeliest printings, what fits over the camera unscrolled;
+// View all shows the rest (owner, 2026-10-16: three shown, the other nine of Utopia Sprawl's twelve
+// were out of sight in a list scrolling on its own).
+const FIRST = 3;
+
 /**
  * An older card that could be several printings (docs/SCAN_FUNCTION.md 6.2,
  * tier 3; tier 2 when its number and set size fit more than one): the
@@ -14,8 +19,9 @@ import { cardImage } from '../lib/scryfall.js';
 export default function PickPrintingSheet({ pick, onPick, onSkip }) {
   const [viewAll, setViewAll] = useState(false);
   const all = pick.all ?? pick.cards;
-  const more = all.length > pick.cards.length;
-  const shown = viewAll ? all : pick.cards;
+  const likely = pick.cards.slice(0, FIRST);
+  const more = all.length > likely.length;
+  const shown = viewAll ? all : likely;
   return (
     <div className="scan-sheet pick" role="dialog" aria-label={`Which printing of ${pick.name}?`}>
       <strong className="scan-pick-title">Which {pick.name}? Match the set symbol.</strong>
@@ -34,7 +40,7 @@ export default function PickPrintingSheet({ pick, onPick, onSkip }) {
       <div className="scan-sheet-foot">
         {more && (
           <button type="button" className="btn" onClick={() => setViewAll(!viewAll)}>
-            {viewAll ? 'Likely ones only' : `View all (${all.length})`}
+            {viewAll ? 'Fewer' : `View all (${all.length})`}
           </button>
         )}
         <button type="button" className="btn ghost" onClick={onSkip}>Skip this card</button>
