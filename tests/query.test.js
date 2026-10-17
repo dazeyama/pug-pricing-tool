@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  parseQuery, withoutGuessedSetCode, normNumber, sameNumber, numericSize, numberPrefix, dexNumberQuery,
+  parseQuery, withoutGuessedSetCode, normNumber, sameNumber, numericSize, numberPrefix, dexNumberQuery, searchTextFromUrl,
 } from '../src/lib/query.js';
 
 // Codes a game uses, for rule 1's "matches a known set code" branch.
@@ -108,4 +108,14 @@ test('whole-name reading', async () => {
   assert.equal(read("Blaine's Quiz #1"), null);
   // A set code taken off counts too.
   assert.equal(read('Pikachu 25 SVI', (t) => t === 'SVI').name, 'Pikachu 25 SVI');
+});
+
+test('a search from the address bar: name-number-set, as typed, a dash in a name kept', () => {
+  assert.equal(searchTextFromUrl('Wild Growth-342-5ED'), 'Wild Growth 342 5ED');
+  assert.equal(searchTextFromUrl('Wild Growth-342'), 'Wild Growth 342');
+  assert.equal(searchTextFromUrl('Stone-Giant of High Pass-113-HOB'), 'Stone-Giant of High Pass 113 HOB');
+  assert.equal(searchTextFromUrl('Stone-Giant of High Pass'), 'Stone-Giant of High Pass');
+  assert.equal(searchTextFromUrl('wild growth 342'), 'wild growth 342');
+  assert.equal(searchTextFromUrl('wild+growth+342'), 'wild growth 342');
+  assert.equal(searchTextFromUrl('Sol Ring'), 'Sol Ring');
 });

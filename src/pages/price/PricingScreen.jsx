@@ -15,6 +15,7 @@ import ActionRow, { parseQty } from './ActionRow.jsx';
 import BuyList from './BuyList.jsx';
 import { useCardSearch } from './useCardSearch.js';
 import { useCardImages } from './useCardImages.js';
+import { searchTextFromUrl } from '../../lib/query.js';
 import { warmUp, magicCandidate } from '../../lib/cardSearch.js';
 import { magicFinishes, POKEMON_FINISHES } from '../../lib/printings.js';
 import { CONDITIONS } from '../../lib/prices.js';
@@ -87,6 +88,8 @@ const NO_POKEMON = { resolved: true, card: null, info: null, page: null };
  * @param {string|null} [p.addLocked]  why ADD CARD can't add a new card, though list lines can still be
  *   edited (a confirmed buy in project view; owner, 2026-10-13), or null
  * @param {string|null} [p.ratesLocked]  why the list's rates can't change (the same), or null
+ * @param {string|null} [p.urlSearch]  a search from the address bar (#/price/<search>), typed in as
+ *   if by hand on a fresh stage (lib/query.js searchTextFromUrl)
  * @param {{ kind: 'walk_in'|'collection', buyId: string|null, name: string }|null} [p.scanTarget]
  *   this list takes cards from a paired phone (docs/SCAN_FUNCTION.md 8): what the phone shows it as;
  *   null for none (a confirmed buy in project view, Can't upload cards)
@@ -95,6 +98,7 @@ export default function PricingScreen({
   list, rates, master, locked = null, removeLocked = locked, listTitle, ratesTitle,
   renderListDetails, renderListFooter, resetKey = 0, searchLead = null, className = '', hits = null,
   searchBlocked = null, listBadge = null, roundUp = false, addLocked = null, ratesLocked = null, scanTarget = null,
+  urlSearch = null,
 }) {
   const [text, setText] = useState('');
   // EN | JP for Pokémon: EN every time a screen opens, not remembered
@@ -415,6 +419,15 @@ export default function PricingScreen({
     setEditing(null);
     focusSearch();
   }
+
+  // A search from the address bar (owner, 2026-10-16: Chrome's "Site search", as for Scryfall): a
+  // fresh stage with the search typed in, which runs it as typing does (Enter would add the card).
+  useEffect(() => {
+    if (urlSearch == null) return;
+    clear();
+    setText(searchTextFromUrl(urlSearch));
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- only on a new address; clear is rebuilt every render
+  }, [urlSearch]);
 
   // A new resetKey (a walk-in buy confirmed or cancelled): a fresh start.
   const lastReset = useRef(resetKey);

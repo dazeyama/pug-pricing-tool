@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
 import PricingScreen from './price/PricingScreen.jsx';
 import WalkInButtons from './price/WalkInButtons.jsx';
@@ -21,6 +22,13 @@ const SCAN_TARGET = { kind: 'walk_in', buyId: null, name: 'Buy list' };
 // (Phase 6). Confirming or cancelling starts the next buy afresh.
 export default function PricePage() {
   const { deviceId } = useDevice();
+  // A search from the address bar (#/price/<search>; owner, 2026-10-16): handed to the price screen,
+  // which types it in, and the address goes back to #/price (the screen keeps its state).
+  const { search: urlSearch } = useParams();
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (urlSearch != null) navigate('/price', { replace: true });
+  }, [urlSearch, navigate]);
   const draft = useDraft(deviceId);
   const { current: user, pulse, forget } = useStaff();
   const toast = useToast();
@@ -96,6 +104,7 @@ export default function PricePage() {
 
   return (
     <PricingScreen
+      urlSearch={urlSearch ?? null}
       list={list}
       rates={rates}
       master={master}

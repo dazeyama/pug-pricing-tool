@@ -74,7 +74,8 @@ function AuthGate() {
                 {phone ? <Route path="*" element={<Navigate to="/scan" replace />} /> : (
                 <Route element={<Layout />}>
                   <Route path="/home" element={<HomePage />} />
-                  <Route path="/price" element={<PricePage />} />
+                  {/* #/price/<search>: a search from the address bar (Chrome's Site search). */}
+                  <Route path="/price/:search?" element={<PricePage />} />
                   <Route path="/collections" element={<CollectionsPage />} />
                   <Route path="/collections/:id" element={<CollectionPage />} />
                   <Route path="/calendar" element={<CalendarPage />} />

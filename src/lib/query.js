@@ -137,3 +137,26 @@ export function numericSize(size) {
 export function numberPrefix(value) {
   return (/^([a-z]*)/i.exec(String(value ?? '').trim())?.[1] ?? '').toLowerCase();
 }
+
+/**
+ * A search from the address bar (owner, 2026-10-16: Chrome's "Site search", as
+ * for Scryfall): "#/price/<card name>-<collector number>-<set code>", or the
+ * search as typed ("Wild Growth 342 5ED"). The dashes between the name, the
+ * number and the set become spaces; a dash inside a name stays ("Stone-Giant
+ * of High Pass-113-HOB"); "+" for a space, as some address bars send it,
+ * becomes one. Pure, for tests.
+ * @param {string} segment  the part after #/price/, decoded
+ * @returns {string}  the search line
+ */
+export function searchTextFromUrl(segment) {
+  let text = String(segment ?? '').trim();
+  if (!/\s/.test(text) && text.includes('+')) text = text.replace(/\+/g, ' ').trim();
+  const parts = text.split('-');
+  if (parts.length >= 3 && SET_CODE.test(parts.at(-1)) && NUMBER_ONLY.test(parts.at(-2))) {
+    return `${parts.slice(0, -2).join('-').trim()} ${parts.at(-2)} ${parts.at(-1)}`;
+  }
+  if (parts.length >= 2 && NUMBER_ONLY.test(parts.at(-1))) {
+    return `${parts.slice(0, -1).join('-').trim()} ${parts.at(-1)}`;
+  }
+  return text;
+}
