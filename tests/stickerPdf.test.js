@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { PER_SHEET, SHEET, stickerBox, stickerLabel, stickerPdf, stickerRows } from '../src/lib/stickerPdf.js';
+import { PER_SHEET, SHEET, stickerBox, stickerLabel, stickerMoney, stickerPdf, stickerRows } from '../src/lib/stickerPdf.js';
 
 // Print PKM Stickers? (decision 281): price tags on the store's 160-sticker sheets.
 
@@ -15,6 +15,12 @@ test("a sticker's top line: the name's first letters and the number, always", ()
   assert.equal(stickerLabel('Mew', '151'), 'Mew [151]');
   assert.equal(stickerLabel('Mr. Mime', '122'), 'Mr. Mi [122]');
   assert.equal(stickerLabel('', '7'), '[7]');
+});
+
+test('the price, always in full', () => {
+  assert.equal(stickerMoney(12), '$12.00');
+  assert.equal(stickerMoney(0.4), '$0.40');
+  assert.equal(stickerMoney(1999.99), '$1,999.99');
 });
 
 test("a sticker a copy, in Print PKM?'s order: by set name, then by number, NM first", () => {

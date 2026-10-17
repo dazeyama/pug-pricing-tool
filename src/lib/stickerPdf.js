@@ -10,7 +10,6 @@
 // like the audit printout; the pure parts are tested under Node.
 
 import { jsPDF } from 'jspdf';
-import { formatMoney } from './money.js';
 import { CONDITION_RGB, pdfSafe } from './auditPdf.js';
 import { pokemonOrder } from './auditPrint.js';
 
@@ -37,7 +36,12 @@ const PAD = 3;               // kept clear inside each sticker: a print lands a 
 const LABEL_PT = 5.5;
 const PRICE_PT = 17;         // the biggest the price is tried at; it shrinks to fit
 const PRICE_MIN_PT = 7;
-const CHIP = { w: 16, h: 9, pt: 6 };
+const CHIP = { w: 18, h: 9, pt: 6 };
+
+/** A sticker's price, always in full (owner: "full $1.00 formatting"): "$12.00", "$1,999.99". */
+export function stickerMoney(amount) {
+  return `$${Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
 
 /**
  * A sticker's top line: the name's first letters and the collector number,
@@ -129,7 +133,7 @@ export function stickerPdf(rows, { offset = PRINTER_OFFSET, start = 1, outline =
     doc.setFontSize(CHIP.pt);
     doc.text(row.condition, chipX + CHIP.w / 2, chipY + 6.6, { align: 'center' });
     // The price, big, centred in the room left of the chip.
-    const price = formatMoney(row.price);
+    const price = stickerMoney(row.price);
     const roomW = chipX - 3 - (x + PAD);
     sizeToFit(doc, price, roomW, PRICE_PT, PRICE_MIN_PT);
     doc.text(price, x + PAD + roomW / 2, y + 30, { align: 'center' });
