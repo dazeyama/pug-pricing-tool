@@ -160,8 +160,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   // Auto scan: `held`, the art of the card last sent (nothing's read while it's
   // still there); `pending`, the printing the last look read, for the next to agree with;
   // the older-card mode: `noLine`, looks in a row with no set code at the bottom (`lineArt`, the
-  // card's art when they began), `older`, read by its title now, `pendingOld`, the name the last
-  // title read gave, for the next to agree with.
+  // card's art when they began), `older`, read by its title now, `pendingOld`, what the last
+  // title read gave (the name, and the printing if one was clearly ahead), for the next to agree with.
   const view = useRef({ held: null, pending: null });
   // An older card that could be several printings: { tier, name, cards } to pick from.
   const [pick, setPick] = useState(null);
@@ -584,8 +584,10 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         progress?.finish('older');
         foilSeen = undefined;   // an older card, read by its title: no mark to go by
         if (!manual) {
-          if (!old || v.pendingOld !== old.name) {
-            v.pendingOld = old?.name ?? null;
+          // Two looks must name the same card, and the same printing when one's to be taken.
+          const said = old ? `${old.name}|${old.cards.length === 1 ? old.cards[0].id : ''}` : null;
+          if (!old || v.pendingOld !== said) {
+            v.pendingOld = said;
             return;
           }
           v.pendingOld = null;

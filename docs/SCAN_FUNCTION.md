@@ -843,6 +843,33 @@ locks **automatically on the first card**.
   strip that reads. What's picked or skipped in the picker is held like a card sent, so the card
   left in the holder isn't asked about again. Replaces `AUTO_OLDER` (older cards on Scan card
   only); Scan card still tries the title whenever the strip names nothing.
+- **An older card's printing by how it looks** (owner, 2026-10-16: "Build all of this. I want to get
+  older cards to a state where they are sometimes automatically accepted like newer ones to the best
+  of our abilities"; the clues proposed: the art, border and frame, the artist, the set symbol).
+  `src/scan/printingMatch.js` scores every English paper printing of the name the title gave,
+  against Scryfall's own small picture of it and its set's symbol (both readable on a canvas:
+  `cards.scryfall.io` and `svgs.scryfall.io` send `Access-Control-Allow-Origin: *`):
+  - **art** (up to ±3): the middle of the art box (14–86% across, 15–50% down: inside every frame's
+    art box) as a 10 × 7 fingerprint of red, green and blue, each evened out (the camera's light
+    and white balance count for little), a cell's shift allowed. The same art, ~0.2–0.4 apart;
+    other art, 0.7 and more.
+  - **border** (+1 / −2): the band just inside the locked card's edge, dark (black, borderless) or
+    light (white).
+  - **frame** (−1.5): a printing in today's frame (2015 on) would have had its set code read.
+  - **artist** (+1.5): most of the credited artist's name among the words read off the card's bottom.
+  - **set symbol**: Scryfall's SVG, cut to its ink, drawn at five heights and slid over the edges at
+    the type line's right end (found by its two ruled edges), scored by how well the outlines meet
+    (a chamfer match). At ~25px in a slightly blurred picture most symbols fit most outlines
+    (0.8–0.95), so it mostly says **whether there's a symbol** (a fit of 0.75 or more): none seen
+    favours a set printed with none (Alpha to Fifth Edition, +1.5), one seen counts against them
+    (−1.5); the best fits among the sets nudge (±0.5). Promos' generic symbols aren't compared;
+    nor are sets that printed it only in today's frame.
+  - **year** (+1) and **number** (+2.5): the copyright year (that year or the one before) and the
+    "123/350", when read.
+
+  A printing at 4 or more, 2 ahead of the next, is taken; else the picker opens on them best first.
+  The number and set size fitting one printing still settle it alone. Auto scan's two looks must
+  agree on the printing to take it. **Checked:** every pre-2015 printing of 18 much-reprinted cards (336: Llanowar Elves, Lightning Bolt, Serra Angel, Counterspell, Swords to Plowshares …), Scryfall's scans laid in a simulated holder as the phone sees them (4K, the card 42% of the picture, turned up to 1°, nudged 1.5%, a colour cast, a blur), on the look alone (no year, number or artist read): the right printing first 160 times (48%), in the top three 280 (83%); **taken by itself 27 times, all right, none wrong**. 124 of the misses had a twin first: the same art, border and frame (Alpha and Beta; Revised and Fourth), which only the copyright line or the card's corners tell apart. On the phone the year and number read add to it. Tests: `tests/scanPrintingMatch.test.js`.
 - **An older card's printings: View all** (owner, 2026-10-16: "The "Which <cardname>? Match the set
   symbol." menu panel is good, but doesn't offer enough options, there needs to be a "view all"
   button … and when viewing all, show them oldest to newest"): the pick list opens on **one row**

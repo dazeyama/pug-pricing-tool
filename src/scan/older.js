@@ -2,15 +2,20 @@
 //  - tier 2, 1998–2014: its title and its "123/350" → the printings of that
 //    name with that number, in a set of that size (almost always one);
 //  - tier 3, before 1998 (no number), or a number that couldn't be read:
-//    its title → its printings, oldest first, narrowed to the year on its
-//    copyright line when that was read, for staff to pick by the set symbol.
-// Several printings left, and the phone lists them to pick from.
+//    its title → its printings.
+// Several printings left, they're ranked by how the card looks
+// (printingMatch.js: its art, border, frame, artist, set symbol, year and
+// number); one clearly ahead is taken, else the phone lists them, best
+// first, to pick from (owner, 2026-10-16: "sometimes automatically accepted
+// like newer ones").
 
 import * as scry from '../lib/scryfall.js';
 import { defaultCreateCanvas } from './recognition/canvasUtil.js';
 import { PSM_BLOCK, PSM_LINE, readText } from './ocr.js';
 import { parseCopyrightYear, parseOldNumber, readBottom, readTitle } from './titles.js';
 import { matchName } from './nameMatch.js';
+import { guideRect } from './guide.js';
+import { rankPrintings } from './printingMatch.js';
 
 // The most printings the pick list shows at first; View all shows the rest.
 const PICK_MAX = 12;
@@ -26,13 +31,36 @@ async function printingsOf(name) {
 }
 
 /**
+ * A picture by its address, ready to be drawn and read on a canvas
+ * (Scryfall's card images and set symbols allow it). An SVG is given its
+ * drawing area's size first: Scryfall's carry only a viewBox, and Safari
+ * then doesn't know how big to draw one.
+ */
+async function loadPicture(url) {
+  let src = url;
+  if (/\.svg(\?|$)/i.test(url)) {
+    const text = await (await fetch(url)).text();
+    const box = /viewBox="\s*[-\d.]+[\s,]+[-\d.]+[\s,]+([\d.]+)[\s,]+([\d.]+)\s*"/.exec(text);
+    const sized = box && !/<svg[^>]*\swidth=/.test(text) ? text.replace('<svg', `<svg width="${box[1]}" height="${box[2]}"`) : text;
+    src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(sized)}`;
+  }
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    if (!src.startsWith('data:')) img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error(`No picture at ${url}`));
+    img.src = src;
+  });
+}
+
+/**
  * Read an older card in the frame: its name, and its number if it has one.
  * @param {object} frame  the camera's picture
  * @param {{ texts?: string[] }} [opts]  what the collector-line reading already read: on a
  *   black-bordered card it's the copyright line with the "123/350" in it, so no second read
  * @returns {Promise<{ tier: 2|3, name: string, number: string|null, cards: object[], all: object[] }|null>}
- *   null: the title couldn't be named clearly; cards: the likely ones, oldest first, one or more;
- *   all: every printing of that name, oldest first (the pick list's View all)
+ *   null: the title couldn't be named clearly; cards: one (the printing to take), or the likely
+ *   ones, best first; all: every printing of that name, oldest first (the pick list's View all)
  */
 export async function readOlderCard(frame, { texts = [], card = null } = {}) {
   const names = await scry.loadNames();
@@ -48,24 +76,43 @@ export async function readOlderCard(frame, { texts = [], card = null } = {}) {
   }
   const printings = await printingsOf(match.name);
   if (!printings.length) return null;
+  const sets = await scry.loadSets();
 
+  let hits = [];
   if (old) {
-    const sets = await scry.loadSets();
     const sizeOf = (c) => sets.get(c.set)?.printed_size ?? sets.get(c.set)?.card_count ?? null;
-    const hits = printings.filter((c) => plainNumber(c.collector_number) === old.number
+    hits = printings.filter((c) => plainNumber(c.collector_number) === old.number
       && (sizeOf(c) == null || sizeOf(c) === old.size));
-    if (hits.length) return { tier: 2, name: match.name, number: old.number, cards: hits.slice(0, PICK_MAX), all: printings };
+    // The number and the set's size fit one printing: that's it.
+    if (hits.length === 1) return { tier: 2, name: match.name, number: old.number, cards: hits, all: printings };
   }
-  // No number (before 1998), or none read: every printing, unless the
-  // copyright line's year narrows them (printed that year or the one before).
+  const tier = hits.length ? 2 : 3;
+  const number = hits.length ? old.number : null;
   const year = bottoms.map(parseCopyrightYear).find(Boolean) ?? null;
+  // Every printing ranked by how the card looks; one clearly ahead is taken.
+  try {
+    const { ranked, winner } = await rankPrintings(frame, card ?? guideRect(frame.width, frame.height), printings, {
+      text: bottoms.join(' '),
+      year,
+      number,
+      older: true,
+      setIcon: (code) => sets.get(code)?.icon_svg_uri ?? null,
+      setType: (code) => sets.get(code)?.set_type ?? null,
+      loadImage: loadPicture,
+      createCanvas: defaultCreateCanvas,
+    });
+    if (winner) return { tier, name: match.name, number, cards: [winner], all: printings };
+    return { tier, name: match.name, number, cards: ranked.slice(0, PICK_MAX).map((r) => r.card), all: printings };
+  } catch (e) {
+    console.warn('Ranking the printings by look failed', e);
+  }
+  // Unranked: those with the number read, or of the copyright line's year (or the one before).
   const thatYear = year
     ? printings.filter((c) => {
       const y = Number((c.released_at ?? '').slice(0, 4));
       return y === year || y === year - 1;
     })
     : [];
-  return {
-    tier: 3, name: match.name, number: null, cards: (thatYear.length ? thatYear : printings).slice(0, PICK_MAX), all: printings,
-  };
+  const likely = hits.length ? hits : thatYear.length ? thatYear : printings;
+  return { tier, name: match.name, number, cards: likely.slice(0, PICK_MAX), all: printings };
 }
