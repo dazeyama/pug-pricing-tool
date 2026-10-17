@@ -37,7 +37,10 @@
   and cards by game on a collection's name (decision 276).
   Then the phone scanner (docs/SCAN_FUNCTION.md Phases S1–S5, decisions 278–279, migrations 0068–0070 on dev;
   the repo is GPL-3.0 since), with the owner's live-testing rounds, the address-bar search, bulk pinned in the
-  buy list and print/export in any status: live as v0.9.9.10-scanner (2026-10-16), all migrations on dev. The squash's
+  buy list and print/export in any status: live as v0.9.9.10-scanner (2026-10-16), all migrations on dev.
+  Then live as v0.9.9.11-stickers (2026-10-17): Print MTG? / Print PKM? / Print PKM Stickers? (decisions 280–283;
+  the 160-sticker sheet in lib/stickerPdf.js with the store printer's offset), a Pokémon day's EXPORT ▾ with
+  Complete day…, a Pokémon buy's prints, TCGdex four at a time, the scanner's double-add guard. No new migrations. The squash's
   numbers moved on: baseline 0071, the Changelog lock 0072.
   Phase 10 launch (the migration squash, SQUASH.md, then prod) waits for the owner's go; the live site runs on the
   dev project until then. docs/TEST.md holds the smoke tests and the database test run.
