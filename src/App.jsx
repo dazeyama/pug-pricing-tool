@@ -4,6 +4,7 @@ import { SessionProvider, useSession } from './state/session.jsx';
 import { DeviceProvider, useDevice } from './state/device.jsx';
 import { ConnectionProvider } from './state/connection.jsx';
 import { StaffProvider } from './state/staff.jsx';
+import { PresenceProvider } from './state/presence.jsx';
 import { SettingsProvider } from './state/settings.jsx';
 import { InventoryProvider } from './state/inventory.jsx';
 import { PriceLimitProvider } from './state/priceLimit.jsx';
@@ -40,17 +41,20 @@ function Layout() {
   // contents and page scroll inside their own panels (owner, 2026-10-09).
   const fullScreen = isPricingScreen(pathname) || pathname === '/home' || pathname.startsWith('/help');
   return (
-    <div className={`shell${fullScreen ? ' shell-fixed' : ''}`}>
-      <Header />
-      <main>
-        <Banners />
-        <section className="panel active" key={tabKeyFor(pathname)}>
-          <Outlet />
-        </section>
-      </main>
-      {/* Name this computer, then wait for its row in `devices` (owner's bug, 2026-09-30). */}
-      {!label ? <DeviceNameModal /> : !saved && <DeviceSaveModal />}
-    </div>
+    // Every desktop tab says it's here, and who's picked (decision 284); the home page counts them.
+    <PresenceProvider>
+      <div className={`shell${fullScreen ? ' shell-fixed' : ''}`}>
+        <Header />
+        <main>
+          <Banners />
+          <section className="panel active" key={tabKeyFor(pathname)}>
+            <Outlet />
+          </section>
+        </main>
+        {/* Name this computer, then wait for its row in `devices` (owner's bug, 2026-09-30). */}
+        {!label ? <DeviceNameModal /> : !saved && <DeviceSaveModal />}
+      </div>
+    </PresenceProvider>
   );
 }
 

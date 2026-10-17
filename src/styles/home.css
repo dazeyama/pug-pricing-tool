@@ -167,3 +167,11 @@
 /* The logo and name: a way home (owner, 2026-10-01). */
 .brand-home { padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .brand-home:hover h1 { color: var(--accent); }
+
+/* Who's on (decision 284): computers with the app open, users picked on them; the user dots in their colours. */
+.home-status { display: flex; justify-content: flex-end; align-items: center; gap: 18px; font-size: 12.5px; color: var(--muted); }
+.home-dot.is-live { --c: var(--good); }
+.home-users { display: inline-flex; align-items: center; gap: 6px; }
+.home-user-dots { display: inline-flex; gap: 3px; }
+.home-user-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--c); }
+.home-user-dot.none { background: var(--border); }
