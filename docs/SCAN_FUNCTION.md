@@ -826,8 +826,15 @@ locks **automatically on the first card**.
   place, it moves whenever I slide any new card into view … it should be more confident in the
   viewport … relying on the user to press Reset if something major changes NOT moving around on it's
   own"). Locked, the view never moves by itself: **Reset view** unlocks it (the next card found
-  locks it again); Stop unlocks it; a camera picture of a new shape unlocks it (the lock no longer
-  fits). `followMove`, `findCardNear`, `movedFrom` and `samePlace` went with it.
+  locks it again), and nothing else: the lock stays while the camera's off (Stop, or the page
+  hidden) for when it's back. `followMove`, `findCardNear`, `movedFrom` and `samePlace` went with
+  it. **A camera picture of another size keeps the lock** (owner, the same day, still seeing it
+  move: "Once the crop is done. Lock that in until reset is pressed"): it was unlocking, and the next
+  look locked onto whatever it found, often the card coming in; an iPhone changes its picture's
+  format when it switches lenses, which a hand or a card coming close sets off (SCAN_LEARNINGS.md
+  2.4). Now the lock is scaled to the new size (`lock.js` `rescaleLock`), shown and read the same
+  part of the picture, the held art kept. **What a page can't stop:** the lens switch itself moves
+  the picture inside the fixed crop (each lens sits elsewhere on the phone).
 - **Checked end to end** on Scryfall's scans of 17 modern cards (2017–2025) laid in a simulated holder:
   card 40% of the picture's height: edges 17/17, locked 17/17, the cutout read right 17/17; 30%:
   17, 16 and 16. Tests: `tests/scanLock.test.js`, `tests/scanGuide.test.js`.

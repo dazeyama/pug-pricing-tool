@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createCanvas } from '@napi-rs/canvas';
 import { findCard } from '../src/scan/cardEdges.js';
 import {
-  ART_CHANGED, anchorBlock, artDistance, artPrint, blockOnCard, makeLock,
+  ART_CHANGED, anchorBlock, artDistance, artPrint, blockOnCard, makeLock, rescaleLock,
 } from '../src/scan/lock.js';
 
 // Owner, 2026-10-16: the view locks onto the first card found by its edges,
@@ -83,4 +83,21 @@ test('the lock: the corner and the art lie on the card, the view a little around
   assert.ok(lock.collector.x < card.x + 35 && lock.collector.y < card.y + 712);
   assert.ok(lock.art.x > card.x && lock.art.y > card.y && lock.art.y + lock.art.height < card.y + card.height);
   assert.ok(lock.view.x < card.x && lock.view.width > card.width);
+});
+
+test('the camera picture changes size: the lock kept, the same part of the picture', () => {
+  const lock = {
+    card: { x: 300, y: 600, width: 540, height: 760 },
+    collector: { x: 320, y: 1300, width: 160, height: 40 },
+    art: { x: 340, y: 700, width: 460, height: 300 },
+    view: { x: 280, y: 580, width: 580, height: 800 },
+    charHeight: 9,
+    frame: { width: 1080, height: 1920 },
+  };
+  const half = rescaleLock(lock, { width: 540, height: 960 });
+  assert.deepEqual(half.view, { x: 140, y: 290, width: 290, height: 400 });
+  assert.deepEqual(half.card, { x: 150, y: 300, width: 270, height: 380 });
+  assert.equal(half.charHeight, 4.5);
+  assert.deepEqual(half.frame, { width: 540, height: 960 });
+  assert.equal(rescaleLock(lock, { width: 1080, height: 1920 }), lock, 'the same size: the same lock');
 });

@@ -5,7 +5,8 @@
 // enlarged under it and read first; and the card's art, always at the same
 // place, tells a new card from the same one. The
 // holder is snug, so each card lands where the last one did, and the view
-// stays locked till Reset view (owner, 2026-10-16: no re-locking by itself).
+// stays locked till Reset view (owner, 2026-10-16: no re-locking by itself;
+// a camera picture of another size keeps the lock, scaled to it).
 // DOM-free: the canvas maker is passed in.
 
 // On a modern card the collector block's left edge is 6.5% in and its top
@@ -142,6 +143,31 @@ export function artDistance(a, b) {
 }
 
 /** A part of the picture as a canvas of its own (the card, for finding its line when the corner misses). */
+/**
+ * The lock at the camera picture's new size (owner, 2026-10-16: "Once the
+ * crop is done. Lock that in until reset is pressed"): the same part of the
+ * picture, every rectangle scaled with it, rather than unlocking. An iPhone
+ * changes its picture's format when it switches lenses, which a hand or a
+ * card coming close sets off.
+ * @param {object} lock  makeLock's
+ * @param {{ width: number, height: number }} frame  the picture now
+ */
+export function rescaleLock(lock, frame) {
+  if (lock.frame.width === frame.width && lock.frame.height === frame.height) return lock;
+  const sx = frame.width / lock.frame.width;
+  const sy = frame.height / lock.frame.height;
+  const r = (b) => ({ x: b.x * sx, y: b.y * sy, width: b.width * sx, height: b.height * sy });
+  return {
+    ...lock,
+    card: r(lock.card),
+    collector: r(lock.collector),
+    art: r(lock.art),
+    view: r(lock.view),
+    charHeight: lock.charHeight * sy,
+    frame: { width: frame.width, height: frame.height },
+  };
+}
+
 export function cropTo(frame, r, createCanvas) {
   const c = clampTo(r, frame.width, frame.height);
   const out = createCanvas(Math.max(1, Math.round(c.width)), Math.max(1, Math.round(c.height)));

@@ -14,7 +14,7 @@ import { resolveReadings, resolveThorough } from './resolve.js';
 import { STEP_MS, createProgress } from './progress.js';
 import { findCard } from './cardEdges.js';
 import {
-  ART_CHANGED, anchorBlock, artDistance, artPrint, blockOnCard, cropTo, makeLock,
+  ART_CHANGED, anchorBlock, artDistance, artPrint, blockOnCard, cropTo, makeLock, rescaleLock,
 } from './lock.js';
 import { straightCutout } from './straighten.js';
 import { defaultCreateCanvas } from './recognition/canvasUtil.js';
@@ -345,10 +345,11 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, []);
 
+  // The camera off (Stop, or the page hidden): the lock stays for when it's back, till Reset view
+  // (owner, 2026-10-16: "Lock that in until reset is pressed"); only a first look's outline goes.
   useEffect(() => {
     if (camera.on) return;
-    lockRef.current = null;
-    setLockState(null);
+    view.current.pending = null;
     setSeenCard(null);
   }, [camera.on]);
 
@@ -428,10 +429,12 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       const pattern = await setCodePattern();
       const known = await paperSetCodes();
       let lock = lockRef.current;
-      // The camera's picture changed shape: the lock no longer fits it.
+      // The camera's picture changed size (an iPhone switching lenses): the lock kept, scaled to it,
+      // and what's held about the last card with it (owner, 2026-10-16: locked till Reset view).
       if (lock && (lock.frame.width !== frame.width || lock.frame.height !== frame.height)) {
-        resetView();
-        lock = null;
+        lock = rescaleLock(lock, frame);
+        lockRef.current = lock;
+        setLockState(lock);
       }
       let blocks = null;
       if (!lock) {
@@ -633,7 +636,9 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   // Before the lock: the whole picture, filling the space, the card found
   // outlined. Locked: just the card, as large as fits, still (owner, 2026-10-16).
   const picture = camera.size ? { width: camera.size.w, height: camera.size.h } : null;
-  const part = lock?.view ?? (picture && { x: 0, y: 0, width: picture.width, height: picture.height });
+  // The locked part, at the picture's size now (it may have changed since the last look).
+  const part = lock && picture ? rescaleLock(lock, picture).view
+    : lock?.view ?? (picture && { x: 0, y: 0, width: picture.width, height: picture.height });
   const shown = picture && room.w && room.h ? showPart(picture, part, room.w, room.h, lock ? 'contain' : 'cover') : null;
   const outline = !lock && seenCard && shown ? onScreen(shown, seenCard) : null;
   // Locked: the picture cut to the card at its sides too, not just its top and bottom (owner, 2026-10-16).
