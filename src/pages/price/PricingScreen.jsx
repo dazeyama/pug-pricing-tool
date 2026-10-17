@@ -175,8 +175,9 @@ export default function PricingScreen({
   // for it; the card that was selected left exactly as it was underneath. Not while a list line's
   // being edited or a dialog's open (the line just flashes). Gone at a click anywhere outside it,
   // left or right, which does nothing else ("Should the dismissing click do nothing else? yes"),
-  // at its ×, at Esc, or at any other key, which goes on to do its work (typing a search). No
-  // timeout ("Should it disappear by itself? Off").
+  // at Esc, or at any other key, which goes on to do its work (typing a search). No timeout
+  // ("Should it disappear by itself? Off"). Its look as first built (owner: "this went too far,
+  // i liked how this part looked before"): no frame, label or × of its own.
   const [phoneCard, setPhoneCard] = useState(null);   // { candidate, finish }
   const swallowUntil = useRef(0);
   // Cards from the paired phone, added as ADD CARD adds them and flashed the same way
@@ -193,8 +194,8 @@ export default function PricingScreen({
       setPhoneCard({ candidate: magicCandidate(added.card), finish: added.finish });
     },
   });
-  // Inside the peek: its picture (a click enlarges it, a right-click searches it), its ×, its
-  // enlarged view, and its details' links. Anything else is outside.
+  // Inside the peek: its picture (a click enlarges it, a right-click searches it), its enlarged
+  // view, and its details' links. Anything else is outside.
   useEffect(() => {
     if (!phoneCard) return undefined;
     const inside = (t) => Boolean(t.closest?.('[data-phone-card], .card-zoom') || (t.closest?.('[data-phone-info]') && t.closest('a')));
@@ -625,7 +626,6 @@ export default function PricingScreen({
                 pokemonVersion={null}
                 fromPhone
                 onSearch={() => searchName(`${phoneCard.candidate.name} ${phoneCard.candidate.number}`)}
-                onDismiss={() => setPhoneCard(null)}
               />
             ) : bulk ? <BulkSelected c={bulk} name={placeholderName} onName={setPlaceholderName} /> : (
             <SelectedCard

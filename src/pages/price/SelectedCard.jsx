@@ -84,14 +84,13 @@ function cardmarketLink(c, magic, searchName) {
  * finish label, the Poké Ball / Master Ball badge, and the 1st Edition stamp:
  * `hasFirstEdition` when one of the card's versions is 1st Edition).
  * `fromPhone`: the card the paired phone just added, peeking over the
- * selected card (owner, 2026-10-16): framed in the phone's colour, a 📱
- * badge where a Poké Ball's goes and before its name, a right-click on it
- * searching its name and number (`onSearch`), its × putting it away
- * (`onDismiss`).
+ * selected card (owner, 2026-10-16): labelled so, a 📱 badge where a Poké
+ * Ball's goes and before its name, a right-click on it searching its name
+ * and number (`onSearch`).
  */
 export default function SelectedCard({
   candidate: c, typedName, englishName, pokemon, finish, pokemonVersion, hasFirstEdition = false,
-  fromPhone = false, onSearch = null, onDismiss = null,
+  fromPhone = false, onSearch = null,
 }) {
   const pokemonFinish = pokemonVersion?.finish;
   const [face, setFace] = useState(0);
@@ -278,15 +277,8 @@ export default function SelectedCard({
 
   return (
     <>
-      <div className={`area-card${fromPhone ? ' phone-peek' : ''}`} data-phone-card={fromPhone || undefined}>
-        {fromPhone ? (
-          <div className="stage-label phone-label">
-            <span>📱 From the phone · click anywhere to go back</span>
-            {onDismiss && (
-              <button type="button" className="peek-close" title="Back to the selected card (Esc)" aria-label="Back to the selected card" onClick={onDismiss}>×</button>
-            )}
-          </div>
-        ) : <div className="stage-label">Selected card</div>}
+      <div className="area-card" data-phone-card={fromPhone || undefined}>
+        <div className="stage-label">{fromPhone ? 'Added from the phone' : 'Selected card'}</div>
         <div
           className={`card-box${zoomable ? ' zoomable' : ''}`}
           onClick={zoomable ? (e) => setZoom({ x: e.clientX, y: e.clientY }) : undefined}
@@ -325,7 +317,7 @@ export default function SelectedCard({
 
       {/* A fixed height for every card (see .area-info), so the suggestions
           below never shift: one line each, long text ends in "…". */}
-      <aside className={`area-info${fromPhone ? ' phone-peek' : ''}`} data-phone-info={fromPhone || undefined}>
+      <aside className="area-info" data-phone-info={fromPhone || undefined}>
         <div className="card-info">
           <h2 className="info-name" title={englishName ? `${name} (${englishName})` : name}>
             {fromPhone && <span className="info-phone" role="img" aria-label="Added from the phone">📱</span>}

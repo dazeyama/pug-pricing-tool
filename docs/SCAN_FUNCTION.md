@@ -800,12 +800,12 @@ locks **automatically on the first card**.
 - **The phone's card as a peek** (owner, 2026-10-16, asking for consistent dismissal; the "peek"
   agreed, no timeout, the dismissing click doing nothing else): the phone's card covers the card
   picture and details panel only; the card that was selected stays selected underneath, with its
-  condition, finish and highlight (the deselect of the line below is gone). The picture and details
-  are framed in the phone's colour (#2dd4bf), labelled "📱 From the phone · click anywhere to go
-  back" with a × to put it away, and the price, finish and action areas (still the selected card's)
-  are dimmed. Put away by: a click anywhere outside it, left or right, which then does nothing else
-  (no focus, no menu, no click: `swallowUntil`); its ×; Esc; or any other key, which goes on to do
-  its work (typing a search). Inside it: a click on the picture enlarges it, a right-click searches
+  condition, finish and highlight (the deselect of the line below is gone). It looks as first built,
+  "Added from the phone" and the 📱 badges (a teal frame, a longer label and a × were tried and
+  taken back: "this went too far, i liked how this part looked before"); the price, finish and
+  action areas (still the selected card's) are dimmed. Put away by: a click anywhere outside it,
+  left or right, which then does nothing else (no focus, no menu, no click: `swallowUntil`); Esc;
+  or any other key, which goes on to do its work (typing a search). Inside it: a click on the picture enlarges it, a right-click searches
   its name and number, and its details' links open as usual. Not shown while a list line's being
   edited or a dialog's open: the list line just flashes. The newest scan replaces the one showing.
 - **The phone's card on the computer's Selected card frame** (as first built; refined above) (owner, 2026-10-16: "When a card is
