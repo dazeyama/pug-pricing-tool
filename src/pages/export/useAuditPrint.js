@@ -3,7 +3,7 @@ import { useToast } from '../../components/Toast.jsx';
 import { matchLines, scryfallCards } from '../../lib/ccExport.js';
 import { loadSets } from '../../lib/scryfall.js';
 import {
-  UNMATCHED, auditSections, cardBucket, matchCategory, printLines, savedCategory,
+  UNMATCHED, auditSections, cardBucket, matchCategory, pokemonPrintLines, pokemonSections, printLines, savedCategory,
 } from '../../lib/auditPrint.js';
 
 const escapeHtml = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -13,7 +13,7 @@ const escapeHtml = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '
  * the app's dark look, big bold white words and a spinner, all inline (no
  * file to fetch), so it's there the moment the tab opens.
  */
-function loadingPage(title) {
+function loadingPage(title, what = "Finding each card's Crystal Commerce category. It opens here when it's ready.") {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Building the printout…</title>
 <style>
 html, body { height: 100%; margin: 0; }
@@ -33,7 +33,7 @@ p { margin: 0; font-size: 17px; font-weight: 600; color: #9aa1bd; }
 @media (prefers-reduced-motion: reduce) { .spin { animation-duration: 2.4s; } }
 </style></head><body><div class="box"><div class="spin" aria-hidden="true"></div>
 <h1>Building the printout…</h1><p class="what">${escapeHtml(title)}</p>
-<p>Finding each card's Crystal Commerce category. It opens here when it's ready.</p></div></body></html>`;
+<p>${escapeHtml(what)}</p></div></body></html>`;
 }
 
 /** Hand the PDF over: downloaded, and shown in `tab` (opened at the click), else a new one. */
@@ -143,21 +143,30 @@ async function symbolsFor(sections) {
  * then the PDF, downloaded and opened in a new tab. Writes nothing anywhere.
  * `load` instead of `lines`: the cards fetched once the tab is open (a
  * collection's ⋯ on the Collections tab, whose cards aren't loaded yet).
- * @returns {{ print: (p: { lines?: object[], load?: () => Promise<object[]>, title: string, fileName: string }) => Promise<void>, printing: boolean }}
+ * `game: 'pokemon'` is Print PKM? (decision 280): the batch's Pokémon cards
+ * by set instead of by category, nothing matched or fetched.
+ * @returns {{ print: (p: { lines?: object[], load?: () => Promise<object[]>, title: string, fileName: string,
+ *   game?: 'mtg'|'pokemon' }) => Promise<void>, printing: boolean }}
  */
 export function useAuditPrint() {
   const toast = useToast();
   const [printing, setPrinting] = useState(false);
 
-  const print = useCallback(async ({ lines, load, title, fileName }) => {
+  const print = useCallback(async ({ lines, load, title, fileName, game = 'mtg' }) => {
     if (printing) return;
+    const pokemon = game === 'pokemon';
+    const choose = pokemon ? pokemonPrintLines : printLines;
     const nothing = (all) => {
+      if (pokemon) {
+        toast('No Pokémon cards to print.', 'err');
+        return;
+      }
       const magic = (all ?? []).some((l) => l.game === 'mtg' && !l.bulk_kind && !l.struck_at);
       toast(magic
         ? 'Nothing to print: these cards were marked Completed without being exported.'
         : 'No Magic cards to print.', 'err');
     };
-    let chosen = load ? null : printLines(lines);
+    let chosen = load ? null : choose(lines);
     if (chosen && !chosen.length) {
       nothing(lines);
       return;
@@ -167,19 +176,27 @@ export function useAuditPrint() {
     const tab = window.open('', '_blank');
     if (tab) {
       tab.document.open();
-      tab.document.write(loadingPage(title));
+      tab.document.write(loadingPage(title, pokemon ? "Sorting the cards by set. It opens here when it's ready." : undefined));
       tab.document.close();
     }
     setPrinting(true);
     try {
       if (load) {
         const all = await load();
-        chosen = printLines(all);
+        chosen = choose(all);
         if (!chosen.length) {
           tab?.close();
           nothing(all);
           return;
         }
+      }
+      if (pokemon) {
+        const sections = pokemonSections(chosen);
+        const { auditPdf } = await import('../../lib/auditPdf.js');
+        deliver(auditPdf({ title, sections }), fileName, tab);
+        const count = sections.reduce((n, s) => n + s.cards, 0);
+        toast(`Printout ready: ${count} card${count === 1 ? '' : 's'} in ${sections.length} set${sections.length === 1 ? '' : 's'}.`, 'ok');
+        return;
       }
       const toMatch = chosen.filter((l) => savedCategory(l) === undefined);
       const { results, cards } = toMatch.length ? await matchLines(toMatch) : { results: [], cards: new Map() };

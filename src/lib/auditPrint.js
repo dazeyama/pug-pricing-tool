@@ -4,12 +4,14 @@
 
 import { CONDITIONS } from './ladder.js';
 import { magicTreatmentLabel } from './printings.js';
+import { lineTags } from './lineFormat.js';
 
 /** The last section: cards with no Crystal Commerce product (team plan 3.3). */
 export const UNMATCHED = 'Unmatched';
 
 const FINISHES = ['nonfoil', 'foil', 'etched'];
 const FINISH_WORDS = { foil: 'Foil', etched: 'Etched' };
+const POKEMON_FINISH_WORDS = { holo: 'Holo', reverse: 'Reverse' };
 
 /**
  * A card's colour group, as pull-pdf sorts and tints them (owner, 2026-10-14:
@@ -44,6 +46,17 @@ export function printLines(lines) {
   const magic = (lines ?? []).filter((l) => l.game === 'mtg' && !l.bulk_kind && !l.struck_at);
   const pending = magic.filter((l) => !l.completed_at);
   return pending.length ? pending : magic.filter((l) => l.cc_status === 'exported' || l.cc_status === 'cant_upload');
+}
+
+/**
+ * The cards Print PKM? takes (decision 280): a batch's Pokémon cards, never
+ * bulk or struck. Pokémon cards are never exported, so a Completed batch
+ * prints the same cards as before.
+ * @param {object[]} lines  buy_lines rows
+ * @returns {object[]}
+ */
+export function pokemonPrintLines(lines) {
+  return (lines ?? []).filter((l) => l.game === 'pokemon' && !l.bulk_kind && !l.struck_at);
 }
 
 /**
@@ -87,6 +100,24 @@ export function auditRow(line, qty = line.quantity, bucket = 'unknown') {
     condition: line.condition || 'NM',
     extras: [FINISH_WORDS[line.finish], ...(line.treatments ?? []).map(magicTreatmentLabel)].filter(Boolean),
     bucket,
+  };
+}
+
+/**
+ * A Pokémon row's parts, as auditRow gives a Magic card's: its finish
+ * ("Holo", "Reverse") and the bracket's tags but the condition ("1st Ed",
+ * "JP", a reverse pattern, a TCGplayer-only version) as its chips. No colour
+ * group: the row's edge chip stays grey.
+ */
+export function pokemonRow(line, qty = line.quantity) {
+  return {
+    name: line.name_en || line.name,
+    qty,
+    set: String(line.set_code ?? '').toUpperCase(),
+    number: String(line.collector_number ?? ''),
+    condition: line.condition || 'NM',
+    extras: [POKEMON_FINISH_WORDS[line.finish], ...lineTags({ ...line, condition: 'NM' })].filter(Boolean),
+    bucket: 'unknown',
   };
 }
 
@@ -168,4 +199,40 @@ export function auditSections(placed) {
       rows: list.sort(byCard).map((m) => auditRow(m.line, m.qty, m.bucket)),
     }))
     .sort((a, b) => (a.name === UNMATCHED) - (b.name === UNMATCHED) || collator.compare(a.name, b.name));
+}
+
+/**
+ * Print PKM?'s sections (decision 280): one per set, A to Z by the set's
+ * name, its code on the band ("Scarlet & Violet [SV1]"); inside, as a Magic
+ * category's rows (NM by number, then the rest), the same card from
+ * different buys as one row. A set is its code (whatever its case); its
+ * name as first met, the code when a line has none.
+ * @param {object[]} lines  pokemonPrintLines' lines
+ * @returns {{ name: string, cards: number, set: string|null, rows: ReturnType<typeof pokemonRow>[] }[]}
+ */
+export function pokemonSections(lines) {
+  const names = new Map();
+  const merged = new Map();
+  for (const line of lines) {
+    const code = String(line.set_code ?? '').toLowerCase();
+    if (!names.has(code)) names.set(code, line.set_name || code.toUpperCase() || 'No set');
+    const key = [code, line.tcgdex_id ?? '', line.justtcg_card_id ?? '', line.name, line.collector_number, line.lang,
+      line.finish, line.condition, Boolean(line.first_edition), [...(line.treatments ?? [])].sort().join(',')].join('|');
+    const had = merged.get(key);
+    if (had) had.qty += line.quantity;
+    else merged.set(key, { code, line, qty: line.quantity });
+  }
+  const bySet = new Map();
+  for (const m of merged.values()) {
+    if (!bySet.has(m.code)) bySet.set(m.code, []);
+    bySet.get(m.code).push(m);
+  }
+  return [...bySet.entries()]
+    .map(([code, list]) => ({
+      name: names.get(code),
+      cards: list.reduce((n, m) => n + m.qty, 0),
+      set: code || null,
+      rows: list.sort(byCard).map((m) => pokemonRow(m.line, m.qty)),
+    }))
+    .sort((a, b) => collator.compare(a.name, b.name) || collator.compare(a.set ?? '', b.set ?? ''));
 }

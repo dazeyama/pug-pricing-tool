@@ -267,6 +267,19 @@ function CollectionScreen({ id }) {
     print({ lines: col.lines, title: `Audit — ${name}`, fileName: `audit-${fileSafe(name)}.pdf` });
   }
 
+  // EXPORT ▾ → Print PKM? (decision 280): its Pokémon cards by set. Nothing is fetched, so no connection needed.
+  const printPokemonBlockedWhy = firstReason([
+    [!col.lines.some((l) => l.game === 'pokemon' && movesOn(l)), 'No Pokémon cards here'],
+  ]);
+  function printPokemon() {
+    if (printPokemonBlockedWhy) {
+      toast(printPokemonBlockedWhy, 'err');
+      return;
+    }
+    const name = buy.customer_name;
+    print({ lines: col.lines, game: 'pokemon', title: `Audit — ${name} (Pokémon)`, fileName: `audit-pkm-${fileSafe(name)}.pdf` });
+  }
+
   async function exported(result) {
     setExportStep(null);
     if (result.fileOnly) {
@@ -680,7 +693,14 @@ function CollectionScreen({ id }) {
           >
             REPRICE?
           </button>
-          <ExportButton onClick={startExport} onPrint={printCollection} printing={printing} up />
+          <ExportButton
+            onClick={startExport}
+            onPrint={printCollection}
+            onPrintPokemon={system ? null : printPokemon}
+            printPokemonBlocked={printPokemonBlockedWhy}
+            printing={printing}
+            up
+          />
           {repricing && (
             <RepriceModal
               lines={col.lines}

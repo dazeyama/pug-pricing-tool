@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  UNMATCHED, auditRow, auditSections, cardBucket, matchCategory, printLines, savedCategory,
+  UNMATCHED, auditRow, auditSections, cardBucket, matchCategory, pokemonPrintLines, pokemonRow, pokemonSections,
+  printLines, savedCategory,
 } from '../src/lib/auditPrint.js';
 import { magicTreatmentLabel } from '../src/lib/printings.js';
 
@@ -107,4 +108,39 @@ test("a row's words", () => {
   assert.equal(magicTreatmentLabel('promopack'), 'Promo pack stamp');
   assert.equal(magicTreatmentLabel('variant:Foil Etched'), 'Foil Etched');
   assert.equal(magicTreatmentLabel('something-new'), 'Something new');
+});
+
+// Print PKM? (decision 280): the Pokémon cards by set.
+const pkm = (over) => line({
+  game: 'pokemon', lang: 'en', set_code: 'sv1', set_name: 'Scarlet & Violet', finish: 'normal', tcgdex_id: 'sv1-1',
+  scryfall_id: null, ...over,
+});
+
+test('Print PKM? takes the Pokémon cards, never bulk or struck, Completed or not', () => {
+  const a = pkm({ name: 'A' });
+  const done = pkm({ name: 'B', completed_at: '2026-10-14' });
+  const bulk = pkm({ name: 'C', bulk_kind: 'pkm_100_common' });
+  const struck = pkm({ name: 'D', struck_at: '2026-10-16T18:00:00Z' });
+  const mtg = line({ name: 'E' });
+  assert.deepEqual(pokemonPrintLines([a, done, bulk, struck, mtg]).map((l) => l.name), ['A', 'B']);
+});
+
+test('Pokémon sections: one a set, A to Z by name with the code on the band; inside by number; the same card merged', () => {
+  const s = pokemonSections([
+    pkm({ name: 'Pikachu', collector_number: '25', quantity: 2 }),
+    pkm({ name: 'Pikachu', collector_number: '25', quantity: 1 }),
+    pkm({ name: 'Mew', collector_number: '151', set_code: 'MEW', set_name: '151', tcgdex_id: 'sv3pt5-151' }),
+    pkm({ name: 'Charmander', collector_number: '4', condition: 'LP' }),
+    pkm({ name: 'Eevee', collector_number: '133', finish: 'reverse', treatments: ['sv-pattern'] }),
+    pkm({ name: 'Nameless', set_code: 'xy', set_name: null, collector_number: '1' }),
+  ]);
+  assert.deepEqual(s.map((x) => [x.name, x.set, x.cards]), [['151', 'mew', 1], ['Scarlet & Violet', 'sv1', 5], ['XY', 'xy', 1]]);
+  const sv = s[1];
+  assert.deepEqual(sv.rows.map((r) => [r.name, r.qty, r.condition]), [['Pikachu', 3, 'NM'], ['Eevee', 1, 'NM'], ['Charmander', 1, 'LP']]);
+  assert.equal(sv.rows[1].extras[0], 'Reverse');
+});
+
+test("a Pokémon row's words: the finish and the bracket's tags but the condition, as chips; no colour", () => {
+  const r = pokemonRow(pkm({ name: 'Pikachu', collector_number: '25', finish: 'holo', condition: 'MP', lang: 'ja', first_edition: true }));
+  assert.deepEqual([r.name, r.set, r.number, r.condition, r.extras, r.bucket], ['Pikachu', 'SV1', '25', 'MP', ['Holo', '1st Ed', 'JP'], 'unknown']);
 });
