@@ -85,23 +85,34 @@ export function blockedText(session) {
 }
 
 /** The strip for a scan the computer has, by where it's got to. */
-function scanStrip(s, computer) {
-  const what = scanText(s);
+/**
+ * The strip for a scan the computer has, by where it's got to: the card's
+ * name on the first line, the short facts on the second (set, number, finish
+ * and condition, then the price and how many in the list), so a phone shows
+ * them all (owner, 2026-10-16: "The card name/set and the price all get
+ * truncated"). The computer's name is in the paired bar, not repeated here.
+ */
+function scanStrip(s) {
+  const mark = s.finish === 'foil' ? ' *F*' : s.finish === 'etched' ? ' *E*' : '';
+  const cond = s.condition && s.condition !== 'NM' ? ` [${s.condition}]` : '';
+  const code = `${String(s.set_code ?? '').toUpperCase()} ${s.collector_number ?? ''}`.trim() + mark + cond;
+  const name = s.name ?? '';
+  const facts = (...more) => [code, ...more].filter(Boolean).join(' · ');
   switch (s.status) {
-    case 'sent': return { tone: 'muted', title: what, text: `Sending to ${computer}…` };
-    case 'pricing': return { tone: 'muted', title: what, text: `Pricing on ${computer}…` };
+    case 'sent': return { tone: 'muted', title: name, text: facts('sending…') };
+    case 'pricing': return { tone: 'muted', title: name, text: facts('pricing…') };
     case 'added': return {
       tone: 'good',
-      title: `✓ ${what}`,
-      text: `Added to ${computer}${s.price != null ? ` at ${formatMoney(Number(s.price))}` : ''}${s.line_qty > 1 ? ` · ×${s.line_qty} in the list` : ''}`,
+      title: `✓ ${name}`,
+      text: facts(s.price != null ? formatMoney(Number(s.price)) : null, s.line_qty > 1 ? `×${s.line_qty} in the list` : null),
     };
-    case 'needs_price': return { tone: 'warn', title: what, text: 'Needs a price: type one below.' };
-    case 'failed': return { tone: 'err', title: what, text: `Couldn't add: ${s.note ?? 'unknown reason'}` };
-    case 'skipped': return { tone: 'muted', title: what, text: 'Skipped: set it aside and add it on the computer.' };
+    case 'needs_price': return { tone: 'warn', title: name, text: facts('needs a price: type one below') };
+    case 'failed': return { tone: 'err', title: name, text: facts(`couldn't add: ${s.note ?? 'unknown reason'}`) };
+    case 'skipped': return { tone: 'muted', title: name, text: facts('skipped: set it aside') };
     case 'undo':
-    case 'undoing': return { tone: 'muted', title: what, text: `Taking it off ${computer}…` };
-    case 'undone': return { tone: 'muted', title: `↶ ${what}`, text: `Taken off ${computer}.` };
-    default: return { tone: 'muted', title: what, text: s.status };
+    case 'undoing': return { tone: 'muted', title: name, text: facts('taking it off…') };
+    case 'undone': return { tone: 'muted', title: `↶ ${name}`, text: facts('taken off') };
+    default: return { tone: 'muted', title: name, text: facts(s.status) };
   }
 }
 
@@ -823,7 +834,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   }, [camera.on]);
 
   // The strip: the phone's own message, or the latest scan's state, whichever is newer.
-  const stripOfLatest = latest ? scanStrip(latest, computer) : null;
+  const stripOfLatest = latest ? scanStrip(latest) : null;
   const strip = local && local.at >= latestAt ? local : stripOfLatest ?? local;
   // Before the lock: the whole picture, filling the space, the card found
   // outlined. Locked: just the card, as large as fits, still (owner, 2026-10-16).
@@ -978,32 +989,33 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
             </>
           ) : <span>Cards you scan show here.</span>}
         </div>
-        {/* Undo last scan (S5): one copy of it off the computer's list. */}
+        {/* Undo and FOIL? / NONFOIL?, stacked small at the right, to leave the text room. */}
         {showUndo && (
-          <button
-            type="button"
-            className="btn small scan-undo"
-            onClick={async () => {
-              const e = await undo(latest.id);
-              if (e) say('err', `Couldn't undo it: ${e}`);
-            }}
-          >
-            ↶ Undo
-          </button>
-        )}
-        {/* FOIL? on a normal card, NONFOIL? on a foil one (owner, 2026-10-16): the last card's finish changed. */}
-        {showUndo && (
-          <button
-            type="button"
-            className={`btn small scan-refinish${toFoil ? ' to-foil' : ''}`}
-            disabled={Boolean(swapping)}
-            title={toFoil
-              ? 'The last card is foil: take the normal copy off and add it as foil'
-              : 'The last card is normal: take the foil copy off and add it as nonfoil'}
-            onClick={() => refinish(latest, toFoil)}
-          >
-            {toFoil ? 'FOIL?' : 'NONFOIL?'}
-          </button>
+          <div className="scan-strip-buttons">
+            {/* Undo last scan (S5): one copy of it off the computer's list. */}
+            <button
+              type="button"
+              className="btn small scan-undo"
+              onClick={async () => {
+                const e = await undo(latest.id);
+                if (e) say('err', `Couldn't undo it: ${e}`);
+              }}
+            >
+              ↶ Undo
+            </button>
+            {/* FOIL? on a normal card, NONFOIL? on a foil one (owner, 2026-10-16): the last card's finish changed. */}
+            <button
+              type="button"
+              className={`btn small scan-refinish${toFoil ? ' to-foil' : ''}`}
+              disabled={Boolean(swapping)}
+              title={toFoil
+                ? 'The last card is foil: take the normal copy off and add it as foil'
+                : 'The last card is normal: take the foil copy off and add it as nonfoil'}
+              onClick={() => refinish(latest, toFoil)}
+            >
+              {toFoil ? 'FOIL?' : 'NONFOIL?'}
+            </button>
+          </div>
         )}
       </div>
 
