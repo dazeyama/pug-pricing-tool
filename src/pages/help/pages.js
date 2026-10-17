@@ -156,9 +156,11 @@ export const PAGES = [
     id: 'day-buy', chapter: 'Calendar', start: 'A day page > A buy', title: 'A buy on a day page',
     images: [{ src: 'day-menu', caption: 'A buy’s ⋯ menu' }],
   },
+  // The printouts and the stickers (decisions 280-283): Print MTG?, Print PKM?, Print PKM Stickers?.
+  { id: 'printouts', chapter: 'Calendar', start: 'A day page > Print MTG? (the audit printout)', title: 'Printouts and stickers' },
   {
-    id: 'complete', chapter: 'Calendar', start: 'A day page > COMPLETE (Pokémon days)', title: 'COMPLETE on Pokémon days',
-    images: [{ src: 'pokemon-complete', caption: 'A Pokémon day, before' }, { src: 'pokemon-done', caption: 'After COMPLETE' }],
+    id: 'complete', chapter: 'Calendar', start: 'A day page > Complete day… (Pokémon days)', title: 'Complete day… on Pokémon days',
+    images: [{ src: 'pokemon-complete', caption: 'A Pokémon day, before' }, { src: 'pokemon-done', caption: 'After Complete day…' }],
   },
 
   // Exporting
