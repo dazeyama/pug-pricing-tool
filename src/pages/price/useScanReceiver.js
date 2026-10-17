@@ -9,7 +9,7 @@ import {
   cardmarketPrice, conditionPrices, conditionVariants, fallbackPrice, fetchPrices, lookupsFor, priceResults, resultFor,
 } from '../../lib/prices.js';
 import { loadEurUsd } from '../../lib/useEurUsd.js';
-import { scanFinish, scanQuote } from '../../lib/scanPrice.js';
+import { lineOfScan, scanFinish, scanQuote } from '../../lib/scanPrice.js';
 import { useConnection } from '../../state/connection.jsx';
 import { usePriceLimit } from '../../state/priceLimit.jsx';
 import { useSettings } from '../../state/settings.jsx';
@@ -29,6 +29,8 @@ import { useStaff } from '../../state/staff.jsx';
 
 const POLL_MS = 10_000;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+/** scan_resolve's own refusals: not a blip, so not tried again. */
+const RESOLVE_REFUSALS = new Set(['scan_gone', 'not_session', 'bad_status']);
 
 /**
  * @param {object} p
@@ -61,6 +63,10 @@ export function useScanReceiver({ deviceId, label, session, list, roundUp, onAdd
   const handle = useCallback(async (scan) => {
     const now = latest.current;
     now.touch?.();
+    // Claimed again after its "added" was lost (review, 2026-10-16): the line it made is in the
+    // list already, under its id. Said so again, nothing added.
+    const made = lineOfScan(now.list.lines, scan.id);
+    if (made) return { status: 'added', lineId: made.id, price: made.unit_price, source: made.price_source };
     const user = now.user;
     if (!user) return { status: 'failed', note: `Pick a user on ${now.label} first.` };
     const card = await scry.cardById(scan.scryfall_id);
@@ -193,15 +199,23 @@ export function useScanReceiver({ deviceId, label, session, list, roundUp, onAdd
             console.error('A scan failed', e);
             out = { status: 'failed', note: `Something went wrong on ${latest.current.label}: ${e.message}` };
           }
-          const { error: resolveError } = await supabase.rpc('scan_resolve', {
-            p_id: scan.id,
-            p_device: deviceId,
-            p_status: out.status,
-            p_line_id: out.lineId ?? null,
-            p_price: out.price ?? null,
-            p_source: out.source ?? null,
-            p_note: out.note ?? null,
-          });
+          // Tried three times on a blip (review, 2026-10-16): a scan left "pricing" or "undoing" is
+          // claimed again in a minute, and the card would go in, or come off, twice. The function's
+          // own refusals (scan_gone, not_session, bad_status) won't change: no second try.
+          let resolveError = null;
+          for (let tries = 0; tries < 3; tries++) {
+            ({ error: resolveError } = await supabase.rpc('scan_resolve', {
+              p_id: scan.id,
+              p_device: deviceId,
+              p_status: out.status,
+              p_line_id: out.lineId ?? null,
+              p_price: out.price ?? null,
+              p_source: out.source ?? null,
+              p_note: out.note ?? null,
+            }));
+            if (!resolveError || RESOLVE_REFUSALS.has(resolveError.message)) break;
+            await sleep(1000);
+          }
           if (resolveError) console.warn('scan_resolve failed', resolveError);
         }
       } while (again.current);

@@ -68,3 +68,17 @@ export function scanText({ name, set_code: set, collector_number: number, finish
   const cond = condition && condition !== 'NM' ? ` [${condition}]` : '';
   return `${name} (${String(set ?? '').toUpperCase()}) ${number ?? ''}${mark}${cond}`.replace(/\s+/g, ' ').trim();
 }
+
+/**
+ * The list line a scan already became, when its "added" never reached the
+ * database (a network blip on scan_resolve, a tab closed between the add and
+ * it): the scan is claimed again a minute later, and mustn't be added twice.
+ * Only a line the scan itself made carries its id: a copy merged into an
+ * older line keeps that line's stamp (0065), so a merged repeat isn't found.
+ * @param {object[]} lines  the list's lines, their price_snapshot included
+ * @param {string} scanId
+ * @returns {object|null}
+ */
+export function lineOfScan(lines, scanId) {
+  return (lines ?? []).find((l) => l.price_snapshot?.scan?.scan_id === scanId) ?? null;
+}

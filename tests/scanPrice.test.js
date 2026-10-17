@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { scanFinish, scanQuote, scanText } from '../src/lib/scanPrice.js';
+import { lineOfScan, scanFinish, scanQuote, scanText } from '../src/lib/scanPrice.js';
 
 // docs/SCAN_FUNCTION.md 7.1: TCGplayer > JustTCG > Cardmarket > ask (owner, 2026-10-16).
 
@@ -81,4 +81,16 @@ test('a scan reads like a list line', () => {
     'Lightning Bolt (2X2) 117 *F* [LP]');
   assert.equal(scanText({ name: 'Sol Ring', set_code: 'CMR', collector_number: '472', finish: 'etched', condition: 'NM' }),
     'Sol Ring (CMR) 472 *E*');
+});
+
+test('lineOfScan: the line a scan made, by its id in the snapshot; nothing for a scan that made none', () => {
+  const lines = [
+    { id: 'a', price_snapshot: { scan: { from: 'phone', scan_id: 's1' } } },
+    { id: 'b', price_snapshot: { manual: 1 } },
+    { id: 'c', price_snapshot: null },
+  ];
+  assert.equal(lineOfScan(lines, 's1')?.id, 'a');
+  assert.equal(lineOfScan(lines, 's2'), null);
+  assert.equal(lineOfScan([], 's1'), null);
+  assert.equal(lineOfScan(undefined, 's1'), null);
 });

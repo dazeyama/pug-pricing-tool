@@ -148,11 +148,14 @@ export default function PricingScreen({
   const { current: user, pulse } = useStaff();
   const { offline } = useConnection();
   const toast = useToast();
-  const { deviceId, label: deviceLabel } = useDevice();
+  const { deviceId, label: deviceLabel, saved: deviceSaved } = useDevice();
   // Open for a phone to scan into (docs/SCAN_FUNCTION.md 8.1): what this
   // screen is on, its games, its user, and why it can't take cards, if it can't.
-  const scan = useScanSession(scanTarget && deviceId ? {
-    deviceId,
+  // Once this computer's `devices` row is saved (review, 2026-10-16): a touch
+  // before that is refused (no_device), and the next one is 20 seconds off.
+  const scanDevice = deviceSaved ? deviceId : null;
+  const scan = useScanSession(scanTarget && scanDevice ? {
+    deviceId: scanDevice,
     kind: scanTarget.kind,
     buyId: scanTarget.buyId ?? null,
     name: scanTarget.name,
@@ -187,7 +190,7 @@ export default function PricingScreen({
   // Cards from the paired phone, added as ADD CARD adds them and flashed the same way
   // (docs/SCAN_FUNCTION.md 8.3).
   useScanReceiver({
-    deviceId: scanTarget ? deviceId : null,
+    deviceId: scanTarget ? scanDevice : null,
     label: deviceLabel ?? 'The computer',
     session: scan.session,
     list,

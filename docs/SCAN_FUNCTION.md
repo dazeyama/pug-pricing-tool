@@ -601,7 +601,9 @@ Database test run: **461 checks**, all passing (sections Scan sessions and Scans
   A session touched after going stale loses its phone. `scan_pair` also refuses `cannot_scan` (Magic
   off, or locked).
 - `scans.status`: `sent` → **`pricing`** (the computer's claim, `scan_claim`, so two tabs of one
-  computer can't both add it; a claim quiet for a minute can be taken again) → `added` /
+  computer can't both add it; a claim quiet for a minute can be taken again, so `scan_resolve` is
+  tried three times on a blip, and a scan claimed again is first looked for in the list by its id in
+  the line's `price_snapshot.scan`, and only said to be added: review, 2026-10-16) → `added` /
   `needs_price` / `failed`; `needs_price` → `sent` (a price) or `skipped`; **`added` → `undo` →
   `undoing` → `undone`** (or back to `added` with a note). `line_qty` holds the line's quantity just
   after, for "×2". Old scans are swept by `scan_send` (a week), not by `scan_session_touch`.
