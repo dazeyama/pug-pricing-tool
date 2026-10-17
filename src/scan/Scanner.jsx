@@ -816,6 +816,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           <NeedsPriceSheet key={needs.id} scan={needs} onAnswer={(price) => answer(needs.id, price)} />
         ) : pick && (
           <PickPrintingSheet
+            key={`${pick.name}:${pick.cards[0]?.id ?? ''}`}
             pick={pick}
             onPick={(card) => {
               const { tier } = pick;

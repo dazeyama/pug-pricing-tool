@@ -288,11 +288,12 @@ html[data-scan] .toast { max-width: none; }
 .scan-price-row input { flex: 1; margin: 0; min-height: 46px; font-size: 18px; }
 .scan-price-row .btn { min-height: 46px; white-space: nowrap; font-weight: 600; }
 .scan-sheet-error { margin: 0; color: var(--bad); font-size: 13px; }
-.scan-sheet-foot { display: flex; justify-content: flex-end; }
+.scan-sheet-foot { display: flex; justify-content: flex-end; gap: 8px; }
 
 /* ---- An older card's printings, to pick from ---- */
 .scan-sheet.pick { border-color: var(--accent); }
 .scan-pick-title { font-size: 15px; }
+.scan-pick-note { color: var(--muted); font-size: 13px; margin-top: -4px; }
 .scan-pick-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; max-height: 52vh; overflow-y: auto; }
 .scan-pick {
   display: flex;

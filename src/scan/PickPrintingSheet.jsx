@@ -1,18 +1,27 @@
+import { useState } from 'react';
 import { cardImage } from '../lib/scryfall.js';
 
 /**
  * An older card that could be several printings (docs/SCAN_FUNCTION.md 6.2,
- * tier 3; tier 2 when its number and set size fit more than one): its
- * printings, oldest first, to pick from by the set symbol on the card in
- * hand. Skip sends nothing.
- * @param {{ pick: { name: string, cards: object[] }, onPick: (card: object) => void, onSkip: () => void }} props
+ * tier 3; tier 2 when its number and set size fit more than one): the
+ * likely printings, oldest first, to pick from by the set symbol on the card
+ * in hand; View all shows every printing of that name, oldest to newest
+ * (owner, 2026-10-16: "doesn't offer enough options, there needs to be a
+ * "view all" button"). Skip sends nothing.
+ * @param {{ pick: { name: string, cards: object[], all?: object[] }, onPick: (card: object) => void,
+ *   onSkip: () => void }} props
  */
 export default function PickPrintingSheet({ pick, onPick, onSkip }) {
+  const [viewAll, setViewAll] = useState(false);
+  const all = pick.all ?? pick.cards;
+  const more = all.length > pick.cards.length;
+  const shown = viewAll ? all : pick.cards;
   return (
     <div className="scan-sheet pick" role="dialog" aria-label={`Which printing of ${pick.name}?`}>
       <strong className="scan-pick-title">Which {pick.name}? Match the set symbol.</strong>
+      {viewAll && <span className="scan-pick-note">All {all.length} printings, oldest to newest.</span>}
       <div className="scan-pick-list">
-        {pick.cards.map((card) => (
+        {shown.map((card) => (
           <button key={card.id} type="button" className="scan-pick" onClick={() => onPick(card)}>
             <img src={cardImage(card, 'small')} alt="" width="73" height="102" loading="lazy" />
             <span className="scan-pick-set">{card.set_name}</span>
@@ -23,6 +32,11 @@ export default function PickPrintingSheet({ pick, onPick, onSkip }) {
         ))}
       </div>
       <div className="scan-sheet-foot">
+        {more && (
+          <button type="button" className="btn" onClick={() => setViewAll(!viewAll)}>
+            {viewAll ? 'Likely ones only' : `View all (${all.length})`}
+          </button>
+        )}
         <button type="button" className="btn ghost" onClick={onSkip}>Skip this card</button>
       </div>
     </div>
