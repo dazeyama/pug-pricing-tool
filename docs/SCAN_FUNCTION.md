@@ -858,6 +858,11 @@ locks **automatically on the first card**.
     card with no strip to go by (an older card read by its title, Scan card before the lock) is
     nonfoil. Normal or Foil: every card so, whatever the strip shows (`scanFinish`, so a card with
     only one finish keeps it).
+- **The last scan's ribbon under the info box** (owner, 2026-10-16: "The confirm card card details
+  ribbon should be right under the title/number display panel, above the Scan Card button instead
+  of at the top where it is now. That's where the eye rests"): the strip with the last scan, its
+  Undo and FOIL? / NONFOIL?, now sits between the info box and Scan card; the paired bar stays at
+  the top.
 - **Title / Number** (owner, 2026-10-16: "Sometimes an older card will get stuck without it's name
   highlighted and doesn't respond to Scan Card. I think there needs to be a way to force scan card
   on older pre-2014 cards to actually detect and highlight the name and name search open the card

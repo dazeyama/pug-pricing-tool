@@ -863,45 +863,6 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         <button type="button" className="btn small" onClick={unpair}>Unpair</button>
       </div>
 
-      {/* The last scan and what became of it, always in view (owner, 2026-10-16). */}
-      <div className={`scan-strip ${strip?.tone ?? 'muted'}`} role="status">
-        <div className="scan-strip-text">
-          {strip ? (
-            <>
-              {strip.title && <strong>{strip.title}</strong>}
-              <span>{strip.text}</span>
-            </>
-          ) : <span>Cards you scan show here.</span>}
-        </div>
-        {/* Undo last scan (S5): one copy of it off the computer's list. */}
-        {showUndo && (
-          <button
-            type="button"
-            className="btn small scan-undo"
-            onClick={async () => {
-              const e = await undo(latest.id);
-              if (e) say('err', `Couldn't undo it: ${e}`);
-            }}
-          >
-            ↶ Undo
-          </button>
-        )}
-        {/* FOIL? on a normal card, NONFOIL? on a foil one (owner, 2026-10-16): the last card's finish changed. */}
-        {showUndo && (
-          <button
-            type="button"
-            className={`btn small scan-refinish${toFoil ? ' to-foil' : ''}`}
-            disabled={Boolean(swapping)}
-            title={toFoil
-              ? 'The last card is foil: take the normal copy off and add it as foil'
-              : 'The last card is normal: take the foil copy off and add it as nonfoil'}
-            onClick={() => refinish(latest, toFoil)}
-          >
-            {toFoil ? 'FOIL?' : 'NONFOIL?'}
-          </button>
-        )}
-      </div>
-
       <div className="scan-controls">
         <div className="scan-seg conditions" role="radiogroup" aria-label="Condition for the next scans">
           {CONDITIONS.map((c) => (
@@ -1005,6 +966,46 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           </button>
         </div>
       )}
+
+      {/* The last scan and what became of it, always in view: under the info box, above Scan card,
+          where the eye rests (owner, 2026-10-16). */}
+      <div className={`scan-strip ${strip?.tone ?? 'muted'}`} role="status">
+        <div className="scan-strip-text">
+          {strip ? (
+            <>
+              {strip.title && <strong>{strip.title}</strong>}
+              <span>{strip.text}</span>
+            </>
+          ) : <span>Cards you scan show here.</span>}
+        </div>
+        {/* Undo last scan (S5): one copy of it off the computer's list. */}
+        {showUndo && (
+          <button
+            type="button"
+            className="btn small scan-undo"
+            onClick={async () => {
+              const e = await undo(latest.id);
+              if (e) say('err', `Couldn't undo it: ${e}`);
+            }}
+          >
+            ↶ Undo
+          </button>
+        )}
+        {/* FOIL? on a normal card, NONFOIL? on a foil one (owner, 2026-10-16): the last card's finish changed. */}
+        {showUndo && (
+          <button
+            type="button"
+            className={`btn small scan-refinish${toFoil ? ' to-foil' : ''}`}
+            disabled={Boolean(swapping)}
+            title={toFoil
+              ? 'The last card is foil: take the normal copy off and add it as foil'
+              : 'The last card is normal: take the foil copy off and add it as nonfoil'}
+            onClick={() => refinish(latest, toFoil)}
+          >
+            {toFoil ? 'FOIL?' : 'NONFOIL?'}
+          </button>
+        )}
+      </div>
 
       {/* Scan card across the top; Auto?, Reset view, the light and Stop under it (owner, 2026-10-16). */}
       <div className="scan-actions">
