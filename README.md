@@ -111,7 +111,7 @@ status.justtcg.com.
 - A card's prices are kept for 6 hours, for every computer, matching JustTCG's own 6-hour update.
   Looking up the same card again in that time uses no request. An export takes prices up to 12
   hours old.
-- One request covers up to 100 cards. An export, a **REPRICE?** or a **COMPLETE** uses about one
+- One request covers up to 100 cards. An export, a **REPRICE?**, a **Complete day…** or **Print PKM Stickers?** uses about one
   request for every 100 different cards.
 - Japanese Pokémon are a catalogue of their own on JustTCG (Pokemon Japan). The app looks Japanese
   cards up there. A "No." search uses about one request.
@@ -896,13 +896,16 @@ Sends the collection's Magic cards to Crystal Commerce. See
 | Paid/Ours, Pokémon cards only | Asks, then marks it **Completed** with no file. |
 | Completed | Downloads the same file again. Nothing changes. |
 
-**Print?** works in every status.
+**Print MTG?**, **Print PKM?** and **Print PKM Stickers?** work in every status.
 
 A Completed collection shows its **Custom SKU** in the list heading. Its prices show in green: those
 are its Sell Prices.
 
-**EXPORT ▾** opens **Print?** and **Export csv**. **Print?** makes the audit printout (see
-[Print?](#print-the-audit-printout)). The ⋯ menu has **Print collection** (or **Print project**) too.
+**EXPORT ▾** opens **Print MTG?**, **Print PKM?**, **Print PKM Stickers?** and **Export csv**.
+**Print MTG?** makes the audit printout (see [Print MTG?](#print-mtg-the-audit-printout));
+**Print PKM?** the same for the Pokémon cards, by set; **Print PKM Stickers?** price-tag stickers
+for them (see [Print PKM Stickers?](#print-pkm-stickers)). The ⋯ menu has **Print collection** (or
+**Print project**) too.
 
 **Projects have no rates.** They're the store's own cards: no custom rates, no Set Rate.
 
@@ -989,8 +992,8 @@ One game's part of every walk-in buy confirmed that day.
 |---|---|
 | **< BACK** | Back to the Calendar, on the same month. |
 | **⋯** | The day's menu. See below. |
-| **EXPORT (N) ▾** | Magic days. **Export csv** exports the day; **Print?** makes the audit printout. N is the cards to export: count the pile first. |
-| **COMPLETE (N)** | Pokémon days. Marks the day Completed. See below. |
+| **EXPORT (N) ▾** | Magic days: **Print MTG?** makes the audit printout; **Export csv** exports the day. N is the cards to export: count the pile first. |
+| **EXPORT (N) ▾** | Pokémon days: **Print PKM?** (the cards by set), **Print PKM Stickers?** (price-tag stickers) and **Complete day…** (see below). N is the cards to mark Completed. |
 
 The title shows the date and game. Once exported it also shows **Exported** and the **Custom SKU**.
 A line under it says when the day was exported, by whom, and how many cards couldn't upload.
@@ -1024,7 +1027,7 @@ Removing the last card deletes the buy, after asking.
 
 **🚩 Check condition.** A buy flagged at CONFIRM BUY shows a red chip. Clicking it asks **Condition
 checked?**; **Yes** turns it into a green **✅ Condition checked** for good. EXPORT, Export single buy
-and COMPLETE warn while a buy is flagged.
+and Complete day… warn while a buy is flagged.
 
 Once Completed, a buy is locked. Its card names turn grey, and its prices show in green: those are its
 Sell Prices.
@@ -1051,7 +1054,8 @@ the list, crossed out, as a record that it went elsewhere: straight into the cas
 | **Mark as completed** | Completes this buy's cards without exporting them. They're locked, and left out of the search and the day's export. |
 | **Mark Paid/Ours again** | Undoes Mark as completed. On an exported buy it reads **Mark Paid/Ours again…** and undoes this buy's export only. |
 | **Export single buy** | Magic only. Exports just this buy, on any day, today included. The rest of the day stays as it is. |
-| **Print buy** | Magic only. The audit printout of this buy's cards. |
+| **Print buy** | The audit printout of this buy's cards: Magic by Crystal Commerce category, Pokémon by set. |
+| **Print stickers** | Pokémon only. Price-tag stickers for this buy's cards. See [Print PKM Stickers?](#print-pkm-stickers). |
 | **Edit in project view** | Opens the buy's cards on the pricing screen, in the game's colour, to fix a card before an export (its condition or treatment, mostly). Click a card, change it, then **SAVE EDIT**; **×** takes cards out. Nothing is saved until **SAVE BUY**, which goes back to the day page. The buy stays on its day; cards can't be added and the rates don't change. |
 | **Convert to project** | Moves every card, both games, into a new project with the buy's notes (a project has no rates). The buy is deleted from the day. The name starts as the customer's. The cards keep their prices until a **REPRICE?** rounds them up. |
 | **Delete buy…** | Deletes the buy and every card in it, both games. Asks first. |
@@ -1059,7 +1063,7 @@ the list, crossed out, as a record that it went elsewhere: straight into the cas
 **Edit in project view**, **Convert to project** and **Delete buy…** are locked once any of the buy's cards are Completed.
 A project can become a buy again: see [Convert to buy…](#convert-to-buy).
 
-### Print? (the audit printout)
+### Print MTG? (the audit printout)
 
 A PDF to check a batch by hand before it goes up to Crystal Commerce. It changes nothing.
 
@@ -1069,11 +1073,34 @@ A PDF to check a batch by hand before it goes up to Crystal Commerce. It changes
 - Each row: quantity, a tick box, the name, its colour, the collector number, condition and finish.
 - It opens in a new tab and downloads. Bulk is never on it.
 
-### COMPLETE (Pokémon days)
+### Print PKM? (the Pokémon printout)
 
-Pokémon can't be exported yet. **COMPLETE** marks the day's Paid/Ours Pokémon buys **Completed**
-instead. It asks first. Each card gets today's Sell Price, worked out as an export would, shown in
-green. Nothing is exported. It uses about one JustTCG lookup. **⋯ → Mark Paid/Ours again** undoes it.
+The same printout for a batch's Pokémon cards: one section per **set**, its code on the band, Near
+Mint first by collector number, the finish and tags as chips. Nothing is looked up, so it works
+offline. Pokémon cards are never exported, so a Completed batch prints the same cards.
+
+### Print PKM Stickers?
+
+Price-tag stickers for a batch's Pokémon cards, on the store's sticker sheets (Letter, 160 stickers:
+8 across × 20 down, each 1 in × ½ in). It changes nothing.
+
+- First it fetches today's prices and works out each card's **Sell Price** as an export would (the
+  full market price for its condition, rounded up, at least $0.40). Nothing is saved: the batch's
+  prices stay as they are.
+- One sticker per copy, in Print PKM?'s order (by set, then collector number), so a sheet follows
+  the printout. More than 160 run on to another sheet.
+- Each sticker: the name's first letters and the collector number, the price, and the condition in a
+  chip, all centred with room to spare.
+- Print at **100% / Actual size**, never "fit to page". The layout is tuned to the store's printer:
+  if the stickers land off-centre, say so.
+- It opens in a new tab and downloads. Bulk is never on it.
+
+### Complete day… (Pokémon days)
+
+Pokémon can't be exported yet. On a Pokémon day, **EXPORT ▾ → Complete day…** marks the day's
+Paid/Ours Pokémon buys **Completed** instead. It asks first. Each card gets today's Sell Price,
+worked out as an export would, shown in green. Nothing is exported. It uses about one JustTCG
+lookup. **⋯ → Mark Paid/Ours again** undoes it.
 
 <br>
 
