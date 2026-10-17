@@ -481,6 +481,17 @@ pattern reverse holos get a ball badge.
 
 **⟲ Flip** shows the back of a two-faced card.
 
+**The phone's card.** Each card a paired phone adds shows here, over the selected card, labelled
+**Added from the phone**, with a 📱 badge on it and before its name in Card details. Nothing is
+searched or priced for it: the selected card stays selected underneath, and the prices and buttons
+below, still the selected card's, are faded.
+
+- A click anywhere else puts it away, and that click does nothing else. **Esc** puts it away too, and
+  so does any other key, which then does its work as usual (typing a search, say).
+- Clicking its picture opens it large. **Right-click** it to search for its name and number
+  (*Wild Growth 342*). Its links in Card details work as usual.
+- It doesn't show while a list line is being edited or a dialog is open: the line just flashes.
+
 ### Card details
 
 The name, set and set code, number and set size, rarity, game and language. A Japanese card shows
@@ -1007,7 +1018,8 @@ Removing the last card deletes the buy, after asking.
 checked?**; **Yes** turns it into a green **✅ Condition checked** for good. EXPORT, Export single buy
 and COMPLETE warn while a buy is flagged.
 
-Once Completed, a buy is locked. Its prices show in green: those are its Sell Prices.
+Once Completed, a buy is locked. Its card names turn grey, and its prices show in green: those are its
+Sell Prices.
 
 ### Struck cards
 
@@ -1262,36 +1274,61 @@ Tap one to scan into it.
 
 - **Greyed out:** the computer is on Pokémon only, or its list can't take cards (Paid/Ours,
   Completed, being edited on another computer). The reason is under its name.
+- The computer doesn't wait between cards: it prices each one as it comes, in the order sent, while
+  the phone goes on scanning.
 - **One phone per computer.** Pairing a second phone replaces the first, which says so.
 - The computer's list shows **📱 Dana's phone · 23 scanned** under its heading. **×** unpairs it.
   After a minute without hearing from the phone, the chip says **away**.
 - The pairing ends when the computer leaves its price screen. CONFIRM BUY doesn't end it: the next
   buy's cards go into the new list.
 
+### The scanning screen
+
+Top to bottom: the computer it's paired with (its list, its user, how many cards scanned, 🔔 / 🔇 for
+the sounds, **Unpair**); the **condition**; the **finish**; the camera; the **info box**; the
+**last card**; **Scan card** and **+1**; and **Auto?**, **Reset view**, **💡** and **■ Stop**.
+
 ### Scanning
 
-1. Set the **condition** (NM to DMG) and **Normal | Foil**. They apply to every card from now on:
-   sort the pile first, and switch between piles.
-2. **START CAMERA**, and allow the camera. The first scan loads the card reader (about 3 MB).
-3. Lay a card in the holder. A green outline shows the card once its edges are found, and the view
-   **locks onto it**: from then on the screen shows just that card, large and still. Under it, each
-   card's **set code and number** are shown enlarged, set level even when the card lies a little
-   turned, and cleaned up to black on white. The holder keeps every card in the same spot, so the
-   next cards are read from there.
-4. Lay each card in turn. A card is added by itself, with a chime, once its picture has changed from
-   the last card's and two reads agree on its printing.
+1. Set the **condition** (NM to DMG). It applies to every card from now on: sort the pile first.
+2. Pick the **finish**:
+   - **Detect** (to begin with): a card goes in as foil when its collector line shows the foil
+     star (★) after the set code, and as normal when it shows the dot (•).
+   - **Normal** or **Foil**: every card goes in that way, whatever its collector line shows.
+   - A printing made in only one finish goes in as that finish whichever is picked.
+3. **START CAMERA**, and allow the camera. The first scan loads the card reader (about 3 MB).
+4. Lay a card in the holder. A green outline shows the card once its edges are found, and the view
+   **locks onto it**: from then on the screen shows just that card, large and still, until
+   **Reset view**. The info box under it shows the card's **set code and number**, enlarged, set
+   level and cleaned up to black on white.
+5. Lay each card in turn. With **Auto?** ticked, a card goes in by itself once its picture has
+   changed from the last card's and the reading is sure: on one look when its set code, number,
+   rarity and artist all agree, otherwise when two looks agree. It chimes the moment it's sent:
+   **two notes for a normal card, a brighter three for a foil.**
 
-- **Reset view** finds the card again and locks onto it. If the phone or the camera shifts, the view
-  locks onto the card again by itself after a couple of seconds.
-- **Scan card** reads the card in view now. Use it for a second copy of the same card: the scanner
-  never adds the same card twice in a row by itself.
-- **↶ Undo** under the last card takes one copy back off the list.
-- **💡** turns the phone's torch on, where the phone has one. **■ Stop** stops the camera (and lets go
-  of the view).
-- 🔔 / 🔇 turns the sounds on or off on this phone.
+| | |
+|---|---|
+| **Scan card** | Reads the card in view now, more thoroughly: every line of text on it, every search. A bar fills the button as it goes. Auto scan waits while it reads. |
+| **+1** | Another copy of the last card, exactly as it went in (printing, finish, condition), without reading anything. **Tapping the middle of the picture** does the same. Auto scan never adds the same card twice in a row by itself: use +1 for a second copy. |
+| **Auto?** | Unticked, nothing goes in by itself. Scan card and +1 still work. |
+| **Reset view** | Lets go of the card; the next card found locks the view again. Nothing else moves the view, not even Stop. |
+| **💡** | The torch, where the phone has one. |
+| **■ Stop** | Stops the camera. |
+| **🔔 / 🔇** | Sounds on or off on this phone. |
+
+**The last card** sits under the info box: its name, then its set and number, its price, and how many
+are in the list (*HOB 87 · $0.25*). Beside it:
+
+- **↶ Undo** takes one copy back off the list.
+- **✦ FOIL?** (or **NON FOIL?** on a foil) changes its finish: that copy comes off and goes back in as
+  foil (or normal), priced again.
+
+**Blurry?** The info box gets an amber border and auto scan waits for a sharp picture. After a few
+blurry looks the camera refocuses by itself (the picture stops for a moment). The camera can't focus
+closer than about 15 cm: if it stays blurry, raise the phone a little.
+
 - A card printed in another language is refused: add it on the computer.
 - **Couldn't read this card:** set it aside and add it on the computer.
-- A printing that exists only in foil is added as foil, whatever the switch says.
 
 ### Prices
 
@@ -1309,15 +1346,28 @@ the computer: it opens with Use TCGplayer on.
 
 ### Older cards
 
-Cards printed before 2014 have no set code at the bottom. **Scan card** reads them by their title
-instead, so fill the frame with the card.
+Cards printed before 2014 have no set code at the bottom.
 
+- **The view doesn't lock on them by itself.** Tap the picture while the green outline shows: the
+  view locks onto that card.
+- After a few looks with no set code, the scanner reads the card by its **title**: the info box shows
+  the card's name, and the button at its right end says **Number** (back to the bottom line, for a
+  modern card). **Title** does this straight away and always opens the printing list: use it when an
+  older card seems stuck.
 - **1998 to 2014:** the "123/350" in the copyright line names the printing, when it can be read.
-- **Before 1998,** or when the number can't be read: the phone lists the card's printings. Tap the one
-  whose set symbol matches.
+- Otherwise the printings are ranked by how the card looks: its art, black or white border, frame,
+  artist, set symbol and copyright year. One clearly ahead goes in by itself, once two looks agree;
+  otherwise the printing list opens, best matches first. Tap the one whose set symbol matches.
+  **View all** shows every printing, oldest to newest. **Skip this card** adds nothing.
+- An older card goes in as normal on Detect: it has no foil star to go by. Pick **Foil**, or use
+  **FOIL?** after.
 
-Older cards aren't read by themselves, only with **Scan card**. The List cards come in as their
-original set's printing: fix the set on the computer.
+### The List and Mystery Booster
+
+A card from **The List** (or from the first **Mystery Booster**) is its original printing plus a small
+planeswalker symbol in the black border at its bottom-left corner. The scanner looks for that mark:
+when it's there, the card goes in as its List printing. **Mystery Booster 2** cards have their own
+frame and no set code at the bottom, so they're read as older cards.
 
 <br>
 
@@ -1347,7 +1397,7 @@ with a **Required** badge until one is uploaded.
 | | |
 |---|---|
 | **Computer name** | Shown on buys in progress and on collections open here. Saved when she leaves the box. |
-| **Sign out** | Signs this browser out of the app. The store password is needed again. |
+| **Sign out** | Signs this computer out of the app. The store's other computers and phones stay signed in. The store password is needed again here. |
 
 ### API keys
 
@@ -1447,7 +1497,7 @@ Buys downloads.
 | **+N / −N** | Cards added and removed, placeholders included. Bulk is counted apart in the words: *7 cards + 100 bulk bought*. |
 | **User** | Who did it, in her colour. |
 | **Market / Cash / Credit** | Totals, where they apply. |
-| **Card rows** | Each card added (+) or removed (−), with its price. |
+| **Card rows** | Each card added (+) or removed (−), with its price. A card a phone scanned into a collection ends *· 📱 scanned on Dana's phone*. |
 | **Field rows** | Each detail changed, before → after. |
 
 Cards added to one collection by one user, each within 15 minutes of the last, show as one panel.
