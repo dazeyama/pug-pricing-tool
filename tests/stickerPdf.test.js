@@ -31,7 +31,7 @@ test("a sticker a copy, in Print PKM?'s order: by set name, then by number, NM f
   ]);
 });
 
-test('the sheet: 8 x 20 stickers of 1 in x 1/2 in from 0.30 in, 0.49 in; a printer offset moves them all', () => {
+test('the sheet: 8 x 20 stickers of 1 in x 1/2 in from 0.29 in, 0.49 in; a printer offset moves them all', () => {
   assert.equal(PER_SHEET, 160);
   assert.deepEqual(stickerBox(0), { x: SHEET.left, y: SHEET.top, w: 72, h: 36 });
   assert.deepEqual(stickerBox(9), { x: SHEET.left + 72, y: SHEET.top + 36, w: 72, h: 36 });
@@ -39,7 +39,7 @@ test('the sheet: 8 x 20 stickers of 1 in x 1/2 in from 0.30 in, 0.49 in; a print
   assert.equal(stickerBox(0, { dx: 2, dy: -3 }).x, SHEET.left + 2);
   assert.equal(stickerBox(0, { dx: 2, dy: -3 }).y, SHEET.top - 3);
   assert.ok(SHEET.left + 8 * 72 <= SHEET.page.w && SHEET.top + 20 * 36 <= SHEET.page.h);
-  assert.equal(SHEET.left, 0.30 * 72);
+  assert.equal(SHEET.left, 0.29 * 72);
   assert.equal(SHEET.top, 0.49 * 72);
 });
 

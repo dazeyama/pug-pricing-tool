@@ -1,6 +1,6 @@
 // Price-tag stickers for Pokémon cards (decision 281), on the store's
 // sticker sheets: Letter, 160 stickers, 8 across x 20 down, each 1 in x
-// 1/2 in, the grid 0.30 in from the left and 0.49 in from the top. Measured
+// 1/2 in, the grid 0.29 in from the left and 0.49 in from the top. Measured
 // from a scan of the sheet (2026-10-16: the pitch), then from the owner's
 // test print on it (the same day: the print sat 0.03 in right and a little
 // low, so the grid moved; the stand-alone tool with the same numbers and a
@@ -9,9 +9,9 @@
 // follows the printout. Each sticker (owner, 2026-10-16): the name's first
 // letters and the collector number in brackets, small, at the top; the
 // price, big and centred, as the app shows money ("$12", "$1.50"); the
-// condition in a chip to its right; all of it kept 5% of the width in from
-// the sides and 3.6 pt from the top and bottom (the test print: the chip
-// sat on the right cut line). Built with jsPDF
+// condition in a chip centred under it; 0.12 in kept clear at the sides and
+// about 0.08 in top and bottom (two test prints: a chip at the price's
+// right sat on the right cut line, the name on the top one). Built with jsPDF
 // like the audit printout; the pure parts are tested under Node.
 
 import { jsPDF } from 'jspdf';
@@ -26,7 +26,7 @@ export const SHEET = {
   columns: 8,
   rows: 20,
   cell: { w: 1 * IN, h: 0.5 * IN },
-  left: 0.30 * IN,
+  left: 0.29 * IN,
   top: 0.49 * IN,
 };
 export const PER_SHEET = SHEET.columns * SHEET.rows;
@@ -38,14 +38,16 @@ export const PER_SHEET = SHEET.columns * SHEET.rows;
 export const PRINTER_OFFSET = { dx: 0, dy: 0 };
 
 const NAME_LETTERS = 6;      // "first 5ish letters of the name" (owner, 2026-10-16)
-// Kept clear inside each sticker (owner, after the test print: "margins of error next to the
-// edges of the box by ~5%"): 5% of the width at the sides, 3.6 pt (10%) top and bottom.
-const PAD_X = 0.05 * IN;
-const PAD_Y = 3.6;
-const LABEL_PT = 5.5;
-const PRICE_PT = 16;         // the biggest the price is tried at; it shrinks to fit
+// Kept clear inside each sticker (owner, after two test prints: "we can't be close to or
+// touching ANY red lines"): 0.12 in at the sides; the stack sized to leave about 0.08 in at
+// the top and the bottom, so a print landing 0.05 in off still touches nothing.
+const INSET_X = 0.12 * IN;
+const LABEL_PT = 5;          // the name and number
+const LABEL_TOP = 6;         // its cap top this far below the sticker's top edge
+const PRICE_PT = 12;         // the biggest the price is tried at; it shrinks to fit
 const PRICE_MIN_PT = 7;
-const CHIP = { w: 18, h: 9, pt: 6 };
+const PRICE_BASELINE = 21.5; // below the sticker's top edge
+const CHIP = { h: 7, pt: 5, top: 23.4, pad: 5 };   // the condition, centred under the price
 
 /**
  * A sticker's top line: the name's first letters and the collector number,
@@ -122,27 +124,29 @@ export function stickerPdf(rows, { offset = PRINTER_OFFSET, start = 1, outline =
       doc.setLineWidth(0.3);
       doc.rect(x, y, w, h, 'S');
     }
-    // The name and number, small, along the top.
+    const mid = x + w / 2;
+    const room = w - 2 * INSET_X;
+    // The name and number, small, at the top: well down from the edge (owner, second test print).
     const label = pdfSafe(row.label);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(0, 0, 0);
-    sizeToFit(doc, label, w - 2 * PAD_X, LABEL_PT, 4);
-    doc.text(label, x + w / 2, y + PAD_Y + 4.2, { align: 'center' });
-    // The price's baseline, up from the bottom; the chip centred on the price's height.
-    const baseline = y + h - PAD_Y - 1;
-    const chipX = x + w - PAD_X - CHIP.w;
-    const chipY = baseline - 5.8 - CHIP.h / 2;
-    doc.setDrawColor(...(CONDITION_RGB[row.condition] ?? CONDITION_RGB.NM));
-    doc.setLineWidth(0.8);
-    doc.roundedRect(chipX, chipY, CHIP.w, CHIP.h, 1.6, 1.6, 'S');
-    doc.setFontSize(CHIP.pt);
-    doc.text(row.condition, chipX + CHIP.w / 2, chipY + 6.6, { align: 'center' });
-    // The price, big, centred in the room left of the chip.
+    sizeToFit(doc, label, room, LABEL_PT, 4);
+    doc.text(label, mid, y + LABEL_TOP + LABEL_PT * 0.72, { align: 'center' });
+    // The price, big, centred.
     // As the app shows money: "$12", "$1.50", "$0.40" (owner, after seeing both: no "empty .00").
     const price = formatMoney(row.price);
-    const roomW = chipX - 3 - (x + PAD_X);
-    sizeToFit(doc, price, roomW, PRICE_PT, PRICE_MIN_PT);
-    doc.text(price, x + PAD_X + roomW / 2, baseline, { align: 'center' });
+    sizeToFit(doc, price, room, PRICE_PT, PRICE_MIN_PT);
+    doc.text(price, mid, y + PRICE_BASELINE, { align: 'center' });
+    // The condition's chip, centred under the price (owner, second test print: "a LOT of space
+    // on both left and right").
+    doc.setFontSize(CHIP.pt);
+    const chipW = doc.getTextWidth(row.condition) + CHIP.pad;
+    const chipX = mid - chipW / 2;
+    const chipY = y + CHIP.top;
+    doc.setDrawColor(...(CONDITION_RGB[row.condition] ?? CONDITION_RGB.NM));
+    doc.setLineWidth(0.7);
+    doc.roundedRect(chipX, chipY, chipW, CHIP.h, 1.4, 1.4, 'S');
+    doc.text(row.condition, mid, chipY + 5.2, { align: 'center' });
   }
   return doc;
 }
