@@ -460,7 +460,7 @@ Every phase's list in Section 15 says which screen on which device. The owner ne
 
 ## 12. Changelog, Help, Settings
 
-- **Changelog:** nothing new. A walk-in draft isn't logged (spec 8.10); a collection's scans are logged by `collection_add_line` as **Cards added**, on the computer's user and device, as adds from the keyboard are. ◆ (Wanting "scanned from Dana's phone" in the entry would be a change to `collection_add_line`'s event text: ask first.)
+- **Changelog:** a walk-in draft isn't logged (spec 8.10); a collection's scans are logged by `collection_add_line` as **Cards added**, on the computer's user and device, as adds from the keyboard are, and (owner, 2026-10-16: "sure") each scanned card's line there ends "· 📱 scanned on <the phone's name>": `useCollection.add` adds it to the text it already passes (`p_text`) when the line's snapshot carries the phone's stamp; no database change.
 - **Help:** the README gains a **Scanning from a phone** section (pairing, the controls, the tiers, "fill the frame", sounds, what to do with a card that can't be read), which Help renders as it does the rest (`src/lib/help.js`). Written in S5, as the owner's rule is one Help update per feature.
 - **Settings:** nothing new. ◆ (Possible later: the phone's name, like the computer's, under Settings → This computer; today the phone is renamed by clearing its site data.)
 
@@ -1063,7 +1063,7 @@ The owner's answers (2026-10-16, the clarification session before this document)
 2. **Version name** for the first live scanner: the owner's call at S5.
 3. **Pokémon scanning:** not planned. Their line (`125/198` with a set abbreviation elsewhere on the card) would need its own locator.
 4. **The List and Mystery Booster** (Appendix A): a smarter lookup (try `plst` when the card has a List printing and the symbol is seen) if it matters in practice.
-5. **A "scanned from a phone" note in the Changelog** (Section 12): ask the owner if wanted.
+5. **A "scanned from a phone" note in the Changelog**: done 2026-10-16 (Section 12).
 6. **Renaming a phone** without clearing its site data (Section 12).
 7. **An auto scan switch** on the phone: built 2026-10-16 as "Auto?" (Section 17).
 8. **Settings → Sign out signs out every computer**: done 2026-10-16 (owner: "make sign out per computer"): `session.signOut` now defaults to `scope: 'local'`, so Settings' Sign out and the phone's sign out only their own device.

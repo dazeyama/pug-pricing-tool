@@ -148,8 +148,12 @@ export function useCollection(id, { deviceId, onLockLost }) {
   );
 
   const add = useCallback(async (line, userId) => {
+    // A card the paired phone scanned says so in the Changelog (owner, 2026-10-16: "sure"):
+    // the line's text, then "· 📱 scanned on <the phone's name>".
+    const scan = line.price_snapshot?.scan;
+    const scanned = scan?.from === 'phone' ? ` · 📱 scanned on ${scan.phone ?? 'the phone'}` : '';
     const r = await run('collection_add_line', {
-      p_buy_id: id, p_line: line, p_merge: true, ...mine(userId), p_text: lineText(line),
+      p_buy_id: id, p_line: line, p_merge: true, ...mine(userId), p_text: lineText(line) + scanned,
     }, "Couldn't add the card");
     return r.ok ? r.data : null;
   }, [id, run, mine]);
