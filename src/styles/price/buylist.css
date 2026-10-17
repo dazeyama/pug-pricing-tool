@@ -25,6 +25,8 @@
 .list-body { flex: 1; min-height: 0; overflow-y: auto; padding: 0 0 10px; }
 .list-group:first-child { padding-top: 6px; }
 .list-group + .list-group { margin-top: 8px; }
+/* Bulk pinned at the top of its game, a line between it and the cards (owner, 2026-10-16). */
+.bulk-divider { height: 0; margin: 5px 6px; border-top: 1px solid var(--border); }
 .group-head {
   position: sticky;
   top: 0;

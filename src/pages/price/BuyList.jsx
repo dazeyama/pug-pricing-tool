@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import LinePreview, { previewFor } from '../../components/LinePreview.jsx';
 import { lineText } from '../../lib/lineFormat.js';
 import { formatMoney } from '../../lib/money.js';
@@ -6,13 +6,16 @@ import {
   hasOwnRate, lineRate, otherRate, rateTotals, whyText,
 } from '../../lib/rates.js';
 import { useToast } from '../../components/Toast.jsx';
-import { bulkItem, bulkShortText, cardCounts, countText, isValuedBulk, perText } from '../../lib/bulk.js';
+import { BULK_ITEMS, bulkItem, bulkShortText, cardCounts, countText, isValuedBulk, perText } from '../../lib/bulk.js';
 import CustomRateMark from '../../components/CustomRateMark.jsx';
 import RemoveModal from '../../components/RemoveModal.jsx';
 import { isStruck, struckNote } from '../../lib/struck.js';
 import { useStaff } from '../../state/staff.jsx';
 import { GAMES } from '../../lib/games.js';
 import { useDismiss } from '../../lib/useDismiss.js';
+
+/** Where a bulk line's item comes among the bulk suggestions in a search (lib/bulk.js BULK_ITEMS). */
+const bulkRank = (l) => BULK_ITEMS.findIndex((item) => item.kind === l.bulk_kind);
 
 const VALID_PCT = /^\d{1,3}(\.\d{1,2})?$/;
 
@@ -552,16 +555,23 @@ export default function BuyList({
       <div className="list-body" ref={list}>
         {loaded && !lines.length && <p className="list-empty">Cards you add will appear here.</p>}
         {GAMES.map((g) => {
-          const mine = lines.filter((l) => l.game === g.key);
-          if (!mine.length) return null;
+          const all = lines.filter((l) => l.game === g.key);
+          if (!all.length) return null;
+          // Bulk at the top, in the order the bulk suggestions come in a search, a line under it;
+          // then the cards (placeholders among them) as added (owner, 2026-10-16: "It's confusing
+          // seeing them mixed in").
+          const bulk = all.filter(isValuedBulk).sort((a, b) => bulkRank(a) - bulkRank(b));
+          const mine = [...bulk, ...all.filter((l) => !isValuedBulk(l))];
+          const firstCard = bulk.length < mine.length ? mine[bulk.length].id : null;
           return (
             <section key={g.key} className="list-group">
               <div className="group-head">
                 <span className={`group-chip ${g.key}`}>{g.name} ({countText({ ...cardCounts(mine), struck: 0 }, { short: true })})</span>
               </div>
               {mine.map((l) => (
+                <Fragment key={l.id}>
+                {bulk.length > 0 && l.id === firstCard && <div className="bulk-divider" role="separator" aria-label="Bulk above, cards below" />}
                 <div
-                  key={l.id}
                   data-line={l.id}
                   className={`buy-line-row${l.id === flashId ? ' flash' : ''}${l.id === editingId ? ' editing' : ''}${hitSet.has(l.id) ? ' search-hit' : ''}${hasOwnRate(l) ? ' own-rate' : ''}${l.id === rateFor ? ' rating' : ''}${isStruck(l) ? ' struck' : ''}`}
                   // A small card picture left of the sidebar, level with the line (owner, 2026-09-29).
@@ -617,6 +627,7 @@ export default function BuyList({
                     ×
                   </button>
                 </div>
+                </Fragment>
               ))}
             </section>
           );
