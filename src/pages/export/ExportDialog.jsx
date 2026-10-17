@@ -28,12 +28,15 @@ import {
  * @param {object} [p.target]  export_lines' target (export mode)
  * @param {string} [p.fileName]  the Mass Create file's name (export mode)
  * @param {(result: object) => void} [p.onExported]  after the export is saved and the file handed over
+ * @param {string|null} [p.fileOnly]  the file only, nothing saved (a collection not Paid/Ours, team
+ *   feedback 2026-10-16: export "should always" be allowed; the owner: "File only, change nothing"):
+ *   its status, as the dialog says it ("Processing")
  * @param {boolean} [p.pullOut]  can't-upload cards must be pulled from the batch (false: Can't upload
  *   cards itself, whose cards are already out of it; spec 9.3)
  * @param {() => void} p.onClose
  */
 export default function ExportDialog({
-  items: itemsNow, mode = 'check', title, target: targetNow, fileName, onExported, onClose, pullOut = true,
+  items: itemsNow, mode = 'check', title, target: targetNow, fileName, onExported, onClose, pullOut = true, fileOnly = null,
 }) {
   // The cards and the buys' versions as they were when it opened, kept for
   // as long as it's open (owner, 2026-10-14: an export kept starting over
@@ -205,6 +208,13 @@ export default function ExportDialog({
   const nearMint = exporting ? nearMintPrices(fileLines, pct) : new Map();
 
   async function save() {
+    // The file only: downloaded as it would be, its Custom SKU today's; nothing saved, so no user needed.
+    if (fileOnly) {
+      const sku = customSkuFor(new Date());
+      const rows = toExport > 0 ? downloadMassCreate(fileLines.map((l) => ({ ...l, cc_custom_sku: sku })), fileName, pct) : 0;
+      onExported?.({ fileOnly: true, rows, cards: toExport, sku });
+      return;
+    }
     if (!staff.current) {
       staff.pulse();
       return;
@@ -352,7 +362,7 @@ export default function ExportDialog({
       </>
     );
   } else {
-    const blocked = (pullOut && cantCards > 0 && !pulled) || (!pullOut && toExport === 0) || saving;
+    const blocked = (pullOut && cantCards > 0 && !pulled) || ((!pullOut || fileOnly) && toExport === 0) || saving;
     footer = (
       <>
         <button type="button" className="btn ghost" disabled={saving} onClick={() => setPhase('review')}>Back</button>
@@ -361,10 +371,11 @@ export default function ExportDialog({
           className={`btn primary${saving ? ' busy' : ''}`}
           disabled={blocked}
           title={pullOut && cantCards > 0 && !pulled ? 'Tick “I’ve pulled these cards out of the batch” first'
-            : !pullOut && toExport === 0 ? 'Nothing matched: there’s nothing to export' : undefined}
+            : (!pullOut || fileOnly) && toExport === 0 ? 'Nothing matched: there’s nothing to export' : undefined}
           onClick={save}
         >
-          {toExport > 0 ? `Export ${toExport} card${toExport === 1 ? '' : 's'}` : 'Mark them Can’t upload'}
+          {fileOnly ? `Download the file (${toExport} card${toExport === 1 ? '' : 's'})`
+            : toExport > 0 ? `Export ${toExport} card${toExport === 1 ? '' : 's'}` : 'Mark them Can’t upload'}
         </button>
       </>
     );
@@ -455,7 +466,14 @@ export default function ExportDialog({
           <>
             {saveError && <div className="banner err">{saveError}</div>}
             <p className="xd-summary">
-              {toExport > 0 ? (
+              {fileOnly ? (
+                <>
+                  Download a Crystal Commerce Mass Create file of <strong>{toExport} card{toExport === 1 ? '' : 's'}</strong>{' '}
+                  ({previewRows().length} row{previewRows().length === 1 ? '' : 's'}), Custom SKU{' '}
+                  <strong>{customSkuFor(new Date())}</strong>. <strong>Nothing is saved:</strong> it stays {fileOnly}, and its
+                  cards aren't marked exported, so they can be exported again.
+                </>
+              ) : toExport > 0 ? (
                 <>
                   Export <strong>{toExport} card{toExport === 1 ? '' : 's'}</strong> ({previewRows().length} row
                   {previewRows().length === 1 ? '' : 's'}) to a Crystal Commerce Mass Create file, Custom SKU{' '}

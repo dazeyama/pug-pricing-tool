@@ -193,8 +193,10 @@ function CollectionScreen({ id }) {
    * EXPORT (export spec 8.2). Paid/Ours: the export dialog for its Magic
    * cards, then Completed (only Pokémon cards: Completed with no file, after
    * asking). Completed: the same file again from the stamps. Processing,
-   * Priced or Rejected: blocked. Can't upload cards (9.3): a warning, then
-   * the dialog.
+   * Priced or Rejected (team feedback, 2026-10-16: export "should always" be
+   * allowed; the owner: "File only, change nothing"): the dialog, which only
+   * downloads the file, saving nothing. Can't upload cards (9.3): a warning,
+   * then the dialog.
    */
   function startExport() {
     if (buy && !system && buy.status === 'completed') {
@@ -210,12 +212,14 @@ function CollectionScreen({ id }) {
       toast(`Downloaded the same file again: ${rows} row${rows === 1 ? '' : 's'}, Custom SKU ${skus.join(', ')}.`, 'ok');
       return;
     }
-    if (buy && !system && buy.status === 'rejected') {
-      toast('This collection was Rejected: there is nothing to export.', 'err');
-      return;
-    }
     if (buy && !system && buy.status !== 'paid') {
-      toast('Mark it Paid/Ours first.', 'err');
+      // The file only: nothing's saved, so no user or edit lock is needed.
+      if (offline) {
+        toast('No connection: the export needs it to match Crystal Commerce products.', 'err');
+        return;
+      }
+      if (!col.lines.some((l) => l.game === 'mtg' && movesOn(l))) toast('No Magic cards here to export.', 'err');
+      else setExportStep('file');
       return;
     }
     if (!user) {
@@ -265,6 +269,12 @@ function CollectionScreen({ id }) {
 
   async function exported(result) {
     setExportStep(null);
+    if (result.fileOnly) {
+      toast(result.rows > 0
+        ? `Downloaded the file: ${result.rows} row${result.rows === 1 ? '' : 's'}, Custom SKU ${result.sku}. Nothing was saved: it stays ${statusLabel(buy.status)}.`
+        : 'Nothing matched, so there was no file. Nothing was saved.', 'ok');
+      return;
+    }
     const rows = `${result.rows} row${result.rows === 1 ? '' : 's'}`;
     const cards = `${result.cards} card${result.cards === 1 ? '' : 's'}`;
     if (system) {
@@ -730,6 +740,21 @@ function CollectionScreen({ id }) {
                 Crystal Inventory has changed or you can pick their products by hand.
               </p>
             </Modal>
+          )}
+          {exportStep === 'file' && !system && (
+            <ExportDialog
+              mode="export"
+              fileOnly={statusLabel(buy.status)}
+              title={`Export ${buy.customer_name} to Crystal Commerce (file only)`}
+              items={col.lines.filter((l) => l.game === 'mtg' && movesOn(l)).map((line) => ({ line, where: '' }))}
+              target={{ kind: 'collection', buy_id: buy.id, version: buy.version }}
+              fileName={`cc-mass-create-${fileSafe(buy.customer_name)}-${fileStamp(new Date())}.csv`}
+              onExported={exported}
+              onClose={() => {
+                setExportStep(null);
+                focusSearch();
+              }}
+            />
           )}
           {exportStep === 'dialog' && system && (
             <ExportDialog
