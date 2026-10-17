@@ -1,7 +1,10 @@
 // The request transport, ported from Audit Tool (app.js enqueue/scryfallFetch):
-// one serialized queue per API, at least `spacingMs` between requests, and
+// one queue per API, at least `spacingMs` between request starts, and
 // retries on 429/503/network errors with backoff that honours Retry-After.
-// Nothing is fired in parallel on one queue.
+// One request at a time unless the queue is given `concurrency` lanes
+// (TCGdex: four, owner, 2026-10-16, "why is this screen so slow": 91 card
+// records one by one took the better part of a minute); the spacing then
+// holds between starts, however many are in flight.
 //
 // Additions for live search: requests carry an AbortSignal, so a query that's
 // been superseded drops its queued requests; and a low-priority lane for
@@ -28,23 +31,23 @@ export class UnavailableError extends Error {
 const SLOW_FOR_MS = 60_000;
 
 /**
- * @param {{ spacingMs?: number, tries?: number }} [options]
+ * @param {{ spacingMs?: number, tries?: number, concurrency?: number }} [options]
  */
-export function createTransport({ spacingMs = 100, tries = 5 } = {}) {
+export function createTransport({ spacingMs = 100, tries = 5, concurrency = 1 } = {}) {
   const high = [];
   const low = [];
-  let running = false;
-  let lastRequestAt = 0;
+  let active = 0;
+  let nextStartAt = 0;   // the earliest the next request may start: reserved, so lanes don't start together
   let slowUntil = 0;
 
   async function fetchWithRetry(url, signal) {
     let limited = false;
     for (let attempt = 0; attempt < tries; attempt++) {
       const gap = Date.now() < slowUntil ? Math.max(spacingMs * 5, 500) : spacingMs;
-      const since = Date.now() - lastRequestAt;
-      if (since < gap) await sleep(gap - since);
+      const at = Math.max(Date.now(), nextStartAt);
+      nextStartAt = at + gap;
+      if (at > Date.now()) await sleep(at - Date.now());
       if (signal?.aborted) throw abortError();
-      lastRequestAt = Date.now();
 
       let res;
       try {
@@ -68,22 +71,22 @@ export function createTransport({ spacingMs = 100, tries = 5 } = {}) {
     throw new UnavailableError(url, limited);
   }
 
-  async function pump() {
-    if (running) return;
-    running = true;
-    while (high.length || low.length) {
+  /** Start queued requests while a lane is free; each one that ends frees its lane and pumps again. */
+  function pump() {
+    while (active < concurrency && (high.length || low.length)) {
       const job = high.length ? high.shift() : low.shift();
       if (job.signal?.aborted) {
         job.reject(abortError());
         continue;
       }
-      try {
-        job.resolve(await fetchWithRetry(job.url, job.signal));
-      } catch (e) {
-        job.reject(e);
-      }
+      active += 1;
+      fetchWithRetry(job.url, job.signal)
+        .then(job.resolve, job.reject)
+        .finally(() => {
+          active -= 1;
+          pump();
+        });
     }
-    running = false;
   }
 
   /**

@@ -108,18 +108,23 @@ export async function todaysPrices(lines, { cards = null, onStep } = {}) {
     scry = new Map([...scry, ...(await scryfallCards(missing))]);
   }
 
-  // Pokémon: each card's TCGdex record, for its versions and their prices.
+  // Pokémon: each card's TCGdex record, for its versions and their prices. All asked for at
+  // once: TCGdex's queue runs a few at a time and paces them (owner, 2026-10-16: one by one, a
+  // sheet of 91 took the better part of a minute).
   const dexCards = new Map();
   const dexKeys = [...new Set(pokemon.map((l) => `${l.lang}|${l.tcgdex_id}`))];
-  for (let i = 0; i < dexKeys.length; i++) {
-    if (i % 10 === 0) onStep?.(`Loading Pokémon card data (${i + 1} of ${dexKeys.length})…`);
-    const [lang, id] = dexKeys[i].split('|');
+  if (dexKeys.length) onStep?.(`Loading Pokémon card data (0 of ${dexKeys.length})…`);
+  let landed = 0;
+  await Promise.all(dexKeys.map(async (key) => {
+    const [lang, id] = key.split('|');
     try {
-      dexCards.set(dexKeys[i], await dex.fetchCard(lang, id));
+      dexCards.set(key, await dex.fetchCard(lang, id));
     } catch {
       // Gone from TCGdex: that line keeps its price.
     }
-  }
+    landed += 1;
+    if (landed % 10 === 0 || landed === dexKeys.length) onStep?.(`Loading Pokémon card data (${landed} of ${dexKeys.length})…`);
+  }));
 
   // Each line as the Price screen saw it: the card (c), finish, version.
   const seen = [];

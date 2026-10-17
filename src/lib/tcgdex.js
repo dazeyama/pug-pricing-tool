@@ -18,7 +18,10 @@ import { DAY, memoryCache, readStored, storedOrDownload, writeStored } from './c
 import { normNumber } from './query.js';
 
 const API = 'https://api.tcgdex.net/v2';
-const transport = createTransport({ spacingMs: 100 });
+// Four at a time (owner, 2026-10-16: a sticker sheet's 91 card records one by one took the
+// better part of a minute); TCGdex sits on a CDN and names no limit, and the 100 ms between
+// starts keeps it to ten a second.
+const transport = createTransport({ spacingMs: 100, concurrency: 4 });
 
 /** @typedef {'en'|'ja'} Lang */
 

@@ -46,3 +46,47 @@ test('a 429 marks the failure as limited and widens the spacing for a while', as
     globalThis.fetch = realFetch;
   }
 });
+
+// Several lanes (TCGdex's card records, owner, 2026-10-16): up to `concurrency` in flight; one by default.
+test('concurrency lanes: that many requests in flight at once, one without it', async () => {
+  const realFetch = globalThis.fetch;
+  let inFlight = 0;
+  let most = 0;
+  globalThis.fetch = async () => {
+    inFlight += 1;
+    most = Math.max(most, inFlight);
+    await new Promise((r) => setTimeout(r, 15));
+    inFlight -= 1;
+    return new Response('{}', { status: 200 });
+  };
+  try {
+    const four = createTransport({ spacingMs: 0, concurrency: 4 });
+    await Promise.all(['a', 'b', 'c', 'd', 'e', 'f'].map((x) => four.request(`https://x.test/${x}`)));
+    assert.equal(most, 4);
+    most = 0;
+    const one = createTransport({ spacingMs: 0 });
+    await Promise.all(['a', 'b', 'c'].map((x) => one.request(`https://x.test/${x}`)));
+    assert.equal(most, 1);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+// The spacing holds between starts even with lanes open.
+test('with lanes, requests still start at least the spacing apart', async () => {
+  const realFetch = globalThis.fetch;
+  const starts = [];
+  globalThis.fetch = async () => {
+    starts.push(Date.now());
+    await new Promise((r) => setTimeout(r, 30));
+    return new Response('{}', { status: 200 });
+  };
+  try {
+    const t = createTransport({ spacingMs: 20, concurrency: 3 });
+    await Promise.all(['a', 'b', 'c', 'd'].map((x) => t.request(`https://x.test/${x}`)));
+    starts.sort((p, q) => p - q);
+    for (let i = 1; i < starts.length; i++) assert.ok(starts[i] - starts[i - 1] >= 15, `gap ${starts[i] - starts[i - 1]} ms`);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
