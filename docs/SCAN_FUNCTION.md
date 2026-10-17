@@ -835,17 +835,6 @@ locks **automatically on the first card**.
   2.4). Now the lock is scaled to the new size (`lock.js` `rescaleLock`), shown and read the same
   part of the picture, the held art kept. **What a page can't stop:** the lens switch itself moves
   the picture inside the fixed crop (each lens sits elsewhere on the phone).
-- **One lens, never switching** (owner, 2026-10-16, two screenshots: the crop stayed put on screen
-  while the picture in it jumped, the card up-left in one and down-right in the other, Reset
-  setting it right). `camera.js` `openCamera`: on a phone whose default back camera is the
-  switching kind ("Back Triple Camera", an iPhone Pro), the ultra-wide lens is opened on its own
-  ("Back Ultra Wide Camera", by its device id once the camera's allowed), at up to 3840 × 2160: it
-  focuses close (13 Pro and later) and never switches, so the picture can't jump. The card is
-  smaller in its picture than through the switching camera, hence the most pixels it gives; the
-  locked crop shows it as large as before; `findCard` takes a card down to 10% of the picture's
-  height (was 20%) for it. Any other phone, or the ultra-wide refusing to open,
-  keeps the default camera. Untested on the phone: if the ultra-wide reads worse or can't focus,
-  this is the commit to undo.
 - **Checked end to end** on Scryfall's scans of 17 modern cards (2017–2025) laid in a simulated holder:
   card 40% of the picture's height: edges 17/17, locked 17/17, the cutout read right 17/17; 30%:
   17, 16 and 16. Tests: `tests/scanLock.test.js`, `tests/scanGuide.test.js`.

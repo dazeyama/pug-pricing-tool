@@ -13,11 +13,8 @@ import { otsuThreshold } from './recognition/textLocator.js';
 const WORK_WIDTH = 320;
 /** A card's width ÷ height is 0.716; a slightly turned card's outline a little more. */
 const RATIO = { min: 0.62, max: 0.84 };
-/**
- * The card is at least this share of the picture's height, at most this. 10%: through an iPhone's
- * ultra-wide lens alone (camera.js) the card is about half as tall as through its default camera.
- */
-const HEIGHT = { min: 0.1, max: 0.97 };
+/** The card is at least this share of the picture's height, at most this. */
+const HEIGHT = { min: 0.2, max: 0.97 };
 /** A patch of dark this small is nothing (a share of the picture). */
 const MIN_SHARE = 0.004;
 /** The border and dark art fill at least this share of their outline (a lone thin frame line doesn't). */
