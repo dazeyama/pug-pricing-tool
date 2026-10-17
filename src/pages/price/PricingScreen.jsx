@@ -168,9 +168,13 @@ export default function PricingScreen({
   // selected (found), then its saved choices put back (restored); SAVE EDIT
   // saves over it. { line, key, query, found, restored } or null.
   const [editing, setEditing] = useState(null);
-  // The card the phone last added, shown in the Selected card frame over whatever's selected,
-  // but not selected: nothing's searched or priced for it (owner, 2026-10-16). Gone at a click
-  // anywhere else, a card picked, or a new search; the selected card's back underneath.
+  const editingRef = useRef(null);
+  editingRef.current = editing;
+  // The card the phone last added, shown in the Selected card frame but not selected: nothing's
+  // searched or priced for it (owner, 2026-10-16). The card that was selected is deselected
+  // ("it feels natural to click the selected card again to get it back"), unless a list line's
+  // being edited. Gone at a click anywhere else (the details panel too), a card picked, or a
+  // new search.
   const [phoneCard, setPhoneCard] = useState(null);   // { candidate, finish }
   // Cards from the paired phone, added as ADD CARD adds them and flashed the same way
   // (docs/SCAN_FUNCTION.md 8.3).
@@ -182,10 +186,15 @@ export default function PricingScreen({
     roundUp,
     onAdded: (id, added) => {
       flash(id);
-      if (added?.card) setPhoneCard({ candidate: magicCandidate(added.card), finish: added.finish });
+      if (!added?.card) return;
+      setPhoneCard({ candidate: magicCandidate(added.card), finish: added.finish });
+      if (!editingRef.current) {
+        setSelected(null);
+        setHighlight(-1);
+      }
     },
   });
-  // A click anywhere but on the phone's card (or its enlarged view) puts it away.
+  // A click anywhere but on the phone's card picture (or its enlarged view) puts it away.
   useEffect(() => {
     if (!phoneCard) return undefined;
     const away = (e) => {
@@ -194,8 +203,8 @@ export default function PricingScreen({
     document.addEventListener('pointerdown', away, true);
     return () => document.removeEventListener('pointerdown', away, true);
   }, [phoneCard]);
-  // A new search, or another card selected, puts it away too.
-  useEffect(() => setPhoneCard(null), [text, selected?.key]);
+  // A new search puts it away too (a card picked does, in pick()).
+  useEffect(() => setPhoneCard(null), [text]);
   const images = useCardImages(card);   // a Pokémon thumbnail for the line (backups too)
 
   // ADD CARD's requirements (spec 8.8), besides a user (GuardButton).
@@ -314,6 +323,7 @@ export default function PricingScreen({
 
   // Clicking the selected card again deselects it.
   function pick(c) {
+    setPhoneCard(null);
     const again = selected?.key === c.key;
     setSelected(again ? null : c);
     setHighlight(again ? -1 : visible.findIndex((v) => v.key === c.key));
@@ -334,6 +344,7 @@ export default function PricingScreen({
 
   /** Move to a sibling printing in the same set (details panel, spec 8.6). */
   function moveTo(card, nextFinish) {
+    setPhoneCard(null);
     const c = magicCandidate(card);
     setSelected(c);
     setPrinting({ key: c.key, finish: nextFinish, version: null });
@@ -359,6 +370,7 @@ export default function PricingScreen({
 
   /** CLEAR (spec 8.8): the stage back to empty and defaults; never the list. */
   function clear() {
+    setPhoneCard(null);
     setText('');
     setSelected(null);
     setHighlight(-1);

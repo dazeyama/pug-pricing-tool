@@ -261,7 +261,8 @@ export default function SelectedCard({
         {centerStamp && (
           <img src={CENTER_LOGO} className="pattern-badge" alt="Pokémon Center stamp" title="Pokémon Center stamp" />
         )}
-        {fromPhone && (
+        {/* Not on the enlarged view: it'd be in the way of the magnifying glass (owner, 2026-10-16). */}
+        {fromPhone && !large && (
           <span className="pattern-badge phone-badge" role="img" aria-label="Added from the phone" title="Added from the phone">📱</span>
         )}
       </>
@@ -314,9 +315,10 @@ export default function SelectedCard({
 
       {/* A fixed height for every card (see .area-info), so the suggestions
           below never shift: one line each, long text ends in "…". */}
-      <aside className="area-info" data-phone-card={fromPhone || undefined}>
+      <aside className="area-info">
         <div className="card-info">
           <h2 className="info-name" title={englishName ? `${name} (${englishName})` : name}>
+            {fromPhone && <span className="info-phone" role="img" aria-label="Added from the phone">📱</span>}
             {name}
             {englishName && <span className="info-en">{englishName}</span>}
           </h2>

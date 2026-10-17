@@ -803,8 +803,11 @@ locks **automatically on the first card**.
   each card the phone adds is shown there (`useScanReceiver` hands the Scryfall card it already
   fetched to `PricingScreen`, `phoneCard`), over whatever's selected, without selecting it:
   nothing's searched, priced or looked up. Labelled "Added from the phone", with a 📱 badge where a
-  Poké Ball's goes (`.phone-badge`). A click anywhere but on it (or its enlarged view), another card
-  selected, or a new search puts it away, the selected card back underneath. A right-click on its
+  Poké Ball's goes (`.phone-badge`, not on the enlarged view, where it'd be in the way of the
+  magnifying glass) and a 📱 before its name in the details panel. The card that was selected is
+  deselected ("it feels natural to click the selected card again to get it back"), unless a list
+  line's being edited. A click anywhere but on its picture (or its enlarged view; a click on the
+  details panel puts it away), a card picked, or a new search puts it away. A right-click on its
   picture searches its name and number ("Wild Growth 342").
 - **The chime when it's sent, brighter for a foil** (owner, later the same day: "Instead of >$3 (we no
   longer need to collect this info at all) I want the alternate sound to be used for Foil and the

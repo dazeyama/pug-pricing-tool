@@ -265,7 +265,8 @@
 .flip-btn:hover { border-color: var(--accent); }
 /* Poké Ball / Master Ball pattern reverse holos: the ball sits inside the
    card's bottom-right corner, clear of the edges, sized with the card. */
-/* The phone's card (shown, not selected): a 📱 where a Poké Ball's badge goes. */
+/* The phone's card (shown, not selected): a 📱 where a Poké Ball's badge goes, and before its name. */
+.info-phone { margin-right: .35em; }
 .phone-badge {
   display: grid;
   place-items: center;
