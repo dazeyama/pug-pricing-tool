@@ -1298,10 +1298,29 @@ Prices are the file's. A TCGplayer file with no price uses TCGplayer's market pr
 For big piles of Magic cards. A phone reads each card with its camera and the card goes straight into
 a computer's open buy list, priced. The computer stays free for anything else. Magic only.
 
-**On the phone,** open the app's address. A phone gets the scanner instead of the app: sign in with
-the store password once, then name the phone ("Chase's phone").
+### How the phone reads a card
+
+The scanner is built on two free, open-source projects. Both run **on the phone itself**.
+
+| | |
+|---|---|
+| **mtgscan**<br>Finding the text, and making sense of it | A free card scanner that runs in a web browser, by GrimbiXcode. The app reuses its card-recognition code. It finds the collector line (the small light text on the card's dark bottom border, like `BLB • EN 0125`) anywhere in the camera's picture, cuts it out and cleans it to black on white. Once Tesseract has read it, mtgscan picks out the set code and the number, fixing common misreads (`O` for `0`, `S` for `5`). It's plain hand-written rules: no neural net, nothing learned. |
+| **Tesseract**<br>Reading the letters | A free text reader (OCR), begun at HP in the 1980s, open source since 2005 and developed by Google for years. The app runs it inside the phone's browser. It looks at a picture of a line of text and says which letters are in it. |
+
+**It isn't generative AI.** Tesseract's reader is a small neural net, trained once by its makers to
+recognise printed letters and shipped as one fixed 3 MB file.
+
+- **It reads; it doesn't write.** All it can do is say which letters are in a picture. It can't make
+  up text, answer questions or invent a card, as a chatbot like ChatGPT can.
+- **Offline.** The picture never leaves the phone. Only the set code and number go online, to
+  Scryfall, to look the card up.
+- **Fixed and predictable.** It never learns from our scans or changes: the same picture gives the
+  same reading every time.
 
 ### Pairing
+
+**On the phone,** open the app's address. A phone gets the scanner instead of the app: sign in with
+the store password once, then name the phone ("Chase's phone").
 
 The phone lists every computer with a price screen open: the Buy tab, a project or a collection.
 Each shows the computer's name, what it's on, and its user (**Pick user** when no one is picked).

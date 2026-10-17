@@ -198,7 +198,12 @@ export const PAGES = [
   },
 
   // Scanning from a phone (docs/SCAN_FUNCTION.md)
+  // Its first page says how the phone reads a card (owner, 2026-10-17).
   { id: 'scanning', chapter: 'Scanning from a phone', start: 'Scanning from a phone', title: 'Scanning from a phone' },
+  {
+    id: 'scanning-pairing', chapter: 'Scanning from a phone', start: 'Scanning from a phone > Pairing',
+    title: 'Pairing and scanning',
+  },
   {
     id: 'scanning-prices', chapter: 'Scanning from a phone', start: 'Scanning from a phone > Prices',
     title: 'Prices and older cards',
