@@ -419,6 +419,12 @@ part can be left out. The sample text shows one: `Lightning Bolt 117/331 2X2`.
 
 Japanese cards are searched differently: see [Japanese searches](#japanese-searches).
 
+**From the address bar.** Opening `…/pug-pricing-tool/#/price/<search>` opens the Buy tab with that
+search typed in, on a fresh stage: *#/price/Wild Growth 342 5ED*, or with dashes,
+*#/price/Wild Growth-342-5ED*. To search from Chrome's address bar, add it as a **Site search**
+(Settings → Search engine → Manage search engines and site search) with the URL
+`https://dazeyama.github.io/pug-pricing-tool/#/price/%s`.
+
 **Japanese Magic printings.** Magic is searched in English, but printings that only exist in
 Japanese come up too: the Mystical Archive's Japanese alternate art (*Cyclonic Rift SOA 79*), War of
 the Spark's Japanese planeswalkers, Japanese promos. They're marked **JP** on their suggestion and
@@ -578,8 +584,9 @@ adding a new line.
 
 ### The buy list
 
-Every card in the buy, in the order added, under **Magic** and **Pokémon** headings. The heading
-counts the cards, and bulk apart: *42 cards + 1,000 bulk*.
+Every card in the buy, in the order added, under **Magic** and **Pokémon** headings. **Bulk sits at the
+top** of its heading, in the order it comes in a search, with a line under it; placeholders stay among
+the cards. The heading counts the cards, and bulk apart: *42 cards + 1,000 bulk*.
 
 | | |
 |---|---|
@@ -884,11 +891,12 @@ Sends the collection's Magic cards to Crystal Commerce. See
 
 | Status | What EXPORT does |
 |---|---|
-| Processing, Priced | Says to mark it Paid/Ours first. |
+| Processing, Priced, Rejected | Opens the export, but only downloads the file. **Nothing is saved:** the status stays, and the cards can be exported again. No user needed. |
 | Paid/Ours, Ours | Opens the export. Afterwards the collection is **Completed**. |
 | Paid/Ours, Pokémon cards only | Asks, then marks it **Completed** with no file. |
 | Completed | Downloads the same file again. Nothing changes. |
-| Rejected | Says there's nothing to export. |
+
+**Print?** works in every status.
 
 A Completed collection shows its **Custom SKU** in the list heading. Its prices show in green: those
 are its Sell Prices.
