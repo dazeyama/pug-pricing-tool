@@ -14,7 +14,7 @@ import { readClues, resolveReadings, resolveThorough } from './resolve.js';
 import { STEP_MS, createProgress } from './progress.js';
 import { findCard } from './cardEdges.js';
 import {
-  ART_CHANGED, anchorBlock, artDistance, artPrint, blockOnCard, cropTo, makeLock, rescaleLock,
+  ART_CHANGED, anchorBlock, artDistance, artPrint, blockOnCard, cropTo, lockOnCard, makeLock, rescaleLock,
 } from './lock.js';
 import { straightCutout } from './straighten.js';
 import { stripShowsFoil } from './foilMark.js';
@@ -264,13 +264,33 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     }
     chime(s.finish);
   }
-  /** A tap on the middle half of the picture is +1. */
+  /**
+   * A tap on the picture: while it's unlocked and a card's outlined in
+   * green, the view locks onto that card (owner, 2026-10-16: "Older cards
+   * never initiate the crop … When this border is showing and the screen is
+   * tapped instead of the normal +1, instead initiate the edge detection crop
+   * on that area"); otherwise a tap on its middle half is +1.
+   */
   function tapPicture(e) {
     if (!camera.on) return;
+    if (!lockRef.current && seenCard) {
+      lockOnSeen();
+      return;
+    }
     const r = e.currentTarget.getBoundingClientRect();
     const x = (e.clientX - r.left) / r.width;
     const y = (e.clientY - r.top) / r.height;
     if (x > 0.25 && x < 0.75 && y > 0.25 && y < 0.75) plusOne();
+  }
+
+  /** Lock onto the card outlined: found again in the picture now, or where it was outlined. */
+  function lockOnSeen() {
+    const frame = camera.capture();
+    if (!frame) return;
+    const card = findCard(frame, defaultCreateCanvas) ?? seenCard;
+    if (!card) return;
+    setLock(lockOnCard(card, frame));
+    setSeenCard(null);
   }
 
   // When the latest scan last changed, by this phone's clock (the database's

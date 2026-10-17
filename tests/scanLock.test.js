@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createCanvas } from '@napi-rs/canvas';
 import { findCard } from '../src/scan/cardEdges.js';
 import {
-  ART_CHANGED, anchorBlock, artDistance, artPrint, blockOnCard, makeLock, rescaleLock,
+  ART_CHANGED, anchorBlock, artDistance, artPrint, blockOnCard, lockOnCard, makeLock, rescaleLock,
 } from '../src/scan/lock.js';
 
 // Owner, 2026-10-16: the view locks onto the first card found by its edges,
@@ -100,4 +100,13 @@ test('the camera picture changes size: the lock kept, the same part of the pictu
   assert.equal(half.charHeight, 4.5);
   assert.deepEqual(half.frame, { width: 540, height: 960 });
   assert.equal(rescaleLock(lock, { width: 1080, height: 1920 }), lock, 'the same size: the same lock');
+});
+
+test('a lock on a card by its edges alone: the collector corner where a modern card has it', () => {
+  const card = { x: 300, y: 600, width: 540, height: 760 };
+  const lock = lockOnCard(card, { width: 1080, height: 1920 });
+  assert.deepEqual(lock.card, card);
+  assert.ok(lock.collector.x > card.x && lock.collector.x < card.x + card.width * 0.1, 'near the left edge');
+  assert.ok(lock.collector.y > card.y + card.height * 0.9 && lock.collector.y < card.y + card.height, 'at the bottom');
+  assert.ok(Math.abs(lock.charHeight - card.height * 0.0115) < 1e-9);
 });

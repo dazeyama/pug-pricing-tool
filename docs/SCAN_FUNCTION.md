@@ -835,6 +835,15 @@ locks **automatically on the first card**.
     card with no strip to go by (an older card read by its title, Scan card before the lock) is
     nonfoil. Normal or Foil: every card so, whatever the strip shows (`scanFinish`, so a card with
     only one finish keeps it).
+- **A tap locks onto an outlined card** (owner, 2026-10-16: "Older cards never initiate the crop that
+  the first card sets. But I see that they have a green detection border. When this border is
+  showing and the screen is tapped instead of the normal +1, instead initiate the edge detection
+  crop on that area"): the view locks by itself only on a card with a modern collector line where a
+  card's is. While it's unlocked and a card is outlined in green, a tap anywhere on the picture
+  locks onto that card (found again in the picture at the tap, else where it was outlined), its
+  collector corner taken where a modern card's is (`lock.js` `lockOnCard`: 6.5% in, 93.6% down);
+  the strip is looked for in that corner on each card anyway, and an older card then goes to the
+  older-card mode as usual. Locked, a tap on the picture's middle is +1, as before.
 - **The older-card mode** (owner, 2026-10-16, a 2014 Courser of Kruphix: "When you put in a pre-2014
   card the detection for collectors number changes rapidly to card text. When it's detected that
   it's changing very rapidly like this shift to 2014 mode and focus the info box on the card name

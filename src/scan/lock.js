@@ -62,6 +62,22 @@ const clampTo = (r, w, h) => {
  * @param {{ bounds: object, charHeight: number }} block  its collector block
  * @param {{ width: number, height: number }} frame
  */
+/**
+ * A lock on a card found by its edges alone, its collector corner where a
+ * modern card's is (6.5% in, 93.6% down, letters 1.15% of its height): an
+ * older card has no collector line to lock by (owner, 2026-10-16: a tap on
+ * the picture while its green outline shows locks onto it). The strip is
+ * looked for in that corner on each card anyway (straighten.js).
+ */
+export function lockOnCard(card, frame) {
+  const charHeight = card.height * 0.0115;
+  const block = {
+    bounds: { x: card.x + card.width * 0.065, y: card.y + card.height * 0.936, width: card.width * 0.3, height: charHeight * 2.6 },
+    charHeight,
+  };
+  return makeLock(card, block, frame);
+}
+
 export function makeLock(card, block, frame) {
   const pad = block.charHeight * CUTOUT_MARGIN;
   return {
