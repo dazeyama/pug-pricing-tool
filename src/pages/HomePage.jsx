@@ -12,7 +12,6 @@ import CardCountsName from '../components/CardCountsName.jsx';
 import { colorVar } from '../lib/palette.js';
 import { formatInTimeZone } from 'date-fns-tz';
 import { useStaff } from '../state/staff.jsx';
-import { usePresence } from '../state/presence.jsx';
 
 // Home (owner, 2026-10-01): the first tab, and where the logo goes. What
 // needs doing (days to export, Can't upload cards, collections and projects
@@ -187,12 +186,6 @@ function HomeScreen({ today }) {
   const usageHigh = u?.daily_limit && u.daily_used >= u.daily_limit * USAGE_WARN;
 
   const go = (path, state) => navigate(path, state ? { state } : undefined);
-  // Who's on (decision 284): computers with the app open, and the users picked on them.
-  const who = usePresence();
-  const whoComputers = who.computers.length ? who.computers.map((c) => c.label).join(', ') : 'No computer has the app open';
-  const whoUsers = who.users.length
-    ? who.users.map((w) => `${w.name} on ${w.computers.join(' and ')}`).join(', ')
-    : 'No user picked anywhere';
 
   return (
     // The band behind the panels takes the picked user's colour, faintly
@@ -205,18 +198,6 @@ function HomeScreen({ today }) {
           or REPRICE? may hit the limit.
         </div>
       )}
-
-      <div className="home-status" aria-label="Who's on">
-        <span className="home-dot is-live" title={whoComputers}>{who.computers.length} Connected</span>
-        <span className="home-users" title={whoUsers}>
-          <span className="home-user-dots" aria-hidden="true">
-            {who.users.length
-              ? who.users.map((w) => <span key={w.id} className="home-user-dot" style={{ '--c': colorVar(w.color) }} />)
-              : <span className="home-user-dot none" />}
-          </span>
-          {who.users.length} {who.users.length === 1 ? 'User' : 'Users'} selected
-        </span>
-      </div>
 
       {/* Today and the quick actions first, Collections and projects (Can't upload
           cards its fifth tile) in the middle, then Days to export beside Recent activity, taking

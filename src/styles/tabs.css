@@ -332,6 +332,16 @@ nav#tabs {
 }
 /* Changelog is a record of the work, not a step in it: pushed to the right. */
 .tab.tab-apart { margin-left: auto; }
+/* Who's on (decision 284) sits just left of it: the computers with the app open behind a green
+   dot, the picked users as dots in their colours. It takes the push; Changelog follows close. */
+.who-on { margin-left: auto; align-self: center; display: flex; align-items: center; gap: 16px; padding-right: 14px; font-size: 12.5px; color: var(--muted); white-space: nowrap; }
+.who-on + .tab.tab-apart { margin-left: 0; }
+.who-dot::before { content: ""; display: inline-block; width: 9px; height: 9px; margin-right: 6px; border-radius: 50%; background: var(--c); }
+.who-dot.is-live { --c: var(--good); }
+.who-users { display: inline-flex; align-items: center; gap: 6px; }
+.who-user-dots { display: inline-flex; gap: 3px; }
+.who-user-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--c); }
+.who-user-dot.none { background: var(--border); }
 
 .tab {
   background: transparent;

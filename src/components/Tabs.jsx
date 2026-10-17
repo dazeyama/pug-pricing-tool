@@ -1,4 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom';
+import WhoIsOn from './WhoIsOn.jsx';
 
 // The tabs (spec 7.2). Changelog sits apart on the right. Home first, and
 // "Buy" for the Price tab (owner, 2026-10-01; its address stays /price).
@@ -23,19 +24,23 @@ export default function Tabs() {
   const navigate = useNavigate();
   const active = tabKeyFor(pathname);
 
+  const button = (tab) => (
+    <button
+      key={tab.key}
+      type="button"
+      className={`tab${tab.key === active ? ' active' : ''}${tab.apart ? ' tab-apart' : ''}`}
+      // Clicking the active tab again returns it to its root view.
+      onClick={() => navigate(tab.path)}
+    >
+      {tab.label}
+    </button>
+  );
   return (
     <nav id="tabs">
-      {TABS.map((tab) => (
-        <button
-          key={tab.key}
-          type="button"
-          className={`tab${tab.key === active ? ' active' : ''}${tab.apart ? ' tab-apart' : ''}`}
-          // Clicking the active tab again returns it to its root view.
-          onClick={() => navigate(tab.path)}
-        >
-          {tab.label}
-        </button>
-      ))}
+      {TABS.filter((tab) => !tab.apart).map(button)}
+      {/* Who's on (decision 284), pushed right with Changelog: fun to always see (owner, 2026-10-17). */}
+      <WhoIsOn />
+      {TABS.filter((tab) => tab.apart).map(button)}
     </nav>
   );
 }
