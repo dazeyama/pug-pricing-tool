@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { isPricey, scanFinish, scanQuote, scanTcgPrice, scanText } from '../src/lib/scanPrice.js';
+import { scanFinish, scanQuote, scanText } from '../src/lib/scanPrice.js';
 
 // docs/SCAN_FUNCTION.md 7.1: TCGplayer > JustTCG > Cardmarket > ask (owner, 2026-10-16).
 
@@ -81,15 +81,4 @@ test('a scan reads like a list line', () => {
     'Lightning Bolt (2X2) 117 *F* [LP]');
   assert.equal(scanText({ name: 'Sol Ring', set_code: 'CMR', collector_number: '472', finish: 'etched', condition: 'NM' }),
     'Sol Ring (CMR) 472 *E*');
-});
-
-test('the brighter chime: over $3 at TCGplayer for the finish sent, before condition and rounding', () => {
-  const card = { prices: { usd: '3.20', usd_foil: '2.50', usd_etched: null } };
-  assert.equal(scanTcgPrice(card, 'nonfoil'), 3.2);
-  assert.equal(isPricey(card, 'nonfoil'), true);
-  assert.equal(isPricey(card, 'foil'), false, 'the foil price is the one that counts for a foil');
-  assert.equal(scanTcgPrice(card, 'etched'), null);
-  assert.equal(isPricey(card, 'etched'), false, 'no price: the usual chime');
-  assert.equal(isPricey({ prices: { usd: '3.00' } }, 'nonfoil'), false, 'over $3, not $3 itself');
-  assert.equal(isPricey(null, 'nonfoil'), false);
 });

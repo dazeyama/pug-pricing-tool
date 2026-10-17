@@ -3,7 +3,7 @@ import { CONDITIONS } from '../lib/ladder.js';
 import { readSession, writeSession } from '../lib/local.js';
 import { formatMoney } from '../lib/money.js';
 import * as scry from '../lib/scryfall.js';
-import { isPricey, scanFinish, scanText } from '../lib/scanPrice.js';
+import { scanFinish, scanText } from '../lib/scanPrice.js';
 import { useConnection } from '../state/connection.jsx';
 import { usePairing } from './usePairing.js';
 import { useScans } from './useScans.js';
@@ -168,16 +168,12 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const { offline } = useConnection();
   const busy = useRef(false);
   const lastSent = useRef(null);                  // the printing and finish last sent (6.3)
-  // The Scryfall cards sent from this page, by id: +1's chime knows a copy's price from them.
-  const sentCards = useRef(new Map());
   /**
    * The chime the moment a card is sent, not when the computer has added it
-   * (owner, 2026-10-16): the brighter one over $3 at TCGplayer for its finish.
+   * (owner, 2026-10-16): the brighter one for a foil (or etched) card, the
+   * usual one for nonfoil, so the person scanning hears which went in.
    */
-  const chime = (card, finish) => {
-    if (card) sentCards.current.set(card.id, card);
-    play(card && isPricey(card, finish) ? 'pricey' : 'added');
-  };
+  const chime = (finish) => play(finish === 'nonfoil' ? 'added' : 'foil');
   const computer = session?.device_label ?? 'the computer';
 
   const setCondition = (c) => {
@@ -266,7 +262,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       play('error');
       return;
     }
-    chime(sentCards.current.get(s.scryfall_id) ?? null, s.finish);
+    chime(s.finish);
   }
   /** A tap on the middle half of the picture is +1. */
   function tapPicture(e) {
@@ -296,7 +292,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       swap.current = null;
       send(r.fields).then((res) => {
         if (res.error) say('err', `Couldn't send the new copy: ${SEND_MESSAGES[res.error] ?? res.error}`);
-        else chime(r.card, r.fields.finish);
+        else chime(r.fields.finish);
         setSwapping(null);
       });
     } else if (s.status === 'added' && r.seenUndo) {
@@ -691,7 +687,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       check();
       return;
     }
-    chime(card, finish);
+    chime(finish);
     lastSent.current = key;
     v.held = art;
     setLocal(null);

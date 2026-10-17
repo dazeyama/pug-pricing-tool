@@ -797,7 +797,13 @@ locks **automatically on the first card**.
     read; "+1" shows over the picture as it goes. Only while that card is on its way or added (not
     once undone, failed, skipped or waiting for a price), and not while its finish is being changed.
     The picture takes taps without the double-tap zoom (`touch-action: manipulation`).
-- **The chime when it's sent, brighter over $3** (owner, 2026-10-16: "make a different sound if the
+- **The chime when it's sent, brighter for a foil** (owner, later the same day: "Instead of >$3 (we no
+  longer need to collect this info at all) I want the alternate sound to be used for Foil and the
+  normal sound for normal nonfoil. This will aide workers doing quick detection more than a price
+  point"): the brighter three-note chime (`sounds.js` `foil`) plays when the card sent is foil or
+  etched, the usual two notes when nonfoil, at the same moments as below. The price check
+  (`isPricey`, `scanTcgPrice`, `PRICEY_USD`) and the cards kept for +1's price are gone.
+- **The chime when it's sent, brighter over $3** (superseded by the above) (owner, 2026-10-16: "make a different sound if the
   card scanned is over $3"; then, told the chime came only once the computer had added the card:
   "build it that way"): the chime plays the moment a card is sent (auto scan, Scan card, a printing
   picked, +1, FOIL? / NONFOIL?'s new copy), not when the computer has added it, which with no
