@@ -9,8 +9,9 @@ import { useDismiss } from '../lib/useDismiss.js';
  * word: "EXPORT (42)". `label`: COMPLETE on Pokémon days (owner, 2026-10-02).
  *
  * With `onPrint` (docs/TEAM_FEEDBACK.md 3.1), it opens a small menu instead:
- * **Print?** (the audit printout) and **Export csv** (`onClick`, exactly the
- * EXPORT it was). Blocked, it still just says why. `up`: the menu opens
+ * **Print MTG?** (the audit printout; "Print?" until the owner's 2026-10-16
+ * request, decision 280) and **Export csv** (`onClick`, exactly the EXPORT
+ * it was). Blocked, it still just says why. `up`: the menu opens
  * upward (a button at the foot of the screen); `printing`: a printout is
  * being built.
  */
@@ -58,7 +59,7 @@ export default function ExportButton({
               onPrint();
             }}
           >
-            {printing ? 'Printing…' : 'Print?'}
+            {printing ? 'Printing…' : 'Print MTG?'}
           </button>
           <button
             type="button"
