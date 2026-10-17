@@ -9,6 +9,37 @@ const transport = createTransport({ spacingMs: 100 });
 // two searches a second, and answers faster ones with a minute's 429.
 const bulkSearches = createTransport({ spacingMs: 550 });
 
+// Every search, of every kind (live search, a card's printings, Import
+// Collection, the scanner's), takes its turn through one gate (owner,
+// 2026-10-16: "fix this"): Scryfall takes two searches a second
+// (scryfall.com/docs/api/rate-limits, read 2026-10-16: /cards/search 500 ms),
+// and one 429 shuts the app out for 30 seconds. One search at a time, each
+// sent 550 ms or more after the last one's answer came back, so two are never
+// closer however the queue behind them stands. A search given up before its
+// turn (a newer query typed) takes none.
+const SEARCH_GAP_MS = 550;
+let lastSearchAt = 0;
+let searchLine = Promise.resolve();
+/**
+ * A /cards/search request, in its turn.
+ * @param {string} url
+ * @param {{ signal?: AbortSignal, via?: object }} [opts]  via: the transport (the bulk one for Import Collection)
+ */
+function searchJson(url, { signal, via = transport } = {}) {
+  const run = searchLine.then(async () => {
+    if (signal?.aborted) return via.getJson(url, { signal });   // given up: rejects at once, no turn taken
+    const wait = lastSearchAt + SEARCH_GAP_MS - Date.now();
+    if (wait > 0) await sleep(wait);
+    try {
+      return await via.getJson(url, { signal });
+    } finally {
+      lastSearchAt = Date.now();
+    }
+  });
+  searchLine = run.catch(() => {});
+  return run;
+}
+
 /**
  * @typedef {{ code: string, name: string, printed_size: number|null, card_count: number|null,
  *   released_at: string|null, set_type: string, icon_svg_uri: string|null }} ScryfallSet
@@ -143,7 +174,7 @@ export async function searchPrints(q, signal) {
   const params = new URLSearchParams({
     q: parts.join(' '), unique: 'prints', order: 'released', dir: q.oldest ? 'asc' : 'desc',
   });
-  const data = await transport.getJson(`${API}/cards/search?${params}`, { signal });
+  const data = await searchJson(`${API}/cards/search?${params}`, { signal });
   if (!data) return { cards: [], total: 0, hasMore: false };   // 404: nothing matched
   return { cards: data.data.filter(keptLanguage), total: data.total_cards, hasMore: data.has_more };
 }
@@ -160,7 +191,7 @@ export async function searchAll(q, { maxPages = 10 } = {}) {
   let url = `${API}/cards/search?${params}`;
   const cards = [];
   for (let page = 0; url && page < maxPages; page++) {
-    const data = await bulkSearches.getJson(url);
+    const data = await searchJson(url, { via: bulkSearches });
     if (!data) break;                      // 404: nothing matched; 400: a query Scryfall can't read
     cards.push(...(data.data ?? []));
     url = data.has_more ? data.next_page : null;
@@ -245,7 +276,7 @@ export function fetchSiblings(card, signal) {
     const params = new URLSearchParams({
       q, unique: 'prints', include_extras: 'true', include_variations: 'true', order: 'set',
     });
-    const data = await transport.getJson(`${API}/cards/search?${params}`, { signal });
+    const data = await searchJson(`${API}/cards/search?${params}`, { signal });
     const kept = (data?.data ?? []).filter(keptLanguage);
     return kept.length ? kept : [card];
   });
@@ -295,17 +326,6 @@ export function cardById(id) {
 }
 
 const quickCache = memoryCache(DAY / 4);
-// Scryfall takes two searches a second (scryfall.com/docs/api/rate-limits,
-// read 2026-10-16: /cards/search 500 ms; one 429 shuts the app out for 30
-// seconds), so the scanner's searches, asked two or three in a row, each
-// wait their turn.
-const QUICK_GAP_MS = 550;
-let quickTurnAt = 0;
-function quickTurn() {
-  const at = Math.max(Date.now(), quickTurnAt);
-  quickTurnAt = at + QUICK_GAP_MS;
-  return new Promise((r) => setTimeout(r, at - Date.now()));
-}
 /**
  * One page of a search (up to 175 printings), paper, English or Japanese-
  * only, kept six hours this page's life: the scanner's evidence searches
@@ -316,9 +336,8 @@ function quickTurn() {
  */
 export function searchQuick(q) {
   return quickCache.get(q, async () => {
-    await quickTurn();
     const params = new URLSearchParams({ q: `${q} game:paper`, unique: 'prints', order: 'set' });
-    const data = await transport.getJson(`${API}/cards/search?${params}`);
+    const data = await searchJson(`${API}/cards/search?${params}`);
     return (data?.data ?? []).filter(keptLanguage);
   });
 }

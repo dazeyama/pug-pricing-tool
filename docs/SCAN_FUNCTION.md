@@ -1067,9 +1067,8 @@ The owner's answers (2026-10-16, the clarification session before this document)
 6. **Renaming a phone** without clearing its site data (Section 12).
 7. **An auto scan switch** on the phone: built 2026-10-16 as "Auto?" (Section 17).
 8. **Settings → Sign out signs out every computer**: done 2026-10-16 (owner: "make sign out per computer"): `session.signOut` now defaults to `scope: 'local'`, so Settings' Sign out and the phone's sign out only their own device.
-9. **Scryfall's search limit** (found while building the resolver, 2026-10-16): Scryfall now
-   documents `/cards/search` at two a second (500 ms; scryfall.com/docs/api/rate-limits), and one 429
-   shuts the caller out for 30 seconds. The scanner's searches wait 550 ms (`searchQuick`); the app's
-   other searches (live search, a card's printings) go through the shared queue at 100 ms and back off
-   only after a 429. A typing pace hasn't hit it (the 2026-10-09 load test); the owner's call whether
-   to space every search.
+9. **Scryfall's search limit**: done 2026-10-16 (owner: "fix this, yes"): every `/cards/search`, of
+   every kind (live search, a card's printings, Import Collection, the older-card printings, the
+   scanner's), takes its turn through one gate in `scryfall.js` (`searchJson`): one at a time, each
+   sent 550 ms or more after the last one's answer came back; a search given up before its turn (a
+   newer query typed) takes none. `/cards/collection` was already spaced 550 ms (`todaysPrices.js`).
