@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CONDITIONS } from '../lib/ladder.js';
 import { readSession, writeSession } from '../lib/local.js';
 import { formatMoney } from '../lib/money.js';
@@ -23,7 +23,6 @@ import { isMuted, play, setMuted, unlockSounds } from './sounds.js';
 import { readOlderCard } from './older.js';
 import NeedsPriceSheet from './NeedsPriceSheet.jsx';
 import PickPrintingSheet from './PickPrintingSheet.jsx';
-import FocusTest from './FocusTest.jsx';
 
 // Auto scan (docs/SCAN_FUNCTION.md 6.3): the rest between one look at the
 // camera and the next, and the wait before the first.
@@ -141,12 +140,10 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const [seenCard, setSeenCard] = useState(null);
   // The enlarged collector corner, under the card.
   const cutoutRef = useRef(null);
-  // Focus: whether the strip's blurry (its border turns amber), blurry looks in a row, the last
-  // refocus; and the focus test open.
+  // Focus: whether the strip's blurry (its border turns amber), blurry looks in a row, the last refocus.
   const [blurry, setBlurry] = useState(false);
   const blurryLooks = useRef(0);
   const lastRefocus = useRef(0);
-  const [focusTest, setFocusTest] = useState(false);
   // Auto scan: `held`, the art of the card last sent (nothing's read while it's
   // still there); `pending`, the printing the last look read, for the next to agree with.
   const view = useRef({ held: null, pending: null });
@@ -384,14 +381,6 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     setLockState(next);
     view.current = { held: null, pending: null };
   }
-
-  /** The focus test's reading: the strip's sharpness in the picture now, null till the view is locked. */
-  const measureSharpness = useCallback(() => {
-    const lock = lockRef.current;
-    const frame = cam.current.capture();
-    if (!lock || !frame) return null;
-    return straightCutout(frame, rescaleLock(lock, frame), defaultCreateCanvas).sharpness;
-  }, []);
 
   /** Reset view: unlocked, and the next card found locks it again. */
   function resetView() {
@@ -649,7 +638,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   // scan more cards"): the computer takes them in the order sent. Stop ends
   // it with the camera.
   const auto = useRef(null);
-  auto.current = { scanFrame, paused: !autoOn || focusTest || Boolean(blocked) || Boolean(needs) || Boolean(pick) || offline };
+  auto.current = { scanFrame, paused: !autoOn || Boolean(blocked) || Boolean(needs) || Boolean(pick) || offline };
   useEffect(() => {
     if (!camera.on) return undefined;
     let alive = true;
@@ -793,17 +782,6 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
                 {camera.starting ? 'Starting…' : 'START CAMERA'}
               </button>
               <p>Lay a card in the holder. The view locks onto the first card it finds; Reset view finds it again.</p>
-              <button
-                type="button"
-                className="btn small scan-focus-open"
-                disabled={camera.starting}
-                onClick={async () => {
-                  setFocusTest(true);
-                  await startCamera();
-                }}
-              >
-                Focus test
-              </button>
             </div>
           )}
           {ocrLoading && <div className="scan-stage-note">Loading the card reader (first scan only)…</div>}
@@ -811,15 +789,6 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         </div>
         {(blocked || camera.error) && (
           <div className={`scan-notice ${camera.error ? 'err' : 'warn'} scan-over`} role="alert">{camera.error ?? blocked}</div>
-        )}
-        {focusTest && (
-          <FocusTest
-            focusInfo={camera.focusInfo}
-            setFocus={camera.setFocus}
-            measure={measureSharpness}
-            blurBelow={BLUR_BELOW}
-            onClose={() => setFocusTest(false)}
-          />
         )}
         {needs ? (
           <NeedsPriceSheet key={needs.id} scan={needs} onAnswer={(price) => answer(needs.id, price)} />

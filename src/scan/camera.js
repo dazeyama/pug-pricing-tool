@@ -83,8 +83,7 @@ function cameraError(e) {
  * @param {import('react').RefObject<HTMLVideoElement>} videoRef
  * @returns {{ on: boolean, starting: boolean, error: string|null, torch: boolean|null,
  *   size: { w: number, h: number }|null, start: () => Promise<boolean>, stop: () => void,
- *   toggleTorch: () => Promise<void>, capture: () => HTMLCanvasElement|null,
- *   refocus: () => Promise<void>, focusInfo: () => object|null, setFocus: (distance: number|null) => Promise<string|null> }}
+ *   toggleTorch: () => Promise<void>, capture: () => HTMLCanvasElement|null, refocus: () => Promise<void> }}
  *   torch: null when the camera has none, else whether it's lit
  */
 export function useCamera(videoRef) {
@@ -155,38 +154,6 @@ export function useCamera(videoRef) {
     }
   }, [videoRef]);
 
-  /**
-   * What the camera says about itself, for the focus test (owner,
-   * 2026-10-16): its name, its settings and what can be set, focus
-   * included if this phone lets a page set it.
-   */
-  const focusInfo = useCallback(() => {
-    const track = stream.current?.getVideoTracks()[0];
-    if (!track) return null;
-    return {
-      label: track.label,
-      settings: track.getSettings?.() ?? {},
-      capabilities: track.getCapabilities?.() ?? {},
-    };
-  }, []);
-
-  /**
-   * Focus fixed at a distance (the phone's own units), or back to automatic
-   * (null), where the phone lets a page do it. An error message, or null.
-   */
-  const setFocus = useCallback(async (distance) => {
-    const track = stream.current?.getVideoTracks()[0];
-    if (!track) return 'The camera is off.';
-    try {
-      await track.applyConstraints(distance == null
-        ? { advanced: [{ focusMode: 'continuous' }] }
-        : { advanced: [{ focusMode: 'manual', focusDistance: distance }] });
-      return null;
-    } catch (e) {
-      return e?.message ?? String(e);
-    }
-  }, []);
-
   const toggleTorch = useCallback(async () => {
     const track = stream.current?.getVideoTracks()[0];
     if (!track || state.torch == null) return;
@@ -236,5 +203,5 @@ export function useCamera(videoRef) {
     stream.current = null;
   }, []);
 
-  return { ...state, start, stop, toggleTorch, capture, refocus, focusInfo, setFocus };
+  return { ...state, start, stop, toggleTorch, capture, refocus };
 }

@@ -858,7 +858,8 @@ locks **automatically on the first card**.
   - **Refocus:** four blurry looks in a row (`REFOCUS_AFTER`), no more than once every 6 seconds,
     the camera is opened afresh, the same lens (`camera.js` `refocus`), so the phone's autofocus
     starts over; the picture stops for a moment.
-  - **The focus test:** a "Focus test" button under START CAMERA starts the camera with a panel over
+  - **The focus test** (removed once it had answered, the owner: "remove the focus test button"):
+    a "Focus test" button under START CAMERA started the camera with a panel over
     the bottom of the picture (auto scan waits while it's open): the strip's sharpness live against
     the blurry line, the lens, the picture's size, and the focus modes, focus distance and zoom this
     phone lets a page set, with everything else it reports. If it offers a focus distance, a slider
