@@ -569,6 +569,7 @@ function DayScreen({ game, day }) {
             exportBlocked={completeOnly ? exportBlocked : null}
             printing={printing || stickers.printing}
             blocked={completeOnly ? null : exportBlocked}
+            copyLines={dayLines}
             count={state.loaded ? pileCards : null}
             countTitle={toExport.length
               ? `${pileCards} card${pileCards === 1 ? '' : 's'} to ${completeOnly ? 'mark Completed' : 'export'}: count the pile first`

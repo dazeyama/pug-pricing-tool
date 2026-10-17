@@ -718,6 +718,7 @@ function CollectionScreen({ id }) {
             onPrintStickers={system ? null : printStickers}
             printStickersBlocked={printStickersBlockedWhy}
             printing={printing || stickers.printing}
+            copyLines={col.lines}
             up
           />
           {repricing && (

@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react';
 import { useDismiss } from '../lib/useDismiss.js';
+import { decklistText } from '../lib/decklist.js';
+import { useToast } from './Toast.jsx';
 
 /**
  * The blue EXPORT button (docs/EXPORT_FUNCTION.md 8): on the day pages and a
@@ -20,18 +22,38 @@ import { useDismiss } from '../lib/useDismiss.js';
  * with `onPrint`: a Pokémon day has the other two. Blocked, it still just says why. `up`: the menu opens
  * upward (a button at the foot of the screen); `printing`: a printout is
  * being built.
+ *
+ * With `copyLines`, Ctrl+Click (a secret, decision 285) copies those cards to
+ * the clipboard as a plain decklist, "<quantity> <card name>" a line, for
+ * Moxfield and the like, and says so in a toast. It changes nothing, so it
+ * works even when the button is blocked; no menu opens.
  */
 export default function ExportButton({
   className = '', onClick, onPrint = null, printing = false, up = false,
   onPrintPokemon = null, printPokemonBlocked = null, onPrintStickers = null, printStickersBlocked = null,
   exportLabel = 'Export csv', exportTitle = 'The Crystal Commerce Mass Create file: the export', exportBlocked = null,
-  blocked = null, count = null, countTitle, label = 'EXPORT',
+  blocked = null, count = null, countTitle, label = 'EXPORT', copyLines = null,
 }) {
   const [open, setOpen] = useState(false);
   const wrap = useRef(null);
+  const toast = useToast();
   const menu = Boolean(onPrint || onPrintPokemon || onPrintStickers);
 
   useDismiss(() => setOpen(false), { ref: wrap, when: open });
+
+  async function copyDecklist() {
+    const list = decklistText(copyLines);
+    if (!list.cards) {
+      toast('No cards to copy.', 'err');
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(list.text);
+      toast(`Copied ${list.cards} card${list.cards === 1 ? '' : 's'} as a decklist (${list.names} line${list.names === 1 ? '' : 's'}).`, 'ok');
+    } catch {
+      toast("Couldn't copy to the clipboard.", 'err');
+    }
+  }
 
   const button = (
     <button
@@ -41,8 +63,11 @@ export default function ExportButton({
       aria-haspopup={menu ? 'menu' : undefined}
       aria-expanded={menu ? open : undefined}
       title={blocked ?? (count != null ? countTitle : undefined)}
-      onClick={() => {
-        if (menu && !blocked) setOpen((o) => !o);
+      onClick={(e) => {
+        if (copyLines && (e.ctrlKey || e.metaKey)) {
+          setOpen(false);
+          copyDecklist();
+        } else if (menu && !blocked) setOpen((o) => !o);
         else onClick();
       }}
     >
