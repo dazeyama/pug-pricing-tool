@@ -13,6 +13,7 @@ import UserTag from '../components/UserTag.jsx';
 import ExportButton from '../components/ExportButton.jsx';
 import ExportDialog from './export/ExportDialog.jsx';
 import { useAuditPrint } from './export/useAuditPrint.js';
+import { useStickerPrint } from './export/useStickerPrint.js';
 import { downloadMassCreate } from '../lib/ccExport.js';
 import { todaysPrices } from '../lib/todaysPrices.js';
 import { sellPriceFor } from '../lib/sellPrice.js';
@@ -95,6 +96,8 @@ function DayScreen({ game, day }) {
   const { values: settingValues } = useSettings();
   // Print? and Print buy (docs/TEAM_FEEDBACK.md 3): the audit printout, changing nothing.
   const { print, printing } = useAuditPrint();
+  // Print PKM Stickers? on a Pokémon day (decision 282): price tags at today's sell prices, saving nothing.
+  const stickers = useStickerPrint();
   const [checking, setChecking] = useState(false);       // ⋯ → Check Crystal Commerce matches (export spec E2)
   const [busy, setBusy] = useState(false);
   const ticket = useRef(0);
@@ -163,7 +166,8 @@ function DayScreen({ game, day }) {
   const done = mine.filter((b) => walkInStatus(b, game) === 'completed');
   const allDone = mine.length > 0 && !pending.length;
   const notOver = day >= storeDay();
-  // Pokémon days: COMPLETE in EXPORT's place (owner, 2026-10-02).
+  // Pokémon days: EXPORT ▾ holds Print PKM?, Print PKM Stickers? and Complete Day (decision 282;
+  // COMPLETE alone in EXPORT's place from 2026-10-02 until then).
   const completeOnly = game === 'pokemon';
   const exportBlocked = notOver ? (completeOnly ? NOT_OVER_COMPLETE : NOT_OVER) : null;
   // When and by whom: the latest export of this game's cards here.
@@ -457,6 +461,28 @@ function DayScreen({ game, day }) {
     print({ lines: dayLines, title: `Audit — Magic, ${dayTitle(day)}`, fileName: `audit-magic-${day}.pdf` });
   }
 
+  /**
+   * A Pokémon day's EXPORT ▾ → Print PKM? and Print PKM Stickers? (decision
+   * 282): the day's Pokémon cards (Completed or not), any time: they change
+   * nothing, so the day needn't be over, unlike Complete Day.
+   */
+  const printPokemonBlocked = mine.length ? null : 'No Pokémon buys that day';
+  const printStickersBlocked = offline ? "No connection: the stickers need today's prices" : printPokemonBlocked;
+  function printPokemonDay() {
+    if (printPokemonBlocked) {
+      toast(`${printPokemonBlocked}.`, 'err');
+      return;
+    }
+    print({ lines: dayLines, game: 'pokemon', title: `Audit — Pokémon, ${dayTitle(day)}`, fileName: `audit-pokemon-${day}.pdf` });
+  }
+  function printStickersDay() {
+    if (printStickersBlocked) {
+      toast(`${printStickersBlocked}.`, 'err');
+      return;
+    }
+    stickers.print({ lines: dayLines, title: `Stickers — Pokémon, ${dayTitle(day)}`, fileName: `stickers-pokemon-${day}.pdf` });
+  }
+
   /** A buy's ⋯ → Print buy (docs/TEAM_FEEDBACK.md 3.1): that buy alone, any day. */
   function printBuy(b, n) {
     print({
@@ -510,11 +536,17 @@ function DayScreen({ game, day }) {
           )}
           <ExportButton
             className="top"
-            label={completeOnly ? 'COMPLETE' : 'EXPORT'}
             onClick={completeOnly ? startComplete : startExport}
             onPrint={completeOnly ? null : printDay}
-            printing={printing}
-            blocked={exportBlocked}
+            onPrintPokemon={completeOnly ? printPokemonDay : null}
+            printPokemonBlocked={printPokemonBlocked}
+            onPrintStickers={completeOnly ? printStickersDay : null}
+            printStickersBlocked={printStickersBlocked}
+            exportLabel={completeOnly ? 'Complete Day' : 'Export csv'}
+            exportTitle={completeOnly ? "Mark the day's Pokémon buys Completed, with today's sell prices" : undefined}
+            exportBlocked={completeOnly ? exportBlocked : null}
+            printing={printing || stickers.printing}
+            blocked={completeOnly ? null : exportBlocked}
             count={state.loaded ? pileCards : null}
             countTitle={toExport.length
               ? `${pileCards} card${pileCards === 1 ? '' : 's'} to ${completeOnly ? 'mark Completed' : 'export'}: count the pile first`

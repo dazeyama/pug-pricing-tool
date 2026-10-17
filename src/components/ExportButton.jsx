@@ -14,18 +14,22 @@ import { useDismiss } from '../lib/useDismiss.js';
  * the Pokémon cards by set; `printPokemonBlocked` says why not), **Print
  * PKM Stickers?** (`onPrintStickers`, decision 281: price-tag stickers at
  * today's sell prices; `printStickersBlocked`) and **Export csv**
- * (`onClick`, exactly the EXPORT it was). Blocked, it still just says why. `up`: the menu opens
+ * (`onClick`, exactly the EXPORT it was; `exportLabel` and `exportTitle`
+ * word it otherwise, `exportBlocked` greys it alone: a Pokémon day's
+ * **Complete Day** before the day is over, decision 282). Print MTG? only
+ * with `onPrint`: a Pokémon day has the other two. Blocked, it still just says why. `up`: the menu opens
  * upward (a button at the foot of the screen); `printing`: a printout is
  * being built.
  */
 export default function ExportButton({
   className = '', onClick, onPrint = null, printing = false, up = false,
   onPrintPokemon = null, printPokemonBlocked = null, onPrintStickers = null, printStickersBlocked = null,
+  exportLabel = 'Export csv', exportTitle = 'The Crystal Commerce Mass Create file: the export', exportBlocked = null,
   blocked = null, count = null, countTitle, label = 'EXPORT',
 }) {
   const [open, setOpen] = useState(false);
   const wrap = useRef(null);
-  const menu = Boolean(onPrint);
+  const menu = Boolean(onPrint || onPrintPokemon || onPrintStickers);
 
   useDismiss(() => setOpen(false), { ref: wrap, when: open });
 
@@ -51,20 +55,22 @@ export default function ExportButton({
       {button}
       {open && (
         <div className={`more-list export-list${up ? ' up' : ''}`} role="menu">
-          <button
-            type="button"
-            role="menuitem"
-            className={`more-item${printing ? ' is-disabled' : ''}`}
-            aria-disabled={printing || undefined}
-            title="A PDF of these Magic cards by Crystal Commerce category, to check them by hand. Changes nothing."
-            onClick={() => {
-              if (printing) return;
-              setOpen(false);
-              onPrint();
-            }}
-          >
-            {printing ? 'Printing…' : 'Print MTG?'}
-          </button>
+          {onPrint && (
+            <button
+              type="button"
+              role="menuitem"
+              className={`more-item${printing ? ' is-disabled' : ''}`}
+              aria-disabled={printing || undefined}
+              title="A PDF of these Magic cards by Crystal Commerce category, to check them by hand. Changes nothing."
+              onClick={() => {
+                if (printing) return;
+                setOpen(false);
+                onPrint();
+              }}
+            >
+              {printing ? 'Printing…' : 'Print MTG?'}
+            </button>
+          )}
           {onPrintPokemon && (
             <button
               type="button"
@@ -101,14 +107,15 @@ export default function ExportButton({
           <button
             type="button"
             role="menuitem"
-            className="more-item"
-            title="The Crystal Commerce Mass Create file: the export"
+            className={`more-item${exportBlocked ? ' is-disabled' : ''}`}
+            aria-disabled={exportBlocked ? true : undefined}
+            title={exportBlocked ?? exportTitle}
             onClick={() => {
               setOpen(false);
-              onClick();
+              onClick();   // blocked, it says why
             }}
           >
-            Export csv
+            {exportLabel}
           </button>
         </div>
       )}
