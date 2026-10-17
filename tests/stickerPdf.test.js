@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { PER_SHEET, SHEET, stickerBox, stickerLabel, stickerPdf, stickerRows } from '../src/lib/stickerPdf.js';
+import { PER_SHEET, PRINTER_OFFSET, SHEET, stickerBox, stickerLabel, stickerPdf, stickerRows } from '../src/lib/stickerPdf.js';
 
 // Print PKM Stickers? (decision 281): price tags on the store's 160-sticker sheets.
 
@@ -33,9 +33,14 @@ test("a sticker a copy, in Print PKM?'s order: by set name, then by number, NM f
 
 test('the sheet: 8 x 20 stickers of 1 in x 1/2 in from 0.29 in, 0.49 in; a printer offset moves them all', () => {
   assert.equal(PER_SHEET, 160);
-  assert.deepEqual(stickerBox(0), { x: SHEET.left, y: SHEET.top, w: 72, h: 36 });
-  assert.deepEqual(stickerBox(9), { x: SHEET.left + 72, y: SHEET.top + 36, w: 72, h: 36 });
-  assert.deepEqual(stickerBox(159), { x: SHEET.left + 7 * 72, y: SHEET.top + 19 * 36, w: 72, h: 36 });
+  const none = { dx: 0, dy: 0 };
+  assert.deepEqual(stickerBox(0, none), { x: SHEET.left, y: SHEET.top, w: 72, h: 36 });
+  assert.deepEqual(stickerBox(9, none), { x: SHEET.left + 72, y: SHEET.top + 36, w: 72, h: 36 });
+  assert.deepEqual(stickerBox(159, none), { x: SHEET.left + 7 * 72, y: SHEET.top + 19 * 36, w: 72, h: 36 });
+  // The store printer's offset, measured from a printed sticker (2026-10-16), applies by default.
+  assert.deepEqual([PRINTER_OFFSET.dx, PRINTER_OFFSET.dy].map((v) => Math.round(v * 100) / 100), [-4.32, 3.6]);
+  assert.equal(stickerBox(0).x, SHEET.left + PRINTER_OFFSET.dx);
+  assert.equal(stickerBox(0).y, SHEET.top + PRINTER_OFFSET.dy);
   assert.equal(stickerBox(0, { dx: 2, dy: -3 }).x, SHEET.left + 2);
   assert.equal(stickerBox(0, { dx: 2, dy: -3 }).y, SHEET.top - 3);
   assert.ok(SHEET.left + 8 * 72 <= SHEET.page.w && SHEET.top + 20 * 36 <= SHEET.page.h);
