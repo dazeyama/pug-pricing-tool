@@ -25,14 +25,15 @@ import { useToast } from './Toast.jsx';
  *
  * With `copyLines`, Ctrl+Click (a secret, decision 285) copies those cards to
  * the clipboard as a plain decklist, "<quantity> <card name>" a line, for
- * Moxfield and the like, and says so in a toast. It changes nothing, so it
- * works even when the button is blocked; no menu opens.
+ * Moxfield and the like, and says so in a toast (`copyEmpty`: the toast when
+ * there's nothing to copy). It changes nothing, so it works even when the
+ * button is blocked; no menu opens.
  */
 export default function ExportButton({
   className = '', onClick, onPrint = null, printing = false, up = false,
   onPrintPokemon = null, printPokemonBlocked = null, onPrintStickers = null, printStickersBlocked = null,
   exportLabel = 'Export csv', exportTitle = 'The Crystal Commerce Mass Create file: the export', exportBlocked = null,
-  blocked = null, count = null, countTitle, label = 'EXPORT', copyLines = null,
+  blocked = null, count = null, countTitle, label = 'EXPORT', copyLines = null, copyEmpty = 'No cards to copy.',
 }) {
   const [open, setOpen] = useState(false);
   const wrap = useRef(null);
@@ -44,7 +45,7 @@ export default function ExportButton({
   async function copyDecklist() {
     const list = decklistText(copyLines);
     if (!list.cards) {
-      toast('No cards to copy.', 'err');
+      toast(copyEmpty, 'err');
       return;
     }
     try {

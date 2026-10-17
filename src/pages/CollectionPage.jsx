@@ -718,7 +718,8 @@ function CollectionScreen({ id }) {
             onPrintStickers={system ? null : printStickers}
             printStickersBlocked={printStickersBlockedWhy}
             printing={printing || stickers.printing}
-            copyLines={col.lines}
+            copyLines={col.lines.filter((l) => l.game === 'mtg')}
+            copyEmpty="No Magic cards to copy."
             up
           />
           {repricing && (
