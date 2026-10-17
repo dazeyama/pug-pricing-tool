@@ -989,7 +989,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
             </>
           ) : <span>Cards you scan show here.</span>}
         </div>
-        {/* Undo and FOIL? / NONFOIL?, stacked small at the right, to leave the text room. */}
+        {/* Undo and FOIL? / NONFOIL?: two squares side by side at the right, the strip's height. */}
         {showUndo && (
           <div className="scan-strip-buttons">
             {/* Undo last scan (S5): one copy of it off the computer's list. */}
@@ -1001,7 +1001,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
                 if (e) say('err', `Couldn't undo it: ${e}`);
               }}
             >
-              ↶ Undo
+              <span className="sq-top">↶</span>
+              <span>Undo</span>
             </button>
             {/* FOIL? on a normal card, NONFOIL? on a foil one (owner, 2026-10-16): the last card's finish changed. */}
             <button
@@ -1013,7 +1014,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
                 : 'The last card is normal: take the foil copy off and add it as nonfoil'}
               onClick={() => refinish(latest, toFoil)}
             >
-              {toFoil ? 'FOIL?' : 'NONFOIL?'}
+              <span className="sq-top">{toFoil ? '✦' : 'NON'}</span>
+              <span>FOIL?</span>
             </button>
           </div>
         )}

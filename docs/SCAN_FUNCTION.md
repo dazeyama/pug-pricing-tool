@@ -867,7 +867,9 @@ locks **automatically on the first card**.
   the first line; on the second its set, number, finish and condition, then the price and how many
   are in the list ("HOB 87 · $0.25"; "sending…", "pricing…", "needs a price", "taken off" for the
   other states); the computer's name, in the paired bar, isn't repeated; Undo and FOIL? / NONFOIL?
-  stacked small at the right end (82px wide).
+  two squares side by side at the right end, the strip's height (50 × 44px, their labels on two
+  short lines: "↶ / Undo", "✦ / FOIL?", "NON / FOIL?"; stacked small first, too small for the
+  owner).
 - **Title / Number** (owner, 2026-10-16: "Sometimes an older card will get stuck without it's name
   highlighted and doesn't respond to Scan Card. I think there needs to be a way to force scan card
   on older pre-2014 cards to actually detect and highlight the name and name search open the card

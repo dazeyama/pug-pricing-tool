@@ -277,9 +277,25 @@ html[data-scan] .toast { max-width: none; }
 .scan-strip.warn { border-left-color: var(--warn); }
 .scan-strip.err { border-left-color: var(--bad); }
 .scan-strip.err span { color: var(--bad); }
-/* Undo above FOIL? / NONFOIL?, small, at the strip's right end (owner, 2026-10-16: room for the text). */
-.scan-strip-buttons { flex: none; display: flex; flex-direction: column; gap: 3px; width: 82px; }
-.scan-strip-buttons .btn { min-height: 0; height: 20px; padding: 0 6px; font-size: 12px; line-height: 1; white-space: nowrap; }
+/* Undo and FOIL? / NONFOIL?: two squares side by side at the strip's right end, its height, their
+   labels on two short lines (owner, 2026-10-16). */
+.scan-strip-buttons { flex: none; display: flex; gap: 6px; }
+.scan-strip-buttons .btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 50px;
+  min-height: 0;
+  height: 44px;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+.scan-strip-buttons .sq-top { font-size: 14px; }
 
 /* ---- A card that needs a price ---- */
 .scan-sheet {
