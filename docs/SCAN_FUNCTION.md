@@ -807,6 +807,21 @@ locks **automatically on the first card**.
   TCGplayer price for (priced from JustTCG or Cardmarket on the computer) gets the usual chime. The
   computer's "added" no longer chimes; a card that needs a price and one it couldn't add still
   sound when it says so.
+- **Foil by its star** (owner, 2026-10-16: "there's a STAR symbol after the Set Code … when it's
+  not a star it's a small dot … when the star is detected I want it to automatically send in the
+  card as a foil, and when it's not detected I want it to auto to non-foil"): since 2014 the
+  collector line marks the finish between the set code and the language ("TMT ★ EN" foil,
+  "TMT • EN" not). `src/scan/foilMark.js` looks for it on the strip already cut, set level and
+  cleaned, by shape, no OCR: the marks on each line (4-connected), and the one after the set code's
+  2–4 letters, spaced from them and before two more letters; a **star** stands at least 0.58 of a
+  letter's height and fills under 0.74 of its box, anything else there is a dot. Checked: the 17
+  modern (nonfoil) Scryfall scans, straightened as on the phone, all dots (0.40–0.44 high, filling
+  0.72–0.80); the owner's foil from a phone screenshot, a star (0.78 high; its points blurred in,
+  filling 0.64). Every strip read (auto scan and Scan card, locked) sends foil on a star, nonfoil
+  otherwise (`scanFinish`, so a card with only one finish keeps it); a misjudged look differs in
+  its finish and so can't agree with the next. **Normal / Foil** now sets only cards with no mark to
+  go by: older cards read by their title, and Scan card before the view's locked. FOIL? and
+  NONFOIL? still correct the last card. Tests: `tests/scanFoilMark.test.js`.
 - **The camera taller** (owner, 2026-10-16: "There's still empty space on my phone under the
   buttons, about 280px worth … Make the default video size that much taller and scale the cropped
   card to fit in it"): the 86px kept free under the buttons for Safari's floating toolbar is now

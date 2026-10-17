@@ -17,6 +17,7 @@ import {
   ART_CHANGED, anchorBlock, artDistance, artPrint, blockOnCard, cropTo, makeLock, rescaleLock,
 } from './lock.js';
 import { straightCutout } from './straighten.js';
+import { stripShowsFoil } from './foilMark.js';
 import { defaultCreateCanvas } from './recognition/canvasUtil.js';
 import { ocrWorker, onOcrStatus } from './ocr.js';
 import { isMuted, play, setMuted, unlockSounds } from './sounds.js';
@@ -466,6 +467,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       let attempts = [];
       let found = null;
       let art = null;
+      // The finish the strip shows: its star (foil) or not (foilMark.js); undefined with no strip read.
+      let foilSeen;
       if (lock) {
         // This card's collector line, found in its zone and set level (owner, 2026-10-16).
         const strip = straightCutout(frame, lock, defaultCreateCanvas);
@@ -494,6 +497,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           return;
         }
         blurryLooks.current = 0;
+        // The foil star between the set code and the language, or not (owner, 2026-10-16).
+        foilSeen = stripShowsFoil(cut);
         progress?.start('strip');
         attempts = await readPrepared(cut, pattern);
         progress?.finish('strip');
@@ -528,6 +533,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         progress?.start('older');
         const old = await readOlderCard(frame, { texts: attempts.map((a) => a.text), card: lock?.card ?? null });
         progress?.finish('older');
+        foilSeen = undefined;   // an older card, read by its title: no mark to go by
         if (old?.cards.length === 1) found = { card: old.cards[0], tier: old.tier };
         else if (old) {
           setPick(old);
@@ -549,7 +555,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         return;
       }
       progress?.start('send');
-      await sendCard(found.card, { tier: found.tier ?? 1, manual, art, sure: Boolean(found.sure) });
+      await sendCard(found.card, { tier: found.tier ?? 1, manual, art, sure: Boolean(found.sure), foilSeen });
       progress?.finish('send');
     } catch (e) {
       console.error('Scan failed', e);
@@ -597,13 +603,15 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
    * once two looks in a row have read this same printing, or on one look
    * when every clue on the strip agrees with it (`sure`, resolve.js isSure;
    * owner, 2026-10-16: "Let's try it with just one"). Once sent, the card's
-   * art is held: nothing is read again till it changes.
-   * @param {{ tier: number, manual: boolean, art?: Float32Array|null, sure?: boolean }} opts
+   * art is held: nothing is read again till it changes. Its finish: what
+   * the strip shows (`foilSeen`: the star, foil; else not), or the Normal /
+   * Foil setting when there was no strip to go by (an older card).
+   * @param {{ tier: number, manual: boolean, art?: Float32Array|null, sure?: boolean, foilSeen?: boolean }} opts
    *   art: the card's (lock.js artPrint)
    */
-  async function sendCard(card, { tier, manual, art = null, sure = false }) {
+  async function sendCard(card, { tier, manual, art = null, sure = false, foilSeen }) {
     const v = view.current;
-    const finish = scanFinish(card, foil);
+    const finish = scanFinish(card, foilSeen ?? foil);
     const key = `${card.id}:${finish}`;
     if (!manual) {
       if (key === lastSent.current) {
@@ -752,7 +760,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
             </button>
           ))}
         </div>
-        <div className="scan-seg finish" role="radiogroup" aria-label="Finish for the next scans">
+        {/* The finish for cards with no foil star to go by (older cards); a strip read decides it itself. */}
+        <div className="scan-seg finish" role="radiogroup" aria-label="Finish for cards with no foil mark (older cards)">
           <button type="button" role="radio" aria-checked={!foil} className={`scan-seg-btn${!foil ? ' on' : ''}`} onClick={() => setFoil(false)}>
             Normal
           </button>
