@@ -864,6 +864,13 @@ locks **automatically on the first card**.
     phone lets a page set, with everything else it reports. If it offers a focus distance, a slider
     fixes the focus there (and Auto puts it back): the way to find whether a fixed focus at the
     holder's distance works. Close ends it. `src/scan/FocusTest.jsx`.
+  - **What the test found** (the owner's iPhone 13 Pro, iOS Safari, 2026-10-16): lens "Back Camera",
+    picture 2160 × 3840 (the 4K asked for, granted); focus modes **not offered**; focus distance
+    reported only as a minimum, **0.15 m** (the 1× lens's closest focus: a card nearer than 15 cm
+    is blurry; nothing can be set); zoom 1–10 (digital, the same lens). So a page can't fix the
+    focus on this phone. The owner, after the 1× lens, 4K, the blur gate and refocus: "the other
+    things we've done have cleared up the problems entirely already pretty much AND detection is
+    faster too".
 - **Checked end to end** on Scryfall's scans of 17 modern cards (2017–2025) laid in a simulated holder:
   card 40% of the picture's height: edges 17/17, locked 17/17, the cutout read right 17/17; 30%:
   17, 16 and 16. Tests: `tests/scanLock.test.js`, `tests/scanGuide.test.js`.
