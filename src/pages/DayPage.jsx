@@ -485,10 +485,32 @@ function DayScreen({ game, day }) {
 
   /** A buy's ⋯ → Print buy (docs/TEAM_FEEDBACK.md 3.1): that buy alone, any day. */
   function printBuy(b, n) {
+    if (game === 'pokemon') {
+      print({
+        lines: b.buy_lines,
+        game: 'pokemon',
+        title: `Audit — Pokémon, Buy ${n}, ${dayDate(day)}`,
+        fileName: `audit-pokemon-${day}-buy-${n}.pdf`,
+      });
+      return;
+    }
     print({
       lines: b.buy_lines,
       title: `Audit — Buy ${n}, ${dayDate(day)}`,
       fileName: `audit-magic-${day}-buy-${n}.pdf`,
+    });
+  }
+
+  /** A Pokémon buy's ⋯ → Print stickers (decision 283): that buy's cards alone, any day. */
+  function printBuyStickers(b, n) {
+    if (offline) {
+      toast("No connection: the stickers need today's prices.", 'err');
+      return;
+    }
+    stickers.print({
+      lines: b.buy_lines,
+      title: `Stickers — Pokémon, Buy ${n}, ${dayDate(day)}`,
+      fileName: `stickers-pokemon-${day}-buy-${n}.pdf`,
     });
   }
 
@@ -542,7 +564,7 @@ function DayScreen({ game, day }) {
             printPokemonBlocked={printPokemonBlocked}
             onPrintStickers={completeOnly ? printStickersDay : null}
             printStickersBlocked={printStickersBlocked}
-            exportLabel={completeOnly ? 'Complete Day' : 'Export csv'}
+            exportLabel={completeOnly ? 'Complete day…' : 'Export csv'}
             exportTitle={completeOnly ? "Mark the day's Pokémon buys Completed, with today's sell prices" : undefined}
             exportBlocked={completeOnly ? exportBlocked : null}
             printing={printing || stickers.printing}
@@ -614,7 +636,8 @@ function DayScreen({ game, day }) {
               onExport={(b, n) => guard() && unlessFlagged([b], () => setExportingBuy({ buy: b, number: n }))}
               onFlag={(b, n, flag) => guard() && setConditionFlag(b, n, flag)}
               onPrint={printBuy}
-              printing={printing}
+              onPrintStickers={printBuyStickers}
+              printing={printing || stickers.printing}
               onUnexport={(b, n) => guard() && setUnexportingBuy({ buy: b, number: n })}
               // Edit in project view (owner, 2026-10-13): the buy's cards on the pricing screen.
               onEditView={(b, n) => navigate(`/calendar/${game}/${day}/buy/${b.id}`, { state: { number: n } })}

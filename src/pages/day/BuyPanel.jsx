@@ -99,7 +99,7 @@ function ConditionChip({ buy, byId, blocked, onChecked }) {
 /** One buy on a day page (spec 10.2). */
 export default function BuyPanel({
   buy, number, game, other, day, byId, busy, offline, hits, flash, onRemove, onRestore, onDelete, onComplete, onConvert,
-  onExport, onUnexport, onEditView, onPrint, printing, onFlag, tiers,
+  onExport, onUnexport, onEditView, onPrint, onPrintStickers, printing, onFlag, tiers,
 }) {
   const [preview, setPreview] = useState(null);   // { src, top, left } while a line is hovered
   const hidePreview = useCallback(() => setPreview(null), []);
@@ -188,6 +188,21 @@ export default function BuyPanel({
               blocked: offline ? 'No connection' : printing ? 'Printing…' : lines.length ? null : 'No Magic cards in this buy',
               title: "A PDF of this buy's Magic cards by Crystal Commerce category, to check them by hand. Changes nothing.",
               onClick: () => onPrint(buy, number),
+            }] : []),
+            // A Pokémon buy (decision 283), mirroring a Magic buy's Print buy: its cards by set
+            // (Print PKM?), and price-tag stickers for them (Print PKM Stickers?).
+            ...(game === 'pokemon' ? [{
+              label: 'Print buy',
+              needsUser: false,
+              blocked: printing ? 'Printing…' : lines.length ? null : 'No Pokémon cards in this buy',
+              title: "A PDF of this buy's Pokémon cards by set, to check them by hand. Changes nothing.",
+              onClick: () => onPrint(buy, number),
+            }, {
+              label: 'Print stickers',
+              needsUser: false,
+              blocked: offline ? 'No connection' : printing ? 'Printing…' : lines.length ? null : 'No Pokémon cards in this buy',
+              title: "Price-tag stickers for this buy's Pokémon cards at today's sell prices, a sticker a copy, for the store's 160-sticker sheets. Changes nothing.",
+              onClick: () => onPrintStickers(buy, number),
             }] : []),
             // Its cards edited on the pricing screen, saved with SAVE BUY (owner, 2026-10-13):
             // for small fixes (a condition, a treatment) before an export.
