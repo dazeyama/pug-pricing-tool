@@ -858,6 +858,23 @@ locks **automatically on the first card**.
     card with no strip to go by (an older card read by its title, Scan card before the lock) is
     nonfoil. Normal or Foil: every card so, whatever the strip shows (`scanFinish`, so a card with
     only one finish keeps it).
+- **The List and Mystery Booster** (owner, 2026-10-16: "We should attempt to detect this symbol like we
+  do with collector number info and make sure that list and mystery booster cards have 100% accuracy
+  like the rest"): a card on The List, and one from the first Mystery Booster (Scryfall files those
+  with The List, dated 2019-11-07), is its original printing to the letter, set code and number
+  included, but for a small white planeswalker symbol in the black border at its bottom-left corner,
+  just left of the collector line; Scryfall numbers it `<SET>-<number>` in set `plst` ("A25-50").
+  `src/scan/listMark.js` looks for it on the locked card's place each look: in the corner band (0–9%
+  across, 90.5–99.5% down, at a 600px card), a bright shape the mark's size (1.4–4% of the card high,
+  about square: width ÷ height 0.8–1.25, half filled), clear of the band's edges, with no other
+  glyph-sized mark at its sides (a digit has its neighbour a pixel or two off) and little above or
+  below; the holder past a card set off, or a frame's edge, is big and runs off the band, so it
+  doesn't count. **Strip reads:** the mark seen, the printing read is swapped for The List's of that
+  set and number when Scryfall has one (`/cards/plst/A25-50`); no List printing, the card goes in as
+  read. **Older cards:** the mark is a clue in the printing match (`printingMatch.js` `list`: seen,
+  +3 for a List printing and −2 for the rest; not seen, −1 for a List printing). **Mystery Booster
+  2** (`mb2`) prints in its own frame with no set code at the bottom: read as an older card.
+  **Checked:** the 28 List printings among the 18 sample cards' 671 (M15, 2003 and 1997 frames; Mystery Booster's among them), and the other 643 as the ones that mustn't be taken for List cards, laid in a simulated holder (4K, the card 42% of the picture, turned up to 1°, nudged up to 1% or 2% of the card, a colour cast, a blur): the mark found on **28 of 28** at both nudges; a mark wrongly seen on 0 of 643 at 1%, and 1 of 643 at 2% (a borderless Final Fantasy card with no List printing, so nothing would change). Tests: `tests/scanListMark.test.js`.
 - **The last scan's ribbon under the info box** (owner, 2026-10-16: "The confirm card card details
   ribbon should be right under the title/number display panel, above the Scan Card button instead
   of at the top where it is now. That's where the eye rests"): the strip with the last scan, its
@@ -1062,7 +1079,7 @@ The owner's answers (2026-10-16, the clarification session before this document)
 1. **The benchmark on the store's own photos** (11.3): done 2026-10-16, by the owner's live testing on the store's phone and cards (Section 17); older cards scan by themselves in the older-card mode.
 2. **Version name** for the first live scanner: the owner's call at S5.
 3. **Pokémon scanning:** not planned. Their line (`125/198` with a set abbreviation elsewhere on the card) would need its own locator.
-4. **The List and Mystery Booster** (Appendix A): a smarter lookup (try `plst` when the card has a List printing and the symbol is seen) if it matters in practice.
+4. **The List and Mystery Booster**: done 2026-10-16, by their planeswalker mark (Section 17).
 5. **A "scanned from a phone" note in the Changelog**: done 2026-10-16 (Section 12).
 6. **Renaming a phone** without clearing its site data (Section 12).
 7. **An auto scan switch** on the phone: built 2026-10-16 as "Auto?" (Section 17).

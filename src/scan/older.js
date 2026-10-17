@@ -56,13 +56,14 @@ async function loadPicture(url) {
 /**
  * Read an older card in the frame: its name, and its number if it has one.
  * @param {object} frame  the camera's picture
- * @param {{ texts?: string[] }} [opts]  what the collector-line reading already read: on a
+ * @param {{ texts?: string[], card?: object, listMark?: boolean|null }} [opts]  listMark: The List's
+ *   mark seen at the card's corner (listMark.js); texts: what the collector-line reading already read: on a
  *   black-bordered card it's the copyright line with the "123/350" in it, so no second read
  * @returns {Promise<{ tier: 2|3, name: string, number: string|null, cards: object[], all: object[] }|null>}
  *   null: the title couldn't be named clearly; cards: one (the printing to take), or the likely
  *   ones, best first; all: every printing of that name, oldest first (the pick list's View all)
  */
-export async function readOlderCard(frame, { texts = [], card = null } = {}) {
+export async function readOlderCard(frame, { texts = [], card = null, listMark = null } = {}) {
   const names = await scry.loadNames();
   // As one line first; if that names nothing clearly, as a block (it copes with a stray mark better).
   let match = matchName(await readTitle(frame, (c) => readText(c, PSM_LINE), defaultCreateCanvas, { card }), names);
@@ -96,6 +97,7 @@ export async function readOlderCard(frame, { texts = [], card = null } = {}) {
       year,
       number,
       older: true,
+      listMark,
       setIcon: (code) => sets.get(code)?.icon_svg_uri ?? null,
       setType: (code) => sets.get(code)?.set_type ?? null,
       loadImage: loadPicture,

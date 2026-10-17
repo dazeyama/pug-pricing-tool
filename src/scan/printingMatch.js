@@ -52,6 +52,7 @@ export const WEIGHTS = {
   artist: 1.5,
   year: 1,
   number: 2.5,
+  list: { seen: 3, other: -2, missed: -1 }, // The List's mark seen: its printing gains, the rest lose; not seen: a List printing loses a little
 };
 /** A printing is taken at this score or more, this far ahead of the next. */
 export const TAKE = { score: 4, lead: 2 };
@@ -396,7 +397,8 @@ const plainNumber = (n) => String(n ?? '').replace(/^0+(?=\d)/, '').toLowerCase(
  * One printing's score from the clues. Pure, for tests.
  * @param {object} p  a Scryfall card
  * @param {{ art?: number|null, symbol?: number|null, symbolBest?: number, symbolSeen: boolean,
- *   border: 'dark'|'light'|null, artist: number, year: number|null, number: string|null, older: boolean }} c
+ *   border: 'dark'|'light'|null, artist: number, year: number|null, number: string|null, older: boolean,
+ *   listMark?: boolean|null }} c  listMark: The List's mark seen at the card's corner (listMark.js), null unknown
  *   art: the fingerprints' distance; symbol: how well the set's symbol fits (null: none to compare,
  *   a promo's); symbolBest: the best any candidate set's fits
  */
@@ -414,6 +416,8 @@ export function scorePrinting(p, c) {
   const released = Number(String(p.released_at ?? '').slice(0, 4));
   if (c.year && (released === c.year || released === c.year - 1)) parts.year = WEIGHTS.year;
   if (c.number && plainNumber(p.collector_number) === c.number) parts.number = WEIGHTS.number;
+  if (c.listMark === true) parts.list = p.set === 'plst' ? WEIGHTS.list.seen : WEIGHTS.list.other;
+  else if (c.listMark === false && p.set === 'plst') parts.list = WEIGHTS.list.missed;
   const score = Object.values(parts).reduce((a, b) => a + b, 0);
   return { score, parts };
 }
@@ -439,7 +443,7 @@ const smallImage = (p) => p.image_uris?.small ?? p.card_faces?.[0]?.image_uris?.
  * @param {object} frame  the camera's picture
  * @param {{ x: number, y: number, width: number, height: number }} card  where the card is in it
  * @param {object[]} printings  Scryfall cards, one name
- * @param {{ text?: string, year?: number|null, number?: string|null, older?: boolean,
+ * @param {{ text?: string, year?: number|null, number?: string|null, older?: boolean, listMark?: boolean|null,
  *   setIcon: (code: string) => string|null, setType?: (code: string) => string|null,
  *   loadImage: (url: string) => Promise<object>, createCanvas: (w: number, h: number) => object }} opts
  *   text: what was read off the card's bottom (the artist's name in it); setType: a set's kind
@@ -447,7 +451,7 @@ const smallImage = (p) => p.image_uris?.small ?? p.card_faces?.[0]?.image_uris?.
  * @returns {Promise<{ ranked: { card: object, score: number, parts: object }[], winner: object|null }>}
  */
 export async function rankPrintings(frame, card, printings, {
-  text = '', year = null, number = null, older = true, setIcon, setType = () => null, loadImage, createCanvas,
+  text = '', year = null, number = null, older = true, listMark = null, setIcon, setType = () => null, loadImage, createCanvas,
 }) {
   const seenArt = regionPrint(frame, card, ART, createCanvas);
   const border = borderKind(borderTone(frame, card, createCanvas));
@@ -475,6 +479,7 @@ export async function rankPrintings(frame, card, printings, {
       year,
       number,
       older,
+      listMark,
     });
     return { card: p, score, parts };
   }).sort((a, b) => b.score - a.score);

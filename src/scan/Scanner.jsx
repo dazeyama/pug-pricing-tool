@@ -18,6 +18,7 @@ import {
 } from './lock.js';
 import { straightCutout } from './straighten.js';
 import { stripShowsFoil } from './foilMark.js';
+import { findListMark, listNumber } from './listMark.js';
 import { defaultCreateCanvas } from './recognition/canvasUtil.js';
 import { ocrWorker, onOcrStatus } from './ocr.js';
 import { isMuted, play, setMuted, unlockSounds } from './sounds.js';
@@ -536,11 +537,14 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       let art = null;
       // The finish the strip shows: its star (foil) or not (foilMark.js); undefined with no strip read.
       let foilSeen;
+      // The List's mark at the card's corner (listMark.js), when the view's locked.
+      let listSeen = null;
       if (lock) {
         // This card's collector line, found in its zone and set level (owner, 2026-10-16).
         const strip = straightCutout(frame, lock, defaultCreateCanvas);
         const cut = strip.canvas;
         art = artPrint(frame, lock);
+        listSeen = findListMark(frame, lock.card, defaultCreateCanvas).mark;
         // Another card in: back to its bottom strip (the older mode was the last card's).
         if (v.lineArt && artDistance(v.lineArt, art) >= ART_CHANGED) leaveOlder(v);
         // The info box: the bottom strip, or an older card's title.
@@ -613,7 +617,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         if (manual) say('muted', 'No set code at the bottom: reading the title…');
         progress?.plan('older', STEP_MS.older);
         progress?.start('older');
-        const old = await readOlderCard(frame, { texts: attempts.map((a) => a.text), card: lock?.card ?? null });
+        const old = await readOlderCard(frame, { texts: attempts.map((a) => a.text), card: lock?.card ?? null, listMark: listSeen });
         progress?.finish('older');
         foilSeen = undefined;   // an older card, read by its title: no mark to go by
         if (!manual) {
@@ -645,6 +649,13 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         say('warn', `Not English (${found.foreign}): add it on the computer.`);
         if (manual) play('error');
         return;
+      }
+      // The List's mark on a card read by its strip: the List's printing of that set and number
+      // ("A25-50"), when Scryfall has one (owner, 2026-10-16: "make sure that list and mystery
+      // booster cards have 100% accuracy like the rest").
+      if (listSeen && !found.tier) {
+        const listed = await scry.cardBySetNumber('plst', listNumber(found.card)).catch(() => null);
+        if (listed) found = { ...found, card: listed };
       }
       progress?.start('send');
       await sendCard(found.card, { tier: found.tier ?? 1, manual, art, sure: Boolean(found.sure), foilSeen });
@@ -737,7 +748,10 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       if (lock) showCutout(titleCutout(frame, lock.card, defaultCreateCanvas));
       say('muted', 'Reading the title…');
       bar.start('older');
-      const old = await readOlderCard(frame, { card: lock?.card ?? null });
+      const old = await readOlderCard(frame, {
+        card: lock?.card ?? null,
+        listMark: lock ? findListMark(frame, lock.card, defaultCreateCanvas).mark : null,
+      });
       bar.finish('older');
       if (!old) {
         say('err', "Couldn't read the title: straighten the card in the holder, then press Title again.");
