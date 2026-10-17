@@ -165,6 +165,9 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const view = useRef({ held: null, pending: null });
   // An older card that could be several printings: { tier, name, cards } to pick from.
   const [pick, setPick] = useState(null);
+  // The info box on the card's title (the older-card mode, by itself or by Title), for the
+  // Title / Number button's label.
+  const [titleMode, setTitleMode] = useState(false);
   const { offline } = useConnection();
   const busy = useRef(false);
   const lastSent = useRef(null);                  // the printing and finish last sent (6.3)
@@ -412,6 +415,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     lockRef.current = next;
     setLockState(next);
     view.current = { held: null, pending: null };
+    setTitleMode(false);
   }
 
   /** One more look with no set code at the bottom; enough of them, and it's read as an older card. */
@@ -420,6 +424,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     v.lineArt ??= art;
     if (!v.older && v.noLine >= OLDER_AFTER) {
       v.older = true;
+      setTitleMode(true);
       say('muted', 'An older card: reading its title…');
     }
   }
@@ -430,6 +435,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     v.lineArt = null;
     v.older = false;
     v.pendingOld = null;
+    setTitleMode(false);
   }
 
   /** Reset view: unlocked, and the next card found locks it again. */
@@ -674,6 +680,82 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   }
 
   /**
+   * Title (owner, 2026-10-16: "Sometimes an older card will get stuck without
+   * it's name highlighted and doesn't respond to Scan Card … a way to force
+   * scan card on older pre-2014 cards to actually detect and highlight the
+   * name and name search open the card selection menu"): the view locked onto
+   * the card outlined if it isn't yet, the info box on its title, the title
+   * read and its name searched, and the printing menu opened, best match
+   * first, whatever the match (the person scanning confirms it). Waits for an
+   * auto look to end, as Scan card does; auto scan holds off meanwhile.
+   */
+  async function readTitleNow() {
+    if (manualWaiting.current || reading || !camera.on) return;
+    manualWaiting.current = true;
+    const bar = createProgress();
+    if (busy.current) bar.plan('wait', STEP_MS.ocr);
+    bar.plan('older', STEP_MS.older);
+    setProgress(bar);
+    setReading(true);
+    try {
+      bar.start('wait');
+      while (busy.current) await sleep(40);
+      bar.finish('wait');
+      busy.current = true;
+      const frame = camera.capture();
+      if (!frame) return;
+      let lock = lockRef.current;
+      if (!lock) {
+        const card = findCard(frame, defaultCreateCanvas) ?? seenCard;
+        if (card) {
+          lock = lockOnCard(card, frame);
+          setLock(lock);
+          setSeenCard(null);
+        }
+      } else if (lock.frame.width !== frame.width || lock.frame.height !== frame.height) {
+        lock = rescaleLock(lock, frame);
+        lockRef.current = lock;
+        setLockState(lock);
+      }
+      const v = view.current;
+      const art = lock ? artPrint(frame, lock) : null;
+      v.older = true;
+      v.lineArt = art;
+      v.pendingOld = null;
+      setTitleMode(true);
+      if (lock) showCutout(titleCutout(frame, lock.card, defaultCreateCanvas));
+      say('muted', 'Reading the title…');
+      bar.start('older');
+      const old = await readOlderCard(frame, { card: lock?.card ?? null });
+      bar.finish('older');
+      if (!old) {
+        say('err', "Couldn't read the title: straighten the card in the holder, then press Title again.");
+        play('error');
+        return;
+      }
+      setPick({ ...old, art });
+      say('muted', `${old.name}: pick its printing.`);
+    } catch (e) {
+      console.error('Reading the title failed', e);
+      say('err', `Couldn't read the title: ${e.message}`);
+      play('error');
+    } finally {
+      busy.current = false;
+      manualWaiting.current = false;
+      bar.complete();
+      await sleep(BAR_DONE_MS);
+      setProgress(null);
+      setReading(false);
+    }
+  }
+
+  /** Number: the info box back on the bottom strip, read as a modern card's. */
+  function backToNumber() {
+    leaveOlder(view.current);
+    say('muted', 'Reading the set code and number at the bottom.');
+  }
+
+  /**
    * Send a recognised card. Auto scan: never the card it last sent, and only
    * once two looks in a row have read this same printing, or on one look
    * when every clue on the strip agrees with it (`sure`, resolve.js isSure;
@@ -903,12 +985,25 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       </div>
 
       {/* The collector corner, enlarged and cleaned, for the person scanning (owner, 2026-10-16). */}
-      {lock && camera.on && (
-        <canvas
-          ref={cutoutRef}
-          className={`scan-cutout${blurry ? ' blurry' : ''}`}
-          aria-label={blurry ? 'The set code and number, enlarged: out of focus' : 'The set code and number, enlarged'}
-        />
+      {/* The info box: the collector strip or an older card's title, enlarged; Title / Number
+          switches it (owner, 2026-10-16). There while the camera's on, locked or not. */}
+      {camera.on && (
+        <div className="scan-cutout-wrap">
+          <canvas
+            ref={cutoutRef}
+            className={`scan-cutout${blurry ? ' blurry' : ''}`}
+            aria-label={titleMode ? "The card's title, enlarged" : blurry ? 'The set code and number, enlarged: out of focus' : 'The set code and number, enlarged'}
+          />
+          <button
+            type="button"
+            className="btn small scan-cutout-mode"
+            disabled={reading || Boolean(needs) || Boolean(pick)}
+            title={titleMode ? 'Read the set code and number at the bottom' : 'An older card: read its title and pick its printing'}
+            onClick={titleMode ? backToNumber : readTitleNow}
+          >
+            {titleMode ? 'Number' : 'Title'}
+          </button>
+        </div>
       )}
 
       {/* Scan card across the top; Auto?, Reset view, the light and Stop under it (owner, 2026-10-16). */}

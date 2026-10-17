@@ -858,6 +858,16 @@ locks **automatically on the first card**.
     card with no strip to go by (an older card read by its title, Scan card before the lock) is
     nonfoil. Normal or Foil: every card so, whatever the strip shows (`scanFinish`, so a card with
     only one finish keeps it).
+- **Title / Number** (owner, 2026-10-16: "Sometimes an older card will get stuck without it's name
+  highlighted and doesn't respond to Scan Card. I think there needs to be a way to force scan card
+  on older pre-2014 cards to actually detect and highlight the name and name search open the card
+  selection menu"): a button at the info box's right end. **Title**: the view locks onto the card
+  outlined if it isn't locked yet (`lockOnCard`), the info box shows its title, the title's read and
+  its name searched (`readOlderCard`, with the printing match), and the printing menu opens, best
+  match first, whatever the match: the person scanning confirms it. The info box is there whenever
+  the camera's on, so Title can be pressed before the view locks. It then reads **Number**, which
+  puts the info box back on the bottom strip. The older-card mode turning on by itself says Number
+  too.
 - **A tap locks onto an outlined card** (owner, 2026-10-16: "Older cards never initiate the crop that
   the first card sets. But I see that they have a green detection border. When this border is
   showing and the screen is tapped instead of the normal +1, instead initiate the edge detection
