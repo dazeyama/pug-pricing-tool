@@ -813,20 +813,21 @@ locks **automatically on the first card**.
   - **Shown:** locked, the video is cut to the card and its 3% margin on all four sides
     (`guide.js` `insetTo`, a CSS clip-path), so the stage's black lies either side of the card
     instead of the rest of the picture.
-  - **Followed:** each locked look looks for the card only round where it's locked, the card and a
-    quarter of it each side (`lock.js` `findCardNear`), not over the whole picture: nothing beside
-    the holder can be taken for the card or start a re-lock. A card moved further than that stays
-    as it was locked: Reset view finds it. The strip and the art were already read from the card's
-    own place only.
+  - **Followed:** each locked look looked for the card only round where it's locked
+    (`findCardNear`); superseded the same day by no re-locking at all (Re-locking, below). The strip
+    and the art are read from the card's own place only.
 - **New card or the same one:** the art (the middle of the art box at its locked place) as a 16 × 10
   thumbnail of true averages, brightness and contrast evened out (`artPrint`, `artDistance` with a
   one-cell shift). After a card is sent its art is held; **nothing is read while the art is under 12
   apart** (`ART_CHANGED`), so a misread of the card in the holder can't be sent; once it's changed,
   two looks in a row must read the same printing; and never the card last sent.
-- **Re-locking:** each locked look also finds the card's edges; when they're clearly elsewhere (the
-  centre 6% of the card's height away, or the size 10% different) at the same new place for **2
-  seconds**, with a collector line on it, the view locks there (the held art carried over). **Reset
-  view** (a button) unlocks; Stop unlocks too; a camera picture of a new shape unlocks.
+- **Re-locking:** ~~each locked look also finds the card's edges and locks again when they've clearly
+  moved for 2 seconds~~ (removed 2026-10-16, the owner: "The viewport is still moving all over the
+  place, it moves whenever I slide any new card into view … it should be more confident in the
+  viewport … relying on the user to press Reset if something major changes NOT moving around on it's
+  own"). Locked, the view never moves by itself: **Reset view** unlocks it (the next card found
+  locks it again); Stop unlocks it; a camera picture of a new shape unlocks it (the lock no longer
+  fits). `followMove`, `findCardNear`, `movedFrom` and `samePlace` went with it.
 - **Checked end to end** on Scryfall's scans of 17 modern cards (2017–2025) laid in a simulated holder:
   card 40% of the picture's height: edges 17/17, locked 17/17, the cutout read right 17/17; 30%:
   17, 16 and 16. Tests: `tests/scanLock.test.js`, `tests/scanGuide.test.js`.

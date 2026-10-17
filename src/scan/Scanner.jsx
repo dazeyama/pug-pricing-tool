@@ -14,7 +14,7 @@ import { resolveReadings, resolveThorough } from './resolve.js';
 import { STEP_MS, createProgress } from './progress.js';
 import { findCard } from './cardEdges.js';
 import {
-  ART_CHANGED, anchorBlock, artDistance, artPrint, blockOnCard, cropTo, findCardNear, makeLock, movedFrom, samePlace,
+  ART_CHANGED, anchorBlock, artDistance, artPrint, blockOnCard, cropTo, makeLock,
 } from './lock.js';
 import { straightCutout } from './straighten.js';
 import { defaultCreateCanvas } from './recognition/canvasUtil.js';
@@ -34,8 +34,6 @@ const FIRST_LOOK_MS = 800;
 // sure than a collector line: only on Scan card until the benchmark on the
 // store's own photos reads 80% of them right (docs/SCAN_FUNCTION.md 11.3).
 const AUTO_OLDER = false;
-// The card clearly moved for this long (the camera shifted): the view locks onto it again.
-const RELOCK_MS = 2000;
 // Scan card's loading bar stays full this long once it's done.
 const BAR_DONE_MS = 250;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -135,8 +133,6 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const [seenCard, setSeenCard] = useState(null);
   // The enlarged collector corner, under the card.
   const cutoutRef = useRef(null);
-  // The card seen elsewhere than locked: { card, since }, till it's lasted RELOCK_MS.
-  const moving = useRef(null);
   // Auto scan: `held`, the art of the card last sent (nothing's read while it's
   // still there); `pending`, the printing the last look read, for the next to agree with.
   const view = useRef({ held: null, pending: null });
@@ -368,11 +364,10 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   }
 
   /** Lock the view onto a card (null: unlock); anything held about the last card goes. */
-  function setLock(next, keep = null) {
+  function setLock(next) {
     lockRef.current = next;
     setLockState(next);
-    moving.current = null;
-    view.current = { held: keep, pending: null };
+    view.current = { held: null, pending: null };
   }
 
   /** Reset view: unlocked, and the next card found locks it again. */
@@ -395,34 +390,6 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     ctx.fillRect(0, 0, w, h);
     const k = Math.min(w / src.width, h / src.height);
     ctx.drawImage(src, (w - src.width * k) / 2, (h - src.height * k) / 2, src.width * k, src.height * k);
-  }
-
-  /**
-   * The camera shifted (an iPhone switching lenses): when the card has
-   * clearly moved from the locked place and stayed in its new one for two
-   * seconds, with its collector line where a card's is, lock onto it there
-   * (owner's choice). Returns the lock to use for this look.
-   */
-  function followMove(frame, lock) {
-    // Looked for round the locked card only: nothing beside the holder sets the view moving.
-    const now = findCardNear(frame, lock.card, defaultCreateCanvas);
-    if (!now || !movedFrom(lock.card, now)) {
-      moving.current = null;
-      return lock;
-    }
-    const m = moving.current;
-    if (!m || !samePlace(m.card, now)) {
-      moving.current = { card: now, since: Date.now() };
-      return lock;
-    }
-    if (Date.now() - m.since < RELOCK_MS) return lock;
-    moving.current = null;
-    const anchor = anchorBlock(locate(frame));
-    if (!anchor || !blockOnCard(anchor, now)) return lock;
-    const next = makeLock(now, anchor, frame);
-    // The same card, now seen at its new place: still held.
-    setLock(next, view.current.held ? artPrint(frame, next) : null);
-    return next;
   }
 
   /**
@@ -478,10 +445,10 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         } else if (!manual) {
           return;   // auto scan starts once the view is locked
         }
-      } else if (!manual) {
-        lock = followMove(frame, lock);
       }
-
+      // Locked, the view stays as it is till Reset view (owner, 2026-10-16: "more confident in the
+      // viewport … relying on the user to press Reset if something major changes NOT moving around
+      // on it's own"): nothing seen in the picture moves it.
       let attempts = [];
       let found = null;
       let art = null;

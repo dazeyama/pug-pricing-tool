@@ -4,12 +4,9 @@
 // corner, found again on each card and set straight (straighten.js), is shown
 // enlarged under it and read first; and the card's art, always at the same
 // place, tells a new card from the same one. The
-// holder is snug, so each card lands where the last one did. If the camera
-// shifts (an iPhone switches lenses by itself), the view is locked again
-// once the card has clearly moved and stayed moved (owner's choice).
+// holder is snug, so each card lands where the last one did, and the view
+// stays locked till Reset view (owner, 2026-10-16: no re-locking by itself).
 // DOM-free: the canvas maker is passed in.
-
-import { findCard } from './cardEdges.js';
 
 // On a modern card the collector block's left edge is 6.5% in and its top
 // 93.6% down (measured on 17 cards, docs/SCAN_LEARNINGS.md 2.2): a block
@@ -20,8 +17,6 @@ const ART = { left: 0.15, right: 0.85, top: 0.15, bottom: 0.5 };
 // Room around the card on screen, and around the collector line in the
 // cutout (in its letters' heights), for the next card landing a little off.
 const VIEW_MARGIN = 0.03;
-// A moved card is looked for this share of the locked card's size each side of it, no further.
-const NEAR = 0.25;
 const CUTOUT_MARGIN = 1.2;
 // The art as a 16 × 10 thumbnail.
 const AW = 16;
@@ -29,10 +24,6 @@ const AH = 10;
 
 /** Below this the art is the same card's (a still picture: noise and the camera's exposure). */
 export const ART_CHANGED = 12;
-/** The card clearly elsewhere: its centre moved this share of its height, or its size this share. */
-const MOVED = { centre: 0.06, size: 0.1 };
-/** Two sightings of the card in one place: within these shares. */
-const SAME_PLACE = { centre: 0.03, size: 0.05 };
 
 /**
  * The block to take as the collector line: of the located blocks, the
@@ -91,18 +82,6 @@ export function makeLock(card, block, frame) {
   };
 }
 
-const centreGap = (a, b) => Math.hypot(a.x + a.width / 2 - (b.x + b.width / 2), a.y + a.height / 2 - (b.y + b.height / 2));
-const sizeGap = (a, b) => Math.abs(a.height - b.height) / a.height;
-
-/** Is the card now clearly somewhere else than the locked one? */
-export function movedFrom(locked, now) {
-  return centreGap(locked, now) > locked.height * MOVED.centre || sizeGap(locked, now) > MOVED.size;
-}
-
-/** Two sightings of the card in one place (so a move has lasted)? */
-export function samePlace(a, b) {
-  return centreGap(a, b) <= a.height * SAME_PLACE.centre && sizeGap(a, b) <= SAME_PLACE.size;
-}
 
 /**
  * The card's art as a tiny thumbnail, each cell the true average of its
@@ -163,25 +142,6 @@ export function artDistance(a, b) {
 }
 
 /** A part of the picture as a canvas of its own (the card, for finding its line when the corner misses). */
-/**
- * The card, looked for only round where it's locked: the card and a
- * quarter of it each side (owner, 2026-10-16: the picture's sides "add
- * noise"), so whatever lies beside the holder can't be taken for it or set
- * the view moving. A card moved further than that: Reset view.
- * @param {{ width: number, height: number }} frame
- * @param {{ x: number, y: number, width: number, height: number }} locked  the locked card
- * @param {(w: number, h: number) => object} createCanvas
- * @returns {{ x: number, y: number, width: number, height: number }|null}  in the picture's px
- */
-export function findCardNear(frame, locked, createCanvas) {
-  const r = clampTo({
-    x: locked.x - locked.width * NEAR, y: locked.y - locked.height * NEAR,
-    width: locked.width * (1 + 2 * NEAR), height: locked.height * (1 + 2 * NEAR),
-  }, frame.width, frame.height);
-  const found = findCard(cropTo(frame, r, createCanvas), createCanvas);
-  return found && { x: found.x + r.x, y: found.y + r.y, width: found.width, height: found.height };
-}
-
 export function cropTo(frame, r, createCanvas) {
   const c = clampTo(r, frame.width, frame.height);
   const out = createCanvas(Math.max(1, Math.round(c.width)), Math.max(1, Math.round(c.height)));
