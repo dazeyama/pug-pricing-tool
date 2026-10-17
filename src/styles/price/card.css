@@ -267,12 +267,15 @@
    card's bottom-right corner, clear of the edges, sized with the card. */
 /* The phone's card (shown, not selected): a 📱 where a Poké Ball's badge goes, and before its name. */
 .info-phone { margin-right: .35em; }
-.phone-badge {
+.pattern-badge.phone-badge {
   display: grid;
   place-items: center;
+  box-sizing: border-box;
+  width: 18%;   /* a little larger than a Poké Ball's 15% (owner, 2026-10-16) */
+  border: 2px solid #000;
   border-radius: 50%;
   background: rgba(255, 255, 255, .9);
-  font-size: clamp(14px, 1.6vw, 34px);
+  font-size: clamp(16px, 1.95vw, 41px);
   line-height: 1;
   user-select: none;
 }
