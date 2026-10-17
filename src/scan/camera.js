@@ -10,6 +10,43 @@ const CONSTRAINTS = {
   video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1280 } },
 };
 
+// One lens, never switching (owner, 2026-10-16, screenshots: the locked crop
+// stayed put while the picture in it jumped as each new card came in). An
+// iPhone Pro's default back camera ("Back Triple Camera") switches lenses by
+// itself when a hand or a card comes close, and each lens sees the holder
+// from elsewhere (docs/SCAN_LEARNINGS.md 2.4). Tried the same day: the
+// ultra-wide alone (cards too small to read) and the telephoto alone (too
+// close, the card didn't fit). The owner's choice: the normal 1× lens alone
+// ("Back Camera"), as in the first attempt, its focus to be worked on. Opened
+// by name once the camera's allowed, so the default camera opens first. Only
+// on a phone with that switching camera; other phones keep the default
+// camera, as does an iPhone if the 1× lens won't open.
+const SWITCHING_CAMERA = /triple camera/i;
+const ONE_X = /^back camera$/i;
+
+/** The camera to scan with: the 1× lens alone where the default one switches lenses, else the default. */
+async function openCamera() {
+  const first = await navigator.mediaDevices.getUserMedia(CONSTRAINTS);
+  let lens = null;
+  try {
+    const cameras = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === 'videoinput');
+    if (cameras.some((d) => SWITCHING_CAMERA.test(d.label))) lens = cameras.find((d) => ONE_X.test(d.label.trim())) ?? null;
+  } catch {
+    lens = null;
+  }
+  if (!lens) return first;
+  first.getTracks().forEach((t) => t.stop());
+  try {
+    return await navigator.mediaDevices.getUserMedia({
+      audio: false,
+      video: { deviceId: { exact: lens.deviceId }, width: CONSTRAINTS.video.width, height: CONSTRAINTS.video.height },
+    });
+  } catch (e) {
+    console.warn('The 1× lens would not open: the default camera instead', e);
+    return navigator.mediaDevices.getUserMedia(CONSTRAINTS);
+  }
+}
+
 /** Why the camera didn't start, in the phone's words. */
 function cameraError(e) {
   if (!window.isSecureContext) {
@@ -49,7 +86,7 @@ export function useCamera(videoRef) {
     }
     setState((s) => ({ ...s, starting: true, error: null }));
     try {
-      const s = await navigator.mediaDevices.getUserMedia(CONSTRAINTS);
+      const s = await openCamera();
       stream.current = s;
       const video = videoRef.current;
       video.srcObject = s;
