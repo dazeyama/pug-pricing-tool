@@ -241,29 +241,20 @@ function CollectionScreen({ id }) {
     setExportStep(magic ? 'dialog' : 'pokemon');
   }
 
-  // Why Print can't run now (its ⋯ shows it; printCollection says it too).
+  // Why Print can't run now (its ⋯ shows it; printCollection says it too). Any status (team
+  // feedback, 2026-10-16: printing "should always" be allowed, in every state).
   const printBlockedWhy = firstReason([
     NO_CONNECTION,
     [printing, 'Printing…'],
-    [buy?.status === 'rejected', 'Rejected: there is nothing to print'],
-    [buy && !buy.system_key && !['paid', 'completed'].includes(buy.status), 'Mark it Paid/Ours first'],
     [!col.lines.some((l) => l.game === 'mtg' && movesOn(l)), 'No Magic cards here'],
   ]);
 
   /**
    * EXPORT ▾ → Print? (docs/TEAM_FEEDBACK.md 3.1): its Magic cards by Crystal
-   * Commerce category; once Completed, what it exported. Blocked like EXPORT
-   * (Paid/Ours first), but needs no user or edit lock: it changes nothing.
+   * Commerce category; once Completed, what it exported. In any status (team
+   * feedback, 2026-10-16), and it needs no user or edit lock: it changes nothing.
    */
   function printCollection() {
-    if (buy && !system && buy.status === 'rejected') {
-      toast('This collection was Rejected: there is nothing to print.', 'err');
-      return;
-    }
-    if (buy && !system && !['paid', 'completed'].includes(buy.status)) {
-      toast('Mark it Paid/Ours first.', 'err');
-      return;
-    }
     if (offline) {
       toast('No connection: printing needs it to find the Crystal Commerce categories.', 'err');
       return;
