@@ -1059,14 +1059,14 @@ The owner's answers (2026-10-16, the clarification session before this document)
 
 ## Appendix C: Open items
 
-1. **The benchmark on the store's own photos** (11.3): Section 16 has the figures on mtgscan's and Scryfall's pictures; the store's photos decide whether older cards may scan by themselves (`AUTO_OLDER`; since 2026-10-16 they do, in the older-card mode, Section 17).
+1. **The benchmark on the store's own photos** (11.3): done 2026-10-16, by the owner's live testing on the store's phone and cards (Section 17); older cards scan by themselves in the older-card mode.
 2. **Version name** for the first live scanner: the owner's call at S5.
 3. **Pokémon scanning:** not planned. Their line (`125/198` with a set abbreviation elsewhere on the card) would need its own locator.
 4. **The List and Mystery Booster** (Appendix A): a smarter lookup (try `plst` when the card has a List printing and the symbol is seen) if it matters in practice.
 5. **A "scanned from a phone" note in the Changelog** (Section 12): ask the owner if wanted.
 6. **Renaming a phone** without clearing its site data (Section 12).
 7. **An auto scan switch** on the phone: built 2026-10-16 as "Auto?" (Section 17).
-8. **Settings → Sign out signs out every computer** (found while building the phone's own Sign out): `supabase.auth.signOut()` defaults to `scope: 'global'`, which ends the store account's session on every device, not just this one. The phone's uses `{ scope: 'local' }`; Settings' is unchanged, for the owner to decide.
+8. **Settings → Sign out signs out every computer**: done 2026-10-16 (owner: "make sign out per computer"): `session.signOut` now defaults to `scope: 'local'`, so Settings' Sign out and the phone's sign out only their own device.
 9. **Scryfall's search limit** (found while building the resolver, 2026-10-16): Scryfall now
    documents `/cards/search` at two a second (500 ms; scryfall.com/docs/api/rate-limits), and one 429
    shuts the caller out for 30 seconds. The scanner's searches wait 550 ms (`searchQuick`); the app's

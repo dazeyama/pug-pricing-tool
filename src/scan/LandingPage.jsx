@@ -82,7 +82,7 @@ export default function LandingPage({ phoneId, notice, onPaired }) {
       {!loaded && <p className="scan-empty">Looking for computers…</p>}
       <div className="scan-landing-foot">
         {/* Only this phone: the store's other devices stay signed in. */}
-        <button type="button" className="btn ghost small" onClick={() => signOut({ scope: 'local' })}>Sign out</button>
+        <button type="button" className="btn ghost small" onClick={() => signOut()}>Sign out</button>
       </div>
     </div>
   );

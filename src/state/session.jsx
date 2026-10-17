@@ -46,11 +46,13 @@ export function SessionProvider({ children }) {
   }
 
   /**
-   * @param {{ scope?: 'global'|'local' }} [options]  supabase-js's own; a phone
-   *   signs out only itself ('local', docs/SCAN_FUNCTION.md 5.2)
+   * Sign this device out, and only this one (owner, 2026-10-16: "make sign out
+   * per computer"): supabase-js's default ('global') ended the store account's
+   * session on every computer and phone at once.
+   * @param {{ scope?: 'global'|'local' }} [options]  supabase-js's own
    */
   async function signOut(options) {
-    await withLoading(() => supabase.auth.signOut(options));
+    await withLoading(() => supabase.auth.signOut({ scope: 'local', ...options }));
   }
 
   return (

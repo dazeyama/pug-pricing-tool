@@ -48,6 +48,7 @@ export default function ThisComputerPanel() {
         <button
           type="button"
           className={`btn danger-ghost${signingOut ? ' busy' : ''}`}
+          title="Signs out this computer only; the store's other computers and phones stay signed in"
           onClick={async () => {
             setSigningOut(true);
             await signOut();
