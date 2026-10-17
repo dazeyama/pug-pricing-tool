@@ -4,6 +4,7 @@ import Modal from '../components/Modal.jsx';
 import ImportDialog from './collections/ImportDialog.jsx';
 import ExportDialog from './export/ExportDialog.jsx';
 import { useAuditPrint } from './export/useAuditPrint.js';
+import { useStickerPrint } from './export/useStickerPrint.js';
 import RepriceModal from './collections/RepriceModal.jsx';
 import { formatMoney } from '../lib/money.js';
 import { fileStamp } from '../lib/time.js';
@@ -53,6 +54,8 @@ function CollectionScreen({ id }) {
   const toast = useToast();
   // Print? (docs/TEAM_FEEDBACK.md 3): the audit printout, changing nothing.
   const { print, printing } = useAuditPrint();
+  // Print PKM Stickers? (decision 281): price tags at today's sell prices, saving nothing.
+  const stickers = useStickerPrint();
   const { values } = useSettings();
   const lock = useCollectionLock(id, { deviceId, userId: user?.id });
   const col = useCollection(id, { deviceId, onLockLost: lock.recheck });
@@ -268,9 +271,23 @@ function CollectionScreen({ id }) {
   }
 
   // EXPORT ▾ → Print PKM? (decision 280): its Pokémon cards by set. Nothing is fetched, so no connection needed.
+  const hasPokemon = col.lines.some((l) => l.game === 'pokemon' && movesOn(l));
   const printPokemonBlockedWhy = firstReason([
-    [!col.lines.some((l) => l.game === 'pokemon' && movesOn(l)), 'No Pokémon cards here'],
+    [!hasPokemon, 'No Pokémon cards here'],
   ]);
+  // EXPORT ▾ → Print PKM Stickers? (decision 281): today's prices first, so it needs the connection.
+  const printStickersBlockedWhy = firstReason([
+    [offline, "No connection: the stickers need today's prices"],
+    [!hasPokemon, 'No Pokémon cards here'],
+  ]);
+  function printStickers() {
+    if (printStickersBlockedWhy) {
+      toast(printStickersBlockedWhy, 'err');
+      return;
+    }
+    const name = buy.customer_name;
+    stickers.print({ lines: col.lines, title: `Stickers — ${name}`, fileName: `stickers-pkm-${fileSafe(name)}.pdf` });
+  }
   function printPokemon() {
     if (printPokemonBlockedWhy) {
       toast(printPokemonBlockedWhy, 'err');
@@ -698,7 +715,9 @@ function CollectionScreen({ id }) {
             onPrint={printCollection}
             onPrintPokemon={system ? null : printPokemon}
             printPokemonBlocked={printPokemonBlockedWhy}
-            printing={printing}
+            onPrintStickers={system ? null : printStickers}
+            printStickersBlocked={printStickersBlockedWhy}
+            printing={printing || stickers.printing}
             up
           />
           {repricing && (

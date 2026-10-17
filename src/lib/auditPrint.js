@@ -236,3 +236,22 @@ export function pokemonSections(lines) {
     }))
     .sort((a, b) => collator.compare(a.name, b.name) || collator.compare(a.set ?? '', b.set ?? ''));
 }
+
+/**
+ * Print PKM?'s order for the lines themselves (the stickers follow it,
+ * decision 281): by set name A to Z (as pokemonSections names them), then as
+ * a set's rows (NM by number, then the rest).
+ * @param {object[]} lines
+ * @returns {object[]}
+ */
+export function pokemonOrder(lines) {
+  const names = new Map();
+  for (const l of lines) {
+    const code = String(l.set_code ?? '').toLowerCase();
+    if (!names.has(code)) names.set(code, l.set_name || code.toUpperCase() || 'No set');
+  }
+  const nameOf = (l) => names.get(String(l.set_code ?? '').toLowerCase());
+  return [...lines].sort((a, b) => collator.compare(nameOf(a), nameOf(b))
+    || collator.compare(String(a.set_code ?? ''), String(b.set_code ?? ''))
+    || byCard({ line: a }, { line: b }));
+}

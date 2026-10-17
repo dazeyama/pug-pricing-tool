@@ -11,14 +11,16 @@ import { useDismiss } from '../lib/useDismiss.js';
  * With `onPrint` (docs/TEAM_FEEDBACK.md 3.1), it opens a small menu instead:
  * **Print MTG?** (the audit printout; "Print?" until the owner's 2026-10-16
  * request, decision 280), **Print PKM?** (`onPrintPokemon`, decision 280:
- * the Pokémon cards by set; `printPokemonBlocked` says why not) and
- * **Export csv** (`onClick`, exactly the EXPORT it was). Blocked, it still just says why. `up`: the menu opens
+ * the Pokémon cards by set; `printPokemonBlocked` says why not), **Print
+ * PKM Stickers?** (`onPrintStickers`, decision 281: price-tag stickers at
+ * today's sell prices; `printStickersBlocked`) and **Export csv**
+ * (`onClick`, exactly the EXPORT it was). Blocked, it still just says why. `up`: the menu opens
  * upward (a button at the foot of the screen); `printing`: a printout is
  * being built.
  */
 export default function ExportButton({
   className = '', onClick, onPrint = null, printing = false, up = false,
-  onPrintPokemon = null, printPokemonBlocked = null,
+  onPrintPokemon = null, printPokemonBlocked = null, onPrintStickers = null, printStickersBlocked = null,
   blocked = null, count = null, countTitle, label = 'EXPORT',
 }) {
   const [open, setOpen] = useState(false);
@@ -77,6 +79,23 @@ export default function ExportButton({
               }}
             >
               {printing ? 'Printing…' : 'Print PKM?'}
+            </button>
+          )}
+          {onPrintStickers && (
+            <button
+              type="button"
+              role="menuitem"
+              className={`more-item${printing || printStickersBlocked ? ' is-disabled' : ''}`}
+              aria-disabled={printing || Boolean(printStickersBlocked) || undefined}
+              title={printStickersBlocked
+                ?? "Price-tag stickers for these Pokémon cards at today's sell prices, a sticker a copy, for the store's 160-sticker sheets. Changes nothing."}
+              onClick={() => {
+                if (printing) return;
+                setOpen(false);
+                onPrintStickers();
+              }}
+            >
+              {printing ? 'Printing…' : 'Print PKM Stickers?'}
             </button>
           )}
           <button

@@ -65,7 +65,7 @@ const BUCKET_RGB = {
 };
 // The condition chip's outline: the condition buttons' colours (price/conditions.css),
 // deepened to read as a thin line on paper.
-const CONDITION_RGB = {
+export const CONDITION_RGB = {
   NM: [34, 150, 96], LP: [104, 154, 36], MP: [196, 142, 18], HP: [212, 106, 28], DMG: [204, 58, 58],
 };
 const INK = [20, 20, 26];        // text, the bands
