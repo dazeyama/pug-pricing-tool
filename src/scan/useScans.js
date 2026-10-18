@@ -16,6 +16,18 @@ const POLL_MS = 4_000;
 // trip to the database took 0.17 s at worst (2026-10-18); 5 s leaves room for the write itself.
 const WRITE_MS = 5_000;
 const SLOW = 'no answer in time: the connection may be slow';
+// A send with no answer is tried this many times in all, with the same scan id.
+const SEND_TRIES = 3;
+
+/** A new id for a scan (crypto.randomUUID needs a secure page; the scan page always is, the fallback is for tests). */
+function newId() {
+  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+  const b = globalThis.crypto.getRandomValues(new Uint8Array(16));
+  b[6] = (b[6] & 0x0f) | 0x40;
+  b[8] = (b[8] & 0x3f) | 0x80;
+  const h = [...b].map((x) => x.toString(16).padStart(2, '0')).join('');
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+}
 
 /** A write through a database function, or { error: { message: 'timeout' } } when it took too long. */
 async function call(fn, args) {
@@ -78,10 +90,18 @@ export function useScans(computerId, phoneId) {
   // The list read again after a write, but never waited on for longer than a write is.
   const settle = useCallback(() => withTimeout(reload(), WRITE_MS).catch(() => {}), [reload]);
 
+  // Sent once (owner, 2026-10-19; decision 302): each scan carries its own id, and a send with no
+  // answer in time is tried again with the same one, so a send that landed after all isn't saved
+  // twice (scan_send returns the scan it has). After SEND_TRIES, `timeout`.
   const send = useCallback(async (scan) => {
-    const { data, error } = await call('scan_send', { p_device: computerId, p_phone: phoneId, p_scan: scan });
+    const p_scan = { ...scan, client_id: scan.client_id ?? newId() };
+    let result;
+    for (let tries = 0; tries < SEND_TRIES; tries++) {
+      result = await call('scan_send', { p_device: computerId, p_phone: phoneId, p_scan });
+      if (result.error?.message !== 'timeout') break;
+    }
     await settle();
-    return error ? { error: error.message } : { id: data };
+    return result.error ? { error: result.error.message } : { id: result.data };
   }, [computerId, phoneId, settle]);
 
   /** A price for a scan that needs one, or null to skip it. An error message, or null. */

@@ -2601,6 +2601,20 @@ begin
   perform pg_temp.ok(s, 'The paired phone sends a card; it waits for the computer',
     (select status = 'sent' and finish = 'nonfoil' and condition = 'LP' and tier = 1 and name = 'DBTEST Bolt'
        from scans where id = v_id));
+  -- The same scan sent again (a retry after no answer in time): saved once (0075).
+  declare
+    v_once uuid;
+    v_again uuid;
+  begin
+    v_once := scan_send(a, ph, card || '{"client_id": "0b5c2d8e-1f3a-4c6b-9d7e-2a1b3c4d5e6f"}');
+    v_again := scan_send(a, ph, card || '{"client_id": "0b5c2d8e-1f3a-4c6b-9d7e-2a1b3c4d5e6f"}');
+    perform pg_temp.ok(s, 'A scan sent twice with its id is saved once (0075)',
+      v_once = v_again and v_once <> v_id
+      and (select count(*) from scans where phone_device_id = ph and client_id = '0b5c2d8e-1f3a-4c6b-9d7e-2a1b3c4d5e6f') = 1);
+    perform pg_temp.ok(s, '… and another id is another scan',
+      scan_send(a, ph, card || '{"client_id": "1c6d3e9f-2a4b-4d7c-8e8f-3b2c4d5e6f70"}') <> v_once);
+    delete from scans where phone_device_id = ph and client_id is not null;
+  end;
   begin
     perform scan_send(a, ph2, card);
     raise exception 'dbt_no_error';

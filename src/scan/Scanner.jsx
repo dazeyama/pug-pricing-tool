@@ -86,7 +86,7 @@ const SEND_MESSAGES = {
   session_gone: 'The computer left its price screen.',
   session_stale: "The computer hasn't been heard from for a minute.",
   bad_scan: "That card couldn't be sent.",
-  timeout: "No answer from the computer yet: check its list before scanning this card again.",
+  timeout: "No answer from the computer after three tries: check its list before scanning this card again.",
 };
 
 /** Why the paired computer can't take cards now, as the phone says it, or null. */

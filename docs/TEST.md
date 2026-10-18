@@ -330,6 +330,7 @@ Four findings, all in the live build too, and the owner's calls:
 
 ### For the next smoke test
 
+- [ ] 🆕 **A scan saved once (decision 302):** on a weak connection (Chrome's throttling on the laptop's `#/scan`), a card whose send is slow goes in once, not twice; only after three tries does the phone say "No answer from the computer after three tries".
 - [ ] 🆕 **Flagged buys on the printout (decision 301):** a day with a 🚩 flagged Magic buy and an unflagged one: EXPORT ▾ → Print MTG? has the red CHECK CONDITION banner naming that buy on every page, the rows as before; the flagged buy's ⋯ → Print buy has it too; after ✅ Condition checked, no banner; a BUY COMPLETE printout of a buy flagged at CONFIRM BUY has the banner; the same on a Pokémon day (Print PKM?) and a flagged Pokémon buy's Print buy.
 - [ ] 🆕 **Never stuck (decision 300):** on a slow or flaky network (phone on weak Wi-Fi, or Chrome's network throttling on the laptop's `#/scan`), Scan card ends within 20 s with "That took too long…" instead of Reading… for good; the next press works without a refresh.
 - [ ] 🆕 **Stop and start over (decision 300):** while reading, after 3 s the button says "Reading… tap to stop": tapping it says Stopped and the next Scan card reads; holding Scan card (a buzz) starts over and reads the card in the holder, even the same card auto scan just sent; the long press opens no menu or text selection on the phone.
