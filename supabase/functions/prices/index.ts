@@ -125,6 +125,10 @@ const NO_NUMBER_SETS = new Set([
 /** "Lt. Surge's Pikachu (LV.15)" → "Lt. Surge's Pikachu": the name without JustTCG's number or bracketed notes. */
 const plainName = (n: unknown) => baseName(n).replace(/\s*\([^()]*\)\s*$/, '');
 const SEARCH_MISS_MS = 86400_000;   // a search that found nothing is asked again after a day
+// Which products share a card's name and number changes rarely: a siblings
+// search is kept a week (decision 289); the app looks a chosen version's
+// price up on its own when the search is older than a price's freshness.
+const SIBLINGS_MS = 7 * 86400_000;
 const SEARCHES_MAX = 3;
 
 /**
@@ -480,7 +484,8 @@ Deno.serve(async (req) => {
       for (const s of cardSearches) {
         const row = keptBy.get(`search:${s.key}`);
         const keptCards: any[] = row?.payload?.cards ?? [];
-        if (row && now - Date.parse(row.fetched_at) < (keptCards.length ? maxAge : SEARCH_MISS_MS)) {
+        const keepFor = !keptCards.length ? SEARCH_MISS_MS : s.kind === 'siblings' ? SIBLINGS_MS : maxAge;
+        if (row && now - Date.parse(row.fetched_at) < keepFor) {
           searchOut[s.key] = { cards: keptCards, fetchedAt: row.fetched_at };
           continue;
         }

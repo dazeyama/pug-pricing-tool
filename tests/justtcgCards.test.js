@@ -308,3 +308,17 @@ test('pokemonPrintingFits: TCGplayer\'s names, loosely', () => {
   assert.equal(pokemonPrintingFits('Reverse Holofoil', { finish: 'holo', firstEdition: false }), false);
   assert.equal(pokemonPrintingFits('Normal', { finish: 'normal', firstEdition: false }), true);
 });
+
+// A pattern product in the search lends the card no finish (decision 289's clean-up of 234).
+test('a Master Ball product sold as "Holofoil" adds no HOLO version to the card', () => {
+  const versions = [
+    { id: 'normal|||', finish: 'normal', treatments: [], firstEdition: false, tcgplayerId: '610356' },
+    { id: 'reverse|||', finish: 'reverse', treatments: [], firstEdition: false, tcgplayerId: '610356' },
+    { id: 'reverse||masterball|', finish: 'reverse', treatments: ['masterball-pattern'], firstEdition: false, tcgplayerId: '610637' },
+  ];
+  const cards = [
+    { id: 'a', name: 'Exeggcute', number: '001/131', set_name: 'SV: Prismatic Evolutions', tcgplayerId: '610356', variants: [{ printing: 'Normal' }, { printing: 'Reverse Holofoil' }] },
+    { id: 'b', name: 'Exeggcute (Master Ball Pattern)', number: '001/131', set_name: 'SV: Prismatic Evolutions', tcgplayerId: '610637', variants: [{ printing: 'Holofoil' }] },
+  ];
+  assert.deepEqual(siblingVersions(cards, { setName: 'Prismatic Evolutions' }, versions), []);
+});

@@ -110,7 +110,8 @@ export function lookupsFor(c, { pokemonCard, versions, jaName }) {
     const l = v.tcgplayerId
       ? { key: `pokemon:tcgplayer:${v.tcgplayerId}`, game: 'pokemon', lang: c.lang, tcgplayerId: v.tcgplayerId }
       : { key: `pokemon:justtcg:${v.justtcgId}`, game: 'pokemon', lang: c.lang, justtcgId: v.justtcgId };
-    out.set(l.key, l);
+    // The card's own product, asked for above, keeps the card it's for.
+    if (!out.has(l.key)) out.set(l.key, l);
   }
   return [...out.values()];
 }
@@ -152,10 +153,14 @@ export async function searchTcgplayer(s) {
   const data = await callFunction('prices', { searches: [body] });
   const got = data?.searches?.[key];
   const cards = got?.cards ?? [];
-  for (const card of cards) keepPrices(card, got.fetchedAt ?? null);
+  // A siblings search is kept a week (decision 289): its cards' prices stand
+  // in only while fresh; older, a version chosen from it is looked up.
+  const fresh = got?.fetchedAt && Date.now() - Date.parse(got.fetchedAt) < SEED_FRESH_MS;
+  if (fresh) for (const card of cards) keepPrices(card, got.fetchedAt);
   searched.set(key, cards);
   return cards;
 }
+const SEED_FRESH_MS = 6 * 3600_000;   // the server's own freshness for a price
 
 // ---------------------------------------------------------------- reading a card
 

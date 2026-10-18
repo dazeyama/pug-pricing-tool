@@ -127,8 +127,18 @@ export default function PricingScreen({
 
   useEffect(() => warmUp(lang), [lang]);
 
+  // Editing a list line (owner, 2026-09-29): its card is searched for and
+  // selected (found), then its saved choices put back (restored); SAVE EDIT
+  // saves over it. { line, key, query, found, restored } or null.
+  const [editing, setEditing] = useState(null);
+  const editingRef = useRef(null);
+  editingRef.current = editing;
+
   // The chosen finish (Magic) or version (Pokémon), and what they're chosen from (usePrinting.js).
-  const { setPrinting, pokemon, siblings, magic, finish, tcgSiblings, versions, version } = usePrinting(selected, card);
+  // A line saved on a TCGplayer-only version needs the TCGplayer search to find it again.
+  const needSiblings = Boolean(editing?.found && selected?.key === editing.key
+    && String(editing.line?.price_snapshot?.version ?? '').startsWith('jt:'));
+  const { setPrinting, pokemon, siblings, magic, finish, tcgSiblings, versions, version } = usePrinting(selected, card, { needSiblings });
 
   // Condition, manual price and override, the manual price box, a placeholder's name (usePricing.js).
   const {
@@ -171,12 +181,6 @@ export default function PricingScreen({
     setFlashId(id);
     setTimeout(() => setFlashId((f) => (f === id ? null : f)), 1600);
   };
-  // Editing a list line (owner, 2026-09-29): its card is searched for and
-  // selected (found), then its saved choices put back (restored); SAVE EDIT
-  // saves over it. { line, key, query, found, restored } or null.
-  const [editing, setEditing] = useState(null);
-  const editingRef = useRef(null);
-  editingRef.current = editing;
   // The card the phone last added, peeking over the Selected card frame (owner, 2026-10-16, the
   // "peek" agreed): its picture and details over the card's; nothing selected, searched or priced
   // for it; the card that was selected left exactly as it was underneath. Not while a list line's
@@ -700,6 +704,7 @@ export default function PricingScreen({
                 pokemon={pokemon}
                 versions={versions}
                 version={version}
+                tcgSiblings={tcgSiblings}
                 onVersion={(id) => {
                   setPrinting({ key: selected.key, finish: null, version: id });
                   focusSearch();

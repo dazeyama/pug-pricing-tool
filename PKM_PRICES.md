@@ -20,8 +20,12 @@ finding or a proposal for you to work through; the "Needs your answer" list is a
 > - ✅ Section 4.4 — `marketPriceIn` by finish; decision 287.
 > - ✅ Section 4.5 — the function refuses a product whose number isn't the card's, or a plain version's
 >   product outside the set's home; the app shows no fallback for a refused one. Needs the same deploy.
-> - ⏳ Section 4.6 (the 5 saved lines), 4.7 (budget: siblings per set / plan), 4.8 (TCGdex issue) and the
->   Section 7 answers are still yours. Not done: Base Set Machamp (TCGplayer has no Base Set product for
+> - ✅ Section 4.7 — the siblings search runs only when the card needs it (a version without a product; a
+>   saved TCGplayer-only version being edited) or on the new **Other TCGplayer versions…** link; the function
+>   keeps its answers 7 days; a TCGplayer-only version is looked up once chosen; decision 289. Roughly halves
+>   Pokémon's JustTCG spend. Needs the same deploy.
+> - ⏳ Section 4.6 (the 5 saved lines), 4.8 (TCGdex issue), the plan (Starter vs Professional) and the rest
+>   of the Section 7 answers are still yours. Not done: Base Set Machamp (TCGplayer has no Base Set product for
 >   it; both are "Deck Exclusives"), Multi Energy EX Sandstorm 93 (two versions share the wrong id).
 > - 🧪 To check at the counter: Charmander SVP 044 (price and TCGplayer link are Charmander's, $50-ish);
 >   Exeggcute PRE 001 Master Ball (JustTCG's five conditions, no "fallback" tag); Mimikyu V TG16

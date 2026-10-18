@@ -235,6 +235,9 @@ const suffixOf = (v) => (v.treatments ?? []).find((t) => t.startsWith('variant:'
  */
 export function siblingVersions(cards, c, versions) {
   const known = new Set(versions.map((v) => v.tcgplayerId).filter(Boolean));
+  // Only a plain version's product lends the card printings: a Master Ball
+  // pattern's own product, sold as "Holofoil", is no HOLO of the card.
+  const plainKnown = new Set(versions.filter((v) => !v.treatments?.length && !v.firstEdition).map((v) => v.tcgplayerId).filter(Boolean));
   // "XY - BREAKthrough" = "BREAKthrough", "Diamond and Pearl" = "Diamond & Pearl".
   const setKey = (name) => fold(plainSetName(name).replace(/&|\band\b/gi, ' '));
   const set = setKey(c?.setName);
@@ -247,6 +250,7 @@ export function siblingVersions(cards, c, versions) {
     const theirs = setKey(card.set_name);
     const sameSet = Boolean(set && theirs && (theirs.includes(set) || set.includes(theirs)));
     if ((card.tcgplayerId && known.has(String(card.tcgplayerId))) || (!suffix && sameSet)) {
+      if (card.tcgplayerId && known.has(String(card.tcgplayerId)) && !plainKnown.has(String(card.tcgplayerId))) continue;
       for (const v of justtcgVersions(card)) {
         if (have.has(finishKey(v))) continue;
         have.add(finishKey(v));

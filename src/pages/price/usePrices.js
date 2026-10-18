@@ -83,19 +83,28 @@ export function usePrices(selected, { pokemon, versions, jaName, waitName }) {
 /**
  * TCGplayer-only products sharing a TCGdex card's name and number (owner,
  * 2026-10-09): Cosmos Holo, stamped and other separate products TCGdex
- * doesn't list, for the Version list. English cards only, once the card has
- * stayed selected (like prices), one search per card (kept by the server).
- * @returns {{ cards: object[]|null, settled: boolean }} cards null while looking
+ * doesn't list, for the Version list. English cards only, one search per
+ * card (kept by the server a week). It ran for every card selected, a
+ * JustTCG request each; now (decision 289) it runs by itself only when the
+ * card `needed`s it (a version TCGdex gives no product, or a saved
+ * TCGplayer-only version being edited), and otherwise when asked for
+ * (`ask`: the "Other TCGplayer versions…" link in the details panel).
+ * @returns {{ cards: object[]|null, settled: boolean, canAsk: boolean, byHand: boolean, ask: () => void }}
+ *   cards null while looking, or while not asked; settled: nothing more to wait for
  */
-export function usePokemonSiblings(selected, pokemon) {
+export function usePokemonSiblings(selected, pokemon, { needed = true } = {}) {
   const { offline } = useConnection();
-  const wanted = selected?.game === 'pokemon' && selected.lang === 'en' && selected.source !== 'justtcg'
+  const possible = selected?.game === 'pokemon' && selected.lang === 'en' && selected.source !== 'justtcg'
     && selected.tcgdexId && selected.number && pokemon.resolved;
-  const key = wanted ? `pokemon:siblings:${selected.tcgdexId}` : null;
+  const key = possible ? `pokemon:siblings:${selected.tcgdexId}` : null;
   const [state, setState] = useState({ key: null, cards: null });
+  const [askedKey, setAskedKey] = useState(null);
+  const byHand = Boolean(key) && askedKey === key;
+  const wanted = Boolean(key) && (needed || byHand);
+  const ask = useCallback(() => key && setAskedKey(key), [key]);
 
   useEffect(() => {
-    if (!key || offline) return undefined;
+    if (!wanted || offline) return undefined;
     let alive = true;
     const size = selected.printedSize ?? pokemon.card?.set?.cardCount?.official ?? null;
     const timer = setTimeout(() => {
@@ -113,8 +122,11 @@ export function usePokemonSiblings(selected, pokemon) {
       clearTimeout(timer);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps -- key stands for the card; its name, number and size go with it
-  }, [key, offline]);
+  }, [wanted, key, offline]);
 
-  if (!key) return { cards: null, settled: true };
-  return state.key === key ? { cards: state.cards, settled: true } : { cards: null, settled: Boolean(offline) };
+  if (!key) return { cards: null, settled: true, canAsk: false, byHand: false, ask };
+  if (!wanted) return { cards: null, settled: true, canAsk: true, byHand: false, ask };
+  return state.key === key
+    ? { cards: state.cards, settled: true, canAsk: false, byHand, ask }
+    : { cards: null, settled: Boolean(offline), canAsk: false, byHand, ask };
 }

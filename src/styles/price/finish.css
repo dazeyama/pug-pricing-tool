@@ -131,3 +131,5 @@
 .detail-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .detail-chips .trait-chip { align-self: auto; }
 .versions legend { padding: 0; margin-bottom: 4px; font-size: 12px; color: var(--muted); }
+/* The TCGplayer search on request (decision 289), under the versions. */
+.versions-more { margin-top: 6px; font-size: 12px; color: var(--muted); align-self: flex-start; }

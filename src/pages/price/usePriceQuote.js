@@ -20,8 +20,11 @@ export function usePriceQuote({
   // A Japanese card's English name (Pokédex number): shown beside the
   // Japanese one, and used for JustTCG, TCGplayer and Cardmarket searches.
   const englishName = useEnglishPokemonName(pokemon.card, card?.lang);
+  // A TCGplayer-only version (a separate product) is looked up once it's chosen, not
+  // for every card (decision 289): the card's own products go in every time.
   const prices = usePrices(card, {
-    pokemon, versions, jaName: englishName || search.parsed?.name, waitName: englishName === undefined,
+    pokemon, versions: versions.filter((v) => !v.tcgplayerOnly || v.id === version?.id),
+    jaName: englishName || search.parsed?.name, waitName: englishName === undefined,
   });
   const result = resultFor(card, prices.results, { finish, version, versions });
   const variantOpts = {

@@ -113,7 +113,7 @@ const sourceTitle = (v) => (v.ownProduct
   : 'A separate TCGplayer product TCGdex doesn\u2019t list');
 
 /** Pokémon: NORMAL | HOLO | REVERSE, then the versions of that finish (TCGdex variants). */
-function PokemonFinish({ c, pokemon, versions, version, onVersion }) {
+function PokemonFinish({ c, pokemon, versions, version, onVersion, tcgSiblings }) {
   if (!pokemon.resolved) {
     return (
       <>
@@ -183,6 +183,23 @@ function PokemonFinish({ c, pokemon, versions, version, onVersion }) {
             ))}
           </fieldset>
         )}
+        {/* The TCGplayer search on request (decision 289): Cosmos Holo, stamped, Prize Pack and
+            other separate products TCGdex doesn't list. One JustTCG request, kept a week. */}
+        {c.source !== 'justtcg' && tcgSiblings?.canAsk && (
+          <button
+            type="button"
+            className="link-btn versions-more"
+            title="Look for other TCGplayer products of this card (Cosmos Holo, stamped, Prize Pack…): one JustTCG request"
+            onClick={tcgSiblings.ask}
+          >
+            Other TCGplayer versions…
+          </button>
+        )}
+        {tcgSiblings?.byHand && !tcgSiblings.settled && <p className="details-note">Looking on TCGplayer…</p>}
+        {tcgSiblings?.byHand && tcgSiblings.settled && tcgSiblings.cards
+          && !versions.some((v) => v.tcgplayerOnly && !v.ownProduct) && (
+          <p className="details-note">No other TCGplayer versions.</p>
+        )}
       </div>
     </>
   );
@@ -215,6 +232,7 @@ export default function FinishPanel(props) {
           versions={props.versions}
           version={props.version}
           onVersion={props.onVersion}
+          tcgSiblings={props.tcgSiblings}
         />
       )}
     </div>
