@@ -139,6 +139,8 @@ export default function PricingScreen({
   // selected (found), then its saved choices put back (restored); SAVE EDIT
   // saves over it. { line, key, query, found, restored } or null.
   const [editing, setEditing] = useState(null);
+  // Defined here, before anything reads it (a use above its line crashed the screen). The suggestions, the card being edited pinned first (decision 324), the rest in the search's order.
+  const candidates = useMemo(() => pinFirst(search.candidates, editing?.key), [search.candidates, editing?.key]);
   const editingRef = useRef(null);
   editingRef.current = editing;
 
@@ -292,8 +294,6 @@ export default function PricingScreen({
   const canRemove = Boolean(user) && !offline && !removeLocked;
   const removeBlocked = blockedBy(removeLocked);
 
-  // The suggestions, the card being edited pinned first (decision 324), the rest in the search's order.
-  const candidates = useMemo(() => pinFirst(search.candidates, editing?.key), [search.candidates, editing?.key]);
   const visible = candidates.slice(0, shownCount);
   const hasShowAll = candidates.length > shownCount;
 

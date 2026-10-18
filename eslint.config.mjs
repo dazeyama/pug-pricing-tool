@@ -25,6 +25,10 @@ export default [
       'react/jsx-uses-vars': 'error',
       ...reactHooks.configs.recommended.rules,
       'no-unused-vars': ['error', { argsIgnorePattern: '^_', caughtErrors: 'none', ignoreRestSiblings: true }],
+      // A value read above its own line in the same scope throws when that code runs (2026-10-19: the
+      // Buy screen went blank, \`candidates\` read before its \`const\`); uses inside functions that run
+      // later are fine and not flagged.
+      'no-use-before-define': ['error', { functions: false, classes: true, variables: false, allowNamedExports: true }],
     },
   },
   {
