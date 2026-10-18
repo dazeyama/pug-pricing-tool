@@ -330,6 +330,7 @@ Four findings, all in the live build too, and the owner's calls:
 
 ### For the next smoke test
 
+- [ ] 🆕 **Older card titles found (decision 308):** an older card (Courser of Kruphix, a 4th Edition card, a Mirrodin card): Title shows the name itself in the info box, level and whole, not the frame's line; the printing list opens with the right name, also when the card sits a little high or low in the holder.
 - [ ] 🆕 **The computer never stuck (decision 307):** with Chrome's network throttling on the computer (Slow 3G) while scanning, scans still finish or fail with a reason within 30 s, and the next scans go in once the connection's back; on the phone, a scan waiting over 15 s says "still waiting on <computer>" or "still pricing it" in amber.
 - [ ] 🆕 **Too dark (decision 306):** scan in a dim corner: after a few looks the strip suggests 💡; turning it on (or more light) clears it; a Scan card that fails in the dark says it's too dark. A black-bordered card in good light never gets the hint.
 - [ ] 🆕 **Auto scan rests (decision 304):** leave the scanner on with an empty holder for a minute, then lay a card: it's read within about a second, and the next cards go in at the usual pace.

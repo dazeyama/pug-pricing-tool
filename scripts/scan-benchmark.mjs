@@ -114,7 +114,7 @@ if (!titles) {
   console.log(`\nRead right: ${right}/${total}; sure (score ≥ ${HIGH}, auto scan): ${sure}/${total} = ${Math.round((sure / total) * 100)}%;`
     + ` fair (≥ ${MEDIUM}, Scan card): ${fair}/${total}; ${Math.round(ms / total)} ms a photo here.`);
 } else {
-  const { parseOldNumber, readBottom, readTitle } = await import('../src/scan/titles.js');
+  const { findTitle, parseOldNumber, readBottom } = await import('../src/scan/titles.js');
   const { matchName } = await import('../src/scan/nameMatch.js');
   const names = (await (await fetch('https://api.scryfall.com/catalog/card-names', { headers: SCRYFALL_HEADERS })).json()).data;
   console.log(`Titles: ${files.length} photos in ${folder}\n`);
@@ -131,16 +131,14 @@ if (!titles) {
     const canvas = createCanvas(image.width, image.height);
     canvas.getContext('2d').drawImage(image, 0, 0);
     const t0 = performance.now();
-    // As the phone does (src/scan/older.js): one line, then a block if that names nothing.
-    await worker.setParameters({ tessedit_pageseg_mode: '7' });
-    let text = await readTitle(canvas, read, make, { wholeFrame: true });
-    await worker.setParameters({ tessedit_pageseg_mode: '6' });
-    let match = matchName(text, names);
-    if (!match) {
-      const second = await readTitle(canvas, read, make, { wholeFrame: true });
-      match = matchName(second, names);
-      text = `${text.trim()}" / "${second.trim()}`;
-    }
+    // As the phone does (src/scan/older.js, decision 308): the title where it's found, each likely
+    // place as one line till one names a card, then the best as a block.
+    const reads = {
+      line: async (c) => { await worker.setParameters({ tessedit_pageseg_mode: '7' }); return read(c); },
+      block: async (c) => { await worker.setParameters({ tessedit_pageseg_mode: '6' }); return read(c); },
+    };
+    const text = await findTitle(canvas, reads, make, (t) => matchName(t, names), { wholeFrame: true });
+    const match = matchName(text, names);
     // As the phone does: the "123/350" in what the collector-line reading read, else the bottom band.
     const { attempts } = await readLine(canvas);
     let bottom = attempts.map((a) => a.text).find((t) => parseOldNumber(t)) ?? null;

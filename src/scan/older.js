@@ -12,7 +12,7 @@
 import * as scry from '../lib/scryfall.js';
 import { defaultCreateCanvas } from './recognition/canvasUtil.js';
 import { PSM_BLOCK, PSM_LINE, readText } from './ocr.js';
-import { parseCopyrightYear, parseOldNumber, readBottom, readTitle } from './titles.js';
+import { findTitle, parseCopyrightYear, parseOldNumber, readBottom } from './titles.js';
 import { matchName } from './nameMatch.js';
 import { guideRect } from './guide.js';
 import { rankPrintings } from './printingMatch.js';
@@ -65,9 +65,10 @@ async function loadPicture(url) {
  */
 export async function readOlderCard(frame, { texts = [], card = null, listMark = null } = {}) {
   const names = await scry.loadNames();
-  // As one line first; if that names nothing clearly, as a block (it copes with a stray mark better).
-  let match = matchName(await readTitle(frame, (c) => readText(c, PSM_LINE), defaultCreateCanvas, { card }), names);
-  match ??= matchName(await readTitle(frame, (c) => readText(c, PSM_BLOCK), defaultCreateCanvas, { card }), names);
+  // The title where it's found on the card (decision 308), each likely place as one line till one
+  // names a card; then the best as a block (it copes with a stray mark better).
+  const reads = { line: (c) => readText(c, PSM_LINE), block: (c) => readText(c, PSM_BLOCK) };
+  const match = matchName(await findTitle(frame, reads, defaultCreateCanvas, (t) => matchName(t, names), { card }), names);
   if (!match) return null;
   const bottoms = [...texts];
   let old = bottoms.map(parseOldNumber).find(Boolean) ?? null;

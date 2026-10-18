@@ -9,13 +9,25 @@ import { guideRect } from './guide.js';
 
 // Where the title sits on a card, as fractions of the card: below the top
 // border, left of the mana cost.
-const TITLE = { top: 0.035, bottom: 0.105, left: 0.065, right: 0.78 };
+const TITLE = { top: 0.035, bottom: 0.105, left: 0.045, right: 0.78 };
 // Where an old card's collector number sits: in the copyright line along
 // the bottom border, in very small print.
 const BOTTOM = { top: 0.925, bottom: 0.985, left: 0.03, right: 0.97 };
 // The band is scaled to this height before it's read: the title's letters
 // end up about 45px tall, the copyright line's about 30px.
 const BAND_HEIGHT = { title: 72, bottom: 240 };
+
+// Finding the title (owner, 2026-10-19: "Sometimes for older cards the name reading is misaligned …
+// It detects the name too high (high most often, sometimes low)"; decision 308). The card's outline
+// can sit a little off the card, and a fixed band then lands on the border or the art. So the band
+// is looked for: down the top of the card, from a little above where the outline puts the top to a
+// fifth of the way down, the place where a line of text sits, busy across its middle and calm above
+// and below (a title bar's margins, or the border round an old card's name), the art and the
+// border's edges being busy or calm all the way through.
+const SEARCH = { from: -0.05, to: 0.2 };
+const SEARCH_W = 320;            // the search is done on a copy this wide
+const STEP_EDGE = 22;            // a change of brightness this big between neighbours is an edge
+const APART = 0.02;              // two places to try are at least this far apart (of the card's height)
 
 /**
  * One band of the card, scaled, black text on white whichever way round it
@@ -75,13 +87,96 @@ function band(frame, card, where, height, createCanvas) {
 }
 
 /**
+ * Each row's edges: how many neighbouring pixels across it differ by
+ * STEP_EDGE or more. Pure, for tests.
+ * @param {Float32Array|number[]} gray  w × h, row by row
+ */
+export function rowEdges(gray, w, h) {
+  const out = new Float32Array(h);
+  for (let y = 0; y < h; y++) {
+    let n = 0;
+    for (let x = 1; x < w; x++) if (Math.abs(gray[y * w + x] - gray[y * w + x - 1]) >= STEP_EDGE) n += 1;
+    out[y] = n / w;
+  }
+  return out;
+}
+
+/**
+ * Where a line of text sits in a column of rows' edges: each place a band
+ * `bandH` rows tall could start, scored by the edges across its middle 60%
+ * less those in its top and bottom fifths; the best first, each at least
+ * `apart` rows from those before it. Pure, for tests.
+ * @returns {{ at: number, score: number }[]}
+ */
+export function textBands(edges, bandH, apart = 1) {
+  const h = edges.length;
+  const prefix = new Float64Array(h + 1);
+  for (let y = 0; y < h; y++) prefix[y + 1] = prefix[y] + edges[y];
+  const mean = (a, b) => (b > a ? (prefix[Math.min(h, b)] - prefix[Math.max(0, a)]) / (Math.min(h, b) - Math.max(0, a)) : 0);
+  const edgeRows = Math.max(1, Math.round(bandH * 0.2));
+  const all = [];
+  for (let at = 0; at + bandH <= h; at++) {
+    const middle = mean(at + edgeRows, at + bandH - edgeRows);
+    const rim = (mean(at, at + edgeRows) + mean(at + bandH - edgeRows, at + bandH)) / 2;
+    all.push({ at, score: middle - 1.5 * rim });
+  }
+  all.sort((a, b) => b.score - a.score);
+  const picked = [];
+  for (const c of all) {
+    if (c.score <= 0) break;
+    if (picked.every((p) => Math.abs(p.at - c.at) >= apart)) picked.push(c);
+    if (picked.length === 3) break;
+  }
+  return picked;
+}
+
+/**
+ * Where the card's title is, as fractions of the card's height from its
+ * outline's top (decision 308): the likeliest first, then the next ones
+ * worth a try, and the fixed place last if none's near it.
+ * @param {{ x: number, y: number, width: number, height: number }} card
+ * @returns {number[]}  each a band's top, the band TITLE's height
+ */
+export function titleTops(frame, card, createCanvas) {
+  const bandFrac = TITLE.bottom - TITLE.top;
+  const x0 = Math.max(0, card.x + card.width * TITLE.left);
+  const x1 = Math.min(frame.width, card.x + card.width * TITLE.right);
+  const y0 = Math.max(0, card.y + card.height * SEARCH.from);
+  const y1 = Math.min(frame.height, card.y + card.height * (SEARCH.to + bandFrac));
+  const tops = [];
+  if (x1 - x0 > 8 && y1 - y0 > 8) {
+    const scale = SEARCH_W / (x1 - x0);
+    const w = SEARCH_W;
+    const h = Math.max(8, Math.round((y1 - y0) * scale));
+    const c = createCanvas(w, h);
+    const ctx = c.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(frame, Math.round(x0), Math.round(y0), Math.round(x1 - x0), Math.round(y1 - y0), 0, 0, w, h);
+    const { data } = ctx.getImageData(0, 0, w, h);
+    const gray = new Float32Array(w * h);
+    for (let k = 0; k < gray.length; k++) gray[k] = 0.299 * data[4 * k] + 0.587 * data[4 * k + 1] + 0.114 * data[4 * k + 2];
+    const bandH = Math.max(4, Math.round(card.height * bandFrac * scale));
+    const apart = Math.max(1, Math.round(card.height * APART * scale));
+    for (const { at } of textBands(rowEdges(gray, w, h), bandH, apart)) {
+      tops.push((y0 + at / scale - card.y) / card.height);
+    }
+  }
+  if (tops.every((t) => Math.abs(t - TITLE.top) >= APART)) tops.push(TITLE.top);
+  return tops;
+}
+
+/** The title band starting `top` of the way down the card (TITLE's height and sides). */
+const titleAt = (top) => ({ ...TITLE, top, bottom: top + (TITLE.bottom - TITLE.top) });
+
+/**
  * The card's title as the reader sees it (black on white, its box's ruled
  * lines taken out), for the info box under the card when it's an older
- * card (owner, 2026-10-16: "focus the info box on the card name instead").
+ * card (owner, 2026-10-16: "focus the info box on the card name instead"),
+ * where it was found (decision 308).
  * @param {{ x: number, y: number, width: number, height: number }} card  where the card is
  */
 export function titleCutout(frame, card, createCanvas) {
-  return band(frame, card, TITLE, BAND_HEIGHT.title, createCanvas);
+  return band(frame, card, titleAt(titleTops(frame, card, createCanvas)[0]), BAND_HEIGHT.title, createCanvas);
 }
 
 /** The share of a black-on-white canvas that's ink: next to none, the band's blank. */
@@ -102,11 +197,31 @@ const cardIn = (frame, wholeFrame, card) => card ?? (wholeFrame
  * @param {object} frame  a canvas: the camera's picture
  * @param {(canvas: object) => Promise<string>} read  OCR, one line (PSM 7)
  * @param {(w: number, h: number) => object} createCanvas
- * @param {{ wholeFrame?: boolean, card?: { x: number, y: number, width: number, height: number } }} [opts]
- *   card: where the card is (the locked view's); else the guide's place, or the whole picture
+ * @param {{ wholeFrame?: boolean, card?: { x: number, y: number, width: number, height: number },
+ *   top?: number }} [opts]  card: where the card is (the locked view's); else the guide's place, or
+ *   the whole picture; top: where its title starts (titleTops), else the fixed place
  */
-export function readTitle(frame, read, createCanvas, { wholeFrame = false, card = null } = {}) {
-  return read(band(frame, cardIn(frame, wholeFrame, card), TITLE, BAND_HEIGHT.title, createCanvas));
+export function readTitle(frame, read, createCanvas, { wholeFrame = false, card = null, top = TITLE.top } = {}) {
+  return read(band(frame, cardIn(frame, wholeFrame, card), titleAt(top), BAND_HEIGHT.title, createCanvas));
+}
+
+/**
+ * Read the card's title where it's found (decision 308): each place
+ * titleTops gives, best first, as one line, till `accept` takes a reading;
+ * then the best place as a block. The reading taken, or the last one.
+ * @param {(text: string) => unknown} accept  a reading that names a card
+ * @param {{ line: (c: object) => Promise<string>, block: (c: object) => Promise<string> }} reads  OCR
+ */
+export async function findTitle(frame, reads, createCanvas, accept, { wholeFrame = false, card = null } = {}) {
+  const rect = cardIn(frame, wholeFrame, card);
+  const tops = titleTops(frame, rect, createCanvas);
+  let text = '';
+  for (const top of tops) {
+    text = await reads.line(band(frame, rect, titleAt(top), BAND_HEIGHT.title, createCanvas));
+    if (accept(text)) return text;
+  }
+  text = await reads.block(band(frame, rect, titleAt(tops[0]), BAND_HEIGHT.title, createCanvas));
+  return text;
 }
 
 /**
