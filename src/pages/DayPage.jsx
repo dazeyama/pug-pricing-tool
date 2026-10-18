@@ -488,7 +488,14 @@ function DayScreen({ game, day }) {
       toast(`${printPokemonBlocked}.`, 'err');
       return;
     }
-    print({ lines: dayLines, game: 'pokemon', title: `Audit — Pokémon, ${dayTitle(day)}`, fileName: `audit-pokemon-${day}.pdf` });
+    const flagged = new Map(mine.filter((b) => b.condition_check).map((b) => [b.id, `Buy ${numberOf(b)}`]));
+    print({
+      lines: dayLines,
+      game: 'pokemon',
+      title: `Audit — Pokémon, ${dayTitle(day)}`,
+      fileName: `audit-pokemon-${day}.pdf`,
+      flagOf: (l) => flagged.get(l.buy_id) ?? null,   // decision 301, as on Magic's
+    });
   }
   function printStickersDay() {
     if (printStickersBlocked) {
@@ -509,6 +516,7 @@ function DayScreen({ game, day }) {
         game: 'pokemon',
         title: `Audit — Pokémon, Buy ${n}, ${dayDate(day)}`,
         fileName: `audit-pokemon-${day}-buy-${n}.pdf`,
+        flagOf: b.condition_check ? () => `Buy ${n}` : null,
       });
       return;
     }

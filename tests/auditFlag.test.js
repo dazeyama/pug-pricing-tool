@@ -29,3 +29,15 @@ test('the banner names the flagged buys, in order', () => {
   assert.match(flagBanner(['Buy 9', 'Buy 10', 'Buy 11'], true), /^CHECK CONDITION: Buys 9, 10 and 11 are flagged\./);
   assert.deepEqual(flaggedBuys(['Buy 10', 'Buy 9']), ['Buy 9', 'Buy 10']);
 });
+
+test("a Pokémon printout keeps a flagged buy's card apart too", async () => {
+  const { pokemonSections } = await import('../src/lib/auditPrint.js');
+  const pk = (id, buy) => ({
+    id, buy_id: buy, game: 'pokemon', name: 'Pikachu', set_code: 'sv1', set_name: 'Scarlet & Violet',
+    collector_number: '63', lang: 'en', finish: 'normal', condition: 'NM', quantity: 1, treatments: [],
+  });
+  const [section] = pokemonSections([pk('a', 'b1'), pk('b', 'b2'), pk('c', 'b2')], (l) => (l.buy_id === 'b1' ? 'Buy 42' : null));
+  assert.equal(section.cards, 3);
+  assert.deepEqual(section.rows.map((r) => [r.qty, r.flag]).sort(), [[1, 'Buy 42'], [2, null]]);
+  assert.deepEqual(pokemonSections([pk('a', 'b1'), pk('b', 'b2')])[0].rows.map((r) => [r.qty, r.flag]), [[2, null]]);
+});

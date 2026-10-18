@@ -209,19 +209,23 @@ export function auditSections(placed) {
  * different buys as one row. A set is its code (whatever its case); its
  * name as first met, the code when a line has none.
  * @param {object[]} lines  pokemonPrintLines' lines
+ * @param {(line: object) => string|null} [flagOf]  a card's flagged buy ("Buy 42", decision 301), kept on its row
  * @returns {{ name: string, cards: number, set: string|null, rows: ReturnType<typeof pokemonRow>[] }[]}
  */
-export function pokemonSections(lines) {
+export function pokemonSections(lines, flagOf = null) {
   const names = new Map();
   const merged = new Map();
   for (const line of lines) {
     const code = String(line.set_code ?? '').toLowerCase();
     if (!names.has(code)) names.set(code, line.set_name || code.toUpperCase() || 'No set');
+    // A flagged buy's card stays a row of its own, as on the Magic printout.
+    const flag = flagOf?.(line) ?? null;
     const key = [code, line.tcgdex_id ?? '', line.justtcg_card_id ?? '', line.name, line.collector_number, line.lang,
-      line.finish, line.condition, Boolean(line.first_edition), [...(line.treatments ?? [])].sort().join(',')].join('|');
+      line.finish, line.condition, Boolean(line.first_edition), [...(line.treatments ?? [])].sort().join(','),
+      flag ?? ''].join('|');
     const had = merged.get(key);
     if (had) had.qty += line.quantity;
-    else merged.set(key, { code, line, qty: line.quantity });
+    else merged.set(key, { code, line, qty: line.quantity, flag });
   }
   const bySet = new Map();
   for (const m of merged.values()) {
@@ -233,7 +237,7 @@ export function pokemonSections(lines) {
       name: names.get(code),
       cards: list.reduce((n, m) => n + m.qty, 0),
       set: code || null,
-      rows: list.sort(byCard).map((m) => pokemonRow(m.line, m.qty)),
+      rows: list.sort(byCard).map((m) => ({ ...pokemonRow(m.line, m.qty), flag: m.flag })),
     }))
     .sort((a, b) => collator.compare(a.name, b.name) || collator.compare(a.set ?? '', b.set ?? ''));
 }

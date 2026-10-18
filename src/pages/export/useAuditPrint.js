@@ -93,6 +93,21 @@ async function symbolsFor(sections) {
 }
 
 /**
+ * Flagged buys on a printout (decision 301), from each card's flag: a red
+ * banner on every page; each flagged card outlined in red with its buy's chip
+ * when the printout holds others too (a day's), not when every card is the
+ * one buy's.
+ */
+function flagging(rowFlags) {
+  const flags = flaggedBuys(rowFlags);
+  const flagRows = flags.length > 1 || (flags.length > 0 && rowFlags.some((f) => !f));
+  return { flags, flagRows, flagText: flagBanner(flags, flagRows) };
+}
+
+/** The printout toast's word on flagged buys, or nothing. */
+const flaggedNote = (flags) => (flags.length ? ` 🚩 ${flags.join(', ')} flagged: check condition.` : '');
+
+/**
  * Print? and Print buy (docs/TEAM_FEEDBACK.md 3): the cards' Crystal
  * Commerce categories found without asking anything (the export's matching,
  * nothing remembered; exported cards from what their export saved), each
@@ -103,7 +118,7 @@ async function symbolsFor(sections) {
  * `game: 'pokemon'` is Print PKM? (decision 280): the batch's Pokémon cards
  * by set instead of by category, nothing matched or fetched.
  * `flagOf`: a card's flagged buy ("Buy 42", decision 301: its buy flagged
- * for a condition check), or null; the Magic printout says so in red.
+ * for a condition check), or null; the printout says so in red, Magic or Pokémon.
  * @returns {{ print: (p: { lines?: object[], load?: () => Promise<object[]>, title: string, fileName: string,
  *   game?: 'mtg'|'pokemon', flagOf?: (line: object) => string|null }) => Promise<void>, printing: boolean }}
  */
@@ -147,11 +162,13 @@ export function useAuditPrint() {
         }
       }
       if (pokemon) {
-        const sections = pokemonSections(chosen);
+        const sections = pokemonSections(chosen, flagOf);
+        const { flagText, flagRows, flags } = flagging(chosen.map((l) => flagOf?.(l) ?? null));
         const { auditPdf } = await import('../../lib/auditPdf.js');
-        deliver(auditPdf({ title, sections }), fileName, tab);
+        deliver(auditPdf({ title, sections, flagText, flagRows }), fileName, tab);
         const count = sections.reduce((n, s) => n + s.cards, 0);
-        toast(`Printout ready: ${count} card${count === 1 ? '' : 's'} in ${sections.length} set${sections.length === 1 ? '' : 's'}.`, 'ok');
+        toast(`Printout ready: ${count} card${count === 1 ? '' : 's'} in ${sections.length} set${sections.length === 1 ? '' : 's'}.`
+          + flaggedNote(flags), 'ok');
         return;
       }
       const toMatch = chosen.filter((l) => savedCategory(l) === undefined);
@@ -170,19 +187,14 @@ export function useAuditPrint() {
         };
       });
       const sections = auditSections(placed);
-      // Flagged buys (decision 301): a red banner on every page; each flagged card outlined in red with
-      // its buy's chip when the printout holds others too (a day's), not when every card is the one buy's.
-      const flags = flaggedBuys(placed.map((p) => p.flag));
-      const flagRows = flags.length > 1 || (flags.length > 0 && placed.some((p) => !p.flag));
-      const flagText = flagBanner(flags, flagRows);
+      const { flagText, flagRows, flags } = flagging(placed.map((p) => p.flag));
       // The PDF library loads only when something is printed: the app starts as light as before.
       const [{ auditPdf }, symbols] = await Promise.all([import('../../lib/auditPdf.js'), symbolsFor(sections)]);
       deliver(auditPdf({ title, sections, symbols, flagText, flagRows }), fileName, tab);
       const count = sections.reduce((n, s) => n + s.cards, 0);
       const unmatched = sections.find((s) => s.name === UNMATCHED)?.cards ?? 0;
       toast(`Printout ready: ${count} card${count === 1 ? '' : 's'}`
-        + `${unmatched ? `, ${unmatched} Unmatched` : ''}.`
-        + `${flags.length ? ` 🚩 ${flags.join(', ')} flagged: check condition.` : ''}`, 'ok');
+        + `${unmatched ? `, ${unmatched} Unmatched` : ''}.` + flaggedNote(flags), 'ok');
     } catch (e) {
       tab?.close();
       toast(`Couldn't print: ${e.message}`, 'err');

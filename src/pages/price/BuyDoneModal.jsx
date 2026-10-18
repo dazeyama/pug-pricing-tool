@@ -38,7 +38,7 @@ export default function BuyDoneModal({ number, games, lines, customer, paid, met
       game,
       title,
       fileName: `audit-${game === 'pokemon' ? 'pokemon' : 'magic'}-${day}-buy-${number}.pdf`,
-      // Flagged at CONFIRM BUY: the Magic printout says so (decision 301).
+      // Flagged at CONFIRM BUY: the printout says so, either game (decision 301).
       flagOf: flagged ? () => `Buy ${number}` : null,
     });
     onClose();
