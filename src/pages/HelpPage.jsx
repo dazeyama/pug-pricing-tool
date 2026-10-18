@@ -2,8 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import readme from '../../README.md?raw';
 import Modal from '../components/Modal.jsx';
-import { buildHelp } from '../lib/help.js';
+import { buildHelp, fold, searchTerms, wordHits } from '../lib/help.js';
 import { PAGES } from './help/pages.js';
+import HelpSearch from './help/HelpSearch.jsx';
 import SIZES from './help/images.json';
 
 // Help (owner, 2026-10-09), opened with the header's "?": the README, a page
@@ -28,6 +29,9 @@ export default function HelpPage() {
   const prev = HELP.pages[index - 1] ?? null;
   const next = HELP.pages[index + 1] ?? null;
   const [zoom, setZoom] = useState(null);
+  // The search box's words (decision 299), kept from page to page so they stay highlighted.
+  const [query, setQuery] = useState('');
+  const jump = useRef(false);   // a search result was picked: show its first word
   const body = useRef(null);
   const nav = useRef(null);
 
@@ -54,6 +58,41 @@ export default function HelpPage() {
     else body.current?.scrollTo({ top: 0 });
     nav.current?.querySelector('.help-link.on')?.scrollIntoView({ block: 'nearest' });
   }, [page.id, anchor, location.key]);
+
+  // The searched words highlighted on the page, through the browser's own
+  // highlights (nothing in the page's HTML changes); opened from a result,
+  // the first one is scrolled into view.
+  useEffect(() => {
+    const marks = window.CSS?.highlights;
+    const terms = searchTerms(query);
+    const root = body.current;
+    if (!marks || !window.Highlight || !root) return undefined;
+    if (!terms.length) {
+      marks.delete('help-search');
+      jump.current = false;
+      return undefined;
+    }
+    const ranges = [];
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      const text = fold(node.data);
+      if (text.length !== node.data.length) continue;
+      for (const term of terms) {
+        for (const at of wordHits(text, term)) {
+          const range = document.createRange();
+          range.setStart(node, at);
+          range.setEnd(node, at + term.length);
+          ranges.push(range);
+        }
+      }
+    }
+    marks.set('help-search', new window.Highlight(...ranges));
+    if (jump.current) {
+      jump.current = false;
+      ranges[0]?.startContainer.parentElement?.scrollIntoView({ block: 'center' });
+    }
+    return () => marks.delete('help-search');
+  }, [query, page.id, location.key]);
 
   // ← / →: the page before or after. Not while typing (the header search),
   // with a modifier held (the browser's own Alt+← is Back), or over a picture
@@ -134,6 +173,15 @@ export default function HelpPage() {
           <span className="help-kicker">{page.chapter}</span>
           <h2>{page.title}</h2>
           <span className="help-count">{index + 1} of {HELP.pages.length}</span>
+          <HelpSearch
+            pages={HELP.pages}
+            query={query}
+            onQuery={setQuery}
+            onPick={(id) => {
+              jump.current = true;
+              go(id);
+            }}
+          />
         </header>
         <div className="help-scroll" ref={body}>
           <div className={`help-content${page.images.length ? ' has-figures' : ''}`}>

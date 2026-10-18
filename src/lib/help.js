@@ -190,7 +190,97 @@ export function buildHelp(readme, config, { base = '' } = {}) {
       images: p.images ?? [],
       keys: own.map((b) => b.key),
       html,
+      // For the search (decision 299): the page's words as read, and its headings.
+      text: plainText(html),
+      headings: own.slice(1).map((b) => b.title),
     };
   });
   return { pages, anchors, problems };
+}
+
+/** A page's HTML as the words on it: tags gone, entities read, spaces collapsed. */
+export function plainText(html) {
+  return String(html)
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * Lower case with the accents gone ("Pokémon" → "pokemon"), so either spelling
+ * finds the other. Keeps the length of ordinary text, so a place found in the
+ * folded text is the same place in the original.
+ */
+export function fold(text) {
+  return String(text).normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+}
+
+/** The words searched for: two characters or more, each once. */
+export function searchTerms(query) {
+  return [...new Set(fold(query).split(/[^\p{L}\p{N}]+/u).filter((t) => t.length >= 2))];
+}
+
+const wordChar = (c) => Boolean(c) && /[\p{L}\p{N}]/u.test(c);
+
+/** Where `term` starts a word in `folded` text ("port" finds "portrait", not "export"). */
+export function wordHits(folded, term) {
+  const at = [];
+  for (let i = folded.indexOf(term); i >= 0; i = folded.indexOf(term, i + term.length)) {
+    if (!wordChar(folded[i - 1])) at.push(i);
+  }
+  return at;
+}
+
+/**
+ * The Help's search (owner, 2026-10-18; decision 299): the pages that have
+ * every word typed, the most relevant first. A word in the page's title counts
+ * 10, in one of its headings 4, in its text 1 for each time; ties keep the
+ * Help's own order. Each result has a snippet around the first place in the
+ * text, `{ before, match, after }`.
+ * @param {{ id: string, title: string, chapter: string, text: string, headings: string[] }[]} pages
+ * @returns {{ page: object, score: number, count: number, snippet: object|null }[]}
+ */
+export function searchHelp(pages, query) {
+  const terms = searchTerms(query);
+  if (!terms.length) return [];
+  const out = [];
+  pages.forEach((page, order) => {
+    const title = fold(page.title);
+    const heads = fold(page.headings.join(' · '));
+    const text = fold(page.text);
+    let score = 0;
+    let count = 0;
+    let first = null;
+    for (const term of terms) {
+      const inTitle = wordHits(title, term).length;
+      const inHeads = wordHits(heads, term).length;
+      const inText = wordHits(text, term);
+      if (!inTitle && !inHeads && !inText.length) return;
+      score += inTitle * 10 + inHeads * 4 + inText.length;
+      count += inText.length;
+      if (first == null && inText.length) first = { at: inText[0], length: term.length };
+    }
+    out.push({ page, score, count, order, snippet: first && snippetAt(page.text, first.at, first.length) });
+  });
+  return out
+    .sort((a, b) => b.score - a.score || a.order - b.order)
+    .map((r) => ({ page: r.page, score: r.score, count: r.count, snippet: r.snippet }));
+}
+
+/** About 50 characters either side of a place in the text, cut at spaces. */
+function snippetAt(text, at, length, room = 50) {
+  let from = Math.max(0, at - room);
+  let to = Math.min(text.length, at + length + room);
+  if (from > 0) from = text.indexOf(' ', from) + 1 || from;
+  if (to < text.length) {
+    const space = text.lastIndexOf(' ', to);
+    if (space > at + length) to = space;
+  }
+  return {
+    before: (from > 0 ? '…' : '') + text.slice(from, at),
+    match: text.slice(at, at + length),
+    after: text.slice(at + length, to) + (to < text.length ? '…' : ''),
+  };
 }

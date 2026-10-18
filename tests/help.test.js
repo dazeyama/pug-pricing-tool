@@ -1,7 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
-import { buildHelp, cleanTitle, inline, parseReadme, renderMarkdown, slugify } from '../src/lib/help.js';
+import {
+  buildHelp, cleanTitle, fold, inline, parseReadme, plainText, renderMarkdown, searchHelp, searchTerms, slugify, wordHits,
+} from '../src/lib/help.js';
 import { PAGES } from '../src/pages/help/pages.js';
 
 const README = readFileSync(new URL('../README.md', import.meta.url), 'utf8');
@@ -80,4 +82,34 @@ test('every Help picture exists, with its size', () => {
       assert.ok(img.caption, `${img.src} has a caption`);
     }
   }
+});
+
+test('search: words, accents and word starts', () => {
+  assert.deepEqual(searchTerms('  Pokémon, EXPORT a  export '), ['pokemon', 'export']);
+  assert.equal(fold('Poké Ball'), 'poke ball');
+  assert.deepEqual(wordHits('export the report; exports', 'export'), [0, 19]);
+  assert.equal(plainText('<p>Cash &amp; <strong>Credit</strong></p>'), 'Cash & Credit');
+});
+
+test('search: every word must be there; the title outranks the text', () => {
+  const pages = [
+    { id: 'a', title: 'Buy tab', chapter: 'Buy', headings: [], text: 'Stickers stickers stickers for the buy.' },
+    { id: 'b', title: 'Print PKM Stickers?', chapter: 'Calendar', headings: [], text: 'One sticker per copy.' },
+    { id: 'c', title: 'Settings', chapter: 'Settings', headings: ['Bulk values'], text: 'Nothing here.' },
+  ];
+  assert.deepEqual(searchHelp(pages, 'stickers').map((r) => r.page.id), ['b', 'a']);
+  assert.deepEqual(searchHelp(pages, 'stickers buy').map((r) => r.page.id), ['a']);
+  assert.deepEqual(searchHelp(pages, 'bulk').map((r) => r.page.id), ['c']);
+  assert.deepEqual(searchHelp(pages, 'x'), []);
+  const [hit] = searchHelp(pages, 'copy');
+  assert.equal(hit.snippet.match, 'copy');
+  assert.equal(hit.count, 1);
+});
+
+test('search: the real Help finds Undo export, on the page that has it first', () => {
+  const help = buildHelp(README, PAGES);
+  const results = searchHelp(help.pages, 'undo export');
+  assert.ok(results.length > 0);
+  assert.ok(/undo export/i.test(results[0].page.text));
+  assert.deepEqual(searchHelp(help.pages, 'pokemon').length, searchHelp(help.pages, 'Pokémon').length);
 });
