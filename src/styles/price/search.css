@@ -52,7 +52,7 @@
 .lang-toggle button.on { background: var(--accent-2); color: #fff; }
 .lang-toggle button:disabled { opacity: .4; cursor: default; }
 .lang-toggle button:disabled:hover { color: var(--muted); }
-/* mimp mode (decision 293): a 🦇 | 🌼 pill after EN | JP, exactly the language toggle's shape; the
+/* mimp mode (decision 293): a 🌼 | 🦇 pill after EN | JP, exactly the language toggle's shape; the
    lit side is the mode (owner, 2026-10-17): 🌼 on (the default), 🦇 off. */
 .mode-toggle button { min-width: 52px; font-size: 21px; }
 /* MTG | PKM: each game on or off, in its badge colours when on. The last one

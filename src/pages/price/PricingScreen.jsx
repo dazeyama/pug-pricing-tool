@@ -125,7 +125,7 @@ export default function PricingScreen({
   const [showAll, setShowAll] = useState(false);
   // mimp mode (owner, 2026-10-17; decision 293; "auto mode" in the code): adding a card leaves
   // the search, the card and its choices as they are, for a run of the same card; only Qty
-  // goes back to 1. The 🦇 | 🌼 pill after EN | JP: 🌼 (the default) is on, 🦇 off.
+  // goes back to 1. The 🌼 | 🦇 pill after EN | JP: 🌼 (the default) is on, 🦇 off.
   // Remembered per computer.
   const [auto, setAuto] = useState(readAuto);
   const chooseAuto = (next) => {

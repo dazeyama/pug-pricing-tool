@@ -1,7 +1,7 @@
 // The main search bar (spec 8.2): large, fixed at the top of the stage, never
 // an overlay. At its right edge, MTG | PKM picks the games searched (either
 // or both, never neither), EN | JP switches Pokémon's language only, and the
-// 🦇 | 🌼 pill is mimp mode (decision 293): 🌼 (the default), adding a card
+// 🌼 | 🦇 pill is mimp mode (decision 293): 🌼 (the default), adding a card
 // leaves the search as it is; 🦇, it clears as it always did.
 // `lead` goes before the field (a collection's < BACK). `blocked` switches
 // the field off and says why in it (Can't upload cards: cards only arrive
@@ -89,7 +89,7 @@ export default function SearchBar({
         </div>
         {onAuto && (
           <div className="lang-toggle mode-toggle" role="radiogroup" aria-label="mimp mode">
-            {[[false, '🦇'], [true, '🌼']].map(([on, mark]) => (
+            {[[true, '🌼'], [false, '🦇']].map(([on, mark]) => (
               <button
                 key={mark}
                 type="button"
