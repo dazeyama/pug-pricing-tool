@@ -31,6 +31,11 @@ import PickPrintingSheet from './PickPrintingSheet.jsx';
 // Auto scan (docs/SCAN_FUNCTION.md 6.3): the rest between one look at the
 // camera and the next, and the wait before the first.
 const REST_MS = 300;
+// Idle (owner, 2026-10-19: "fix", to "Auto scan never slows down"; decision 304): after this long with
+// nothing new in the holder (no card found, the art unchanged, no button pressed), a look a second
+// instead, to spare the battery and the heat; anything new and it's back to REST_MS.
+const IDLE_AFTER_MS = 30_000;
+const IDLE_REST_MS = 1_000;
 /** A first read waiting for the second look that must agree: taken straight away, not after a rest. */
 const CONFIRM_MS = 50;
 const FIRST_LOOK_MS = 800;
@@ -196,6 +201,11 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const [titleMode, setTitleMode] = useState(false);
   const { offline } = useConnection();
   const busy = useRef(false);
+  // The last time anything new was in the holder or a button was pressed (decision 304).
+  const lastActive = useRef(Date.now());
+  const markActive = () => {
+    lastActive.current = Date.now();
+  };
   // Each look's ticket (scanFrame), and each Scan card / Title press's: a look or press given up
   // (too long, or Stop) leaves the screen to the next one.
   const scanTicket = useRef(0);
@@ -284,6 +294,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const lastCard = latest && COPYABLE.has(latest.status) ? latest : null;
   const [plusAt, setPlusAt] = useState(0);         // when +1 last showed over the picture
   async function plusOne() {
+    markActive();
     const s = lastCard;
     if (!s || swapping) return;
     if (blocked) {
@@ -311,6 +322,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
    * on that area"); otherwise a tap on its middle half is +1.
    */
   function tapPicture(e) {
+    markActive();
     if (!camera.on) return;
     if (!lockRef.current && seenCard) {
       lockOnSeen();
@@ -436,6 +448,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   }, [camera.on]);
 
   async function startCamera() {
+    markActive();
     unlockSounds();
     if (await camera.start()) {
       // Ready the reader and the set list while the card is being lined up.
@@ -476,6 +489,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
 
   /** Reset view: unlocked, and the next card found locks it again. */
   function resetView() {
+    markActive();
     setLock(null);
     setSeenCard(null);
   }
@@ -548,6 +562,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       let blocks = null;
       if (!lock) {
         const card = findCard(frame, defaultCreateCanvas);
+        if (card) markActive();
         setSeenCard(card);
         blocks = locate(frame);
         const anchor = anchorBlock(blocks);
@@ -574,6 +589,9 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         const strip = straightCutout(frame, lock, defaultCreateCanvas);
         const cut = strip.canvas;
         art = artPrint(frame, lock);
+        // Something new in the holder since the last look (decision 304): not idle.
+        if (!v.lastArt || artDistance(v.lastArt, art) >= ART_CHANGED) markActive();
+        v.lastArt = art;
         listSeen = findListMark(frame, lock.card, defaultCreateCanvas).mark;
         // Another card in: back to its bottom strip (the older mode was the last card's).
         if (v.lineArt && artDistance(v.lineArt, art) >= ART_CHANGED) leaveOlder(v);
@@ -726,6 +744,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
    * auto look, it waits for the look to end (auto scan holding off).
    */
   async function scanCard() {
+    markActive();
     if (manualWaiting.current || reading) return;
     const run = ++readRun.current;
     manualWaiting.current = true;   // auto scan holds off till Scan card is done: nothing interrupts it
@@ -965,7 +984,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       if (!auto.current.paused && !manualWaiting.current && !busy.current && document.visibilityState === 'visible') {
         await auto.current.scanFrame({ manual: false });
       }
-      if (alive) timer = setTimeout(look, view.current.pending ? CONFIRM_MS : REST_MS);
+      const idle = Date.now() - lastActive.current > IDLE_AFTER_MS;
+      if (alive) timer = setTimeout(look, view.current.pending ? CONFIRM_MS : idle ? IDLE_REST_MS : REST_MS);
     };
     timer = setTimeout(look, FIRST_LOOK_MS);
     return () => {
