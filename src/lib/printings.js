@@ -199,12 +199,97 @@ const SUBTYPE_NAMES = {
 // "1st Edition" (owner, 2026-09-29).
 const FIRST_EDITION_SUBTYPE_NAMES = { shadowless: null, 'shadowless-red-cheek': 'Red Cheeks' };
 
-/** The first TCGplayer market price in a TCGdex pricing block ({ holofoil: { marketPrice } …}). */
-function marketPriceIn(tcgplayer) {
-  for (const v of Object.values(tcgplayer ?? {})) {
-    if (v && typeof v === 'object' && typeof v.marketPrice === 'number') return v.marketPrice;
-  }
-  return null;
+// TCGdex's price block names each printing; the finish's own first (a reverse
+// holo's block lists the plain card's price first, and 4,452 of 6,554 reverse
+// versions used to take it: PKM_PRICES.md 3.4; decision 287).
+const MARKET_KEYS = {
+  normal: ['normal', 'unlimited', '1st-edition'],
+  holo: ['holofoil', 'unlimited-holofoil', '1st-edition-holofoil'],
+  reverse: ['reverse-holofoil'],
+};
+/** The TCGplayer market price for the finish in a TCGdex pricing block, else the first there is. */
+function marketPriceIn(tcgplayer, finish) {
+  const blocks = Object.entries(tcgplayer ?? {})
+    .filter(([, v]) => v && typeof v === 'object' && typeof v.marketPrice === 'number');
+  const own = blocks.find(([k]) => (MARKET_KEYS[finish] ?? []).includes(k));
+  return (own ?? blocks[0])?.[1].marketPrice ?? null;
+}
+
+// TCGdex's TCGplayer products that name another card, checked against
+// TCGplayer's whole catalogue on 2026-10-17 (PKM_PRICES.md 3.1; decision 286):
+// '<TCGdex card id>:<TCGdex's product>' → the right product, or null for none.
+// Charmander SVP 044 was priced, and linked, as Fuecoco 002 at the counter
+// (owner, 2026-10-17); Brilliant Stars' Trainer Gallery full arts as the plain
+// cards; main-set holos as their theme-deck reprints ("Deck Exclusives").
+// Reported to TCGdex too; this table goes when the data is fixed there.
+export const WRONG_PRODUCTS = {
+  'svp-044:477182': '512035',   // Charmander 044: Charmander, not Fuecoco 002 (owner, 2026-10-17)
+  'swsh9tg-TG06:263778': '264214',   // Dusknoir TG06: Trainer Gallery, not the plain card
+  'swsh9tg-TG07:263783': '264215',   // Dedenne TG07
+  'swsh9tg-TG08:263787': '264216',   // Alcremie TG08
+  'swsh9tg-TG16:263784': '264221',   // Mimikyu V TG16
+  'swsh9tg-TG17:263785': '264222',   // Mimikyu VMAX TG17
+  'swsh9tg-TG24:263852': '264228',   // Acerola's Premonition TG24
+  'swsh9tg-TG26:263863': '264229',   // Gloria TG26
+  'ex4-3:125256': '89788',   // Team Aqua's Kyogre 3: the set's holo, not the theme deck reprint
+  'ex4-9:125255': '89827',   // Team Magma's Groudon 9
+  'ex5-11:125058': '87335',   // Metagross 11
+  'ex7-1:125066': '83682',   // Azumarill 1
+  'ex7-7:125065': '84627',   // Dark Marowak 7
+  'ex8-4:84089': '97749',   // Camerupt 4
+  'ex8-14:228156': '89118',   // Shedinja 14
+  'ex9-1:97710': '83906',   // Blaziken 1
+  'ex9-7:97711': '87156',   // Manectric 7
+  'ex9-10:88947': '97730',   // Sceptile 10
+  'ex9-11:89678': '97731',   // Swampert 11
+  'lc-3:118404': '84196',   // Charizard 3
+  'lc-4:125088': '84569',   // Dark Blastoise 4
+  'lc-7:125089': '84646',   // Dark Raichu 7
+  'pl1-8:125076': '85636',   // Gardevoir 8
+  'pl1-38:125077': '89106',   // Shaymin 38
+  'pl2-5:125054': '85526',   // Flygon 5
+  'pl2-32:125053': '88748',   // Rhyperior E4 32
+  'pl3-35:125074': '87459',   // Milotic C 35
+  'pl4-5:125055': '86949',   // Luxray 5
+  'pl4-9:125057': '89674',   // Swalot 9
+  'pl4-10:125056': '89753',   // Tangrowth 10
+  'hgss2-5:125048': '87517',   // Mismagius 5
+  'hgss2-24:125050': '89563',   // Steelix 24
+  'swsh4-121:270101': '226575',   // Dialga 121
+  'swsh7-16:247422': '246831',   // Eldegoss 16
+  'me02-014:664004': '662201',   // Moltres 014
+  'me02-045:664005': '662244',   // Zacian 045
+  'me02-053:664006': '662159',   // Flygon 053
+  'me02-068:663937': '660409',   // Toxtricity 068
+  'cel25cc-CC020:250301': '250337',   // Reshiram CC020: Classic Collection, not Celebrations 2/25
+  'cel25cc-CC021:250308': '250338',   // Zekrom CC021
+  '2021swsh-5:232319': '232320',   // Snivy 5: Snivy, not Turtwig
+  '2021swsh-16:232341': '232330',   // Scorbunny 16: Scorbunny, not Litten
+  'pop7-9:86467': '89505',   // Stantler 9: Stantler, not Kirlia
+  'ru1-5:87775': '89537',   // Starmie 5: Starmie, not Ninetales
+  'ru1-6:87775': '85996',   // Gyarados 6: Gyarados, not Ninetales
+  'hgss4-5:125072': '125069',   // Mamoswine 5: Mamoswine, not Nidoking
+  'hgss3-4:125042': '234310',   // Gliscor 4: Gliscor's cracked ice, not Espeon's
+  'sm3-28:178762': '173088',   // Alolan Ninetales 28: Alolan Ninetales and Lycanroc's cracked ice swapped
+  'sm3-76:173088': '178762',   // Lycanroc 76
+  'swsh10.5-052:279929': '279928',   // Blissey 052: Blissey's cosmos, not Snorlax's
+  'np-16:153317': '153316',   // Treecko 16: Treecko, not Torchic
+  'ecard2-50b:85813': '85814',   // Golduck 50b: Aquapolis a/b
+  'ecard2-74b:84971': '84972',   // Drowzee 74b
+  'ecard2-95a:87591': '87590',   // Mr. Mime 95a
+  'ecard2-103b:88306': '88307',   // Porygon 103b
+  'hgss2-21:220667': '231418',   // Poliwrath 21: Poliwrath's league promo, not Politoed's
+  'hgss2-21:220668': '231419',   // Poliwrath 21
+  'sv03-066:538743': '538744',   // Tyranitar ex 066: Tyranitar ex's Prize Pack card, not Toedscruel's
+  'sv03-022:213012': null,   // Toedscruel ex 022: a 2004 Rayquaza league card: no product
+  'ex1-107:176636': '176637',   // Psychic Energy 107: Psychic Energy, not Water Energy
+};
+
+/** A version's TCGplayer product, with TCGdex's known mistakes put right (null: none). */
+export function fixedProduct(cardId, id) {
+  if (id == null) return null;
+  const key = `${cardId}:${id}`;
+  return key in WRONG_PRODUCTS ? WRONG_PRODUCTS[key] : String(id);
 }
 
 /**
@@ -279,14 +364,17 @@ export function pokemonVersions(card) {
         ...(foil ? [`${foil}-pattern`] : []),
         ...stamps.filter((s) => s !== '1st-edition'),
       ];
+      const tcgplayerId = fixedProduct(card?.id, v.thirdParty?.tcgplayer);
+      // A product put right: TCGdex's market price is the wrong card's, so none.
+      const fixed = v.thirdParty?.tcgplayer != null && tcgplayerId !== String(v.thirdParty.tcgplayer);
       return {
         id: [v.type, v.subtype ?? '', foil ?? '', stamps.join('+')].join('|'),
         finish: v.type,
         label: parts.join(' · ') || (v.subtype === 'unlimited' || hasFirst ? 'Unlimited' : 'Standard'),
         firstEdition: first,
         treatments,
-        tcgplayerId: v.thirdParty?.tcgplayer != null ? String(v.thirdParty.tcgplayer) : null,
-        marketPrice: marketPriceIn(v.pricing?.tcgplayer),
+        tcgplayerId,
+        marketPrice: fixed ? null : marketPriceIn(v.pricing?.tcgplayer, v.type),
         cardmarketPrice: cardmarketIn(v.pricing?.cardmarket, v.type),
         // Its stamps besides 1st Edition: a stamped version TCGdex gives no
         // TCGplayer product can be matched to TCGplayer's (justtcgCards.js).

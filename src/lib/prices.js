@@ -16,7 +16,7 @@
 //   tcgplayer_etched_id), priced through that product.
 import { callFunction } from './functions.js';
 import { formatEur, formatMoney } from './money.js';
-import { cardId, fold } from './justtcgCards.js';
+import { cardId, fold, ownProductCard, pokemonPrintingFits } from './justtcgCards.js';
 import { normNumber } from './query.js';
 
 export { CONDITIONS, priceLadder } from './ladder.js';
@@ -70,8 +70,20 @@ export function lookupsFor(c, { pokemonCard, versions, jaName }) {
   // (owner, 2026-10-09) are their own products too, priced as found.
   const own = versions.filter((v) => !v.tcgplayerOnly);
   const out = new Map();
-  const ids = [...new Set(own.map((v) => v.tcgplayerId).filter(Boolean))];
-  for (const id of ids) out.set(`pokemon:tcgplayer:${id}`, { key: `pokemon:tcgplayer:${id}`, game: 'pokemon', lang: c.lang, tcgplayerId: id });
+  // Each product lookup says which card and set it's for, so the function can
+  // refuse a product that turns out to be another card (decision 288).
+  for (const v of own) {
+    if (!v.tcgplayerId) continue;
+    const key = `pokemon:tcgplayer:${v.tcgplayerId}`;
+    const l = out.get(key) ?? {
+      key, game: 'pokemon', lang: c.lang, tcgplayerId: v.tcgplayerId,
+      setId: c.setId, number: c.number, name: c.name, plain: false,
+    };
+    // The plain version's product has to be the set's own card.
+    if (!v.treatments.length && !v.firstEdition) l.plain = true;
+    out.set(key, l);
+  }
+  const ids = [...out.keys()];
   if (!ids.length && (pokemonCard || c.number)) {
     // Japanese cards' own names are Japanese; JustTCG's are English. `jaName`
     // is the English name (Pokédex number) or what was typed (owner, 2026-09-29).
@@ -79,7 +91,7 @@ export function lookupsFor(c, { pokemonCard, versions, jaName }) {
     const key = `pokemon:${c.lang}:${c.tcgdexId}`;
     const main = {
       key, game: 'pokemon', lang: c.lang,
-      name, number: c.number, setName: c.lang === 'en' ? c.setName : undefined, setCode: c.setCode,
+      name, number: c.number, setName: c.lang === 'en' ? c.setName : undefined, setCode: c.setCode, setId: c.setId,
       size: c.printedSize ?? pokemonCard?.set?.cardCount?.official ?? undefined,
     };
     out.set(key, main);
@@ -159,13 +171,7 @@ function printingFits(printing, { game, finish, firstEdition }) {
     if (finish === 'foil') return p === 'foil';
     return p === 'normal';
   }
-  const reverse = p.includes('reverse');
-  const holo = !reverse && p.includes('holo');
-  const first = p.includes('1st edition');
-  if (Boolean(firstEdition) !== first) return false;
-  if (finish === 'reverse') return reverse;
-  if (finish === 'holo') return holo;
-  return !reverse && !holo;
+  return pokemonPrintingFits(printing, { finish, firstEdition });
 }
 
 /**
@@ -230,12 +236,26 @@ export function resultFor(c, results, { finish, version, versions = [] }) {
   const plain = versions.find((v) => v.finish === version?.finish && v.tcgplayerId
     && !v.treatments.length && !v.firstEdition);
   const id = version?.tcgplayerId ?? plain?.tcgplayerId;
-  if (id) return results[`pokemon:tcgplayer:${id}`];
+  if (id) {
+    // Its own product (a pattern, a cosmos foil, a stamp: not the plain
+    // version's) is that version whatever TCGplayer calls its printing
+    // (decision 287; ownProductCard).
+    const own = Boolean(version?.tcgplayerId) && version.tcgplayerId !== plain?.tcgplayerId
+      && (version.treatments ?? []).length > 0;
+    return readAsVersion(results[`pokemon:tcgplayer:${id}`], version, c.lang, own);
+  }
   // A Japanese pattern version: its own product, which is that version
   // whatever TCGplayer calls its printing ("Holofoil" on a reverse holo).
   const t = c.lang === 'ja' ? patternOf(version) : null;
   if (t) return asFinish(results[patternKey(c, t)], version.finish);
-  return results[`pokemon:${c.lang}:${c.tcgdexId}`];
+  return readAsVersion(results[`pokemon:${c.lang}:${c.tcgdexId}`], version, c.lang, false);
+}
+
+/** A result's card read as the version (ownProductCard), when the rule applies. */
+function readAsVersion(result, version, lang, own) {
+  if (!result?.card || !version) return result;
+  const card = ownProductCard(result.card, { finish: version.finish, firstEdition: version.firstEdition, lang, own });
+  return card === result.card ? result : { ...result, card };
 }
 
 const FINISH_PRINTINGS = { normal: 'Normal', holo: 'Holofoil', reverse: 'Reverse Holofoil' };

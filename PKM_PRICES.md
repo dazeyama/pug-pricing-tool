@@ -5,6 +5,28 @@ price, done 2026-10-17 after the team's report: *"super low prices for some full
 prices were displaying for the wrong cards."* No code was changed. Everything below is a
 finding or a proposal for you to work through; the "Needs your answer" list is at the end.
 
+> **Status, 2026-10-17 evening — the code fixes are applied** (owner: "Apply all code fixes"), local commit,
+> not pushed, the `prices` function not redeployed:
+>
+> - ✅ Section 4.1 — own-product printings read as the version (`justtcgCards.js` `ownProductCard`,
+>   `prices.js` `resultFor`); decision 287. Poké Ball / Master Ball cards and SM promos now show
+>   JustTCG's five prices.
+> - ✅ Section 4.2 — `WRONG_PRODUCTS` in `printings.js` with 59 entries from `fixes.md`, Charmander SVP
+>   044 → #512035 first; decision 286. Fixed versions drop TCGdex's market price (the wrong card's).
+> - ✅ Section 4.3 — `supabase/functions/prices/sets.ts` (197 sets: JustTCG set ids + names + number
+>   padding), exact set match, size check, `set=` as the second step, no set-code step for English;
+>   decision 288. **Needs `npx supabase functions deploy prices --project-ref psucrzljraxeootwnltf
+>   --use-api --no-verify-jwt`** to take effect (the live site runs on dev).
+> - ✅ Section 4.4 — `marketPriceIn` by finish; decision 287.
+> - ✅ Section 4.5 — the function refuses a product whose number isn't the card's, or a plain version's
+>   product outside the set's home; the app shows no fallback for a refused one. Needs the same deploy.
+> - ⏳ Section 4.6 (the 5 saved lines), 4.7 (budget: siblings per set / plan), 4.8 (TCGdex issue) and the
+>   Section 7 answers are still yours. Not done: Base Set Machamp (TCGplayer has no Base Set product for
+>   it; both are "Deck Exclusives"), Multi Energy EX Sandstorm 93 (two versions share the wrong id).
+> - 🧪 To check at the counter: Charmander SVP 044 (price and TCGplayer link are Charmander's, $50-ish);
+>   Exeggcute PRE 001 Master Ball (JustTCG's five conditions, no "fallback" tag); Mimikyu V TG16
+>   ($80-ish, not $3.78); after the deploy, Purugly DP 36 and Pikachu SM1 (prices arrive by search).
+
 **Data checked:** all 21,256 English TCGdex cards (205 sets, 34,002 versions), TCGplayer's whole
 Pokémon catalogue (32,868 products in 220 sets, with today's prices, from tcgcsv.com), the dev
 database's `price_map` / `price_cache` (what JustTCG actually answered: 3,785 Pokémon cards) and

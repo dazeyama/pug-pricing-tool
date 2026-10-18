@@ -35,6 +35,7 @@
 // REQUEST_LIMIT_EXCEEDED, resetAt } when the allowance is used up.
 import { adminClient, corsHeaders, json, readSecret, requireStoreSession } from '../_shared/supabase.ts';
 import { BATCH_MAX, call, QuotaError } from '../_shared/justtcg.ts';
+import { TCGPLAYER_SETS } from './sets.ts';
 
 const FRESH_MS = 6 * 3600_000;          // price_cache freshness
 const EXPORT_FRESH_MS = 12 * 3600_000; // with fresh: true (an export's Sell Prices; owner, 2026-10-01)
@@ -66,6 +67,8 @@ type Lookup = {
   key: string; game: 'mtg' | 'pokemon'; lang: 'en' | 'ja';
   scryfallId?: string; tcgplayerId?: string; tcgplayerSkuId?: string; justtcgId?: string;
   name?: string; number?: string; setName?: string;
+  setId?: string;     // the TCGdex set id ("svp"): its TCGplayer home (TCGPLAYER_SETS)
+  plain?: boolean;    // a product lookup for a card's plain version: its product must be the set's own card
   setCode?: string;   // printed set code ("SV2a", "OBF"): breaks a tie between search matches
   size?: number;      // printed set size (165): JustTCG's numbers are "025/165"
   // A Japanese card's Poké Ball / Master Ball version, its own product
@@ -163,11 +166,46 @@ const fold = (s: unknown) => String(s ?? '').toLowerCase().normalize('NFKD')
 const words = (s: unknown) => String(s ?? '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
 // JustTCG writes "025/165" and "TG12/TG30"; TCGdex just "025" and "TG12". Compare
 // the part before the "/", without leading zeros.
-/** "25" + 165 → "025/165", JustTCG's number format; null for "TG12" and the like. */
-const justtcgNumber = (n: string, size?: number) =>
+/**
+ * "25" + 165 → "025/165", JustTCG's number format (TCGplayer's); the older
+ * sets write "12/107", so their table entry says `pad: false`; null for "TG12"
+ * and the like.
+ */
+const justtcgNumber = (n: string, size?: number, pad = true) =>
   /^\d+$/.test(n) && size && /^\d+$/.test(String(size))
-    ? `${n.padStart(3, '0')}/${String(size).padStart(3, '0')}`
+    ? (pad ? `${n.padStart(3, '0')}/${String(size).padStart(3, '0')}` : `${Number(n)}/${size}`)
     : null;
+/** "025/165" → 165; null when the number names no size. */
+const sizeOf = (n: unknown) => { const of = String(n ?? '').split('/')[1]; return of && /^\d+$/.test(of) ? Number(of) : null; };
+/** The TCGdex set a lookup is for: said, or read off its key (pokemon:en:<set>-<number>). */
+const setIdOf = (l: Lookup) => {
+  if (l.setId) return l.setId;
+  const id = /^pokemon:(?:en|ja):(.+)$/.exec(l.key)?.[1] ?? '';
+  return id.includes('-') ? id.slice(0, id.lastIndexOf('-')) : null;
+};
+/** Where the lookup's set lives on TCGplayer (TCGPLAYER_SETS), if known. */
+const homeOf = (l: Lookup) => (l.lang === 'en' ? TCGPLAYER_SETS[setIdOf(l) ?? ''] ?? null : null);
+/**
+ * A product that is another card (decision 288): its number isn't the card's
+ * (Celebrations' Classic Collection keeps the originals' numbers, "CC001" vs
+ * "2/102", and is let through), or a plain version's product outside the set's
+ * TCGplayer home (a theme-deck reprint in "Deck Exclusives" sold as the set's
+ * holo). TCGdex named 176 such products (PKM_PRICES.md 3.1): the known ones
+ * are put right in the app (printings.js WRONG_PRODUCTS); the rest, and the
+ * next ones, are refused here rather than priced as the wrong card.
+ */
+function anotherCard(l: Lookup, card: any): string | null {
+  const theirs = String(card?.number ?? '');
+  const mine = String(l.number ?? '');
+  if (/\d/.test(theirs) && /\d/.test(mine) && !/^cc/i.test(mine) && normNumber(theirs) !== normNumber(mine)) {
+    return `number ${theirs}, not ${mine}`;
+  }
+  const home = homeOf(l);
+  if (l.plain && home && !home.names.some((n) => fold(n) === fold(card?.set_name))) {
+    return `in ${card?.set_name}, not ${home.names.join(' / ')}`;
+  }
+  return null;
+}
 const normNumber = (n: unknown) => String(n ?? '').trim().toLowerCase().split('/')[0]
   .replace(/^([a-z]*-?)0+(?=\d)/, '$1');
 /** "Mega Starmie ex - 021/088" → "Mega Starmie ex": JustTCG adds the number to some names. */
@@ -297,23 +335,37 @@ Deno.serve(async (req) => {
           || (item.tcgplayerSkuId && (c.variants ?? []).some((v: any) => String(v.tcgplayerSkuId) === item.tcgplayerSkuId)));
         // A SKU asked for alone: the one card that came back, if its variants don't say.
         if (!card && item.tcgplayerSkuId && chunk.length === 1 && cards.length === 1) card = cards[0];
+        // A Pokémon product that is another card is not priced, and not
+        // remembered either: the product's own card may ask for it next.
+        const why = card && lookup.game === 'pokemon' && item.tcgplayerId ? anotherCard(lookup, card) : null;
+        if (why) {
+          console.log(`prices: ${lookup.key} (${lookup.name} ${lookup.number}, ${setIdOf(lookup)}) is ${card.name} ${card.number} in ${card.set_name}: ${why}; not priced`);
+          results[lookup.key] = { card: null, fetchedAt, refused: why } as any;
+          continue;
+        }
         found(lookup, card ?? null);
       }
     }
 
     // 3. No identifier: search by name and number, and only accept one clear
-    //    match (spec 5.3: don't guess). English also has to match the set name.
+    //    match (spec 5.3: don't guess). English also has to match the set:
+    //    its TCGplayer home exactly (TCGPLAYER_SETS, decision 288), or, for a
+    //    set the table doesn't know, a set name containing the card's (or the
+    //    other way), and the printed size where JustTCG's number has one.
     //    Starter allows 20 results a search. Up to three steps, each only if
     //    the one before found nothing (owner's Pikachu SV2a, 2026-09-29):
-    //    a) the name with JustTCG's own number format, "025/165";
-    //    b) the name inside the card's JustTCG set, found once by its set code;
+    //    a) the name with JustTCG's own number format, "025/165" ("12/107" in
+    //       the sets TCGplayer writes that way);
+    //    b) the name inside the card's JustTCG set: English by the set's home,
+    //       Japanese by its set code ("SV2a", found once);
     //    c) the name alone.
     //    What each step got back is logged when nothing (or several) match.
     const search = async (l: Lookup, extra: Record<string, string>, log: string[], label: string) => {
       const params = new URLSearchParams({ game: gameFor(l), q: l.name!, limit: '20', ...extra });
       const res = await call(key, `/cards?${params}`);
       const all: any[] = res?.data ?? [];
-      const numbered = all.filter((c: any) => normNumber(c.number) === normNumber(l.number));
+      const numbered = all.filter((c: any) => normNumber(c.number) === normNumber(l.number)
+        && (!l.size || !sizeOf(c.number) || sizeOf(c.number) === Number(l.size)));
       let cards = numbered;
       if (l.lang === 'ja') {
         cards = cards.filter((c: any) => (c.variants ?? []).length);
@@ -321,8 +373,10 @@ Deno.serve(async (req) => {
         // would only find the same (owner's Pikachu SV2a log, 2026-09-29), so
         // stop here and save their requests.
         if (numbered.length && !cards.length) noJapanese = true;
-      }
-      else if (l.setName) {
+      } else if (homeOf(l)) {
+        const names = homeOf(l)!.names.map(fold);
+        cards = cards.filter((c: any) => names.includes(fold(c.set_name)));
+      } else if (l.setName) {
         const want = fold(l.setName);
         cards = cards.filter((c: any) => fold(c.set_name).includes(want) || want.includes(fold(c.set_name)));
       }
@@ -367,9 +421,15 @@ Deno.serve(async (req) => {
           return all.filter((c: any) => fold(baseName(c.name)) === want && (c.variants ?? []).length);
         });
       } else {
-        const printed = justtcgNumber(l.number!, l.size);
+        const home = homeOf(l);
+        const printed = justtcgNumber(l.number!, l.size, home?.pad !== false);
         if (printed) await attempt(`number ${printed}`, () => search(l, { number: printed }, log, `number ${printed}`));
-        if (l.setCode) {
+        if (home) {
+          // The set itself, by JustTCG's id (TCGplayer's name as a slug); a
+          // set split in two on TCGplayer (Generations and its Radiant
+          // Collection) is asked set by set.
+          for (const set of home.sets) await attempt(`set ${set}`, () => search(l, { set }, log, `set ${set}`));
+        } else if (l.setCode && l.lang === 'ja') {
           await attempt(`set ${l.setCode}`, async () => {
             const set = await justtcgSet(l, log);
             return set ? search(l, { set }, log, `set ${set}`) : [];

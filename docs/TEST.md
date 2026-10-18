@@ -330,6 +330,10 @@ Four findings, all in the live build too, and the owner's calls:
 
 ### For the next smoke test
 
+- [ ] 🆕 **Wrong products put right (decision 286):** Charmander `44/225 SVP` prices as Charmander (~$50, not Fuecoco's ~$5) and View on TCGplayer opens Charmander 044; Mimikyu V `TG16/TG30` (Brilliant Stars Trainer Gallery) prices ~$80, not the plain card's.
+- [ ] 🆕 **Own products read as the version (decision 287):** Exeggcute `1/131 PRE` Master Ball pattern shows JustTCG's five conditions, no "fallback" tag; an SM Black Star Promo (Rowlet SM01) likewise.
+- [ ] 🆕 **The name search by the set's home (decision 288, after the function is deployed):** Purugly `36/130` (Diamond & Pearl) and a Sun & Moon base card get prices; a Base Set card without its own product (a 4th-print version) no longer says "no match" for being ambiguous.
+
 New since 0.9.9.8-day1, worth a check:
 - [ ] **Qty:** Alt+Q, type 3, Enter: 3 added, and Qty reads 1 again.
 - [ ] **Every card starts fresh:** Lightning Bolt, LP + Use Cardmarket; pick another card, then Bolt again: NM, no tag.

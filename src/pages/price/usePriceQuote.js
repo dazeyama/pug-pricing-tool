@@ -31,7 +31,9 @@ export function usePriceQuote({
     firstEdition: version?.firstEdition,
   };
   const market = conditionPrices(result?.card, variantOpts);
-  const fallback = fallbackPrice(card, { finish, version });
+  // A product the function refused (another card's: decision 288) gets no fallback either: TCGdex's
+  // market price for it is the same wrong card's.
+  const fallback = result?.refused ? null : fallbackPrice(card, { finish, version });
   const { values: settingValues } = useSettings();
   const fallbackPct = settingValues[selected?.game === 'pokemon' ? 'fallback_pct_pokemon' : 'fallback_pct_mtg'];
   // Use Fallback / Use Cardmarket (owner, 2026-09-29): every JustTCG price

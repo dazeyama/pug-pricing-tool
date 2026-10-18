@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  guessSetCode, isOversized, isPlayStamp, isSealed, isTcgplayerOnlyLine, isWorldsDeck, justtcgCandidate, justtcgVersions, lineVersion, noNumberCards, plainSetName, printingFinish, siblingVersions, splitName, splitNumber, withTcgplayerVersions,
+  guessSetCode, isOversized, isPlayStamp, isSealed, isTcgplayerOnlyLine, isWorldsDeck, justtcgCandidate, justtcgVersions, lineVersion, noNumberCards, ownProductCard, plainSetName, pokemonPrintingFits, printingFinish, siblingVersions, splitName, splitNumber, withTcgplayerVersions,
 } from '../src/lib/justtcgCards.js';
 import { lineText } from '../src/lib/lineFormat.js';
 
@@ -258,4 +258,53 @@ test('sealed products are told apart from cards', () => {
   // An unnumbered card still has a rarity; a card named like a product still has a number.
   assert.ok(!isSealed({ name: 'Pikachu', number: 'N/A', rarity: 'Promo' }));
   assert.ok(!isSealed({ name: 'Energy Box', number: '12', rarity: '' }));
+});
+
+// A product that is one version is read as that version (PKM_PRICES.md 3.2; decision 287).
+const product = (printings) => ({
+  id: 'x', variants: printings.flatMap((printing) => [
+    { printing, condition: 'Near Mint', price: 10 }, { printing, condition: 'Lightly Played', price: 8 },
+  ]),
+});
+const printingsOf = (card) => [...new Set(card.variants.map((v) => v.printing))];
+
+test('a Master Ball pattern sold as "Holofoil" is the reverse holo it is', () => {
+  const card = ownProductCard(product(['Holofoil']), { finish: 'reverse', own: true });
+  assert.deepEqual(printingsOf(card), ['Reverse Holofoil']);
+  assert.equal(card.variants[0].price, 10, 'the prices stay');
+});
+
+test('an SM promo TCGplayer sells only as "Holofoil" is the plain card it is', () => {
+  assert.deepEqual(printingsOf(ownProductCard(product(['Holofoil']), { finish: 'normal' })), ['Holofoil'].map(() => 'Normal'));
+});
+
+test('a printing that fits is read as it is', () => {
+  const card = product(['Normal', 'Reverse Holofoil']);
+  assert.equal(ownProductCard(card, { finish: 'reverse' }), card);
+  assert.equal(ownProductCard(card, { finish: 'normal', own: true }), card);
+});
+
+test('a shared product with several printings, none fitting, is left alone unless it is the version\'s own', () => {
+  const card = product(['Normal', 'Reverse Holofoil']);
+  assert.equal(ownProductCard(card, { finish: 'holo' }), card, 'a plain card\'s product: not read as a holo');
+  assert.deepEqual(printingsOf(ownProductCard(card, { finish: 'holo', own: true })), ['Holofoil']);
+});
+
+test('1st Editions keep their own rule', () => {
+  const shadowless = product(['1st Edition', 'Unlimited']);
+  assert.equal(ownProductCard(shadowless, { finish: 'normal', firstEdition: true }), shadowless);
+  assert.equal(ownProductCard(shadowless, { finish: 'normal', own: true }), shadowless, '"Unlimited" fits a plain version already');
+  const firstOnly = product(['1st Edition Holofoil']);
+  assert.equal(ownProductCard(firstOnly, { finish: 'holo' }), firstOnly, 'an Unlimited never prices from a 1st Edition');
+  const japanese = { id: 'j', variants: [{ printing: 'Holofoil', condition: 'Near Mint', price: 3, language: 'Japanese' }, { printing: 'Normal', condition: 'Near Mint', price: 1, language: 'English' }] };
+  const read = ownProductCard(japanese, { finish: 'reverse', lang: 'ja', own: true });
+  assert.deepEqual(read.variants.map((v) => v.printing), ['Reverse Holofoil', 'Normal'], 'only the Japanese listings are the version\'s');
+});
+
+test('pokemonPrintingFits: TCGplayer\'s names, loosely', () => {
+  assert.equal(pokemonPrintingFits('Unlimited Holofoil', { finish: 'holo', firstEdition: false }), true);
+  assert.equal(pokemonPrintingFits('1st Edition Holofoil', { finish: 'holo', firstEdition: false }), false);
+  assert.equal(pokemonPrintingFits('1st Edition', { finish: 'normal', firstEdition: true }), true);
+  assert.equal(pokemonPrintingFits('Reverse Holofoil', { finish: 'holo', firstEdition: false }), false);
+  assert.equal(pokemonPrintingFits('Normal', { finish: 'normal', firstEdition: false }), true);
 });

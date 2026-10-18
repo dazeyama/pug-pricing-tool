@@ -87,6 +87,57 @@ export function splitNumber(value) {
   return { number: number ?? '', size: /^\d+$/.test(of ?? '') ? Number(of) : null };
 }
 
+/**
+ * Does a JustTCG Pokémon printing name fit the finish? TCGplayer's names,
+ * matched loosely ("Holofoil", "Unlimited Holofoil", "1st Edition Holofoil"…).
+ */
+export function pokemonPrintingFits(printing, { finish, firstEdition }) {
+  const p = lower(printing);
+  const reverse = p.includes('reverse');
+  const holo = !reverse && p.includes('holo');
+  const first = p.includes('1st edition');
+  if (Boolean(firstEdition) !== first) return false;
+  if (finish === 'reverse') return reverse;
+  if (finish === 'holo') return holo;
+  return !reverse && !holo;
+}
+
+/** A card's variants in one language: English (or unsaid), or Japanese for a Japanese card. */
+export function languageVariants(card, lang = 'en') {
+  return (card?.variants ?? []).filter((v) => (lang === 'ja'
+    ? lower(v.language) === 'japanese'
+    : !v.language || lower(v.language) === 'english'));
+}
+
+const FINISH_PRINTINGS = { normal: 'Normal', holo: 'Holofoil', reverse: 'Reverse Holofoil' };
+
+/**
+ * A product that is one version, read as that version (decision 287). A Poké
+ * Ball or Master Ball pattern, a Cosmos foil or a stamped reprint is its own
+ * TCGplayer product, sold as "Holofoil" where TCGdex calls the version a
+ * reverse; an SM Black Star Promo is sold as "Holofoil" where TCGdex says
+ * normal. Asked for the version's finish, nothing fitted, and every such card
+ * showed the fallback (PKM_PRICES.md 3.2; the store's Sylveon PRE 040 Master
+ * Ball). So when none of the product's printings fit the finish, every
+ * printing that isn't a 1st Edition is read as that finish: for the version's
+ * own product (`own`: it has a treatment and a product of its own), or any
+ * product TCGplayer sells in a single printing. A 1st Edition version keeps
+ * its own rule, so an Unlimited never prices a 1st Edition, nor the other way.
+ * @param {object|null} card  a JustTCG card
+ * @param {{ finish: string, firstEdition?: boolean, lang?: 'en'|'ja', own?: boolean }} opts
+ * @returns {object|null} the card, its printings renamed where the rule applies
+ */
+export function ownProductCard(card, { finish, firstEdition = false, lang = 'en', own = false }) {
+  if (!card || firstEdition) return card;
+  const mine = languageVariants(card, lang);
+  if (!mine.length || mine.some((v) => pokemonPrintingFits(v.printing, { finish, firstEdition: false }))) return card;
+  const readable = mine.filter((v) => !printingFinish(v.printing).firstEdition);
+  if (!readable.length) return card;
+  if (!own && new Set(readable.map((v) => v.printing)).size > 1) return card;
+  const printing = FINISH_PRINTINGS[finish] ?? 'Normal';
+  return { ...card, variants: card.variants.map((v) => (readable.includes(v) ? { ...v, printing } : v)) };
+}
+
 /** A JustTCG printing as a finish: "Reverse Holofoil" → reverse, "1st Edition Holofoil" → holo + 1st Edition. */
 export function printingFinish(printing) {
   const p = lower(printing);

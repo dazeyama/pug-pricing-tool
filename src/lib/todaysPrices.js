@@ -164,7 +164,7 @@ export async function todaysPrices(lines, { cards = null, onStep } = {}) {
         finish: version?.finish ?? line.finish,
         c: {
           game: 'pokemon', lang: line.lang, tcgdexId: line.tcgdex_id, name: line.name, number: line.collector_number,
-          setName: line.set_name, setCode: line.set_code, printedSize: line.printed_size,
+          setName: line.set_name, setCode: line.set_code, setId: line.source_set_id, printedSize: line.printed_size,
         },
       });
     }
@@ -210,7 +210,8 @@ export async function todaysPrices(lines, { cards = null, onStep } = {}) {
     const eur = cardmarketPrice(s.c, { finish: s.finish, version: s.version });
     out.set(s.line.id, {
       market: conditionPrices(result?.card, opts),
-      fallback: fallbackPrice(s.c, { finish: s.finish, version: s.version }),
+      // A product the function refused (another card's: decision 288): no fallback from it either.
+      fallback: result?.refused ? null : fallbackPrice(s.c, { finish: s.finish, version: s.version }),
       cardmarketEur: eur,
       cardmarketUsd: eur != null && rate != null ? eur * rate : null,
       rate,
