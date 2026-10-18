@@ -466,7 +466,14 @@ function DayScreen({ game, day }) {
       toast('No connection: printing needs it to find the Crystal Commerce categories.', 'err');
       return;
     }
-    print({ lines: dayLines, title: `Audit — Magic, ${dayTitle(day)}`, fileName: `audit-magic-${day}.pdf` });
+    // A flagged buy's cards say so on the printout (owner, 2026-10-18; decision 301).
+    const flagged = new Map(mine.filter((b) => b.condition_check).map((b) => [b.id, `Buy ${numberOf(b)}`]));
+    print({
+      lines: dayLines,
+      title: `Audit — Magic, ${dayTitle(day)}`,
+      fileName: `audit-magic-${day}.pdf`,
+      flagOf: (l) => flagged.get(l.buy_id) ?? null,
+    });
   }
 
   /**
@@ -509,6 +516,7 @@ function DayScreen({ game, day }) {
       lines: b.buy_lines,
       title: `Audit — Buy ${n}, ${dayDate(day)}`,
       fileName: `audit-magic-${day}-buy-${n}.pdf`,
+      flagOf: b.condition_check ? () => `Buy ${n}` : null,
     });
   }
 

@@ -176,15 +176,16 @@ export function auditSections(placed) {
   // One section per category whatever its case (an older export's saved name), named as first met.
   const names = new Map();
   const merged = new Map();
-  for (const { line, category, bucket } of placed) {
+  for (const { line, category, bucket, flag = null } of placed) {
     const folded = (category || UNMATCHED).toLowerCase();
     if (!names.has(folded)) names.set(folded, category || UNMATCHED);
     const section = names.get(folded);
+    // A flagged buy's card (decision 301) stays a row of its own: it's checked apart.
     const key = [section, line.scryfall_id ?? '', line.name, line.set_code, line.collector_number, line.finish,
-      line.condition, [...(line.treatments ?? [])].sort().join(',')].join('|');
+      line.condition, [...(line.treatments ?? [])].sort().join(','), flag ?? ''].join('|');
     const had = merged.get(key);
     if (had) had.qty += line.quantity;
-    else merged.set(key, { section, line, qty: line.quantity, bucket: bucket ?? 'unknown' });
+    else merged.set(key, { section, line, qty: line.quantity, bucket: bucket ?? 'unknown', flag });
   }
   const bySection = new Map();
   for (const m of merged.values()) {
@@ -196,7 +197,7 @@ export function auditSections(placed) {
       name,
       cards: list.reduce((n, m) => n + m.qty, 0),
       set: name === UNMATCHED ? null : mainSet(list),
-      rows: list.sort(byCard).map((m) => auditRow(m.line, m.qty, m.bucket)),
+      rows: list.sort(byCard).map((m) => ({ ...auditRow(m.line, m.qty, m.bucket), flag: m.flag })),
     }))
     .sort((a, b) => (a.name === UNMATCHED) - (b.name === UNMATCHED) || collator.compare(a.name, b.name));
 }
@@ -254,4 +255,23 @@ export function pokemonOrder(lines) {
   return [...lines].sort((a, b) => collator.compare(nameOf(a), nameOf(b))
     || collator.compare(String(a.set_code ?? ''), String(b.set_code ?? ''))
     || byCard({ line: a }, { line: b }));
+}
+
+/**
+ * The flagged buys a printout holds (decision 301), in order: "Buy 42",
+ * "Buy 45". `flags`: each row's flag, or null.
+ */
+export function flaggedBuys(flags) {
+  return [...new Set(flags.filter(Boolean))].sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
+}
+
+/** The banner's words: what's flagged, and what to do. */
+export function flagBanner(buys, marked) {
+  if (!buys.length) return null;
+  const one = buys.length === 1;
+  const numbers = buys.map((x) => x.replace(/^Buy /, ''));
+  const names = one ? buys[0] : `Buys ${numbers.slice(0, -1).join(', ')} and ${numbers.at(-1)}`;
+  return `CHECK CONDITION: ${names} ${one ? 'is' : 'are'} flagged.`
+    + (marked ? ` ${one ? 'Its' : 'Their'} cards are outlined in red.`
+      : ' Check every card\'s condition before export.');
 }

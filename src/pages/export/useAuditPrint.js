@@ -3,7 +3,8 @@ import { useToast } from '../../components/Toast.jsx';
 import { matchLines, scryfallCards } from '../../lib/ccExport.js';
 import { loadSets } from '../../lib/scryfall.js';
 import {
-  UNMATCHED, auditSections, cardBucket, matchCategory, pokemonPrintLines, pokemonSections, printLines, savedCategory,
+  UNMATCHED, auditSections, cardBucket, flagBanner, flaggedBuys, matchCategory, pokemonPrintLines, pokemonSections,
+  printLines, savedCategory,
 } from '../../lib/auditPrint.js';
 import { deliver, openPrintTab } from './printTab.js';
 
@@ -101,14 +102,16 @@ async function symbolsFor(sections) {
  * collection's ⋯ on the Collections tab, whose cards aren't loaded yet).
  * `game: 'pokemon'` is Print PKM? (decision 280): the batch's Pokémon cards
  * by set instead of by category, nothing matched or fetched.
+ * `flagOf`: a card's flagged buy ("Buy 42", decision 301: its buy flagged
+ * for a condition check), or null; the Magic printout says so in red.
  * @returns {{ print: (p: { lines?: object[], load?: () => Promise<object[]>, title: string, fileName: string,
- *   game?: 'mtg'|'pokemon' }) => Promise<void>, printing: boolean }}
+ *   game?: 'mtg'|'pokemon', flagOf?: (line: object) => string|null }) => Promise<void>, printing: boolean }}
  */
 export function useAuditPrint() {
   const toast = useToast();
   const [printing, setPrinting] = useState(false);
 
-  const print = useCallback(async ({ lines, load, title, fileName, game = 'mtg' }) => {
+  const print = useCallback(async ({ lines, load, title, fileName, game = 'mtg', flagOf = null }) => {
     if (printing) return;
     const pokemon = game === 'pokemon';
     const choose = pokemon ? pokemonPrintLines : printLines;
@@ -163,16 +166,23 @@ export function useAuditPrint() {
           line,
           category: saved !== undefined ? saved : matchCategory(byId.get(line.id)),
           bucket: cardBucket(cards.get(line.scryfall_id) ?? more.get(line.scryfall_id)),
+          flag: flagOf?.(line) ?? null,
         };
       });
       const sections = auditSections(placed);
+      // Flagged buys (decision 301): a red banner on every page; each flagged card outlined in red with
+      // its buy's chip when the printout holds others too (a day's), not when every card is the one buy's.
+      const flags = flaggedBuys(placed.map((p) => p.flag));
+      const flagRows = flags.length > 1 || (flags.length > 0 && placed.some((p) => !p.flag));
+      const flagText = flagBanner(flags, flagRows);
       // The PDF library loads only when something is printed: the app starts as light as before.
       const [{ auditPdf }, symbols] = await Promise.all([import('../../lib/auditPdf.js'), symbolsFor(sections)]);
-      deliver(auditPdf({ title, sections, symbols }), fileName, tab);
+      deliver(auditPdf({ title, sections, symbols, flagText, flagRows }), fileName, tab);
       const count = sections.reduce((n, s) => n + s.cards, 0);
       const unmatched = sections.find((s) => s.name === UNMATCHED)?.cards ?? 0;
       toast(`Printout ready: ${count} card${count === 1 ? '' : 's'}`
-        + `${unmatched ? `, ${unmatched} Unmatched` : ''}.`, 'ok');
+        + `${unmatched ? `, ${unmatched} Unmatched` : ''}.`
+        + `${flags.length ? ` 🚩 ${flags.join(', ')} flagged: check condition.` : ''}`, 'ok');
     } catch (e) {
       tab?.close();
       toast(`Couldn't print: ${e.message}`, 'err');

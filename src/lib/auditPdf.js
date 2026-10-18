@@ -69,6 +69,9 @@ export const CONDITION_RGB = {
   NM: [34, 150, 96], LP: [104, 154, 36], MP: [196, 142, 18], HP: [212, 106, 28], DMG: [204, 58, 58],
 };
 const INK = [20, 20, 26];        // text, the bands
+// A flagged buy (decision 301): the banner, and its cards' outlines and chips.
+const FLAG_RGB = [200, 30, 30];
+const FLAG_BANNER = 20;
 const LINE = [190, 192, 200];    // the rows' hairlines
 
 // PDF's built-in fonts draw Windows-1252 (Latin-1 and a few more: curly
@@ -111,10 +114,14 @@ function fit(doc, text, width) {
  * @param {ReturnType<import('./auditPrint.js').auditSections>} p.sections
  * @param {Record<string, { data: string, ratio: number }>} [p.symbols]  set code → its symbol (a white PNG; width / height)
  * @param {Date} [p.printedAt]
+ * @param {string|null} [p.flagText]  a flagged buy's banner (decision 301), red across every page under its header
+ * @param {boolean} [p.flagRows]  each flagged card outlined in red with its buy's chip (a day's printout:
+ *   some cards aren't flagged, or they're from more than one flagged buy)
  * @returns {jsPDF}
  */
-export function auditPdf({ title, sections, symbols = {}, printedAt = new Date() }) {
+export function auditPdf({ title, sections, symbols = {}, printedAt = new Date(), flagText = null, flagRows = false }) {
   const doc = new jsPDF({ unit: 'pt', format: 'letter', orientation: 'portrait' });
+  const top = flagText ? TOP + FLAG_BANNER + 4 : TOP;
   const cards = sections.reduce((n, s) => n + s.cards, 0);
   const when = printedAt.toLocaleString('en-US', {
     month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit',
@@ -132,10 +139,19 @@ export function auditPdf({ title, sections, symbols = {}, printedAt = new Date()
     doc.setDrawColor(200, 203, 214);
     doc.setLineWidth(0.5);
     doc.line(MARGIN, 36, PAGE.w - MARGIN, 36);
+    if (flagText) {
+      // Red across the page, white words: the first thing seen on every page (owner, 2026-10-18).
+      doc.setFillColor(...FLAG_RGB);
+      doc.roundedRect(MARGIN, 40, PAGE.w - 2 * MARGIN, FLAG_BANNER, 2.5, 2.5, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(255, 255, 255);
+      doc.text(fit(doc, pdfSafe(flagText), PAGE.w - 2 * MARGIN - 16), PAGE.w / 2, 40 + 13.6, { align: 'center' });
+    }
   };
 
   let col = 0;
-  let y = TOP;
+  let y = top;
   const x = () => MARGIN + col * (COL_W + GUTTER);
   const nextColumn = () => {
     if (col === 0) col = 1;
@@ -144,7 +160,7 @@ export function auditPdf({ title, sections, symbols = {}, printedAt = new Date()
       header();
       col = 0;
     }
-    y = TOP;
+    y = top;
   };
 
   const chipWidth = (text) => {
@@ -207,20 +223,23 @@ export function auditPdf({ title, sections, symbols = {}, printedAt = new Date()
     const set = pdfSafe(numberChip(r, s.set));
     const setW = chipWidth(set);
     const right = COL_W - 4 - COND_W - 3 - setW - 4;   // the name's room ends at the set chip
-    const extras = r.extras.map((e) => pdfSafe(e));
+    const flagChip = flagRows && r.flag ? pdfSafe(r.flag) : null;
+    const extras = [...(flagChip ? [flagChip] : []), ...r.extras.map((e) => pdfSafe(e))];
     const extrasW = extras.reduce((w, e) => w + chipWidth(e) + 2, 0);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(NAME_PT);
     const nameW = doc.getTextWidth(pdfSafe(r.name));
     const oneLine = !extras.length || NAME_X + nameW + 4 + extrasW <= right;
-    return { set, setW, right, extras, oneLine, h: oneLine ? ROW : ROW_WRAPPED };
+    return { set, setW, right, extras, flagChip, oneLine, h: oneLine ? ROW : ROW_WRAPPED };
   };
 
   const row = (r, l) => {
     const left = x();
-    // A hairline round the row, and its card's colour as the chip on its left edge.
-    doc.setDrawColor(...LINE);
-    doc.setLineWidth(0.35);
+    // A hairline round the row (red and thicker for a flagged buy's card, decision 301), and its
+    // card's colour as the chip on its left edge.
+    const flagged = flagRows && r.flag;
+    doc.setDrawColor(...(flagged ? FLAG_RGB : LINE));
+    doc.setLineWidth(flagged ? 1.1 : 0.35);
     doc.rect(left, y, COL_W, l.h, 'S');
     doc.setFillColor(...(BUCKET_RGB[r.bucket] ?? BUCKET_RGB.unknown));
     doc.rect(left, y, 3, l.h, 'F');
@@ -248,12 +267,14 @@ export function auditPdf({ title, sections, symbols = {}, printedAt = new Date()
     doc.text(name, left + NAME_X, y + 9.2);
     let ex = l.oneLine ? left + NAME_X + doc.getTextWidth(name) + 4 : left + NAME_X;
     const exTop = l.oneLine ? top : y + ROW - 1;
-    for (const e of l.extras) {
+    l.extras.forEach((e, i) => {
       const w = chipWidth(e);
-      if (ex + w > left + COL_W - 4) break;   // never past the row
-      chip(e, ex, exTop, w, [170, 172, 182], 0.4);
+      if (ex + w > left + COL_W - 4) return;   // never past the row
+      // The flagged buy's chip first, in red ("Buy 42").
+      if (i === 0 && l.flagChip) chip(e, ex, exTop, w, FLAG_RGB, 1);
+      else chip(e, ex, exTop, w, [170, 172, 182], 0.4);
       ex += w + 2;
-    }
+    });
     y += l.h + ROW_GAP;
   };
 
@@ -262,10 +283,10 @@ export function auditPdf({ title, sections, symbols = {}, printedAt = new Date()
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
     doc.setTextColor(95, 99, 115);
-    doc.text('No cards to print.', MARGIN, TOP + 12);
+    doc.text('No cards to print.', MARGIN, top + 12);
   }
   for (const s of sections) {
-    if (y > TOP) y += SECTION_GAP;
+    if (y > top) y += SECTION_GAP;
     const first = s.rows[0] ? layout(s.rows[0], s) : { h: ROW };
     // A band never sits alone at a column's foot: it needs its first row under it.
     if (y + BAND + 2 + first.h > BOTTOM) nextColumn();

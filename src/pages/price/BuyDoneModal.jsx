@@ -33,7 +33,14 @@ export default function BuyDoneModal({ number, games, lines, customer, paid, met
     }
     const title = game === 'pokemon' ? `Audit — Pokémon, Buy ${number}, ${dayDate(day)}` : `Audit — Buy ${number}, ${dayDate(day)}`;
     // The printout's tab opens at the click and finishes on its own; the dialog has done its job (owner, 2026-10-17).
-    print({ lines, game, title, fileName: `audit-${game === 'pokemon' ? 'pokemon' : 'magic'}-${day}-buy-${number}.pdf` });
+    print({
+      lines,
+      game,
+      title,
+      fileName: `audit-${game === 'pokemon' ? 'pokemon' : 'magic'}-${day}-buy-${number}.pdf`,
+      // Flagged at CONFIRM BUY: the Magic printout says so (decision 301).
+      flagOf: flagged ? () => `Buy ${number}` : null,
+    });
     onClose();
   }
 
