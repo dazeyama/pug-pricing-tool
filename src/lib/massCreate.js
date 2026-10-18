@@ -90,6 +90,17 @@ export function customSkuFor(when = new Date()) {
 }
 
 /**
+ * The same code for a calendar day ("2026-10-16" → "101626"): a day page's
+ * export is stamped with the day exported, not the day it's run (owner,
+ * 2026-10-17; migration 0071). "Export single buy" adds the buy's number:
+ * "101626-42".
+ */
+export function customSkuForDay(day) {
+  const [y, m, d] = String(day).split('-').map(Number);
+  return `${m}${String(d).padStart(2, '0')}${String(y % 100).padStart(2, '0')}`;
+}
+
+/**
  * The file's rows from exported lines (each with its cc_* stamps and
  * quantity): lines with the same product, condition and Sell Price merge,
  * their quantities added; sorted by Category, Product Name, then condition.

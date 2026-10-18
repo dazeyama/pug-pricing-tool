@@ -52,6 +52,23 @@
 .lang-toggle button.on { background: var(--accent-2); color: #fff; }
 .lang-toggle button:disabled { opacity: .4; cursor: default; }
 .lang-toggle button:disabled:hover { color: var(--muted); }
+/* mimp mode (decision 293): a round 🦇 after EN | JP, like the header's "?"; on, it lights up and shows 🌼. */
+.mode-btn {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  background: var(--bg);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.mode-btn:hover { border-color: var(--accent); }
+.mode-btn.on { border-color: var(--accent); background: var(--accent-2); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent); }
 /* MTG | PKM: each game on or off, in its badge colours when on. The last one
    on can't be switched off (owner, 2026-09-29). */
 .game-toggle button.mtg.on { background: var(--pal-indigo); color: #fff; }

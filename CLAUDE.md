@@ -47,6 +47,10 @@
   (287), the name search by each set's TCGplayer home + the wrong-card guard (288), the siblings search on request and
   kept a week (289), who's on in the tab row (284), Ctrl+Click EXPORT decklist (285), Help on how scanning works.
   No new migrations. The `prices` function (288/289's server half) needs `npx supabase functions deploy prices
-  --project-ref psucrzljraxeootwnltf --use-api --no-verify-jwt` after the push.
+  --project-ref psucrzljraxeootwnltf --use-api --no-verify-jwt` after the push (done 2026-10-17).
+  Then, local: the team's six items (decisions 290–293; migrations 0071–0072 on dev): buys numbered once forever
+  (`buys.number`), the day's Custom SKU and "101626-42" for a single buy, BUY COMPLETE after CONFIRM BUY with
+  Print MTG? / Print PKM?, mimp mode (🦇/🌼 after EN | JP), and docs/AUTO_COMPLETE.md (the map of what becomes
+  Completed, for the owner to chart). The squash's numbers moved on: baseline 0073, the Changelog lock 0074.
   Phase 10 launch (the migration squash, SQUASH.md, then prod) waits for the owner's go; the live site runs on the
   dev project until then. docs/TEST.md holds the smoke tests and the database test run.

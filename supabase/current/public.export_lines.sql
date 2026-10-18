@@ -43,6 +43,8 @@ begin
     -- Today can't be exported (owner, 2026-09-30).
     if v_day >= (now() at time zone 'America/Los_Angeles')::date then raise exception 'day_not_over'; end if;
     v_from := 'Magic · ' || to_char(v_day, 'FMMonth FMDD, YYYY');
+    -- The Custom SKU is the day exported, not the day it's run (owner, 2026-10-17; 0071).
+    v_sku := cc_custom_sku_day(v_day);
 
     -- The day's buys, locked, then those with this game's cards still Paid/Ours.
     perform 1 from buys x
@@ -75,16 +77,11 @@ begin
     update buys set version = version + 1, updated_at = now() where id = any(v_buys);
 
     -- Copies in Can't upload cards (spec 9.2), each saying which buy it's from,
-    -- numbered as the day page numbers them.
-    select jsonb_object_agg(l.id::text, format('from Buy %s · %s', n.n, to_char(v_day, 'FMMonth FMDD, YYYY')))
+    -- by the buy's number (0071).
+    select jsonb_object_agg(l.id::text, format('from Buy %s · %s', buy_number(x), to_char(v_day, 'FMMonth FMDD, YYYY')))
       into v_notes
       from buy_lines l
-      join (select x.id, row_number() over (order by x.confirmed_at, x.id) as n
-              from buys x
-             where x.kind = 'walk_in' and x.status = 'confirmed'
-               and (x.confirmed_at at time zone 'America/Los_Angeles')::date = v_day
-               and exists (select 1 from buy_lines y where y.buy_id = x.id and y.game = v_game)) n
-        on n.id = l.buy_id
+      join buys x on x.id = l.buy_id
      where l.id = any(p_cant);
     perform cant_upload_copy(
       (select array_agg(l.id order by l.buy_id, l.position) from buy_lines l where l.id = any(p_cant)),
@@ -135,6 +132,8 @@ begin
        and l.bulk_kind is null and l.struck_at is null;
     if v_lines is null then raise exception 'nothing_to_export'; end if;
     v_target := buy_target_name(b.id);
+    -- Its day's Custom SKU with its number: "101626-42" (owner, 2026-10-17; 0071).
+    v_sku := cc_custom_sku_day((b.confirmed_at at time zone 'America/Los_Angeles')::date) || '-' || buy_number(b);
     perform export_check(v_lines, p_matches, p_cant, v_file);
 
     perform export_stamp(p_matches, v_file, v_sku);

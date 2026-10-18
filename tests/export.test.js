@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { SELL_FLOOR, roundUpPrice } from '../src/lib/money.js';
 import { sellPriceFor } from '../src/lib/sellPrice.js';
 import {
-  customSkuFor, fileSafe, massCreateCsv, massCreateRows, nearMintPrice, nearMintPrices,
+  customSkuFor, customSkuForDay, fileSafe, massCreateCsv, massCreateRows, nearMintPrice, nearMintPrices,
 } from '../src/lib/massCreate.js';
 
 // docs/EXPORT_FUNCTION.md 5.3: the buy steps, upward.
@@ -144,4 +144,11 @@ test('NM prices: the best condition\'s highest Sell Price; the percentage stampe
   // Can't-upload cards set nothing; nor does a card with no percentage to divide by.
   assert.equal(nearMintPrices([stamped({ ...lp, cc_status: 'cant_upload' })], MTG_PCT).size, 0);
   assert.equal(nearMintPrices([stamped(lp)], {}).size, 0);
+});
+
+// A day page's export is stamped with the day exported (owner, 2026-10-17; 0071).
+test('the Custom SKU of a calendar day', () => {
+  assert.equal(customSkuForDay('2026-10-16'), '101626');
+  assert.equal(customSkuForDay('2026-06-07'), '60726');
+  assert.equal(customSkuForDay('2026-11-01'), '110126');
 });

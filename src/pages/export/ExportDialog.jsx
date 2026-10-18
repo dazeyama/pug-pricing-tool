@@ -8,7 +8,7 @@ import { useToast } from '../../components/Toast.jsx';
 import { lineTextWithCondition } from '../../lib/lineFormat.js';
 import { formatMoney } from '../../lib/money.js';
 import { openPopup, popupName } from '../../lib/popup.js';
-import { CONDITION_WORDS, customSkuFor, massCreateRows, nearMintPrices, productKey } from '../../lib/massCreate.js';
+import { CONDITION_WORDS, customSkuFor, customSkuForDay, massCreateRows, nearMintPrices, productKey } from '../../lib/massCreate.js';
 import {
   downloadMassCreate, forgetLink, linkKey, matchLines, saveExport, saveLink, saveSetMap, searchProducts, sellPrices,
 } from '../../lib/ccExport.js';
@@ -194,6 +194,11 @@ export default function ExportDialog({
     setReopened((s) => new Set(s).add(r.line.id));
   }
 
+  // The Custom SKU the server will stamp (0071): a day page's is its day; a single buy's
+  // that day with the buy's number; a collection's, project's or Can't upload's is today's.
+  const skuText = target?.kind === 'day' ? customSkuForDay(target.day)
+    : target?.kind === 'buy' && target.day ? `${customSkuForDay(target.day)}-${target.number}`
+      : customSkuFor(new Date());
   /** The matched lines as the file will have them: its rows (the Confirm step's count) and NM prices. */
   const fileLines = groups.matched.map((r) => ({
     cc_status: 'exported',
@@ -470,14 +475,14 @@ export default function ExportDialog({
                 <>
                   Download a Crystal Commerce Mass Create file of <strong>{toExport} card{toExport === 1 ? '' : 's'}</strong>{' '}
                   ({previewRows().length} row{previewRows().length === 1 ? '' : 's'}), Custom SKU{' '}
-                  <strong>{customSkuFor(new Date())}</strong>. <strong>Nothing is saved:</strong> it stays {fileOnly}, and its
+                  <strong>{skuText}</strong>. <strong>Nothing is saved:</strong> it stays {fileOnly}, and its
                   cards aren't marked exported, so they can be exported again.
                 </>
               ) : toExport > 0 ? (
                 <>
                   Export <strong>{toExport} card{toExport === 1 ? '' : 's'}</strong> ({previewRows().length} row
                   {previewRows().length === 1 ? '' : 's'}) to a Crystal Commerce Mass Create file, Custom SKU{' '}
-                  <strong>{customSkuFor(new Date())}</strong>.{' '}
+                  <strong>{skuText}</strong>.{' '}
                   {pullOut ? <>The cards here become <strong>Completed</strong>.</> : <>They leave Can't upload cards.</>}
                 </>
               ) : pullOut ? (

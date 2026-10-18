@@ -72,11 +72,12 @@ begin
     from buy_lines where buy_id = p.id;
 
   -- The default rates the screen showed: a project has none of its own (owner, 2026-10-15).
-  insert into buys (kind, status, customer_name, phone, notes, draft_device_id,
+  -- A new buy, with the next number ever (0071).
+  insert into buys (kind, status, number, customer_name, phone, notes, draft_device_id,
                     confirmed_at, confirmed_by, paid_at, paid_price, paid_method,
                     cash_pct, credit_pct, custom_cash_pct, custom_credit_pct,
                     created_by, last_edited_by)
-  values ('walk_in', 'confirmed', v_customer, v_phone, coalesce(btrim(p_notes), ''), p_device,
+  values ('walk_in', 'confirmed', nextval('buys_number_seq'), v_customer, v_phone, coalesce(btrim(p_notes), ''), p_device,
           now(), p_user, now(), p_paid_price, p_paid_method,
           p_cash_pct, p_credit_pct,
           null, null,
@@ -88,13 +89,8 @@ begin
   update buy_lines set custom_cash_pct = null, custom_credit_pct = null, cash_pct = null, credit_pct = null where buy_id = b.id;
   perform internal.fix_line_rates(b);
 
-  -- Its number on today's page, counted as confirm_buy counts it.
   v_day := (now() at time zone 'America/Los_Angeles')::date;
-  select count(*) into v_number
-    from buys x
-   where x.kind = 'walk_in' and x.status = 'confirmed'
-     and (x.confirmed_at at time zone 'America/Los_Angeles')::date = v_day
-     and exists (select 1 from buy_lines l where l.buy_id = x.id and l.game = v_games[1]);
+  v_number := b.number;
   v_target := format('Buy %s · %s', v_number, to_char(v_day, 'Dy Mon FMDD, YYYY'));
 
   select * into v_user from staff_users where id = p_user;

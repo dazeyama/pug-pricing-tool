@@ -1,6 +1,8 @@
 // The main search bar (spec 8.2): large, fixed at the top of the stage, never
 // an overlay. At its right edge, MTG | PKM picks the games searched (either
-// or both, never neither), and EN | JP switches Pokémon's language only.
+// or both, never neither), EN | JP switches Pokémon's language only, and the
+// round 🦇 is mimp mode (decision 293): on (🌼), adding a card leaves the
+// search as it is.
 // `lead` goes before the field (a collection's < BACK). `blocked` switches
 // the field off and says why in it (Can't upload cards: cards only arrive
 // from exports).
@@ -13,6 +15,7 @@ const HINT = { en: "Type what's printed on the card: Lightning Bolt 117/331 2X2"
 
 export default function SearchBar({
   inputRef, value, onChange, onKeyDown, lang, onLang, games, onGames, note, lead, blocked = null, gameBlocked = {},
+  auto = false, onAuto = null,
 }) {
   return (
     <div className="main-search">
@@ -84,6 +87,18 @@ export default function SearchBar({
             </button>
           ))}
         </div>
+        {onAuto && (
+          <button
+            type="button"
+            className={`mode-btn${auto ? ' on' : ''}`}
+            aria-pressed={auto}
+            aria-label="Toggle mimp mode"
+            title="Toggle mimp mode"
+            onClick={onAuto}
+          >
+            {auto ? '🌼' : '🦇'}
+          </button>
+        )}
       </div>
       <p className="search-note">{note}</p>
     </div>

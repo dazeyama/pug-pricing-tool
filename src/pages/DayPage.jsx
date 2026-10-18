@@ -145,9 +145,12 @@ function DayScreen({ game, day }) {
     };
   }, [game, day, reload]);
 
-  // This game's buys, numbered in confirmed order: "Buy 1", "Buy 2"… (as the
-  // confirm toast and changelog number them).
+  // This game's buys, in confirmed order. Each is "Buy N" by its own number
+  // (buys.number: one count for both games, forever; owner, 2026-10-17,
+  // migration 0071); a row from before numbers counts as it used to, by its
+  // place in the day.
   const mine = state.buys.filter((b) => b.buy_lines.some((l) => l.game === game));
+  const numberOf = (b) => b.number ?? mine.findIndex((m) => m.id === b.id) + 1;
 
   // A search result lands here: scroll its buy into view and flash it, once
   // the day has loaded (again for each new result, even on the same day).
@@ -298,7 +301,6 @@ function DayScreen({ game, day }) {
    */
   function unlessFlagged(buys, go) {
     // By id, not by object: the numbers are the buys' places on this page (Buy 1, Buy 2…).
-    const numberOf = (b) => mine.findIndex((m) => m.id === b.id) + 1;
     const numbers = buys.filter((b) => b.condition_check).map(numberOf).filter((n) => n > 0);
     if (numbers.length) setFlagWarning({ numbers, go });
     else go();
@@ -615,12 +617,12 @@ function DayScreen({ game, day }) {
         <p className="empty">No {GAME_NAMES[game]} buys that day.</p>
       ) : (
         <div className="card-grid day-grid">
-          {mine.map((buy, i) => (
+          {mine.map((buy) => (
             <BuyPanel
               key={buy.id}
               buy={buy}
               tiers={tiersFrom(settingValues.rate_tiers)}
-              number={i + 1}
+              number={numberOf(buy)}
               game={game}
               other={other}
               day={day}
@@ -689,7 +691,7 @@ function DayScreen({ game, day }) {
         <ExportDialog
           mode="check"
           title={`Crystal Commerce matches: ${GAME_NAMES[game]}, ${dayDate(day)}`}
-          items={mine.flatMap((b, i) => b.buy_lines.filter((l) => l.game === 'mtg' && movesOn(l)).map((line) => ({ line, where: `Buy ${i + 1}` })))}
+          items={mine.flatMap((b) => b.buy_lines.filter((l) => l.game === 'mtg' && movesOn(l)).map((line) => ({ line, where: `Buy ${numberOf(b)}` })))}
           onClose={() => setChecking(false)}
         />
       )}
@@ -697,9 +699,9 @@ function DayScreen({ game, day }) {
         <ExportDialog
           mode="export"
           title={`Export ${GAME_NAMES[game]} for ${dayDate(day)} to Crystal Commerce`}
-          items={mine.flatMap((b, i) => b.buy_lines
+          items={mine.flatMap((b) => b.buy_lines
             .filter((l) => l.game === game && !l.completed_at && movesOn(l))
-            .map((line) => ({ line, where: `Buy ${i + 1}` })))}
+            .map((line) => ({ line, where: `Buy ${numberOf(b)}` })))}
           target={{
             kind: 'day',
             day,
@@ -778,7 +780,7 @@ function DayScreen({ game, day }) {
           items={exportingBuy.buy.buy_lines
             .filter((l) => l.game === game && !l.completed_at && movesOn(l))
             .map((line) => ({ line, where: `Buy ${exportingBuy.number}` }))}
-          target={{ kind: 'buy', buy_id: exportingBuy.buy.id, game, version: exportingBuy.buy.version }}
+          target={{ kind: 'buy', buy_id: exportingBuy.buy.id, game, version: exportingBuy.buy.version, day, number: exportingBuy.number }}
           fileName={`cc-mass-create-${game === 'mtg' ? 'magic' : game}-${day}-buy-${exportingBuy.number}.csv`}
           onExported={exported}
           onClose={() => {

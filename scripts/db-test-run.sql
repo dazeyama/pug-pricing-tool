@@ -510,12 +510,10 @@ begin
     (select status = 'confirmed' and confirmed_by = u and customer_name = 'DBTEST Ash' and notes = 'first visit'
             and phone = '5550100001' and paid_price = 9.5 and paid_method = 'cash' and paid_at is not null
             and cash_pct = 50 and credit_pct = 65 from buys where id = v_buy));
-  select count(*) into v_n from buys x
-   where x.status = 'confirmed'
-     and (x.confirmed_at at time zone 'America/Los_Angeles')::date = (now() at time zone 'America/Los_Angeles')::date
-     and exists (select 1 from buy_lines l where l.buy_id = x.id and l.game = 'mtg');
-  perform pg_temp.ok(s, 'It answers with its number on today''s page',
-    (v_res ->> 'number')::integer = v_n and v_res -> 'games' = '["mtg", "pokemon"]'::jsonb
+  select number into v_n from buys where id = v_buy;
+  perform pg_temp.ok(s, 'It answers with its number, the next ever (0071)',
+    v_n >= 1 and v_n = (select max(number) from buys)
+    and (v_res ->> 'number')::integer = v_n and v_res -> 'games' = '["mtg", "pokemon"]'::jsonb
     and v_res ->> 'target_name' = internal.buy_target_name(v_buy), v_res::text);
   perform pg_temp.ok(s, 'The Changelog has it, with its totals',
     exists (select 1 from events where action = 'buy_confirmed' and target_id = v_buy and added = 4
@@ -1953,8 +1951,9 @@ declare
   a uuid := pg_temp.id('devA');
   bd uuid := pg_temp.id('devB');
   d date := date '2001-02-03';
+  v_num2 integer;
   v_today date := (now() at time zone 'America/Los_Angeles')::date;
-  v_sku text := internal.cc_custom_sku(now());
+  v_sku text := internal.cc_custom_sku_day(date '2001-02-03');   -- the day exported (0071)
   b1 uuid;
   b2 uuid;
   b3 uuid;
@@ -1980,6 +1979,7 @@ begin
           pg_temp.line('Dbtest Mystery', 'DBT', '003', 1, 0.50)]);
   update buys set confirmed_at = (d + time '12:00') at time zone 'America/Los_Angeles' where id = b1;
   update buys set confirmed_at = (d + time '12:05') at time zone 'America/Los_Angeles' where id = b2;
+  select number into v_num2 from buys where id = b2;   -- its number, the next ever (0071)
   bolt := pg_temp.line_id(b1, 'Dbtest Bolt', 'nonfoil');
   foil := pg_temp.line_id(b1, 'Dbtest Bolt', 'foil');
   pika := pg_temp.line_id(b1, 'Dbtestchu');
@@ -2054,7 +2054,8 @@ begin
     (select completed_at is null and cc_status is null from buy_lines where id = pika));
   perform pg_temp.ok(s, 'A copy goes to Can''t upload cards, saying which buy',
     exists (select 1 from buy_lines c join buys x on x.id = c.buy_id
-             where x.system_key = 'cant_upload' and c.source_line_id = mys and c.source_note = 'from Buy 2 · February 3, 2001'),
+             where x.system_key = 'cant_upload' and c.source_line_id = mys
+               and c.source_note = format('from Buy %s · February 3, 2001', v_num2)),
     (select c.source_note from buy_lines c where c.source_line_id = mys));
   perform pg_temp.ok(s, 'Search shows it in Can''t upload cards',
     exists (select 1 from global_search('dbtest mystery', null, null, null, false) where collection_kind = 'system'));
@@ -2138,11 +2139,11 @@ begin
     (v ->> 'buys')::integer = 1 and (v ->> 'cards')::integer = 1 and (v ->> 'cant')::integer = 1
     and (select cc_status = 'exported' and completed_at is not null from buy_lines where id = cs), v::text);
   perform pg_temp.ok(s, '… its copy says which buy',
-    exists (select 1 from buy_lines where source_line_id = mys and source_note = 'from Buy 2 · Sat Feb 3, 2001'),
+    exists (select 1 from buy_lines where source_line_id = mys and source_note = format('from Buy %s · Sat Feb 3, 2001', v_num2)),
     (select source_note from buy_lines where source_line_id = mys));
   perform pg_temp.ok(s, '… and the Changelog says so',
     exists (select 1 from events where action = 'buy_exported' and target_id = b2
-              and summary = format('1 Magic card exported on its own (Custom SKU %s); 1 can''t upload, copied to Can''t upload cards; the buy is Completed.', v_sku)));
+              and summary = format('1 Magic card exported on its own (Custom SKU %s-%s); 1 can''t upload, copied to Can''t upload cards; the buy is Completed.', v_sku, v_num2)));
   begin
     perform export_lines(jsonb_build_object('kind', 'buy', 'game', 'mtg', 'buy_id', b2, 'version', pg_temp.version(b2)), '[]', '{}', '[]', u, a);
     raise exception 'dbt_no_error';

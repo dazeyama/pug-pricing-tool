@@ -41,14 +41,7 @@ AS $function$
   )
   select h.line_id, h.buy_id, h.kind, h.status, h.customer_name, h.paid_method,
          h.confirmed_at, h.confirmed_by, h.created_at,
-         case when h.kind = 'walk_in' then (
-           select count(*)::integer from buys x
-            where x.kind = 'walk_in' and x.status = 'confirmed'
-              and (x.confirmed_at at time zone 'America/Los_Angeles')::date
-                = (h.confirmed_at at time zone 'America/Los_Angeles')::date
-              and (x.confirmed_at, x.id) <= (h.confirmed_at, h.buy_id)
-              and exists (select 1 from buy_lines y where y.buy_id = x.id and y.game = h.game))
-         end,
+         case when h.kind = 'walk_in' then (select buy_number(x) from buys x where x.id = h.buy_id) end,
          h.game, h.lang, h.name, h.name_en, h.set_code, h.collector_number, h.finish,
          h.first_edition, h.treatments, h.condition, h.quantity, h.image_url, h.completed,
          h.collection_kind, h.bulk_kind, h.struck_at, h.struck_by

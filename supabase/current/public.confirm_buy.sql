@@ -61,8 +61,10 @@ begin
   v_cash   := coalesce(b.custom_cash_pct, p_cash_pct);
   v_credit := coalesce(b.custom_credit_pct, p_credit_pct);
 
+  -- Its number, the next ever (0071): the same count for both games, every day.
   update buys
      set status = 'confirmed', confirmed_at = now(), confirmed_by = p_user,
+         number = coalesce(number, nextval('buys_number_seq')),
          customer_name = v_customer, phone = v_phone, notes = coalesce(btrim(p_notes), ''),
          cash_pct = v_cash, credit_pct = v_credit,
          paid_price = p_paid_price, paid_method = p_paid_method, paid_at = now(),
@@ -73,11 +75,7 @@ begin
   perform internal.fix_line_rates(b);
 
   v_day := (now() at time zone 'America/Los_Angeles')::date;
-  select count(*) into v_number
-    from buys x
-   where x.status = 'confirmed'
-     and (x.confirmed_at at time zone 'America/Los_Angeles')::date = v_day
-     and exists (select 1 from buy_lines l where l.buy_id = x.id and l.game = v_games[1]);
+  v_number := b.number;
   v_target := format('Buy %s · %s', v_number, to_char(v_day, 'Dy Mon FMDD, YYYY'));
 
   select jsonb_agg(jsonb_build_object(

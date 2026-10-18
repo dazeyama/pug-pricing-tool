@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase.js';
 import PricingScreen from './price/PricingScreen.jsx';
 import WalkInButtons from './price/WalkInButtons.jsx';
 import ConfirmBuyModal from './price/ConfirmBuyModal.jsx';
+import BuyDoneModal from './price/BuyDoneModal.jsx';
 import { useDraft } from './price/useDraft.js';
 import { lineText } from '../lib/lineFormat.js';
 import { tiersFrom } from '../lib/rates.js';
@@ -35,6 +36,8 @@ export default function PricePage() {
   const { values } = useSettings();
   const [confirming, setConfirming] = useState(false);
   const [resetKey, setResetKey] = useState(0);
+  // BUY COMPLETE (owner, 2026-10-17; decision 292): the dialog after a confirm, with the printouts on offer.
+  const [completed, setCompleted] = useState(null);
 
   // This buy's rates: its custom ones where set, else the Master Buy
   // Percentages (spec 8.9.1), with the low-end and high-end rates
@@ -65,6 +68,7 @@ export default function PricePage() {
       return;
     }
     const buyId = draft.buy?.id;
+    const lines = draft.lines;   // as confirmed, for BUY COMPLETE's printouts
     const done = await draft.confirm({
       userId: user.id,
       customerName,
@@ -90,8 +94,12 @@ export default function PricePage() {
         ? ` It couldn't be flagged (${error.message}): flag it from its ⋯ on the day page.`
         : ' 🚩 Flagged: check its condition before export.';
     }
-    toast(`Buy confirmed — Buy ${done.number} today (${names}).${flagged} Pick your user for the next one.`,
+    toast(`Buy confirmed — Buy ${done.number} (${names}).${flagged} Pick your user for the next one.`,
       flagged.includes("couldn't") ? 'warn' : 'ok');
+    setCompleted({
+      number: done.number, games: done.games, lines, customer: customerName, paid: paidPrice, method: paidMethod,
+      flagged: Boolean(flagCondition) && !flagged.includes("couldn't"),
+    });
     // The next buy may be someone else's: they pick themselves (owner, 2026-10-11).
     forget();
     setResetKey((k) => k + 1);
@@ -133,6 +141,15 @@ export default function PricePage() {
               flagOption
               onClose={() => {
                 setConfirming(false);
+                focusSearch();
+              }}
+            />
+          )}
+          {completed && (
+            <BuyDoneModal
+              {...completed}
+              onClose={() => {
+                setCompleted(null);
                 focusSearch();
               }}
             />
