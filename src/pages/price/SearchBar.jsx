@@ -96,7 +96,7 @@ export default function SearchBar({
                 role="radio"
                 aria-checked={auto === on}
                 className={auto === on ? 'on' : ''}
-                title="Toggle mimp mode"
+                title={on ? `Auto Mode: ${auto ? 'ON' : 'OFF'}` : 'Toggle mimp mode'}
                 onClick={() => auto !== on && onAuto(on)}
               >
                 {mark}
