@@ -48,7 +48,8 @@ function loadPokellector() {
   return pokellector;
 }
 // pokemontcg.io's API often answers 500/502 and then works on a retry.
-const ptcg = createTransport({ spacingMs: 200, tries: 6 });
+// The Pokémon TCG API's first byte came in 0.28 s at worst (2026-10-18): given up after 3 s.
+const ptcg = createTransport({ spacingMs: 200, tries: 6, timeoutMs: 3_000 });
 
 const setKey = (name) => String(name ?? '').toLowerCase()
   .replace(/&/g, 'and').normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');

@@ -14,11 +14,13 @@ let psm = null;
 let generation = 0;
 const listeners = new Set();
 
-// A strip is read in well under a second; a read taking this long is stuck (owner, 2026-10-18:
-// "stuck on 'Reading...' … forever until a hard refresh"), and the worker is started afresh.
-const READ_MS = 10_000;
-// Starting the worker downloads its files the first time: slow on a slow network, not forever.
-const LOAD_MS = 90_000;
+// A read on a phone takes 0.3 to 1 s (docs/SCAN_FUNCTION.md 11; 0.12 s on the laptop); one
+// taking 5 s is stuck (owner, 2026-10-18: "stuck on 'Reading...' … forever until a hard
+// refresh"), and the worker is started afresh.
+const READ_MS = 5_000;
+// Starting the worker downloads its three files the first time (4.4 MB: 1.35 s from GitHub Pages
+// on 2026-10-18) and compiles them on the phone; given up after 20 s and started again on the next read.
+const LOAD_MS = 20_000;
 
 /** PSM 6, Tesseract.js's default: a block of text. */
 export const PSM_BLOCK = '6';

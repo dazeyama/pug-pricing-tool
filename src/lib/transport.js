@@ -35,10 +35,14 @@ const SLOW_FOR_MS = 60_000;
 // A request with no answer in this long is given up and tried again, like a
 // network error (owner, 2026-10-18: the scanner stuck on "Reading…" on a slow
 // network: one stalled request held its queue, and every request after it,
-// for good). Its body gets longer: the big lists (every set, every card name)
-// take a while on a slow connection.
-const ANSWER_MS = 15_000;
-const BODY_MS = 60_000;
+// for good). Set at about ten times the slowest measured (2026-10-18, the
+// office network; owner: "set the timeout durations more tightly to align
+// with what we learn"): a Scryfall lookup's first byte came in 0.32 s at
+// worst, so 4 s; each queue can set its own (scryfall.js, tcgdex.js,
+// pokemonImages.js) and a request its own (Scryfall's searches). The body:
+// the slowest, a 700 KB search page, took 0.85 s after its first byte, so 10 s.
+const ANSWER_MS = 4_000;
+const BODY_MS = 10_000;
 
 /**
  * @param {{ spacingMs?: number, tries?: number, concurrency?: number, timeoutMs?: number, bodyMs?: number }} [options]
@@ -53,7 +57,7 @@ export function createTransport({
   let nextStartAt = 0;   // the earliest the next request may start: reserved, so lanes don't start together
   let slowUntil = 0;
 
-  async function fetchWithRetry(url, signal) {
+  async function fetchWithRetry(url, signal, answerMs = timeoutMs) {
     let limited = false;
     for (let attempt = 0; attempt < tries; attempt++) {
       const gap = Date.now() < slowUntil ? Math.max(spacingMs * 5, 500) : spacingMs;
@@ -66,7 +70,7 @@ export function createTransport({
       const attemptSignal = new AbortController();
       const giveUp = () => attemptSignal.abort();
       signal?.addEventListener('abort', giveUp, { once: true });
-      const clock = setTimeout(giveUp, timeoutMs);
+      const clock = setTimeout(giveUp, answerMs);
       let res;
       try {
         res = await fetch(url, { headers: { Accept: 'application/json' }, signal: attemptSignal.signal });
@@ -101,7 +105,7 @@ export function createTransport({
         continue;
       }
       active += 1;
-      fetchWithRetry(job.url, job.signal)
+      fetchWithRetry(job.url, job.signal, job.timeoutMs)
         .then(job.resolve, job.reject)
         .finally(() => {
           active -= 1;
@@ -114,13 +118,14 @@ export function createTransport({
    * Queue a GET. Resolves with the Response (any status but 429/503), rejects
    * with AbortError if superseded or UnavailableError after every retry.
    * @param {string} url
-   * @param {{ signal?: AbortSignal, priority?: 'high'|'low' }} [options]
+   * @param {{ signal?: AbortSignal, priority?: 'high'|'low', timeoutMs?: number }} [options]
+   *   timeoutMs: this request's own wait for an answer, instead of the queue's
    * @returns {Promise<Response>}
    */
-  function request(url, { signal, priority = 'high' } = {}) {
+  function request(url, { signal, priority = 'high', timeoutMs: answerMs } = {}) {
     if (signal?.aborted) return Promise.reject(abortError());
     return new Promise((resolve, reject) => {
-      (priority === 'low' ? low : high).push({ url, signal, resolve, reject });
+      (priority === 'low' ? low : high).push({ url, signal, timeoutMs: answerMs, resolve, reject });
       pump();
     });
   }

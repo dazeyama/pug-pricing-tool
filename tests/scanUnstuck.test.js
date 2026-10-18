@@ -53,6 +53,20 @@ test("the caller's own give-up still rejects as AbortError, not retried", async 
   }
 });
 
+test("a request's own limit wins over its queue's (Scryfall's searches wait longer than its lookups)", async () => {
+  const realFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = silentFetch(calls);
+  try {
+    const t = createTransport({ spacingMs: 0, tries: 1, timeoutMs: 60_000 });
+    const began = Date.now();
+    await assert.rejects(t.request('https://x.test/slow', { timeoutMs: 30 }), (e) => e.name === 'UnavailableError');
+    assert.ok(Date.now() - began < 5_000, 'gave up on its own 30 ms, not the minute its queue allows');
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
 const KNOWN = new Set(['HOB']);
 const card = (id, set, number, rarity, artist) => ({
   id, set, collector_number: number, rarity, artist, lang: 'en', name: id,

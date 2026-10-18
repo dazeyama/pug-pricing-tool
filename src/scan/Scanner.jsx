@@ -53,10 +53,13 @@ const REFOCUS_GAP_MS = 6000;
 // Scan card's loading bar stays full this long once it's done.
 const BAR_DONE_MS = 250;
 // Unstuck (owner, 2026-10-18: "it kept getting stuck on 'Reading...' after hitting Scan Card"):
-// no look runs longer than this, a press's longer than an auto look's; whatever it waits on
-// (Scryfall, the computer, the card reader), it's given up and says so.
-const MANUAL_DEADLINE_MS = 30_000;
-const AUTO_DEADLINE_MS = 15_000;
+// no look runs longer than this; whatever it waits on (Scryfall, the computer, the card
+// reader), it's given up and says so. Scan card's slowest honest run, timed from its steps on
+// 2026-10-18: four reads (1 s each on a phone), the lookups (0.3 s), about four searches (550 ms
+// apart, 1 s each) and an older card's title (about 5 s): some 15 s, so 20 s. An auto look:
+// one read, a lookup and two searches, about 4 s, so 8 s.
+const MANUAL_DEADLINE_MS = 20_000;
+const AUTO_DEADLINE_MS = 8_000;
 // Reading… can be tapped to stop once it's run this long.
 const STOPPABLE_AFTER_MS = 3_000;
 // Holding Scan card this long starts over: the reader started afresh, what auto scan held forgotten.

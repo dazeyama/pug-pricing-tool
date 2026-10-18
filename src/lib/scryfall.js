@@ -4,10 +4,13 @@ import { createTransport } from './transport.js';
 import { DAY, memoryCache, storedOrDownload } from './cache.js';
 
 const API = 'https://api.scryfall.com';
-const transport = createTransport({ spacingMs: 100 });
+// A lookup's first byte came in 0.32 s at worst (2026-10-18): given up after 4 s and tried again.
+const transport = createTransport({ spacingMs: 100, timeoutMs: 4_000 });
 // Many searches in a row (Import Collection) go slower: Scryfall allows about
 // two searches a second, and answers faster ones with a minute's 429.
-const bulkSearches = createTransport({ spacingMs: 550 });
+const bulkSearches = createTransport({ spacingMs: 550, timeoutMs: 10_000 });
+// A search's first byte came in 0.97 s at worst (an older card's printings, 2026-10-18): 10 s.
+const SEARCH_ANSWER_MS = 10_000;
 
 // Every search, of every kind (live search, a card's printings, Import
 // Collection, the scanner's), takes its turn through one gate (owner,
@@ -31,7 +34,7 @@ function searchJson(url, { signal, via = transport } = {}) {
     const wait = lastSearchAt + SEARCH_GAP_MS - Date.now();
     if (wait > 0) await sleep(wait);
     try {
-      return await via.getJson(url, { signal });
+      return await via.getJson(url, { signal, timeoutMs: SEARCH_ANSWER_MS });
     } finally {
       lastSearchAt = Date.now();
     }
