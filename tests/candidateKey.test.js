@@ -54,3 +54,13 @@ test('an edit searches the name where a name finds the card; else the exact sear
   assert.equal(nameQuery({ game: 'pokemon', lang: 'en', justtcg_card_id: 'x', name: 'Mimikyu ex' }), null);
   assert.equal(nameQuery({ game: 'mtg', bulk_kind: 'mtg_cu', name: '100 commons' }), null);
 });
+
+// The card being edited pinned first among its name's printings (decision 324).
+test('pinFirst: the edited card first, the rest in order; nothing to pin, the list as it was', async () => {
+  const { pinFirst } = await import('../src/lib/candidateKey.js');
+  const list = ['a', 'b', 'c', 'd'].map((key) => ({ key }));
+  assert.deepEqual(pinFirst(list, 'c').map((c) => c.key), ['c', 'a', 'b', 'd']);
+  assert.equal(pinFirst(list, 'a'), list);
+  assert.equal(pinFirst(list, 'zz'), list);
+  assert.equal(pinFirst(list, null), list);
+});

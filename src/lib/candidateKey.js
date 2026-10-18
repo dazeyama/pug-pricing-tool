@@ -38,6 +38,24 @@ export function nameQuery(line) {
 }
 
 /**
+ * The suggestions with the card being edited first (owner, 2026-10-19: "The
+ * selected card for edit needs to still appear pinned as the first result.
+ * THEN show the rest of the search"; decision 324): its name's every printing
+ * (decision 319) can run past the ten shown. The rest keep their order; no
+ * card being edited, or not among them, and the list is as it was. Pure.
+ * @template {{ key: string }} T
+ * @param {T[]} list
+ * @param {string|null|undefined} key  the edited card's key
+ * @returns {T[]}
+ */
+export function pinFirst(list, key) {
+  if (!key) return list;
+  const at = list.findIndex((c) => c.key === key);
+  if (at <= 0) return list;
+  return [list[at], ...list.slice(0, at), ...list.slice(at + 1)];
+}
+
+/**
  * A search line that finds exactly this saved card (spec 8.2's syntax):
  * "Sol Ring 472 CMR", "Charizard 4/102 BS", Japanese "025/165 SV2a".
  */

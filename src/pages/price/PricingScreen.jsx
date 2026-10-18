@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useMemo, useEffect, useRef, useState } from 'react';
 import { useCardRoom, useListRoom } from './useStageRoom.js';
 import { usePrinting } from './usePrinting.js';
 import { usePricing } from './usePricing.js';
@@ -33,7 +33,7 @@ import { useDevice } from '../../state/device.jsx';
 import { useScanSession } from './useScanSession.js';
 import { useScanReceiver } from './useScanReceiver.js';
 import ScanChip from './ScanChip.jsx';
-import { candidateKeyOf, editQuery, nameQuery } from '../../lib/candidateKey.js';
+import { candidateKeyOf, editQuery, nameQuery, pinFirst } from '../../lib/candidateKey.js';
 
 const BACKGROUND = { '--stage-bg': `url(${import.meta.env.BASE_URL}background.webp)` };
 
@@ -267,7 +267,7 @@ export default function PricingScreen({
   else if (addLocked && !editing) addBlocked = addLocked;
   else if (!selected) {
     // Several suggestions and none picked yet: ↓ picks the first.
-    addBlocked = search.candidates.length ? 'Select a card first: ↓ picks the first suggestion' : 'Select a card first';
+    addBlocked = candidates.length ? 'Select a card first: ↓ picks the first suggestion' : 'Select a card first';
   }
   else if (bulk) {
     // Bulk: a quantity of items, nothing to wait for. A placeholder's price is always typed in.
@@ -292,8 +292,10 @@ export default function PricingScreen({
   const canRemove = Boolean(user) && !offline && !removeLocked;
   const removeBlocked = blockedBy(removeLocked);
 
-  const visible = search.candidates.slice(0, shownCount);
-  const hasShowAll = search.candidates.length > shownCount;
+  // The suggestions, the card being edited pinned first (decision 324), the rest in the search's order.
+  const candidates = useMemo(() => pinFirst(search.candidates, editing?.key), [search.candidates, editing?.key]);
+  const visible = candidates.slice(0, shownCount);
+  const hasShowAll = candidates.length > shownCount;
 
   // When a search settles: a lone printing is selected automatically (owner:
   // taken out 2026-10-11, put back 2026-10-12); a selection the new results
@@ -307,7 +309,7 @@ export default function PricingScreen({
       const index = found.findIndex((c) => c.key === editing.key);
       if (index >= 0) {
         setSelected(found[index]);
-        setHighlight(index < shownCount ? index : -1);
+        setHighlight(0);   // pinned first (decision 324)
         setEditing((e) => e && { ...e, found: true });
       } else if (editing.exact && editing.query !== editing.exact) {
         // Not among the name's printings (one of hundreds, a basic land): its exact search instead.
@@ -828,7 +830,7 @@ export default function PricingScreen({
 
         {showAll && (
           <ShowAllModal
-            candidates={search.candidates}
+            candidates={candidates}
             hasMore={search.hasMore}
             selectedKey={selected?.key}
             onPick={pick}
