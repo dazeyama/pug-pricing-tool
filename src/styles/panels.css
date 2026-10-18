@@ -78,11 +78,16 @@
 }
 .modal-body { padding: 14px 16px; overflow: auto; }
 .modal-body p { margin: 0 0 10px; }
-/* BUY COMPLETE (decision 292): × in the corner, what was saved in green, the facts. */
-.buy-done .modal-box { position: relative; }
+/* BUY COMPLETE (decision 292): a bold centred title, × in the corner, what was saved in green on
+   one line, the facts, the print buttons in their games' colours. */
+.buy-done .modal-box { position: relative; width: min(600px, calc(92vw / var(--ui-zoom))); }
+.buy-done .modal-head { text-align: center; font-size: 20px; font-weight: 800; letter-spacing: .04em; }
+.buy-done .game-btn.mtg { background: var(--pal-indigo); border-color: var(--pal-indigo); color: #fff; }
+.buy-done .game-btn.pokemon { background: var(--pal-amber); border-color: var(--pal-amber); color: #1a1405; }
+.buy-done .game-btn:disabled { opacity: .6; }
 .modal-x { position: absolute; top: 8px; right: 10px; width: 32px; height: 32px; border: none; border-radius: 50%; background: none; color: var(--muted); font-size: 24px; line-height: 1; cursor: pointer; }
 .modal-x:hover { background: var(--bg-2, rgba(127, 127, 127, .15)); color: var(--text); }
-.buy-done-saved { margin: 0 0 10px; color: var(--good); font-weight: 700; }
+.buy-done-saved { margin: 0 0 10px; color: var(--good); font-weight: 700; font-size: 15px; white-space: nowrap; }
 .buy-done-facts { margin: 0 0 10px; padding-left: 20px; }
 .buy-done-facts li + li { margin-top: 3px; }
 .buy-done-hint { margin: 0; color: var(--muted); font-size: 13px; }

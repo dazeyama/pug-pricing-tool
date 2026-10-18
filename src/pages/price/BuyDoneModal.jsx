@@ -5,7 +5,7 @@ import { useToast } from '../../components/Toast.jsx';
 import { GAME_NAMES } from '../../lib/games.js';
 import { cardCounts, countText } from '../../lib/bulk.js';
 import { formatMoney } from '../../lib/money.js';
-import { dayDate, dayTitle, storeDay } from '../../lib/calendar.js';
+import { dayDate, storeDay } from '../../lib/calendar.js';
 
 /**
  * BUY COMPLETE (owner, 2026-10-17; decision 292): the dialog after CONFIRM
@@ -20,6 +20,8 @@ export default function BuyDoneModal({ number, games, lines, customer, paid, met
   const { offline } = useConnection();
   const toast = useToast();
   const day = storeDay();
+  // "Oct 17, 2026": short enough for the saved line to stay on one line.
+  const shortDay = dayDate(day).replace(/^([A-Z][a-z]{2})[a-z]*/, '$1');
   const has = (g) => lines.some((l) => l.game === g);
   const counts = cardCounts(lines);
 
@@ -40,13 +42,13 @@ export default function BuyDoneModal({ number, games, lines, customer, paid, met
       footer={(
         <>
           {has('mtg') && (
-            <button type="button" className="btn" disabled={printing} onClick={() => printGame('mtg')}>
-              {printing ? 'Printing…' : 'Print MTG?'}
+            <button type="button" className="btn game-btn mtg" disabled={printing} onClick={() => printGame('mtg')}>
+              {printing ? 'Printing… 🖨' : 'Print MTG? 🖨'}
             </button>
           )}
           {has('pokemon') && (
-            <button type="button" className="btn" disabled={printing} onClick={() => printGame('pokemon')}>
-              {printing ? 'Printing…' : 'Print PKM?'}
+            <button type="button" className="btn game-btn pokemon" disabled={printing} onClick={() => printGame('pokemon')}>
+              {printing ? 'Printing… 🖨' : 'Print PKM? 🖨'}
             </button>
           )}
           <button type="button" className="btn primary" onClick={onClose}>No thanks</button>
@@ -55,7 +57,7 @@ export default function BuyDoneModal({ number, games, lines, customer, paid, met
     >
       <button type="button" className="modal-x" aria-label="Dismiss" title="Dismiss" onClick={onClose}>×</button>
       <p className="buy-done-saved">
-        ✓ Cards saved in the Calendar page: {games.map((g) => GAME_NAMES[g]).join(' and ')} · {dayTitle(day)}
+        ✓ Saved in the Calendar page: {games.map((g) => GAME_NAMES[g]).join(' and ')} · {shortDay}
       </p>
       <ul className="buy-done-facts">
         <li><strong>Buy {number}</strong>{customer ? ` · ${customer}` : ''}</li>

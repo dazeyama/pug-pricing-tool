@@ -179,7 +179,12 @@ function DayScreen({ game, day }) {
   const lastExport = doneLines.filter((l) => !markedByHand(l))
     .reduce((a, l) => (!a || l.completed_at > a.completed_at ? l : a), null);
   // What the export wrote (export spec 4.4, 10): its Custom SKU, and the counts.
-  const skus = [...new Set(doneLines.map((l) => l.cc_custom_sku).filter(Boolean))];
+  // A single buy's export carries "<day>-<number>" (0071): its chip goes on the
+  // buy, the day's own export's on the page (owner, 2026-10-17).
+  const skus = [...new Set(doneLines.map((l) => l.cc_custom_sku).filter((s) => s && !s.includes('-')))];
+  const buySkus = (b) => [...new Set(b.buy_lines
+    .filter((l) => l.game === game && l.cc_custom_sku && l.cc_custom_sku.includes('-'))
+    .map((l) => l.cc_custom_sku))];
   const exportedCards = doneLines.filter((l) => l.cc_status === 'exported').reduce((n, l) => n + l.quantity, 0);
   const cantCards = doneLines.filter((l) => l.cc_status === 'cant_upload').reduce((n, l) => n + l.quantity, 0);
   const fileName = `cc-mass-create-${game === 'mtg' ? 'magic' : game}-${day}.csv`;
@@ -623,6 +628,7 @@ function DayScreen({ game, day }) {
               buy={buy}
               tiers={tiersFrom(settingValues.rate_tiers)}
               number={numberOf(buy)}
+              skus={buySkus(buy)}
               game={game}
               other={other}
               day={day}

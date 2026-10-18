@@ -98,7 +98,7 @@ function ConditionChip({ buy, byId, blocked, onChecked }) {
 
 /** One buy on a day page (spec 10.2). */
 export default function BuyPanel({
-  buy, number, game, other, day, byId, busy, offline, hits, flash, onRemove, onRestore, onDelete, onComplete, onConvert,
+  buy, number, skus = [], game, other, day, byId, busy, offline, hits, flash, onRemove, onRestore, onDelete, onComplete, onConvert,
   onExport, onUnexport, onEditView, onPrint, onPrintStickers, printing, onFlag, tiers,
 }) {
   const [preview, setPreview] = useState(null);   // { src, top, left } while a line is hovered
@@ -150,6 +150,12 @@ export default function BuyPanel({
         <span className={`status-chip ${statusTone({ kind: 'walk_in', status, paid_method: buy.paid_method })}`}>
           {statusLabel(status)}
         </span>
+        {/* Export single buy's Custom SKU, "<day>-<number>" (0071), on the buy it belongs to. */}
+        {skus.map((s) => (
+          <span key={s} className="sku-chip compact" title="The Custom SKU on this buy's own export">
+            Custom SKU <strong>{s}</strong>
+          </span>
+        ))}
         <MoreMenu
           items={[
             // ✅ Condition checked, pinned first while the buy is flagged (owner, 2026-10-14).
