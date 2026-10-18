@@ -100,15 +100,33 @@ export function useCamera(videoRef) {
     on: false, starting: false, error: null, torch: null, size: null, interrupted: null, opened: 0,
   });
   const stream = useRef(null);
+  // Bumped by stop() (decision 321): an opening under way (START, a refocus, a restart, the tab shown
+  // again) that finishes after Stop shuts what it opened instead of showing it.
+  const generation = useRef(0);
   // Restarts after the camera was cut off, lately: a camera that keeps failing isn't restarted for ever.
   const restarts = useRef([]);
 
   const stop = useCallback(() => {
-    stream.current?.getTracks().forEach((t) => t.stop());
+    generation.current += 1;
+    stream.current?.getTracks().forEach((t) => {
+      t.enabled = false;
+      t.stop();
+    });
     stream.current = null;
-    if (videoRef.current) videoRef.current.srcObject = null;
+    const video = videoRef.current;
+    if (video) {
+      video.pause();
+      video.srcObject = null;
+    }
     setState((s) => ({ ...s, on: false, starting: false, torch: null, interrupted: null }));
   }, [videoRef]);
+
+  /** A stream opened after Stop (decision 321): shut at once, never shown. */
+  const stale = (gen, s) => {
+    if (gen === generation.current) return false;
+    s?.getTracks().forEach((t) => t.stop());
+    return true;
+  };
 
   // Cut off (owner, 2026-10-19: "fix", to "The camera doesn't notice when it's cut off"): a call, Siri
   // or another app can take the camera while the page stays open, and the picture froze while auto
@@ -137,8 +155,10 @@ export function useCamera(videoRef) {
       return false;
     }
     setState((s) => ({ ...s, starting: true, error: null }));
+    const gen = generation.current;
     try {
       const s = await openCamera();
+      if (stale(gen, s)) return false;
       stream.current = s;
       watch(s);
       const video = videoRef.current;
@@ -149,6 +169,7 @@ export function useCamera(videoRef) {
       if (!video.videoWidth) {
         await new Promise((resolve) => video.addEventListener('loadedmetadata', resolve, { once: true }));
       }
+      if (gen !== generation.current) return false;   // stopped meanwhile: stop() has shut it
       const caps = s.getVideoTracks()[0]?.getCapabilities?.() ?? {};
       setState((st) => ({
         on: true, starting: false, error: null, torch: caps.torch ? false : null,
@@ -196,10 +217,12 @@ export function useCamera(videoRef) {
     const video = videoRef.current;
     if (!stream.current || !video || refocusing.current) return;
     refocusing.current = true;
+    const gen = generation.current;
     try {
       stream.current.getTracks().forEach((t) => t.stop());
       stream.current = null;
       const s = await openCamera();
+      if (stale(gen, s)) return;
       stream.current = s;
       watch(s);
       video.srcObject = s;

@@ -1054,6 +1054,25 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   }
 
   /**
+   * Stop (owner, 2026-10-19: "The stop button on the phone should cut off the camera faster than it
+   * does, as an abort button, do what needs to be done to stop the camera immediately"; decision
+   * 321): the camera shut at once (and any opening under way cancelled, camera.js), the look and any
+   * Scan card read under way given up, and the card reader stopped, so nothing works on behind it.
+   * The lock stays for when the camera's back (Reset view unlocks), as before.
+   */
+  function abortCamera() {
+    camera.stop();
+    readRun.current += 1;
+    scanTicket.current += 1;
+    busy.current = false;
+    manualWaiting.current = false;
+    relockDue.current = false;
+    resetOcr();
+    endReading();
+    trace('stop-camera');
+  }
+
+  /**
    * Hold Scan card (owner, 2026-10-18: "a button or some gesture that helps
    * it get unstuck" when a card in plain view won't read): start over, as
    * Stop does, and read the card in front now. The view stays locked
@@ -1528,7 +1547,21 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
               💡
             </button>
           )}
-          <button type="button" className="btn scan-stop" disabled={!camera.on} onClick={camera.stop}>■ Stop</button>
+          {/* An abort (owner, 2026-10-19; decision 321): on the touch itself, not the lift. */}
+          <button
+            type="button"
+            className="btn scan-stop"
+            disabled={!camera.on}
+            onPointerDown={(e) => {
+              e.preventDefault();
+              abortCamera();
+            }}
+            onClick={() => {
+              if (camera.on) abortCamera();
+            }}
+          >
+            ■ Stop
+          </button>
         </div>
       </div>
     </div>
