@@ -12,7 +12,8 @@ import { dayDate, storeDay } from '../../lib/calendar.js';
  * BUY, mainly to offer the printouts straight after the purchase. What was
  * saved and where (the day page, by game) in green, the easy facts (the
  * buy's number, cards, what was paid), then **Print MTG?** / **Print PKM?**
- * for the games the buy has, and **No thanks**; × and Esc are No thanks too.
+ * for the games the buy has (either closes the dialog as it starts the printout), and
+ * **No thanks**; × and Esc are No thanks too.
  * `lines` are the buy's lines as they were confirmed (the draft's rows).
  */
 export default function BuyDoneModal({ number, games, lines, customer, paid, method, flagged, onClose }) {
@@ -31,7 +32,9 @@ export default function BuyDoneModal({ number, games, lines, customer, paid, met
       return;
     }
     const title = game === 'pokemon' ? `Audit — Pokémon, Buy ${number}, ${dayDate(day)}` : `Audit — Buy ${number}, ${dayDate(day)}`;
+    // The printout's tab opens at the click and finishes on its own; the dialog has done its job (owner, 2026-10-17).
     print({ lines, game, title, fileName: `audit-${game === 'pokemon' ? 'pokemon' : 'magic'}-${day}-buy-${number}.pdf` });
+    onClose();
   }
 
   return (
