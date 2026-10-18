@@ -15,6 +15,7 @@ import { usePriceLimit } from '../../state/priceLimit.jsx';
 import { useSettings } from '../../state/settings.jsx';
 import { useStaff } from '../../state/staff.jsx';
 import { isTimeout, withTimeout } from '../../lib/timeout.js';
+import { createStayAwake } from '../../lib/stayAwake.js';
 
 // Cards from the paired phone (docs/SCAN_FUNCTION.md 8.3). Each scan the
 // phone sends is claimed here, one at a time in the order they came, priced
@@ -76,6 +77,12 @@ export function useScanReceiver({ deviceId, label, session, list, roundUp, onAdd
   };
   const running = useRef(false);
   const again = useRef(false);
+  // Awake while cards arrive (decision 320): each one keeps the screen on for ten minutes more.
+  const awake = useRef(null);
+  useEffect(() => {
+    awake.current = createStayAwake();
+    return () => awake.current?.stop();
+  }, []);
 
   /**
    * Price one claimed scan and add it; returns how it went, for scan_resolve.
@@ -84,6 +91,7 @@ export function useScanReceiver({ deviceId, label, session, list, roundUp, onAdd
   const handle = useCallback(async (scan, live = () => true) => {
     const now = latest.current;
     now.touch?.();
+    awake.current?.ping();   // a card arriving counts as use, as a keystroke would (decision 320)
     // Claimed again after its "added" was lost (review, 2026-10-16): the line it made is in the
     // list already, under its id. Said so again, nothing added.
     const made = lineOfScan(now.list.lines, scan.id);
