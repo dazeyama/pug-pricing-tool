@@ -30,11 +30,28 @@ const STEP_EDGE = 22;            // a change of brightness this big between neig
 const APART = 0.02;              // two places to try are at least this far apart (of the card's height)
 
 /**
+ * White letters (decision 309): the pixels bright in every colour, where
+ * `values` is each pixel's darkest channel; bright enough means past Otsu's
+ * threshold and past 80% of the band's brightest (its top 1%), so it holds
+ * in a dim photo as in a bright scan. Pure, for tests.
+ * @param {Float32Array|number[]} values
+ * @returns {number}  the threshold: brighter is a letter
+ */
+export function whiteThreshold(values) {
+  const sorted = Float32Array.from(values).sort();
+  const top = sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.99))] ?? 0;
+  return Math.max(otsuThreshold(values), 0.8 * top);
+}
+
+/**
  * One band of the card, scaled, black text on white whichever way round it
  * was printed (dark on a light title bar, or light on a black border), with
- * a white margin: what Tesseract reads best.
+ * a white margin: what Tesseract reads best. `white`: the letters taken as
+ * the white ones (whiteThreshold), for the old frames' white titles with a
+ * dark shadow (decision 309), which the usual way reads as hollow outlines
+ * or with the frame's marbling round them.
  */
-function band(frame, card, where, height, createCanvas) {
+function band(frame, card, where, height, createCanvas, { white = false } = {}) {
   const x = card.x + card.width * where.left;
   const y = card.y + card.height * where.top;
   const w = card.width * (where.right - where.left);
@@ -49,14 +66,20 @@ function band(frame, card, where, height, createCanvas) {
   const image = ctx.getImageData(0, 0, outW, outH);
   const { data } = image;
   const gray = new Float32Array(outW * outH);
-  for (let k = 0; k < gray.length; k++) gray[k] = 0.299 * data[4 * k] + 0.587 * data[4 * k + 1] + 0.114 * data[4 * k + 2];
-  const t = otsuThreshold(gray);
-  let light = 0;
-  for (const g of gray) if (g > t) light += 1;
-  // The text is the smaller class: on a light bar it's the dark pixels.
-  const textIsDark = light > gray.length / 2;
   const ink = new Uint8Array(gray.length);
-  for (let k = 0; k < gray.length; k++) ink[k] = (textIsDark ? gray[k] <= t : gray[k] > t) ? 1 : 0;
+  if (white) {
+    for (let k = 0; k < gray.length; k++) gray[k] = Math.min(data[4 * k], data[4 * k + 1], data[4 * k + 2]);
+    const t = whiteThreshold(gray);
+    for (let k = 0; k < gray.length; k++) ink[k] = gray[k] > t ? 1 : 0;
+  } else {
+    for (let k = 0; k < gray.length; k++) gray[k] = 0.299 * data[4 * k] + 0.587 * data[4 * k + 1] + 0.114 * data[4 * k + 2];
+    const t = otsuThreshold(gray);
+    let light = 0;
+    for (const g of gray) if (g > t) light += 1;
+    // The text is the smaller class: on a light bar it's the dark pixels.
+    const textIsDark = light > gray.length / 2;
+    for (let k = 0; k < gray.length; k++) ink[k] = (textIsDark ? gray[k] <= t : gray[k] > t) ? 1 : 0;
+  }
   // The title box's ruled edges and the card's border, long straight lines
   // of "ink", make Tesseract read nothing at all: white them out (a row
   // more than half ink, a column more than 60%).
@@ -206,21 +229,29 @@ export function readTitle(frame, read, createCanvas, { wholeFrame = false, card 
 }
 
 /**
- * Read the card's title where it's found (decision 308): each place
- * titleTops gives, best first, as one line, till `accept` takes a reading;
- * then the best place as a block. The reading taken, or the last one.
+ * Read the card's title where it's found (decision 308), till `accept` takes
+ * a reading: at the likeliest place as one line, then its white letters
+ * (decision 309: the old frames' white titles, measured on 32 older cards,
+ * clean and dimmed, 26–27 named before, 30 with this read after it); the
+ * same at the next place; the usual read at the third; then the best place
+ * as a block. Six reads at most, on a card that keeps failing. The reading
+ * taken, or the last one.
  * @param {(text: string) => unknown} accept  a reading that names a card
  * @param {{ line: (c: object) => Promise<string>, block: (c: object) => Promise<string> }} reads  OCR
  */
 export async function findTitle(frame, reads, createCanvas, accept, { wholeFrame = false, card = null } = {}) {
   const rect = cardIn(frame, wholeFrame, card);
   const tops = titleTops(frame, rect, createCanvas);
+  const at = (top, white = false) => band(frame, rect, titleAt(top), BAND_HEIGHT.title, createCanvas, { white });
+  const tries = [];
+  tops.slice(0, 2).forEach((top) => tries.push([top, false], [top, true]));
+  if (tops[2] != null) tries.push([tops[2], false]);
   let text = '';
-  for (const top of tops) {
-    text = await reads.line(band(frame, rect, titleAt(top), BAND_HEIGHT.title, createCanvas));
+  for (const [top, white] of tries) {
+    text = await reads.line(at(top, white));
     if (accept(text)) return text;
   }
-  text = await reads.block(band(frame, rect, titleAt(tops[0]), BAND_HEIGHT.title, createCanvas));
+  text = await reads.block(at(tops[0]));
   return text;
 }
 

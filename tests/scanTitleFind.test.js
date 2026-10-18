@@ -29,3 +29,15 @@ test('textBands: the band with text in its middle and calm rims, not the busy ar
 test('textBands: nothing like text, nothing offered', () => {
   assert.deepEqual(textBands(Array(40).fill(0.2), 10), []);
 });
+
+test('whiteThreshold: the white letters, in a bright scan and in a dim photo', async () => {
+  const { whiteThreshold } = await import('../src/scan/titles.js');
+  // A parchment bar (darkest channel about 160) with white letters (250): the letters are past it.
+  const bright = [...Array(90).fill(160), ...Array(10).fill(250)];
+  const t1 = whiteThreshold(bright);
+  assert.ok(t1 > 160 && t1 < 250, String(t1));
+  // The same, dimmed to 60% (96 and 150): still between them, where a fixed cut at 200 would take nothing.
+  const dim = bright.map((v) => v * 0.6);
+  const t2 = whiteThreshold(dim);
+  assert.ok(t2 > 96 && t2 < 150, String(t2));
+});
