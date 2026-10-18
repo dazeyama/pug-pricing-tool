@@ -94,10 +94,10 @@ const NO_POKEMON = { resolved: true, card: null, info: null, page: null };
  *   this list takes cards from a paired phone (docs/SCAN_FUNCTION.md 8): what the phone shows it as;
  *   null for none (a confirmed buy in project view, Can't upload cards)
  */
-// mimp mode's switch, remembered per computer (decision 293).
+// mimp mode's switch, remembered per computer, on until switched off (decision 293).
 const AUTO_KEY = 'pug.autoMode';
 const readAuto = () => {
-  try { return localStorage.getItem(AUTO_KEY) === '1'; } catch { return false; }
+  try { return localStorage.getItem(AUTO_KEY) !== '0'; } catch { return true; }
 };
 
 export default function PricingScreen({
@@ -125,13 +125,13 @@ export default function PricingScreen({
   const [showAll, setShowAll] = useState(false);
   // mimp mode (owner, 2026-10-17; decision 293; "auto mode" in the code): adding a card leaves
   // the search, the card and its choices as they are, for a run of the same card; only Qty
-  // goes back to 1. The 🦇 after EN | JP; on, it shows 🌼. Remembered per computer.
+  // goes back to 1. The 🦇 | 🌼 pill after EN | JP: 🌼 (the default) is on, 🦇 off.
+  // Remembered per computer.
   const [auto, setAuto] = useState(readAuto);
-  const toggleAuto = () => setAuto((a) => {
-    const next = !a;
+  const chooseAuto = (next) => {
+    setAuto(next);
     try { localStorage.setItem(AUTO_KEY, next ? '1' : '0'); } catch { /* no storage: this page only */ }
-    return next;
-  });
+  };
   const input = useRef(null);
   const selectedRef = useRef(null);
   selectedRef.current = selected;
@@ -643,8 +643,8 @@ export default function PricingScreen({
               focusSearch();
             }}
             auto={auto}
-            onAuto={() => {
-              toggleAuto();
+            onAuto={(next) => {
+              chooseAuto(next);
               focusSearch();
             }}
             games={searchGames}
