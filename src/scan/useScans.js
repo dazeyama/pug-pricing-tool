@@ -13,8 +13,8 @@ const WAITING = new Set(['sent', 'pricing', 'undo', 'undoing']);
 const POLL_MS = 4_000;
 // A write with no answer by then is given up (owner, 2026-10-18: a slow network left the phone
 // waiting for good): `timeout`, which the scanner says as "check the computer's list". A round
-// trip to the database took 0.17 s at worst (2026-10-18); 3 s leaves room for the write itself.
-const WRITE_MS = 3_000;
+// trip to the database took 0.17 s at worst (2026-10-18); 5 s leaves room for the write itself.
+const WRITE_MS = 5_000;
 const SLOW = 'no answer in time: the connection may be slow';
 
 /** A write through a database function, or { error: { message: 'timeout' } } when it took too long. */

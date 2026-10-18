@@ -37,11 +37,11 @@ const SLOW_FOR_MS = 60_000;
 // network: one stalled request held its queue, and every request after it,
 // for good). Set at about ten times the slowest measured (2026-10-18, the
 // office network; owner: "set the timeout durations more tightly to align
-// with what we learn"): a Scryfall lookup's first byte came in 0.32 s at
-// worst, so 4 s; each queue can set its own (scryfall.js, tcgdex.js,
+// with what we learn"), then rounded up to the next 5 s ("to be safe"): a
+// Scryfall lookup's first byte came in 0.32 s at worst, so 5 s; each queue can set its own (scryfall.js, tcgdex.js,
 // pokemonImages.js) and a request its own (Scryfall's searches). The body:
 // the slowest, a 700 KB search page, took 0.85 s after its first byte, so 10 s.
-const ANSWER_MS = 4_000;
+const ANSWER_MS = 5_000;
 const BODY_MS = 10_000;
 
 /**

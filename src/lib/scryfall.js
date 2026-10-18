@@ -4,8 +4,8 @@ import { createTransport } from './transport.js';
 import { DAY, memoryCache, storedOrDownload } from './cache.js';
 
 const API = 'https://api.scryfall.com';
-// A lookup's first byte came in 0.32 s at worst (2026-10-18): given up after 4 s and tried again.
-const transport = createTransport({ spacingMs: 100, timeoutMs: 4_000 });
+// A lookup's first byte came in 0.32 s at worst (2026-10-18): given up after 5 s and tried again.
+const transport = createTransport({ spacingMs: 100, timeoutMs: 5_000 });
 // Many searches in a row (Import Collection) go slower: Scryfall allows about
 // two searches a second, and answers faster ones with a minute's 429.
 const bulkSearches = createTransport({ spacingMs: 550, timeoutMs: 10_000 });

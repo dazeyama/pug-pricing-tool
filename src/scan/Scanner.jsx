@@ -57,9 +57,9 @@ const BAR_DONE_MS = 250;
 // reader), it's given up and says so. Scan card's slowest honest run, timed from its steps on
 // 2026-10-18: four reads (1 s each on a phone), the lookups (0.3 s), about four searches (550 ms
 // apart, 1 s each) and an older card's title (about 5 s): some 15 s, so 20 s. An auto look:
-// one read, a lookup and two searches, about 4 s, so 8 s.
+// one read, a lookup and two searches, about 4 s, so 10 s (every limit rounded up to 5 s).
 const MANUAL_DEADLINE_MS = 20_000;
-const AUTO_DEADLINE_MS = 8_000;
+const AUTO_DEADLINE_MS = 10_000;
 // Reading… can be tapped to stop once it's run this long.
 const STOPPABLE_AFTER_MS = 3_000;
 // Holding Scan card this long starts over: the reader started afresh, what auto scan held forgotten.

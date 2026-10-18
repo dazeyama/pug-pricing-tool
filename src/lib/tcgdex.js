@@ -21,8 +21,8 @@ const API = 'https://api.tcgdex.net/v2';
 // Four at a time (owner, 2026-10-16: a sticker sheet's 91 card records one by one took the
 // better part of a minute); TCGdex sits on a CDN and names no limit, and the 100 ms between
 // starts keeps it to ten a second.
-// TCGdex's first byte came in 0.67 s at worst (2026-10-18): given up after 7 s and tried again.
-const transport = createTransport({ spacingMs: 100, concurrency: 4, timeoutMs: 7_000 });
+// TCGdex's first byte came in 0.67 s at worst (2026-10-18): given up after 10 s and tried again.
+const transport = createTransport({ spacingMs: 100, concurrency: 4, timeoutMs: 10_000 });
 
 /** @typedef {'en'|'ja'} Lang */
 
