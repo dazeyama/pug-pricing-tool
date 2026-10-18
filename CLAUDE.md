@@ -42,5 +42,11 @@
   the 160-sticker sheet in lib/stickerPdf.js with the store printer's offset), a Pokémon day's EXPORT ▾ with
   Complete day…, a Pokémon buy's prints, TCGdex four at a time, the scanner's double-add guard. No new migrations. The squash's
   numbers moved on: baseline 0071, the Changelog lock 0072.
+  Then live as v0.9.9.12-henry (2026-10-17): the Pokémon price audit (PKM_PRICES.md) and its fixes: TCGdex's wrong
+  TCGplayer products put right (WRONG_PRODUCTS, decision 286; Charmander SVP 044), own products read as the version
+  (287), the name search by each set's TCGplayer home + the wrong-card guard (288), the siblings search on request and
+  kept a week (289), who's on in the tab row (284), Ctrl+Click EXPORT decklist (285), Help on how scanning works.
+  No new migrations. The `prices` function (288/289's server half) needs `npx supabase functions deploy prices
+  --project-ref psucrzljraxeootwnltf --use-api --no-verify-jwt` after the push.
   Phase 10 launch (the migration squash, SQUASH.md, then prod) waits for the owner's go; the live site runs on the
   dev project until then. docs/TEST.md holds the smoke tests and the database test run.
