@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, mkdirSync, readFileSync, statSync } from 'node:fs';
+import { appendFileSync, copyFileSync, existsSync, mkdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
@@ -36,6 +36,41 @@ function vendorTesseract() {
   };
 }
 
+// The scanner's run log (src/scan/trace.js), development only: each event the
+// phone posts is appended, with the server's time, to a file outside the repo
+// (owner, 2026-10-19: a timed run of 417 cards, its times and fallbacks).
+const SCAN_LOG = 'C:/ClaudeProjects/temp/scan-run/scan-log.jsonl';
+function scanLog() {
+  return {
+    name: 'scan-log',
+    configureServer(server) {
+      server.middlewares.use('/__scan-log', (req, res) => {
+        if (req.method !== 'POST') {
+          res.statusCode = 405;
+          res.end();
+          return;
+        }
+        let body = '';
+        req.on('data', (chunk) => {
+          body += chunk;
+          if (body.length > 20_000) req.destroy();
+        });
+        req.on('end', () => {
+          try {
+            const event = JSON.parse(body);
+            mkdirSync(dirname(SCAN_LOG), { recursive: true });
+            appendFileSync(SCAN_LOG, `${JSON.stringify({ at: new Date().toISOString(), ...event })}\n`);
+          } catch {
+            // not an event: dropped
+          }
+          res.statusCode = 204;
+          res.end();
+        });
+      });
+    },
+  };
+}
+
 // `npm run dev:lan` (vite --host): the dev server on the shop's network over
 // HTTPS with a self-signed certificate, since a phone's camera only works on
 // HTTPS (docs/SCAN_FUNCTION.md 11.1; docs/SETUP.md). Plain `npm run dev` and
@@ -44,7 +79,7 @@ const lan = process.argv.includes('--host');
 
 export default defineConfig(({ command, isPreview }) => ({
   base: command === 'build' || isPreview ? '/pug-pricing-tool/' : '/',
-  plugins: [react(), vendorTesseract(), ...(command === 'serve' && lan ? [basicSsl()] : [])],
+  plugins: [react(), vendorTesseract(), ...(command === 'serve' ? [scanLog()] : []), ...(command === 'serve' && lan ? [basicSsl()] : [])],
   // Shown in the Settings footer (spec 11.7).
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),

@@ -71,9 +71,12 @@ export async function readOlderCard(frame, { texts = [], card = null, listMark =
   // names a card; then the best as a block (it copes with a stray mark better).
   const reads = { line: (c) => readText(c, PSM_LINE), block: (c) => readText(c, PSM_BLOCK) };
   const readings = [];
-  const match = matchName(await findTitle(frame, reads, defaultCreateCanvas, (t) => matchName(t, names), { card, readings }), names);
+  const how = {};
+  const match = matchName(await findTitle(frame, reads, defaultCreateCanvas, (t) => matchName(t, names), { card, readings, how }), names);
   if (!match) return { name: null, guess: guessName(readings, names)?.name ?? '' };
-  return printingsFor(match.name, frame, { texts, card, listMark });
+  const found = await printingsFor(match.name, frame, { texts, card, listMark });
+  // Which read named it (the run log): the usual line, the white letters, or the block.
+  return found && { ...found, how: how.how ?? 'line' };
 }
 
 /**

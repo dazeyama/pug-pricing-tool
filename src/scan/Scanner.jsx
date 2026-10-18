@@ -25,6 +25,7 @@ import { isTimeout, withTimeout } from '../lib/timeout.js';
 import { isMuted, play, setMuted, unlockSounds } from './sounds.js';
 import { printingsFor, readOlderCard } from './older.js';
 import { isPromoStrip, resolvePromo } from './promo.js';
+import { trace } from './trace.js';
 import { guessName, matchName } from './nameMatch.js';
 import { isDark, lightIn } from './light.js';
 import { inkShare, titleCutout } from './titles.js';
@@ -279,6 +280,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const [swapping, setSwapping] = useState(null);  // the scan whose finish is being changed
   async function refinish(scan, toFoil) {
     if (swapping) return;
+    trace('refinish', { name: scan.name, set: scan.set_code, number: scan.collector_number, toFoil });
     const was = toFoil ? 'normal' : 'foil';
     setSwapping(scan.id);
     try {
@@ -328,6 +330,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     if (dark) {
       darkLooks.current += 1;
       if (darkLooks.current === DARK_AFTER) {
+        trace('dark');
         setLocal({ tone: 'warn', text: `Too dark to read well: ${lightTip()}.`, title: null, at: Date.now(), light: true });
       }
     } else {
@@ -365,6 +368,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       return;
     }
     chime(s.finish);
+    trace('sent', { via: 'plus-one', name: s.name, set: s.set_code, number: s.collector_number, finish: s.finish, condition: s.condition });
     noteSent();   // another copy laid on the stack too
   }
   /**
@@ -536,6 +540,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     if (!v.older && v.noLine >= OLDER_AFTER) {
       v.older = true;
       setTitleMode(true);
+      trace('older-mode');
       say('muted', 'An older card: reading its title…');
     }
   }
@@ -606,6 +611,9 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     const ticket = ++scanTicket.current;
     const stale = () => scanTicket.current !== ticket;
     if (manual) say('muted', 'Reading…');
+    const lookAt = Date.now();
+    // How this look found its card, for the run log (trace.js).
+    let via = null;
     const lookOnce = async () => {
       const frame = camera.capture();
       if (!frame) {
@@ -631,6 +639,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         const card = findCard(frame, defaultCreateCanvas);
         const anchor = card ? anchorBlock(locate(frame)) : null;
         if (card) {
+          trace('relock', { anchor: Boolean(anchor && blockOnCard(anchor, card)), tries: relockTries.current });
           const kept = { held: view.current.held, lastArt: view.current.lastArt };
           lock = anchor && blockOnCard(anchor, card) ? makeLock(card, anchor, frame) : lockOnCard(card, frame);
           setLock(lock);
@@ -700,6 +709,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           if (blurryLooks.current >= REFOCUS_AFTER && Date.now() - lastRefocus.current > REFOCUS_GAP_MS) {
             blurryLooks.current = 0;
             lastRefocus.current = Date.now();
+            trace('refocus');
             await camera.refocus();
           }
           return;
@@ -725,9 +735,11 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           const more = located.length ? await readCollectorLine(onCard, pattern, located, { all: true, progress }) : [];
           attempts = [...attempts, ...more];
           found = await resolveThorough(attempts.map((a) => a.text), known, { pattern, progress });
+          via = 'scan-card';
         } else if (!v.older) {
           // What the strip names, the quick way first (resolve.js; owner, 2026-10-16).
           found = await resolveReadings(attempts, known, { pattern });
+          via = found?.quick ? 'strip-quick' : 'strip-search';
           if (found) leaveOlder(v);
           // No set code read at the bottom: once more towards the older-card mode.
           // A promo's PRM counts as a set read (decision 313): it's no older card.
@@ -740,6 +752,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         blocks.forEach((_, i) => progress?.plan(`located-${i + 1}`, STEP_MS.ocr));
         attempts = blocks.length ? await readCollectorLine(frame, pattern, blocks, { all: true, progress }) : [];
         found = await resolveThorough(attempts.map((a) => a.text), known, { pattern, progress });
+        via = 'scan-card-unlocked';
       }
 
       // A promo printing PRM for its set (decision 313): its main set found by the size read
@@ -748,9 +761,12 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       if (!found && attempts.some((a) => isPromoStrip(a.text))) {
         const promo = await resolvePromo(attempts.map((a) => a.text));
         if (stale()) return;
-        if (promo?.cards.length === 1) found = { card: promo.cards[0], tier: 1, sure: true };
-        else if (promo) {
-          setPick({ tier: 1, name: promo.name, cards: promo.cards, all: promo.all, art, foilSeen, hint: 'A promo: match the stamp.' });
+        if (promo?.cards.length === 1) {
+          found = { card: promo.cards[0], tier: 1, sure: true };
+          via = 'promo';
+        } else if (promo) {
+          trace('pick-open', { via: 'pick-promo', name: promo.name, count: promo.cards.length, manual });
+          setPick({ tier: 1, name: promo.name, cards: promo.cards, all: promo.all, art, foilSeen, hint: 'A promo: match the stamp.', via: 'pick-promo' });
           say('muted', `${promo.name}: a promo, pick which one.`);
           return;
         }
@@ -769,11 +785,12 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         // No read could name it (decision 311): Scan card asks for the name at once; auto scan after
         // UNREAD_AFTER such looks in a row on this card, instead of trying for ever.
         if (read && !read.name) {
+          trace('title-unread', { manual, guess: read.guess, ms: Date.now() - lookAt });
           v.unread = (v.unread ?? 0) + 1;
           if (manual || v.unread >= UNREAD_AFTER) {
             v.unread = 0;
             v.pendingOld = null;
-            askName({ guess: read.guess, frame, card: lock?.card ?? null, listMark: listSeen, texts: attempts.map((a) => a.text), art });
+            askName({ guess: read.guess, frame, card: lock?.card ?? null, listMark: listSeen, texts: attempts.map((a) => a.text), art, from: manual ? 'scan-card' : 'auto' });
           }
           return;
         }
@@ -789,9 +806,12 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           v.pendingOld = null;
         }
         // Two looks have named it: one printing, sent on this look.
-        if (old?.cards.length === 1) found = { card: old.cards[0], tier: old.tier, sure: true };
-        else if (old) {
-          setPick({ ...old, art });
+        if (old?.cards.length === 1) {
+          found = { card: old.cards[0], tier: old.tier, sure: true };
+          via = `title-${old.how}-${old.tier === 2 ? 'number' : 'look'}`;
+        } else if (old) {
+          trace('pick-open', { via: `pick-title-${old.how}`, name: old.name, count: old.cards.length, manual });
+          setPick({ ...old, art, via: `pick-title-${old.how}` });
           say('muted', `${old.name}: pick its printing.`);
           return;
         }
@@ -799,6 +819,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       if (stale()) return;
       if (!found) {
         if (!manual) v.pending = null;
+        trace('no-card', { manual, dark: lastDark.current, ms: Date.now() - lookAt, strip: attempts[0]?.text?.slice(0, 80) ?? null });
         if (manual) {
           say('err', lastDark.current
             ? `Couldn't read this card: it's too dark. ${lightTip()[0].toUpperCase()}${lightTip().slice(1)}, then press Scan card again.`
@@ -808,6 +829,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         return;
       }
       if (found.foreign) {
+        trace('foreign', { manual, lang: found.foreign });
         say('warn', `Not English (${found.foreign}): add it on the computer.`);
         if (manual) play('error');
         return;
@@ -817,11 +839,14 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       // booster cards have 100% accuracy like the rest").
       if (listSeen && !found.tier) {
         const listed = await scry.cardBySetNumber('plst', listNumber(found.card)).catch(() => null);
-        if (listed) found = { ...found, card: listed };
+        if (listed) {
+          found = { ...found, card: listed };
+          via = `${via ?? 'strip'}+list`;
+        }
       }
       if (stale()) return;
       progress?.start('send');
-      await sendCard(found.card, { tier: found.tier ?? 1, manual, art, sure: Boolean(found.sure), foilSeen });
+      await sendCard(found.card, { tier: found.tier ?? 1, manual, art, sure: Boolean(found.sure), foilSeen, via, lookMs: Date.now() - lookAt });
       progress?.finish('send');
     };
     try {
@@ -831,6 +856,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       if (isTimeout(e)) {
         // Too long (owner, 2026-10-18: stuck on "Reading…" on a slow network): given up, so the
         // next look or press isn't held behind it.
+        trace('timeout', { manual, ms: Date.now() - lookAt });
         scanTicket.current += 1;
         busy.current = false;
         if (manual) {
@@ -842,6 +868,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         return;
       }
       console.error('Scan failed', e);
+      trace('error', { manual, message: String(e?.message ?? e).slice(0, 120) });
       if (manual) {
         say('err', `Couldn't read it: ${e.message}`);
         play('error');
@@ -858,6 +885,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   async function scanCard() {
     markActive();
     if (manualWaiting.current || reading) return;
+    trace('scan-card-press');
     const run = ++readRun.current;
     manualWaiting.current = true;   // auto scan holds off till Scan card is done: nothing interrupts it
     const bar = createProgress();
@@ -906,6 +934,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
    */
   async function readTitleNow() {
     if (manualWaiting.current || reading || !camera.on) return;
+    trace('title-press');
     const run = ++readRun.current;
     manualWaiting.current = true;
     const bar = createProgress();
@@ -952,7 +981,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       if (scanTicket.current !== ticket) return;
       if (old && !old.name) {
         // No read could name it (decision 311): its name to type.
-        askName({ guess: old.guess, frame, card: lock?.card ?? null, listMark, texts: [], art });
+        askName({ guess: old.guess, frame, card: lock?.card ?? null, listMark, texts: [], art, from: 'title' });
         return;
       }
       if (!old) {
@@ -960,7 +989,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         play('error');
         return;
       }
-      setPick({ ...old, art });
+      trace('pick-open', { via: `pick-title-press-${old.how}`, name: old.name, count: old.cards.length, manual: true });
+      setPick({ ...old, art, via: `pick-title-press-${old.how}` });
       say('muted', `${old.name}: pick its printing.`);
     } catch (e) {
       if (readRun.current !== run || (ticket != null && scanTicket.current !== ticket)) return;
@@ -992,6 +1022,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
    * card in the holder is read again, even the same card.
    */
   function stopReading(text = 'Stopped. Press Scan card to read it again.') {
+    trace(text ? 'stop' : 'start-over');
     readRun.current += 1;
     scanTicket.current += 1;
     busy.current = false;
@@ -1019,6 +1050,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
 
   /** Which card? (decision 311): the box opened, the reader's closest name in it. */
   function askName(ask) {
+    trace('name-ask', { from: ask.from ?? null, guess: ask.guess });
     setNameAsk(ask);
     say('warn', lastDark.current
       ? `Couldn't read the name: it's too dark (${lightTip()}). Type it below, or skip the card.`
@@ -1043,8 +1075,9 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       if (!name) return 'No card by that name: check the spelling.';
       const old = await withTimeout(printingsFor(name, ask.frame, { texts: ask.texts, card: ask.card, listMark: ask.listMark }), MANUAL_DEADLINE_MS);
       if (!old) return `Scryfall has no printing of ${name}.`;
+      trace('name-typed', { typed, name, guessed: typed === ask.guess, count: old.cards.length });
       setNameAsk(null);
-      setPick({ ...old, art: ask.art });
+      setPick({ ...old, art: ask.art, via: 'pick-name' });
       say('muted', `${old.name}: pick its printing.`);
       return null;
     } catch (e) {
@@ -1069,7 +1102,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
    * @param {{ tier: number, manual: boolean, art?: Float32Array|null, sure?: boolean, foilSeen?: boolean }} opts
    *   art: the card's (lock.js artPrint)
    */
-  async function sendCard(card, { tier, manual, art = null, sure = false, foilSeen }) {
+  async function sendCard(card, { tier, manual, art = null, sure = false, foilSeen, via = null, lookMs = null }) {
     const v = view.current;
     const finish = scanFinish(card, finishMode === 'foil' ? true : finishMode === 'normal' ? false : Boolean(foilSeen));
     const key = `${card.id}:${finish}`;
@@ -1085,14 +1118,21 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       }
     }
     v.pending = null;
+    const sentAt = Date.now();
     const r = await send({ ...cardFields(card), finish, condition, tier });
     if (r.error) {
+      trace('send-error', { error: r.error, via, name: card.name });
       say('err', SEND_MESSAGES[r.error] ?? `Couldn't send it: ${r.error}`);
       play('error');
       check();
       return;
     }
     chime(finish);
+    trace('sent', {
+      via: via ?? (manual ? 'scan-card' : 'auto'), tier, manual, sure, name: card.name,
+      set: String(card.set).toUpperCase(), number: card.collector_number, finish, condition,
+      lookMs, sendMs: Date.now() - sentAt, sinceLock: sinceLock.current + 1,
+    });
     lastSent.current = key;
     v.held = art;
     setLocal(null);
@@ -1102,6 +1142,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   // The camera cut off (decision 303): said on the strip while the phone has it, or while it starts again.
   const interrupted = camera.interrupted;
   useEffect(() => {
+    if (interrupted) trace('camera', { state: interrupted });
     if (interrupted === 'paused') sayCamera('warn', 'The phone has taken the camera (a call?): scanning carries on when it gives it back.');
     else if (interrupted === 'restarting') sayCamera('warn', 'The camera stopped: starting it again…');
     else setLocal((l) => (l?.camera ? null : l));
@@ -1275,12 +1316,14 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
             pick={pick}
             onPick={(card) => {
               const { tier, art, foilSeen } = pick;
+              trace('pick-chosen', { via: pick.via ?? 'pick', name: card.name, rank: pick.cards.findIndex((c) => c.id === card.id) });
               setPick(null);
               // A promo's strip showed its foil star or not (decision 313); an older card's has none.
-              sendCard(card, { tier, manual: true, art: art ?? null, foilSeen });
+              sendCard(card, { tier, manual: true, art: art ?? null, foilSeen, via: pick.via ?? 'pick' });
             }}
             onSkip={() => {
               // Skipped: held, so auto scan doesn't ask about the card still in the holder again.
+              trace('pick-skip', { via: pick.via ?? 'pick', name: pick.name });
               view.current.held = pick.art ?? null;
               setPick(null);
               say('muted', 'Skipped: set it aside and add it on the computer.');
@@ -1294,6 +1337,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
             onSubmit={nameTyped}
             onSkip={() => {
               // Skipped: held, as a skipped printing list is, so auto scan leaves this card be.
+              trace('name-skip', { guess: nameAsk.guess });
               view.current.held = nameAsk.art ?? null;
               setNameAsk(null);
               say('muted', 'Skipped: set it aside and add it on the computer.');
@@ -1343,6 +1387,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
               type="button"
               className="btn small scan-undo"
               onClick={async () => {
+                trace('undo', { name: latest.name, set: latest.set_code, number: latest.collector_number, status: latest.status });
                 const e = await undo(latest.id);
                 if (e) say('err', `Couldn't undo it: ${e}`);
               }}
