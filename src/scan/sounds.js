@@ -7,6 +7,7 @@
 // unlocks them. Muted per phone (🔇, kept in localStorage).
 
 import { readLocal, writeLocal } from '../lib/local.js';
+import { trace } from './trace.js';
 
 const MUTE_KEY = 'pug.scan.muted';
 let ctx = null;
@@ -41,9 +42,24 @@ function note(freq, at, length, { type = 'sine', volume = 0.16 } = {}) {
   osc.stop(t + length + 0.02);
 }
 
-/** @param {'added'|'foil'|'needs_price'|'error'} kind  added: a nonfoil card sent; foil: a foil or etched one */
+/**
+ * Play a sound, waking the audio first if it's stopped (owner, 2026-10-19: "It doesn't seem to be
+ * making the sound anymore"; decision 315): an iPhone stops a page's audio ("interrupted") when the
+ * camera starts, restarts or is paused by the phone, and START CAMERA's tap was the only time it was
+ * started; now each sound starts it again if it has to.
+ * @param {'added'|'foil'|'needs_price'|'error'} kind  added: a nonfoil card sent; foil: a foil or etched one
+ */
 export function play(kind) {
   if (!ctx || isMuted()) return;
+  if (ctx.state !== 'running') {
+    trace('sound-woken', { state: ctx.state, kind });
+    ctx.resume().then(() => sound(kind)).catch(() => {});
+    return;
+  }
+  sound(kind);
+}
+
+function sound(kind) {
   try {
     if (kind === 'added') {
       note(1046.5, 0, 0.11);          // C6

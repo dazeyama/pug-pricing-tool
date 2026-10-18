@@ -1182,6 +1182,14 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     trace('camera-reopened', { opened });
   }, [opened]);
 
+  // Any tap on the screen starts the audio again if the phone stopped it (decision 315): a tap is
+  // what a phone needs to allow sound, and the camera starting or pausing stops it on an iPhone.
+  useEffect(() => {
+    const wake = () => unlockSounds();
+    document.addEventListener('pointerdown', wake, { passive: true });
+    return () => document.removeEventListener('pointerdown', wake);
+  }, []);
+
   // Reading… becomes tappable (Stop) once a press has run a few seconds.
   useEffect(() => {
     if (!reading) return undefined;
