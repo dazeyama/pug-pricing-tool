@@ -92,6 +92,7 @@ function DayScreen({ game, day }) {
   const [exporting, setExporting] = useState(false);     // the export dialog (export spec 8.3)
   const [unexporting, setUnexporting] = useState(false); // ⋯ → Mark Paid/Ours again
   const [completing, setCompleting] = useState(false);   // COMPLETE (Pokémon days)
+  const [askComplete, setAskComplete] = useState(false); // after Print PKM Stickers?: complete the day? (decision 297)
   const [completeStep, setCompleteStep] = useState('');   // what COMPLETE is doing (today's prices…)
   const { values: settingValues } = useSettings();
   // Print? and Print buy (docs/TEAM_FEEDBACK.md 3): the audit printout, changing nothing.
@@ -488,6 +489,9 @@ function DayScreen({ game, day }) {
       return;
     }
     stickers.print({ lines: dayLines, title: `Stickers — Pokémon, ${dayTitle(day)}`, fileName: `stickers-pokemon-${day}.pdf` });
+    // The stickers usually mean the day is done (owner, 2026-10-18; decision 297): offer
+    // Complete day… while the PDF builds, when the day can be completed and has buys left.
+    if (!exportBlocked && pending.length) setAskComplete(true);
   }
 
   /** A buy's ⋯ → Print buy (docs/TEAM_FEEDBACK.md 3.1): that buy alone, any day. */
@@ -748,6 +752,33 @@ function DayScreen({ game, day }) {
               hand.
             </p>
           )}
+        </Modal>
+      )}
+      {askComplete && (
+        <Modal
+          title="Complete the day?"
+          onClose={() => setAskComplete(false)}
+          footer={(
+            <>
+              <button type="button" className="btn ghost" onClick={() => setAskComplete(false)}>Not yet</button>
+              <button
+                type="button"
+                className="btn primary"
+                autoFocus
+                onClick={() => {
+                  setAskComplete(false);
+                  startComplete();
+                }}
+              >
+                Complete day…
+              </button>
+            </>
+          )}
+        >
+          <p>
+            The stickers are on their way. Mark this day's {pending.length} Pokémon buy{pending.length === 1 ? '' : 's'} Completed
+            now, with today's Sell Prices? The Complete day step opens to confirm.
+          </p>
         </Modal>
       )}
       {completing && (

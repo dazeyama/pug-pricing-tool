@@ -330,6 +330,7 @@ Four findings, all in the live build too, and the owner's calls:
 
 ### For the next smoke test
 
+- [ ] 🆕 **Stickers, then the day (decision 297):** on a past Pokémon day with Paid/Ours buys, EXPORT ▾ → Print PKM Stickers? opens the PDF tab and then asks "Complete the day?"; Complete day… opens the usual step; Not yet closes it; on today, or a day already Completed, no ask.
 - [ ] 🆕 **Collections by hand (decision 294):** EXPORT on a Paid/Ours collection stamps its Magic cards and leaves it Paid/Ours (toast without "Marked Completed"; the SKU chip shows); EXPORT again says every Magic card is exported already; the status dropdown and "Mark as Completed →" set Completed from Paid/Ours; Reopen puts it back to Paid/Ours with the stamps kept; a project can be marked Completed with no export.
 - [ ] 🆕 **Mark as completed strikes (decision 295):** on a Magic buy its cards cross out and the buy reads Completed; Mark Paid/Ours again brings them back unstruck; on a Pokémon buy nothing is struck.
 - [ ] 🆕 **Convert to project skips Completed (decision 296):** a buy with one game Completed converts: the live cards move, the buy stays with the Completed ones; the dialog says so; a buy with nothing live is blocked.
