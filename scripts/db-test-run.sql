@@ -554,6 +554,8 @@ declare
   l1 uuid := pg_temp.id('buy1_bolt');
   lp uuid := pg_temp.id('buy1_pika');
   v_b2 uuid;
+  v_cb uuid;
+  v_cp uuid;
   l uuid;
   v_n integer;
 begin
@@ -579,15 +581,15 @@ begin
               and target_name = internal.buy_target_name(b) and summary = '1 card removed from a confirmed buy.'));
 
   v_n := buy_mark_completed(b, 'mtg', u, a, true, pg_temp.version(b));
-  perform pg_temp.ok(s, 'Mark as completed (Magic) completes just the Magic cards',
-    v_n = 1 and (select completed_at is not null from buy_lines where id = l1)
-    and (select completed_at is null from buy_lines where id = lp));
+  perform pg_temp.ok(s, 'Mark as completed (Magic) completes just the Magic cards, and strikes them (0073)',
+    v_n = 1 and (select completed_at is not null and struck_at = completed_at from buy_lines where id = l1)
+    and (select completed_at is null and struck_at is null from buy_lines where id = lp));
   perform pg_temp.ok(s, 'The calendar sees it',
     (select games = array['mtg', 'pokemon'] and completed_games = array['mtg'] and exported_games = '{}'
        from buys_in_range(now() - interval '1 minute', now() + interval '1 minute') where id = b));
   perform pg_temp.ok(s, 'The everyday search leaves completed cards out; the full one shows them',
     not exists (select 1 from global_search('dbtest bolt', null, null, null, false) where line_id = l1)
-    and exists (select 1 from global_search('dbtest bolt', null, null, null, true) where line_id = l1 and completed));
+    and exists (select 1 from global_search('dbtest bolt', null, null, null, true, true) where line_id = l1 and completed));
   begin
     perform buy_remove_line(l1, 1, u, a, null, null);
     raise exception 'dbt_no_error';
@@ -598,10 +600,21 @@ begin
     raise exception 'dbt_no_error';
   exception when others then perform pg_temp.err(s, 'A buy with completed cards can''t be deleted', sqlerrm, 'buy_completed');
   end;
+  -- Convert to project skips Completed cards (0073): the live ones move, the buy stays with the rest.
+  v_cb := pg_temp.buy(a, u, 'DBTEST Half Done', '5550100012', array[
+    pg_temp.line('Dbtest Bolt', 'DBT', '001', 1, 1.00), pg_temp.line('Dbtestchu', 'DBTP', '025', 1, 4.00, 'pokemon')]);
+  perform buy_mark_completed(v_cb, 'mtg', u, a, true);
+  v_cp := buy_to_project(v_cb, 'DBTEST Half Project', u, a);
+  perform pg_temp.ok(s, 'Convert to project moves the live cards; Completed ones stay, and so does the buy',
+    (select count(*) from buy_lines where buy_id = v_cp) = 1
+    and (select count(*) from buy_lines where buy_id = v_cb and completed_at is not null) = 1
+    and exists (select 1 from buys where id = v_cb)
+    and exists (select 1 from events where action = 'buy_converted' and target_id = v_cp
+                  and summary like 'Project started from Buy % · %: DBTEST Half Project; its Completed cards stay on the buy.'));
   begin
-    perform buy_to_project(b, 'DBTEST X', u, a);
+    perform buy_to_project(v_cb, 'DBTEST X', u, a);
     raise exception 'dbt_no_error';
-  exception when others then perform pg_temp.err(s, '… or made a project', sqlerrm, 'buy_completed');
+  exception when others then perform pg_temp.err(s, '… and refuses when nothing is left to move', sqlerrm, 'buy_completed');
   end;
   begin
     perform buy_mark_completed(b, 'chess', u, a, true);
@@ -610,7 +623,7 @@ begin
   end;
   perform pg_temp.ok(s, 'Completing twice changes nothing', buy_mark_completed(b, 'mtg', u, a, true) = 0);
   v_n := buy_mark_completed(b, 'mtg', u, a, false);
-  perform pg_temp.ok(s, 'Paid/Ours again puts it back', v_n = 1 and (select completed_at is null from buy_lines where id = l1));
+  perform pg_temp.ok(s, 'Paid/Ours again puts it back, unstruck', v_n = 1 and (select completed_at is null and struck_at is null from buy_lines where id = l1));
 
   perform pg_temp.ok(s, 'Search finds it by name, with its buy number',
     exists (select 1 from global_search('DBTEST BOLT', null, null, null, false)
@@ -1679,7 +1692,7 @@ begin
   begin
     perform collection_set_status(v_c, 'completed', u, a, null, null, null);
     raise exception 'dbt_no_error';
-  exception when others then perform pg_temp.err(s, 'Only EXPORT marks a collection Completed', sqlerrm, 'complete_by_export');
+  exception when others then perform pg_temp.err(s, 'Completed comes after Paid/Ours', sqlerrm, 'complete_from_paid');
   end;
   begin
     perform collection_set_status(v_c, 'paid', u, a, null, null, null, p_paid_method => 'cash');
@@ -2205,6 +2218,7 @@ declare
   cp uuid := pg_temp.id('coll_pika');
   v_sku text := internal.cc_custom_sku(now());
   v_x uuid;
+  v_c3 uuid;
   v_pp uuid;
   v jsonb;
 begin
@@ -2228,19 +2242,23 @@ begin
   end;
   v := export_lines(jsonb_build_object('kind', 'collection', 'buy_id', v_c, 'version', pg_temp.version(v_c)),
                     jsonb_build_array(pg_temp.match(c1, 'DBTEST-P1', 1.25)), '{}', '[]', u, a);
-  perform pg_temp.ok(s, 'EXPORT completes a Paid/Ours collection, its Magic cards stamped',
+  perform pg_temp.ok(s, 'EXPORT stamps a Paid/Ours collection''s Magic cards; its status stays (0073)',
     (v ->> 'cards')::integer = 3 and v ->> 'sku' = v_sku
-    and (select status = 'completed' and completed_at is not null from buys where id = v_c)
+    and (select status = 'paid' and completed_at is null from buys where id = v_c)
     and (select cc_status = 'exported' from buy_lines where id = c1)
     and (select cc_status is null from buy_lines where id = cp), v::text);
   perform pg_temp.ok(s, '… and the Changelog says so',
-    exists (select 1 from events where target_id = v_c and action = 'collection_status_changed'
-              and summary = format('Exported 3 cards (Custom SKU %s); marked Completed.', v_sku)));
+    exists (select 1 from events where target_id = v_c and action = 'collection_exported'
+              and summary = format('Exported 3 cards (Custom SKU %s).', v_sku)));
   begin
     perform export_lines(jsonb_build_object('kind', 'collection', 'buy_id', v_c, 'version', pg_temp.version(v_c)), '[]', '{}', '[]', u, a);
     raise exception 'dbt_no_error';
   exception when others then perform pg_temp.err(s, '… only once', sqlerrm, 'nothing_to_export');
   end;
+  perform collection_set_status(v_c, 'completed', u, a, null, null, null);
+  perform pg_temp.ok(s, 'Completed is set by hand, from Paid/Ours (0073)',
+    (select status = 'completed' and completed_at is not null from buys where id = v_c)
+    and exists (select 1 from events where target_id = v_c and summary = 'Marked Completed.'));
   begin
     perform collection_add_line(v_c, pg_temp.line('Dbtest Bolt', 'DBT', '001', 1, 1.00), true, u, a, null, null);
     raise exception 'dbt_no_error';
@@ -2255,28 +2273,43 @@ begin
     not exists (select 1 from global_search('dbtest bolt', null, null, null, false) where buy_id = v_c)
     and exists (select 1 from global_search('dbtest bolt', null, null, null, true) where buy_id = v_c and status = 'completed'));
   perform collection_set_status(v_c, 'paid', u, a, null, null, null);
-  perform pg_temp.ok(s, 'Reopening a Completed collection undoes its export',
+  perform pg_temp.ok(s, 'Reopening a Completed collection changes the status only: the export stays (0073)',
     (select status = 'paid' and completed_at is null from buys where id = v_c)
-    and (select cc_status is null and cc_custom_sku is null from buy_lines where id = c1)
+    and (select cc_status = 'exported' and cc_custom_sku = v_sku from buy_lines where id = c1)
     and exists (select 1 from events where target_id = v_c
-                  and summary = 'Reopened: back to Paid/Ours, still locked. Its export was undone.'));
-  v := export_lines(jsonb_build_object('kind', 'collection', 'buy_id', v_c, 'version', pg_temp.version(v_c)), '[]', array[c1], '[]', u, a);
+                  and summary = 'Reopened: back to Paid/Ours, still locked.'));
+  begin
+    perform export_lines(jsonb_build_object('kind', 'collection', 'buy_id', v_c, 'version', pg_temp.version(v_c)), '[]', array[c1], '[]', u, a);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'An exported card isn''t exported again', sqlerrm, 'nothing_to_export');
+  end;
+  v_x := collection_create('DBTEST Collection Three', null, '', u, a);
+  perform lock_acquire(v_x, a, u);
+  perform collection_add_line(v_x, pg_temp.line('Dbtest Mystery', 'DBT', '003', 2, 1.00), true, u, a, null, null);
+  select id into v_c3 from buy_lines where buy_id = v_x;
+  perform collection_set_status(v_x, 'paid', u, a, null, null, null, p_paid_price => 2, p_paid_method => 'cash');
+  v := export_lines(jsonb_build_object('kind', 'collection', 'buy_id', v_x, 'version', pg_temp.version(v_x)), '[]', array[v_c3], '[]', u, a);
   perform pg_temp.ok(s, 'A collection''s card that can''t upload is copied, saying where from',
-    (v ->> 'cant')::integer = 3 and v ->> 'sku' is null
-    and exists (select 1 from buy_lines where source_line_id = c1 and source_note = 'from DBTEST Collection Two'));
-  perform collection_set_status(v_c, 'paid', u, a, null, null, null);
-  perform pg_temp.ok(s, '… and reopening takes it back out',
-    not exists (select 1 from buy_lines where source_line_id = c1)
-    and exists (select 1 from events where target_id = v_c
-                  and summary = 'Reopened: back to Paid/Ours, still locked. Its export was undone: 3 cards taken back out of Can''t upload cards.'));
+    (v ->> 'cant')::integer = 2 and v ->> 'sku' is null
+    and exists (select 1 from buy_lines where source_line_id = v_c3 and source_note = 'from DBTEST Collection Three'));
+  perform collection_set_status(v_x, 'completed', u, a, null, null, null);
+  perform collection_set_status(v_x, 'paid', u, a, null, null, null);
+  perform pg_temp.ok(s, '… and a status change leaves the copy where it is (0073)',
+    exists (select 1 from buy_lines where source_line_id = v_c3)
+    and (select cc_status = 'cant_upload' from buy_lines where id = v_c3));
 
   v_pp := project_create('DBTEST Pokémon Project', '', u, a);
   perform lock_acquire(v_pp, a, u);
   perform collection_add_line(v_pp, pg_temp.line('Dbtestchu', 'DBTP', '025', 1, 4.00, 'pokemon'), true, u, a, null, null);
-  v := export_lines(jsonb_build_object('kind', 'collection', 'buy_id', v_pp, 'version', pg_temp.version(v_pp)), '[]', '{}', '[]', u, a);
-  perform pg_temp.ok(s, 'A project of only Pokémon cards is Completed with no file',
-    (v ->> 'cards')::integer = 0 and v ->> 'sku' is null and (select status = 'completed' from buys where id = v_pp)
-    and exists (select 1 from events where target_id = v_pp and summary = 'Marked Completed: no Magic cards to export.'));
+  begin
+    perform export_lines(jsonb_build_object('kind', 'collection', 'buy_id', v_pp, 'version', pg_temp.version(v_pp)), '[]', '{}', '[]', u, a);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'A project of only Pokémon cards has nothing to export (0073)', sqlerrm, 'nothing_to_export');
+  end;
+  perform collection_set_status(v_pp, 'completed', u, a, null, null, null);
+  perform pg_temp.ok(s, 'A project is marked Completed by hand',
+    (select status = 'completed' and completed_at is not null from buys where id = v_pp)
+    and exists (select 1 from events where target_id = v_pp and summary = 'Marked Completed.'));
   begin
     perform project_to_buy(v_pp, u, a, 'DBTEST Gary', '5550100004', 1, 'cash', '', 50, 65);
     raise exception 'dbt_no_error';

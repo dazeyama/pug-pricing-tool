@@ -177,7 +177,7 @@ export default function BuyPanel({
             } : {
               label: 'Mark as completed',
               blocked: offOrBusy ?? (lines.length ? null : `No ${GAME_NAMES[game]} cards in this buy`),
-              title: `Mark this buy's ${GAME_NAMES[game]} cards Completed without exporting them: locked, left out of the header search and of this day's export`,
+              title: `Mark this buy's ${GAME_NAMES[game]} cards Completed without exporting them${game === 'mtg' ? ', and struck (something else happened to them)' : ''}: locked, left out of the header search and of this day's export`,
               onClick: () => onComplete(buy, number, true),
             },
             // Export single buy (owner, 2026-10-09): Magic only, like EXPORT, but any day, today's too.
@@ -220,8 +220,10 @@ export default function BuyPanel({
             },
             {
               label: 'Convert to project',
-              blocked: offOrBusy ?? (anyCompleted ? lockedWhy(locked) : null),
-              title: 'Move every card in this buy, both games, into a new project, and delete the buy',
+              // Completed cards are skipped, and the buy stays with them (decision 296).
+              blocked: offOrBusy ?? (buy.buy_lines.some((l) => !l.completed_at && !l.struck_at && !l.bulk_kind)
+                ? null : 'Nothing left to move: every card is Completed or struck'),
+              title: 'Move this buy\'s live cards, both games, into a new project; Completed cards stay here',
               onClick: () => onConvert(buy, number),
             },
             {

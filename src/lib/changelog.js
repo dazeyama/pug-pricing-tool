@@ -42,7 +42,7 @@ export const CATEGORIES = [
   {
     key: 'actions',
     label: 'Actions',
-    actions: ['collection_info_edited', 'collection_status_changed',
+    actions: ['collection_info_edited', 'collection_status_changed', 'collection_exported',
       'collection_line_edited', 'collection_repriced',
       // A card's own rate set or cleared (Set Rate, docs/TEAM_FEEDBACK.md 4.3).
       'collection_line_rate',
@@ -97,6 +97,7 @@ export const HEADLINES = {
   collection_cards_restored: 'Struck cards restored to collection',
   collection_info_edited: 'Collection details edited',
   collection_status_changed: 'Status changed',
+  collection_exported: 'Collection exported',
   collection_deleted: 'Collection deleted',
   collection_repriced: 'Collection repriced',
   collection_called: 'Customer called',

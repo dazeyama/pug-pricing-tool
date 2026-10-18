@@ -330,6 +330,9 @@ Four findings, all in the live build too, and the owner's calls:
 
 ### For the next smoke test
 
+- [ ] 🆕 **Collections by hand (decision 294):** EXPORT on a Paid/Ours collection stamps its Magic cards and leaves it Paid/Ours (toast without "Marked Completed"; the SKU chip shows); EXPORT again says every Magic card is exported already; the status dropdown and "Mark as Completed →" set Completed from Paid/Ours; Reopen puts it back to Paid/Ours with the stamps kept; a project can be marked Completed with no export.
+- [ ] 🆕 **Mark as completed strikes (decision 295):** on a Magic buy its cards cross out and the buy reads Completed; Mark Paid/Ours again brings them back unstruck; on a Pokémon buy nothing is struck.
+- [ ] 🆕 **Convert to project skips Completed (decision 296):** a buy with one game Completed converts: the live cards move, the buy stays with the Completed ones; the dialog says so; a buy with nothing live is blocked.
 - [ ] 🆕 **Buys numbered forever (decision 290):** CONFIRM BUY says "Buy 42" (one more than the last buy of either game, any day); the day page, the changelog entry, the header search and the buy's ⋯ printout title all show the same number; a Pokémon buy confirmed next is 43.
 - [ ] 🆕 **The SKU is the day's (decision 291):** EXPORT on a past Magic day page says Custom SKU `101626`-style for that day in the Confirm step and in the file; Export single buy says `101626-42`; a collection's export still says today's.
 - [ ] 🆕 **BUY COMPLETE (decision 292):** after CONFIRM BUY a dialog: "Cards saved in the Calendar page: Magic · <today>" in green, Buy N · customer, the count, what was paid; Print MTG? / Print PKM? open the audit printout for that buy; No thanks, × and Esc close it and the search is focused.

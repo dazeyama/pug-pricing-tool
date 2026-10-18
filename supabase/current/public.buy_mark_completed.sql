@@ -6,6 +6,7 @@ AS $function$
 declare
   b        buys;
   v_count  integer;
+  v_lines  uuid[];
   v_cards  integer;
   v_market numeric;
   v_game   text := case p_game when 'mtg' then 'Magic' when 'pokemon' then 'Pokémon' end;
@@ -25,12 +26,25 @@ begin
   end if;
 
   if p_complete then
-    update buy_lines set completed_at = now(), completed_by = p_user
+    -- A Magic buy Completed instead of exported means something else happened
+    -- to its cards (owner, 2026-10-18; decision 295): they're struck too, with
+    -- struck_at = completed_at so Paid/Ours again knows which ones to restore.
+    select array_agg(id) into v_lines from buy_lines
      where buy_id = b.id and game = p_game and completed_at is null and bulk_kind is null and struck_at is null;
+    update buy_lines
+       set completed_at = now(), completed_by = p_user,
+           struck_at = case when p_game = 'mtg' then now() else struck_at end,
+           struck_by = case when p_game = 'mtg' then p_user else struck_by end
+     where id = any(coalesce(v_lines, '{}'::uuid[]));
   else
-    -- COMPLETE's Sell Prices go with it (owner, 2026-10-09).
-    update buy_lines set completed_at = null, completed_by = null, cc_sell_price = null, cc_sell_basis = null
+    -- COMPLETE's Sell Prices go with it (owner, 2026-10-09); the cards the
+    -- completion struck come back.
+    select array_agg(id) into v_lines from buy_lines
      where buy_id = b.id and game = p_game and completed_at is not null and cc_status is null;
+    update buy_lines set struck_at = null, struck_by = null
+     where id = any(coalesce(v_lines, '{}'::uuid[])) and struck_at = completed_at;
+    update buy_lines set completed_at = null, completed_by = null, cc_sell_price = null, cc_sell_basis = null
+     where id = any(coalesce(v_lines, '{}'::uuid[]));
   end if;
   get diagnostics v_count = row_count;
   if v_count = 0 then
@@ -41,14 +55,15 @@ begin
   returning * into b;
 
   select sum(quantity), sum(unit_price * quantity) into v_cards, v_market
-    from buy_lines where buy_id = b.id and game = p_game and bulk_kind is null and struck_at is null;
+    from buy_lines where id = any(coalesce(v_lines, '{}'::uuid[]));
   perform buy_event(b, p_user, p_device,
     case when p_complete then 'buy_completed' else 'buy_uncompleted' end,
     buy_target_name(b.id), array[p_game], 0,
     internal.lines_totals(b, array(select l from buy_lines l where l.buy_id = b.id and l.game = p_game)), '[]'::jsonb,
     case when p_complete
-         then format('%s %s card%s marked Completed without exporting: left out of the search and the day''s export.',
-                     coalesce(v_cards, 0), v_game, case when coalesce(v_cards, 0) = 1 then '' else 's' end)
+         then format('%s %s card%s marked Completed without exporting%s: left out of the search and the day''s export.',
+                     coalesce(v_cards, 0), v_game, case when coalesce(v_cards, 0) = 1 then '' else 's' end,
+                     case when p_game = 'mtg' then ', and struck' else '' end)
          else format('%s %s card%s marked Paid/Ours again.',
                      coalesce(v_cards, 0), v_game, case when coalesce(v_cards, 0) = 1 then '' else 's' end) end);
   return v_count;

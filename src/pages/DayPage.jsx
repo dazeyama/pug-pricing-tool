@@ -320,7 +320,7 @@ function DayScreen({ game, day }) {
     const { error } = await run('buy_mark_completed', { p_buy_id: buy.id, p_game: game, p_complete: complete, ...by(buy) },
       complete ? "Couldn't mark the buy Completed" : "Couldn't mark the buy Paid/Ours");
     if (!error) toast(complete
-      ? `Buy ${number} marked Completed: left out of the search and of this day's export.`
+      ? `Buy ${number} marked Completed: left out of the search and of this day's export.${game === 'mtg' ? ' Its Magic cards are struck.' : ''}`
       : `Buy ${number} marked Paid/Ours again.`, 'ok');
     await reload();
   }
@@ -338,7 +338,7 @@ function DayScreen({ game, day }) {
     await reload();
   }
 
-  /** A buy's ⋯ → Convert to project (owner, 2026-10-02): its cards go to a new project, the buy is deleted. */
+  /** A buy's ⋯ → Convert to project (owner, 2026-10-02): its live cards go to a new project; the buy is deleted unless Completed cards stay (decision 296). */
   async function convert(name) {
     const { buy, number } = converting;
     const { data, error } = await run('buy_to_project', {

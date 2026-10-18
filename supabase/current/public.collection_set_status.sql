@@ -12,8 +12,6 @@ declare
   v_rows   jsonb;
   v_totals jsonb := null;
   v_summary text;
-  v_undo    uuid[];
-  v_back    integer := 0;
 begin
   if p_user is null then
     raise exception 'no_user';
@@ -42,20 +40,9 @@ begin
   if v_was = 'rejected' and p_status not in ('processing', 'priced') then
     raise exception 'rejected_reopen';
   end if;
-  -- Leaving Completed undoes its export (export spec 9.4): the stamps go, so
-  -- the buy prices show again, and its cards come back out of Can't upload
-  -- cards.
-  if v_was = 'completed' then
-    select array_agg(id) into v_undo from buy_lines where buy_id = p_buy_id and cc_status is not null;
-    if v_undo is not null then
-      update buy_lines set
-        cc_status = null, cc_product_id = null, cc_product_name = null, cc_category = null,
-        cc_condition = null, cc_sell_price = null, cc_sell_basis = null, cc_custom_sku = null,
-        cc_exported_at = null
-      where id = any(v_undo);
-      v_back := cant_upload_return(v_undo, b.customer_name, p_user, p_device);
-    end if;
-  end if;
+  -- Completed is a status like the others (owner, 2026-10-18; decision 294):
+  -- leaving it changes the status only. An export's stamps, and its copies in
+  -- Can't upload cards, stay whatever the status does.
   v_cash := coalesce(b.custom_cash_pct, p_cash_pct, master_pct('cash_pct'));
   v_credit := coalesce(b.custom_credit_pct, p_credit_pct, master_pct('credit_pct'));
   select coalesce(sum(unit_price * quantity), 0) into v_market from buy_lines where buy_id = p_buy_id;
@@ -144,8 +131,17 @@ begin
     v_summary := format('Marked Paid/Ours: paid %s in %s, locked.', money_text(p_paid_price), p_paid_method);
 
   elsif p_status = 'completed' then
-    -- Only EXPORT marks a collection Completed (owner, 2026-10-01; export_lines).
-    raise exception 'complete_by_export';
+    -- By hand, from Paid/Ours (owner, 2026-10-18; decision 294): a collection
+    -- is paid for before it's done with. EXPORT no longer sets it.
+    if v_was <> 'paid' then
+      raise exception 'complete_from_paid';
+    end if;
+    update buys
+       set status = 'completed', completed_at = now(),
+           version = version + 1, updated_at = now(), last_edited_by = p_user
+     where id = p_buy_id
+    returning * into b;
+    v_summary := 'Marked Completed.';
 
   else
     -- Back to Priced or Processing: not paid after all. From Processing to
@@ -162,11 +158,6 @@ begin
                       else sentence('Marked ' || status_label(p_status)) end;
   end if;
 
-  if v_undo is not null then
-    v_summary := v_summary || ' Its export was undone' || case when v_back > 0
-      then format(': %s card%s taken back out of Can''t upload cards.', v_back, case when v_back = 1 then '' else 's' end)
-      else '.' end;
-  end if;
   perform collection_event(b, p_user, p_device, 'collection_status_changed', '{}', 0, 0, v_totals, '[]',
     v_rows, v_summary);
 end;

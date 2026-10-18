@@ -131,13 +131,14 @@ export default function CollectionDetails({
   const step = {
     processing: { to: 'priced', label: 'Mark as Priced →' },
     priced: { to: 'paid', label: 'Mark as Paid/Ours →' },
-    // Paid/Ours → Completed is EXPORT's job (owner, 2026-10-01): no step here.
+    // Paid/Ours → Completed by hand (owner, 2026-10-18; decision 294): EXPORT no longer does it.
+    paid: { to: 'completed', label: 'Mark as Completed →' },
   }[buy.status] ?? null;
-  // What the dropdown can't pick from here. Completed only comes from EXPORT
-  // (owner, 2026-10-01). Rejected (owner, 2026-10-09): only from Processing
+  // What the dropdown can't pick from here. Completed only from Paid/Ours
+  // (decision 294). Rejected (owner, 2026-10-09): only from Processing
   // or Priced, and only reopened to one of those (Priced needs its offer).
   const optionOff = (value) => {
-    if (value === 'completed') return true;
+    if (value === 'completed') return buy.status !== 'paid';
     if (buy.status === 'rejected') return value === 'paid' || (value === 'priced' && buy.offer_cash == null);
     if (value === 'rejected') return buy.status !== 'processing' && buy.status !== 'priced';
     return false;
@@ -222,12 +223,12 @@ export default function CollectionDetails({
           )}
           {buy.status === 'paid' && project && (
             <div className={`cd-banner ${tone}`}>
-              <span>Project: the store's own cards. Add, price and remove them; EXPORT marks it Completed.</span>
+              <span>Project: the store's own cards. Add, price and remove them; mark it Completed when it's done.</span>
             </div>
           )}
           {buy.status === 'paid' && !project && (
             <div className={`cd-banner ${tone}`}>
-              <span>Paid/Ours — <PaidText buy={buy} withMethod />. Locked. EXPORT marks it Completed.</span>
+              <span>Paid/Ours — <PaidText buy={buy} withMethod />. Locked. Mark it Completed when it's done.</span>
               <GuardButton
                 className="btn small ghost"
                 disabled={!canChangeStatus}
@@ -332,6 +333,17 @@ export default function CollectionDetails({
               {project ? (
                 <dd className="cd-status">
                   <span className={`status-chip ${tone}`}>{statusText(buy)}</span>
+                  {/* Paid/Ours → Completed by hand (decision 294): a project's one status step. */}
+                  {step && (
+                    <GuardButton
+                      className="btn small step-btn"
+                      disabled={!canChangeStatus}
+                      title={canChangeStatus ? undefined : statusBlocked}
+                      onClick={() => onStatus(step.to)}
+                    >
+                      {step.label}
+                    </GuardButton>
+                  )}
                 </dd>
               ) : (
               <dd className="cd-status">

@@ -51,6 +51,9 @@
   Then, local: the team's six items (decisions 290–293; migrations 0071–0072 on dev): buys numbered once forever
   (`buys.number`), the day's Custom SKU and "101626-42" for a single buy, BUY COMPLETE after CONFIRM BUY with
   Print MTG? / Print PKM?, mimp mode (🦇/🌼 after EN | JP), and docs/AUTO_COMPLETE.md (the map of what becomes
-  Completed, for the owner to chart). The squash's numbers moved on: baseline 0073, the Changelog lock 0074.
+  Completed, for the owner to chart). Then the owner's chart (decisions 294–296; migration 0073 on dev):
+  collections never complete themselves (Completed by hand; EXPORT only stamps), Mark as completed strikes a
+  Magic buy's cards, Convert to project skips Completed cards. The squash's numbers moved on: baseline 0074,
+  the Changelog lock 0075.
   Phase 10 launch (the migration squash, SQUASH.md, then prod) waits for the owner's go; the live site runs on the
   dev project until then. docs/TEST.md holds the smoke tests and the database test run.

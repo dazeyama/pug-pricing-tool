@@ -14,8 +14,11 @@ import Modal from '../../components/Modal.jsx';
  */
 export function ConvertBuyModal({ buy, number, day, byId, busy, onClose, onConvert }) {
   const [name, setName] = useState(() => (buy.customer_name || `Buy ${number} · ${dayDate(day)}`).slice(0, 80));
-  const counts = cardCounts(buy.buy_lines);
-  const bothGames = new Set(buy.buy_lines.filter((l) => !isStruck(l)).map((l) => l.game)).size > 1;
+  // Completed cards stay on the buy (decision 296): only the live ones move.
+  const live = buy.buy_lines.filter((l) => !l.completed_at);
+  const done = buy.buy_lines.length - live.length;
+  const counts = cardCounts(live);
+  const bothGames = new Set(live.filter((l) => !isStruck(l)).map((l) => l.game)).size > 1;
   // "its 1 card" / "all 12 cards, both games" (smoke test 2026-10-02 #8); bulk apart (T3).
   // Struck cards stay out: a project doesn't strike (owner, 2026-10-16).
   const single = counts.cards === 1 && !counts.bulk;
@@ -43,7 +46,10 @@ export function ConvertBuyModal({ buy, number, day, byId, busy, onClose, onConve
       <p>
         <strong>Buy {number}</strong> ({who}, {formatTime(buy.confirmed_at)}) becomes a new <strong>project</strong>:{' '}
         <strong>{cards}</strong>{bothGames ? ', both games,' : ''} {single ? 'moves' : 'move'} there as{' '}
-        {single ? 'it is' : 'they are'}, with the buy's notes (a project has no rates), and the buy is deleted from this day.
+        {single ? 'it is' : 'they are'}, with the buy's notes (a project has no rates)
+        {done > 0
+          ? <>. Its <strong>{done} Completed card{done === 1 ? '' : 's'}</strong> stay{done === 1 ? 's' : ''} here, and so does the buy.</>
+          : ', and the buy is deleted from this day.'}
         {counts.struck > 0 && (
           <> Its <strong>{counts.struck} struck card{counts.struck === 1 ? '' : 's'}</strong> stay out of the project:
             the Changelog keeps {counts.struck === 1 ? 'it' : 'them'}, crossed out.</>

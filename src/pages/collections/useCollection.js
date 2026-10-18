@@ -25,7 +25,7 @@ const MESSAGES = {
   offer_needed: 'Set an offer to mark it Priced.',
   paid_price_needed: 'Set the final purchase price to mark it Paid/Ours.',
   paid_method_needed: 'Choose Cash or Credit to mark it Paid/Ours.',
-  complete_by_export: 'EXPORT marks a collection Completed: it can’t be set by hand.',
+  complete_from_paid: 'Mark it Paid/Ours first: Completed comes after.',
   project_status: 'A project is only ever Paid/Ours, until EXPORT marks it Completed.',
   collection_gone: 'This collection was deleted.',
   locked_elsewhere: 'Another computer is editing this collection: take over first.',

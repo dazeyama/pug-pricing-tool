@@ -172,20 +172,18 @@ begin
   end if;
 
   -- ------------------------------------------------------- a collection (E5)
-  -- Paid/Ours only; its Magic cards exported, its Pokémon cards left as they
-  -- are (owner, 2026-09-30); then it's Completed, whatever was exported.
+  -- Paid/Ours only; its Magic cards not exported yet are exported, its Pokémon
+  -- cards left as they are (owner, 2026-09-30). Its status doesn't move
+  -- (owner, 2026-10-18; decision 294): Completed is set by hand.
   if v_kind = 'collection' then
     b := collection_for_write((p_target ->> 'buy_id')::uuid, p_device, (p_target ->> 'version')::integer, false);
     if b.system_key is not null then raise exception 'bad_target'; end if;
-    if b.status = 'completed' then raise exception 'nothing_to_export'; end if;
     if b.status <> 'paid' then raise exception 'collection_not_paid'; end if;
     v_from := b.customer_name;
-    select array_agg(l.id) into v_lines from buy_lines l where l.buy_id = b.id and l.game = 'mtg' and l.bulk_kind is null and l.struck_at is null;
-    if v_lines is not null then
-      perform export_check(v_lines, p_matches, p_cant, v_file);
-    elsif jsonb_array_length(p_matches) > 0 or coalesce(array_length(p_cant, 1), 0) > 0 then
-      raise exception 'stale_version';
-    end if;
+    select array_agg(l.id) into v_lines from buy_lines l
+     where l.buy_id = b.id and l.game = 'mtg' and l.bulk_kind is null and l.struck_at is null and l.cc_status is null;
+    if v_lines is null then raise exception 'nothing_to_export'; end if;
+    perform export_check(v_lines, p_matches, p_cant, v_file);
 
     perform export_stamp(p_matches, v_file, v_sku);
     update buy_lines set cc_status = 'cant_upload', cc_exported_at = now() where id = any(p_cant);
@@ -206,16 +204,13 @@ begin
       into v_rows
       from buy_lines l where l.id = any(coalesce(v_lines, '{}'::uuid[]));
 
-    update buys set status = 'completed', completed_at = now(),
-                    version = version + 1, updated_at = now(), last_edited_by = p_user
+    update buys set version = version + 1, updated_at = now(), last_edited_by = p_user
      where id = b.id returning * into b;
-    perform collection_event(b, p_user, p_device, 'collection_status_changed', '{}', 0, 0, null, '[]',
-      jsonb_build_array(jsonb_build_object('field', 'status', 'before', 'Paid/Ours', 'after', 'Completed')),
-      case when v_lines is null then 'Marked Completed: no Magic cards to export.'
-           else format('Exported %s card%s (Custom SKU %s)%s; marked Completed.', v_cards,
-                       case when v_cards = 1 then '' else 's' end, v_sku,
-                       case when v_cant > 0 then format('; %s can''t upload, copied to Can''t upload cards', v_cant)
-                            else '' end) end);
+    perform collection_event(b, p_user, p_device, 'collection_exported', array['mtg'], 0, 0, null, '[]', '[]',
+      format('Exported %s card%s (Custom SKU %s)%s.', v_cards,
+             case when v_cards = 1 then '' else 's' end, v_sku,
+             case when v_cant > 0 then format('; %s can''t upload, copied to Can''t upload cards', v_cant)
+                  else '' end));
     return jsonb_build_object('buys', 1, 'cards', v_cards, 'cant', v_cant,
                               'sku', case when v_cards > 0 then v_sku end, 'lines', coalesce(v_rows, '[]'::jsonb));
   end if;

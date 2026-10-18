@@ -69,3 +69,17 @@ only Complete day… stamps Sell Prices.
 - Should **all-struck** read as Completed, or as Paid/Ours with no cards left?
 - Should **Mark as completed** exist at all for Magic (it skips the export), or only for Pokémon?
 - Should a buy be allowed to **Convert to project** after one game's side is Completed (today: refused as soon as any card is)?
+
+## 6. The chart (owner, 2026-10-18) and what changed
+
+| Question | Answer | Change |
+|---|---|---|
+| A day completing itself when its last buy is marked | "if everything is completed, complete the whole day; same for Magic, if everything has been exported or completed, mark the day exported" | Already so: a day's chip and the calendar derive from the buys' cards (`buys_in_range`, `walkInStatus`), so a day whose buys are all done one by one reads Completed / Exported. No change. |
+| Export single buy completing the Pokémon side | "no, it's correct as-is" | None. |
+| EXPORT on a collection with no Magic cards | "we're going to change this behavior later" | Left for later (today it says "nothing to export"; see below). |
+| All-struck reading as Completed | "100% struck is completed" | Already so. No change. |
+| Mark as completed for Magic | "Yes, but when it's done, strike all the cards" | `buy_mark_completed` strikes the Magic cards it completes; Mark Paid/Ours again restores them (decision 295). |
+| Convert to project after a card is Completed | "Completed/struck cards just get skipped, right?" | It refused before; now the live cards move and the buy stays with its Completed cards (decision 296). |
+| **Collections** | "collections should never 'auto complete' themselves and instead should be moved to completed manually always" | EXPORT no longer sets Completed; the status menu and a "Mark as Completed →" step do, from Paid/Ours; leaving Completed no longer undoes the export (decision 294). |
+
+Open from this round: a way to undo a collection's export (Reopen used to do it), and the no-Magic-cards export the owner wants to change later.
