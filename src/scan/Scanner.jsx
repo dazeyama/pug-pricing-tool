@@ -638,12 +638,18 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       if (lock && !manual && relockDue.current) {
         const card = findCard(frame, defaultCreateCanvas);
         const anchor = card ? anchorBlock(locate(frame)) : null;
-        if (card) {
-          trace('relock', { anchor: Boolean(anchor && blockOnCard(anchor, card)), tries: relockTries.current });
-          const kept = { held: view.current.held, lastArt: view.current.lastArt };
-          lock = anchor && blockOnCard(anchor, card) ? makeLock(card, anchor, frame) : lockOnCard(card, frame);
+        const anchored = Boolean(anchor && blockOnCard(anchor, card));
+        // Locked again only on a card whose collector line is where a card's is, as the first lock
+        // (decision 314: an outline round the holder's floor, an empty holder's, isn't a card); an
+        // older card, with no line, by its edges alone in the older-card mode.
+        const next = !card ? null : anchored ? makeLock(card, anchor, frame) : view.current.older ? lockOnCard(card, frame) : null;
+        if (next) {
+          trace('relock', { anchor: anchored, tries: relockTries.current });
+          const kept = { held: view.current.held, lastArt: view.current.lastArt, older: view.current.older };
+          lock = next;
           setLock(lock);
           Object.assign(view.current, kept);
+          if (kept.older) setTitleMode(true);
         } else if (++relockTries.current >= RELOCK_TRIES) {
           relockDue.current = false;
           relockTries.current = 0;
@@ -1164,6 +1170,17 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     const timer = setInterval(() => setClock(Date.now()), 2_000);
     return () => clearInterval(timer);
   }, [latestWaiting]);
+
+  // The camera's picture came back (opened again, refocused, restarted, unpaused; decision 314): it may
+  // be another lens or framing, so the lock, scaled to the new picture, may no longer fit the card. The
+  // next look finds the card again (the re-crop of decision 312).
+  const opened = camera.opened;
+  useEffect(() => {
+    if (!opened || !lockRef.current) return;
+    relockDue.current = true;
+    relockTries.current = 0;
+    trace('camera-reopened', { opened });
+  }, [opened]);
 
   // Reading… becomes tappable (Stop) once a press has run a few seconds.
   useEffect(() => {

@@ -94,8 +94,10 @@ function cameraError(e) {
  *   phone took the camera for a while, a call say) or 'restarting' (it ended, or froze)
  */
 export function useCamera(videoRef) {
+  // opened: counts each time the picture comes (back) — opened, refocused, restarted, given back
+  // after a pause — for the scanner to find the card again (decision 314).
   const [state, setState] = useState({
-    on: false, starting: false, error: null, torch: null, size: null, interrupted: null,
+    on: false, starting: false, error: null, torch: null, size: null, interrupted: null, opened: 0,
   });
   const stream = useRef(null);
   // Restarts after the camera was cut off, lately: a camera that keeps failing isn't restarted for ever.
@@ -120,7 +122,7 @@ export function useCamera(videoRef) {
       if (stream.current === s) setState((st) => ({ ...st, interrupted: 'paused' }));
     });
     track.addEventListener('unmute', () => {
-      if (stream.current === s) setState((st) => ({ ...st, interrupted: null }));
+      if (stream.current === s) setState((st) => ({ ...st, interrupted: null, opened: st.opened + 1 }));
     });
     // Our own stop() doesn't fire `ended`: this is the phone ending it.
     track.addEventListener('ended', () => {
@@ -148,10 +150,10 @@ export function useCamera(videoRef) {
         await new Promise((resolve) => video.addEventListener('loadedmetadata', resolve, { once: true }));
       }
       const caps = s.getVideoTracks()[0]?.getCapabilities?.() ?? {};
-      setState({
+      setState((st) => ({
         on: true, starting: false, error: null, torch: caps.torch ? false : null,
-        size: { w: video.videoWidth, h: video.videoHeight }, interrupted: null,
-      });
+        size: { w: video.videoWidth, h: video.videoHeight }, interrupted: null, opened: st.opened + 1,
+      }));
       return true;
     } catch (e) {
       stream.current?.getTracks().forEach((t) => t.stop());
@@ -202,7 +204,7 @@ export function useCamera(videoRef) {
       watch(s);
       video.srcObject = s;
       await video.play().catch(() => {});
-      setState((st) => ({ ...st, torch: st.torch == null ? null : false }));
+      setState((st) => ({ ...st, torch: st.torch == null ? null : false, opened: st.opened + 1 }));
     } catch (e) {
       console.warn('Refocusing failed', e);
       setState((st) => ({ ...st, on: false, error: cameraError(e) }));
