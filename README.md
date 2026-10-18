@@ -421,7 +421,7 @@ part can be left out. The sample text shows one: `Lightning Bolt 117/331 2X2`.
 |---|---|
 | **MTG \| PKM** | Which games to search. Both are on to start. One always stays on. |
 | **EN \| JP** | English or Japanese Pokémon. EN to start, every time the screen opens. |
-| **🌼 \| 🦇** | **mimp mode.** 🌼 (on, to start): after **ADD CARD** the card and the search stay as they are, with Qty back to 1, so another copy, or the same card in another finish or condition, is a keystroke away. 🦇 (off): the card area clears after each add. Like EN \| JP, it's back to 🌼 every time the screen opens. **SAVE EDIT** always clears. |
+| **🌼 \| 🦇** | 🌼 (to start): the card area clears after each **ADD CARD**, ready for the next card. 🦇 **mimp mode**: after ADD CARD the card and the search stay as they are, with Qty back to 1, so another copy, or the same card in another finish or condition, is a keystroke away. Like EN \| JP, it's back to 🌼 every time the screen opens. **SAVE EDIT** always clears. |
 
 Japanese cards are searched differently: see [Japanese searches](#japanese-searches).
 
@@ -583,7 +583,7 @@ lists the reasons. Clicking keeps the list open. The reasons:
 |---|---|
 | **Qty** | How many copies: 1 to 99. **Enter** in the box adds the card. Qty goes back to 1 after each add. |
 | **CLEAR** | Empties the card area. The buy list stays. |
-| **ADD CARD** | Adds the card to the buy list. The new line flashes. The card area clears for the next card, unless mimp mode (🌼) is on: then the card stays selected, Qty goes back to 1 and the search box takes the focus. |
+| **ADD CARD** | Adds the card to the buy list. The new line flashes. The card area clears for the next card, unless mimp mode (🦇) is on: then the card stays selected, Qty goes back to 1 and the search box takes the focus. |
 
 ADD CARD needs a user, a selected card, a price and a connection. Hovering it says what's missing.
 Adding the same printing, finish, condition and price again raises that line's quantity instead of

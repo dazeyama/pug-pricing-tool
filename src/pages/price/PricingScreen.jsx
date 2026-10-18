@@ -119,9 +119,12 @@ export default function PricingScreen({
   const [showAll, setShowAll] = useState(false);
   // mimp mode (owner, 2026-10-17; decision 293; "auto mode" in the code): adding a card leaves
   // the search, the card and its choices as they are, for a run of the same card; only Qty
-  // goes back to 1. The 🌼 | 🦇 pill after EN | JP: 🌼 is on, 🦇 off. Like EN | JP it starts on
-  // its default with the page and keeps its setting from buy to buy; nothing is stored.
-  const [auto, setAuto] = useState(true);
+  // goes back to 1. The 🌼 | 🦇 pill after EN | JP: 🌼 clears the search after each card (the
+  // default), 🦇 is mimp mode, keeping it (owner, 2026-10-19: "by default I want the search clear,
+  // represented by the daisy, the bat, non-default, is the persistent search"; decision 323). Like
+  // EN | JP it starts on its default with the page and keeps its setting from buy to buy; nothing
+  // is stored.
+  const [auto, setAuto] = useState(false);
   const input = useRef(null);
   const selectedRef = useRef(null);
   selectedRef.current = selected;
