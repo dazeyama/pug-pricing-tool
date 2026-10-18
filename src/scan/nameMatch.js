@@ -13,6 +13,10 @@ const LEAD = 0.08;
 // A read this much shorter than the name it matches is only part of a title
 // ("Shivan" of Shivan Dragon, or of Shivan Wurm?): no answer.
 const MIN_LENGTH = 0.7;
+// Words cut off a read's end are short ones only (owner, 2026-10-19: "Fix this"; decision 310): the
+// mana cost read as letters ("Chromatic Sphere Bh"), a stray mark. A real word of the title isn't
+// cut: "{lUrza's Tower N" cut down to "Urza" named another card.
+const CUT_UP_TO = 3;
 
 /** Letters, digits and single spaces, lower case: how an OCR'd title and a name are compared. */
 export const titleKey = (text) => nameKey(text).replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
@@ -50,8 +54,9 @@ function matchKey(key, index) {
 
 /**
  * The readings of a title worth trying, best first: as read, then without
- * the words at its end (the mana cost read as letters, "Chromatic Sphere
- * Bh"), and without a stray letter or two at its start (the box's edge).
+ * the short words at its end (the mana cost read as letters, "Chromatic
+ * Sphere Bh"; CUT_UP_TO letters at most, decision 310), and without a stray
+ * letter or two at its start (the box's edge).
  */
 export function titleKeys(text) {
   const words = titleKey(text).split(' ').filter(Boolean);
@@ -62,6 +67,8 @@ export function titleKeys(text) {
     for (let end = words.length; end > start; end--) {
       const key = words.slice(start, end).join(' ');
       if (!out.includes(key)) out.push(key);
+      // The next cut drops words[end - 1]: only a short one.
+      if (words[end - 1].length > CUT_UP_TO) break;
     }
   }
   return out;

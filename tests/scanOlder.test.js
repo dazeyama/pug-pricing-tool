@@ -46,6 +46,15 @@ test('a read that could be two cards, or none, has no answer', () => {
   assert.equal(matchName('Wizards of the Coast', NAMES), null);
 });
 
+test("only short words are cut off a read's end (decision 310)", async () => {
+  const { titleKeys } = await import('../src/scan/nameMatch.js');
+  // The mana cost read as letters goes; a real word of the title stays.
+  assert.deepEqual(titleKeys('Chromatic Sphere Bh'), ['chromatic sphere bh', 'chromatic sphere']);
+  assert.deepEqual(titleKeys("{lUrza's Tower N"), ['lurza s tower n', 'lurza s tower']);
+  // Cut down to "lurza" it named Urza, another card; now it's never cut that far.
+  assert.notEqual(matchName("{lUrza's Tower N", ['Urza', "Urza's Tower", "Urza's Power Plant", "Urza's Mine"])?.name, 'Urza');
+});
+
 test('titles compare without punctuation or case', () => {
   assert.equal(titleKey('Æther Vial!'), 'aether vial');
 });
