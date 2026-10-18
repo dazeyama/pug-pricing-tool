@@ -72,12 +72,15 @@ test('concurrency lanes: that many requests in flight at once, one without it', 
   }
 });
 
-// The spacing holds between starts even with lanes open.
+// The spacing holds between starts even with lanes open: each request starts no sooner than its turn,
+// the first's start plus the spacing for each before it. (Measured from the first, not between
+// neighbours: a timer firing late, up to ~15 ms on Windows, shortened a neighbour gap below the
+// spacing and failed this test now and then, though nothing started early. 2026-10-19.)
 test('with lanes, requests still start at least the spacing apart', async () => {
   const realFetch = globalThis.fetch;
   const starts = [];
   globalThis.fetch = async () => {
-    starts.push(Date.now());
+    starts.push(performance.now());
     await new Promise((r) => setTimeout(r, 30));
     return new Response('{}', { status: 200 });
   };
@@ -85,7 +88,10 @@ test('with lanes, requests still start at least the spacing apart', async () => 
     const t = createTransport({ spacingMs: 20, concurrency: 3 });
     await Promise.all(['a', 'b', 'c', 'd'].map((x) => t.request(`https://x.test/${x}`)));
     starts.sort((p, q) => p - q);
-    for (let i = 1; i < starts.length; i++) assert.ok(starts[i] - starts[i - 1] >= 15, `gap ${starts[i] - starts[i - 1]} ms`);
+    // 3 ms for a timer's rounding.
+    for (let i = 1; i < starts.length; i++) {
+      assert.ok(starts[i] - starts[0] >= i * 20 - 3, `request ${i + 1} started ${(starts[i] - starts[0]).toFixed(1)} ms after the first`);
+    }
   } finally {
     globalThis.fetch = realFetch;
   }
