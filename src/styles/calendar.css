@@ -210,7 +210,7 @@ button.flag-chip:hover, button.flag-chip[aria-expanded="true"] { background: rgb
   margin: 0 0 10px; padding: 7px 10px; border: 1px solid var(--bad); border-radius: 8px;
   background: rgba(255, 107, 107, .1); color: var(--text); font-size: 13px; font-weight: 600;
 }
-.buy-panel-head .status-chip + .more-menu { margin-left: 0; }
+.buy-panel-head .status-chip ~ .more-menu { margin-left: 0; }   /* the status chip takes the push; chips after it (a single buy's SKU) stay with it */
 /* < BACK, big and bold, like a collection's (owner, 2026-09-29). */
 .page-back {
   padding: 10px 22px;
