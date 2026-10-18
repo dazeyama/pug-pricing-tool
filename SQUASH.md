@@ -14,9 +14,9 @@ Read FABLE.md first (the gates apply here more than anywhere), then this.
 third time for the phone scanner:* migrations 0063–0067 landed on dev before
 the squash (0066: bulk counted apart in the Changelog, after the Phase 6
 smoke test; 0067: Show all finds struck cards), then 0068–0070 (the phone
-scanner, docs/SCAN_FUNCTION.md: scan sessions, scans, undo), then 0071–0073 (buys numbered
-forever, the day's Custom SKU, the completion rules), so N is 0073,
-the baseline `0074_baseline.sql`, and the first migration after launch 0075.
+scanner, docs/SCAN_FUNCTION.md: scan sessions, scans, undo), then 0071–0074 (buys numbered
+forever, the day's Custom SKU, the completion rules, a collection's Undo export), so N is 0074,
+the baseline `0075_baseline.sql`, and the first migration after launch 0076.
 The generator and its rehearsal were last run at 0065 (92 functions, 4,281
 lines; nine of nine the same); dev has 107 functions now, so section 1 runs
 them again.
@@ -25,16 +25,16 @@ them again.
 
 ## 0. The shape of it
 
-Dev has 73 migrations (0001–0073), 15,801 lines, many rewriting the same
-function. Prod is empty and not live. The squash replaces the 70 files with
+Dev has 74 migrations (0001–0074), 17,391 lines, many rewriting the same
+function. Prod is empty and not live. The squash replaces the 74 files with
 **one baseline file that builds the database as dev has it**, applies it to
 prod, proves prod matches dev, and then tells dev's migration record that the
 baseline is what it has. Nothing in the app changes. Dev's data is never
 touched.
 
-**N** is the last migration on dev when the squash starts (today 0073). The
-baseline is `<N+1>_baseline.sql` (today `0074_baseline.sql`); the first
-migration after launch is N+2. Every command below uses 0073/0074; substitute
+**N** is the last migration on dev when the squash starts (today 0074). The
+baseline is `<N+1>_baseline.sql` (today `0075_baseline.sql`); the first
+migration after launch is N+2. Every command below uses 0074/0075; substitute
 if more migrations land first — and if they do, **start again from section 1**:
 a baseline written before the last migration is wrong by definition.
 
@@ -113,8 +113,8 @@ node scripts/db-test-run.mjs --save /c/ClaudeProjects/temp/pug-squash/dev-run.js
 
 ```bash
 cat supabase/.temp/project-ref                       # dev, still
-node scripts/db-baseline.mjs supabase/migrations/0074_baseline.sql
-cp supabase/migrations/0074_baseline.sql /c/ClaudeProjects/temp/pug-squash/
+node scripts/db-baseline.mjs supabase/migrations/0075_baseline.sql
+cp supabase/migrations/0075_baseline.sql /c/ClaudeProjects/temp/pug-squash/
 ```
 
 It prints the counts. On 2026-10-16: `17 tables, 184 columns, 1 sequence(s),
@@ -128,7 +128,7 @@ and these parts in full (the ones a catalog read can't check for you):
 
 | Section | Must show |
 |---|---|
-| header | "standing in for migrations 0001–0073"; "write migration 0075 and up" |
+| header | "standing in for migrations 0001–0074"; "write migration 0076 and up" |
 | Extensions | `create extension if not exists pg_trgm with schema extensions;` and nothing else (the other extensions on dev — pgcrypto, uuid-ossp, pg_stat_statements, supabase_vault — are Supabase's defaults; prod has them) |
 | Schemas | `create schema if not exists internal;` |
 | Sequences | `public.events_seq_seq` as bigint … start with 1; later `owned by public.events.seq` |
@@ -152,7 +152,7 @@ Nothing in the file is edited by hand. If something is wrong, fix
 ## 4. Rehearse it on dev (rolled back)
 
 ```bash
-node scripts/db-baseline.mjs --rehearse supabase/migrations/0074_baseline.sql
+node scripts/db-baseline.mjs --rehearse supabase/migrations/0075_baseline.sql
 ```
 
 What it does: one transaction on dev; `create schema scratch`; the baseline
@@ -201,19 +201,19 @@ section 8).
 ```bash
 mkdir -p supabase/migrations-archive
 git mv supabase/migrations/00{01..67}_*.sql supabase/migrations-archive/
-ls supabase/migrations            # exactly one file: 0074_baseline.sql
+ls supabase/migrations            # exactly one file: 0075_baseline.sql
 ls supabase/migrations-archive | wc -l    # 67
 ```
 
 Write `supabase/migrations-archive/README.md`:
 
 ```markdown
-# Archived migrations 0001–0073
+# Archived migrations 0001–0074
 
 History only: how the dev database was built between 2026-09-28 and the
-squash (DESIGN_SPEC decision 192). `supabase/migrations/0074_baseline.sql`
+squash (DESIGN_SPEC decision 192). `supabase/migrations/0075_baseline.sql`
 replaced them. The CLI does not read this folder. Never edit or run these;
-to change the database, write migration 0075 and up.
+to change the database, write migration 0076 and up.
 ```
 
 **Gate:** `supabase/migrations/` holds only the baseline. **From here to the
@@ -284,7 +284,7 @@ Prod has **data** (buys, staff users): **stop.** Someone used it. The owner
 decides whether it's disposable before anything is dropped.
 
 **Gate:** the probe reads as "untouched" (or was made so), `migration list`
-shows nothing on the remote side, and the local side lists only `0074`.
+shows nothing on the remote side, and the local side lists only `0075`.
 
 ---
 
@@ -292,9 +292,9 @@ shows nothing on the remote side, and the local side lists only `0074`.
 
 ```bash
 cat supabase/.temp/project-ref                    # prod
-npx supabase db push --dry-run --linked           # must list only 0074_baseline.sql
+npx supabase db push --dry-run --linked           # must list only 0075_baseline.sql
 npx supabase db push --linked --yes
-npx supabase migration list --linked              # 0074 on both sides, nothing else
+npx supabase migration list --linked              # 0075 on both sides, nothing else
 ```
 
 `db push` runs the file in one transaction: it either all lands or none of
@@ -303,7 +303,7 @@ hand), rewrite, rehearse, and because the transaction rolled back, push again
 without a reset. (If the push *did* land and something is still wrong, section
 8 finds it and section 6's reset path empties prod for another go.)
 
-**Gate:** push succeeded; the list shows 0074 and nothing else.
+**Gate:** push succeeded; the list shows 0075 and nothing else.
 
 ---
 
@@ -352,10 +352,10 @@ password). Then Claude:
 
 ```bash
 cat supabase/.temp/project-ref                    # dev
-npx supabase migration list --linked              # remote: 0001–0073; local: 0074 only
+npx supabase migration list --linked              # remote: 0001–0074; local: 0075 only
 npx supabase migration repair --linked --status reverted $(printf '%04d ' $(seq 1 67))
-npx supabase migration repair --linked --status applied 0074
-npx supabase migration list --linked              # 0074 on both sides, nothing else
+npx supabase migration repair --linked --status applied 0075
+npx supabase migration list --linked              # 0075 on both sides, nothing else
 npx supabase db push --dry-run --linked           # nothing to push
 node scripts/db-test-run.mjs --compare /c/ClaudeProjects/temp/pug-squash/dev-run.json
 ```
@@ -365,11 +365,11 @@ record of what was applied); dev's tables, functions and data don't change,
 and the last command proves it: every check passes and every fingerprint
 reads `✓ same` against the run saved in section 2.
 
-**Gate:** list shows 0074 only; dry run has nothing to push; test run same.
+**Gate:** list shows 0075 only; dry run has nothing to push; test run same.
 
 **If the repair went wrong** (a version missed, the wrong status): repair is
 idempotent — run the two commands again. Worst case, `--status applied` back
-for 0001–0073 and `--status reverted 0074` returns the record to where
+for 0001–0074 and `--status reverted 0075` returns the record to where
 section 1 found it, and `git checkout pre-squash -- supabase/migrations`
 returns the files.
 
@@ -379,7 +379,7 @@ returns the files.
 
 ```bash
 git add supabase/migrations supabase/migrations-archive SQUASH.md
-git commit   # "Migration squash: 0001–0073 → 0074_baseline.sql (decision 192)"
+git commit   # "Migration squash: 0001–0074 → 0075_baseline.sql (decision 192)"
 ```
 
 One commit, with the baseline, the moves, the archive README, and a line in
@@ -410,7 +410,7 @@ Then the launch steps outside the squash (spec, Phase 10 → Launch):
 
 ## 11. After the squash: how migrations work from now on
 
-- Files are numbered from **0075**. One behaviour per file (FABLE.md): one
+- Files are numbered from **0076**. One behaviour per file (FABLE.md): one
   function per file unless two must change together, as 0066's thirteen
   event writers did for one wording rule. The header comment names the
   decision and the *lines* that changed ("export_lines: the `where` gains
@@ -426,7 +426,7 @@ Then the launch steps outside the squash (spec, Phase 10 → Launch):
   --save <fresh dev run>` → (owner links prod) `db push` to prod →
   `node scripts/db-test-run.mjs --confirm zvxquzcfffmxwizonxuo --compare
   <that run>` when the store isn't using the app → (owner links dev again).
-- **The first one, 0075, locks the Changelog to the database** (section 11a).
+- **The first one, 0076, locks the Changelog to the database** (section 11a).
 - `scripts/db-baseline.mjs` is **not run again** for prod: the baseline is
   history once applied. It stays useful two ways: `--rehearse` on a
   freshly written file is a free full-structure comparison between "what a
@@ -437,7 +437,7 @@ Then the launch steps outside the squash (spec, Phase 10 → Launch):
 
 ---
 
-## 11a. 0075: the Changelog written only by the database
+## 11a. 0076: the Changelog written only by the database
 
 *(Moved here from FABLE_REPORT.md item A2 when that report was retired,
 2026-10-16; DESIGN_SPEC decision 274.)*
@@ -453,7 +453,7 @@ so the store's role keeps that right until then.
 every entry the database writes is inserted *as the signed-in role*
 (`authenticated`), through the `insert` grant (`0002_rls.sql:56`) and the
 policy `"store: append"` (`0002_rls.sql:61`). Revoking those alone would
-stop every entry, not just the browser's. On dev at 0073 these functions
+stop every entry, not just the browser's. On dev at 0074 these functions
 insert into `events` themselves: `internal.buy_event`,
 `internal.collection_event`, `public.buy_log_cash_download`,
 `public.confirm_buy`, `public.project_to_buy`, `public.day_complete`,
@@ -475,7 +475,7 @@ already security definer). Check again with
    "store: read" stay: the Changelog page reads it.
 
 **When.** Only after the pushed app is live (the site before that inserts
-directly), and after the squash, so it's 0075. The owner decides the day.
+directly), and after the squash, so it's 0076. The owner decides the day.
 
 **Verify** in `scripts/db-test-run.sql`:
 - Update the check "Only the expected functions run with the owner's

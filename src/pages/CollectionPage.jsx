@@ -59,7 +59,7 @@ function CollectionScreen({ id }) {
   const { values } = useSettings();
   const lock = useCollectionLock(id, { deviceId, userId: user?.id });
   const col = useCollection(id, { deviceId, onLockLost: lock.recheck });
-  // 'offer' | 'paid' | 'reopen' | 'unlock' | 'reject' | 'unreject' | 'takeover' | 'delete' | 'convert'
+  // 'offer' | 'paid' | 'reopen' | 'unlock' | 'reject' | 'unreject' | 'takeover' | 'delete' | 'convert' | 'unexport'
   const [asking, setAsking] = useState(null);
   const [unlockTo, setUnlockTo] = useState('priced');
   const seen = useRef(false);
@@ -190,6 +190,8 @@ function CollectionScreen({ id }) {
 
   // What the export wrote (export spec 4.4, 5.5): its Custom SKU, for the details' chip.
   const skus = [...new Set(col.lines.map((l) => l.cc_custom_sku).filter(Boolean))];
+  // The cards an export stamped, exported or copied to Can't upload cards (Undo export…, decision 298).
+  const exportedLines = col.lines.filter((l) => l.cc_status);
   const exportedAt = col.lines.find((l) => l.cc_exported_at)?.cc_exported_at ?? null;
 
   /**
@@ -346,6 +348,13 @@ function CollectionScreen({ id }) {
     [buy?.status === 'completed', 'Completed: reopen it (back to Paid/Ours) first'],
     [!col.lines.length, 'No cards to convert'],
   ]);
+  // Undo export… (owner, 2026-10-18; decision 298): from the computer holding the lock, like EXPORT.
+  const unexportBlocked = firstReason([
+    NO_CONNECTION,
+    [viewOnly, `${holderLabel} is editing this collection: take over first`],
+    [lock.status !== 'held', 'Checking who is editing this collection'],
+    [!exportedLines.length, 'Nothing here is exported'],
+  ]);
 
   /**
    * Status changes (spec 9.5): Priced asks for the offer, Paid/Ours for the
@@ -458,6 +467,8 @@ function CollectionScreen({ id }) {
               onConvert={() => setAsking('convert')}
               onPrint={printCollection}
               printBlocked={printBlockedWhy}
+              unexportBlocked={unexportBlocked}
+              onUnexport={() => setAsking('unexport')}
             />
           ) : (
             <div className="col-details">
@@ -520,9 +531,35 @@ function CollectionScreen({ id }) {
               }}
             >
               <p>It will go back to Paid/Ours, still locked, with the price paid kept.</p>
-              {col.lines.some((l) => l.cc_status) && (
-                <p>Its export stays as it is: the exported cards keep their stamps and Sell Prices, and the file isn't undone.</p>
+              {exportedLines.length > 0 && (
+                <p>Its export stays as it is: the exported cards keep their stamps and Sell Prices, and the file isn't undone. The ⋯ menu's Undo export… takes the stamps off.</p>
               )}
+            </ConfirmModal>
+          )}
+          {asking === 'unexport' && (
+            <ConfirmModal
+              title="Undo this collection's export?"
+              yes="Undo export"
+              onClose={() => setAsking(null)}
+              onYes={async () => {
+                setAsking(null);
+                const r = await col.unexport(user?.id);
+                if (r) {
+                  const back = r.returned > 0 ? ` ${r.returned} taken back out of Can't upload cards.` : '';
+                  toast(`Export undone: ${r.cards} card${r.cards === 1 ? '' : 's'} no longer marked exported.${back}`, 'ok');
+                }
+                api.focusSearch();
+              }}
+            >
+              <p>
+                Its exported Magic cards will no longer be marked exported{skus.length > 0 ? ` (Custom SKU ${skus.join(', ')})` : ''}:
+                their Sell Prices go, and EXPORT offers them again.
+                {exportedLines.some((l) => l.cc_status === 'cant_upload') && " Their copies come back out of Can't upload cards."}
+              </p>
+              <p>
+                It stays {statusLabel(buy.status)}. The file already downloaded isn't undone: if it was uploaded to
+                Crystal Commerce, take those rows out there.
+              </p>
             </ConfirmModal>
           )}
           {asking === 'unlock' && (

@@ -190,7 +190,7 @@ export default function CollectionsPage() {
       },
       ...(c.project ? [{
         label: 'Convert to buy',
-        blocked: busy ?? (c.status === 'completed' ? "Completed: its cards were exported, so it can't become a buy" : null),
+        blocked: busy ?? (c.status === 'completed' ? 'Completed: open it and reopen it (back to Paid/Ours) first' : null),
         title: "Move every card into a new buy on today's page, confirmed now, and delete the project",
         onClick: () => setActing({ id: c.id, action: 'convert' }),
       }] : []),

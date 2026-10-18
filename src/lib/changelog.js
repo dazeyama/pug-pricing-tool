@@ -43,6 +43,8 @@ export const CATEGORIES = [
     key: 'actions',
     label: 'Actions',
     actions: ['collection_info_edited', 'collection_status_changed', 'collection_exported',
+      // Undo export… on a collection (decision 298).
+      'collection_unexported',
       'collection_line_edited', 'collection_repriced',
       // A card's own rate set or cleared (Set Rate, docs/TEAM_FEEDBACK.md 4.3).
       'collection_line_rate',
@@ -98,6 +100,7 @@ export const HEADLINES = {
   collection_info_edited: 'Collection details edited',
   collection_status_changed: 'Status changed',
   collection_exported: 'Collection exported',
+  collection_unexported: 'Collection export undone',
   collection_deleted: 'Collection deleted',
   collection_repriced: 'Collection repriced',
   collection_called: 'Customer called',

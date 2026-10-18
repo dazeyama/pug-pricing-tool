@@ -118,13 +118,13 @@ export function PaidText({ buy, withMethod = false }) {
 export default function CollectionDetails({
   buy, byId, api, canChangeStatus, statusBlocked, deleteBlocked,
   viewOnly, holder, onTakeOver, onUnlock, onReopen, onUnreject, onInfo, onStatus, onDelete,
-  convertBlocked = null, onConvert, printBlocked = null, onPrint,
+  convertBlocked = null, onConvert, printBlocked = null, onPrint, unexportBlocked = null, onUnexport,
 }) {
   const [open, setOpen] = useState(true);
   const toggle = () => setOpen((o) => !o);
   if (buy.system_key) return <SystemDetails buy={buy} open={open} onToggle={toggle} viewOnly={viewOnly} holder={holder} onTakeOver={onTakeOver} />;
   // A project (owner, 2026-10-01): no phone, ID, offer or price paid, and
-  // no status controls; Paid/Ours until EXPORT, Reopen after.
+  // one status step, Paid/Ours to Completed (decision 294), Reopen after.
   const project = Boolean(buy.project);
   const hasBody = open || viewOnly || ['paid', 'completed', 'rejected'].includes(buy.status);
   const tone = statusTone(buy);
@@ -170,6 +170,14 @@ export default function CollectionDetails({
               blocked: printBlocked,
               title: `A PDF of this ${project ? 'project' : 'collection'}'s Magic cards by Crystal Commerce category, to check them by hand. Changes nothing.`,
               onClick: onPrint,
+            }] : []),
+            // Undo export… (owner, 2026-10-18; decision 298): the export's stamps off its cards,
+            // their Can't-upload copies taken back; the status stays.
+            ...(onUnexport ? [{
+              label: 'Undo export…',
+              blocked: unexportBlocked,
+              title: "Take the export's stamps off this collection's exported Magic cards, so EXPORT offers them again, and bring their copies back out of Can't upload cards. The status and the file already downloaded stay as they are.",
+              onClick: onUnexport,
             }] : []),
             // A project becomes a buy again (owner, 2026-10-10): the way back from Convert to project.
             ...(project ? [{

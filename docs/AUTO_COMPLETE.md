@@ -82,4 +82,4 @@ only Complete day… stamps Sell Prices.
 | Convert to project after a card is Completed | "Completed/struck cards just get skipped, right?" | It refused before; now the live cards move and the buy stays with its Completed cards (decision 296). |
 | **Collections** | "collections should never 'auto complete' themselves and instead should be moved to completed manually always" | EXPORT no longer sets Completed; the status menu and a "Mark as Completed →" step do, from Paid/Ours; leaving Completed no longer undoes the export (decision 294). |
 
-Open from this round: a way to undo a collection's export (Reopen used to do it), and the no-Magic-cards export the owner wants to change later.
+From this round: **Undo export…** on a collection's ⋯ takes the export's stamps off and brings its Can't-upload copies back (decision 298; Reopen used to do it). Still open: the no-Magic-cards export the owner wants to change later.

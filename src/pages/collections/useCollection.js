@@ -26,7 +26,9 @@ const MESSAGES = {
   paid_price_needed: 'Set the final purchase price to mark it Paid/Ours.',
   paid_method_needed: 'Choose Cash or Credit to mark it Paid/Ours.',
   complete_from_paid: 'Mark it Paid/Ours first: Completed comes after.',
-  project_status: 'A project is only ever Paid/Ours, until EXPORT marks it Completed.',
+  project_status: 'A project is only ever Paid/Ours or Completed.',
+  // Undo export… (owner, 2026-10-18; decision 298).
+  nothing_to_undo: 'Nothing here is exported.',
   collection_gone: 'This collection was deleted.',
   locked_elsewhere: 'Another computer is editing this collection: take over first.',
   name_mismatch: "The name you typed doesn't match.",
@@ -42,7 +44,7 @@ const MESSAGES = {
   project_rates: "A project has no rates of its own: it's the store's own cards.",
   // Convert to buy… (owner, 2026-10-10): a project that can't go (the name and phone CONFIRM BUY
   // asks for are DB_MESSAGES').
-  project_completed: "This project is Completed: its cards were exported, so it can't become a buy.",
+  project_completed: 'This project is Completed: reopen it (back to Paid/Ours) first.',
   empty_buy: 'There are no cards to convert.',
   // Import Collection (owner, 2026-10-09).
   not_empty: 'This collection already has cards: a file can only go into an empty one.',
@@ -228,6 +230,16 @@ export function useCollection(id, { deviceId, onLockLost }) {
     return r.ok;
   }, [id, run, mine]);
 
+  /**
+   * Undo export… (owner, 2026-10-18; decision 298): the export's stamps off
+   * this collection's exported cards, their Can't-upload copies taken back;
+   * the status stays. { cards, returned } or null.
+   */
+  const unexport = useCallback(async (userId) => {
+    const r = await run('collection_unexport', { p_buy_id: id, ...mine(userId) }, "Couldn't undo the export");
+    return r.ok ? r.data : null;
+  }, [id, run, mine]);
+
   /** REPRICE?: today's buy prices for many lines at once (reprice.js); { lines, before, after } or null. */
   const reprice = useCallback(async (updates, userId) => {
     const r = await run('collection_reprice', { p_buy_id: id, p_lines: updates, ...mine(userId) },
@@ -303,6 +315,6 @@ export function useCollection(id, { deviceId, onLockLost }) {
 
   return {
     ...state, busy, reload, add, update, remove, strike, restore, updateInfo, setRates, setLineRate, setStatus, reprice,
-    destroy, toBuy,
+    unexport, destroy, toBuy,
   };
 }

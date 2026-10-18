@@ -2283,6 +2283,29 @@ begin
     raise exception 'dbt_no_error';
   exception when others then perform pg_temp.err(s, 'An exported card isn''t exported again', sqlerrm, 'nothing_to_export');
   end;
+  begin
+    perform collection_unexport(v_c, u, bd, pg_temp.version(v_c));
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'Undo export needs the lock (0074)', sqlerrm, 'not_lock_holder');
+  end;
+  v := collection_unexport(v_c, u, a, pg_temp.version(v_c));
+  perform pg_temp.ok(s, 'Undo export takes the stamps off; the status stays (0074)',
+    (v ->> 'cards')::integer = 3 and (v ->> 'returned')::integer = 0
+    and (select status = 'paid' from buys where id = v_c)
+    and (select cc_status is null and cc_custom_sku is null and cc_sell_price is null and cc_product_id is null
+           from buy_lines where id = c1), v::text);
+  perform pg_temp.ok(s, '… and the Changelog says so',
+    exists (select 1 from events where target_id = v_c and action = 'collection_unexported'
+              and summary = format('Export undone (Custom SKU %s): 3 cards no longer marked exported.', v_sku)));
+  begin
+    perform collection_unexport(v_c, u, a, pg_temp.version(v_c));
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, '… once', sqlerrm, 'nothing_to_undo');
+  end;
+  v := export_lines(jsonb_build_object('kind', 'collection', 'buy_id', v_c, 'version', pg_temp.version(v_c)),
+                    jsonb_build_array(pg_temp.match(c1, 'DBTEST-P1', 1.25)), '{}', '[]', u, a);
+  perform pg_temp.ok(s, '… and EXPORT offers the cards again',
+    (v ->> 'cards')::integer = 3 and (select cc_status = 'exported' and cc_custom_sku = v_sku from buy_lines where id = c1), v::text);
   v_x := collection_create('DBTEST Collection Three', null, '', u, a);
   perform lock_acquire(v_x, a, u);
   perform collection_add_line(v_x, pg_temp.line('Dbtest Mystery', 'DBT', '003', 2, 1.00), true, u, a, null, null);
@@ -2297,6 +2320,13 @@ begin
   perform pg_temp.ok(s, '… and a status change leaves the copy where it is (0073)',
     exists (select 1 from buy_lines where source_line_id = v_c3)
     and (select cc_status = 'cant_upload' from buy_lines where id = v_c3));
+  v := collection_unexport(v_x, u, a, pg_temp.version(v_x));
+  perform pg_temp.ok(s, 'Undo export brings its copy back out of Can''t upload cards (0074)',
+    (v ->> 'cards')::integer = 2 and (v ->> 'returned')::integer = 2
+    and not exists (select 1 from buy_lines where source_line_id = v_c3)
+    and (select cc_status is null from buy_lines where id = v_c3)
+    and exists (select 1 from events where target_id = v_x and action = 'collection_unexported'
+                  and summary = 'Export undone: 2 cards no longer marked exported; 2 taken back out of Can''t upload cards.'), v::text);
 
   v_pp := project_create('DBTEST Pokémon Project', '', u, a);
   perform lock_acquire(v_pp, a, u);

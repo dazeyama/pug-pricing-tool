@@ -53,7 +53,7 @@
   Print MTG? / Print PKM?, mimp mode (🦇/🌼 after EN | JP), and docs/AUTO_COMPLETE.md (the map of what becomes
   Completed, for the owner to chart). Then the owner's chart (decisions 294–296; migration 0073 on dev):
   collections never complete themselves (Completed by hand; EXPORT only stamps), Mark as completed strikes a
-  Magic buy's cards, Convert to project skips Completed cards. The squash's numbers moved on: baseline 0074,
-  the Changelog lock 0075.
+  Magic buy's cards, Convert to project skips Completed cards. Then Undo export… on a collection's ⋯ (decision 298;
+  migration 0074 on dev). The squash's numbers moved on: baseline 0075, the Changelog lock 0076.
   Phase 10 launch (the migration squash, SQUASH.md, then prod) waits for the owner's go; the live site runs on the
   dev project until then. docs/TEST.md holds the smoke tests and the database test run.
