@@ -271,6 +271,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     }
   }
   const say = (tone, text, title = null) => setLocal({ tone, text, title, at: Date.now() });
+  /** A message about the camera (decision 303): cleared when the camera's back. */
+  const sayCamera = (tone, text) => setLocal({ tone, text, title: null, at: Date.now(), camera: true });
 
   const blocked = blockedText(session);
   const needs = [...scans].reverse().find((s) => s.status === 'needs_price') ?? null;
@@ -927,6 +929,14 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     setLocal(null);
   }
 
+  // The camera cut off (decision 303): said on the strip while the phone has it, or while it starts again.
+  const interrupted = camera.interrupted;
+  useEffect(() => {
+    if (interrupted === 'paused') sayCamera('warn', 'The phone has taken the camera (a call?): scanning carries on when it gives it back.');
+    else if (interrupted === 'restarting') sayCamera('warn', 'The camera stopped: starting it again…');
+    else setLocal((l) => (l?.camera ? null : l));
+  }, [interrupted]);
+
   // Reading… becomes tappable (Stop) once a press has run a few seconds.
   useEffect(() => {
     if (!reading) return undefined;
@@ -942,7 +952,10 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   // scan more cards"): the computer takes them in the order sent. Stop ends
   // it with the camera.
   const auto = useRef(null);
-  auto.current = { scanFrame, paused: !autoOn || Boolean(blocked) || Boolean(needs) || Boolean(pick) || offline };
+  auto.current = {
+    scanFrame,
+    paused: !autoOn || Boolean(blocked) || Boolean(needs) || Boolean(pick) || offline || Boolean(camera.interrupted),
+  };
   useEffect(() => {
     if (!camera.on) return undefined;
     let alive = true;

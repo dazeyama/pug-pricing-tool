@@ -32,6 +32,12 @@ const ONE_X_SIZE = { width: { ideal: 3840 }, height: { ideal: 2160 } };
 // a refocus) opens the same lens straight away.
 let chosen = null;
 
+// The camera cut off (decision 303): a picture that hasn't moved for this long is frozen; restarted
+// at most this many times in this long before it's left off.
+const FROZEN_MS = 3_000;
+const RESTART_MAX = 3;
+const RESTART_WINDOW_MS = 60_000;
+
 /** The camera to scan with: the 1× lens alone where the default one switches lenses, else the default. */
 async function openCamera() {
   if (chosen) {
@@ -84,18 +90,43 @@ function cameraError(e) {
  * @returns {{ on: boolean, starting: boolean, error: string|null, torch: boolean|null,
  *   size: { w: number, h: number }|null, start: () => Promise<boolean>, stop: () => void,
  *   toggleTorch: () => Promise<void>, capture: () => HTMLCanvasElement|null, refocus: () => Promise<void> }}
- *   torch: null when the camera has none, else whether it's lit
+ *   torch: null when the camera has none, else whether it's lit; interrupted: null, 'paused' (the
+ *   phone took the camera for a while, a call say) or 'restarting' (it ended, or froze)
  */
 export function useCamera(videoRef) {
-  const [state, setState] = useState({ on: false, starting: false, error: null, torch: null, size: null });
+  const [state, setState] = useState({
+    on: false, starting: false, error: null, torch: null, size: null, interrupted: null,
+  });
   const stream = useRef(null);
+  // Restarts after the camera was cut off, lately: a camera that keeps failing isn't restarted for ever.
+  const restarts = useRef([]);
 
   const stop = useCallback(() => {
     stream.current?.getTracks().forEach((t) => t.stop());
     stream.current = null;
     if (videoRef.current) videoRef.current.srcObject = null;
-    setState((s) => ({ ...s, on: false, starting: false, torch: null }));
+    setState((s) => ({ ...s, on: false, starting: false, torch: null, interrupted: null }));
   }, [videoRef]);
+
+  // Cut off (owner, 2026-10-19: "fix", to "The camera doesn't notice when it's cut off"): a call, Siri
+  // or another app can take the camera while the page stays open, and the picture froze while auto
+  // scan read the same frozen picture. Now the camera's track is watched: paused by the phone, the
+  // scanner waits and says so; ended, the camera starts again by itself.
+  const restartRef = useRef(null);
+  const watch = useCallback((s) => {
+    const track = s.getVideoTracks()[0];
+    if (!track) return;
+    track.addEventListener('mute', () => {
+      if (stream.current === s) setState((st) => ({ ...st, interrupted: 'paused' }));
+    });
+    track.addEventListener('unmute', () => {
+      if (stream.current === s) setState((st) => ({ ...st, interrupted: null }));
+    });
+    // Our own stop() doesn't fire `ended`: this is the phone ending it.
+    track.addEventListener('ended', () => {
+      if (stream.current === s) restartRef.current?.();
+    });
+  }, []);
 
   const start = useCallback(async () => {
     if (stream.current) return true;
@@ -107,6 +138,7 @@ export function useCamera(videoRef) {
     try {
       const s = await openCamera();
       stream.current = s;
+      watch(s);
       const video = videoRef.current;
       video.srcObject = s;
       video.muted = true;
@@ -118,16 +150,40 @@ export function useCamera(videoRef) {
       const caps = s.getVideoTracks()[0]?.getCapabilities?.() ?? {};
       setState({
         on: true, starting: false, error: null, torch: caps.torch ? false : null,
-        size: { w: video.videoWidth, h: video.videoHeight },
+        size: { w: video.videoWidth, h: video.videoHeight }, interrupted: null,
       });
       return true;
     } catch (e) {
       stream.current?.getTracks().forEach((t) => t.stop());
       stream.current = null;
-      setState((st) => ({ ...st, on: false, starting: false, error: cameraError(e) }));
+      setState((st) => ({ ...st, on: false, starting: false, error: cameraError(e), interrupted: null }));
       return false;
     }
-  }, [videoRef]);
+  }, [videoRef, watch]);
+
+  /**
+   * Start the camera again after it was cut off (it ended, or its picture
+   * froze): at most RESTART_MAX times in RESTART_WINDOW_MS, then it's left
+   * off with START CAMERA to press.
+   */
+  const restart = useCallback(async () => {
+    const now = Date.now();
+    restarts.current = restarts.current.filter((t) => now - t < RESTART_WINDOW_MS);
+    stream.current?.getTracks().forEach((t) => t.stop());
+    stream.current = null;
+    if (restarts.current.length >= RESTART_MAX) {
+      if (videoRef.current) videoRef.current.srcObject = null;
+      setState((s) => ({
+        ...s, on: false, starting: false, torch: null, interrupted: null,
+        error: 'The camera keeps stopping. Press START CAMERA to try again.',
+      }));
+      return;
+    }
+    restarts.current.push(now);
+    setState((s) => ({ ...s, interrupted: 'restarting' }));
+    await start();
+  }, [start, videoRef]);
+  restartRef.current = restart;
 
   /**
    * Refocus (owner, 2026-10-16): the camera opened afresh, the same lens, so
@@ -143,6 +199,7 @@ export function useCamera(videoRef) {
       stream.current = null;
       const s = await openCamera();
       stream.current = s;
+      watch(s);
       video.srcObject = s;
       await video.play().catch(() => {});
       setState((st) => ({ ...st, torch: st.torch == null ? null : false }));
@@ -152,6 +209,34 @@ export function useCamera(videoRef) {
     } finally {
       refocusing.current = false;
     }
+  }, [videoRef, watch]);
+
+  // A frozen picture (an iPhone doesn't always say its camera ended): the video's clock checked every
+  // second; stopped for FROZEN_MS while nothing paused it, the camera starts again. A paused video
+  // is played first.
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return undefined;
+    let last = -1;
+    let since = Date.now();
+    const timer = setInterval(() => {
+      const track = stream.current?.getVideoTracks()[0];
+      if (!track || refocusing.current || track.muted || document.visibilityState !== 'visible') {
+        last = -1;
+        since = Date.now();
+        return;
+      }
+      if (video.paused) video.play().catch(() => {});
+      if (video.currentTime !== last) {
+        last = video.currentTime;
+        since = Date.now();
+      } else if (Date.now() - since > FROZEN_MS) {
+        last = -1;
+        since = Date.now();
+        restartRef.current?.();
+      }
+    }, 1000);
+    return () => clearInterval(timer);
   }, [videoRef]);
 
   const toggleTorch = useCallback(async () => {

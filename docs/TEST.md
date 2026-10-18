@@ -330,6 +330,7 @@ Four findings, all in the live build too, and the owner's calls:
 
 ### For the next smoke test
 
+- [ ] 🆕 **The camera cut off (decision 303):** scanning, take a call (or open the phone's own camera from the control centre): the strip says the phone has the camera, auto scan waits; back, scanning carries on with the view still locked. A picture that freezes restarts by itself within a few seconds.
 - [ ] 🆕 **A scan saved once (decision 302):** on a weak connection (Chrome's throttling on the laptop's `#/scan`), a card whose send is slow goes in once, not twice; only after three tries does the phone say "No answer from the computer after three tries".
 - [ ] 🆕 **Flagged buys on the printout (decision 301):** a day with a 🚩 flagged Magic buy and an unflagged one: EXPORT ▾ → Print MTG? has the red CHECK CONDITION banner naming that buy on every page, the rows as before; the flagged buy's ⋯ → Print buy has it too; after ✅ Condition checked, no banner; a BUY COMPLETE printout of a buy flagged at CONFIRM BUY has the banner; the same on a Pokémon day (Print PKM?) and a flagged Pokémon buy's Print buy.
 - [ ] 🆕 **Never stuck (decision 300):** on a slow or flaky network (phone on weak Wi-Fi, or Chrome's network throttling on the laptop's `#/scan`), Scan card ends within 20 s with "That took too long…" instead of Reading… for good; the next press works without a refresh.
