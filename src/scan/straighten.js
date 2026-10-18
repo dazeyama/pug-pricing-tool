@@ -14,11 +14,22 @@ import { binarizeCollectorText, locateCollectorTextBlocks, otsuThreshold } from 
 import { anchorBlock } from './lock.js';
 
 // The bottom-left zone of a card where its collector line is, as fractions
-// of the card, with room for a card landing a little off or turned.
-const ZONE = { left: -0.04, right: 0.62, top: 0.83, bottom: 1.03 };
+// of the card, with room for a card landing a little off or turned, and for
+// the card coming closer as the stack grows (decision 317: a card 30% bigger
+// than the lock's outline has its line at about 1.07 down and -0.06 in; was
+// left -0.04, bottom 1.03, which lost it past 15%). Measured on 48 modern
+// cards grown past a stale outline: read right 28/7/0 (same, +15%, +30%) with
+// the old zone and settings, 41/33/23 with these.
+const ZONE = { left: -0.15, right: 0.66, top: 0.8, bottom: 1.18 };
 // The locator ignores letters taller than 3% of its picture (it's made for
 // whole photos): the zone is set on a taller dark canvas so its letters pass.
-const LOCATOR_LETTERS = 40;
+// `locatorLetters`: that canvas's height in the letters expected from the
+// lock's card; `twoLines`: a collector line found alone is cut with room for
+// the line above and below it (decision 317: as the stack grows the card
+// comes closer, its letters outgrow the lock's, and the number line, the
+// tallest, was dropped first, leaving "SNC ★ EN" alone and the number cut
+// off). Tuned with the benchmark (scripts), so kept here together.
+export const COLLECTOR_TUNING = { locatorLetters: 70, twoLines: true, zone: null };
 // Room around the collector line in the cutout, in its letters' heights.
 const MARGIN = 0.9;
 // The letters are enlarged to about this tall, as mtgscan's reading likes them.
@@ -119,14 +130,15 @@ export function sharpness(gray, w, h, charHeight) {
  */
 export function findCollector(frame, lock, createCanvas) {
   const { card } = lock;
-  const zx = Math.max(0, Math.floor(card.x + card.width * ZONE.left));
-  const zy = Math.max(0, Math.floor(card.y + card.height * ZONE.top));
-  const zw = Math.min(frame.width, Math.ceil(card.x + card.width * ZONE.right)) - zx;
-  const zh = Math.min(frame.height, Math.ceil(card.y + card.height * ZONE.bottom)) - zy;
+  const Z = COLLECTOR_TUNING.zone ?? ZONE;
+  const zx = Math.max(0, Math.floor(card.x + card.width * Z.left));
+  const zy = Math.max(0, Math.floor(card.y + card.height * Z.top));
+  const zw = Math.min(frame.width, Math.ceil(card.x + card.width * Z.right)) - zx;
+  const zh = Math.min(frame.height, Math.ceil(card.y + card.height * Z.bottom)) - zy;
   if (zw < 20 || zh < 10) return null;
   // Letters are about 1.15% of the card's height: the canvas is made tall enough for the locator.
   const letter = card.height * 0.0115;
-  const tall = Math.max(zh, Math.ceil(letter * LOCATOR_LETTERS));
+  const tall = Math.max(zh, Math.ceil(letter * COLLECTOR_TUNING.locatorLetters));
   const zone = createCanvas(zw, tall);
   const ctx = zone.getContext('2d', { willReadFrequently: true });
   ctx.fillStyle = '#000';
@@ -150,7 +162,12 @@ export function findCollector(frame, lock, createCanvas) {
 export function straightCutout(frame, lock, createCanvas) {
   const hit = findCollector(frame, lock, createCanvas);
   const charHeight = hit?.charHeight ?? lock.charHeight;
-  const b = hit?.bounds ?? lock.collector;
+  let b = hit?.bounds ?? lock.collector;
+  // One line found where a card's collector info is two (the number over the set code): room for
+  // the other, above or below (decision 317).
+  if (COLLECTOR_TUNING.twoLines && b.height < charHeight * 1.8) {
+    b = { ...b, y: b.y - charHeight * 1.5, height: b.height + charHeight * 3 };
+  }
   const pad = charHeight * MARGIN;
   const region = {
     x: Math.max(0, b.x - pad), y: Math.max(0, b.y - pad),

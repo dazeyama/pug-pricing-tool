@@ -233,6 +233,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const sinceLock = useRef(0);
   const relockDue = useRef(false);
   const relockTries = useRef(0);
+  // The art of the card a failed strip last asked a re-crop for (decision 317): one ask a card.
+  const lineRelockArt = useRef(null);
   // The last time anything new was in the holder or a button was pressed (decision 304).
   const lastActive = useRef(Date.now());
   // Dark looks in a row (decision 306), and whether the last picture was too dark.
@@ -537,6 +539,15 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   function noLineAgain(v, art) {
     v.noLine = (v.noLine ?? 0) + 1;
     v.lineArt ??= art;
+    // A card whose strip names no set: the view found again first (decision 317), once a card, before
+    // it's taken for an older one: as the stack grows the card comes closer and the lock's outline,
+    // and the strip's zone with it, drift off it. Two looks to find it, then on as before.
+    if (v.noLine === 1 && lockRef.current && (!lineRelockArt.current || artDistance(lineRelockArt.current, art) >= ART_CHANGED)) {
+      lineRelockArt.current = art;
+      relockDue.current = true;
+      relockTries.current = RELOCK_TRIES - 2;
+      trace('relock-asked', { why: 'no set code' });
+    }
     if (!v.older && v.noLine >= OLDER_AFTER) {
       v.older = true;
       setTitleMode(true);
