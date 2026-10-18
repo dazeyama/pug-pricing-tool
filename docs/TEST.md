@@ -330,6 +330,7 @@ Four findings, all in the live build too, and the owner's calls:
 
 ### For the next smoke test
 
+- [ ] 🆕 **The view found again every 20 cards (decision 312):** scan a stack of 25+ cards with auto scan: around the 20th the view shifts slightly to fit the card (no message, never the whole picture), and the card in the holder isn't added twice; the reads stay right as the stack grows.
 - [ ] 🆕 **Which card? (decision 311):** Heaven's Gate (Legends) or any card the title can't be read on: Title opens "Couldn't read the name. Which card is it?" with a guess in the box; × clears it; typing "heav" lists Heaven's Gate; tapping it (or Find printings) opens its printings; picking one adds it. With auto scan, the same card left in the holder opens the box by itself after a few looks. Skip sets it aside and auto scan doesn't ask again for that card.
 - [ ] 🆕 **White titles read (decision 309):** a Mercadian Masques card (Statecraft, Misdirection), an Apocalypse or Urza's Destiny card: Title (or the older-card mode) names it and opens its printings, where before it said it couldn't read the title.
 - [ ] 🆕 **Older card titles found (decision 308):** an older card (Courser of Kruphix, a 4th Edition card, a Mirrodin card): Title shows the name itself in the info box, level and whole, not the frame's line; the printing list opens with the right name, also when the card sits a little high or low in the holder.

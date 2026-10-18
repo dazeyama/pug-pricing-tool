@@ -51,6 +51,13 @@ const FIRST_LOOK_MS = 800;
 // on the card name instead, resetting to the normal bottom position upon
 // the next card"); then it reads the title, two looks naming the same card.
 const OLDER_AFTER = 3;
+// The view found again every so many cards (owner, 2026-10-19: "As the stack gets taller it gets
+// closer in and the old crop loses its accuracy. Quietly resetting and re-cropping will help";
+// decision 312): after this many cards sent with one lock, the next looks find the card's edges again
+// and lock onto it afresh; the old lock stays till a new one's found, and after this many looks
+// without one it's kept till the next round.
+const RELOCK_EVERY = 20;
+const RELOCK_TRIES = 10;
 // Which card? (decision 311): this many title reads in a row naming nothing, on the same card, and
 // auto scan stops trying and asks for the name.
 const UNREAD_AFTER = 3;
@@ -220,6 +227,10 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const [titleMode, setTitleMode] = useState(false);
   const { offline } = useConnection();
   const busy = useRef(false);
+  // Cards sent with this lock, whether it's due to be found again, and the looks spent trying (decision 312).
+  const sinceLock = useRef(0);
+  const relockDue = useRef(false);
+  const relockTries = useRef(0);
   // The last time anything new was in the holder or a button was pressed (decision 304).
   const lastActive = useRef(Date.now());
   // Dark looks in a row (decision 306), and whether the last picture was too dark.
@@ -353,6 +364,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       return;
     }
     chime(s.finish);
+    noteSent();   // another copy laid on the stack too
   }
   /**
    * A tap on the picture: while it's unlocked and a card's outlined in
@@ -505,6 +517,15 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     setLockState(next);
     view.current = { held: null, pending: null };
     setTitleMode(false);
+    sinceLock.current = 0;
+    relockDue.current = false;
+    relockTries.current = 0;
+  }
+
+  /** A card sent (decision 312): RELOCK_EVERY with one lock, and the view's due to be found again. */
+  function noteSent() {
+    sinceLock.current += 1;
+    if (lockRef.current && sinceLock.current >= RELOCK_EVERY) relockDue.current = true;
   }
 
   /** One more look with no set code at the bottom; enough of them, and it's read as an older card. */
@@ -600,6 +621,24 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         lock = rescaleLock(lock, frame);
         lockRef.current = lock;
         setLockState(lock);
+      }
+      // Due to be found again (decision 312): the card's edges looked for afresh, quietly; locked onto
+      // when found (by its collector line, or, an older card, by its edges alone), what's held about
+      // the card last sent kept, so it isn't sent again. Not found: the old lock stays, tried again
+      // on the next looks, RELOCK_TRIES at most.
+      if (lock && !manual && relockDue.current) {
+        const card = findCard(frame, defaultCreateCanvas);
+        const anchor = card ? anchorBlock(locate(frame)) : null;
+        if (card) {
+          const kept = { held: view.current.held, lastArt: view.current.lastArt };
+          lock = anchor && blockOnCard(anchor, card) ? makeLock(card, anchor, frame) : lockOnCard(card, frame);
+          setLock(lock);
+          Object.assign(view.current, kept);
+        } else if (++relockTries.current >= RELOCK_TRIES) {
+          relockDue.current = false;
+          relockTries.current = 0;
+          sinceLock.current = 0;
+        }
       }
       let blocks = null;
       if (!lock) {
@@ -1041,6 +1080,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     lastSent.current = key;
     v.held = art;
     setLocal(null);
+    noteSent();
   }
 
   // The camera cut off (decision 303): said on the strip while the phone has it, or while it starts again.
