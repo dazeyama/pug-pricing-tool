@@ -330,6 +330,7 @@ Four findings, all in the live build too, and the owner's calls:
 
 ### For the next smoke test
 
+- [ ] 🆕 **🔔 resets the sound (decision 318):** when the chimes go quiet, tap 🔔 (to 🔇) and again (to 🔔): a chime plays at once, and the next cards chime; with the iPhone's silent switch on too.
 - [ ] 🆕 **The collector box keeps up (decision 317):** a long run, 150+ cards in one stack: the info box keeps both collector lines whole near the top of the stack, and the strip keeps reading (few cards going to the title or the name box); the run log's quick strip reads don't fall away after card 100.
 - [ ] 🆕 **Surge foils priced (decision 316):** Altered Ego (FIC 317) scanned as foil, or picked on the Buy tab with FOIL: priced (~$0.40, JustTCG's conditions), not asking for a price; its nonfoil still ~$0.20.
 - [ ] 🆕 **Promos that print PRM (decision 313):** Etali, Primal Storm with "100/196 P / PRM ★ EN" (or another 2018–2019 promo): Scan card (or auto scan) opens "Which Etali, Primal Storm? A promo: match the stamp." with its promo printings; picking one adds it as foil when the strip shows the star; auto scan doesn't switch to reading the title.

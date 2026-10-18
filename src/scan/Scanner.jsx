@@ -22,7 +22,7 @@ import { findListMark, listNumber } from './listMark.js';
 import { defaultCreateCanvas } from './recognition/canvasUtil.js';
 import { ocrWorker, onOcrStatus, resetOcr } from './ocr.js';
 import { isTimeout, withTimeout } from '../lib/timeout.js';
-import { isMuted, play, setMuted, unlockSounds } from './sounds.js';
+import { isMuted, play, resetSounds, setMuted, unlockSounds } from './sounds.js';
 import { printingsFor, readOlderCard } from './older.js';
 import { isPromoStrip, resolvePromo } from './promo.js';
 import { trace } from './trace.js';
@@ -1272,10 +1272,16 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           type="button"
           className="btn small scan-mute"
           aria-pressed={muted}
-          title={muted ? 'Sounds off: tap to turn them on' : 'Sounds on: tap to mute'}
+          title={muted ? 'Sounds off: tap to turn them on (and start the sound afresh)' : 'Sounds on: tap to mute'}
           onClick={() => {
             setMuted(!muted);
             setMutedState(!muted);
+            // Turned on: the sound started afresh, whatever had stopped it, and a chime to show it's back
+            // (decision 318). Off, then on again, is the way to fix silent chimes.
+            if (muted) {
+              resetSounds();
+              play('added');
+            }
           }}
         >
           {muted ? '🔇' : '🔔'}

@@ -24,6 +24,59 @@ export function unlockSounds() {
   }
 }
 
+/** A moment of silence as a WAV file (16-bit mono, 8 kHz, 0.1 s), made here: no file to fetch. */
+function silentWav() {
+  const samples = 800;
+  const buf = new ArrayBuffer(44 + samples * 2);
+  const v = new DataView(buf);
+  const text = (at, s) => [...s].forEach((c, i) => v.setUint8(at + i, c.charCodeAt(0)));
+  text(0, 'RIFF');
+  v.setUint32(4, 36 + samples * 2, true);
+  text(8, 'WAVEfmt ');
+  v.setUint32(16, 16, true);
+  v.setUint16(20, 1, true);
+  v.setUint16(22, 1, true);
+  v.setUint32(24, 8000, true);
+  v.setUint32(28, 16000, true);
+  v.setUint16(32, 2, true);
+  v.setUint16(34, 16, true);
+  text(36, 'data');
+  v.setUint32(40, samples * 2, true);
+  return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+}
+
+/**
+ * Start the sound afresh, whatever stopped it (owner, 2026-10-19: "can we make toggling the sound icon
+ * back and forth a hard reset for sound that always makes it refresh no matter why the iphone has it
+ * muted?"; decision 318). Called from the 🔔 tap, the moment a phone allows sound: the old audio closed
+ * and a new one started; the page's sound asked to play as media (Safari's audioSession, so the ringer
+ * switch doesn't silence it); and a moment of silence played through an <audio> element, which does the
+ * same on an iPhone without audioSession. An iPhone can leave the audio "running" but silent after the
+ * camera's been paused, which play()'s wake-up (decision 315) can't see.
+ */
+export function resetSounds() {
+  try {
+    ctx?.close();
+  } catch {
+    // already closed
+  }
+  ctx = null;
+  try {
+    if (navigator.audioSession) navigator.audioSession.type = 'playback';
+  } catch {
+    // not this browser
+  }
+  try {
+    const a = new Audio(silentWav());
+    a.playsInline = true;
+    a.play().catch(() => {});
+  } catch {
+    // no <audio> here
+  }
+  unlockSounds();
+  trace('sound-reset', { state: ctx?.state ?? null, session: navigator.audioSession?.type ?? null });
+}
+
 export const isMuted = () => readLocal(MUTE_KEY) === '1';
 export const setMuted = (muted) => writeLocal(MUTE_KEY, muted ? '1' : null);
 
