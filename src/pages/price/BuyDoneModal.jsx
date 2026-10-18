@@ -51,7 +51,7 @@ export default function BuyDoneModal({ number, games, lines, customer, paid, met
               {printing ? 'Printing… 🖨' : 'Print PKM? 🖨'}
             </button>
           )}
-          <button type="button" className="btn primary" onClick={onClose}>No thanks</button>
+          <button type="button" className="btn ghost" onClick={onClose}>No thanks</button>
         </>
       )}
     >
