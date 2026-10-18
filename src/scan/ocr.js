@@ -18,6 +18,11 @@ const listeners = new Set();
 // taking 5 s is stuck (owner, 2026-10-18: "stuck on 'Reading...' … forever until a hard
 // refresh"), and the worker is started afresh.
 const READ_MS = 5_000;
+// A fresh worker after this many reads (owner, 2026-10-19: "fix", to "The card reader is never
+// restarted"; decision 305): Tesseract's worker grows over a long session, so it's swapped between
+// reads, the new one loading at once so the next read hardly waits.
+const RECYCLE_AFTER = 300;
+let reads = 0;
 // Starting the worker downloads its three files the first time (4.4 MB: 1.35 s from GitHub Pages
 // on 2026-10-18) and compiles them on the phone; given up after 20 s and started again on the next read.
 const LOAD_MS = 20_000;
@@ -65,8 +70,23 @@ export function resetOcr() {
   workerPromise = null;
   queue = Promise.resolve();
   psm = null;
+  reads = 0;
   generation += 1;
   old?.then((w) => w.terminate()).catch(() => {});
+}
+
+/**
+ * Swap the worker for a fresh one after RECYCLE_AFTER reads (decision 305).
+ * Called inside a read, once it's done: the reads are one at a time, so no
+ * other is using the old worker. The new one starts loading now.
+ */
+function recycle() {
+  const old = workerPromise;
+  workerPromise = null;
+  psm = null;
+  reads = 0;
+  old?.then((w) => w.terminate()).catch(() => {});
+  ocrWorker().catch(() => {});   // a failed start is tried again on the next read
 }
 
 /**
@@ -86,6 +106,7 @@ export function readText(canvas, mode = PSM_BLOCK) {
         if (gen === generation) psm = mode;
       }
       const { data } = await withTimeout(worker.recognize(canvas), READ_MS);
+      if (gen === generation && ++reads >= RECYCLE_AFTER) recycle();
       return data?.text ?? '';
     } catch (e) {
       if (isTimeout(e) && gen === generation) resetOcr();   // stuck: the next read gets a new worker
