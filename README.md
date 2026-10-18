@@ -115,6 +115,8 @@ status.justtcg.com.
   request for every 100 different cards.
 - Japanese Pokémon are a catalogue of their own on JustTCG (Pokemon Japan). The app looks Japanese
   cards up there. A "No." search uses about one request.
+- **Other TCGplayer versions…** on a Pokémon card (see [Finish and Details:
+  Pokémon](#finish-and-details-pokémon)) uses one request. Its answer is kept for a week.
 - Home shows a warning once 80% of the day's requests are used. When they run out, a yellow bar
   says so, and prices are typed by hand until midnight UTC.
 
@@ -216,8 +218,10 @@ everywhere in the app. Credit is blue.
 phone number most recently used with it, so it can be suggested next time. Projects aren't
 customers. ID numbers are never kept this way.
 
-**Export.** Magic cards go to Crystal Commerce as a **Mass Create** file. Exporting marks the cards
-**Completed**. Pokémon cards can't be exported yet.
+**Export.** Magic cards go to Crystal Commerce as a **Mass Create** file. Exporting a day or a buy
+marks its cards **Completed**. Exporting a collection or project marks its cards exported and leaves
+its status alone: it's marked Completed by hand, when it's done with. Pokémon cards can't be exported
+yet.
 
 ### Statuses
 
@@ -227,12 +231,12 @@ customers. ID numbers are never kept this way.
 <tr><td><strong>Priced</strong></td><td>🔴 red</td><td>An offer was made. Waiting on the customer.</td></tr>
 <tr><td><strong>Paid/Ours</strong></td><td>🟢 green or 🔵 blue</td><td>Paid for, in cash (green) or credit (blue). Locked. Waiting to be exported.</td></tr>
 <tr><td><strong>Ours</strong></td><td>⚪ white</td><td>Paid/Ours for the store's own cards: projects and Can't upload cards.</td></tr>
-<tr><td><strong>Completed</strong></td><td>⚫ grey</td><td>Exported, or marked done. Locked, and left out of the header search.</td></tr>
+<tr><td><strong>Completed</strong></td><td>⚫ grey</td><td>A buy: exported, or marked done. A collection or project: marked done by hand. Locked, and left out of the header search.</td></tr>
 <tr><td><strong>Rejected</strong></td><td>faded red</td><td>The customer said no. Locked, and left out of the header search.</td></tr>
 </table>
 
 A walk-in buy is **Paid/Ours** from the moment it's confirmed. It becomes **Completed** once it's
-exported.
+exported. A collection becomes **Completed** when someone marks it so; exporting it doesn't.
 
 ### Rounding
 
@@ -271,6 +275,7 @@ The header is the same on every tab.
 | **?** | Opens **Help**: this guide, inside the app, a section at a time, with pictures. <kbd>←</kbd> and <kbd>→</kbd> turn the pages. |
 | **Search buys & collections…** | Finds cards already bought. See below. |
 | **Tabs** | Home, Buy, Collections, Calendar, Settings. **Changelog** sits apart on the right. Clicking the tab she's already on takes it back to its start. |
+| **Who's on** | Left of Changelog: a green dot with **N Connected** (computers with the app open), then a dot in each picked user's colour with **N Users selected**. Hovering either names them. |
 
 ### Users
 
@@ -416,6 +421,7 @@ part can be left out. The sample text shows one: `Lightning Bolt 117/331 2X2`.
 |---|---|
 | **MTG \| PKM** | Which games to search. Both are on to start. One always stays on. |
 | **EN \| JP** | English or Japanese Pokémon. EN to start, every time the screen opens. |
+| **🌼 \| 🦇** | **mimp mode.** 🌼 (on, to start): after **ADD CARD** the card and the search stay as they are, with Qty back to 1, so another copy, or the same card in another finish or condition, is a keystroke away. 🦇 (off): the card area clears after each add. Like EN \| JP, it's back to 🌼 every time the screen opens. **SAVE EDIT** always clears. |
 
 Japanese cards are searched differently: see [Japanese searches](#japanese-searches).
 
@@ -527,6 +533,7 @@ Three links open the card on other sites, each in its own pop-up window:
 |---|---|
 | **NORMAL \| HOLO \| REVERSE** | The finish. A finish never printed is greyed out. |
 | **Version** | When a finish has several versions (1st Edition, Poké Ball pattern…), she picks one here. A **TCGplayer** tag marks a version only TCGplayer lists. |
+| **Other TCGplayer versions…** | Under the versions. Asks TCGplayer for versions the card database doesn't list (stamped reprints, Prize Pack cards…). They join the list with the **TCGplayer** tag, or it says *No other TCGplayer versions*. It costs a JustTCG lookup, so it waits to be clicked unless the card is missing a product of its own. |
 | **From TCGplayer** | The card itself is from TCGplayer's catalogue: TCGdex doesn't list it yet. |
 | **Chips** | Rarity and language. |
 
@@ -576,7 +583,7 @@ lists the reasons. Clicking keeps the list open. The reasons:
 |---|---|
 | **Qty** | How many copies: 1 to 99. **Enter** in the box adds the card. Qty goes back to 1 after each add. |
 | **CLEAR** | Empties the card area. The buy list stays. |
-| **ADD CARD** | Adds the card to the buy list. The new line flashes. The card area clears for the next card. |
+| **ADD CARD** | Adds the card to the buy list. The new line flashes. The card area clears for the next card, unless mimp mode (🌼) is on: then the card stays selected, Qty goes back to 1 and the search box takes the focus. |
 
 ADD CARD needs a user, a selected card, a price and a connection. Hovering it says what's missing.
 Adding the same printing, finish, condition and price again raises that line's quantity instead of
@@ -648,7 +655,22 @@ the name and the phone number. Both can still be changed. A changed number repla
 next time. **Esc** closes the list.
 
 It names who is confirming. **Confirm buy** files the buy on today's date and starts a fresh one.
-A message says its number: *"Buy confirmed — Buy 4 today (Magic)"*.
+A message says its number: *"Buy confirmed — Buy 42 (Magic)"*.
+
+**Buy numbers.** Every buy gets the next number, for good. The first buy ever was Buy 1, and the
+count goes on across both games and every day: a Magic buy numbered 42 is followed by Buy 43
+whichever game comes next. The number is on the day page, in the header search and in the
+Changelog, so a buy and its box can be found by it.
+
+### BUY COMPLETE
+
+The window after Confirm buy. *✓ Saved in the Calendar page: Magic · Oct 17, 2026* in green, then
+the buy's number and customer, its cards, what was paid, and a 🚩 if it was flagged.
+
+**Print MTG? 🖨** and **Print PKM? 🖨**, in the games' colours, open the audit printout for that buy
+(see [Print MTG?](#print-mtg-the-audit-printout)) and close the window; only the games the buy has
+are offered. **No thanks**, **×** or <kbd>Esc</kbd> close it. The same printouts are in the buy's ⋯
+menu on its day page later.
 
 ### Bulk
 
@@ -711,9 +733,15 @@ The same list sits at the bottom of the screen.
 5. **Japanese Pokémon** come from JustTCG's Japanese catalogue. A Poké Ball or Master Ball pattern
    version is priced as its own product. A Japanese card with no JustTCG price uses Cardmarket
    automatically.
-6. **A Poké Ball pattern is never priced above the same card's Master Ball pattern.** When TCGdex's
+6. **A version TCGplayer sells on its own** (a Poké Ball or Master Ball pattern, a Cosmos foil, a
+   stamped reprint) is priced as that product, in English too, with JustTCG's five conditions.
+7. **The product has to be this card.** The card database points some cards at another card's
+   TCGplayer product (Charmander 44/225 SVP at Fuecoco 2, say). The app knows the right product
+   for those, and a product that turns out to be a different card is never priced or linked: the
+   card goes without a JustTCG price rather than with a wrong one, and the price is typed by hand.
+8. **A Poké Ball pattern is never priced above the same card's Master Ball pattern.** When TCGdex's
    figures have the two the wrong way round, the app swaps them back.
-7. **Every price is rounded down** by the store's steps. In a project, every price is rounded
+9. **Every price is rounded down** by the store's steps. In a project, every price is rounded
    **up** instead (see [Rounding](#rounding)).
 
 <br>
@@ -814,7 +842,7 @@ The header bar always shows the name and status.
 | | |
 |---|---|
 | **Name and status** | Click to fold the details away, or bring them back. |
-| **⋯** | **Convert to buy…** (projects only) and **Delete collection…** (**Delete project…** on a project) |
+| **⋯** | **Print collection** (**Print project**), **Undo export…**, **Convert to buy…** (projects only) and **Delete collection…** (**Delete project…**) |
 | **Arrow button** | Folds or unfolds the details. |
 | **Name, Phone, Last 4 ID, Notes** | Click the ✎ to edit in place. **Enter** saves. Clicking away saves. **Esc** leaves it as it was. Notes save with **Ctrl+Enter**. |
 | **📞 (N)** | On a Priced collection, beside the phone. See below. |
@@ -823,7 +851,8 @@ The header bar always shows the name and status.
 | **Paid** | The price paid and how, or TBD. |
 | **Created / Edited** | When, and by whom. |
 
-Projects have no phone, Last 4 ID, offer or paid rows, and no status controls.
+Projects have no phone, Last 4 ID, offer or paid rows. Their one status control is **Mark as
+Completed →**, and **Reopen** after it.
 
 ### Moving through the statuses
 
@@ -838,7 +867,10 @@ cash offer. The credit offer is worked out from it, at this collection's rates, 
 **Rejected** comes from Processing or Priced. She can type a reason (optional). **Reject** locks
 the collection. It's kept with its prices and offer until it's deleted.
 
-**Completed** only comes from **EXPORT**. It can't be picked from the dropdown.
+**Mark as Completed →** (or the dropdown) marks a Paid/Ours collection or project **Completed**: done
+with, locked, and out of the search. It's a status like the others, set by hand and only from
+Paid/Ours. EXPORT doesn't set it: a collection can be exported and stay Paid/Ours, or be marked
+Completed without ever being exported.
 
 ### Going backwards
 
@@ -846,11 +878,11 @@ the collection. It's kept with its prices and offer until it's deleted.
 |---|---|---|
 | **Priced** | Dropdown → Processing | Goes straight back. |
 | **Paid/Ours** | **🔒 Unlock** | Back to Priced, and editable. The price paid is cleared. The offer stays. The dropdown can send it to Processing instead. |
-| **Completed** | **Reopen** | Back to Paid/Ours, still locked, the price paid kept. The export is undone: Sell Prices go and Can't upload copies come back out. |
+| **Completed** | **Reopen** | Back to Paid/Ours, still locked, the price paid kept. An export stays as it is: [Undo export…](#undo-export) takes it back. |
 | **Rejected** | **Reopen** | Back to Priced with its offer, or to Processing if it had none. The reason stays in the Changelog. |
 
-Reopening a Completed collection doesn't undo the file already downloaded. If it was uploaded to
-Crystal Commerce, the stock there is fixed by hand.
+Neither Reopen nor Undo export… undoes the file already downloaded. If it was uploaded to Crystal
+Commerce, the stock there is fixed by hand.
 
 ### What can change in each status
 
@@ -892,14 +924,14 @@ Sends the collection's Magic cards to Crystal Commerce. See
 | Status | What EXPORT does |
 |---|---|
 | Processing, Priced, Rejected | Opens the export, but only downloads the file. **Nothing is saved:** the status stays, and the cards can be exported again. No user needed. |
-| Paid/Ours, Ours | Opens the export. Afterwards the collection is **Completed**. |
-| Paid/Ours, Pokémon cards only | Asks, then marks it **Completed** with no file. |
+| Paid/Ours, Ours | Opens the export for the Magic cards not exported yet. Afterwards those cards are marked exported, with the **Custom SKU** and their Sell Prices in green. The status stays: she marks it **Completed** herself when it's done with. EXPORT again says every Magic card is exported already. |
+| Paid/Ours, no Magic cards | Says so: there's nothing to export. Completed is set from the status menu. |
 | Completed | Downloads the same file again. Nothing changes. |
 
 **Print MTG?**, **Print PKM?** and **Print PKM Stickers?** work in every status.
 
-A Completed collection shows its **Custom SKU** in the list heading. Its prices show in green: those
-are its Sell Prices.
+An exported collection shows its **Custom SKU** in the list heading, whatever its status. Its
+exported cards' prices show in green: those are its Sell Prices.
 
 **EXPORT ▾** opens **Print MTG?**, **Print PKM?**, **Print PKM Stickers?** and **Export csv**.
 **Print MTG?** makes the audit printout (see [Print MTG?](#print-mtg-the-audit-printout));
@@ -908,6 +940,18 @@ for them (see [Print PKM Stickers?](#print-pkm-stickers)). The ⋯ menu has **Pr
 **Print project**) too.
 
 **Projects have no rates.** They're the store's own cards: no custom rates, no Set Rate.
+
+### Undo export…
+
+From the ⋯ menu, once the collection or project has been exported. It asks first, then takes the
+export back: the exported Magic cards lose their Custom SKU, product and Sell Price, so EXPORT
+offers them again, and their copies in Can't upload cards come back out. The status doesn't change,
+whatever it is. The Changelog shows *Export undone (Custom SKU 101826): 3 cards no longer marked
+exported*.
+
+It doesn't undo the file already downloaded: if it was uploaded to Crystal Commerce, those rows are
+taken out there by hand. Like EXPORT, it needs this computer to be the one editing the collection,
+so the Collections tab's row menu doesn't have it.
 
 ### Convert to buy…
 
@@ -923,8 +967,8 @@ price paid and notes, and its name is the customer's.
 they have. The project is deleted and today's day page opens. The Changelog shows it under
 **Buys** as *Project converted to buy*.
 
-It's greyed out while another computer is editing the project, once the project is Completed, or
-when it has no cards.
+It's greyed out while another computer is editing the project, once the project is Completed
+(Reopen it first), or when it has no cards.
 
 ### Delete collection…
 
@@ -995,7 +1039,8 @@ One game's part of every walk-in buy confirmed that day.
 | **EXPORT (N) ▾** | Magic days: **Print MTG?** makes the audit printout; **Export csv** exports the day. N is the cards to export: count the pile first. |
 | **EXPORT (N) ▾** | Pokémon days: **Print PKM?** (the cards by set), **Print PKM Stickers?** (price-tag stickers) and **Complete day…** (see below). N is the cards to mark Completed. |
 
-The title shows the date and game. Once exported it also shows **Exported** and the **Custom SKU**.
+The title shows the date and game. Once the day is exported it also shows **Exported** and the day's
+**Custom SKU**. A buy exported on its own shows its own SKU on its panel instead.
 A line under it says when the day was exported, by whom, and how many cards couldn't upload.
 
 **Today can't be exported or completed until it's over.** Buys confirmed later would miss it.
@@ -1012,8 +1057,9 @@ Commerce, the stock there is fixed by hand.
 
 ### A buy
 
-Each buy is a panel in the colour of the user who confirmed it. Its header shows **Buy N**, the
-user, the time and its status.
+Each buy is a panel in the colour of the user who confirmed it. Its header shows **Buy N** (its
+number for good: see [Buy numbers](#cancel-and-confirm-buy)), the user, the time and its status,
+and, after Export single buy, its own **Custom SKU** (*101626-42*).
 
 - The customer's name, phone number and notes.
 - A table of its cards: **Price**, **Qty**, **Card** and **×**. Hovering a row shows the card.
@@ -1030,7 +1076,7 @@ checked?**; **Yes** turns it into a green **✅ Condition checked** for good. EX
 and Complete day… warn while a buy is flagged.
 
 Once Completed, a buy is locked. Its card names turn grey, and its prices show in green: those are its
-Sell Prices.
+Sell Prices. A Magic buy marked Completed by hand has its cards struck as well (see the ⋯ menu).
 
 ### Struck cards
 
@@ -1051,16 +1097,17 @@ the list, crossed out, as a record that it went elsewhere: straight into the cas
 | | |
 |---|---|
 | **✅ Condition checked** | Flagged buys only, first in the menu. Takes the 🚩 flag off. |
-| **Mark as completed** | Completes this buy's cards without exporting them. They're locked, and left out of the search and the day's export. |
-| **Mark Paid/Ours again** | Undoes Mark as completed. On an exported buy it reads **Mark Paid/Ours again…** and undoes this buy's export only. |
-| **Export single buy** | Magic only. Exports just this buy, on any day, today included. The rest of the day stays as it is. |
+| **Mark as completed** | Completes this game's cards in this buy without exporting them: locked, and left out of the search and the day's export. On a Magic buy they're **struck** as well: a Magic buy Completed instead of exported means its cards went somewhere else. On a Pokémon buy it's Complete day… for one buy, without the Sell Prices. |
+| **Mark Paid/Ours again** | Undoes Mark as completed, and restores the cards it struck. On an exported buy it reads **Mark Paid/Ours again…** and undoes this buy's export only. |
+| **Export single buy** | Magic only. Exports just this buy, on any day, today included. The rest of the day stays as it is. Its Custom SKU is the day's with the buy's number after a dash, *101626-42*, shown on the buy. |
 | **Print buy** | The audit printout of this buy's cards: Magic by Crystal Commerce category, Pokémon by set. |
 | **Print stickers** | Pokémon only. Price-tag stickers for this buy's cards. See [Print PKM Stickers?](#print-pkm-stickers). |
 | **Edit in project view** | Opens the buy's cards on the pricing screen, in the game's colour, to fix a card before an export (its condition or treatment, mostly). Click a card, change it, then **SAVE EDIT**; **×** takes cards out. Nothing is saved until **SAVE BUY**, which goes back to the day page. The buy stays on its day; cards can't be added and the rates don't change. |
-| **Convert to project** | Moves every card, both games, into a new project with the buy's notes (a project has no rates). The buy is deleted from the day. The name starts as the customer's. The cards keep their prices until a **REPRICE?** rounds them up. |
+| **Convert to project** | Moves every live card, both games, into a new project with the buy's notes (a project has no rates). Completed and struck cards stay behind: the buy stays on its day with them, or is deleted when none are left. The name starts as the customer's. The cards keep their prices until a **REPRICE?** rounds them up. |
 | **Delete buy…** | Deletes the buy and every card in it, both games. Asks first. |
 
-**Edit in project view**, **Convert to project** and **Delete buy…** are locked once any of the buy's cards are Completed.
+**Edit in project view** and **Delete buy…** are locked once any of the buy's cards are Completed.
+**Convert to project** is locked only when no live card is left.
 A project can become a buy again: see [Convert to buy…](#convert-to-buy).
 
 ### Print MTG? (the audit printout)
@@ -1101,6 +1148,9 @@ Pokémon can't be exported yet. On a Pokémon day, **EXPORT ▾ → Complete day
 Paid/Ours Pokémon buys **Completed** instead. It asks first. Each card gets today's Sell Price,
 worked out as an export would, shown in green. Nothing is exported. It uses about one JustTCG
 lookup. **⋯ → Mark Paid/Ours again** undoes it.
+
+After **Print PKM Stickers?** on a day that can be completed, a small window asks **Complete the
+day?**: **Complete day…** opens the same step, **Not yet** closes it.
 
 <br>
 
@@ -1206,7 +1256,8 @@ If any cards can't upload, a red list names them. She pulls those cards out of t
 and ticks **I've pulled these cards out of the batch**. They're left out of the file. They're marked
 **Can't upload** and copied to **Can't upload cards**.
 
-**Export N cards** saves everything and downloads the file. The cards become **Completed**. With
+**Export N cards** saves everything and downloads the file. A day's or a buy's cards become
+**Completed**; a collection's or project's are marked exported, and its status stays as it is. With
 nothing matched, the button reads **Mark them Can't upload** and no file is made.
 
 The app never uploads the file. She uploads it in Crystal Commerce's Mass Create page.
@@ -1228,12 +1279,13 @@ After the export, Sell Prices show in green wherever the card appears.
 | | |
 |---|---|
 | **Name** | `cc-mass-create-magic-2026-10-06.csv` for a day. Collections and single buys get their own names. |
-| **Custom SKU** | The export's date, month-day-year, with no leading zero on the month: 10/09/26 is `100926`, 6/17/26 is `61726`. On every row. |
+| **Custom SKU** | A date, month-day-year, with no leading zero on the month: 10/09/26 is `100926`, 6/17/26 is `61726`. A day's export uses **the day's** date, whenever it's run. A single buy's adds the buy's number: `101626-42`. A collection's, a project's and Can't upload cards' use today's. On every row. |
 | **Conditions** | Near Mint, Lightly Played, Moderately Played, Heavily Played, Damaged. |
 | **Rows** | One per product and condition. Quantities are added together. |
 | **Quantity** | Added to the stock already in Crystal Commerce. |
 
-**EXPORT** on a Completed day or collection downloads the same file again. Nothing changes.
+**EXPORT** on an exported day, or a Completed collection, downloads the same file again. Nothing
+changes.
 
 ### Remembered matches
 
@@ -1539,8 +1591,8 @@ right. It only records: nothing is changed or undone from here.
 | **Funnel** | On a panel. Shows only that buy's or collection's history. |
 | **Show everything** | Clears the filters. |
 
-**Actions** covers status changes, edits, calls, repricing, day exports and completions, and Cash
-Buys downloads.
+**Actions** covers status changes, edits, calls, repricing, exports and their undoing (a day's, a
+buy's or a collection's), completions, and Cash Buys downloads.
 
 ### A panel
 
