@@ -69,7 +69,7 @@ export const CONDITION_RGB = {
   NM: [34, 150, 96], LP: [104, 154, 36], MP: [196, 142, 18], HP: [212, 106, 28], DMG: [204, 58, 58],
 };
 const INK = [20, 20, 26];        // text, the bands
-// A flagged buy (decision 301): the banner, and its cards' outlines and chips.
+// A flagged buy (decision 301): the banner across every page.
 const FLAG_RGB = [200, 30, 30];
 const FLAG_BANNER = 20;
 const LINE = [190, 192, 200];    // the rows' hairlines
@@ -115,11 +115,9 @@ function fit(doc, text, width) {
  * @param {Record<string, { data: string, ratio: number }>} [p.symbols]  set code → its symbol (a white PNG; width / height)
  * @param {Date} [p.printedAt]
  * @param {string|null} [p.flagText]  a flagged buy's banner (decision 301), red across every page under its header
- * @param {boolean} [p.flagRows]  each flagged card outlined in red with its buy's chip (a day's printout:
- *   some cards aren't flagged, or they're from more than one flagged buy)
  * @returns {jsPDF}
  */
-export function auditPdf({ title, sections, symbols = {}, printedAt = new Date(), flagText = null, flagRows = false }) {
+export function auditPdf({ title, sections, symbols = {}, printedAt = new Date(), flagText = null }) {
   const doc = new jsPDF({ unit: 'pt', format: 'letter', orientation: 'portrait' });
   const top = flagText ? TOP + FLAG_BANNER + 4 : TOP;
   const cards = sections.reduce((n, s) => n + s.cards, 0);
@@ -223,23 +221,20 @@ export function auditPdf({ title, sections, symbols = {}, printedAt = new Date()
     const set = pdfSafe(numberChip(r, s.set));
     const setW = chipWidth(set);
     const right = COL_W - 4 - COND_W - 3 - setW - 4;   // the name's room ends at the set chip
-    const flagChip = flagRows && r.flag ? pdfSafe(r.flag) : null;
-    const extras = [...(flagChip ? [flagChip] : []), ...r.extras.map((e) => pdfSafe(e))];
+    const extras = r.extras.map((e) => pdfSafe(e));
     const extrasW = extras.reduce((w, e) => w + chipWidth(e) + 2, 0);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(NAME_PT);
     const nameW = doc.getTextWidth(pdfSafe(r.name));
     const oneLine = !extras.length || NAME_X + nameW + 4 + extrasW <= right;
-    return { set, setW, right, extras, flagChip, oneLine, h: oneLine ? ROW : ROW_WRAPPED };
+    return { set, setW, right, extras, oneLine, h: oneLine ? ROW : ROW_WRAPPED };
   };
 
   const row = (r, l) => {
     const left = x();
-    // A hairline round the row (red and thicker for a flagged buy's card, decision 301), and its
-    // card's colour as the chip on its left edge.
-    const flagged = flagRows && r.flag;
-    doc.setDrawColor(...(flagged ? FLAG_RGB : LINE));
-    doc.setLineWidth(flagged ? 1.1 : 0.35);
+    // A hairline round the row, and its card's colour as the chip on its left edge.
+    doc.setDrawColor(...LINE);
+    doc.setLineWidth(0.35);
     doc.rect(left, y, COL_W, l.h, 'S');
     doc.setFillColor(...(BUCKET_RGB[r.bucket] ?? BUCKET_RGB.unknown));
     doc.rect(left, y, 3, l.h, 'F');
@@ -267,14 +262,12 @@ export function auditPdf({ title, sections, symbols = {}, printedAt = new Date()
     doc.text(name, left + NAME_X, y + 9.2);
     let ex = l.oneLine ? left + NAME_X + doc.getTextWidth(name) + 4 : left + NAME_X;
     const exTop = l.oneLine ? top : y + ROW - 1;
-    l.extras.forEach((e, i) => {
+    for (const e of l.extras) {
       const w = chipWidth(e);
-      if (ex + w > left + COL_W - 4) return;   // never past the row
-      // The flagged buy's chip first, in red ("Buy 42").
-      if (i === 0 && l.flagChip) chip(e, ex, exTop, w, FLAG_RGB, 1);
-      else chip(e, ex, exTop, w, [170, 172, 182], 0.4);
+      if (ex + w > left + COL_W - 4) break;   // never past the row
+      chip(e, ex, exTop, w, [170, 172, 182], 0.4);
       ex += w + 2;
-    });
+    }
     y += l.h + ROW_GAP;
   };
 

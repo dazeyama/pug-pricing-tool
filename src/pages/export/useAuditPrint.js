@@ -93,15 +93,13 @@ async function symbolsFor(sections) {
 }
 
 /**
- * Flagged buys on a printout (decision 301), from each card's flag: a red
- * banner on every page; each flagged card outlined in red with its buy's chip
- * when the printout holds others too (a day's), not when every card is the
- * one buy's.
+ * Flagged buys on a printout (decision 301), from each card's flagged buy:
+ * a red banner naming them on every page (owner, 2026-10-18: "Just the
+ * header is fine, the outlines and the chips are overkill").
  */
-function flagging(rowFlags) {
-  const flags = flaggedBuys(rowFlags);
-  const flagRows = flags.length > 1 || (flags.length > 0 && rowFlags.some((f) => !f));
-  return { flags, flagRows, flagText: flagBanner(flags, flagRows) };
+function flagging(cardFlags) {
+  const flags = flaggedBuys(cardFlags);
+  return { flags, flagText: flagBanner(flags) };
 }
 
 /** The printout toast's word on flagged buys, or nothing. */
@@ -162,10 +160,10 @@ export function useAuditPrint() {
         }
       }
       if (pokemon) {
-        const sections = pokemonSections(chosen, flagOf);
-        const { flagText, flagRows, flags } = flagging(chosen.map((l) => flagOf?.(l) ?? null));
+        const sections = pokemonSections(chosen);
+        const { flagText, flags } = flagging(chosen.map((l) => flagOf?.(l) ?? null));
         const { auditPdf } = await import('../../lib/auditPdf.js');
-        deliver(auditPdf({ title, sections, flagText, flagRows }), fileName, tab);
+        deliver(auditPdf({ title, sections, flagText }), fileName, tab);
         const count = sections.reduce((n, s) => n + s.cards, 0);
         toast(`Printout ready: ${count} card${count === 1 ? '' : 's'} in ${sections.length} set${sections.length === 1 ? '' : 's'}.`
           + flaggedNote(flags), 'ok');
@@ -183,14 +181,13 @@ export function useAuditPrint() {
           line,
           category: saved !== undefined ? saved : matchCategory(byId.get(line.id)),
           bucket: cardBucket(cards.get(line.scryfall_id) ?? more.get(line.scryfall_id)),
-          flag: flagOf?.(line) ?? null,
         };
       });
       const sections = auditSections(placed);
-      const { flagText, flagRows, flags } = flagging(placed.map((p) => p.flag));
+      const { flagText, flags } = flagging(chosen.map((l) => flagOf?.(l) ?? null));
       // The PDF library loads only when something is printed: the app starts as light as before.
       const [{ auditPdf }, symbols] = await Promise.all([import('../../lib/auditPdf.js'), symbolsFor(sections)]);
-      deliver(auditPdf({ title, sections, symbols, flagText, flagRows }), fileName, tab);
+      deliver(auditPdf({ title, sections, symbols, flagText }), fileName, tab);
       const count = sections.reduce((n, s) => n + s.cards, 0);
       const unmatched = sections.find((s) => s.name === UNMATCHED)?.cards ?? 0;
       toast(`Printout ready: ${count} card${count === 1 ? '' : 's'}`
