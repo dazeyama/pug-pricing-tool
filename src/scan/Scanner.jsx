@@ -9,7 +9,7 @@ import { usePairing } from './usePairing.js';
 import { useScans } from './useScans.js';
 import { useCamera } from './camera.js';
 import { insetTo, onScreen, showPart } from './guide.js';
-import { HIGH, locate, paperSetCodes, readCollectorLine, readPrepared, setCodePattern } from './read.js';
+import { locate, paperSetCodes, readCollectorLine, readPrepared, setCodePattern } from './read.js';
 import { readClues, resolveReadings, resolveThorough } from './resolve.js';
 import { STEP_MS, createProgress } from './progress.js';
 import { findCard } from './cardEdges.js';
@@ -612,23 +612,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           attempts = await readPrepared(cut, pattern);
           progress?.finish('strip');
         }
-        if (manual && attempts.length) {
-          // Very sure from the strip alone (owner, 2026-10-18: "If the OCR is VERY confident in the
-          // card then the Scan Card button should accept that before doing the full comprehensive
-          // run"): the printing looked up directly by the set and number read, its rarity or artist
-          // agreeing, and either every clue on the strip agreeing (resolve.js isSure, auto scan's
-          // one-look test) or the line read as surely as mtgscan's best (HIGH). Taken at once.
-          progress?.start('quick');
-          const quick = await resolveReadings(attempts, known, { pattern, quickOnly: true });
-          progress?.finish('quick');
-          const sureRead = Math.max(...attempts.map((a) => a.score)) >= HIGH;
-          if (quick && (quick.foreign || quick.sure || sureRead)) {
-            found = quick;
-            progress?.drop('card');
-            progress?.drop('resolve');
-          }
-        }
-        if (manual && !found) {
+        if (manual) {
           // Scan card: the line looked for on the card itself too, every block read; then all of it
           // weighed together. Auto scan looks again instead (several more reads would keep it busy
           // while a new card is laid in; the strip is found on each card already, straighten.js).
@@ -649,7 +633,6 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       } else {
         // Scan card before the view is locked: the whole picture, every block read.
         progress?.drop('strip');
-        progress?.drop('quick');
         progress?.drop('card');
         blocks.forEach((_, i) => progress?.plan(`located-${i + 1}`, STEP_MS.ocr));
         attempts = blocks.length ? await readCollectorLine(frame, pattern, blocks, { all: true, progress }) : [];
@@ -748,7 +731,6 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     // The work as expected; each step re-planned as it's known (the blocks found, the searches asked).
     if (busy.current) bar.plan('wait', STEP_MS.ocr);
     bar.plan('strip', STEP_MS.ocr);
-    bar.plan('quick', STEP_MS.lookup);
     bar.plan('card', 2 * STEP_MS.ocr);
     bar.plan('resolve', STEP_MS.lookup + 2 * STEP_MS.search);
     bar.plan('send', STEP_MS.send);

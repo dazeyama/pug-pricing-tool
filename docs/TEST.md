@@ -330,7 +330,6 @@ Four findings, all in the live build too, and the owner's calls:
 
 ### For the next smoke test
 
-- [ ] 🆕 **Quick Scan card (decision 300):** a modern card in clear view: Scan card adds it in about a second (the bar jumps to full), not after the whole run; a card with a smudged strip still gets the full run.
 - [ ] 🆕 **Never stuck (decision 300):** on a slow or flaky network (phone on weak Wi-Fi, or Chrome's network throttling on the laptop's `#/scan`), Scan card ends within 20 s with "That took too long…" instead of Reading… for good; the next press works without a refresh.
 - [ ] 🆕 **Stop and start over (decision 300):** while reading, after 3 s the button says "Reading… tap to stop": tapping it says Stopped and the next Scan card reads; holding Scan card (a buzz) starts over and reads the card in the holder, even the same card auto scan just sent; the long press opens no menu or text selection on the phone.
 - [ ] 🆕 **Help search (decision 299):** in Help, type "stickers" in the box at the header's right: Print PKM Stickers? pages first, each with its chapter, a count and a line with the word marked; ↓ ↑ Enter opens one and scrolls to the word, highlighted; "pokemon" finds "Pokémon"; "zzz" says no page has it; Esc clears the box and the highlights; ← → still turn pages when the box isn't focused.

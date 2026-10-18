@@ -379,9 +379,8 @@ async function lookUp(lookup, [set, number], onFail) {
  * knows.
  * @param {string} text  what the OCR read
  * @param {Set<string>} known  every set code, upper case
- * @param {{ manual?: boolean, quickOnly?: boolean, pattern?: RegExp, search?: (q: string) => Promise<object[]>,
+ * @param {{ manual?: boolean, pattern?: RegExp, search?: (q: string) => Promise<object[]>,
  *   lookup?: (set: string, number: string) => Promise<object|null> }} [opts]
- *   quickOnly: the quick way alone, no search asked (Scan card's first try, owner, 2026-10-18);
  *   manual: a card a little less clearly ahead is taken; pattern: mtgscan's set-code pattern,
  *   whose own parse is a clue too (a set code run into its number: "HOB0113"); search and
  *   lookup: Scryfall's (tests pass their own)
@@ -389,9 +388,9 @@ async function lookUp(lookup, [set, number], onFail) {
  *   quick: taken on the direct lookup, no search asked; sure: every clue agrees (isSure)
  */
 export async function resolveText(text, known, {
-  manual = false, quickOnly = false, pattern = null, search = scry.searchQuick, lookup = scry.cardBySetNumber,
+  manual = false, pattern = null, search = scry.searchQuick, lookup = scry.cardBySetNumber,
 } = {}) {
-  const key = `${quickOnly ? 'q' : manual ? 'm' : 'a'}:${String(text).trim()}`;
+  const key = `${manual ? 'm' : 'a'}:${String(text).trim()}`;
   if (remembered.has(key)) return remembered.get(key);
   const { clues, top, direct, narrow, wider } = planFor(text, known, pattern);
   const take = manual ? TAKE.manual : TAKE.auto;
@@ -413,11 +412,6 @@ export async function resolveText(text, known, {
   const agreed = [...new Map(looked.filter((c) => confirms(c, clues)).map((c) => [c.id, c])).values()];
   const quick = agreed.length === 1 ? scoreCard(agreed[0], clues) : 0;
   if (quick >= QUICK) found = { card: agreed[0], score: quick, quick: true, sure: isSure(agreed[0], clues, top) };
-  if (quickOnly) {
-    const out = found ? refuseForeign(found, clues) : null;
-    if (out && !failed) remembered.set(key, out);
-    return out;
-  }
 
   if (!found && narrow) {
     await ask(narrow);

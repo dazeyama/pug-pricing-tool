@@ -11,7 +11,7 @@ import { PSM_BLOCK, readText } from './ocr.js';
 import * as scry from '../lib/scryfall.js';
 
 /** A sure read (mtgscan's HIGH): no more blocks are read after one. */
-export const HIGH = 80;
+const HIGH = 80;
 
 let codesPromise = null;
 /**
