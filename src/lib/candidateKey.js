@@ -22,6 +22,22 @@ export function candidateKeyOf(line) {
 }
 
 /**
+ * The search an edit opens with (owner, 2026-10-19: "Clicking on a card for
+ * edit card should automatically open the same query as the right click
+ * instead of just filtering exactly to the 1 card, it's more useful to see
+ * like-cards when going to edit"; decision 319): the card's name, every
+ * printing of it, as right-clicking a suggestion searches. Null where a name
+ * doesn't find it (a Japanese card, searched by its number; a card known only
+ * from TCGplayer; bulk and placeholders): those keep editQuery's exact search.
+ */
+export function nameQuery(line) {
+  if (line.bulk_kind != null || !line.name) return null;
+  if (line.game === 'mtg') return line.name;
+  if (line.lang === 'ja' || !line.tcgdex_id) return null;
+  return line.name;
+}
+
+/**
  * A search line that finds exactly this saved card (spec 8.2's syntax):
  * "Sol Ring 472 CMR", "Charizard 4/102 BS", Japanese "025/165 SV2a".
  */

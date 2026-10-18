@@ -330,6 +330,7 @@ Four findings, all in the live build too, and the owner's calls:
 
 ### For the next smoke test
 
+- [ ] 🆕 **Edit opens every printing (decision 319):** click a Magic line (Sol Ring CMR): the search reads "Sol Ring", every printing shows, the line's own is selected with its condition and price; SAVE EDIT saves over it. A basic land still edits (falls back to its exact search). A Japanese Pokémon line keeps its number search.
 - [ ] 🆕 **🔔 resets the sound (decision 318):** when the chimes go quiet, tap 🔔 (to 🔇) and again (to 🔔): a chime plays at once, and the next cards chime; with the iPhone's silent switch on too.
 - [ ] 🆕 **The collector box keeps up (decision 317):** a long run, 150+ cards in one stack: the info box keeps both collector lines whole near the top of the stack, and the strip keeps reading (few cards going to the title or the name box); the run log's quick strip reads don't fall away after card 100.
 - [ ] 🆕 **Surge foils priced (decision 316):** Altered Ego (FIC 317) scanned as foil, or picked on the Buy tab with FOIL: priced (~$0.40, JustTCG's conditions), not asking for a price; its nonfoil still ~$0.20.

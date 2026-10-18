@@ -33,7 +33,7 @@ import { useDevice } from '../../state/device.jsx';
 import { useScanSession } from './useScanSession.js';
 import { useScanReceiver } from './useScanReceiver.js';
 import ScanChip from './ScanChip.jsx';
-import { candidateKeyOf, editQuery } from '../../lib/candidateKey.js';
+import { candidateKeyOf, editQuery, nameQuery } from '../../lib/candidateKey.js';
 
 const BACKGROUND = { '--stage-bg': `url(${import.meta.env.BASE_URL}background.webp)` };
 
@@ -306,6 +306,10 @@ export default function PricingScreen({
         setSelected(found[index]);
         setHighlight(index < shownCount ? index : -1);
         setEditing((e) => e && { ...e, found: true });
+      } else if (editing.exact && editing.query !== editing.exact) {
+        // Not among the name's printings (one of hundreds, a basic land): its exact search instead.
+        setEditing((e) => e && { ...e, query: e.exact });
+        setText(editing.exact);
       } else {
         toast("Couldn't find that card again, so it can't be edited here. Remove it with × and add it again.", 'err');
         setEditing(null);
@@ -458,8 +462,11 @@ export default function PricingScreen({
     // A Magic card can't be searched in JP: back to EN for it.
     if (line.game === 'mtg' && lang === 'ja') setLang('en');
     if (!games[line.game]) setGames({ ...games, [line.game]: true });
-    const query = editQuery(line);
-    setEditing({ line, key: candidateKeyOf(line), query, found: false, restored: false });
+    // Every printing of its name, its own selected among them (decision 319); the exact search when
+    // a name doesn't find it, or as the fallback when its card isn't among the name's printings.
+    const exact = editQuery(line);
+    const query = nameQuery(line) ?? exact;
+    setEditing({ line, key: candidateKeyOf(line), query, exact, found: false, restored: false });
     setSelected(null);
     setHighlight(-1);
     setPrinting({ key: null, finish: null, version: null });

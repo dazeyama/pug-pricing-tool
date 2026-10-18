@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { bulkItemKey, candidateKeyOf, editQuery, justtcgKey, magicKey, pokemonKey } from '../src/lib/candidateKey.js';
+import { bulkItemKey, candidateKeyOf, editQuery, justtcgKey, magicKey, nameQuery, pokemonKey } from '../src/lib/candidateKey.js';
 import { bulkCandidate, bulkItem, buildBulkLine, buildPlaceholderLine } from '../src/lib/bulk.js';
 import { cardId, justtcgCandidate } from '../src/lib/justtcgCards.js';
 
@@ -44,4 +44,13 @@ test("a saved line's search finds its own card", () => {
   assert.equal(editQuery({ game: 'pokemon', lang: 'en', name: 'Gengar', collector_number: '060', printed_size: 162, set_code: 'XYP', tcgdex_id: null }), 'Gengar 060/162');
   assert.equal(editQuery({ game: 'mtg', bulk_kind: 'mtg_100_common' }), 'BULK mtg');
   assert.equal(editQuery({ game: 'pokemon', bulk_kind: 'pkm_placeholder' }), 'BULK pkm');
+});
+
+// An edit opens on every printing of the card's name, as right-click does (decision 319).
+test('an edit searches the name where a name finds the card; else the exact search', () => {
+  assert.equal(nameQuery({ game: 'mtg', name: 'Sol Ring', collector_number: '472', set_code: 'CMR' }), 'Sol Ring');
+  assert.equal(nameQuery({ game: 'pokemon', lang: 'en', tcgdex_id: 'base1-4', name: 'Charizard' }), 'Charizard');
+  assert.equal(nameQuery({ game: 'pokemon', lang: 'ja', tcgdex_id: 'sv2a-025', name: 'ピカチュウ' }), null);
+  assert.equal(nameQuery({ game: 'pokemon', lang: 'en', justtcg_card_id: 'x', name: 'Mimikyu ex' }), null);
+  assert.equal(nameQuery({ game: 'mtg', bulk_kind: 'mtg_cu', name: '100 commons' }), null);
 });
