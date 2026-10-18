@@ -303,7 +303,8 @@ export default function PricingScreen({
   // its own search selects that exact card.
   useEffect(() => {
     if (!search.settled) return;
-    const found = search.candidates;
+    // In the order shown: the card being edited pinned first (decision 324), so the highlight matches.
+    const found = pinFirst(search.candidates, editing?.key);
     if (editing && !editing.found) {
       if (search.query !== editing.query) return;   // the edit's search hasn't run yet
       const index = found.findIndex((c) => c.key === editing.key);
