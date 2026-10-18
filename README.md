@@ -1073,7 +1073,8 @@ Removing the last card deletes the buy, after asking.
 
 **🚩 Check condition.** A buy flagged at CONFIRM BUY shows a red chip. Clicking it asks **Condition
 checked?**; **Yes** turns it into a green **✅ Condition checked** for good. EXPORT, Export single buy
-and Complete day… warn while a buy is flagged.
+and Complete day… warn while a buy is flagged, and its printouts carry a red banner (see
+[Print MTG?](#print-mtg-the-audit-printout)).
 
 Once Completed, a buy is locked. Its card names turn grey, and its prices show in green: those are its
 Sell Prices. A Magic buy marked Completed by hand has its cards struck as well (see the ⋯ menu).
@@ -1118,13 +1119,17 @@ A PDF to check a batch by hand before it goes up to Crystal Commerce. It changes
   Commerce category**, each with its set symbol; anything with no product goes under **Unmatched**.
 - In each category: Near Mint first, by collector number, then the other conditions.
 - Each row: quantity, a tick box, the name, its colour, the collector number, condition and finish.
+- **A buy flagged 🚩 for a condition check** (and not yet ✅ checked) puts a red banner across the top
+  of every page, naming it: *"CHECK CONDITION: Buy 42 is flagged. Check its cards before export."* A
+  day's printout names every flagged buy that day.
 - It opens in a new tab and downloads. Bulk is never on it.
 
 ### Print PKM? (the Pokémon printout)
 
 The same printout for a batch's Pokémon cards: one section per **set**, its code on the band, Near
 Mint first by collector number, the finish and tags as chips. Nothing is looked up, so it works
-offline. Pokémon cards are never exported, so a Completed batch prints the same cards.
+offline. Pokémon cards are never exported, so a Completed batch prints the same cards. A flagged
+buy's red banner shows here too.
 
 ### Print PKM Stickers?
 
@@ -1414,7 +1419,7 @@ the sounds, **Unpair**); the **condition**; the **finish**; the camera; the **in
 
 | | |
 |---|---|
-| **Scan card** | Reads the card in view now, more thoroughly: every line of text on it, every search. A bar fills the button as it goes. Auto scan waits while it reads. |
+| **Scan card** | Reads the card in view now, more thoroughly: every line of text on it, every search. A bar fills the button as it goes. Auto scan waits while it reads. **Hold it** to start over: see *Stuck?* below. |
 | **+1** | Another copy of the last card, exactly as it went in (printing, finish, condition), without reading anything. **Tapping the middle of the picture** does the same. Auto scan never adds the same card twice in a row by itself: use +1 for a second copy. |
 | **Auto?** | Unticked, nothing goes in by itself. Scan card and +1 still work. |
 | **Reset view** | Lets go of the card; the next card found locks the view again. Nothing else moves the view, not even Stop. |
@@ -1435,6 +1440,18 @@ closer than about 15 cm: if it stays blurry, raise the phone a little.
 
 - A card printed in another language is refused: add it on the computer.
 - **Couldn't read this card:** set it aside and add it on the computer.
+
+**Stuck?** Nothing waits for long:
+
+- After 3 seconds, Scan card reads **Reading… tap to stop**. Tapping it stops the read and starts the
+  card reader afresh. Press Scan card again to read the card.
+- **Hold Scan card** for a moment (the phone buzzes) to start over and read the card now. Auto scan
+  forgets the last card too, so a card it won't read by itself gets read. The view stays locked:
+  **Reset view** lets go of the card.
+- On a slow connection, a read stops by itself after 20 seconds and says *"That took too long"*.
+  Press Scan card again.
+- *"No answer from the computer yet"*: the card may have gone in anyway. Check the list on the
+  computer before scanning it again.
 
 ### Prices
 
