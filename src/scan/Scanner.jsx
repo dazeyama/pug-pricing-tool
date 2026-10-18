@@ -24,6 +24,7 @@ import { ocrWorker, onOcrStatus, resetOcr } from './ocr.js';
 import { isTimeout, withTimeout } from '../lib/timeout.js';
 import { isMuted, play, setMuted, unlockSounds } from './sounds.js';
 import { printingsFor, readOlderCard } from './older.js';
+import { isPromoStrip, resolvePromo } from './promo.js';
 import { guessName, matchName } from './nameMatch.js';
 import { isDark, lightIn } from './light.js';
 import { inkShare, titleCutout } from './titles.js';
@@ -729,7 +730,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           found = await resolveReadings(attempts, known, { pattern });
           if (found) leaveOlder(v);
           // No set code read at the bottom: once more towards the older-card mode.
-          else if (!attempts.some((a) => readClues(a.text, known).sets.length)) noLineAgain(v, art);
+          // A promo's PRM counts as a set read (decision 313): it's no older card.
+          else if (!attempts.some((a) => readClues(a.text, known).sets.length || isPromoStrip(a.text))) noLineAgain(v, art);
         }
       } else {
         // Scan card before the view is locked: the whole picture, every block read.
@@ -738,6 +740,20 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         blocks.forEach((_, i) => progress?.plan(`located-${i + 1}`, STEP_MS.ocr));
         attempts = blocks.length ? await readCollectorLine(frame, pattern, blocks, { all: true, progress }) : [];
         found = await resolveThorough(attempts.map((a) => a.text), known, { pattern, progress });
+      }
+
+      // A promo printing PRM for its set (decision 313): its main set found by the size read
+      // ("100/196"), and its promo printings of that number; one taken, several to pick from (the
+      // stamp tells them apart).
+      if (!found && attempts.some((a) => isPromoStrip(a.text))) {
+        const promo = await resolvePromo(attempts.map((a) => a.text));
+        if (stale()) return;
+        if (promo?.cards.length === 1) found = { card: promo.cards[0], tier: 1, sure: true };
+        else if (promo) {
+          setPick({ tier: 1, name: promo.name, cards: promo.cards, all: promo.all, art, foilSeen, hint: 'A promo: match the stamp.' });
+          say('muted', `${promo.name}: a promo, pick which one.`);
+          return;
+        }
       }
 
       // No modern collector line: an older card, by its title (and "123/350" from 1998 on). Scan
@@ -1258,9 +1274,10 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
             key={`${pick.name}:${pick.cards[0]?.id ?? ''}`}
             pick={pick}
             onPick={(card) => {
-              const { tier, art } = pick;
+              const { tier, art, foilSeen } = pick;
               setPick(null);
-              sendCard(card, { tier, manual: true, art: art ?? null });
+              // A promo's strip showed its foil star or not (decision 313); an older card's has none.
+              sendCard(card, { tier, manual: true, art: art ?? null, foilSeen });
             }}
             onSkip={() => {
               // Skipped: held, so auto scan doesn't ask about the card still in the holder again.
