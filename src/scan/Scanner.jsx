@@ -24,6 +24,7 @@ import { ocrWorker, onOcrStatus, resetOcr } from './ocr.js';
 import { isTimeout, withTimeout } from '../lib/timeout.js';
 import { isMuted, play, setMuted, unlockSounds } from './sounds.js';
 import { readOlderCard } from './older.js';
+import { isDark, lightIn } from './light.js';
 import { inkShare, titleCutout } from './titles.js';
 import NeedsPriceSheet from './NeedsPriceSheet.jsx';
 import PickPrintingSheet from './PickPrintingSheet.jsx';
@@ -36,6 +37,8 @@ const REST_MS = 300;
 // instead, to spare the battery and the heat; anything new and it's back to REST_MS.
 const IDLE_AFTER_MS = 30_000;
 const IDLE_REST_MS = 1_000;
+// Too dark (decision 306): this many dark looks in a row and the strip suggests more light.
+const DARK_AFTER = 4;
 /** A first read waiting for the second look that must agree: taken straight away, not after a rest. */
 const CONFIRM_MS = 50;
 const FIRST_LOOK_MS = 800;
@@ -203,6 +206,9 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const busy = useRef(false);
   // The last time anything new was in the holder or a button was pressed (decision 304).
   const lastActive = useRef(Date.now());
+  // Dark looks in a row (decision 306), and whether the last picture was too dark.
+  const darkLooks = useRef(0);
+  const lastDark = useRef(false);
   const markActive = () => {
     lastActive.current = Date.now();
   };
@@ -283,6 +289,24 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const say = (tone, text, title = null) => setLocal({ tone, text, title, at: Date.now() });
   /** A message about the camera (decision 303): cleared when the camera's back. */
   const sayCamera = (tone, text) => setLocal({ tone, text, title: null, at: Date.now(), camera: true });
+  /** What more light would take: the torch, where there is one and it's off. */
+  const lightTip = () => (camera.torch === false ? 'tap 💡 for the light' : 'more light on the card helps');
+  /**
+   * Note a look's light (owner, 2026-10-19: "fix", to "No hint in dim light"; decision 306): after
+   * DARK_AFTER dark looks in a row the strip says so, once; it goes when the light's back.
+   */
+  function noteLight(dark) {
+    lastDark.current = dark;
+    if (dark) {
+      darkLooks.current += 1;
+      if (darkLooks.current === DARK_AFTER) {
+        setLocal({ tone: 'warn', text: `Too dark to read well: ${lightTip()}.`, title: null, at: Date.now(), light: true });
+      }
+    } else {
+      if (darkLooks.current >= DARK_AFTER) setLocal((l) => (l?.light ? null : l));
+      darkLooks.current = 0;
+    }
+  }
 
   const blocked = blockedText(session);
   const needs = [...scans].reverse().find((s) => s.status === 'needs_price') ?? null;
@@ -549,6 +573,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         if (manual) say('warn', "The camera isn't ready yet: press Scan card again.");
         return;
       }
+      noteLight(isDark(lightIn(frame, lockRef.current?.view ?? null)));
       const pattern = await setCodePattern();
       const known = await paperSetCodes();
       let lock = lockRef.current;
@@ -690,7 +715,9 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       if (!found) {
         if (!manual) v.pending = null;
         if (manual) {
-          say('err', "Couldn't read this card: set it aside and add it on the computer.");
+          say('err', lastDark.current
+            ? `Couldn't read this card: it's too dark. ${lightTip()[0].toUpperCase()}${lightTip().slice(1)}, then press Scan card again.`
+            : "Couldn't read this card: set it aside and add it on the computer.");
           play('error');
         }
         return;

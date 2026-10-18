@@ -330,6 +330,7 @@ Four findings, all in the live build too, and the owner's calls:
 
 ### For the next smoke test
 
+- [ ] 🆕 **Too dark (decision 306):** scan in a dim corner: after a few looks the strip suggests 💡; turning it on (or more light) clears it; a Scan card that fails in the dark says it's too dark. A black-bordered card in good light never gets the hint.
 - [ ] 🆕 **Auto scan rests (decision 304):** leave the scanner on with an empty holder for a minute, then lay a card: it's read within about a second, and the next cards go in at the usual pace.
 - [ ] 🆕 **The camera cut off (decision 303):** scanning, take a call (or open the phone's own camera from the control centre): the strip says the phone has the camera, auto scan waits; back, scanning carries on with the view still locked. A picture that freezes restarts by itself within a few seconds.
 - [ ] 🆕 **A scan saved once (decision 302):** on a weak connection (Chrome's throttling on the laptop's `#/scan`), a card whose send is slow goes in once, not twice; only after three tries does the phone say "No answer from the computer after three tries".
