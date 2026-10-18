@@ -58,3 +58,18 @@ test("only short words are cut off a read's end (decision 310)", async () => {
 test('titles compare without punctuation or case', () => {
   assert.equal(titleKey('Æther Vial!'), 'aether vial');
 });
+
+test('Which card? (decision 311): a guess when nothing is clear, and names as typed', async () => {
+  const { guessName, nameSuggestions } = await import('../src/scan/nameMatch.js');
+  const names = ["Heaven's Gate", 'Heavenly Blademaster', 'Serra Angel', 'Serra Aviary', 'Shivan Dragon', 'Sanctum Gargoyle'];
+  // A bad reading (the benchmark's Heaven's Gate): no clear name, but a guess to start the box with.
+  assert.equal(matchName("Tienvep's Gare", names), null);
+  assert.equal(guessName(["Tienvep's Gare", ''], names)?.name, "Heaven's Gate");
+  assert.equal(guessName(['', 'x'], names), null);
+  // Typing: names starting with it first, then a word starting with it; nothing loose besides.
+  assert.deepEqual(nameSuggestions('heav', names), ["Heaven's Gate", 'Heavenly Blademaster']);
+  assert.deepEqual(nameSuggestions('aviary', names), ['Serra Aviary']);
+  assert.deepEqual(nameSuggestions('s', names), []);
+  // A typo, nothing starting with it: the closest names.
+  assert.equal(nameSuggestions('hevens gat', names)[0], "Heaven's Gate");
+});

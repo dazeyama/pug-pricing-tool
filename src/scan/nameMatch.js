@@ -88,3 +88,61 @@ export function matchName(text, names) {
   }
   return null;
 }
+
+// Which card? (decision 311): a looser search for the box's first guess and the names as typed.
+let loose = null;
+function looseFuse(names) {
+  const index = indexFor(names);
+  if (loose?.index !== index) {
+    loose = { index, fuse: new Fuse(index.entries, { keys: ['key'], includeScore: true, threshold: 0.6, ignoreLocation: true }) };
+  }
+  return loose.fuse;
+}
+
+/**
+ * The reader's closest name when none was clear (decision 311): the best
+ * of a loose search over every reading, for the Which card? box to start
+ * with; null when nothing comes near. Often wrong (the readings it's for
+ * are the bad ones), so it's only ever a suggestion to correct.
+ * @param {string[]} texts  the title's readings
+ * @returns {{ name: string, score: number }|null}
+ */
+export function guessName(texts, names) {
+  const fuse = looseFuse(names);
+  let best = null;
+  for (const text of texts) {
+    for (const key of titleKeys(text)) {
+      if (key.replace(/ /g, '').length < 3) continue;
+      const [hit] = fuse.search(key, { limit: 1 });
+      if (hit && (!best || hit.score < best.score)) best = { name: hit.item.name, score: hit.score };
+    }
+  }
+  return best;
+}
+
+/**
+ * The names that fit what's typed (decision 311), for the box's list:
+ * those starting with it, then those with a word starting with it; a loose
+ * search's only when none do (a typo); each name once. Pure but for the
+ * shared index.
+ */
+export function nameSuggestions(query, names, limit = 6) {
+  const key = titleKey(query);
+  if (key.replace(/ /g, '').length < 2) return [];
+  const index = indexFor(names);
+  const out = [];
+  const add = (name) => {
+    if (out.length < limit && !out.includes(name)) out.push(name);
+  };
+  for (const e of index.entries) {
+    if (out.length >= limit) break;
+    if (e.key.startsWith(key)) add(e.name);
+  }
+  for (const e of index.entries) {
+    if (out.length >= limit) break;
+    if (e.key.includes(` ${key}`)) add(e.name);
+  }
+  // Nothing starts with it: a typo, so the loose search's closest names.
+  if (!out.length) for (const h of looseFuse(names).search(key, { limit })) add(h.item.name);
+  return out;
+}

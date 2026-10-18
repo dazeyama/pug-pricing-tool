@@ -330,6 +330,7 @@ Four findings, all in the live build too, and the owner's calls:
 
 ### For the next smoke test
 
+- [ ] 🆕 **Which card? (decision 311):** Heaven's Gate (Legends) or any card the title can't be read on: Title opens "Couldn't read the name. Which card is it?" with a guess in the box; × clears it; typing "heav" lists Heaven's Gate; tapping it (or Find printings) opens its printings; picking one adds it. With auto scan, the same card left in the holder opens the box by itself after a few looks. Skip sets it aside and auto scan doesn't ask again for that card.
 - [ ] 🆕 **White titles read (decision 309):** a Mercadian Masques card (Statecraft, Misdirection), an Apocalypse or Urza's Destiny card: Title (or the older-card mode) names it and opens its printings, where before it said it couldn't read the title.
 - [ ] 🆕 **Older card titles found (decision 308):** an older card (Courser of Kruphix, a 4th Edition card, a Mirrodin card): Title shows the name itself in the info box, level and whole, not the frame's line; the printing list opens with the right name, also when the card sits a little high or low in the holder.
 - [ ] 🆕 **The computer never stuck (decision 307):** with Chrome's network throttling on the computer (Slow 3G) while scanning, scans still finish or fail with a reason within 30 s, and the next scans go in once the connection's back; on the phone, a scan waiting over 15 s says "still waiting on <computer>" or "still pricing it" in amber.

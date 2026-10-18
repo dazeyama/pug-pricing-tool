@@ -328,6 +328,39 @@ html[data-scan] .toast { max-width: none; }
 .scan-sheet-error { margin: 0; color: var(--bad); font-size: 13px; }
 .scan-sheet-foot { display: flex; justify-content: flex-end; gap: 8px; }
 
+/* ---- Which card? (decision 311): the name to type ---- */
+.scan-name-row { display: flex; align-items: center; gap: 8px; }
+.scan-name-box { position: relative; flex: 1; min-width: 0; }
+.scan-name-box input { width: 100%; margin: 0; min-height: 46px; font-size: 17px; padding-right: 40px; }
+.scan-name-clear {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--panel-2);
+  color: var(--muted);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.scan-name-row .btn { min-height: 46px; white-space: nowrap; font-weight: 600; }
+.scan-name-suggestions { display: flex; flex-direction: column; gap: 4px; }
+.scan-name-suggestion {
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-2);
+  color: var(--text);
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+}
+
 /* ---- An older card's printings, to pick from ---- */
 .scan-sheet.pick { border-color: var(--accent); }
 .scan-pick-title { font-size: 15px; }

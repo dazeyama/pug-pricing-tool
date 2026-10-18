@@ -13,7 +13,7 @@ import * as scry from '../lib/scryfall.js';
 import { defaultCreateCanvas } from './recognition/canvasUtil.js';
 import { PSM_BLOCK, PSM_LINE, readText } from './ocr.js';
 import { findTitle, parseCopyrightYear, parseOldNumber, readBottom } from './titles.js';
-import { matchName } from './nameMatch.js';
+import { guessName, matchName } from './nameMatch.js';
 import { guideRect } from './guide.js';
 import { rankPrintings } from './printingMatch.js';
 
@@ -59,17 +59,32 @@ async function loadPicture(url) {
  * @param {{ texts?: string[], card?: object, listMark?: boolean|null }} [opts]  listMark: The List's
  *   mark seen at the card's corner (listMark.js); texts: what the collector-line reading already read: on a
  *   black-bordered card it's the copyright line with the "123/350" in it, so no second read
- * @returns {Promise<{ tier: 2|3, name: string, number: string|null, cards: object[], all: object[] }|null>}
- *   null: the title couldn't be named clearly; cards: one (the printing to take), or the likely
- *   ones, best first; all: every printing of that name, oldest first (the pick list's View all)
+ * @returns {Promise<{ tier: 2|3, name: string, number: string|null, cards: object[], all: object[] }
+ *   |{ name: null, guess: string }|null>}  { name: null, guess }: the title couldn't be named clearly,
+ *   guess the reader's closest name ('' for none), for the Which card? box (decision 311); null: no
+ *   printing of the name found; cards: one (the printing to take), or the likely ones, best first;
+ *   all: every printing of that name, oldest first (the pick list's View all)
  */
 export async function readOlderCard(frame, { texts = [], card = null, listMark = null } = {}) {
   const names = await scry.loadNames();
   // The title where it's found on the card (decision 308), each likely place as one line till one
   // names a card; then the best as a block (it copes with a stray mark better).
   const reads = { line: (c) => readText(c, PSM_LINE), block: (c) => readText(c, PSM_BLOCK) };
-  const match = matchName(await findTitle(frame, reads, defaultCreateCanvas, (t) => matchName(t, names), { card }), names);
-  if (!match) return null;
+  const readings = [];
+  const match = matchName(await findTitle(frame, reads, defaultCreateCanvas, (t) => matchName(t, names), { card, readings }), names);
+  if (!match) return { name: null, guess: guessName(readings, names)?.name ?? '' };
+  return printingsFor(match.name, frame, { texts, card, listMark });
+}
+
+/**
+ * An older card's printings once its name is known (read, or typed in the
+ * Which card? box, decision 311): taken by its "123/350" when that fits one,
+ * else ranked by how the card looks, best first.
+ * @returns {Promise<{ tier: 2|3, name: string, number: string|null, cards: object[], all: object[] }|null>}
+ *   null: Scryfall has no printing of that name
+ */
+export async function printingsFor(name, frame, { texts = [], card = null, listMark = null } = {}) {
+  const match = { name };
   const bottoms = [...texts];
   let old = bottoms.map(parseOldNumber).find(Boolean) ?? null;
   if (!old) {

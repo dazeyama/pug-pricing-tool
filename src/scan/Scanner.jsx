@@ -23,11 +23,13 @@ import { defaultCreateCanvas } from './recognition/canvasUtil.js';
 import { ocrWorker, onOcrStatus, resetOcr } from './ocr.js';
 import { isTimeout, withTimeout } from '../lib/timeout.js';
 import { isMuted, play, setMuted, unlockSounds } from './sounds.js';
-import { readOlderCard } from './older.js';
+import { printingsFor, readOlderCard } from './older.js';
+import { guessName, matchName } from './nameMatch.js';
 import { isDark, lightIn } from './light.js';
 import { inkShare, titleCutout } from './titles.js';
 import NeedsPriceSheet from './NeedsPriceSheet.jsx';
 import PickPrintingSheet from './PickPrintingSheet.jsx';
+import NameSheet from './NameSheet.jsx';
 
 // Auto scan (docs/SCAN_FUNCTION.md 6.3): the rest between one look at the
 // camera and the next, and the wait before the first.
@@ -49,6 +51,9 @@ const FIRST_LOOK_MS = 800;
 // on the card name instead, resetting to the normal bottom position upon
 // the next card"); then it reads the title, two looks naming the same card.
 const OLDER_AFTER = 3;
+// Which card? (decision 311): this many title reads in a row naming nothing, on the same card, and
+// auto scan stops trying and asks for the name.
+const UNREAD_AFTER = 3;
 // A blank strip with this much ink in the title band is a card (a white-bordered older one), not an empty holder.
 const TITLE_INK = 0.02;
 // Focus (owner, 2026-10-16): a collector strip under this sharpness
@@ -207,6 +212,9 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const view = useRef({ held: null, pending: null });
   // An older card that could be several printings: { tier, name, cards } to pick from.
   const [pick, setPick] = useState(null);
+  // Which card? (decision 311): a title no read could name, its name to type: { guess, frame, card,
+  // listMark, texts, art }.
+  const [nameAsk, setNameAsk] = useState(null);
   // The info box on the card's title (the older-card mode, by itself or by Title), for the
   // Title / Number button's label.
   const [titleMode, setTitleMode] = useState(false);
@@ -512,6 +520,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
 
   /** Back to the bottom strip: a card with a set code, or the next card. */
   function leaveOlder(v) {
+    v.unread = 0;
     v.noLine = 0;
     v.lineArt = null;
     v.older = false;
@@ -566,8 +575,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       }
       return;
     }
-    if (needs || pick) {
-      if (manual) say('warn', needs ? 'Answer the card that needs a price first.' : 'Pick the printing first.');
+    if (needs || pick || nameAsk) {
+      if (manual) say('warn', needs ? 'Answer the card that needs a price first.' : pick ? 'Pick the printing first.' : 'Type the card\'s name first.');
       return;
     }
     busy.current = true;
@@ -698,10 +707,23 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         if (manual) say('muted', 'No set code at the bottom: reading the title…');
         progress?.plan('older', STEP_MS.older);
         progress?.start('older');
-        const old = await readOlderCard(frame, { texts: attempts.map((a) => a.text), card: lock?.card ?? null, listMark: listSeen });
+        const read = await readOlderCard(frame, { texts: attempts.map((a) => a.text), card: lock?.card ?? null, listMark: listSeen });
         progress?.finish('older');
         if (stale()) return;
         foilSeen = undefined;   // an older card, read by its title: no mark to go by
+        // No read could name it (decision 311): Scan card asks for the name at once; auto scan after
+        // UNREAD_AFTER such looks in a row on this card, instead of trying for ever.
+        if (read && !read.name) {
+          v.unread = (v.unread ?? 0) + 1;
+          if (manual || v.unread >= UNREAD_AFTER) {
+            v.unread = 0;
+            v.pendingOld = null;
+            askName({ guess: read.guess, frame, card: lock?.card ?? null, listMark: listSeen, texts: attempts.map((a) => a.text), art });
+          }
+          return;
+        }
+        v.unread = 0;
+        const old = read;
         if (!manual) {
           // Two looks must name the same card, and the same printing when one's to be taken.
           const said = old ? `${old.name}|${old.cards.length === 1 ? old.cards[0].id : ''}` : null;
@@ -869,12 +891,15 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       if (lock) showCutout(titleCutout(frame, lock.card, defaultCreateCanvas));
       say('muted', 'Reading the title…');
       bar.start('older');
-      const old = await withTimeout(readOlderCard(frame, {
-        card: lock?.card ?? null,
-        listMark: lock ? findListMark(frame, lock.card, defaultCreateCanvas).mark : null,
-      }), MANUAL_DEADLINE_MS);
+      const listMark = lock ? findListMark(frame, lock.card, defaultCreateCanvas).mark : null;
+      const old = await withTimeout(readOlderCard(frame, { card: lock?.card ?? null, listMark }), MANUAL_DEADLINE_MS);
       bar.finish('older');
       if (scanTicket.current !== ticket) return;
+      if (old && !old.name) {
+        // No read could name it (decision 311): its name to type.
+        askName({ guess: old.guess, frame, card: lock?.card ?? null, listMark, texts: [], art });
+        return;
+      }
       if (!old) {
         say('err', "Couldn't read the title: straighten the card in the holder, then press Title again.");
         play('error');
@@ -935,6 +960,41 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     stopReading(null);
     navigator.vibrate?.(40);
     scanCard();
+  }
+
+  /** Which card? (decision 311): the box opened, the reader's closest name in it. */
+  function askName(ask) {
+    setNameAsk(ask);
+    say('warn', lastDark.current
+      ? `Couldn't read the name: it's too dark (${lightTip()}). Type it below, or skip the card.`
+      : "Couldn't read the name: type it below, or skip the card.");
+    play('error');
+  }
+
+  /**
+   * The typed name (decision 311): the card of that name (exactly, else the
+   * clear match, else the closest), its printings found and ranked by the
+   * photo taken when the box opened, and the printing list opened. An error
+   * to show in the box, or null.
+   */
+  async function nameTyped(typed) {
+    const ask = nameAsk;
+    if (!ask) return null;
+    try {
+      const names = await scry.loadNames();
+      const lower = typed.toLowerCase();
+      const name = names.find((n) => n.toLowerCase() === lower)
+        ?? matchName(typed, names)?.name ?? guessName([typed], names)?.name ?? null;
+      if (!name) return 'No card by that name: check the spelling.';
+      const old = await withTimeout(printingsFor(name, ask.frame, { texts: ask.texts, card: ask.card, listMark: ask.listMark }), MANUAL_DEADLINE_MS);
+      if (!old) return `Scryfall has no printing of ${name}.`;
+      setNameAsk(null);
+      setPick({ ...old, art: ask.art });
+      say('muted', `${old.name}: pick its printing.`);
+      return null;
+    } catch (e) {
+      return isTimeout(e) ? 'That took too long: the connection may be slow. Try again.' : `Couldn't find it: ${e.message}`;
+    }
   }
 
   /** Number: the info box back on the bottom strip, read as a modern card's. */
@@ -1025,7 +1085,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const auto = useRef(null);
   auto.current = {
     scanFrame,
-    paused: !autoOn || Boolean(blocked) || Boolean(needs) || Boolean(pick) || offline || Boolean(camera.interrupted),
+    paused: !autoOn || Boolean(blocked) || Boolean(needs) || Boolean(pick) || Boolean(nameAsk) || offline
+      || Boolean(camera.interrupted),
   };
   useEffect(() => {
     if (!camera.on) return undefined;
@@ -1169,6 +1230,19 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
             }}
           />
         )}
+        {!needs && !pick && nameAsk && (
+          <NameSheet
+            key={nameAsk.guess ?? ''}
+            guess={nameAsk.guess}
+            onSubmit={nameTyped}
+            onSkip={() => {
+              // Skipped: held, as a skipped printing list is, so auto scan leaves this card be.
+              view.current.held = nameAsk.art ?? null;
+              setNameAsk(null);
+              say('muted', 'Skipped: set it aside and add it on the computer.');
+            }}
+          />
+        )}
       </div>
 
       {/* The collector corner, enlarged and cleaned, for the person scanning (owner, 2026-10-16). */}
@@ -1184,7 +1258,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           <button
             type="button"
             className="btn small scan-cutout-mode"
-            disabled={reading || Boolean(needs) || Boolean(pick)}
+            disabled={reading || Boolean(needs) || Boolean(pick) || Boolean(nameAsk)}
             title={titleMode ? 'Read the set code and number at the bottom' : 'An older card: read its title and pick its printing'}
             onClick={titleMode ? backToNumber : readTitleNow}
           >
@@ -1244,13 +1318,13 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           <button
             type="button"
             className={`btn primary scan-now${reading ? ' reading' : ''}${reading && stoppable ? ' stoppable' : ''}`}
-            disabled={!camera.on || (reading ? !stoppable : Boolean(needs) || Boolean(pick))}
+            disabled={!camera.on || (reading ? !stoppable : Boolean(needs) || Boolean(pick) || Boolean(nameAsk))}
             aria-busy={reading}
             title={reading ? (stoppable ? 'Stop this read and start the reader afresh' : undefined) : 'Read the card. Hold to start over.'}
             onPointerDown={() => {
               longPressed.current = false;
               clearTimeout(pressTimer.current);
-              if (reading || needs || pick) return;
+              if (reading || needs || pick || nameAsk) return;
               pressTimer.current = setTimeout(() => {
                 longPressed.current = true;
                 startOver();

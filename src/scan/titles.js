@@ -238,8 +238,10 @@ export function readTitle(frame, read, createCanvas, { wholeFrame = false, card 
  * taken, or the last one.
  * @param {(text: string) => unknown} accept  a reading that names a card
  * @param {{ line: (c: object) => Promise<string>, block: (c: object) => Promise<string> }} reads  OCR
+ * @param {{ wholeFrame?: boolean, card?: object, readings?: string[] }} [opts]  readings: each reading
+ *   is added to it (the Which card? box's guess, decision 311)
  */
-export async function findTitle(frame, reads, createCanvas, accept, { wholeFrame = false, card = null } = {}) {
+export async function findTitle(frame, reads, createCanvas, accept, { wholeFrame = false, card = null, readings = null } = {}) {
   const rect = cardIn(frame, wholeFrame, card);
   const tops = titleTops(frame, rect, createCanvas);
   const at = (top, white = false) => band(frame, rect, titleAt(top), BAND_HEIGHT.title, createCanvas, { white });
@@ -249,9 +251,11 @@ export async function findTitle(frame, reads, createCanvas, accept, { wholeFrame
   let text = '';
   for (const [top, white] of tries) {
     text = await reads.line(at(top, white));
+    readings?.push(text);
     if (accept(text)) return text;
   }
   text = await reads.block(at(tops[0]));
+  readings?.push(text);
   return text;
 }
 
