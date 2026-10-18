@@ -330,6 +330,7 @@ Four findings, all in the live build too, and the owner's calls:
 
 ### For the next smoke test
 
+- [ ] 🆕 **Settled reads (decision 322):** in a run, the run log's failed reads just before a card goes in (no-card about 0.6 s before a sent) fall from about half to few; cards go in at the same pace or faster; the collector box stays whole past card 100.
 - [ ] 🆕 **Stop is an abort (decision 321):** press Stop mid-read (Reading…) and while the camera's refocusing: the picture and the phone's green camera dot go at once and the camera doesn't come back by itself; START CAMERA starts it again.
 - [ ] 🆕 **Awake while scanning (decision 320):** with the computer's display set to sleep after 2 minutes, scan cards from the phone for 5: the screen stays on; 10 minutes after the last card it sleeps as usual.
 - [ ] 🆕 **Edit opens every printing (decision 319):** click a Magic line (Sol Ring CMR): the search reads "Sol Ring", every printing shows, the line's own is selected with its condition and price; SAVE EDIT saves over it. A basic land still edits (falls back to its exact search). A Japanese Pokémon line keeps its number search.

@@ -646,7 +646,9 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       // when found (by its collector line, or, an older card, by its edges alone), what's held about
       // the card last sent kept, so it isn't sent again. Not found: the old lock stays, tried again
       // on the next looks, RELOCK_TRIES at most.
-      if (lock && !manual && relockDue.current) {
+      // Found again only on a settled picture (decision 322): a crop made mid-motion, a hand over the
+      // card or the card sliding in, sat wrong till the next one.
+      if (lock && !manual && relockDue.current && !view.current.moving) {
         const card = findCard(frame, defaultCreateCanvas);
         const anchor = card ? anchorBlock(locate(frame)) : null;
         const anchored = Boolean(anchor && blockOnCard(anchor, card));
@@ -697,9 +699,12 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         const strip = straightCutout(frame, lock, defaultCreateCanvas);
         const cut = strip.canvas;
         art = artPrint(frame, lock);
-        // Something new in the holder since the last look (decision 304): not idle.
-        if (!v.lastArt || artDistance(v.lastArt, art) >= ART_CHANGED) markActive();
+        // Something new in the holder since the last look (decision 304): not idle. And still moving
+        // (decision 322): the card (or a hand) not where it was a look ago.
+        const moving = Boolean(v.lastArt) && artDistance(v.lastArt, art) >= ART_CHANGED;
+        if (!v.lastArt || moving) markActive();
         v.lastArt = art;
+        v.moving = moving;
         listSeen = findListMark(frame, lock.card, defaultCreateCanvas).mark;
         // Another card in: back to its bottom strip (the older mode was the last card's).
         if (v.lineArt && artDistance(v.lineArt, art) >= ART_CHANGED) leaveOlder(v);
@@ -707,6 +712,11 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         showCutout(v.older ? titleCutout(frame, lock.card, defaultCreateCanvas) : cut);
         const outOfFocus = strip.sharpness > 0 && strip.sharpness < BLUR_BELOW;
         setBlurry(outOfFocus);
+        // Still moving (owner, 2026-10-19: "the first read is happening slightly too early when waiting
+        // for blur to clear after motion … there's 1 wasted early read often that is then, redone";
+        // decision 322: 62 of 134 strip reads in the run had a failed read 0.6 s before): auto scan
+        // reads once the card's art is the same two looks running, so the card has settled.
+        if (!manual && moving) return;
         if (!manual && v.held) {
           // The card last sent, still there: nothing to read, so a misread of it can't be sent.
           if (artDistance(v.held, art) < ART_CHANGED) return;
