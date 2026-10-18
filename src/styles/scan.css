@@ -231,7 +231,15 @@ html[data-scan] .toast { max-width: none; }
 .scan-actions .btn { min-height: 46px; font-size: 15px; font-weight: 600; white-space: nowrap; }
 /* Scan card and +1 (another copy of the last card) share the top row. */
 .scan-now-row { display: flex; gap: 8px; }
-.scan-now { flex: 1; position: relative; overflow: hidden; }
+.scan-now {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  /* Held to start over: no text selection or callout menu on a phone. */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
 .scan-plus { flex: none; min-width: 64px; font-size: 17px; }
 /* Auto?: auto scan on or off, a checkbox as a button. */
 .scan-auto { display: inline-flex; align-items: center; justify-content: center; gap: 7px; user-select: none; cursor: pointer; }

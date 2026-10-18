@@ -10,6 +10,8 @@
 // been superseded drops its queued requests; and a low-priority lane for
 // background fills, which always waits behind anything the user is waiting on.
 
+import { withTimeout } from './timeout.js';
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function abortError() {
@@ -30,10 +32,21 @@ export class UnavailableError extends Error {
 // (TCGdex's whole set fill and fast typing, 436 requests) never saw one.
 const SLOW_FOR_MS = 60_000;
 
+// A request with no answer in this long is given up and tried again, like a
+// network error (owner, 2026-10-18: the scanner stuck on "Reading…" on a slow
+// network: one stalled request held its queue, and every request after it,
+// for good). Its body gets longer: the big lists (every set, every card name)
+// take a while on a slow connection.
+const ANSWER_MS = 15_000;
+const BODY_MS = 60_000;
+
 /**
- * @param {{ spacingMs?: number, tries?: number, concurrency?: number }} [options]
+ * @param {{ spacingMs?: number, tries?: number, concurrency?: number, timeoutMs?: number, bodyMs?: number }} [options]
+ *   timeoutMs: an attempt with no answer by then is tried again; bodyMs: getJson's wait for the body
  */
-export function createTransport({ spacingMs = 100, tries = 5, concurrency = 1 } = {}) {
+export function createTransport({
+  spacingMs = 100, tries = 5, concurrency = 1, timeoutMs = ANSWER_MS, bodyMs = BODY_MS,
+} = {}) {
   const high = [];
   const low = [];
   let active = 0;
@@ -49,13 +62,21 @@ export function createTransport({ spacingMs = 100, tries = 5, concurrency = 1 } 
       if (at > Date.now()) await sleep(at - Date.now());
       if (signal?.aborted) throw abortError();
 
+      // The caller's signal, and this attempt's time limit, in one.
+      const attemptSignal = new AbortController();
+      const giveUp = () => attemptSignal.abort();
+      signal?.addEventListener('abort', giveUp, { once: true });
+      const clock = setTimeout(giveUp, timeoutMs);
       let res;
       try {
-        res = await fetch(url, { headers: { Accept: 'application/json' }, signal });
-      } catch (e) {
-        if (e.name === 'AbortError') throw e;
-        await sleep(400 * (attempt + 1));            // network hiccup: back off, retry
+        res = await fetch(url, { headers: { Accept: 'application/json' }, signal: attemptSignal.signal });
+      } catch {
+        if (signal?.aborted) throw abortError();
+        await sleep(400 * (attempt + 1));            // network hiccup, or no answer in time: back off, retry
         continue;
+      } finally {
+        clearTimeout(clock);
+        signal?.removeEventListener('abort', giveUp);
       }
       if (res.status === 429 || res.status === 503) {
         if (res.status === 429) {
@@ -113,7 +134,7 @@ export function createTransport({ spacingMs = 100, tries = 5, concurrency = 1 } 
     const res = await request(url, options);
     if (res.status === 404 || res.status === 400) return null;
     if (!res.ok) throw new Error(`${new URL(url).host} answered ${res.status}`);
-    return res.json();
+    return withTimeout(res.json(), bodyMs);
   }
 
   /**

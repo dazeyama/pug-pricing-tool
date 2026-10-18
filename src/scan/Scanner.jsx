@@ -9,7 +9,7 @@ import { usePairing } from './usePairing.js';
 import { useScans } from './useScans.js';
 import { useCamera } from './camera.js';
 import { insetTo, onScreen, showPart } from './guide.js';
-import { locate, paperSetCodes, readCollectorLine, readPrepared, setCodePattern } from './read.js';
+import { HIGH, locate, paperSetCodes, readCollectorLine, readPrepared, setCodePattern } from './read.js';
 import { readClues, resolveReadings, resolveThorough } from './resolve.js';
 import { STEP_MS, createProgress } from './progress.js';
 import { findCard } from './cardEdges.js';
@@ -20,7 +20,8 @@ import { straightCutout } from './straighten.js';
 import { stripShowsFoil } from './foilMark.js';
 import { findListMark, listNumber } from './listMark.js';
 import { defaultCreateCanvas } from './recognition/canvasUtil.js';
-import { ocrWorker, onOcrStatus } from './ocr.js';
+import { ocrWorker, onOcrStatus, resetOcr } from './ocr.js';
+import { isTimeout, withTimeout } from '../lib/timeout.js';
 import { isMuted, play, setMuted, unlockSounds } from './sounds.js';
 import { readOlderCard } from './older.js';
 import { inkShare, titleCutout } from './titles.js';
@@ -51,6 +52,15 @@ const REFOCUS_AFTER = 4;
 const REFOCUS_GAP_MS = 6000;
 // Scan card's loading bar stays full this long once it's done.
 const BAR_DONE_MS = 250;
+// Unstuck (owner, 2026-10-18: "it kept getting stuck on 'Reading...' after hitting Scan Card"):
+// no look runs longer than this, a press's longer than an auto look's; whatever it waits on
+// (Scryfall, the computer, the card reader), it's given up and says so.
+const MANUAL_DEADLINE_MS = 30_000;
+const AUTO_DEADLINE_MS = 15_000;
+// Reading… can be tapped to stop once it's run this long.
+const STOPPABLE_AFTER_MS = 3_000;
+// Holding Scan card this long starts over: the reader started afresh, what auto scan held forgotten.
+const LONG_PRESS_MS = 700;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // The condition and finish for the next scans, kept for this tab (a reload keeps them).
@@ -73,6 +83,7 @@ const SEND_MESSAGES = {
   session_gone: 'The computer left its price screen.',
   session_stale: "The computer hasn't been heard from for a minute.",
   bad_scan: "That card couldn't be sent.",
+  timeout: "No answer from the computer yet: check its list before scanning this card again.",
 };
 
 /** Why the paired computer can't take cards now, as the phone says it, or null. */
@@ -182,6 +193,14 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const [titleMode, setTitleMode] = useState(false);
   const { offline } = useConnection();
   const busy = useRef(false);
+  // Each look's ticket (scanFrame), and each Scan card / Title press's: a look or press given up
+  // (too long, or Stop) leaves the screen to the next one.
+  const scanTicket = useRef(0);
+  const readRun = useRef(0);
+  // Reading… tappable as Stop, once it's run a few seconds; a long press on Scan card under way.
+  const [stoppable, setStoppable] = useState(false);
+  const pressTimer = useRef(null);
+  const longPressed = useRef(false);
   const lastSent = useRef(null);                  // the printing and finish last sent (6.3)
   /**
    * The chime the moment a card is sent, not when the computer has added it
@@ -501,10 +520,16 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       return;
     }
     busy.current = true;
+    // This look's ticket: given up (too long, or Stop), it does nothing more if it ever ends.
+    const ticket = ++scanTicket.current;
+    const stale = () => scanTicket.current !== ticket;
     if (manual) say('muted', 'Reading…');
-    try {
+    const lookOnce = async () => {
       const frame = camera.capture();
-      if (!frame) return;
+      if (!frame) {
+        if (manual) say('warn', "The camera isn't ready yet: press Scan card again.");
+        return;
+      }
       const pattern = await setCodePattern();
       const known = await paperSetCodes();
       let lock = lockRef.current;
@@ -584,7 +609,23 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           attempts = await readPrepared(cut, pattern);
           progress?.finish('strip');
         }
-        if (manual) {
+        if (manual && attempts.length) {
+          // Very sure from the strip alone (owner, 2026-10-18: "If the OCR is VERY confident in the
+          // card then the Scan Card button should accept that before doing the full comprehensive
+          // run"): the printing looked up directly by the set and number read, its rarity or artist
+          // agreeing, and either every clue on the strip agreeing (resolve.js isSure, auto scan's
+          // one-look test) or the line read as surely as mtgscan's best (HIGH). Taken at once.
+          progress?.start('quick');
+          const quick = await resolveReadings(attempts, known, { pattern, quickOnly: true });
+          progress?.finish('quick');
+          const sureRead = Math.max(...attempts.map((a) => a.score)) >= HIGH;
+          if (quick && (quick.foreign || quick.sure || sureRead)) {
+            found = quick;
+            progress?.drop('card');
+            progress?.drop('resolve');
+          }
+        }
+        if (manual && !found) {
           // Scan card: the line looked for on the card itself too, every block read; then all of it
           // weighed together. Auto scan looks again instead (several more reads would keep it busy
           // while a new card is laid in; the strip is found on each card already, straighten.js).
@@ -605,6 +646,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       } else {
         // Scan card before the view is locked: the whole picture, every block read.
         progress?.drop('strip');
+        progress?.drop('quick');
         progress?.drop('card');
         blocks.forEach((_, i) => progress?.plan(`located-${i + 1}`, STEP_MS.ocr));
         attempts = blocks.length ? await readCollectorLine(frame, pattern, blocks, { all: true, progress }) : [];
@@ -619,6 +661,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         progress?.start('older');
         const old = await readOlderCard(frame, { texts: attempts.map((a) => a.text), card: lock?.card ?? null, listMark: listSeen });
         progress?.finish('older');
+        if (stale()) return;
         foilSeen = undefined;   // an older card, read by its title: no mark to go by
         if (!manual) {
           // Two looks must name the same card, and the same printing when one's to be taken.
@@ -637,6 +680,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           return;
         }
       }
+      if (stale()) return;
       if (!found) {
         if (!manual) v.pending = null;
         if (manual) {
@@ -657,17 +701,35 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         const listed = await scry.cardBySetNumber('plst', listNumber(found.card)).catch(() => null);
         if (listed) found = { ...found, card: listed };
       }
+      if (stale()) return;
       progress?.start('send');
       await sendCard(found.card, { tier: found.tier ?? 1, manual, art, sure: Boolean(found.sure), foilSeen });
       progress?.finish('send');
+    };
+    try {
+      await withTimeout(lookOnce(), manual ? MANUAL_DEADLINE_MS : AUTO_DEADLINE_MS);
     } catch (e) {
+      if (stale()) return;   // stopped meanwhile: the screen is the next read's
+      if (isTimeout(e)) {
+        // Too long (owner, 2026-10-18: stuck on "Reading…" on a slow network): given up, so the
+        // next look or press isn't held behind it.
+        scanTicket.current += 1;
+        busy.current = false;
+        if (manual) {
+          say('err', 'That took too long: the connection may be slow. Press Scan card to try again.');
+          play('error');
+        } else {
+          view.current.pending = null;
+        }
+        return;
+      }
       console.error('Scan failed', e);
       if (manual) {
         say('err', `Couldn't read it: ${e.message}`);
         play('error');
       }
     } finally {
-      busy.current = false;
+      if (!stale()) busy.current = false;
     }
   }
 
@@ -677,28 +739,41 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
    */
   async function scanCard() {
     if (manualWaiting.current || reading) return;
+    const run = ++readRun.current;
     manualWaiting.current = true;   // auto scan holds off till Scan card is done: nothing interrupts it
     const bar = createProgress();
     // The work as expected; each step re-planned as it's known (the blocks found, the searches asked).
     if (busy.current) bar.plan('wait', STEP_MS.ocr);
     bar.plan('strip', STEP_MS.ocr);
+    bar.plan('quick', STEP_MS.lookup);
     bar.plan('card', 2 * STEP_MS.ocr);
     bar.plan('resolve', STEP_MS.lookup + 2 * STEP_MS.search);
     bar.plan('send', STEP_MS.send);
     setProgress(bar);
+    setStoppable(false);
     setReading(true);
     try {
       bar.start('wait');
-      while (busy.current) await sleep(40);
+      while (busy.current && readRun.current === run) await sleep(40);
       bar.finish('wait');
+      if (readRun.current !== run) return;
       await scanFrame({ manual: true, progress: bar });
     } finally {
-      manualWaiting.current = false;
-      bar.complete();
-      await sleep(BAR_DONE_MS);
-      setProgress(null);
-      setReading(false);
+      // Stopped meanwhile: Stop has put the screen right, and a new press may be under way.
+      if (readRun.current === run) {
+        manualWaiting.current = false;
+        bar.complete();
+        await sleep(BAR_DONE_MS);
+        if (readRun.current === run) endReading();
+      }
     }
+  }
+
+  /** The press is over: Scan card and its label as they were. */
+  function endReading() {
+    setProgress(null);
+    setReading(false);
+    setStoppable(false);
   }
 
   /**
@@ -713,17 +788,22 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
    */
   async function readTitleNow() {
     if (manualWaiting.current || reading || !camera.on) return;
+    const run = ++readRun.current;
     manualWaiting.current = true;
     const bar = createProgress();
     if (busy.current) bar.plan('wait', STEP_MS.ocr);
     bar.plan('older', STEP_MS.older);
     setProgress(bar);
+    setStoppable(false);
     setReading(true);
+    let ticket = null;
     try {
       bar.start('wait');
-      while (busy.current) await sleep(40);
+      while (busy.current && readRun.current === run) await sleep(40);
       bar.finish('wait');
+      if (readRun.current !== run) return;
       busy.current = true;
+      ticket = ++scanTicket.current;
       const frame = camera.capture();
       if (!frame) return;
       let lock = lockRef.current;
@@ -748,11 +828,12 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       if (lock) showCutout(titleCutout(frame, lock.card, defaultCreateCanvas));
       say('muted', 'Reading the title…');
       bar.start('older');
-      const old = await readOlderCard(frame, {
+      const old = await withTimeout(readOlderCard(frame, {
         card: lock?.card ?? null,
         listMark: lock ? findListMark(frame, lock.card, defaultCreateCanvas).mark : null,
-      });
+      }), MANUAL_DEADLINE_MS);
       bar.finish('older');
+      if (scanTicket.current !== ticket) return;
       if (!old) {
         say('err', "Couldn't read the title: straighten the card in the holder, then press Title again.");
         play('error');
@@ -761,17 +842,58 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       setPick({ ...old, art });
       say('muted', `${old.name}: pick its printing.`);
     } catch (e) {
-      console.error('Reading the title failed', e);
-      say('err', `Couldn't read the title: ${e.message}`);
+      if (readRun.current !== run || (ticket != null && scanTicket.current !== ticket)) return;
+      if (isTimeout(e)) {
+        scanTicket.current += 1;   // the read, if it ever ends, does nothing
+        say('err', 'Reading the title took too long: the connection may be slow. Press Title to try again.');
+      } else {
+        console.error('Reading the title failed', e);
+        say('err', `Couldn't read the title: ${e.message}`);
+      }
       play('error');
     } finally {
-      busy.current = false;
-      manualWaiting.current = false;
-      bar.complete();
-      await sleep(BAR_DONE_MS);
-      setProgress(null);
-      setReading(false);
+      if (readRun.current === run) {
+        busy.current = false;
+        manualWaiting.current = false;
+        bar.complete();
+        await sleep(BAR_DONE_MS);
+        if (readRun.current === run) endReading();
+      }
     }
+  }
+
+  /**
+   * Stop (owner, 2026-10-18: "we need more things you can do to get it
+   * unstuck"): Reading…, tapped once it's run a few seconds, gives up the read
+   * under way; whatever it was waiting on, it does nothing more if it ever
+   * ends. The card reader starts afresh (a stuck read can't hold the next
+   * one), and what auto scan held about the last card is forgotten, so the
+   * card in the holder is read again, even the same card.
+   */
+  function stopReading(text = 'Stopped. Press Scan card to read it again.') {
+    readRun.current += 1;
+    scanTicket.current += 1;
+    busy.current = false;
+    manualWaiting.current = false;
+    resetOcr();
+    const v = view.current;
+    v.held = null;
+    v.pending = null;
+    v.pendingOld = null;
+    endReading();
+    if (text) say('muted', text);
+  }
+
+  /**
+   * Hold Scan card (owner, 2026-10-18: "a button or some gesture that helps
+   * it get unstuck" when a card in plain view won't read): start over, as
+   * Stop does, and read the card in front now. The view stays locked
+   * (Reset view unlocks it).
+   */
+  function startOver() {
+    stopReading(null);
+    navigator.vibrate?.(40);
+    scanCard();
   }
 
   /** Number: the info box back on the bottom strip, read as a modern card's. */
@@ -819,6 +941,13 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     v.held = art;
     setLocal(null);
   }
+
+  // Reading… becomes tappable (Stop) once a press has run a few seconds.
+  useEffect(() => {
+    if (!reading) return undefined;
+    const timer = setTimeout(() => setStoppable(true), STOPPABLE_AFTER_MS);
+    return () => clearTimeout(timer);
+  }, [reading]);
 
   // Auto scan (6.3): while the camera runs, look again and again, resting
   // between looks; paused while the computer can't take cards, a card needs
@@ -1038,15 +1167,40 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       {/* Scan card across the top; Auto?, Reset view, the light and Stop under it (owner, 2026-10-16). */}
       <div className="scan-actions">
         <div className="scan-now-row">
+          {/* Scan card; while reading, after a few seconds, tap to stop (owner, 2026-10-18); held,
+              start over and read now. */}
           <button
             type="button"
-            className={`btn primary scan-now${reading ? ' reading' : ''}`}
-            disabled={!camera.on || reading || Boolean(needs) || Boolean(pick)}
+            className={`btn primary scan-now${reading ? ' reading' : ''}${reading && stoppable ? ' stoppable' : ''}`}
+            disabled={!camera.on || (reading ? !stoppable : Boolean(needs) || Boolean(pick))}
             aria-busy={reading}
-            onClick={scanCard}
+            title={reading ? (stoppable ? 'Stop this read and start the reader afresh' : undefined) : 'Read the card. Hold to start over.'}
+            onPointerDown={() => {
+              longPressed.current = false;
+              clearTimeout(pressTimer.current);
+              if (reading || needs || pick) return;
+              pressTimer.current = setTimeout(() => {
+                longPressed.current = true;
+                startOver();
+              }, LONG_PRESS_MS);
+            }}
+            onPointerUp={() => clearTimeout(pressTimer.current)}
+            onPointerLeave={() => clearTimeout(pressTimer.current)}
+            onPointerCancel={() => clearTimeout(pressTimer.current)}
+            onContextMenu={(e) => e.preventDefault()}
+            onClick={() => {
+              if (longPressed.current) {
+                longPressed.current = false;
+                return;
+              }
+              if (reading) stopReading();
+              else scanCard();
+            }}
           >
             {progress && <ScanBar progress={progress} />}
-            <span className="scan-now-label">{reading ? 'Reading…' : 'Scan card'}</span>
+            <span className="scan-now-label">
+              {reading ? (stoppable ? 'Reading… tap to stop' : 'Reading…') : 'Scan card'}
+            </span>
           </button>
           <button
             type="button"
