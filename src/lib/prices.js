@@ -14,6 +14,7 @@
 //   in case a name differs.
 // - Etched Magic foils are their own TCGplayer product (Scryfall's
 //   tcgplayer_etched_id), priced through that product.
+import { surgeLookup, surgeResult } from './surgeProducts.js';
 import { callFunction } from './functions.js';
 import { formatEur, formatMoney } from './money.js';
 import { cardId, fold, ownProductCard, pokemonPrintingFits } from './justtcgCards.js';
@@ -63,6 +64,9 @@ export function lookupsFor(c, { pokemonCard, versions, jaName }) {
     if ((card.finishes ?? []).includes('etched') && card.tcgplayer_etched_id) {
       out.push({ key: `mtg:etched:${card.tcgplayer_etched_id}`, game: 'mtg', lang: 'en', tcgplayerId: String(card.tcgplayer_etched_id) });
     }
+    // A surge foil TCGplayer sells as its own product (decision 316): its foil's prices are there.
+    const surge = surgeLookup(card);
+    if (surge) out.push(surge);
     return out;
   }
   // Pokémon: every version's TCGplayer product (stamped versions are their own
@@ -229,6 +233,10 @@ export function resultFor(c, results, { finish, version, versions = [] }) {
       if (main?.card?.variants?.some((v) => lower(v.printing).includes('etched'))) return main;
       return etched ?? main;
     }
+    // A surge foil sold as its own product (decision 316): a foil priced on the main card wins (as
+    // an etched one does); else the surge foil product's.
+    const surge = surgeResult(card, results, finish);
+    if (surge !== undefined) return surge;
     return results[`mtg:scryfall:${card.id}`];
   }
   // A card known only from TCGplayer, or a TCGplayer-only version: its own product.

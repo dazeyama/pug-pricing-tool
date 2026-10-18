@@ -330,6 +330,7 @@ Four findings, all in the live build too, and the owner's calls:
 
 ### For the next smoke test
 
+- [ ] 🆕 **Surge foils priced (decision 316):** Altered Ego (FIC 317) scanned as foil, or picked on the Buy tab with FOIL: priced (~$0.40, JustTCG's conditions), not asking for a price; its nonfoil still ~$0.20.
 - [ ] 🆕 **Promos that print PRM (decision 313):** Etali, Primal Storm with "100/196 P / PRM ★ EN" (or another 2018–2019 promo): Scan card (or auto scan) opens "Which Etali, Primal Storm? A promo: match the stamp." with its promo printings; picking one adds it as foil when the strip shows the star; auto scan doesn't switch to reading the title.
 - [ ] 🆕 **The view found again every 20 cards (decision 312):** scan a stack of 25+ cards with auto scan: around the 20th the view shifts slightly to fit the card (no message, never the whole picture), and the card in the holder isn't added twice; the reads stay right as the stack grows.
 - [ ] 🆕 **Which card? (decision 311):** Heaven's Gate (Legends) or any card the title can't be read on: Title opens "Couldn't read the name. Which card is it?" with a guess in the box; × clears it; typing "heav" lists Heaven's Gate; tapping it (or Find printings) opens its printings; picking one adds it. With auto scan, the same card left in the holder opens the box by itself after a few looks. Skip sets it aside and auto scan doesn't ask again for that card.
