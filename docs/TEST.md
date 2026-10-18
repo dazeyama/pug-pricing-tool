@@ -330,6 +330,7 @@ Four findings, all in the live build too, and the owner's calls:
 
 ### For the next smoke test
 
+- [ ] 🆕 **The computer never stuck (decision 307):** with Chrome's network throttling on the computer (Slow 3G) while scanning, scans still finish or fail with a reason within 30 s, and the next scans go in once the connection's back; on the phone, a scan waiting over 15 s says "still waiting on <computer>" or "still pricing it" in amber.
 - [ ] 🆕 **Too dark (decision 306):** scan in a dim corner: after a few looks the strip suggests 💡; turning it on (or more light) clears it; a Scan card that fails in the dark says it's too dark. A black-bordered card in good light never gets the hint.
 - [ ] 🆕 **Auto scan rests (decision 304):** leave the scanner on with an empty holder for a minute, then lay a card: it's read within about a second, and the next cards go in at the usual pace.
 - [ ] 🆕 **The camera cut off (decision 303):** scanning, take a call (or open the phone's own camera from the control centre): the strip says the phone has the camera, auto scan waits; back, scanning carries on with the view still locked. A picture that freezes restarts by itself within a few seconds.

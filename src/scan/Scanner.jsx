@@ -115,15 +115,23 @@ export function blockedText(session) {
  * them all (owner, 2026-10-16: "The card name/set and the price all get
  * truncated"). The computer's name is in the paired bar, not repeated here.
  */
-function scanStrip(s) {
+// A scan still "sending…" or "pricing…" this long after the phone first saw it waiting says so
+// (owner, 2026-10-19; decision 307). Timed on the phone's own clock, from when it first saw it.
+const STILL_WAITING_MS = 15_000;
+
+function scanStrip(s, { waited = 0, computer = 'the computer' } = {}) {
   const mark = s.finish === 'foil' ? ' *F*' : s.finish === 'etched' ? ' *E*' : '';
   const cond = s.condition && s.condition !== 'NM' ? ` [${s.condition}]` : '';
   const code = `${String(s.set_code ?? '').toUpperCase()} ${s.collector_number ?? ''}`.trim() + mark + cond;
   const name = s.name ?? '';
   const facts = (...more) => [code, ...more].filter(Boolean).join(' · ');
   switch (s.status) {
-    case 'sent': return { tone: 'muted', title: name, text: facts('sending…') };
-    case 'pricing': return { tone: 'muted', title: name, text: facts('pricing…') };
+    case 'sent': return waited > STILL_WAITING_MS
+      ? { tone: 'warn', title: name, text: facts(`still waiting on ${computer}: is its price screen open?`) }
+      : { tone: 'muted', title: name, text: facts('sending…') };
+    case 'pricing': return waited > STILL_WAITING_MS
+      ? { tone: 'warn', title: name, text: facts(`${computer} is still pricing it…`) }
+      : { tone: 'muted', title: name, text: facts('pricing…') };
     case 'added': return {
       tone: 'good',
       title: `✓ ${name}`,
@@ -983,6 +991,23 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     else setLocal((l) => (l?.camera ? null : l));
   }, [interrupted]);
 
+  // When the phone first saw the latest scan waiting ("sending…" or "pricing…"), and a clock ticking
+  // while it waits, for "still waiting" (decision 307).
+  const latestWaiting = latest && ['sent', 'pricing'].includes(latest.status) ? `${latest.id}:${latest.status}` : null;
+  const [waitingSince, setWaitingSince] = useState(null);
+  const [clock, setClock] = useState(() => Date.now());
+  const [waitingKey, setWaitingKey] = useState(null);
+  if (latestWaiting !== waitingKey) {
+    // A new wait (or none): timed from now (React's "adjust state when a prop changes" pattern).
+    setWaitingKey(latestWaiting);
+    setWaitingSince(latestWaiting ? Date.now() : null);
+  }
+  useEffect(() => {
+    if (!latestWaiting) return undefined;
+    const timer = setInterval(() => setClock(Date.now()), 2_000);
+    return () => clearInterval(timer);
+  }, [latestWaiting]);
+
   // Reading… becomes tappable (Stop) once a press has run a few seconds.
   useEffect(() => {
     if (!reading) return undefined;
@@ -1022,7 +1047,9 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   }, [camera.on]);
 
   // The strip: the phone's own message, or the latest scan's state, whichever is newer.
-  const stripOfLatest = latest ? scanStrip(latest) : null;
+  const stripOfLatest = latest
+    ? scanStrip(latest, { waited: waitingSince ? clock - waitingSince : 0, computer })
+    : null;
   const strip = local && local.at >= latestAt ? local : stripOfLatest ?? local;
   // Before the lock: the whole picture, filling the space, the card found
   // outlined. Locked: just the card, as large as fits, still (owner, 2026-10-16).
