@@ -1096,7 +1096,7 @@ the list, crossed out, as a record that it went elsewhere: straight into the cas
 - **×** on a struck card removes it for good. **Right-click → Restore** puts it back.
 - Hovering it shows who struck it and when. The Changelog records strikes and restores.
 - Projects and Can't upload cards don't strike: their **×** removes at once. **Convert to project**
-  leaves a buy's struck cards out.
+  and **Convert to collection** leave a buy's struck cards out.
 - **Edit in project view** strikes and restores too, saved with **SAVE BUY**.
 
 ### A buy's ⋯ menu
@@ -1111,10 +1111,12 @@ the list, crossed out, as a record that it went elsewhere: straight into the cas
 | **Print stickers** | Pokémon only. Price-tag stickers for this buy's cards. See [Print PKM Stickers?](#print-pkm-stickers). |
 | **Edit in project view** | Opens the buy's cards on the pricing screen, in the game's colour, to fix a card before an export (its condition or treatment, mostly). Click a card, change it, then **SAVE EDIT**; **×** takes cards out. Nothing is saved until **SAVE BUY**, which goes back to the day page. The buy stays on its day; cards can't be added and the rates don't change. |
 | **Convert to project** | Moves every live card, both games, into a new project with the buy's notes (a project has no rates). Completed and struck cards stay behind: the buy stays on its day with them, or is deleted when none are left. The name starts as the customer's. The cards keep their prices until a **REPRICE?** rounds them up. |
+| **Convert to collection** | The same, into a new **Paid/Ours collection** instead of a project. Nothing to type: the collection takes the buy's customer name, phone and notes, Last 4 ID **1312**, what was paid and when, and the buy's rates, custom ones too. The cards keep the rates CONFIRM BUY saved on them. Completed and struck cards stay behind, as above. The new collection opens. Needs a customer name on the buy. |
 | **Delete buy…** | Deletes the buy and every card in it, both games. Asks first. |
 
 **Edit in project view** and **Delete buy…** are locked once any of the buy's cards are Completed.
-**Convert to project** is locked only when no live card is left.
+**Convert to project** and **Convert to collection** are locked only when no live card is left (Convert to
+collection also when the buy has no customer name).
 A project can become a buy again: see [Convert to buy…](#convert-to-buy).
 
 ### Print MTG? (the audit printout)

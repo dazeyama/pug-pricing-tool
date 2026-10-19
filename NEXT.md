@@ -6,18 +6,12 @@ and function.
 
 ## Open
 
-- **Small notes from the 2026-10-18 pre-push review** (none stopped the push; fix only if the owner wants):
-  - `.claude/skills/release/SKILL.md` step 8: on a push without a bump and with no new feature text, the live check
-    can't tell the new deploy from the old (the version string was already live). The deploy run, found by the
-    pushed commit's SHA, is the real proof; the skill should say so and use `gh run list --commit <sha>` in step 6.
-  - `scripts/live-check.mjs` line 42: a chunk name with a hyphen in it would be cut short, fetched as a wrong name,
-    and crash the script (no MISSING line). Today's 9 chunk names are all fine.
-  - `SKILL.md`: step 3's record commit lands after the step 1b review, so the reviewer never sees it (docs only by
-    design; the secrets check does cover it).
-- **The lint hook hasn't run in a live session yet:** `.claude/settings.json` → `.claude/hooks/lint-edit.mjs`. It
-  loads only in a session started in this folder; the first such session can confirm an Edit triggers it.
-- **Help:** `README.md` "A buy's ⋯ menu" table (line ~1113, after **Convert to project**) has no row for **Convert
-  to collection** (decision 335). Only when the owner asks for Help.
+- **The lint hook hasn't been seen to run yet:** `.claude/settings.json` → `.claude/hooks/lint-edit.mjs`. A session
+  started in this folder edited `scripts/live-check.mjs` on 2026-10-18 with no message back, which is what a pass
+  looks like and also what a hook that never ran looks like. An Edit that breaks lint on purpose would settle it.
+- **The release skill's new order is untried:** `.claude/skills/release/SKILL.md` steps 3–5 (record edits left
+  uncommitted, the review, then the record commit) and step 8 (the run found by `--commit`). The next push is its
+  first run.
 - **Before the squash:** a full smoke test pass, `docs/TEST.md` (180 cases), on dev.
 - **Phase 10 launch** (owner's go): the squash and the switch to prod, `SQUASH.md` sections 1–10 (N is 0076; the
   baseline `0001_baseline.sql`). Decide the **Supabase plan for prod** first (`docs/DESIGN_SPEC.md` Appendix D 2:
@@ -30,6 +24,16 @@ and function.
 
 ## Done
 
+- 2026-10-18: Help: `README.md` "A buy's ⋯ menu" has a **Convert to collection** row (decision 335), and the struck
+  cards and locked lines name it next to Convert to project.
+- 2026-10-18: The pre-push review's three notes fixed:
+  - `.claude/skills/release/SKILL.md`: the record edits (steps 2 and 3) stay uncommitted until the review (now step
+    4) has seen them, then step 5 commits them; the steps after are renumbered (secrets 6, push 7, deploy 8, Edge
+    Functions 9, live check 10, report 11);
+  - the same file, step 8: the deploy run is found by the pushed commit (`gh run list --commit "$sha"`), and its
+    success with a matching `headSha` is the proof; step 10 says a no-bump push with no new text can't be told
+    apart by the live check;
+  - `scripts/live-check.mjs` line 43: chunk names may contain hyphens.
 - 2026-10-18: pug-reviewer reached from a session started in this folder (first use): it loaded with Read, Grep,
   Glob and Bash, read CLAUDE.md and reviewed the one unpushed commit (`df6f846`, NEXT.md only). One docs note: the
   push entry below says "five small notes" but Open lists three, and "Nothing unpushed" is stale until the next push.
