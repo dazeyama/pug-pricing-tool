@@ -7,7 +7,7 @@ import Papa from 'papaparse';
 import { supabase } from './supabase.js';
 import { cardImage, cardsByTcgplayerIds, keptLanguage, loadSets, searchAll } from './scryfall.js';
 import { fetchPrices } from './prices.js';
-import { inChunks } from './inChunks.js';
+import { allPages, inChunks } from './inChunks.js';
 import { scryfallCards, scryfallCollection } from './todaysPrices.js';
 import { normNumber } from './query.js';
 import { saveLink } from './ccExport.js';
@@ -255,7 +255,11 @@ export async function matchImport(rows, onStep, format = 'cc') {
   const product = new Map();
   if (wants.length) {
     onStep?.('Finding them in the inventory…');
-    const { data: candRows, error: candError } = await supabase.rpc('cc_candidates', { p_wants: wants });
+    // Page by page: a big import's candidates run past the API's row limit (decision 346).
+    const { data: candRows, error: candError } = await allPages((from, to) => supabase
+      .rpc('cc_candidates', { p_wants: wants })
+      .order('key').order('category').order('product_id')
+      .range(from, to));
     fail(candError, "Couldn't read the inventory's products");
     const byRow = new Map(ok.map((r) => [String(r.index), r]));
     for (const c of candRows ?? []) {

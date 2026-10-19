@@ -9,7 +9,7 @@ import { categoryFor, chooseProduct, fold, frontFace, promoKind, searchCategorie
 import { scryfallCards, todaysPrices } from './todaysPrices.js';
 import { sellPriceFor } from './sellPrice.js';
 import { massCreateCsv, massCreateRows } from './massCreate.js';
-import { inChunks } from './inChunks.js';
+import { allPages, inChunks } from './inChunks.js';
 import { DB_MESSAGES, knownCode } from './dbErrors.js';
 
 // Full Scryfall cards by id now live with today's prices (todaysPrices.js).
@@ -83,7 +83,11 @@ export async function matchLines(lines, onStep) {
   const wants = prepared.flatMap((p) => [p.where?.category ?? null, ...p.also]
     .map((category) => ({ key: p.line.id, category, base_keys: p.baseKeys })));
   onStep?.('Finding their Crystal Commerce products…');
-  const { data: candRows, error: candError } = await supabase.rpc('cc_candidates', { p_wants: wants });
+  // Page by page: a big export's candidates run past the API's row limit (decision 346).
+  const { data: candRows, error: candError } = await allPages((from, to) => supabase
+    .rpc('cc_candidates', { p_wants: wants })
+    .order('key').order('category').order('product_id')
+    .range(from, to));
   fail(candError, "Couldn't read the inventory's products");
   const byKey = new Map();
   for (const row of candRows ?? []) {
