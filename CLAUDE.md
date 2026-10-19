@@ -67,7 +67,9 @@ tests (`npm test`, commit only on `fail 0`) and the build.
      live store at once. Hand the new migration file, with the app code and test-run checks that go with it, to the
      **pug-reviewer** agent. A confirmed finding that would break the site or its data: fix it first (it's my call
      if unsure). Report the rest with the handoff.
-  2. Rehearse it inside `begin; … rollback;` (`npx supabase db query --linked -f`).
+  2. Rehearse it inside `begin; … rollback;` (`npx supabase db query --linked -f`). A rollback doesn't undo a
+     counter: `setval` and `nextval` on a sequence stay changed on the live store. Rehearse a copy with those lines
+     taken out, and check the counter (`select last_value, is_called from buys_number_seq`) before and after.
   3. `npx supabase db push --linked`.
   4. `node scripts/db-snapshot.mjs` (commit `supabase/current/` with it).
   5. `node scripts/db-test-run.mjs` ("All passed").
