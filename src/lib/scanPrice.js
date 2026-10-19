@@ -8,7 +8,8 @@
 //     (prices.usd / usd_foil / usd_etched): the ladder run as if Use
 //     TCGplayer were pressed (override 'fallback'). No JustTCG request.
 //  2. JustTCG, only when Scryfall has no price for the finish: its price for
-//     the condition, else its NM × the condition's percentage.
+//     the condition, else its NM × the condition's percentage (with no NM,
+//     its best price: decision 338).
 //  3. Cardmarket (prices.eur… on the same card, in dollars at the day's
 //     rate), as if Use Cardmarket were pressed (override 'cardmarket').
 //  4. Nothing: the phone asks for a price.

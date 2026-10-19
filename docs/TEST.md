@@ -8,7 +8,7 @@ what happens. The findings are reported when the pass ends.
   http://localhost:5180). **Never prod.**
 - **Who:** the owner, or Claude in the browser pane at the owner's request (FABLE.md, "a smoke pass the owner asks
   for"). The owner does the phone, two-computer and store cases.
-- **How long:** about two hours, 180 cases.
+- **How long:** about two hours, 181 cases.
 
 ## Ground rules
 
@@ -133,6 +133,9 @@ what happens. The findings are reported when the pass ends.
 
 - [ ] Hovering a price button explains where the price came from; Use TCGplayer and Use Cardmarket price from those.
 - [ ] A card with no price at all asks for a manual price at ADD CARD (Alt+M).
+- [ ] **Better conditions from JustTCG's best price** (decision 338): `blastoise 2 bs` 1st Edition, Holo shows NM and
+      LP at MP's price tagged "fallback", MP JustTCG's own, HP and DMG lower, each a fallback; hovering NM says
+      "JustTCG's MP …, as JustTCG has no NM price".
 - [ ] **Surge foils priced** (decision 316): `Altered Ego FIC 317` with FOIL is priced (~$0.40, JustTCG's conditions);
       its non-foil ~$0.20.
 - [ ] **Totals** show Cash and Credit at the master 33.34% / 66.68%; cards under $3 or over $35 use the low-end and

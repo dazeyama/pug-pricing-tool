@@ -53,10 +53,12 @@ test('Cardmarket after that, as Use Cardmarket', () => {
   assert.equal(q.entry.price, 4.25);
 });
 
-test('JustTCG with nothing for the condition falls through to Cardmarket', () => {
-  // JustTCG prices only LP: no NM to work NM out from.
+test('JustTCG pricing only a worse condition prices NM from it, before Cardmarket', () => {
+  // JustTCG prices only LP: NM takes LP's price as a fallback (decision 338).
   const q = scanQuote({ condition: 'NM', tcgplayer: null, market: { NM: null, LP: 3, MP: null, HP: null, DMG: null }, cardmarketUsd: 2, pct: PCT });
-  assert.equal(q.step, 'cardmarket');
+  assert.equal(q.step, 'justtcg');
+  assert.equal(q.entry.price, 3);
+  assert.equal(q.entry.filled, 'LP');
 });
 
 test('nothing anywhere: the phone asks', () => {

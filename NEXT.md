@@ -6,8 +6,9 @@ and function.
 
 ## Open
 
-- **Unpushed:** decision 337 (CONFIRM BUY's customer name capped at 80) and the Help's struck-cards wording.
-- **Before the squash:** a full smoke test pass, `docs/TEST.md` (180 cases), on dev.
+- **Unpushed:** decision 337 (CONFIRM BUY's customer name capped at 80), the Help's struck-cards wording, and
+  decision 338 (better conditions from JustTCG's best price).
+- **Before the squash:** a full smoke test pass, `docs/TEST.md` (181 cases), on dev.
 - **Phase 10 launch** (owner's go): the squash and the switch to prod, `SQUASH.md` sections 1–10 (N is 0076; the
   baseline `0001_baseline.sql`). Decide the **Supabase plan for prod** first (`docs/DESIGN_SPEC.md` Appendix D 2:
   Free vs Pro).
@@ -19,6 +20,10 @@ and function.
 
 ## Done
 
+- 2026-10-19: Decision 338, better conditions from JustTCG's best price: `priceLadder` in `src/lib/ladder.js` (a
+  `filled` field on each entry), the tooltip in `src/pages/price/PriceTable.jsx`, three tests in
+  `tests/ladder.test.js`, spec 8.7 and a `docs/TEST.md` case. No database change (`justtcg_fallback` was already
+  allowed). The Help's price section doesn't mention it yet.
 - 2026-10-19: The v0.9.9.14-nightb4 review's notes:
   - decision 337: CONFIRM BUY's Customer name stops at 80 characters (`src/pages/price/ConfirmBuyModal.jsx`, was
     120), as `buy_to_collection` and `buy_to_project` require; no buy on dev had a longer name. Left as they are:

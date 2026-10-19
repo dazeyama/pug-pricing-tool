@@ -36,6 +36,34 @@ test('rounding up, two conditions still never show one price', () => {
   assert.equal(down.MP.cap, null);
 });
 
+// Decision 338: JustTCG prices only a worse condition and there's no other base.
+test('better conditions take JustTCG\'s best price, never more; worse ones the percentages of it', () => {
+  // Blastoise 2/102 1st Edition: JustTCG has MP only, TCGdex no price.
+  const ladder = priceLadder({ MP: 1300 }, null, PCT, 'pokemon');
+  assert.deepEqual(prices(ladder), [1300, 1300, 1300, 520, 325]);
+  assert.deepEqual(CONDITIONS.map((c) => ladder[c].source), ['fallback', 'fallback', 'justtcg', 'fallback', 'fallback']);
+  assert.equal(ladder.NM.filled, 'MP');
+  assert.equal(ladder.LP.filled, 'MP');
+  assert.equal(ladder.MP.filled, null);
+  assert.equal(ladder.HP.cap, null);
+  assert.deepEqual(ladder.HP.base, { price: 1300, from: 'JustTCG', code: 'MP' });
+});
+
+test('the fill keeps the never-rise rule below it', () => {
+  // HP's $60 is above MP's fallback ($50 × 55%): thrown out, as before.
+  const ladder = priceLadder({ LP: 50, HP: 60 }, null, PCT, 'mtg');
+  assert.deepEqual(prices(ladder), [50, 50, 27, 20, 12]);
+  assert.equal(ladder.HP.thrownOut, 60);
+});
+
+test('no fill when JustTCG prices NM, or a fallback price is the base', () => {
+  assert.ok(CONDITIONS.every((c) => priceLadder({ NM: 10, MP: 6 }, null, PCT, 'mtg')[c].filled == null));
+  const withBase = priceLadder({ MP: 1300 }, { price: 2000, source: 'tcgdex_fallback' }, PCT, 'pokemon');
+  assert.equal(withBase.NM.price, 2000);
+  assert.equal(withBase.NM.filled, null);
+  assert.equal(withBase.NM.base.from, 'TCGdex');
+});
+
 test('a saved line\'s ladder (REPRICE?) rounds up in a project', () => {
   const line = { id: 'l1', game: 'mtg', condition: 'LP', price_source: 'justtcg', unit_price: 9, market_price: 9.4 };
   const today = { market: { NM: 12.4, LP: 10.2 } };

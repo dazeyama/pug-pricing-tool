@@ -64,8 +64,10 @@ export default function PriceTable({
       const label = showsTcgplayer(ladder, code, pct?.[code]) ? 'TCGplayer' : 'fallback';
       const base = isTcgplayerBase(e)
         ? `TCGplayer's ${formatMoney(e.base.price)} (via ${e.base.from})`
-        : `${e.base.from}'s ${formatMoney(e.base.price)}`;
-      about = e.cap
+        : `${e.base.from}'s ${e.base.code ? `${e.base.code} ` : ''}${formatMoney(e.base.price)}`;
+      // A better condition JustTCG doesn't price takes its best price, never more (decision 338).
+      if (e.filled) about = `${label} ${formatMoney(e.price)}: ${base}, as JustTCG has no ${code} price`;
+      else about = e.cap
         ? `${label} ${formatMoney(e.price)}: `
           + (e.cap.quarter
             ? `a quarter below ${e.cap.code}'s ${formatMoney(ladder[e.cap.code].price)} (${e.cap.pct}% below would show the same price)`

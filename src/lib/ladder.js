@@ -23,31 +23,49 @@ const BASE_NAMES = { scryfall_fallback: 'Scryfall', tcgdex_fallback: 'TCGdex', c
  * round to the same price. Then every price is rounded down by the store's
  * steps, or up in a project (owner, 2026-10-10): the store's own cards,
  * priced to sell, round up like an export's Sell Price.
+ *
+ * When JustTCG prices only worse conditions and there's no other base
+ * (decision 338: Blastoise 2/102 1st Edition, MP only), the better
+ * conditions take the best JustTCG price as their fallback, never more, and
+ * that price is the base for the rest.
  * @param {Record<string, number|null>} market  JustTCG prices by condition (conditionPrices)
  * @param {{ price: number, source: string }|null} fallback  the Scryfall/TCGdex market price
  * @param {Record<string, number>} pct  Master Fallback Percentages for the game
  * @param {'mtg'|'pokemon'} game
  * @param {{ up?: boolean }} [opts]  up: round up (a project), not down
  * @returns {Record<string, { price: number|null, raw: number|null, source: 'justtcg'|'fallback'|null,
- *   base: { price: number, from: string }|null, thrownOut: number|null,
- *   cap: { code: string, pct: number, from: number, was: number, quarter: boolean }|null }>}
+ *   base: { price: number, from: string, code?: string }|null, thrownOut: number|null,
+ *   cap: { code: string, pct: number, from: number, was: number, quarter: boolean }|null,
+ *   filled: string|null }>}  filled: the worse condition whose JustTCG price this one took
  */
 export function priceLadder(market, fallback, pct, game, { up = false } = {}) {
   const round = up ? roundUpPrice : roundDownPrice;
   const out = {};
+  const best = CONDITIONS.find((c) => market?.[c] != null) ?? null;
   let base = null;
   if (market?.NM != null) base = { price: market.NM, from: 'JustTCG' };
   else if (fallback) base = { price: fallback.price, from: BASE_NAMES[fallback.source] ?? 'fallback' };
+  else if (best) base = { price: market[best], from: 'JustTCG', code: best };
+  // The conditions above JustTCG's best one, when that price is the base: the
+  // same price, as a fallback (two conditions show one price here on purpose).
+  const filling = base?.code ? CONDITIONS.slice(0, CONDITIONS.indexOf(best)) : [];
   let prev = null;          // the better condition's price, unrounded
   let prevCode = null;
   for (const code of CONDITIONS) {
+    if (filling.includes(code)) {
+      const raw = base.price;
+      out[code] = { price: round(raw), raw, source: 'fallback', base, thrownOut: null, cap: null, filled: best };
+      prev = raw;
+      prevCode = code;
+      continue;
+    }
     let raw = market?.[code] ?? null;
     let thrownOut = null;
     if (raw != null && prev != null && raw > prev) {
       thrownOut = raw;
       raw = null;
     }
-    const entry = { raw, source: raw != null ? 'justtcg' : null, base: null, thrownOut, cap: null };
+    const entry = { raw, source: raw != null ? 'justtcg' : null, base: null, thrownOut, cap: null, filled: null };
     if (raw == null) {
       let value = base && pct?.[code] != null ? (base.price * Number(pct[code])) / 100 : null;
       // Compared as shown (rounded), so two conditions never show one price.
