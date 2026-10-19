@@ -142,6 +142,75 @@ export function numberTerm(number) {
 }
 
 /**
+ * Sets that number a reprint by its first set and number, "RVR-26" (decision
+ * 329): The List and Mystery Booster, and its foils. Their cards print that
+ * set's code and number, so a search by the code or the number should find
+ * them beside the card they reprint (owner, 2026-10-19: "rootborn def 26 only
+ * pulls up the RVR printing, but there is a The List printing with the exact
+ * same number").
+ */
+export const LIST_SETS = ['plst', 'mb1', 'fmb1'];
+const LIST_SET_TERM = `(${LIST_SETS.map((s) => `set:${s}`).join(' or ')})`;
+
+/**
+ * A List or Mystery Booster card's number as printed on it: "RVR-26" →
+ * { set: 'rvr', number: '26' }; null for any other set's card. Pure.
+ * @param {string} set  the card's Scryfall set code
+ * @param {string} number  its Scryfall collector number
+ */
+export function listedNumber(set, number) {
+  if (!LIST_SETS.includes(String(set ?? '').toLowerCase())) return null;
+  const m = /^([a-z0-9]+)-(.+)$/i.exec(String(number ?? ''));
+  return m ? { set: m[1].toLowerCase(), number: m[2] } : null;
+}
+
+const plainNumber = (n) => String(n ?? '').trim().toLowerCase().replace(/^([a-z]*)0+(?=\d)/, '$1');
+
+/**
+ * The Buy search's Scryfall query (decision 329: The List and Mystery Booster
+ * with it). Pure.
+ *  - a set code and a number: that set's card, and the List's and Mystery
+ *    Booster's printed with that code and number ("RVR 26": RVR 26, PLST RVR-26);
+ *  - a name and a number, no set: those sets' printings of the name too, kept
+ *    by searchPrints only when their number is the one typed (listedOnly);
+ *  - otherwise as typed.
+ * @returns {{ q: string|null, listedOnly: string|null }}  q null: nothing to search;
+ *   listedOnly: the number a List-style card must have to be kept
+ */
+export function printsQuery({ name, number, setCode }) {
+  const parts = nameTerms(name);
+  const term = numberTerm(number);
+  const set = setCode ? setCode.toLowerCase() : null;
+  const n = String(number ?? '').replace(/"/g, '').trim();
+  let listedOnly = null;
+  if (set && term && !LIST_SETS.includes(set)) {
+    parts.push(`((set:${set} ${term}) or (${LIST_SET_TERM} cn:"${set}-${n}"))`);
+  } else if (term && !set && parts.length) {
+    parts.push(`(${term.replace(/^\((.*)\)$/, '$1')} or ${LIST_SET_TERM})`);
+    listedOnly = n;
+  } else {
+    if (term) parts.push(term);
+    if (set) parts.push(`set:${set}`);
+  }
+  if (!parts.length) return { q: null, listedOnly: null };
+  // Paper only: Arena-only cards (e.g. Arena Anthology 3) can't be bought.
+  // English, and Japanese-only printings (keptLanguage), so no lang: term.
+  // No extras (tokens, emblems, art cards…; spec 1.4): Scryfall leaves them out
+  // of a plain name search by itself, but a cn: or set: brings them back
+  // ("2/184 S8b" found tokens and art cards, owner 2026-09-29), so say so.
+  parts.push('game:paper', '-is:extra');
+  return { q: parts.join(' '), listedOnly };
+}
+
+/** Keep a List-style card only when the number printed on it is `number` (printsQuery's listedOnly). Pure. */
+export function keepListed(card, number) {
+  if (number == null) return true;
+  const listed = listedNumber(card.set, card.collector_number);
+  if (!listed && !LIST_SETS.includes(String(card.set).toLowerCase())) return true;
+  return Boolean(listed) && plainNumber(listed.number) === plainNumber(number);
+}
+
+/**
  * The languages a Magic search keeps (owner, 2026-10-16). Searched with no
  * language, Scryfall gives one card per printing: English where there is
  * one, else the printing's own language. So the Japanese printings English
@@ -160,26 +229,20 @@ export const keptLanguage = (card) => card.lang === 'en' || card.lang === 'ja';
  * @returns {Promise<{ cards: any[], total: number, hasMore: boolean }>}
  */
 export async function searchPrints(q, signal) {
-  const parts = nameTerms(q.name);
-  const number = numberTerm(q.number);
-  if (number) parts.push(number);
-  if (q.setCode) parts.push(`set:${q.setCode.toLowerCase()}`);
-  if (!parts.length) return { cards: [], total: 0, hasMore: false };
-  // Paper only: Arena-only cards (e.g. Arena Anthology 3) can't be bought.
-  // English, and Japanese-only printings (keptLanguage), so no lang: term.
-  // No extras (tokens, emblems, art cards…; spec 1.4): Scryfall leaves them out
-  // of a plain name search by itself, but a cn: or set: brings them back
-  // ("2/184 S8b" found tokens and art cards, owner 2026-09-29), so say so.
-  parts.push('game:paper', '-is:extra');
+  const { q: query, listedOnly } = printsQuery(q);
+  if (!query) return { cards: [], total: 0, hasMore: false };
 
   // Newest first, or oldest first with the suggestions' sort toggle
   // (q.oldest): Scryfall sorts, so the first page is the right end of the list.
   const params = new URLSearchParams({
-    q: parts.join(' '), unique: 'prints', order: 'released', dir: q.oldest ? 'asc' : 'desc',
+    q: query, unique: 'prints', order: 'released', dir: q.oldest ? 'asc' : 'desc',
   });
   const data = await searchJson(`${API}/cards/search?${params}`, { signal });
   if (!data) return { cards: [], total: 0, hasMore: false };   // 404: nothing matched
-  return { cards: data.data.filter(keptLanguage), total: data.total_cards, hasMore: data.has_more };
+  // The List's and Mystery Booster's other numbers of the name dropped (decision 329).
+  const kept = data.data.filter((c) => keepListed(c, listedOnly));
+  const dropped = data.data.length - kept.length;
+  return { cards: kept.filter(keptLanguage), total: data.total_cards - dropped, hasMore: data.has_more };
 }
 
 /**

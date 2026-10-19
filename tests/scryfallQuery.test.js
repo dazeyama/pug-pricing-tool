@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { numberTerm } from '../src/lib/scryfall.js';
+import { keepListed, listedNumber, numberTerm, printsQuery } from '../src/lib/scryfall.js';
 
 // Owner, 2026-10-13: "High Perfect 229" finds the promo pack 229p too.
 test('a plain collector number also asks for its promo pack "p" printing', () => {
@@ -13,4 +13,38 @@ test('a plain collector number also asks for its promo pack "p" printing', () =>
   assert.equal(numberTerm('22"9'), '(cn:"229" or cn:"229p")');     // a stray quote is dropped
   assert.equal(numberTerm(''), null);
   assert.equal(numberTerm(null), null);
+});
+
+// Owner, 2026-10-19: "rootborn def 26" finds The List's RVR-26 too (decision 329).
+const TAIL = ' game:paper -is:extra';
+const LISTS = '(set:plst or set:mb1 or set:fmb1)';
+
+test('a set code and a number: that card, and The List\'s and Mystery Booster\'s with that code and number', () => {
+  assert.deepEqual(printsQuery({ name: '', number: '26', setCode: 'RVR' }),
+    { q: `((set:rvr (cn:"26" or cn:"26p")) or (${LISTS} cn:"rvr-26"))${TAIL}`, listedOnly: null });
+  // Asked for The List itself: as typed.
+  assert.deepEqual(printsQuery({ name: '', number: 'RVR-26', setCode: 'plst' }),
+    { q: `cn:"RVR-26" set:plst${TAIL}`, listedOnly: null });
+});
+
+test('a name and a number: those sets\' printings of the name too, kept by their number', () => {
+  const { q, listedOnly } = printsQuery({ name: 'rootborn def', number: '26', setCode: null });
+  assert.equal(q, `"rootborn" "def" (cn:"26" or cn:"26p" or ${LISTS})${TAIL}`);
+  assert.equal(listedOnly, '26');
+  const card = (set, collector_number) => ({ set, collector_number });
+  assert.equal(keepListed(card('plst', 'RVR-26'), '26'), true);
+  assert.equal(keepListed(card('plst', 'MM3-21'), '26'), false);
+  assert.equal(keepListed(card('mb1', 'RVR-026'), '26'), true);
+  assert.equal(keepListed(card('rvr', '26'), '26'), true);
+  assert.equal(keepListed(card('plst', 'MM3-21'), null), true);
+  // A number alone, or a name alone: as before.
+  assert.deepEqual(printsQuery({ name: '', number: '26', setCode: null }), { q: `(cn:"26" or cn:"26p")${TAIL}`, listedOnly: null });
+  assert.equal(printsQuery({ name: '', number: null, setCode: null }).q, null);
+});
+
+test('a List or Mystery Booster number as printed on the card', () => {
+  assert.deepEqual(listedNumber('PLST', 'RVR-26'), { set: 'rvr', number: '26' });
+  assert.deepEqual(listedNumber('fmb1', 'M10-120'), { set: 'm10', number: '120' });
+  assert.equal(listedNumber('rvr', '26'), null);
+  assert.equal(listedNumber('sld', '1-2'), null);
 });

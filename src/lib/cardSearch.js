@@ -279,12 +279,14 @@ async function pokemonCandidates(lang, q, signal, { tcgplayer = true, tcgplayerO
 /** Number 4 + size 2 + set 1: number+size+set > number+size > number > name only. */
 function scoreOf(c, q) {
   let s = 0;
-  if (q.number && sameNumber(c.number, q.number)) s += 4;
+  // A List or Mystery Booster card by the code and number printed on it, "RVR-26" (decision 329).
+  const listed = scry.listedNumber(c.setCode, c.number);
+  if (q.number && sameNumber(listed ? listed.number : c.number, q.number)) s += 4;
   if (q.size) {
     const size = numericSize(q.size);
     if (size != null ? c.printedSize === size : numberPrefix(c.number) === numberPrefix(q.size)) s += 2;
   }
-  if (q.setCode && c.setCode.toLowerCase() === q.setCode.toLowerCase()) s += 1;
+  if (q.setCode && [c.setCode.toLowerCase(), listed?.set].includes(q.setCode.toLowerCase())) s += 1;
   return s;
 }
 
