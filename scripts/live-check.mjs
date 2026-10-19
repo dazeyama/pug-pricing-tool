@@ -1,4 +1,4 @@
-// Is the live site serving this build? (The release skill's step 6.) Fetches the
+// Is the live site serving this build? (The release skill's step 10.) Fetches the
 // Pages site, then its entry chunk and every chunk those load, following references,
 // and looks for each string given: the version, and a string from a new feature,
 // which may sit in a code-split chunk (the printouts, the stickers, Pokémon names).
@@ -39,7 +39,8 @@ while (todo.length) {
     seen.add(name);
     const body = await get(`${BASE}/assets/${name}`);
     texts.push(body);
-    for (const m of body.matchAll(/[A-Za-z0-9_.]+-[A-Za-z0-9_-]{8}\.js/g)) next.push(m[0]);
+    // The name part takes hyphens too, so foo-bar-HASH.js isn't cut to bar-HASH.js.
+    for (const m of body.matchAll(/[A-Za-z0-9_.-]+-[A-Za-z0-9_-]{8}\.js/g)) next.push(m[0]);
   }
   todo = next;
 }
