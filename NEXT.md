@@ -6,9 +6,6 @@ and function.
 
 ## Open
 
-- **The release skill's new order is untried:** `.claude/skills/release/SKILL.md` steps 3–5 (record edits left
-  uncommitted, the review, then the record commit) and step 8 (the run found by `--commit`). The next push is its
-  first run.
 - **Before the squash:** a full smoke test pass, `docs/TEST.md` (180 cases), on dev.
 - **Phase 10 launch** (owner's go): the squash and the switch to prod, `SQUASH.md` sections 1–10 (N is 0076; the
   baseline `0001_baseline.sql`). Decide the **Supabase plan for prod** first (`docs/DESIGN_SPEC.md` Appendix D 2:
@@ -21,6 +18,10 @@ and function.
 
 ## Done
 
+- 2026-10-19: Pushed as **v0.9.9.14-nightb4** (tag `v0.9.9.14-nightb4`), the release skill's first run in its new
+  order (record edits reviewed before the record commit, the deploy run found by commit): the Help's Convert to
+  collection row, the release skill and `scripts/live-check.mjs` fixes, and the NEXT.md notes. No migrations (dev
+  has 0001–0076) and no Edge Functions. Nothing unpushed.
 - 2026-10-19: The lint hook works (`.claude/settings.json` → `.claude/hooks/lint-edit.mjs`): an Edit adding an unused
   `const` to `scripts/live-check.mjs` came back at once with `no-unused-vars` at 13:7, as a blocking hook error.
   The probe line was taken out straight after; no file changed. A passing edit gives no message.

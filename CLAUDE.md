@@ -90,9 +90,9 @@ tests (`npm test`, commit only on `fail 0`) and the build.
   "Retired documents" row at the top of `docs/DESIGN_SPEC.md`. Code comments citing them mean those copies,
   `git show d158ee3:<path>`.
 
-## Where it stands (2026-10-18)
+## Where it stands (2026-10-19)
 
-- Live: v0.9.9.13-scanner2.0, then pushes without a version bump, the last on 2026-10-18 (decisions through 336).
+- Live: v0.9.9.14-nightb4, pushed 2026-10-19 (decisions through 336).
   The live site runs on the dev project until launch.
 - Dev has migrations 0001–0076.
 - Phase 10 launch (the squash, then prod) waits for my go.
