@@ -20,7 +20,9 @@ begin
   if p_expected_version is not null and b.version <> p_expected_version then raise exception 'stale_version'; end if;
 
   select array_agg(id), count(*) into v_lines, v_count
-    from buy_lines where buy_id = b.id and game = p_game and completed_at is not null;
+    from buy_lines where buy_id = b.id and game = p_game and completed_at is not null
+     -- Not the Magic cards Mark as completed struck: they went elsewhere (decision 340).
+     and struck_at is distinct from completed_at;
   if v_lines is null then return 0; end if;
   v_target := buy_target_name(b.id);
 

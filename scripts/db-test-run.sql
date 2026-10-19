@@ -2177,6 +2177,27 @@ begin
     raise exception 'dbt_no_error';
   exception when others then perform pg_temp.err(s, '… Magic or Pokémon only', sqlerrm, 'bad_game');
   end;
+  -- Mark as completed strikes a Magic buy's cards (0073); undoing an export leaves them so (0078).
+  perform buy_mark_completed(b2, 'mtg', u, a, true);
+  v_n := buy_unexport(b2, 'mtg', u, a, pg_temp.version(b2));
+  perform pg_temp.ok(s, 'Undoing one buy''s export leaves its hand-completed Magic cards Completed and struck (0078)',
+    v_n = 0
+    and (select struck_at = completed_at and struck_by is not null from buy_lines where id = cs)
+    and (select struck_at = completed_at from buy_lines where id = mys));
+  v_n := export_undo_day(d, 'mtg', u, a);
+  perform pg_temp.ok(s, '… and so does the day''s: only the exported buy comes back (0078)',
+    v_n = 1 and (select completed_at is null and cc_status is null from buy_lines where id = bolt)
+    and (select struck_at = completed_at from buy_lines where id = cs));
+  v_n := buy_mark_completed(b2, 'mtg', u, a, false);
+  perform pg_temp.ok(s, '… and the buy''s own Paid/Ours again still brings them back',
+    v_n = 2
+    and (select struck_at is null and struck_by is null and completed_at is null from buy_lines where id = cs)
+    and (select struck_at is null and completed_at is null from buy_lines where id = mys));
+  -- Back as it was: the day exported, then this buy's export undone.
+  perform export_lines(jsonb_build_object('kind', 'day', 'day', d, 'game', 'mtg',
+            'versions', jsonb_build_object(b1::text, pg_temp.version(b1), b2::text, pg_temp.version(b2))),
+          v_matches, array[mys], '[]', u, a);
+  perform buy_unexport(b2, 'mtg', u, a, pg_temp.version(b2));
 
   -- Export single buy.
   begin

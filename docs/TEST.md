@@ -312,7 +312,9 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       and the day's EXPORT skips it.
 - [ ] **Mark Paid/Ours again…** undoes that buy's export alone, after asking.
 - [ ] **Mark as completed** (decisions 295, 277): a Magic buy's cards cross out and its names turn grey; Mark Paid/Ours
-      again brings them back; a Pokémon buy has nothing struck.
+      again brings them back; a Pokémon buy has nothing struck. On a past day with that buy and an exported one, the
+      day's ⋯ → Mark Paid/Ours again… says it brings back 1 buy and the hand-completed one stays; after it, that buy
+      is still Completed and crossed out, and its own ⋯ → Mark Paid/Ours again brings it back (decision 340).
 - [ ] **Striking:** × on one copy strikes that copy; every card of one game struck makes that side Completed; Restore
       brings a card back.
 - [ ] **Convert to project…** makes a project with the same prices (and Convert to buy… back again); a buy with one game

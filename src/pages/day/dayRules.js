@@ -5,3 +5,8 @@ export const COMPLETED_LOCK = 'Completed (exported): its ⋯ → Mark Paid/Ours 
 export const MARKED_LOCK = 'Completed (marked by hand, not exported): its ⋯ → Mark Paid/Ours again to change it';
 /** Was this line Completed by hand (Mark as completed), not by an export? */
 export const markedByHand = (l) => Boolean(l.completed_at) && l.cc_status == null;
+/**
+ * A Magic card Mark as completed struck (decision 295: struck_at = completed_at). Undoing an export
+ * leaves it Completed (decision 340): only its buy's own Mark Paid/Ours again brings it back.
+ */
+export const struckByCompletion = (l) => l.struck_at != null && l.struck_at === l.completed_at;

@@ -24,7 +24,9 @@ begin
     from buys b join buy_lines l on l.buy_id = b.id
    where b.kind = 'walk_in' and b.status = 'confirmed'
      and (b.confirmed_at at time zone 'America/Los_Angeles')::date = p_day
-     and l.game = p_game and l.completed_at is not null;
+     and l.game = p_game and l.completed_at is not null
+     -- Not the Magic cards Mark as completed struck: they went elsewhere (decision 340).
+     and l.struck_at is distinct from l.completed_at;
   v_count := coalesce(array_length(v_ids, 1), 0);
   if v_count = 0 then return 0; end if;
 

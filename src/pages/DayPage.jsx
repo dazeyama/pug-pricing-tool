@@ -29,7 +29,7 @@ import { DB_MESSAGES, dbErrorCode, dbMessage } from '../lib/dbErrors.js';
 import { channelName } from '../lib/channels.js';
 import BuyPanel from './day/BuyPanel.jsx';
 import { ConvertBuyModal, DeleteBuyModal } from './day/DayModals.jsx';
-import { COMPLETED_LOCK, markedByHand } from './day/dayRules.js';
+import { COMPLETED_LOCK, markedByHand, struckByCompletion } from './day/dayRules.js';
 
 const MESSAGES = {
   ...DB_MESSAGES,
@@ -168,6 +168,10 @@ function DayScreen({ game, day }) {
   // Paid/Ours until exported, then Completed (owner, 2026-09-30), game by game.
   const pending = mine.filter((b) => walkInStatus(b, game) === 'paid');
   const done = mine.filter((b) => walkInStatus(b, game) === 'completed');
+  // The buys the day's Mark Paid/Ours again brings back, as export_undo_day picks them: any with a Completed
+  // card, but not the cards Mark as completed struck (decision 340).
+  const undoable = mine.filter((b) => b.buy_lines.some((l) => l.game === game && l.completed_at && !struckByCompletion(l)));
+  const keptByHand = done.filter((b) => !undoable.includes(b)).length;
   const allDone = mine.length > 0 && !pending.length;
   const notOver = day >= storeDay();
   // Pokémon days: EXPORT ▾ holds Print PKM?, Print PKM Stickers? and Complete Day (decision 282;
@@ -572,7 +576,7 @@ function DayScreen({ game, day }) {
         <span className="day-actions">
           {/* ⋯: on Magic days, a dry run of the export's matching (export spec E2);
               after an export, undo it if it was done too early (owner, 2026-09-30). */}
-          {(game === 'mtg' || done.length > 0) && (
+          {(game === 'mtg' || done.length > 0 || undoable.length > 0) && (
             <MoreMenu
               items={[
                 ...(game === 'mtg' ? [{
@@ -581,9 +585,10 @@ function DayScreen({ game, day }) {
                   title: 'See how each card matches a Crystal Commerce product, without exporting',
                   onClick: () => setChecking(true),
                 }] : []),
-                ...(done.length > 0 ? [{
+                ...(done.length > 0 || undoable.length > 0 ? [{
                   label: 'Mark Paid/Ours again…',
-                  blocked: offline ? 'No connection' : busy ? 'Saving…' : null,
+                  blocked: offline ? 'No connection' : busy ? 'Saving…'
+                    : !undoable.length ? "Only buys marked Completed by hand: use each one's ⋯ → Mark Paid/Ours again" : null,
                   title: `${lastExport ? 'Undo the export: t' : 'T'}his day's Completed ${GAME_NAMES[game]} buys become Paid/Ours again`,
                   onClick: () => guard() && setUnexporting(true),
                 }] : []),
@@ -766,9 +771,14 @@ function DayScreen({ game, day }) {
           )}
         >
           <p>
-            This day's <strong>{done.length} Completed {GAME_NAMES[game]} buy{done.length === 1 ? '' : 's'}</strong> go
+            This day's <strong>{undoable.length} Completed {GAME_NAMES[game]} buy{undoable.length === 1 ? '' : 's'}</strong> go
             back to <strong>Paid/Ours</strong>: unlocked, and back in the header search, showing their buy prices
             again. Use this if the day was {lastExport ? 'exported' : 'marked Completed'} too early.
+            {keptByHand > 0 && (
+              <> {keptByHand === 1 ? 'The buy' : `The ${keptByHand} buys`} marked Completed by hand stay
+                {keptByHand === 1 ? 's' : ''} Completed, cards crossed out: {keptByHand === 1 ? 'its' : "each one's"} own
+                ⋯ → Mark Paid/Ours again brings them back.</>
+            )}
           </p>
           {lastExport && (
             <p className="hint">
