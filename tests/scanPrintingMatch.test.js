@@ -2,8 +2,24 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createCanvas } from '@napi-rs/canvas';
 import {
-  TAKE, WEIGHTS, artistIn, borderKind, printDistance, regionPrint, scorePrinting,
+  TAKE, WEIGHTS, artistIn, borderKind, mapLimited, printDistance, regionPrint, scorePrinting,
 } from '../src/scan/printingMatch.js';
+
+// Decision 356: a heavily reprinted card's pictures loaded a few at a time, the results in order.
+test('mapLimited runs at most n at once and keeps the order', async () => {
+  let running = 0;
+  let most = 0;
+  const out = await mapLimited([5, 1, 4, 2, 3, 0, 6], 3, async (x) => {
+    running += 1;
+    most = Math.max(most, running);
+    await new Promise((r) => setTimeout(r, x));
+    running -= 1;
+    return x * 10;
+  });
+  assert.deepEqual(out, [50, 10, 40, 20, 30, 0, 60]);
+  assert.equal(most, 3);
+  assert.deepEqual(await mapLimited([], 3, async (x) => x), []);
+});
 
 // Owner, 2026-10-16: an older card's printing chosen by how it looks, sometimes taken by itself.
 

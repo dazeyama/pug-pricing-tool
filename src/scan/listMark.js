@@ -119,3 +119,13 @@ export function findListMark(frame, card, createCanvas, debug = null) {
 export function listNumber(card) {
   return `${String(card.set).toUpperCase()}-${card.collector_number}`;
 }
+
+/**
+ * The List's printing of a card, among a name's printings ("A25-50" in plst), or null (decision 355).
+ * @param {{ set: string, collector_number: string }} card  the original printing
+ * @param {{ set: string, collector_number: string }[]} printings  every printing of its name
+ */
+export function listPrintingOf(card, printings) {
+  const want = listNumber(card).toUpperCase();
+  return (printings ?? []).find((p) => p.set === 'plst' && String(p.collector_number).toUpperCase() === want) ?? null;
+}

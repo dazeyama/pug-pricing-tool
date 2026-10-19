@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createCanvas } from '@napi-rs/canvas';
-import { findListMark, listNumber } from '../src/scan/listMark.js';
+import { findListMark, listNumber, listPrintingOf } from '../src/scan/listMark.js';
 import { WEIGHTS, scorePrinting } from '../src/scan/printingMatch.js';
 
 // Owner, 2026-10-16: The List's (and the first Mystery Booster's) planeswalker mark at the card's
@@ -68,4 +68,13 @@ test('the older-card ranking: the mark seen favours the List printing; not seen,
   assert.equal(scorePrinting(original, { ...clues, listMark: true }).parts.list, WEIGHTS.list.other);
   assert.equal(scorePrinting(list, { ...clues, listMark: false }).parts.list, WEIGHTS.list.missed);
   assert.equal(scorePrinting(original, { ...clues, listMark: false }).parts.list, undefined);
+});
+
+// Decision 355: an older card taken by its number goes in as its List printing when the mark is seen.
+test('the List\'s printing of a card, among its printings', () => {
+  const original = { set: 'dis', collector_number: '99' };
+  const printings = [original, { set: 'plst', collector_number: 'DIS-99' }, { set: 'plst', collector_number: 'A25-50' }];
+  assert.deepEqual(listPrintingOf(original, printings), { set: 'plst', collector_number: 'DIS-99' });
+  assert.equal(listPrintingOf(original, [original]), null);
+  assert.equal(listPrintingOf({ set: 'a25', collector_number: '51' }, printings), null);
 });

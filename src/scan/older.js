@@ -16,6 +16,7 @@ import { findTitle, parseCopyrightYear, parseOldNumber, readBottom } from './tit
 import { guessName, matchName } from './nameMatch.js';
 import { guideRect } from './guide.js';
 import { rankPrintings } from './printingMatch.js';
+import { listNumber, listPrintingOf } from './listMark.js';
 
 // The most printings the pick list shows at first; View all shows the rest.
 const PICK_MAX = 12;
@@ -116,8 +117,14 @@ export async function printingsFor(name, frame, { texts = [], card = null, listM
     const sizeOf = (c) => sets.get(c.set)?.printed_size ?? sets.get(c.set)?.card_count ?? null;
     hits = printings.filter((c) => plainNumber(c.collector_number) === old.number
       && (sizeOf(c) == null || sizeOf(c) === old.size));
-    // The number and the set's size fit one printing: that's it.
-    if (hits.length === 1) return { tier: 2, name: match.name, number: old.number, cards: hits, all: printings };
+    // The number and the set's size fit one printing: that's it, or, with the List's mark seen,
+    // the List's printing of it (decision 355: the mark used to count only when ranking).
+    if (hits.length === 1) {
+      const listed = listMark === true
+        ? listPrintingOf(hits[0], printings) ?? await scry.cardBySetNumber('plst', listNumber(hits[0])).catch(() => null)
+        : null;
+      return { tier: 2, name: match.name, number: old.number, cards: [listed ?? hits[0]], all: printings };
+    }
   }
   const tier = hits.length ? 2 : 3;
   const number = hits.length ? old.number : null;

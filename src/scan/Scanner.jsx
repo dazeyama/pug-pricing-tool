@@ -358,6 +358,10 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const blocked = blockedText(session);
   const needs = [...scans].reverse().find((s) => s.status === 'needs_price') ?? null;
   const latest = scans[0] ?? null;
+  // What's open now, for a read that started earlier (Scan card waits for an auto look, which may
+  // have opened a sheet meanwhile; decision 356).
+  const openNow = useRef({});
+  openNow.current = { blocked, needs, pick, nameAsk };
 
   // +1 (owner, 2026-10-16: "adds another identical copy of the last scanned card. (So I don't have
   // to wait for the long scan now)"): the last card scanned sent again as it was (printing, finish,
@@ -631,15 +635,16 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
    */
   async function scanFrame({ manual, progress = null }) {
     if (busy.current || !camera.on) return;
-    if (blocked) {
+    const now = openNow.current;
+    if (now.blocked) {
       if (manual) {
-        say('warn', blocked);
+        say('warn', now.blocked);
         play('error');
       }
       return;
     }
-    if (needs || pick || nameAsk) {
-      if (manual) say('warn', needs ? 'Answer the card that needs a price first.' : pick ? 'Pick the printing first.' : 'Type the card\'s name first.');
+    if (now.needs || now.pick || now.nameAsk) {
+      if (manual) say('warn', now.needs ? 'Answer the card that needs a price first.' : now.pick ? 'Pick the printing first.' : 'Type the card\'s name first.');
       return;
     }
     busy.current = true;

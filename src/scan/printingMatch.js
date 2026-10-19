@@ -422,7 +422,11 @@ export function scorePrinting(p, c) {
   return { score, parts };
 }
 
-const images = new Map();   // url → Promise<image|null>, this page's life
+// Pictures kept for the page's life, the oldest let go past IMAGES_MAX, so a phone's memory doesn't
+// grow with every reprinted card looked at (decision 356); and loaded LOAD_AT_ONCE at a time.
+const IMAGES_MAX = 300;
+const LOAD_AT_ONCE = 12;
+const images = new Map();   // url → Promise<image|null>, oldest first
 const cached = (url, load) => {
   if (!url) return Promise.resolve(null);
   if (!images.has(url)) {
@@ -431,9 +435,24 @@ const cached = (url, load) => {
       console.warn('A picture for the printing match would not load', url, e);
       return null;
     }));
+    while (images.size > IMAGES_MAX) images.delete(images.keys().next().value);
   }
   return images.get(url);
 };
+
+/** `fn` over `items`, at most `n` at once, the results in order. */
+export async function mapLimited(items, n, fn) {
+  const out = new Array(items.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length) {
+      const i = next++;
+      out[i] = await fn(items[i], i);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(n, items.length) }, worker));
+  return out;
+}
 
 const smallImage = (p) => p.image_uris?.small ?? p.card_faces?.[0]?.image_uris?.small ?? null;
 
@@ -456,7 +475,7 @@ export async function rankPrintings(frame, card, printings, {
   const seenArt = regionPrint(frame, card, ART, createCanvas);
   const border = borderKind(borderTone(frame, card, createCanvas));
   const area = symbolArea(frame, card, createCanvas);
-  const pics = await Promise.all(printings.map((p) => cached(smallImage(p), loadImage)));
+  const pics = await mapLimited(printings, LOAD_AT_ONCE, (p) => cached(smallImage(p), loadImage));
   // Symbols compared only for the sets that printed it in an older frame (a 2015-frame printing
   // would have had its set code read).
   const codes = [...new Set(printings.filter((p) => !older || p.frame !== '2015').map((p) => p.set))];

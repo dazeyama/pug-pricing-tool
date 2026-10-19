@@ -61,17 +61,25 @@ export function useScans(computerId, phoneId, target = null) {
       setScans([]);
       return;
     }
-    const query = supabase
-      .from('scans')
-      .select('*')
-      .eq('phone_device_id', phoneId)
-      .eq('session_device_id', computerId)
-      .eq('target_kind', targetKind);
-    const { data, error } = await (targetBuy ? query.eq('target_buy_id', targetBuy) : query.is('target_buy_id', null))
-      .order('created_at', { ascending: false })
-      .limit(10);
-    if (error || mine !== ticket.current) return;
-    setScans(data ?? []);
+    const base = () => {
+      const q = supabase
+        .from('scans')
+        .select('*')
+        .eq('phone_device_id', phoneId)
+        .eq('session_device_id', computerId)
+        .eq('target_kind', targetKind);
+      return (targetBuy ? q.eq('target_buy_id', targetBuy) : q.is('target_buy_id', null))
+        .order('created_at', { ascending: false });
+    };
+    // The latest ten, and every scan still waiting on this phone or an Undo (decision 356): a card
+    // that needs a price stays in view however far behind the computer is.
+    const [latest, waiting] = await Promise.all([
+      base().limit(10),
+      base().in('status', ['needs_price', 'undo', 'undoing']).limit(20),
+    ]);
+    if (latest.error || waiting.error || mine !== ticket.current) return;
+    const byId = new Map([...(latest.data ?? []), ...(waiting.data ?? [])].map((s) => [s.id, s]));
+    setScans([...byId.values()].sort((a, b) => (a.created_at < b.created_at ? 1 : -1)));
   }, [computerId, phoneId, targetKind, targetBuy]);
 
   useEffect(() => {

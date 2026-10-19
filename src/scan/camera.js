@@ -307,8 +307,10 @@ export function useCamera(videoRef) {
     };
   }, [videoRef]);
 
-  // Off when the screen goes.
+  // Off when the screen goes, and a camera still opening (a refocus, a restart) shut as it opens
+  // instead of left on behind the next screen (decision 356).
   useEffect(() => () => {
+    generation.current += 1;
     stream.current?.getTracks().forEach((t) => t.stop());
     stream.current = null;
   }, []);
