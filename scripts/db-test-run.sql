@@ -2897,9 +2897,10 @@ begin
     and (v_counts ->> 'events')::integer = (select count(*) from events)
     and (v_counts ->> 'users')::integer = (select count(*) from staff_users where active), v_counts::text);
   v_payload := backup_export();
-  perform pg_temp.ok(s, 'A backup has its six tables, and nothing secret',
+  perform pg_temp.ok(s, 'A backup has its nine tables, the learned matches too (0082), and nothing secret',
     (select array_agg(k order by k) from jsonb_object_keys(v_payload -> 'tables') k)
-      = array['buy_lines', 'buys', 'devices', 'events', 'settings', 'staff_users']
+      = array['buy_lines', 'buys', 'cc_product_links', 'cc_set_map', 'devices', 'events', 'import_links',
+              'settings', 'staff_users']
     and v_payload ->> 'format' = 'pug-pricing-backup' and (v_payload ->> 'version') = '1'
     and position('sb_secret' in v_payload::text) = 0);
   perform pg_temp.ok(s, '… all of them',
@@ -2929,8 +2930,19 @@ begin
   end;
   perform set_config('request.jwt.claims', '{"sub":"dddddddd-0000-4000-8000-00000000d0b7","role":"authenticated"}', true);
 
+  -- A backup from before a column was added (no `project` on its buys, no learned matches):
+  -- the column takes its default, the learned matches stay as they are (0082).
+  v_res := restore_backup(jsonb_set(v_payload #- '{tables,cc_set_map}' #- '{tables,cc_product_links}' #- '{tables,import_links}',
+             '{tables,buys}', (select jsonb_agg(b - 'project') from jsonb_array_elements(v_payload -> 'tables' -> 'buys') b)),
+           'dbtest-old-backup.json', u, a, 'RESTORE');
+  perform pg_temp.ok(s, 'An older backup restores: a column it lacks takes its default (0082)',
+    (v_res ->> 'lines') = (v_counts ->> 'lines') and not exists (select 1 from buys where project));
+  perform pg_temp.ok(s, '… and leaves the learned matches as they are',
+    exists (select 1 from cc_set_map where scryfall_set = 'dbt' and category = 'DBTEST Set'));
+
   -- Something made after the backup, for the restore to undo.
   v_after := collection_create('DBTEST After Backup', null, '', u, a);
+  delete from cc_set_map where scryfall_set = 'dbt';
   v_res := restore_backup(v_payload, 'dbtest-backup.json', u, a, 'RESTORE');
   perform pg_temp.ok(s, 'Restore puts everything back as it was, plus its own Changelog entry',
     v_res ->> 'buys' = v_counts ->> 'buys' and v_res ->> 'collections' = v_counts ->> 'collections'
@@ -2938,6 +2950,8 @@ begin
     and (v_res ->> 'events')::integer = (v_counts ->> 'events')::integer + 1,
     v_counts::text || ' → ' || v_res::text);
   perform pg_temp.ok(s, '… drops what came after the backup', not exists (select 1 from buys where id = v_after));
+  perform pg_temp.ok(s, '… brings back the learned matches (0082)',
+    exists (select 1 from cc_set_map where scryfall_set = 'dbt' and category = 'DBTEST Set'));
   perform pg_temp.ok(s, '… and brings back the run''s own buys and cards',
     (select count(*) from buy_lines where buy_id = pg_temp.id('buy1')) = 2);
   perform pg_temp.ok(s, 'The restore is in the Changelog',

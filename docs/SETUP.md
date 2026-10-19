@@ -92,9 +92,32 @@ last one is over 7 days old). The file is `pug-pricing-backup-<date>-<time>.json
 off the store computers, and never put one in the repo (`.gitignore` blocks the name).
 
 **To restore:** Settings → Backups → **Restore from backup…**, pick the file, check the counts,
-type `RESTORE`. A backup of what's there now downloads first (`…-before-restore.json`), then
-everything is replaced in one step and the page reloads. Computers' names, the Crystal Commerce
+type `RESTORE` and press Restore: a backup of what's there now downloads (`…-before-restore.json`);
+check it saved, then press Restore again, and everything is replaced in one step and the page reloads. Computers' names, the Crystal Commerce
 CSVs and the API keys stay as they are. Try it on **dev** first.
+
+**Restoring into a new project** (the old one is gone; decision 348). In order:
+
+1. Create the Supabase project; in it, Authentication → Users → add the store account (the store email,
+   Auto Confirm User), and turn **off** "Allow new users to sign up".
+2. Link it (`npx supabase link --project-ref <new ref>`, the owner types the database password), then
+   `npx supabase db push --linked`: the baseline and every migration after it.
+3. Deploy the Edge Functions: `npx supabase functions deploy prices --project-ref <new ref> --use-api --no-verify-jwt`,
+   and the same for `secrets`.
+4. Point the site at it: the GitHub Actions variables `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`, then
+   re-run the deploy (or push). Settings → Data API → Max rows as before (SQUASH.md section 10).
+5. Sign in on the site, add one staff user (Restore needs a picked user), then Settings → Backups → **Restore
+   from backup…** with the newest backup. Buys, collections, the Changelog, staff, settings and the learned Crystal
+   Commerce matches come back; the buy numbers carry on past the highest in the file.
+6. **Buy numbers used after that backup** are on labels but not in the file. If any buys were confirmed after it,
+   move the counter past them by hand in the SQL editor, never backwards:
+   `select setval('buys_number_seq', greatest(<highest number on a label>, (select last_value from buys_number_seq)), true);`
+7. Upload the Master Crystal Inventory CSV again (it lived in the old project's storage), and put the JustTCG key
+   back in Settings → API keys. Everyone signs in again; computers keep their names.
+8. Link the CLI back to dev (`npx supabase link --project-ref psucrzljraxeootwnltf`), unless the new project is
+   the one to work on from now: `db push --linked` goes to whichever is linked.
+
+Try it on a throwaway project before it's needed.
 
 If prod moves to the Pro plan (daily backups), set `CLOUD_BACKUPS` to `true` in
 `src/lib/backup.js`; the reminder banner then stops.

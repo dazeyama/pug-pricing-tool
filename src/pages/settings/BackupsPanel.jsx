@@ -15,6 +15,10 @@ import { formatDateTime, timeAgo } from '../../lib/time.js';
 // Supabase's own backups for prod, and Restore from backup… (typed RESTORE,
 // a backup of what's here downloads first, then everything is replaced).
 
+// Restore's second press (decision 348): not a double-click, and within two minutes of the safety backup.
+const SETTLE_MS = 1_500;
+const SAFETY_MS = 120_000;
+
 const ROWS = [
   ['buys', 'Buys'],
   ['collections', 'Collections'],
@@ -60,7 +64,7 @@ export default function BackupsPanel() {
         <div className="backups-col">
           <p className="hint">
             A backup file holds every buy, collection, card line, changelog entry, staff user and
-            setting. Keep copies somewhere safe off this computer. The Crystal Commerce CSVs (download
+            setting, and the Crystal Commerce matches staff picked. Keep copies somewhere safe off this computer. The Crystal Commerce CSVs (download
             them above) and the API keys aren’t in it.
           </p>
           <GuardButton
@@ -120,7 +124,8 @@ function RestoreModal({ fileName, data, check, onClose }) {
   const [now, setNow] = useState(null);
   const [nowError, setNowError] = useState(null);
   const [typed, setTyped] = useState('');
-  const [step, setStep] = useState(null);   // null | 'saving' | 'restoring' | 'done'
+  const [step, setStep] = useState(null);   // null | 'saving' | 'saved' | 'restoring' | 'done'
+  const [safety, setSafety] = useState(null);   // { name, at }: the before-restore file, once downloaded
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -133,22 +138,37 @@ function RestoreModal({ fileName, data, check, onClose }) {
     };
   }, []);
 
-  const working = step !== null && step !== 'done';
+  const working = step === 'saving' || step === 'restoring';
   const ready = typed.trim() === 'RESTORE' && !offline && !working && step !== 'done';
 
+  // Two presses (decision 348): the first downloads a backup of what's here now, which a browser
+  // can't confirm saved, so staff check it's in Downloads; the second restores. Not a double-click
+  // (under SETTLE_MS), and not long after (SAFETY_MS: what other computers saved since would be in
+  // neither file), which starts again with a fresh download.
   async function run() {
     setError(null);
+    const since = safety ? Date.now() - safety.at : Infinity;
+    if (step === 'saved' && since < SETTLE_MS) return;
+    if (step !== 'saved' || since > SAFETY_MS) {
+      try {
+        setStep('saving');
+        const name = await saveBackup({ userId: staff.current?.id ?? null, note: 'before-restore' });
+        setSafety({ name, at: Date.now() });
+        setStep('saved');
+      } catch (e) {
+        setStep(null);
+        setError(e.message);
+      }
+      return;
+    }
     try {
-      setStep('saving');
-      await saveBackup({ userId: staff.current?.id ?? null, note: 'before-restore' });
       setStep('restoring');
       await restoreBackup(data, fileName, staff.current?.id ?? null, deviceId);
       setStep('done');
       toast('Backup restored. Reloading…', 'ok');
-      // Give the before-restore download a moment, then start fresh.
       setTimeout(() => window.location.reload(), 1500);
     } catch (e) {
-      setStep(null);
+      setStep('saved');   // the safety backup's still there: Restore again, or Cancel
       setError(e.message);
     }
   }
@@ -193,8 +213,9 @@ function RestoreModal({ fileName, data, check, onClose }) {
       {nowError && <p className="hint">Couldn’t count what’s here now: {nowError}</p>}
       <div className="banner err restore-warning">
         <strong>Everything currently in the database will be replaced.</strong> Every buy, collection,
-        changelog entry, staff user and setting becomes what’s in this file, on every computer. A backup
-        of what’s here now downloads first.
+        changelog entry, staff user and setting (and the Crystal Commerce matches staff picked, if the file has them)
+        becomes what’s in this file, on every computer. Restore
+        first downloads a backup of what’s here now; check it saved, then press Restore again.
       </div>
       <label htmlFor="restore-typed">Type <strong>RESTORE</strong> to confirm</label>
       <input
@@ -212,6 +233,12 @@ function RestoreModal({ fileName, data, check, onClose }) {
         }}
       />
       {step === 'saving' && <p className="loading-note restore-step">Downloading a backup of what’s here now…</p>}
+      {step === 'saved' && (
+        <p className="restore-step">
+          Downloaded <strong>{safety?.name}</strong>. Check it’s in your Downloads folder, then press <strong>Restore</strong> again
+          within two minutes.
+        </p>
+      )}
       {step === 'restoring' && <p className="loading-note restore-step">Restoring…</p>}
       {step === 'done' && <p className="restore-step ok">Restored. Reloading…</p>}
       {error && <div className="banner err restore-error">{error}</div>}

@@ -369,8 +369,9 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
 - [ ] **JustTCG usage** shows Today and This month bars, the plan and the reset time.
 - [ ] **Master Crystal Inventory** shows the current file, who uploaded it and its rows.
 - [ ] **Crystal Commerce matching** lists remembered sets and products; Browse remembered products… searches them.
-- [ ] **Backups:** Last backup updates after the download; **Restore from backup…** shows the file beside what's here
-      (cancelled, not restored).
+- [ ] **Backups:** Last backup updates after the download; **Restore from backup…** shows the file beside what's here;
+      typing RESTORE and pressing Restore downloads `…-before-restore.json` and says to check it, without restoring
+      (decision 348); then Cancel.
 - [ ] **This computer:** Sign out signs out only this computer; the footer shows the version and the data sources.
 
 ## 17. Changelog tab

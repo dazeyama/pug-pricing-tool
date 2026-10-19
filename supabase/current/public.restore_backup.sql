@@ -23,7 +23,8 @@ begin
     raise exception 'bad_backup';
   end if;
 
-  lock table buys, buy_lines, events, staff_users, settings, collection_locks, customers in exclusive mode;
+  lock table buys, buy_lines, events, staff_users, settings, collection_locks, customers,
+             cc_set_map, cc_product_links, import_links in exclusive mode;
 
   -- Out with the old: locks, buys and collections (their lines go with them),
   -- the customers, the changelog, and every setting but when the last backup was taken.
@@ -47,6 +48,27 @@ begin
   perform restore_rows('events', t -> 'events');
   perform setval(pg_get_serial_sequence('public.events', 'seq'),
                  greatest(coalesce((select max(seq) from events), 0), 1));
+  -- Buy numbers carry on past the restored ones (decision 348): in a new project they'd start
+  -- at 1 and collide. Numbers used after the backup was made can't be known: see SETUP.md.
+  if exists (select 1 from buys where number is not null) then
+    perform setval('public.buys_number_seq',
+                   greatest((select max(number) from buys),
+                            (select case when is_called then last_value else last_value - 1 end from public.buys_number_seq)),
+                   true);
+  end if;
+  -- The learned matches, when the file has them (decision 348; older backups don't).
+  if jsonb_typeof(t -> 'cc_set_map') = 'array' then
+    delete from cc_set_map;
+    perform restore_rows('cc_set_map', t -> 'cc_set_map');
+  end if;
+  if jsonb_typeof(t -> 'cc_product_links') = 'array' then
+    delete from cc_product_links;
+    perform restore_rows('cc_product_links', t -> 'cc_product_links');
+  end if;
+  if jsonb_typeof(t -> 'import_links') = 'array' then
+    delete from import_links;
+    perform restore_rows('import_links', t -> 'import_links');
+  end if;
   perform restore_rows('settings',
     (select coalesce(jsonb_agg(r), '[]'::jsonb) from jsonb_array_elements(t -> 'settings') r
       where r ->> 'key' <> 'last_backup_at'));
