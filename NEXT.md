@@ -6,6 +6,14 @@ and function.
 
 ## Open
 
+- **Small notes from the 2026-10-18 pre-push review** (none stopped the push; fix only if the owner wants):
+  - `.claude/skills/release/SKILL.md` step 8: on a push without a bump and with no new feature text, the live check
+    can't tell the new deploy from the old (the version string was already live). The deploy run, found by the
+    pushed commit's SHA, is the real proof; the skill should say so and use `gh run list --commit <sha>` in step 6.
+  - `scripts/live-check.mjs` line 42: a chunk name with a hyphen in it would be cut short, fetched as a wrong name,
+    and crash the script (no MISSING line). Today's 9 chunk names are all fine.
+  - `SKILL.md`: step 3's record commit lands after the step 1b review, so the reviewer never sees it (docs only by
+    design; the secrets check does cover it).
 - **The lint hook hasn't run in a live session yet:** `.claude/settings.json` → `.claude/hooks/lint-edit.mjs`. It
   loads only in a session started in this folder; the first such session can confirm an Edit triggers it.
 - **Help:** `README.md` "A buy's ⋯ menu" table (line ~1113, after **Convert to project**) has no row for **Convert
