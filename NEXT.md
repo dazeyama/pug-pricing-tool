@@ -6,9 +6,6 @@ and function.
 
 ## Open
 
-- **The lint hook hasn't been seen to run yet:** `.claude/settings.json` → `.claude/hooks/lint-edit.mjs`. A session
-  started in this folder edited `scripts/live-check.mjs` on 2026-10-18 with no message back, which is what a pass
-  looks like and also what a hook that never ran looks like. An Edit that breaks lint on purpose would settle it.
 - **The release skill's new order is untried:** `.claude/skills/release/SKILL.md` steps 3–5 (record edits left
   uncommitted, the review, then the record commit) and step 8 (the run found by `--commit`). The next push is its
   first run.
@@ -24,6 +21,9 @@ and function.
 
 ## Done
 
+- 2026-10-19: The lint hook works (`.claude/settings.json` → `.claude/hooks/lint-edit.mjs`): an Edit adding an unused
+  `const` to `scripts/live-check.mjs` came back at once with `no-unused-vars` at 13:7, as a blocking hook error.
+  The probe line was taken out straight after; no file changed. A passing edit gives no message.
 - 2026-10-18: Help: `README.md` "A buy's ⋯ menu" has a **Convert to collection** row (decision 335), and the struck
   cards and locked lines name it next to Convert to project.
 - 2026-10-18: The pre-push review's three notes fixed:
