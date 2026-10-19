@@ -6,6 +6,11 @@ Do NOT run smoke tests, browser tests, or ad-hoc verification after a change unl
 Hand code off untested so I can QA it myself. The checks before each commit still run every time: lint, the unit
 tests (`npm test`, commit only on `fail 0`) and the build.
 
+## NEXT.md
+
+At the start of every session, read NEXT.md (repo root) first and tell me what's open. After each task I give you,
+mark it done there and list anything pending or half-finished with the exact file and function involved.
+
 ## Project rules
 
 - The spec is docs/DESIGN_SPEC.md. Read the relevant sections before each task. Update it
