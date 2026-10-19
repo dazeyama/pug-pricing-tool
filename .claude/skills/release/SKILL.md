@@ -7,7 +7,7 @@ description: Push the PUG Pricing Tool to the live site (GitHub Pages), with or 
 
 Pushing `main` deploys https://dazeyama.github.io/pug-pricing-tool/. Only on the owner's explicit ask, every time.
 
-- **"Push no bump"** (or just "push"): every step but 2.
+- **"Push no bump"** (or just "push"): every step but 2. Step 1b (the review) runs either way.
 - **"Push as vX"**: every step. The owner names the version.
 
 ## 1. Pre-flight
@@ -31,6 +31,17 @@ git diff --stat origin/main..main -- supabase/functions   # Edge Functions chang
 - **Edge Functions changed** (anything under `supabase/functions/`): note which, for step 7. A change under
   `_shared/` counts for both `prices` and `secrets`.
 - Lint, `npm test` (`fail 0`) and the build ran before each commit; if the last commit's run isn't known, run them.
+
+## 1b. Review what's going out
+
+Hand the unpushed range (`origin/main..main`) to the **pug-reviewer** agent (`.claude/agents/pug-reviewer.md`,
+read-only) and wait for its report.
+
+- **A confirmed finding that would break the live site, lose or corrupt data, leak a secret, or deploy something
+  the owner didn't ask for:** stop. Report it and ask; push nothing.
+- **Anything else** (plausible findings, small or cosmetic ones): carry on, and list them in the step 9 report.
+- **The agent isn't available** (a session started outside this folder can't load it): say so, and ask whether to
+  push without a review.
 
 ## 2. The version (bump only)
 
@@ -110,6 +121,7 @@ string missing.
 ## 9. Report
 
 No smoke test: the owner does QA. Report the commits that went out, the version and tag (or "no bump"), the
-deploy's result, what the live check found, and anything outstanding (Help not updated, a function not deployed).
+deploy's result, what the live check found, the review's findings that didn't stop the push, and anything
+outstanding (Help not updated, a function not deployed).
 The release state lives in NEXT.md and CLAUDE.md: don't copy it into memory, and never edit another project's
 memory file.

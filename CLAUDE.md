@@ -62,9 +62,15 @@ tests (`npm test`, commit only on `fail 0`) and the build.
 
 - Database changes are new migration files, applied to the dev project (`psucrzljraxeootwnltf`) only unless I say
   otherwise.
-- Each migration: rehearse it inside `begin; … rollback;` (`npx supabase db query --linked -f`), then
-  `npx supabase db push --linked`, then `node scripts/db-snapshot.mjs` (commit `supabase/current/` with it), then
-  `node scripts/db-test-run.mjs` ("All passed").
+- Each migration, in order:
+  1. **Review it before it's applied.** The live site runs on the dev database, so applying a migration changes the
+     live store at once. Hand the new migration file, with the app code and test-run checks that go with it, to the
+     **pug-reviewer** agent. A confirmed finding that would break the site or its data: fix it first (it's my call
+     if unsure). Report the rest with the handoff.
+  2. Rehearse it inside `begin; … rollback;` (`npx supabase db query --linked -f`).
+  3. `npx supabase db push --linked`.
+  4. `node scripts/db-snapshot.mjs` (commit `supabase/current/` with it).
+  5. `node scripts/db-test-run.mjs` ("All passed").
 - Helpers only the database's own functions call live in the `internal` schema (migration 0040), which the API
   doesn't serve. A function that calls one must `set search_path = public, internal` (security-definer:
   `public, internal, pg_temp`); a plain `= public` can't find them.

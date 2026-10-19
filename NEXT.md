@@ -24,6 +24,9 @@ and function.
 
 ## Done
 
+- 2026-10-18: pug-reviewer wired in at the two regular points: before every push (release skill step 1b; a
+  confirmed serious finding stops the push) and before every migration is applied to dev (CLAUDE.md, Database,
+  step 1).
 - 2026-10-18: The standard review agent: `.claude/agents/pug-reviewer.md` (read-only tools, this project's rules,
   ranked findings, no fixes); listed in CLAUDE.md "Where things are". First use: in a session started in this
   folder (this session started in `klug alters`, so it can't load it).
