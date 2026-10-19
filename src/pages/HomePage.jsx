@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
+import { allPages } from '../lib/inChunks.js';
 import { useLiveTable } from '../lib/useLiveTable.js';
 import { dayDate, dayRange, storeDay } from '../lib/calendar.js';
 import { formatMoney } from '../lib/money.js';
@@ -82,8 +83,9 @@ function HomeScreen({ today }) {
   const [eventsRef, eventsFit] = useRowsThatFit(EVENT_ROW_PX, 4);
   const { from, to } = dayRange(today);
 
-  // Magic cards in confirmed buys not exported yet (Pokémon can't be exported yet).
-  const pending = useLiveTable('buys', () => supabase
+  // Magic cards in confirmed buys not exported yet (Pokémon can't be exported yet). Every page
+  // (decision 365): a backlog past 1,000 cards was cut short, and days dropped off the list.
+  const pending = useLiveTable('buys', () => allPages((a, b) => supabase
     .from('buy_lines')
     .select('quantity, buy_id, buys!inner(kind, status, confirmed_at)')
     .eq('game', 'mtg')
@@ -91,7 +93,8 @@ function HomeScreen({ today }) {
     .is('bulk_kind', null)   // bulk never waits to be exported
     .is('struck_at', null)   // nor a struck card
     .eq('buys.kind', 'walk_in')
-    .eq('buys.status', 'confirmed'));
+    .eq('buys.status', 'confirmed')
+    .order('id').range(a, b)));
   const todays = useLiveTable('buys', () => supabase
     .from('buys')
     .select('id, paid_price, paid_method, buy_lines(game, quantity, bulk_kind, struck_at)')

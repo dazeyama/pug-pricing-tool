@@ -1,6 +1,6 @@
 import Papa from 'papaparse';
 import { supabase } from './supabase.js';
-import { inChunks } from './inChunks.js';
+import { allPages, inChunks } from './inChunks.js';
 import { monthRange, monthTitle, storeDay } from './calendar.js';
 import { formatMoney } from './money.js';
 import { formatPhone } from './phone.js';
@@ -25,13 +25,16 @@ const market = (lines) => Math.round((lines ?? []).reduce((s, l) => s + Number(l
  */
 export async function loadCashBuys(month) {
   const { from, to } = monthRange(month);
-  const range = (q, column) => q.gte(column, from.toISOString()).lt(column, to.toISOString());
+  // Every page, in a stable order (decision 365): the API returns at most 1,000 rows a request,
+  // and unordered, a busy month's file dropped buys at random.
+  const range = (query, column) => allPages((a, b) => query().gte(column, from.toISOString())
+    .lt(column, to.toISOString()).order(column).order('id').range(a, b));
   const [walkIns, collections] = await Promise.all([
-    range(supabase.from('buys')
+    range(() => supabase.from('buys')
       .select('id, confirmed_at, confirmed_by, customer_name, phone, paid_price, buy_lines(unit_price, quantity)')
       .eq('kind', 'walk_in').eq('status', 'confirmed').eq('paid_method', 'cash'), 'confirmed_at'),
     // Paid/Ours or Completed since: still paid. Can't upload cards is never paid.
-    range(supabase.from('buys')
+    range(() => supabase.from('buys')
       .select('id, paid_at, created_by, project, customer_name, phone, paid_price, buy_lines(unit_price, quantity)')
       .eq('kind', 'collection').in('status', ['paid', 'completed']).eq('paid_method', 'cash')
       .is('system_key', null), 'paid_at'),
