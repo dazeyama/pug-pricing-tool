@@ -14,8 +14,8 @@ Read FABLE.md first (the gates apply here more than anywhere), then this.
 third time for the phone scanner:* migrations 0063–0067 landed on dev before
 the squash (0066: bulk counted apart in the Changelog, after the Phase 6
 smoke test; 0067: Show all finds struck cards), then 0068–0070 (the phone
-scanner, docs/SCAN_FUNCTION.md: scan sessions, scans, undo), then 0071–0075 (buys numbered
-forever, the day's Custom SKU, the completion rules, a collection's Undo export, a scan saved once), so N is 0075.
+scanner, docs/SCAN_FUNCTION.md: scan sessions, scans, undo), then 0071–0076 (buys numbered
+forever, the day's Custom SKU, the completion rules, a collection's Undo export, a scan saved once, Convert to collection), so N is 0076.
 
 *Renumbered for launch, 2026-10-19 (DESIGN_SPEC decision 332):* the baseline is
 **`0001_baseline.sql`** whatever N is (the owner: "is there any way we can rename
@@ -32,16 +32,16 @@ them again.
 
 ## 0. The shape of it
 
-Dev has 75 migrations (0001–0075), 17,455 lines, many rewriting the same
-function. Prod is empty and not live. The squash replaces the 75 files with
+Dev has 76 migrations (0001–0076), over 17,000 lines, many rewriting the same
+function. Prod is empty and not live. The squash replaces the 76 files with
 **one baseline file that builds the database as dev has it**, applies it to
 prod, proves prod matches dev, and then tells dev's migration record that the
 baseline is what it has. Nothing in the app changes. Dev's data is never
 touched.
 
-**N** is the last migration on dev when the squash starts (today 0075). The
+**N** is the last migration on dev when the squash starts (today 0076). The
 baseline is always `0001_baseline.sql`, standing in for 0001–N; the first
-migration after launch is 0002. The commands below use 0075 as N; substitute
+migration after launch is 0002. The commands below use 0076 as N; substitute
 if more migrations land first, and if they do, **start again from section 1**:
 a baseline written before the last migration is wrong by definition.
 
@@ -134,7 +134,7 @@ Written in the safety folder, not `supabase/migrations/`: the old
 `0001_init.sql` is still there till section 5 (two 0001s in the folder would
 confuse the CLI, and section 5's archive pattern would take the baseline
 too). The generator reads the old files' numbers from `supabase/migrations/`
-for its header ("standing in for 0001–0075"), so it must run before the
+for its header ("standing in for 0001–0076"), so it must run before the
 archive.
 
 It prints the counts. On 2026-10-16: `17 tables, 184 columns, 1 sequence(s),
@@ -148,7 +148,7 @@ and these parts in full (the ones a catalog read can't check for you):
 
 | Section | Must show |
 |---|---|
-| header | "standing in for migrations 0001–0075"; "write migration 0002 and up" |
+| header | "standing in for migrations 0001–0076"; "write migration 0002 and up" |
 | Extensions | `create extension if not exists pg_trgm with schema extensions;` and nothing else (the other extensions on dev — pgcrypto, uuid-ossp, pg_stat_statements, supabase_vault — are Supabase's defaults; prod has them) |
 | Schemas | `create schema if not exists internal;` |
 | Sequences | `public.events_seq_seq` as bigint … start with 1; later `owned by public.events.seq` |
@@ -220,9 +220,9 @@ section 8).
 
 ```bash
 mkdir -p supabase/migrations-archive
-git mv supabase/migrations/00{01..75}_*.sql supabase/migrations-archive/
+git mv supabase/migrations/00{01..76}_*.sql supabase/migrations-archive/
 ls supabase/migrations            # empty
-ls supabase/migrations-archive | wc -l    # 75
+ls supabase/migrations-archive | wc -l    # 76
 cp /c/ClaudeProjects/temp/pug-squash/0001_baseline.sql supabase/migrations/
 ls supabase/migrations            # exactly one file: 0001_baseline.sql
 ```
@@ -230,7 +230,7 @@ ls supabase/migrations            # exactly one file: 0001_baseline.sql
 Write `supabase/migrations-archive/README.md`:
 
 ```markdown
-# Archived migrations 0001–0075
+# Archived migrations 0001–0076
 
 History only: how the dev database was built between 2026-09-28 and the
 squash (DESIGN_SPEC decisions 192, 332). `supabase/migrations/0001_baseline.sql`
@@ -375,8 +375,8 @@ password). Then Claude:
 
 ```bash
 cat supabase/.temp/project-ref                    # dev
-npx supabase migration list --linked              # remote: 0001–0075; local: 0001 only
-npx supabase migration repair --linked --status reverted $(printf '%04d ' $(seq 1 75))
+npx supabase migration list --linked              # remote: 0001–0076; local: 0001 only
+npx supabase migration repair --linked --status reverted $(printf '%04d ' $(seq 1 76))
 npx supabase migration repair --linked --status applied 0001
 npx supabase migration list --linked              # 0001 on both sides, nothing else
 npx supabase db push --dry-run --linked           # nothing to push
@@ -388,14 +388,14 @@ record of what was applied); dev's tables, functions and data don't change,
 and the last command proves it: every check passes and every fingerprint
 reads `✓ same` against the run saved in section 2.
 
-All 75 reverted first, then 0001 applied: in that order, so 0001 ends up
+All 76 reverted first, then 0001 applied: in that order, so 0001 ends up
 applied (the first command takes it off with the rest).
 
 **Gate:** list shows 0001 only; dry run has nothing to push; test run same.
 
 **If the repair went wrong** (a version missed, the wrong status): repair is
 idempotent — run the two commands again. Worst case, `--status applied` for
-0001–0075 returns the record to where section 1 found it (0001 is in both
+0001–0076 returns the record to where section 1 found it (0001 is in both
 lists, so nothing to revert), and `git checkout pre-squash -- supabase/migrations`
 returns the files.
 
@@ -405,7 +405,7 @@ returns the files.
 
 ```bash
 git add supabase/migrations supabase/migrations-archive SQUASH.md
-git commit   # "Migration squash: 0001–0075 → 0001_baseline.sql (decisions 192, 332)"
+git commit   # "Migration squash: 0001–0076 → 0001_baseline.sql (decisions 192, 332)"
 ```
 
 One commit, with the baseline, the moves, the archive README, and a line in

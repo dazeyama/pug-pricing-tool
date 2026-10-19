@@ -99,6 +99,7 @@ function ConditionChip({ buy, byId, blocked, onChecked }) {
 /** One buy on a day page (spec 10.2). */
 export default function BuyPanel({
   buy, number, skus = [], game, other, day, byId, busy, offline, hits, flash, onRemove, onRestore, onDelete, onComplete, onConvert,
+  onConvertCollection,
   onExport, onUnexport, onEditView, onPrint, onPrintStickers, printing, onFlag, tiers,
 }) {
   const [preview, setPreview] = useState(null);   // { src, top, left } while a line is hovered
@@ -225,6 +226,16 @@ export default function BuyPanel({
                 ? null : 'Nothing left to move: every card is Completed or struck'),
               title: 'Move this buy\'s live cards, both games, into a new project; Completed cards stay here',
               onClick: () => onConvert(buy, number),
+            },
+            {
+              // The same, into a collection (owner, 2026-10-19; decision 335): the buy's name and
+              // phone, the Last 4 ID 1312, its rates and payment.
+              label: 'Convert to collection',
+              blocked: offOrBusy ?? (!buy.customer_name?.trim() ? 'No customer name on this buy'
+                : buy.buy_lines.some((l) => !l.completed_at && !l.struck_at && !l.bulk_kind)
+                  ? null : 'Nothing left to move: every card is Completed or struck'),
+              title: 'Move this buy\'s live cards, both games, into a new Paid/Ours collection under its customer; Completed cards stay here',
+              onClick: () => onConvertCollection(buy, number),
             },
             {
               label: 'Delete buy…',

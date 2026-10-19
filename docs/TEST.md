@@ -8,7 +8,7 @@ what happens. Results and findings go in `docs/TEST_RUNS.md`, under the run's da
   http://localhost:5180). **Never prod.**
 - **Who:** the owner, or Claude in the browser pane at the owner's request (FABLE.md, "a smoke pass the owner asks
   for"). The owner does the phone, two-computer and store cases.
-- **How long:** about two hours, 179 cases.
+- **How long:** about two hours, 180 cases.
 
 ## Ground rules
 
@@ -312,6 +312,9 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       brings a card back.
 - [ ] **Convert to project…** makes a project with the same prices (and Convert to buy… back again); a buy with one game
       Completed moves only its live cards, the dialog says so (decision 296); a buy with nothing live is blocked.
+- [ ] **Convert to collection…** (decision 335) asks once with nothing to type, showing the buy's name, phone and Last
+      4 ID 1312; the collection opens, Paid/Ours, with the buy's cards, rates and what was paid; the Changelog says "Buy
+      converted to collection"; Completed cards stay on the buy; with no customer name it's greyed.
 - [ ] **Delete buy…** asks first.
 - [ ] A buy with both games links "Also has N Pokémon cards →" to the other game's day.
 - [ ] **A Pokémon day's COMPLETE** works out today's Sell Prices and shows them in green.

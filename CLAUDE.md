@@ -66,5 +66,8 @@
   printing with the edited card pinned (319, 324), mimp reversed (323), auto-select sooner (325), special foils
   only with FOIL (326), FNM promos by year (327), stamped promos by their stamp (328), The List and Mystery
   Booster in number searches, after the main printings (329), Help for all of it (330). Migration 0075 on dev.
+  Then the tall-stack note (331, pushed without a bump), the squash renumbered to a 0001 baseline (332), the
+  33.34/66.68 default rates (333), the smoke test as one pass (334, docs/TEST.md; results in docs/TEST_RUNS.md),
+  and Convert to collection on a buy's ⋯ (335, migration 0076 on dev).
   Phase 10 launch (the migration squash, SQUASH.md, then prod) waits for the owner's go; the live site runs on the
   dev project until then. docs/TEST.md is the smoke test (one pass, tab by tab); docs/TEST_RUNS.md holds each run's results.

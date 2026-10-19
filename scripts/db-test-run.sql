@@ -1271,6 +1271,53 @@ exception when others then
   perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
 end $$;
 
+-- ============================================ Convert to collection (0076)
+do $$
+declare
+  s text := 'Convert to collection';
+  u uuid := pg_temp.id('u1');
+  a uuid := pg_temp.id('devA');
+  v_b uuid;
+  v_c uuid;
+begin
+  -- A buy with custom rates, two cards, one struck.
+  v_b := draft_for_device(a, u);
+  perform draft_set_custom_rates(a, 40, 60, u);
+  perform draft_add_line(a, pg_temp.line('Dbtest Coll A', 'DBT', '041', 2, 1.00), u, true);
+  perform draft_add_line(a, pg_temp.line('Dbtest Coll B', 'DBT', '042', 1, 4.00), u, true);
+  perform confirm_buy(v_b, u, 'DBTEST Erika', '', 50, 65, null, 3, 'credit', '{}', '5550100031');
+  perform buy_strike_line(pg_temp.line_id(v_b, 'Dbtest Coll B'), 1, u, a, null, null);
+
+  begin
+    perform buy_to_collection(v_b, null, a);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'Convert to collection needs a user', sqlerrm, 'no_user');
+  end;
+  begin
+    perform buy_to_collection(v_b, u, a, pg_temp.version(v_b) + 1);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, '… and the buy as it is now', sqlerrm, 'stale_version');
+  end;
+  v_c := buy_to_collection(v_b, u, a, pg_temp.version(v_b), '{}');
+  perform pg_temp.ok(s, 'Convert to collection makes a Paid/Ours collection: the buy''s name and phone, ID 1312, what was paid',
+    (select kind = 'collection' and status = 'paid' and not project and customer_name = 'DBTEST Erika'
+            and phone = '5550100031' and id_last4 = '1312' and paid_price = 3 and paid_method = 'credit'
+            and created_by = u from buys where id = v_c));
+  perform pg_temp.ok(s, '… keeping the buy''s rates, on the collection and its cards',
+    (select cash_pct = 40 and credit_pct = 60 and custom_cash_pct = 40 from buys where id = v_c)
+    and not exists (select 1 from buy_lines where buy_id = v_c and (cash_pct is null or credit_pct is null)));
+  perform pg_temp.ok(s, 'Its live card moved, the struck one left out; the buy is gone',
+    (select count(*) = 1 and sum(quantity) = 2 from buy_lines where buy_id = v_c)
+    and not exists (select 1 from buys where id = v_b));
+  perform pg_temp.ok(s, 'One Changelog entry: Collection started from Buy N, the struck card crossed out',
+    exists (select 1 from events where action = 'buy_converted_collection' and target_id = v_c and added = 2
+              and lines @> '[{"struck": true, "qty": 1}]'::jsonb
+              and summary like 'Collection started from Buy % · %: DBTEST Erika; 1 struck card left out.'));
+exception when others then
+  declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;
+  perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
+end $$;
+
 -- ============================================ Convert to project, and back
 do $$
 declare

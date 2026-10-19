@@ -339,12 +339,17 @@ function DayScreen({ game, day }) {
     await reload();
   }
 
-  /** A buy's ⋯ → Convert to project (owner, 2026-10-02): its live cards go to a new project; the buy is deleted unless Completed cards stay (decision 296). */
+  /**
+   * A buy's ⋯ → Convert to project (owner, 2026-10-02): its live cards go to a new project; the buy is
+   * deleted unless Completed cards stay (decision 296). Convert to collection (decision 335): the same,
+   * into a Paid/Ours collection under the buy's customer, nothing typed.
+   */
   async function convert(name) {
-    const { buy, number } = converting;
-    const { data, error } = await run('buy_to_project', {
-      p_buy_id: buy.id, p_name: name, ...by(buy), p_line_texts: Object.fromEntries(buy.buy_lines.map((l) => [l.id, lineText(l)])),
-    }, "Couldn't convert the buy");
+    const { buy, number, to } = converting;
+    const lineTexts = Object.fromEntries(buy.buy_lines.map((l) => [l.id, lineText(l)]));
+    const { data, error } = to === 'collection'
+      ? await run('buy_to_collection', { p_buy_id: buy.id, ...by(buy), p_line_texts: lineTexts }, "Couldn't convert the buy")
+      : await run('buy_to_project', { p_buy_id: buy.id, p_name: name, ...by(buy), p_line_texts: lineTexts }, "Couldn't convert the buy");
     if (error) {
       // A bad name keeps the dialog open, to fix it there.
       if (dbErrorCode(error) !== 'bad_name') setConverting(null);
@@ -352,7 +357,9 @@ function DayScreen({ game, day }) {
       return;
     }
     setConverting(null);
-    toast(`Buy ${number} is now the project ${name.trim()}.`, 'ok');
+    toast(to === 'collection'
+      ? `Buy ${number} is now the collection ${buy.customer_name.trim()}.`
+      : `Buy ${number} is now the project ${name.trim()}.`, 'ok');
     navigate(`/collections/${data}`);
   }
 
@@ -661,7 +668,8 @@ function DayScreen({ game, day }) {
               onRestore={restore}
               onDelete={(b, n) => guard() && setDeleting({ buy: b, number: n, lastCard: false })}
               onComplete={(b, n, complete) => guard() && markCompleted(b, n, complete)}
-              onConvert={(b, n) => guard() && setConverting({ buy: b, number: n })}
+              onConvert={(b, n) => guard() && setConverting({ buy: b, number: n, to: 'project' })}
+              onConvertCollection={(b, n) => guard() && setConverting({ buy: b, number: n, to: 'collection' })}
               onExport={(b, n) => guard() && unlessFlagged([b], () => setExportingBuy({ buy: b, number: n }))}
               onFlag={(b, n, flag) => guard() && setConditionFlag(b, n, flag)}
               onPrint={printBuy}
@@ -875,6 +883,7 @@ function DayScreen({ game, day }) {
           busy={busy}
           onClose={() => setConverting(null)}
           onConvert={convert}
+          to={converting.to}
         />
       )}
       {deleting && (
