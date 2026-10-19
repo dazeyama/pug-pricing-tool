@@ -22,9 +22,10 @@
   the API doesn't serve. A function that calls one must `set search_path = public, internal`
   (security-definer: `public, internal, pg_temp`); a plain `= public` can't find them.
 - The owner is QA — see memory `user-is-qa`.
-- The export's spec is docs/EXPORT_FUNCTION.md.
+- The export's spec was docs/EXPORT_FUNCTION.md, retired 2026-10-19 (decision 336): `git show d158ee3:docs/EXPORT_FUNCTION.md`.
 - The team feedback plan (printout, individual rates, bulk; phases T1–T3) is docs/TEAM_FEEDBACK.md.
-- The phone scanner's spec (a phone scans Magic cards into a computer's buy list; phases S1–S5) is docs/SCAN_FUNCTION.md.
+- The phone scanner's spec (phases S1–S5) was docs/SCAN_FUNCTION.md, retired 2026-10-19 (decision 336):
+  `git show d158ee3:docs/SCAN_FUNCTION.md`. Comments citing it, EXPORT_FUNCTION.md, AUTO_COMPLETE.md or PKM_PRICES.md mean those copies.
   What its first attempt at auto scanning taught us (rolled back 2026-10-16) is docs/SCAN_LEARNINGS.md.
 - Current phase: docs/TEAM_FEEDBACK.md Phases T1 (audit printout) and T2 (individual rates, migrations
   0055–0057) and T3 (bulk, migration 0058) are done, live as v0.9.9.7-feedback.
@@ -32,7 +33,7 @@
   buys keeping their custom rates (decision 268, migration 0061), Japanese-only Magic printings in English
   searches (decision 269) and placeholders (decision 270, migration 0062), all migrations on dev.
   Then live as v0.9.9.9-fable: the code review's fixes (FABLE.md; migrations 0063–0065), the Phase 6
-  smoke test (results in docs/TEST_RUNS.md) and its fixes (decisions 272–273, migration 0066), all on dev.
+  smoke test (results in git history, decision 336) and its fixes (decisions 272–273, migration 0066), all on dev.
   Then pushed without a version change: Show all finds struck cards (decision 275, migration 0067, on dev)
   and cards by game on a collection's name (decision 276).
   Then the phone scanner (docs/SCAN_FUNCTION.md Phases S1–S5, decisions 278–279, migrations 0068–0070 on dev;
@@ -67,7 +68,7 @@
   only with FOIL (326), FNM promos by year (327), stamped promos by their stamp (328), The List and Mystery
   Booster in number searches, after the main printings (329), Help for all of it (330). Migration 0075 on dev.
   Then the tall-stack note (331, pushed without a bump), the squash renumbered to a 0001 baseline (332), the
-  33.34/66.68 default rates (333), the smoke test as one pass (334, docs/TEST.md; results in docs/TEST_RUNS.md),
-  and Convert to collection on a buy's ⋯ (335, migration 0076 on dev).
+  33.34/66.68 default rates (333), the smoke test as one pass (334, docs/TEST.md),
+  and Convert to collection on a buy's ⋯ (335, migration 0076 on dev); five finished docs retired (336).
   Phase 10 launch (the migration squash, SQUASH.md, then prod) waits for the owner's go; the live site runs on the
-  dev project until then. docs/TEST.md is the smoke test (one pass, tab by tab); docs/TEST_RUNS.md holds each run's results.
+  dev project until then. docs/TEST.md is the smoke test (one pass, tab by tab); a pass reports its findings when it ends.

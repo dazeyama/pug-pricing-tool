@@ -1,7 +1,7 @@
 # Smoke test
 
 One pass through the whole app, tab by tab, before a release or the move to prod. Each case says what to do and
-what happens. Results and findings go in `docs/TEST_RUNS.md`, under the run's date.
+what happens. The findings are reported when the pass ends.
 
 - **Build under test:** the Settings footer shows it (0.9.9.13-scanner2.0 or later).
 - **Where:** the dev project only (`psucrzljraxeootwnltf`), through the local dev server (`start.bat` →
@@ -18,8 +18,8 @@ what happens. Results and findings go in `docs/TEST_RUNS.md`, under the run's da
 - **The JustTCG budget:** note Settings → JustTCG usage at the start and the end. The pass uses well under 150 of the
   day's 1,000 requests.
 - **Test files stay outside the repo** (CSV files for Import Collection go in a scratch folder).
-- **Every finding is recorded** in `docs/TEST_RUNS.md` with its steps, what happens, what should happen, and a
-  priority: **P1** breaks or hides something staff rely on; **P2** is wrong or misleading, with a workaround; **P3**
+- **Every finding is noted** with its steps, what happens, what should happen, and a priority, and the list is
+  reported when the pass ends: **P1** breaks or hides something staff rely on; **P2** is wrong or misleading, with a workaround; **P3**
   is cosmetic.
 - **Nothing is fixed during the pass.** Fixes come afterwards, from the findings.
 

@@ -19,7 +19,7 @@ Needs Node.js LTS (`winget install OpenJS.NodeJS.LTS`).
 `localhost` uses the **dev** Supabase project, so testing never touches the store's
 real data. The live site uses the **prod** project.
 
-### Testing the phone scanner (docs/SCAN_FUNCTION.md)
+### Testing the phone scanner
 
 A phone's camera only works on an HTTPS page, so for the scanner the dev server
 has a second way to start, reachable from the shop's Wi-Fi:

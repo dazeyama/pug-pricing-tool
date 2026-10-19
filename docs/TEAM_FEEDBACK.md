@@ -6,7 +6,7 @@
 | **Owner** | Players' Union Games (PUG) |
 | **Plan version** | 1.0 — 2026-10-14 |
 | **Status** | Approved by the owner (2026-10-14). Phase T1 built (2026-10-14); Phase T2 built and checked by the owner (2026-10-15). Phase T3 (bulk) built and checked by the owner (2026-10-15). All three phases live as v0.9.9.7-feedback. |
-| **Extends** | `docs/DESIGN_SPEC.md` (the app) and `docs/EXPORT_FUNCTION.md` (the export). Both stay the source of truth for everything not changed here. |
+| **Extends** | `docs/DESIGN_SPEC.md` (the app) and `docs/EXPORT_FUNCTION.md` (the export; retired 2026-10-19, `git show d158ee3:docs/EXPORT_FUNCTION.md`). Both stay the source of truth for everything not changed here. |
 | **Project folder** | `C:\ClaudeProjects\pug-pricing-tool` |
 | **Built after** | v0.9.9.6-cosmetics |
 

@@ -1,4 +1,4 @@
-// The phone scanner's recognition benchmark (docs/SCAN_FUNCTION.md 11.3):
+// The phone scanner's recognition benchmark (docs/SCAN_FUNCTION.md 11.3, now `git show d158ee3:docs/SCAN_FUNCTION.md`):
 // runs the same reading the phone does (src/scan/recognition/, mtgscan's
 // modules, and Tesseract with the same English model) on photos of real
 // cards, and says how many it reads right, and how surely.
@@ -32,7 +32,7 @@ const make = (w, h) => createCanvas(w, h);
 const SCRYFALL_HEADERS = { Accept: 'application/json', 'User-Agent': 'PUGPricingTool-ScanBenchmark/1.0' };
 
 if (!fs.existsSync(folder)) {
-  console.error(`No folder ${folder}. Put the photos there (docs/SCAN_FUNCTION.md 11.3).`);
+  console.error(`No folder ${folder}. Put the photos there, named as this script's header says.`);
   process.exit(1);
 }
 const files = fs.readdirSync(folder).filter((f) => /\.(jpe?g|png|webp)$/i.test(f)).sort();

@@ -4,7 +4,7 @@
 |---|---|
 | **Written** | 2026-10-16, when the owner rolled the scanner back to `e191f25` ("The current systems are not panning out and working … we're going to try a different approach") |
 | **The rolled-back code** | Local tag `scanner-attempt-1` (`ecfca0a`, not pushed): `git show scanner-attempt-1:src/scan/sameCard.js` and so on. Kept for reference; the next approach isn't expected to reuse it |
-| **The plan it built from** | `docs/SCAN_FUNCTION.md` (Phases S1–S5, all built; Section 16 is the as-built record up to `e191f25`) |
+| **The plan it built from** | `docs/SCAN_FUNCTION.md` (Phases S1–S5, all built; Section 16 is the as-built record up to `e191f25`), retired 2026-10-19: `git show d158ee3:docs/SCAN_FUNCTION.md` |
 
 Everything below was found on the owner's iPhone (iOS 26 Safari, a back camera with several
 lenses), scanning cards laid in a card holder (a white box), with the laptop on dev.
