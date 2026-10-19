@@ -35,7 +35,8 @@ tests (`npm test`, commit only on `fail 0`) and the build.
   The steps are the release skill, `.claude/skills/release/SKILL.md`.
 - **Stay in this project.** Work only in `C:\ClaudeProjects\pug-pricing-tool`. Never create, edit or delete anything
   in another project, its config or its memory file; collection-manager and audit-tool are READ-ONLY references.
-  If something elsewhere looks wrong, say so instead.
+  If something elsewhere looks wrong, say so instead. Claude's own memory notes about this project are fine to keep
+  up, wherever the session stores them; the release state itself lives in NEXT.md and Where it stands below.
 - Scratch files go in the session's scratchpad or `C:\ClaudeProjects\temp`, never in the repo, and never in the
   `klug alters` folder a session may start in.
 
@@ -80,10 +81,10 @@ tests (`npm test`, commit only on `fail 0`) and the build.
   "Retired documents" row at the top of `docs/DESIGN_SPEC.md`. Code comments citing them mean those copies,
   `git show d158ee3:<path>`.
 
-## Where it stands (2026-10-19)
+## Where it stands (2026-10-18)
 
-- Live: v0.9.9.13-scanner2.0, then pushes without a version bump through `d565452` (decisions through 336). The live
-  site runs on the dev project until launch.
+- Live: v0.9.9.13-scanner2.0, then pushes without a version bump, the last on 2026-10-18 (decisions through 336).
+  The live site runs on the dev project until launch.
 - Dev has migrations 0001–0076.
 - Phase 10 launch (the squash, then prod) waits for my go.
 - The release history is the spec's decisions and `git tag`; what's open is NEXT.md.
@@ -97,8 +98,10 @@ Write or Edit are also linted as they're saved (the hook in `.claude/settings.js
 
 ### Writing Code Files
 
-Never write Python, JS, or other source files through Bash heredocs or echo. Always use the Write/Edit tools so
-backslashes, regexes, and encodings are preserved.
+Never write Python, JS, or other source files through Bash heredocs or echo, and don't edit them in place with
+`sed -i` either: the lint hook only sees Write and Edit. Always use the Write/Edit tools so backslashes, regexes,
+and encodings are preserved. A patch script written with Write is fine for many-file changes; the full lint before
+the commit covers what it changed.
 
 ## UI Work
 
