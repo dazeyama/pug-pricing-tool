@@ -3,7 +3,8 @@
 ## QA Handoff
 
 Do NOT run smoke tests, browser tests, or ad-hoc verification after a change unless I explicitly ask for a test.
-Hand code off untested so I can QA it myself. Running the existing unit test suite only when I ask is fine.
+Hand code off untested so I can QA it myself. The checks before each commit still run every time: lint, the unit
+tests (`npm test`, commit only on `fail 0`) and the build.
 
 ## Project rules
 
@@ -85,8 +86,7 @@ Hand code off untested so I can QA it myself. Running the existing unit test sui
 ### Writing Code Files
 
 Never write Python, JS, or other source files through Bash heredocs or echo. Always use the Write/Edit tools so
-backslashes, regexes, and encodings are preserved. When adding helpers to Flask files, never insert code between a
-route decorator and its function.
+backslashes, regexes, and encodings are preserved.
 
 ## UI Work
 
