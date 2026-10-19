@@ -7,8 +7,10 @@ import { DEFAULT_BULK_VALUES } from '../lib/bulk.js';
 // App settings (spec 6.1 `settings`): key/value rows, live on every computer.
 
 export const DEFAULTS = {
-  cash_pct: 33,
-  credit_pct: 66,
+  // The store's rates (owner, 2026-10-19: "start prod at 33.34/66.68 default too, hardcode that as
+  // default"; decision 333): until Settings has its own.
+  cash_pct: 33.34,
+  credit_pct: 66.68,
   // Master Fallback Percentages (owner, 2026-09-29): with only a fallback NM
   // price (no JustTCG price), each condition is that price × its percentage.
   fallback_pct_mtg: { NM: 100, LP: 90, MP: 80, HP: 70, DMG: 60 },

@@ -869,5 +869,5 @@ Categories with no rule yet (from Section 3.3's 138 unmatched): `Mystery Booster
 
 ## Appendix D: Open items
 
-1. **A test upload** of a small E3 file in CC before the first real batch: one or two cards the store has in stock, through Mass Create in "Only Update Products" mode, to confirm CC accepts the columns (above all **Custom SKU**, which the owner's sample didn't have), the condition words and the Sell Prices, and that **Add Qty adds**. It changes real stock and prices, so use cards whose quantity and price are easy to set back by hand in CC.
+1. ~~**A test upload**~~ done (owner, 2026-10-19: "Done, no errors"). Was: a test upload of a small E3 file in CC before the first real batch: one or two cards the store has in stock, through Mass Create in "Only Update Products" mode, to confirm CC accepts the columns (above all **Custom SKU**, which the owner's sample didn't have), the condition words and the Sell Prices, and that **Add Qty adds**. It changes real stock and prices, so use cards whose quantity and price are easy to set back by hand in CC.
 2. **Pokémon:** none of this applies yet (owner, 2026-09-30).

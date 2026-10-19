@@ -389,6 +389,6 @@ Each phase: build, `npm test`, `npm run build`, lint, the database test run afte
 
 ## 8. Later, or to decide when it comes up
 
-- **A Pokémon printout** (owner, 2026-10-14: maybe later), likely by set and number, since Pokémon has no CC matching.
-- **Bulk on conversions**: may be left out instead, once the workflow is seen in use (5.8).
-- **The low/high rates on the alert**: 4.5 lists cards with their own rate, as asked; a one-line summary of the low/high-end cards ("12 cards at the low-end rates: −$4.20 credit") could join it if the team wants it.
+- ~~**A Pokémon printout**~~: built as **Print PKM?** (DESIGN_SPEC decisions 280–283), by set and number.
+- ~~**Bulk on conversions**~~: closed for now (owner, 2026-10-19): bulk moves with conversions as 5.8 says.
+- ~~**The low/high rates on the alert**~~: closed for now (owner, 2026-10-19): the alert lists cards with their own rate only (4.5).

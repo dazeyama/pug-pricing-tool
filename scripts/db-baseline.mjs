@@ -214,8 +214,8 @@ for (const t of tables) {
 if (publication.length) put(`alter publication supabase_realtime add table ${publication.map((p) => qn(p.schema, p.table)).join(', ')};`);
 
 section('Starting rows (not from dev: what the old migrations seeded)');
-put(`-- 0001: the master percentages start at 33 / 66; the store sets its own in Settings.`,
-  `insert into public.settings (key, value) values ('cash_pct', '33'), ('credit_pct', '66') on conflict (key) do nothing;`,
+put(`-- The master percentages start at the store's 33.34 / 66.68 (decision 333; 0001 seeded 33 / 66).`,
+  `insert into public.settings (key, value) values ('cash_pct', '33.34'), ('credit_pct', '66.68') on conflict (key) do nothing;`,
   `-- 0028: the Can't upload cards collection.`,
   `select public.cant_upload_ensure();`);
 

@@ -160,7 +160,7 @@ and these parts in full (the ones a catalog read can't check for you):
 | Privileges | `revoke all on … from public, anon, authenticated, service_role;` then grants, per object; **no line touches `schema public`** (Supabase's; prod has the same) |
 | Storage | the `master-inventory` bucket, `52428800` (50 MB, 0023), four `storage.objects` policies |
 | Realtime | `alter table public.buy_lines replica identity full;` and `alter publication supabase_realtime add table` with 8 tables: api_usage, buy_lines, buys, collection_locks, events, master_inventory_files, settings, staff_users |
-| Starting rows | `cash_pct` 33 / `credit_pct` 66 (0001's values, **not dev's 33.34/66.68** — the store sets its own); `select public.cant_upload_ensure();` |
+| Starting rows | `cash_pct` 33.34 / `credit_pct` 66.68 (the store's rates, decision 333; 0001 seeded 33 / 66); `select public.cant_upload_ensure();` |
 
 Nothing in the file is edited by hand. If something is wrong, fix
 `scripts/db-baseline.mjs` and run it again; the rehearsal will tell you.
@@ -346,7 +346,7 @@ updates (8 tables), All of the above.
 Then the probe from section 6 again, plus the starting rows:
 
 ```sql
-select (select jsonb_object_agg(key, value) from public.settings) as settings,       -- {"cash_pct": 33, "credit_pct": 66}
+select (select jsonb_object_agg(key, value) from public.settings) as settings,       -- {"cash_pct": 33.34, "credit_pct": 66.68}
        (select count(*) from public.buys where system_key = 'cant_upload') as cant_upload,  -- 1
        (select file_size_limit from storage.buckets where id = 'master-inventory') as bucket, -- 52428800
        (select count(*) from pg_policies where schemaname = 'storage') as storage_policies,  -- 4
@@ -428,7 +428,8 @@ Then the launch steps outside the squash (spec, Phase 10 → Launch):
   (empty tables, no backup banner history — "No backup has been downloaded
   yet" is right).
 - **Owner tasks** from the spec: name the computer, add users, enter the
-  JustTCG key, upload the CC CSV, set Cash/Credit % (prod starts at 33/66).
+  JustTCG key, upload the CC CSV. Cash/Credit % start at the store's 33.34/66.68
+  (decision 333): nothing to set unless they've changed.
 - **Clean-up last**, with the owner's approval, including
   `C:\ClaudeProjects\temp\pug-squash\` once prod has run for a while.
 
@@ -556,9 +557,10 @@ directly), and after the squash, so it's 0002. The owner decides the day.
   service_role` and then each grant **in the order dev's ACL lists them**, so
   the strings match. `schema public` is left alone: it belongs to Supabase,
   prod has the same, and revoking on it as `postgres` may not even be allowed.
-- **Starting rows are seeds, not dev's data.** 33/66 from 0001, the Can't
-  upload cards collection from 0028. Dev's `last_backup_at`, its 33.34/66.68,
-  its customers and products are not copied; prod starts clean.
+- **Starting rows are seeds, not dev's data.** The rates 33.34/66.68 (decision
+  333, the same as dev's today but written as a seed), the Can't upload cards
+  collection from 0028. Dev's `last_backup_at`, its customers and products are
+  not copied; prod starts clean.
 - **`internal.customer_key` / `customer_name` / `import_lines`** were open to
   PUBLIC until 0051. The generator writes dev's *current* ACL, so the fix is
   in the baseline. (The test run's Security section checks it on prod.)
