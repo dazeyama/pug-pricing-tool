@@ -53,7 +53,9 @@ export default function PricePage() {
     lines: draft.lines,
     loaded: draft.loaded,
     busy: draft.busy,
-    add: (line, userId) => draft.add(line, userId),
+    // The buy a phone's scan was for (decision 350): its id, so a scan for a finished buy isn't added to this one.
+    draftId: draft.buy?.id ?? null,
+    add: (line, userId, draftId) => draft.add(line, userId, draftId),
     update: (old, line, userId) => draft.update(old.id, line, userId),
     remove: (line, n, userId) => draft.remove(line.id, n, userId),
     setRates: (cash, credit, userId) => draft.setRates(cash, credit, userId),

@@ -19,6 +19,9 @@ export function useSettingField({ stored, problem, save, saved, failed = "Couldn
   const toast = useToast();
   const [text, setText] = useState(String(stored));
   const [editing, setEditing] = useState(false);
+  // What the box held when it got focus: left as it was, nothing is saved, so a box only clicked
+  // into never writes its old value over another computer's change (decision 354).
+  const [atFocus, setAtFocus] = useState(null);
 
   // Follow other computers' changes, but never under someone's typing.
   useEffect(() => {
@@ -27,6 +30,10 @@ export function useSettingField({ stored, problem, save, saved, failed = "Couldn
 
   async function commit() {
     setEditing(false);
+    if (atFocus !== null && clean(text) === clean(atFocus)) {
+      setText(String(stored));
+      return;
+    }
     const raw = clean(text);
     const next = Number(raw);
     const why = problem(raw, next);
@@ -47,7 +54,10 @@ export function useSettingField({ stored, problem, save, saved, failed = "Couldn
 
   return {
     value: text,
-    onFocus: () => setEditing(true),
+    onFocus: () => {
+      setEditing(true);
+      setAtFocus(text);
+    },
     onChange: (e) => setText(e.target.value),
     onBlur: commit,
     onKeyDown: (e) => {

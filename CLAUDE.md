@@ -98,7 +98,7 @@ tests (`npm test`, commit only on `fail 0`) and the build.
 
 - Live: v0.9.9.14-nightb4, pushed 2026-10-19 (decisions through 336).
   The live site runs on the dev project until launch.
-- Dev has migrations 0001–0083.
+- Dev has migrations 0001–0084.
 - Phase 10 launch (the squash, then prod) waits for my go.
 - The release history is the spec's decisions and `git tag`; what's open is NEXT.md.
 

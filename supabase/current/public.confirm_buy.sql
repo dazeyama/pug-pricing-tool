@@ -73,6 +73,9 @@ begin
   returning * into b;
   -- Each card's rate as it was priced, its own included, kept on it (docs/TEAM_FEEDBACK.md 4.6).
   perform internal.fix_line_rates(b);
+  -- Its scans not added by now are left out, and the phone says so (decision 350).
+  perform internal.scans_finished(b.draft_device_id, b.id,
+    format('Buy %s was confirmed first: scan it again for the next buy', b.number));
 
   v_day := (now() at time zone 'America/Los_Angeles')::date;
   v_number := b.number;

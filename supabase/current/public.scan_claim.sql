@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION public.scan_claim(p_id uuid, p_device uuid, p_kind text DEFAULT NULL::text, p_buy_id uuid DEFAULT NULL::uuid)
+CREATE OR REPLACE FUNCTION public.scan_claim(p_id uuid, p_device uuid, p_kind text DEFAULT NULL::text, p_buy_id uuid DEFAULT NULL::uuid, p_draft_id uuid DEFAULT NULL::uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
  SET search_path TO 'public', 'internal'
@@ -14,6 +14,10 @@ begin
           or (p_kind is null and exists (select 1 from scan_sessions s
                                           where s.device_id = p_device and s.target_kind = c.target_kind
                                             and s.buy_id is not distinct from c.target_buy_id)))
+     -- A walk-in scan, by the buy it was sent to, when the app names its own (decision 350); an
+     -- app that names none (the one before this) as before, and an Undo whatever the buy.
+     and (c.target_kind is distinct from 'walk_in' or c.target_draft_id is null or p_draft_id is null
+          or c.target_draft_id = p_draft_id or c.status in ('undo', 'undoing'))
      and (c.status in ('sent', 'undo')
           or (c.status in ('pricing', 'undoing') and c.handled_at < now() - interval '1 minute'))
   returning to_jsonb(c.*) into v;

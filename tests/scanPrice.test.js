@@ -96,3 +96,10 @@ test('lineOfScan: the line a scan made, by its id in the snapshot; nothing for a
   assert.equal(lineOfScan([], 's1'), null);
   assert.equal(lineOfScan(undefined, 's1'), null);
 });
+
+// Decision 351: a copy merged into a line leaves its scan's id there.
+test('lineOfScan finds a scan that merged into another scan\'s line', () => {
+  const lines = [{ id: 'a', price_snapshot: { scan: { scan_id: 's1' }, scans: ['s2', 's3'] } }];
+  assert.equal(lineOfScan(lines, 's3')?.id, 'a');
+  assert.equal(lineOfScan(lines, 's4'), null);
+});

@@ -1042,6 +1042,13 @@ begin
     exists (select 1 from events where action = 'buy_confirmed' and target_id = b and added = 1
               and summary = '1 card + 1,500 bulk bought from DBTEST Bulk, (555) 010-0022; paid $10 in cash.'),
     (select summary || ' added ' || added from events where action = 'buy_confirmed' and target_id = b));
+  -- A Completed side is locked, its bulk too (0084): back to Paid/Ours to strike and remove it.
+  begin
+    perform buy_strike_line(l_bulk, 5, u, a, null, null);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'A Completed side''s bulk is locked too (0084)', sqlerrm, 'buy_completed');
+  end;
+  perform buy_mark_completed(b, 'mtg', u, a, false);
   perform buy_strike_line(l_bulk, 5, u, a, null, null);
   perform pg_temp.ok(s, 'Struck bulk: "500 bulk struck…"',
     exists (select 1 from events where action = 'buy_cards_struck' and target_id = b
@@ -1210,10 +1217,15 @@ begin
     raise exception 'dbt_no_error';
   exception when others then perform pg_temp.err(s, 'A Completed card can''t be struck', sqlerrm, 'buy_completed');
   end;
+  begin
+    perform buy_remove_line(l_b, 1, u, a, null, null);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, '… nor its struck card removed while its game is Completed (0084)', sqlerrm, 'buy_completed');
+  end;
+  perform buy_mark_completed(b, 'mtg', u, a, false);
   perform buy_remove_line(l_b, 1, u, a, null, null);
   perform pg_temp.ok(s, 'A second × removes the struck card',
     not exists (select 1 from buy_lines where id = l_b));
-  perform buy_mark_completed(b, 'mtg', u, a, false);
 
   -- Edit in project view: strikes and restores saved with SAVE BUY.
   perform buy_save_edits(b, u, a, pg_temp.version(b),
@@ -2884,6 +2896,122 @@ begin
     raise exception 'dbt_no_error';
   exception when others then perform pg_temp.err(s, '… and nothing more can be sent', sqlerrm, 'session_gone');
   end;
+exception when others then
+  declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;
+  perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
+end $$;
+
+-- ============================================ The full review's B fixes (0084)
+do $$
+declare
+  s text := 'Review B (0084)';
+  u uuid := pg_temp.id('u1');
+  a uuid := pg_temp.id('devA');
+  ph uuid := gen_random_uuid();
+  card jsonb := '{"scryfall_id": "dbtest-scan-9", "name": "DBTEST Bolt", "set_code": "DBT",
+                  "collector_number": "9", "finish": "nonfoil", "condition": "NM", "tier": 1}';
+  v_draft uuid;
+  v_scan uuid;
+  v_line uuid;
+  v_other uuid;
+  v_b uuid;
+  v_at timestamptz;
+  v jsonb;
+begin
+  -- 350: a walk-in scan is for the buy it was sent to; that buy confirmed, the scans left fail, saying so.
+  insert into devices (id, label) values (ph, 'DBTEST Review Phone');
+  v_draft := draft_for_device(a, u);
+  perform draft_add_line(a, pg_temp.line('Dbtest Bolt', 'DBT', '001', 1, 1.00), u, true);
+  perform scan_session_touch(a, 'walk_in', null, 'Buy list', '{mtg}', u, null);
+  perform scan_pair(a, ph);
+  v_scan := scan_send(a, ph, card);
+  perform pg_temp.ok(s, 'A walk-in scan remembers the buy it was sent to (0084)',
+    (select target_draft_id = v_draft from scans where id = v_scan));
+  perform pg_temp.ok(s, '… another buy doesn''t claim it', scan_claim(v_scan, a, 'walk_in', null, gen_random_uuid()) is null);
+  v := scan_claim(v_scan, a, 'walk_in', null, v_draft);
+  perform pg_temp.ok(s, '… its own buy does', v ->> 'status' = 'pricing', v::text);
+  perform confirm_buy(v_draft, u, 'DBTEST Review', '', 50, 65, null, 1, 'cash', '{}', '5550100017');
+  perform pg_temp.ok(s, 'Its buy confirmed while it was being priced, the scan fails, saying so',
+    (select status = 'failed' and note like 'Buy % was confirmed first: scan it again for the next buy' from scans where id = v_scan));
+  begin
+    perform draft_add_line(a, pg_temp.line('Dbtest Bolt', 'DBT', '001', 1, 1.00), u, true, v_draft);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, '… and a card scanned for it can''t start the next buy', sqlerrm, 'draft_gone');
+  end;
+  v_scan := scan_send(a, ph, card || '{"client_id": "2d7e4f0a-3b5c-4e8d-9f1a-4c3d5e6f7081"}');
+  v_other := (select target_draft_id from scans where id = v_scan);
+  perform pg_temp.ok(s, 'A scan with no buy open opens one for itself',
+    v_other is not null and exists (select 1 from buys where id = v_other and status = 'draft'));
+  perform draft_cancel(v_other);
+  perform pg_temp.ok(s, 'Its buy cancelled, the scan fails, saying so',
+    (select status = 'failed' and note = 'The buy was cancelled: scan it again for the next buy' from scans where id = v_scan));
+
+  -- 351: a scanned copy merged into a line leaves its scan's id there.
+  v_line := draft_add_line(a, pg_temp.line('Dbtest Bolt', 'DBT', '001', 1, 1.00), u, true);
+  v_other := draft_add_line(a, pg_temp.line('Dbtest Bolt', 'DBT', '001', 1, 1.00)
+               || '{"price_snapshot": {"scan": {"scan_id": "dbtest-scan-merged"}}}', u, true);
+  perform pg_temp.ok(s, 'A scanned copy merged into a line leaves its scan''s id there (0084)',
+    v_other = v_line and (select price_snapshot -> 'scans' ? 'dbtest-scan-merged' and quantity = 2 from buy_lines where id = v_line));
+
+  -- 352: two TCGplayer-only cards of one name from two sets are two lines.
+  v_line := draft_add_line(a, (pg_temp.line('Dbtestmon', 'TPA', '5', 1, 2.00, 'pokemon') - 'tcgdex_id')
+              || '{"tcgplayer_id": "900001"}', u, true);
+  v_other := draft_add_line(a, (pg_temp.line('Dbtestmon', 'TPB', '5', 1, 2.00, 'pokemon') - 'tcgdex_id')
+               || '{"tcgplayer_id": "900002"}', u, true);
+  perform pg_temp.ok(s, 'Two TCGplayer-only cards of one name from two sets stay two lines (0084)', v_other <> v_line);
+  v_other := draft_add_line(a, (pg_temp.line('Dbtestmon', 'TPA', '5', 1, 2.00, 'pokemon') - 'tcgdex_id')
+               || '{"tcgplayer_id": "900001"}', u, true);
+  perform pg_temp.ok(s, '… the same one twice is one line', v_other = v_line);
+
+  -- 353: a walk-in's Completed side is locked, its bulk too.
+  v_b := pg_temp.buy(a, u, 'DBTEST Locked Side', '5550100018', array[
+    pg_temp.line('Dbtest Bolt', 'DBT', '001', 1, 1.00), pg_temp.bulk('mtg_100_common', 10, 1.50)]);
+  perform buy_mark_completed(v_b, 'mtg', u, a, true);
+  v_line := (select id from buy_lines where buy_id = v_b and bulk_kind = 'mtg_100_common');
+  begin
+    perform buy_strike_line(v_line, 1, u, a, null, null);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'A Completed side''s bulk can''t be struck (0084)', sqlerrm, 'buy_completed');
+  end;
+  begin
+    perform buy_remove_line(v_line, 1, u, a, null, null);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, '… nor removed', sqlerrm, 'buy_completed');
+  end;
+  begin
+    perform buy_restore_line((select id from buy_lines where buy_id = v_b and game = 'mtg' and bulk_kind is null
+                                and struck_at is not null limit 1), u, a, null, null);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, '… nor a card Mark as completed struck restored', sqlerrm, 'buy_completed');
+  end;
+
+  -- Bulk, a placeholder and a struck card never go out in an export (the review's B19).
+  v_b := pg_temp.buy(a, u, 'DBTEST Mixed', '5550100019', array[pg_temp.line('Dbtest Bolt', 'DBT', '001', 2, 1.00),
+    pg_temp.bulk('mtg_100_common', 10, 1.50), pg_temp.bulk('mtg_placeholder', 1, 3.00) || '{"price_source": "manual"}']);
+  perform buy_strike_line(pg_temp.line_id(v_b, 'Dbtest Bolt'), 1, u, a, null, null);
+  v_line := (select id from buy_lines where buy_id = v_b and name = 'Dbtest Bolt' and struck_at is null);
+  v := export_lines(jsonb_build_object('kind', 'buy', 'game', 'mtg', 'buy_id', v_b, 'version', pg_temp.version(v_b)),
+         jsonb_build_array(pg_temp.match(v_line, 'DBTEST-P1', 1.25)), '{}', '[]', u, a);
+  perform pg_temp.ok(s, 'EXPORT sends the live card and leaves out bulk, a placeholder and a struck card',
+    (v ->> 'cards')::integer = 1
+    and not exists (select 1 from buy_lines where buy_id = v_b and (bulk_kind is not null or struck_at is not null)
+                      and (cc_status is not null or completed_at is not null)), v::text);
+
+  -- 354: a Settings save from an out-of-date screen is refused.
+  v_at := (select updated_at from settings where key = 'cash_pct');
+  perform settings_save('cash_pct', '51', u, v_at);
+  begin
+    perform settings_save('cash_pct', '52', u, v_at);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'A Settings save from an out-of-date screen is refused (0084)', sqlerrm, 'settings_changed');
+  end;
+  perform pg_temp.ok(s, '… the up-to-date one saved', master_pct('cash_pct') = 51);
+  begin
+    perform settings_save('dbtest_new_key', '1', u, now());
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, '… and one expecting a setting that isn''t there', sqlerrm, 'settings_changed');
+  end;
+  perform settings_save('cash_pct', '50', u, (select updated_at from settings where key = 'cash_pct'));
 exception when others then
   declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;
   perform pg_temp.crashed(s, sqlerrm, v_ctx); end;

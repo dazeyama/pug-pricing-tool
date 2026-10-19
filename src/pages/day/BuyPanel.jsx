@@ -122,6 +122,8 @@ export default function BuyPanel({
   const byHand = completed && lines.filter(movesOn).every(markedByHand);
   const lockedWhy = (l) => (markedByHand(l) ? MARKED_LOCK : COMPLETED_LOCK);
   const locked = buy.buy_lines.find((l) => l.completed_at);
+  // This game's side Completed: every line of it locked, bulk, placeholders and struck cards too (decision 353).
+  const sideDone = lines.find((l) => l.completed_at) ?? null;
   const offOrBusy = offline ? 'No connection' : busy ? 'Saving…' : null;
 
   /** Right-click on a struck card: Restore, where the pointer is (lib/struck.js). */
@@ -302,9 +304,9 @@ export default function BuyPanel({
                     <button
                       type="button"
                       className="line-x"
-                      title={l.completed_at ? lockedWhy(l) : isStruck(l) ? 'Remove for good' : 'Strike: moved elsewhere, kept crossed out'}
+                      title={sideDone ? lockedWhy(sideDone) : isStruck(l) ? 'Remove for good' : 'Strike: moved elsewhere, kept crossed out'}
                       aria-label={`${isStruck(l) ? 'Remove for good' : 'Strike'} ${lineText(l)}`}
-                      disabled={busy || Boolean(l.completed_at)}
+                      disabled={busy || Boolean(sideDone)}
                       onClick={() => onRemove(buy, number, l)}
                     >
                       ×
@@ -319,11 +321,11 @@ export default function BuyPanel({
               <button
                 type="button"
                 role="menuitem"
-                className={offOrBusy ? 'is-blocked' : ''}
-                title={offOrBusy ?? 'Take the strike off: back on the buy with its price and rate'}
+                className={offOrBusy || sideDone ? 'is-blocked' : ''}
+                title={offOrBusy ?? (sideDone ? lockedWhy(sideDone) : 'Take the strike off: back on the buy with its price and rate')}
                 onClick={() => {
                   setMenu(null);
-                  if (!offOrBusy) onRestore(buy, menu.line);
+                  if (!offOrBusy && !sideDone) onRestore(buy, menu.line);
                 }}
               >
                 Restore

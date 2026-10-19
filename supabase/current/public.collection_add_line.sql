@@ -28,7 +28,12 @@ begin
   end if;
 
   if v_line is not null then
-    update buy_lines set quantity = quantity + r.quantity where id = v_line;
+    update buy_lines set quantity = quantity + r.quantity,
+           -- The scan it came from, on the line it joined (decision 351).
+           price_snapshot = case when r.price_snapshot -> 'scan' ->> 'scan_id' is null then price_snapshot
+             else jsonb_set(coalesce(price_snapshot, '{}'::jsonb), '{scans}',
+                            coalesce(price_snapshot -> 'scans', '[]'::jsonb) || to_jsonb(r.price_snapshot -> 'scan' ->> 'scan_id')) end
+     where id = v_line;
   else
     insert into buy_lines (
       buy_id, position, game, lang, name, name_en, name_key, set_code, set_name, source_set_id,

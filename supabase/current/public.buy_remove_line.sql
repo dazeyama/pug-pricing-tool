@@ -22,6 +22,10 @@ begin
   if v_old.completed_at is not null then
     raise exception 'buy_completed';
   end if;
+  -- A Completed side is locked, its bulk, placeholders and struck cards too (decision 353).
+  if exists (select 1 from buy_lines where buy_id = v_old.buy_id and game = v_old.game and completed_at is not null) then
+    raise exception 'buy_completed';
+  end if;
   select * into b from buys where id = v_old.buy_id for update;
   if p_expected_version is not null and b.version <> p_expected_version then
     raise exception 'stale_version';

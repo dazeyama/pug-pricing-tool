@@ -17,11 +17,13 @@ const CODES = {
   bad_phone: 'Enter a 10-digit phone number.',
   paid_price_needed: 'Enter the purchase price.',
   paid_method_needed: 'Choose Cash or Credit.',
+  // A phone's scan for a buy that's been confirmed or cancelled meanwhile (decision 350).
+  draft_gone: 'the buy it was scanned for is finished. Scan it again for this one.',
 };
 
 /**
  * @returns {{ buy: object|null, lines: object[], loaded: boolean, busy: boolean,
- *   add: (line: object, userId: string) => Promise<string|null>,
+ *   add: (line: object, userId: string, draftId?: string|null) => Promise<string|null>,
  *   update: (lineId: string, line: object, userId: string) => Promise<string|null>,
  *   remove: (lineId: string, qty: number, userId: string) => Promise<boolean>,
  *   setRates: (cash: number|null, credit: number|null, userId: string) => Promise<boolean>,
@@ -87,9 +89,11 @@ export function useDraft(deviceId) {
     }
   }, [reload, toast]);
 
-  const add = useCallback(async (line, userId) => {
-    const r = await run('draft_add_line', { p_device: deviceId, p_line: line, p_user: userId, p_merge: true },
-      "Couldn't add the card");
+  // draftId: a phone's scan goes into the buy it was scanned for, or nowhere (decision 350).
+  const add = useCallback(async (line, userId, draftId = null) => {
+    const r = await run('draft_add_line', {
+      p_device: deviceId, p_line: line, p_user: userId, p_merge: true, ...(draftId ? { p_draft_id: draftId } : {}),
+    }, "Couldn't add the card");
     return r.ok ? r.data : null;
   }, [deviceId, run]);
 

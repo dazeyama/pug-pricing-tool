@@ -23,6 +23,10 @@ begin
   if v_old.completed_at is not null then
     raise exception 'buy_completed';
   end if;
+  -- A Completed side is locked, its bulk, placeholders and struck cards too (decision 353).
+  if exists (select 1 from buy_lines where buy_id = v_old.buy_id and game = v_old.game and completed_at is not null) then
+    raise exception 'buy_completed';
+  end if;
   if v_old.struck_at is not null then
     raise exception 'line_struck';
   end if;

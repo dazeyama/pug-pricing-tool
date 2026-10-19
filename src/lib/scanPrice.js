@@ -81,5 +81,7 @@ export function scanText({ name, set_code: set, collector_number: number, finish
  * @returns {object|null}
  */
 export function lineOfScan(lines, scanId) {
-  return (lines ?? []).find((l) => l.price_snapshot?.scan?.scan_id === scanId) ?? null;
+  // A copy merged into a line leaves its scan's id there too (decision 351).
+  return (lines ?? []).find((l) => l.price_snapshot?.scan?.scan_id === scanId
+    || (l.price_snapshot?.scans ?? []).includes(scanId)) ?? null;
 }

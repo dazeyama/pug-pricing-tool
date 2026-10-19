@@ -54,6 +54,11 @@ begin
   if exists (select 1 from buy_lines where id = any(v_touched) and completed_at is not null) then
     raise exception 'buy_completed';
   end if;
+  -- A Completed side is locked, all of it (decision 353).
+  if exists (select 1 from buy_lines l join buy_lines t on t.buy_id = l.buy_id and t.game = l.game
+              where l.id = any(v_touched) and t.completed_at is not null) then
+    raise exception 'buy_completed';
+  end if;
   if not exists (select 1 from buy_lines where buy_id = b.id and id <> all(v_removed)) then
     raise exception 'last_card';
   end if;

@@ -39,11 +39,14 @@ begin
   delete from scans where created_at < now() - interval '7 days';
   -- The list it's for (decision 343): only that list claims it.
   insert into scans (session_device_id, phone_device_id, scryfall_id, name, set_code, collector_number,
-                     finish, condition, tier, client_id, target_kind, target_buy_id)
+                     finish, condition, tier, client_id, target_kind, target_buy_id, target_draft_id)
   values (p_device, p_phone, btrim(p_scan ->> 'scryfall_id'), coalesce(p_scan ->> 'name', ''),
           coalesce(p_scan ->> 'set_code', ''), coalesce(p_scan ->> 'collector_number', ''),
           p_scan ->> 'finish', p_scan ->> 'condition', coalesce(p_scan ->> 'tier', '1')::smallint, v_client,
-          v.target_kind, v.buy_id)
+          v.target_kind, v.buy_id,
+          -- A walk-in's buy, as it is now (decision 350).
+          -- Opened now if there isn't one yet, so every walk-in scan knows its buy.
+          case when v.target_kind = 'walk_in' then draft_for_device(p_device, v.staff_user_id) end)
   on conflict (phone_device_id, client_id) where client_id is not null do nothing
   returning id into v_id;
   -- The same scan arriving twice at once (the retry while the first was still on its way).

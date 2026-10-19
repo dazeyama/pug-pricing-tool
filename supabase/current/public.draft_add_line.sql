@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION public.draft_add_line(p_device uuid, p_line jsonb, p_user uuid, p_merge boolean DEFAULT true)
+CREATE OR REPLACE FUNCTION public.draft_add_line(p_device uuid, p_line jsonb, p_user uuid, p_merge boolean DEFAULT true, p_draft_id uuid DEFAULT NULL::uuid)
  RETURNS uuid
  LANGUAGE plpgsql
  SET search_path TO 'public', 'internal'
@@ -12,7 +12,16 @@ begin
   if r.quantity is null or r.quantity < 1 then
     raise exception 'quantity must be at least 1';
   end if;
-  v_buy := draft_for_device(p_device, p_user);
+  -- A scan's card goes into the buy it was scanned for, or nowhere (decision 350).
+  if p_draft_id is not null then
+    -- Locked, and looked at again after a CONFIRM BUY in flight commits: a confirmed buy gets nothing more.
+    select id into v_buy from buys where id = p_draft_id and status = 'draft' and draft_device_id = p_device for update;
+    if v_buy is null then
+      raise exception 'draft_gone';
+    end if;
+  else
+    v_buy := draft_for_device(p_device, p_user);
+  end if;
 
   if p_merge then
     select id into v_line from buy_lines l
@@ -22,7 +31,12 @@ begin
   end if;
 
   if v_line is not null then
-    update buy_lines set quantity = quantity + r.quantity where id = v_line;
+    update buy_lines set quantity = quantity + r.quantity,
+           -- The scan it came from, on the line it joined (decision 351).
+           price_snapshot = case when r.price_snapshot -> 'scan' ->> 'scan_id' is null then price_snapshot
+             else jsonb_set(coalesce(price_snapshot, '{}'::jsonb), '{scans}',
+                            coalesce(price_snapshot -> 'scans', '[]'::jsonb) || to_jsonb(r.price_snapshot -> 'scan' ->> 'scan_id')) end
+     where id = v_line;
   else
     insert into buy_lines (
       buy_id, position, game, lang, name, name_en, name_key, set_code, set_name, source_set_id,

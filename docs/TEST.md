@@ -8,7 +8,7 @@ what happens. The findings are reported when the pass ends.
   http://localhost:5180). **Never prod.**
 - **Who:** the owner, or Claude in the browser pane at the owner's request (FABLE.md, "a smoke pass the owner asks
   for"). The owner does the phone, two-computer and store cases.
-- **How long:** about two hours, 184 cases.
+- **How long:** about two hours, 186 cases.
 
 ## Ground rules
 
@@ -193,6 +193,9 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
 - [ ] **One copy on slow wifi** (decision 344): with the phone's network throttled (or wifi dropped for a few seconds
       mid-send), auto scan one card: it goes in once; pressing Scan card while it's sending says "Still sending that
       card".
+- [ ] **A walk-in's scans stay with its buy** (decision 350): auto scan a stack into the Buy tab and press CONFIRM BUY
+      mid-stack; the cards not yet added say "Buy N was confirmed first: scan it again for the next buy" on the
+      phone, and none lands in the next buy.
 - [ ] **Waiting scans kept** (decision 343): scanning into a collection with auto scan, open Help on the laptop
       mid-stack; the phone says stopped. Open another collection and pair: none of the first one's cards land there,
       and the phone doesn't list them. Go back to the first collection and pair: its waiting cards come in.
@@ -367,6 +370,10 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
 - [ ] **Master Buy Percentages** read 33.34 / 66.68 (decision 333); a value the app can't use shows red and goes back to
       what was saved.
 - [ ] Low-end and high-end rates, Master Fallback Percentages and Bulk values show and save.
+- [ ] **Settings saves don't overwrite** (decision 354): Settings open on two computers; a change on one shows on the
+      other within a second or two. Clicking into a box and out again shows no "saved" toast. (A save from a screen
+      that missed a change is refused, "Settings changed on another computer: check and save again"; the database
+      test run covers that.)
 - [ ] **API keys:** the JustTCG key shows masked; **Test** shows the plan and today's and this month's lookups.
 - [ ] **JustTCG usage** shows Today and This month bars, the plan and the reset time.
 - [ ] **Master Crystal Inventory** shows the current file, who uploaded it and its rows.

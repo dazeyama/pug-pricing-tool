@@ -6,8 +6,8 @@ and function.
 
 ## Open
 
-- **Unpushed, and worth pushing soon:** decisions 337–349 and the Help's struck-cards wording. Migrations
-  0077–0083 are already on dev, which the live site uses, while the live app is the old code: until the push, the
+- **Unpushed, and worth pushing soon:** decisions 337–354 and the Help's struck-cards wording. Migrations
+  0077–0084 are already on dev, which the live site uses, while the live app is the old code: until the push, the
   new refusals (`project_exported`, `line_exported`) show as raw codes, the day's undo dialog counts hand-completed
   buys it now leaves, the convert dialog still says the payment moves, the phone still lists other lists' waiting
   scans, and REPRICE?'s count includes exported cards it now skips. Nothing breaks and no data goes wrong.
@@ -22,20 +22,8 @@ and function.
   an exported project can't convert, decision 339); "How prices are worked out" / "Condition prices" (decision 338).
 - **The full launch review's 20 B findings, planned (owner, 2026-10-19)** (details in
   `C:\ClaudeProjects\temp\launch-review-full-2026-10-19.md`, raw reports in `launch-review-full\`):
-  1. **Batch 1, the database, one review** (the new standing rule in CLAUDE.md, Database), with each item's app side:
-     - B1 + B2: a walk-in scan also remembers its draft; once that buy is confirmed or cancelled, its leftover scans
-       are marked "not added: the buy was finished" and listed on the phone to rescan (the owner's answer), never
-       added to the next customer's buy (`scan_send`, `scan_claim`, `confirm_buy`/`draft_cancel`, `useScanReceiver.js`,
-       `src/scan/useScans.js`);
-     - B3: a merge records the scan's id on the line, so a re-claimed scan sees it went in (`collection_add_line`,
-       `draft_add_line`, `lineOfScan` in `src/lib/scanPrice.js`);
-     - B8: `internal.same_card` compares set, number, `tcgplayer_id` and `justtcg_card_id`;
-     - B11: strike, × and Restore refuse the lines of a walk-in's Completed side (`buy_strike_line`, `buy_remove_line`,
-       `buy_restore_line`; `BuyPanel.jsx`);
-     - B15: Settings save field by field with a version check; a save from an out-of-date screen is **refused**
-       ("Settings changed on another computer: check and save again"; the owner's answer) (`src/state/settings.jsx`,
-       `useSettingField`);
-     - B19: db-test-run checks for these, and for struck, bulk and placeholder lines in front of EXPORT and COMPLETE.
+  1. **Batch 1, the database: done** (decisions 350–354, migration 0084; see Done; what's left of it is under "Left
+     from Batch 1" below).
   2. **App only, small commits by area:**
      - scanner: B4 (List / Mystery Booster cards marked sure as the original), B5 (the camera left on);
      - pricing: B6 (a bad JustTCG batch reply caches "no match": Edge Function, deployed at the push), B7 (an error
@@ -50,6 +38,18 @@ and function.
   Then the first review's leftover B items.
 - **Buy numbers through a project** (the owner's answer, 2026-10-19, not done yet): a project converted back to a buy
   keeps its original number, as decision 290 says; `project_to_buy` gives a new one today.
+- **Left from Batch 1 (0084):**
+  - edits that fold two lines together keep only the surviving line's scan id, so a scan re-claimed later can't
+    find its line (`draft_update_line`, `collection_update_line`; decision 351);
+  - the rest of B3: an Undo after a lost answer takes two copies off; FOIL?/NON FOIL? can leave none; refusal notes
+    never shown after a plain Undo (`Scanner.jsx`, `useScanReceiver.js`);
+  - Convert to project / collection still moves bulk and placeholders off a Completed side (`buy_to_project`,
+    `buy_to_collection`; decision 353);
+  - `settings_save` edges: two first saves of a new key both pass; a quick Tab between two boxes of one object
+    setting (Fallback, Tiers, Bulk) can be refused falsely (decision 354);
+  - a scan can open a walk-in buy the computer doesn't know about until its next write; if that scan never adds,
+    Cancel on the computer doesn't fail it (decision 350);
+  - B19's day EXPORT and COMPLETE checks with struck, bulk and placeholder lines (only Export single buy is tested).
 - **Small edges left from the reviews:**
   - a buy with both exported and hand-completed Magic cards, after its export is undone, shows Mark as completed
     instead of Mark Paid/Ours again (`src/pages/day/BuyPanel.jsx`, `byHand`): Mark as completed, then Mark Paid/Ours
@@ -60,8 +60,8 @@ and function.
     a learned-match table empties it (decision 348);
   - the "Exported: Undo export… first" wording also shows on Can't upload cards (decision 345);
   - SQUASH.md's Max rows blank (section 10) to fill in from dev's dashboard.
-- **Before the squash:** a full smoke test pass, `docs/TEST.md` (184 cases), on dev.
-- **Phase 10 launch** (owner's go): the squash and the switch to prod, `SQUASH.md` sections 1–10 (N is 0083; the
+- **Before the squash:** a full smoke test pass, `docs/TEST.md` (186 cases), on dev.
+- **Phase 10 launch** (owner's go): the squash and the switch to prod, `SQUASH.md` sections 1–10 (N is 0084; the
   baseline `0001_baseline.sql`). Decide the **Supabase plan for prod** first (`docs/DESIGN_SPEC.md` Appendix D 2:
   Free vs Pro).
 - **After launch:**
@@ -72,6 +72,19 @@ and function.
 
 ## Done
 
+- 2026-10-19: Batch 1 of the full review's B findings, the database ones, as one migration with one review (and a
+  re-review after its findings), migration 0084, db-test-run 522 checks:
+  - B1/B2, decision 350: a walk-in scan knows its buy (`scans.target_draft_id`, opened by the scan if none);
+    confirm and cancel fail its scans not added yet with a note the phone shows; `draft_add_line`'s `p_draft_id`
+    (locked, `draft_gone`) and `scan_claim`'s `p_draft_id`; `useDraft.js`, `PricePage.jsx`, `useScanReceiver.js`;
+  - B3 (part), decision 351: a merge records the scan id (`price_snapshot.scans`), `lineOfScan` reads it;
+  - B8, decision 352: `internal.same_card` keeps TCGplayer-only cards from two sets apart;
+  - B11, decision 353: a walk-in's Completed side locked, bulk, placeholders and struck cards too (strike, ×,
+    Restore, `buy_save_edits`; `BuyPanel.jsx` `sideDone`);
+  - B15, decision 354: `settings_save` refuses a stale save; `settings.jsx`; `useSettingField.js` saves nothing if
+    the box is unchanged;
+  - B19 (part): Export single buy leaves out bulk, a placeholder and a struck card; two older tests updated to the
+    new lock (they struck and removed bulk on a Completed side).
 - 2026-10-19: Buy numbers without gaps (decision 349, migration 0083; reviewed twice by pug-reviewer): a confirm
   takes the highest number + 1 under a lock (`internal.next_buy_number`), the old sequence only a floor; the 43
   buys renumbered 1–43 (only 137 → 42 and 154 → 43 changed; list in `C:\ClaudeProjects\temp\buy-renumber-2026-10-19.txt`)

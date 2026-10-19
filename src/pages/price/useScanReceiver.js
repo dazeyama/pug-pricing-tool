@@ -58,7 +58,8 @@ const RESOLVE_REFUSALS = new Set(['scan_gone', 'not_session', 'bad_status']);
  * @param {object|null} p.session  its scan session (useScanSession)
  * @param {{ kind: 'walk_in'|'collection', buyId: string|null }|null} p.target  the list open here: only the
  *   scans sent to it are claimed (decision 343)
- * @param {{ busy: boolean, lines: object[], add: (line: object, userId: string) => Promise<string|null>,
+ * @param {{ busy: boolean, lines: object[], draftId?: string|null,
+ *   add: (line: object, userId: string, draftId?: string|null) => Promise<string|null>,
  *   remove: (line: object, qty: number, userId: string) => Promise<unknown> }} p.list
  * @param {boolean} p.roundUp  a project: prices round up
  * @param {(lineId: string, added: { card: object, finish: string }) => void} p.onAdded  flash the line,
@@ -193,7 +194,8 @@ export function useScanReceiver({ deviceId, label, session, target, list, roundU
     for (let i = 0; i < 25 && latest.current.list.busy; i++) await sleep(200);
     // Given up meanwhile (too long): nothing added late.
     if (!live()) return null;
-    const id = await within(latest.current.list.add(line, user.id), WRITE_MS, 'timeout');
+    // A walk-in scan goes into the buy it was scanned for, or not at all (decision 350).
+    const id = await within(latest.current.list.add(line, user.id, scan.target_draft_id ?? null), WRITE_MS, 'timeout');
     if (id === 'timeout') {
       return { status: 'failed', note: `No answer adding it on ${now.label}: check the list there before scanning it again.` };
     }
@@ -249,6 +251,8 @@ export function useScanReceiver({ deviceId, label, session, target, list, roundU
           // No answer in time: left as it is, claimed on the next look (one left "pricing" in a minute).
           const { data: scan, error: claimError } = await within(supabase.rpc('scan_claim', {
             p_id: id, p_device: deviceId, p_kind: targetKind, p_buy_id: targetBuy,
+            // A walk-in's own buy: scans sent for an earlier one aren't claimed (decision 350).
+            p_draft_id: latest.current.list.draftId ?? null,
           }), DB_MS, { data: null, error: { message: 'timeout' } });
           if (claimError || !scan) continue;   // another tab of this computer has it, or it's been answered
           let out;

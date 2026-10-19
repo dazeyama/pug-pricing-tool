@@ -3,6 +3,10 @@ import { supabase } from '../lib/supabase.js';
 import { useLiveTable } from '../lib/useLiveTable.js';
 import { DEFAULT_TIERS } from '../lib/rates.js';
 import { DEFAULT_BULK_VALUES } from '../lib/bulk.js';
+import { dbErrorCode } from '../lib/dbErrors.js';
+
+/** A save refused because this screen was out of date (decision 354). */
+const STALE_SETTINGS = 'Settings changed on another computer: check and save again';
 
 // App settings (spec 6.1 `settings`): key/value rows, live on every computer.
 
@@ -40,16 +44,22 @@ export function SettingsProvider({ children }) {
   }, [data]);
 
   /**
+   * Save one setting, from the version this screen last read (decision 354): a save from an
+   * out-of-date screen (another computer saved since, or the first load failed) is refused.
    * @param {string} key
    * @param {any} value  stored as JSON
    * @param {string|null} userId  the picked staff user, if any
    * @returns {Promise<string|null>} an error message, or null
    */
   async function save(key, value, userId) {
-    const { error } = await supabase.from('settings').upsert({
-      key, value, updated_at: new Date().toISOString(), updated_by: userId ?? null,
+    const seen = (data ?? []).find((row) => row.key === key)?.updated_at ?? null;
+    const { error } = await supabase.rpc('settings_save', {
+      p_key: key, p_value: value, p_user: userId ?? null, p_expected: seen,
     });
-    if (error) return error.message;
+    if (error) {
+      await reload();
+      return dbErrorCode(error) === 'settings_changed' ? STALE_SETTINGS : error.message;
+    }
     await reload();
     return null;
   }
