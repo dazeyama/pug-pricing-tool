@@ -7,8 +7,12 @@
 // privileges (as they are, entry by entry), comments, the storage bucket and
 // its policies, Realtime, and the starting rows.
 //
-//   node scripts/db-baseline.mjs supabase/migrations/0063_baseline.sql
-//   node scripts/db-baseline.mjs --rehearse supabase/migrations/0063_baseline.sql
+//   node scripts/db-baseline.mjs /c/ClaudeProjects/temp/pug-squash/0001_baseline.sql
+//   node scripts/db-baseline.mjs --rehearse /c/ClaudeProjects/temp/pug-squash/0001_baseline.sql
+//
+// The baseline is 0001 (SQUASH.md, decision 332), written outside
+// supabase/migrations/ while the old files are still there: its header names
+// the last of them, read from that folder.
 //
 // It refuses to run against anything but the dev project (the baseline is
 // dev's structure). Nothing from dev's data is copied: the starting rows are
@@ -24,6 +28,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { fail, projects, query } from './lib/linked.mjs';
 
 const rehearse = process.argv.includes('--rehearse');
@@ -103,11 +108,18 @@ const fnSig = (f) => `${qn(f.schema, f.name)}(${f.args})`;
 const today = new Date().toISOString().slice(0, 10);
 const N = Number(path.basename(out).slice(0, 4));
 const num = (n) => String(n).padStart(4, '0');
+// The old migrations it stands in for: every numbered file in supabase/migrations/ but this one.
+const MIGRATIONS = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'supabase', 'migrations');
+const oldNumbers = fs.readdirSync(MIGRATIONS)
+  .filter((f) => /^\d{4}_.*\.sql$/.test(f) && path.resolve(MIGRATIONS, f) !== path.resolve(out))
+  .map((f) => Number(f.slice(0, 4)));
+if (!oldNumbers.length) fail('No old migrations in supabase/migrations/: write the baseline before archiving them (SQUASH.md section 3).');
+const lastOld = Math.max(...oldNumbers);
 
 put(`-- PUG Pricing Tool: the database as one migration (DESIGN_SPEC decision 192,`,
   `-- Phase 10 "Migration squash at launch"). Written ${today} by`,
   `-- scripts/db-baseline.mjs from the dev project's catalog (${ref}), standing in`,
-  `-- for migrations 0001–${num(N - 1)}, now in supabase/migrations-archive/.`,
+  `-- for migrations 0001–${num(lastOld)}, now in supabase/migrations-archive/.`,
   `-- Nothing here is edited by hand except the "Starting rows" at the end; to change`,
   `-- the database, write migration ${num(N + 1)} and up.`,
   ``,

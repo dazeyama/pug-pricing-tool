@@ -56,7 +56,8 @@
   Magic buy's cards, Convert to project skips Completed cards. Then Undo export… on a collection's ⋯ (decision 298;
   migration 0074 on dev); the scanner's time limits, Stop and hold to start over (decision 300), the
   flagged-buy banner on printouts (301), a scan saved once (302, migration 0075 on dev). The squash's numbers
-  moved on: baseline 0076, the Changelog lock 0077.
+  moved on: baseline 0076, the Changelog lock 0077. (Since decision 332, 2026-10-19: the baseline is always
+  `0001_baseline.sql`, the Changelog lock 0002, and prod starts empty; localhost always uses dev.)
   Then live as v0.9.9.13-scanner2.0 (2026-10-19; v0.9.9.12 was already henry): the scanner's smoothness and
   accuracy round (decisions 302–322: a scan saved once, the camera cut off noticed, idle rest, the reader recycled,
   too dark, the computer's time limits, older titles found and read white, trailing words, Which card?, re-crops
