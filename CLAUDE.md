@@ -1,5 +1,12 @@
 # PUG Pricing Tool — rules for Claude Code
 
+## QA Handoff
+
+Do NOT run smoke tests, browser tests, or ad-hoc verification after a change unless I explicitly ask for a test.
+Hand code off untested so I can QA it myself. Running the existing unit test suite only when I ask is fine.
+
+## Project rules
+
 - The spec is docs/DESIGN_SPEC.md. Read the relevant sections before each task. Update it
   when the owner changes a decision.
 - Read FABLE.md once per session: how to scope, gather evidence, plan for what breaks and
@@ -72,3 +79,19 @@
   and Convert to collection on a buy's ⋯ (335, migration 0076 on dev); five finished docs retired (336).
   Phase 10 launch (the migration squash, SQUASH.md, then prod) waits for the owner's go; the live site runs on the
   dev project until then. docs/TEST.md is the smoke test (one pass, tab by tab); a pass reports its findings when it ends.
+
+## Coding Conventions
+
+### Writing Code Files
+
+Never write Python, JS, or other source files through Bash heredocs or echo. Always use the Write/Edit tools so
+backslashes, regexes, and encodings are preserved. When adding helpers to Flask files, never insert code between a
+route decorator and its function.
+
+## UI Work
+
+### UI Sizing & Layout
+
+When I ask for a size, height, or alignment change, measure the live element in the browser (getBoundingClientRect
+via the browser tool) before picking a value. Don't guess from the CSS alone. Keep fixes minimal and don't change
+unrelated separators, labels, or formatting in the same edit.
