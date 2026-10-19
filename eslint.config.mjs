@@ -33,7 +33,7 @@ export default [
   },
   {
     // Run under Node, not in the browser.
-    files: ['tests/**', 'scripts/**', '*.config.{js,mjs}'],
+    files: ['tests/**', 'scripts/**', '.claude/**', '*.config.{js,mjs}'],
     languageOptions: { globals: { ...globals.node } },
   },
 ];
