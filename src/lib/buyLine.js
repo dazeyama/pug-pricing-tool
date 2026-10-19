@@ -88,7 +88,7 @@ export function buildLine({
       rarity: card.rarity ?? null,
       finish,
       first_edition: false,
-      treatments: magicTreatments(card),
+      treatments: magicTreatments(card, finish),
       scryfall_id: card.id,
       oracle_id: card.oracle_id ?? card.card_faces?.[0]?.oracle_id ?? null,
       tcgdex_id: null,

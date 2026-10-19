@@ -26,7 +26,7 @@ const plural = (n, word) => `${n.toLocaleString()} ${word}${n === 1 ? '' : 's'}`
 
 /** "Kaldheim (KHM) #123 · Borderless, Showcase", and whether it comes in the row's finish. */
 function printingLabel(card, finish) {
-  const traits = [...magicTraits(card).values()].join(', ');
+  const traits = [...magicTraits(card, finish ?? null).values()].join(', ');
   const missing = finish && !(card.finishes ?? []).includes(finish) ? ` · no ${finish === 'nonfoil' ? 'non-foil' : finish}` : '';
   return `${card.set_name} (${card.set.toUpperCase()}) #${card.collector_number}${traits ? ` · ${traits}` : ''}${missing}`;
 }

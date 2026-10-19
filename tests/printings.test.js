@@ -1,6 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { defaultPokemonVersion, fixedProduct, isPokemonCenterStamp, pokemonVersions, uncrossPatterns } from '../src/lib/printings.js';
+import {
+  defaultPokemonVersion, fixedProduct, isFinishTrait, isPokemonCenterStamp, magicTraitRows, magicTreatments,
+  pokemonVersions, uncrossPatterns,
+} from '../src/lib/printings.js';
 
 // TCGdex's data for Fossil (2026-10-01): every printing tagged "galaxy".
 const fossil = (variants) => ({ set: { id: 'base3' }, variants_detailed: variants });
@@ -123,4 +126,24 @@ test('a reverse holo\'s fallback is the reverse holo\'s market price', () => {
   assert.equal(normal.marketPrice, 0.09);
   assert.equal(reverse.marketPrice, 0.2);
   assert.equal(holo.marketPrice, 1.08);
+});
+
+// Kefka, Dancing Mad FIC 84 (owner, 2026-10-19): one Scryfall printing for the plain card and its
+// surge foil. Surge foil comes with the foil finish only (decision 326).
+test('a special foil on a printing that also comes non-foil is the foil copy\'s (Kefka FIC 84)', () => {
+  const kefka = { id: 'k84', set: 'fic', collector_number: '84', finishes: ['nonfoil', 'foil'], promo_types: ['surgefoil', 'ffvi', 'universesbeyond'] };
+  const ext = { id: 'k174', set: 'fic', collector_number: '174', finishes: ['nonfoil', 'foil'], frame_effects: ['extendedart'], promo_types: ['ffvi', 'universesbeyond'] };
+  assert.deepEqual(magicTreatments(kefka, 'nonfoil'), []);
+  assert.deepEqual(magicTreatments(kefka, 'foil'), ['surgefoil']);
+  assert.deepEqual(magicTreatments(kefka), ['surgefoil']);
+  assert.equal(isFinishTrait(kefka, 'foil:surgefoil'), true);
+  assert.equal(isFinishTrait(ext, 'foil:surgefoil'), false);
+  const row = (rows) => rows.find((r) => r.key === 'foil:surgefoil');
+  assert.deepEqual(row(magicTraitRows(kefka, [kefka, ext], 'nonfoil')), { key: 'foil:surgefoil', label: 'Surge foil', on: false, toggle: true });
+  assert.equal(row(magicTraitRows(kefka, [kefka, ext], 'foil')).on, true);
+  // The only printing in the set: still a checkbox, not an "every printing is" chip.
+  assert.equal(row(magicTraitRows(kefka, [kefka], 'nonfoil')).toggle, true);
+  // A surge foil printed only in foil, alone: a chip, on.
+  const only = { ...kefka, id: 'x', finishes: ['foil'] };
+  assert.deepEqual(row(magicTraitRows(only, [only], 'foil')), { key: 'foil:surgefoil', label: 'Surge foil', on: true, toggle: false });
 });

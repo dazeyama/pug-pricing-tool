@@ -36,10 +36,17 @@ function foilName(key) {
 
 /**
  * The traits that identify a Magic printing (spec 8.6), as key → label.
- * Etched isn't here: it's a finish (see magicFinishes).
+ * Etched isn't here: it's a finish (see magicFinishes). With a `finish`, the
+ * copy in that finish: a non-foil copy has no special foil (decision 326).
+ * Scryfall lists one printing for both copies of some cards (Kefka, Dancing
+ * Mad FIC 84: non-foil and foil, promo type surgefoil), the non-foil copy the
+ * plain card. Without one, every trait the printing lists, for comparing
+ * siblings.
+ * @param {object} card
+ * @param {string|null} [finish]
  * @returns {Map<string, string>}
  */
-export function magicTraits(card) {
+export function magicTraits(card, finish = null) {
   const t = new Map();
   const effects = card.frame_effects ?? [];
   const promos = card.promo_types ?? [];
@@ -53,7 +60,7 @@ export function magicTraits(card) {
   // A Japanese-only printing (owner, 2026-10-16): a checkbox beside the set's English one.
   if (card.lang === 'ja') t.set('japanese', TRAIT_LABELS.japanese);
   for (const p of promos) {
-    if (SPECIAL_FOILS[p] || /foil$/.test(p)) t.set(`foil:${p}`, foilName(p));
+    if ((SPECIAL_FOILS[p] || /foil$/.test(p)) && finish !== 'nonfoil') t.set(`foil:${p}`, foilName(p));
     if (STAMPS[p]) t.set(`stamp:${p}`, STAMPS[p]);
   }
   return t;
@@ -82,9 +89,12 @@ export function magicTreatmentLabel(key) {
   return key.replace(/[-_]/g, ' ').replace(/^./, (c) => c.toUpperCase());
 }
 
-/** A Magic printing's traits as a buy line stores them: ["borderless", "showcase", "surgefoil"]. */
-export function magicTreatments(card) {
-  const traits = magicTraits(card);
+/**
+ * A Magic printing's traits as a buy line stores them: ["borderless", "showcase", "surgefoil"].
+ * Pass the line's finish: a non-foil line never stores a special foil (decision 326).
+ */
+export function magicTreatments(card, finish = null) {
+  const traits = magicTraits(card, finish);
   return sortTraitKeys(traits.keys(), traits).map((k) => k.replace(/^(foil|stamp):/, ''));
 }
 
@@ -98,6 +108,16 @@ export function magicFinishes(card) {
 export function defaultMagicFinish(card) {
   const f = magicFinishes(card);
   return f.nonfoil ? 'nonfoil' : f.foil ? 'foil' : 'etched';
+}
+
+/**
+ * Is this trait switched by the FOIL switch on this printing (decision 326)?
+ * A special foil on a printing that also comes non-foil: on with foil, off
+ * with non-foil.
+ */
+export function isFinishTrait(card, key) {
+  const f = magicFinishes(card);
+  return key.startsWith('foil:') && f.nonfoil && f.foil && magicTraits(card).has(key);
 }
 
 /** Keep the current finish on a new printing if it has it; otherwise its default. */
@@ -147,10 +167,11 @@ export function closestSibling(current, siblings, key, accept = () => true) {
 /**
  * What the details panel shows for a Magic printing among its siblings:
  * traits that differ among them are checkboxes; traits every one has are
- * read-only chips.
+ * read-only chips. `finish` is the current one: a special foil the FOIL
+ * switch turns on and off is a checkbox, ticked only with foil (decision 326).
  * @returns {{ key: string, label: string, on: boolean, toggle: boolean }[]}
  */
-export function magicTraitRows(current, siblings) {
+export function magicTraitRows(current, siblings, finish = null) {
   const all = [current, ...siblings.filter((s) => s.id !== current.id)];
   const labels = new Map();
   const counts = new Map();
@@ -160,12 +181,13 @@ export function magicTraitRows(current, siblings) {
       counts.set(k, (counts.get(k) ?? 0) + 1);
     }
   }
-  const cur = magicTraits(current);
+  const cur = magicTraits(current, finish);
   return sortTraitKeys(labels.keys(), labels).map((key) => ({
     key,
     label: labels.get(key),
     on: cur.has(key),
-    toggle: counts.get(key) < all.length,   // some printing lacks it: it can be flipped
+    // Some printing lacks it, or a non-foil copy does: it can be flipped.
+    toggle: counts.get(key) < all.length || all.some((c) => isFinishTrait(c, key)),
   }));
 }
 

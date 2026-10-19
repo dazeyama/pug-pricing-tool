@@ -330,6 +330,7 @@ Four findings, all in the live build too, and the owner's calls:
 
 ### For the next smoke test
 
+- [ ] 🆕 **Surge foil needs FOIL (decision 326):** search Kefka, Dancing Mad FIC 84: FOIL OFF, Surge foil unticked. Tick Surge foil: FOIL turns ON. FOIL off (Alt+F): Surge foil unticks. ADD CARD with FOIL off: the line has no Surge foil tag; with FOIL on it has one. From 174 (extended art), tick Surge foil: moves to 84 with FOIL ON.
 - [ ] 🆕 **Selected sooner (decision 325):** a search with one result (Sol Ring 472 CMR) selects it as its picture appears, the price coming in after; clicking a line to edit selects its card as soon as its printings show. A name with results in both games ("Lightning") still selects nothing by itself.
 - [ ] 🆕 **Settled reads (decision 322):** in a run, the run log's failed reads just before a card goes in (no-card about 0.6 s before a sent) fall from about half to few; cards go in at the same pace or faster; the collector box stays whole past card 100.
 - [ ] 🆕 **Stop is an abort (decision 321):** press Stop mid-read (Reading…) and while the camera's refocusing: the picture and the phone's green camera dot go at once and the camera doesn't come back by itself; START CAMERA starts it again.

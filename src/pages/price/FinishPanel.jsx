@@ -1,5 +1,5 @@
 import {
-  magicFinishes, magicTraitRows, closestSibling, carryFinish, defaultMagicFinish,
+  magicFinishes, magicTraitRows, closestSibling, carryFinish, defaultMagicFinish, isFinishTrait,
   POKEMON_FINISHES,
 } from '../../lib/printings.js';
 
@@ -10,14 +10,14 @@ const FINISH_WORDS = { normal: 'non-holo', holo: 'holo', reverse: 'reverse holo'
  * the knob left when off. Locked when the printing only comes one way, or
  * while Etched is on (then it reads ETCHED).
  */
-function FoilSwitch({ finish, options, onFinish }) {
+function FoilSwitch({ finish, options, onFinish, drops = [] }) {
   const etched = finish === 'etched';
   const on = etched || finish === 'foil';
   const locked = etched || !(options.nonfoil && options.foil);
   const tip = etched ? 'Etched foil. Turn off Etched in Details to change.'
     : !options.foil ? 'Only printed non-foil'
       : !options.nonfoil ? 'Only printed in foil'
-        : `Switch to ${on ? 'non-foil' : 'foil'} (Alt+F)`;
+        : `Switch to ${on ? 'non-foil' : 'foil'}${on && drops.length ? `, dropping ${drops.join(', ')}` : ''} (Alt+F)`;
   return (
     <button
       type="button"
@@ -66,12 +66,14 @@ function MagicFinish({ card, finish, siblings, onFinish, onMove }) {
     if (s) etchedRoute = () => onMove(s, 'etched');
   }
 
-  const rows = siblings ? magicTraitRows(card, siblings) : [];
+  const rows = siblings ? magicTraitRows(card, siblings, finish) : [];
+  // Special foils that are this printing's foil copy (decision 326): FOIL off drops them.
+  const drops = rows.filter((r) => r.on && isFinishTrait(card, r.key)).map((r) => r.label);
 
   return (
     <>
       <div className="stage-label">Finish</div>
-      <FoilSwitch finish={finish} options={options} onFinish={onFinish} />
+      <FoilSwitch finish={finish} options={options} onFinish={onFinish} drops={drops} />
       <div className="stage-label details-label">Details</div>
       <div className="details">
         {siblings === null && <p className="details-note">Loading printings in {code}…</p>}
@@ -90,8 +92,16 @@ function MagicFinish({ card, finish, siblings, onFinish, onMove }) {
               type="checkbox"
               checked={r.on}
               onChange={() => {
+                // A special foil this printing comes in as its foil copy: the FOIL switch (decision 326).
+                if (isFinishTrait(card, r.key)) {
+                  onFinish(r.on ? 'nonfoil' : 'foil');
+                  return;
+                }
                 const s = closestSibling(card, siblings, r.key);
-                if (s) onMove(s, carryFinish(finish, s));
+                if (!s) return;
+                // Turning a special foil on means the foil copy, whatever the finish was.
+                const toFoil = !r.on && r.key.startsWith('foil:') && magicFinishes(s).foil;
+                onMove(s, toFoil ? 'foil' : carryFinish(finish, s));
               }}
             />
             {r.label}

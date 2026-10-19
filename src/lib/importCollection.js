@@ -391,7 +391,7 @@ export function importLines(chosen, sets, fileName) {
       rarity: card.rarity ?? null,
       finish,
       first_edition: false,
-      treatments: magicTreatments(card),
+      treatments: magicTreatments(card, finish),
       condition: row.condition,
       quantity: row.qty,
       unit_price: row.price,

@@ -251,7 +251,7 @@ export function printingLine(card, finish) {
     name: card.name,
     collector_number: card.collector_number,
     finish,
-    treatments: magicTreatments(card),
+    treatments: magicTreatments(card, finish),
     set_code: card.set,
   };
 }
