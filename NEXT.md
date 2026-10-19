@@ -27,6 +27,11 @@ and function.
 
 ## Done
 
+- 2026-10-19: CLAUDE.md cleaned up: the release history cut to a short "Where it stands", stale lines fixed (the
+  Changelog lock is 0002; one small change at a time instead of phases), the duplicate QA line gone and the browser
+  rule's one exception spelled out, the rules from memory added (Help edits only when asked, nothing about the AI
+  in team write-ups, one-pager style, the JustTCG key and store password, the migration routine, scratch files),
+  the retired-doc pointers in one line and a start-of-session order.
 - 2026-10-19: NEXT.md started, and CLAUDE.md told to read it first.
 - 2026-10-19: jq 1.8.2 installed (winget `jqlang.jq`); on the PATH for new sessions.
 - 2026-10-19: Lint hook: `.claude/settings.json` + `.claude/hooks/lint-edit.mjs` (`752f6b0`, `dd7d243`).
