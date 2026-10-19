@@ -327,6 +327,7 @@ Deno.serve(async (req) => {
     };
     const cacheRows: any[] = [];
     const mapRows: any[] = [];
+    const forget: string[] = [];   // remembered matches to let go, so the next ask finds the card afresh (decision 360)
     const found = (l: Lookup, card: any | null) => {
       if (card) {
         const s = slim(card);
@@ -338,12 +339,28 @@ Deno.serve(async (req) => {
         mapRows.push({ source_key: l.key, justtcg_card_id: null, resolved_at: fetchedAt });
       }
     };
+    // Not answered this time: a remembered card's last kept price, or marked failed. Neither is
+    // remembered as "no match" (decision 360).
+    const unanswered = (l: Lookup, cardId?: string) => {
+      const old = cardId ? cacheBy.get(cardId) : undefined;
+      const why = old ? refusedFor(l, old.payload) : null;
+      results[l.key] = !old ? { card: null, fetchedAt: null, failed: true } as any
+        : why ? { card: null, fetchedAt: old.fetched_at, refused: why } as any
+        : { card: old.payload, fetchedAt: old.fetched_at };
+    };
 
     // 2. One batch request (≤100 items on Starter/Pro) for everything missing.
     for (let i = 0; i < batch.length; i += BATCH_MAX) {
       const chunk = batch.slice(i, i + BATCH_MAX);
       const res = await call(key, '/cards', { method: 'POST', body: JSON.stringify(chunk.map((b) => b.item)) });
-      const cards: any[] = res?.data ?? [];
+      // A reply with no card list isn't "none of these exist": nothing in the chunk is remembered
+      // from it, and each lookup is answered as not answered (decision 360).
+      if (!Array.isArray(res?.data)) {
+        console.error('prices: a batch reply had no card list', JSON.stringify(res).slice(0, 300));
+        for (const { lookup, item } of chunk) unanswered(lookup, item.cardId);
+        continue;
+      }
+      const cards: any[] = res.data;
       for (const { lookup, item } of chunk) {
         let card = cards.find((c) =>
           (item.cardId && (c.uuid === item.cardId || c.id === item.cardId))
@@ -352,6 +369,14 @@ Deno.serve(async (req) => {
           || (item.tcgplayerSkuId && (c.variants ?? []).some((v: any) => String(v.tcgplayerSkuId) === item.tcgplayerSkuId)));
         // A SKU asked for alone: the one card that came back, if its variants don't say.
         if (!card && item.tcgplayerSkuId && chunk.length === 1 && cards.length === 1) card = cards[0];
+        // A remembered card missing from the reply (a hiccup, or an id JustTCG retired or renamed): not
+        // turned into "no match" for 7 days on every computer. Its last price, if kept, and the match
+        // let go, so the next ask finds the card by its own ids again (decision 360).
+        if (!card && item.cardId && mapBy.get(lookup.key)?.justtcg_card_id === item.cardId) {
+          forget.push(lookup.key);
+          unanswered(lookup, item.cardId);
+          continue;
+        }
         // A Pokémon product that is another card is not priced, and not
         // remembered either: the product's own card may ask for it next. Asked for
         // by product or by the card its key already maps to (decision 347).
@@ -406,8 +431,14 @@ Deno.serve(async (req) => {
     // Cards first, so their pattern versions can be read off the same results.
     searches.sort((a, b) => Number(Boolean(a.patternOf)) - Number(Boolean(b.patternOf)));
     const candidatesOf = new Map<string, any[]>();
+    const failedSearches = new Set<string>();   // card searches that errored and found nothing
     for (const asked of searches) {
       const l: Lookup = asked.patternOf ? { ...asked, name: `${asked.name} (${asked.pattern})` } : asked;
+      // Its card's search failed: the pattern version isn't "no match" for 7 days either (decision 360).
+      if (asked.patternOf && failedSearches.has(asked.patternOf)) {
+        results[l.key] = { card: null, fetchedAt: null, failed: true } as any;
+        continue;
+      }
       if (asked.patternOf && candidatesOf.has(asked.patternOf)) {
         const want = fold(l.name);
         const pick = candidatesOf.get(asked.patternOf)!.filter((c: any) => fold(baseName(c.name)) === want);
@@ -455,7 +486,8 @@ Deno.serve(async (req) => {
         }
         await attempt('name only', () => search(l, {}, log, 'name only'));
       }
-      candidatesOf.set(l.key, cards);
+      if (failed && !cards.length) failedSearches.add(l.key);
+      else candidatesOf.set(l.key, cards);
       // Several with that name and number (other sets): the one whose set
       // name or ID has the card's set code as a word, if exactly one does
       // (owner, 2026-09-29). TCGplayer names Japanese sets "SV2a: …".
@@ -480,7 +512,8 @@ Deno.serve(async (req) => {
       // A search that errored proves nothing: answer "no price" now, but don't
       // remember it as "no match" for 7 days.
       if (!cards.length && failed) {
-        results[l.key] = { card: null, fetchedAt: null };
+        // Marked, so the Price screen doesn't keep it as "no price" for the page's life (decision 357).
+        results[l.key] = { card: null, fetchedAt: null, failed: true } as any;
         continue;
       }
       found(l, cards.length === 1 ? cards[0] : null);
@@ -583,6 +616,10 @@ Deno.serve(async (req) => {
       const unique = [...new Map(mapRows.map((r) => [r.source_key, r])).values()];
       const { error } = await db.from('price_map').upsert(unique);
       if (error) console.error('price_map write failed', error);
+    }
+    if (forget.length) {
+      const { error } = await db.from('price_map').delete().in('source_key', forget);
+      if (error) console.error('price_map forget failed', error);
     }
     return json({ results, searches: searchOut });
   } catch (e) {

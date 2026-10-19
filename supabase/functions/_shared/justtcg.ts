@@ -48,7 +48,9 @@ export async function call(key: string, path: string, init: RequestInit = {}): P
     if (code === 'DAILY_LIMIT_EXCEEDED' || code === 'REQUEST_LIMIT_EXCEEDED') {
       throw new QuotaError(code, body?.error ?? code);
     }
-    if (res.status === 429 || res.status >= 500) {
+    // A reply that won't read is tried again like a server error (decision 360): read as "no cards",
+    // it remembered every lookup in the batch as "no match" for 7 days.
+    if (res.status === 429 || res.status >= 500 || (res.ok && body == null)) {
       const retryAfter = Number(res.headers.get('Retry-After'));
       const delay = Number.isFinite(retryAfter) && retryAfter > 0
         ? retryAfter * 1000
