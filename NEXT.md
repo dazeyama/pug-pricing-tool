@@ -6,43 +6,38 @@ and function.
 
 ## Open
 
-- **Unpushed, and worth pushing soon:** decisions 337–341 and the Help's struck-cards wording. Migrations 0077–0079
-  are already on dev, which the live site uses, while the live app is the old code: until the push, Convert to buy on
-  an exported project shows a raw `project_exported` error, the day's undo dialog counts hand-completed buys it now
-  leaves, and the convert dialog still says the payment moves.
+- **Unpushed, and worth pushing soon:** decisions 337–348 and the Help's struck-cards wording. Migrations
+  0077–0082 are already on dev, which the live site uses, while the live app is the old code: until the push, the
+  new refusals (`project_exported`, `line_exported`) show as raw codes, the day's undo dialog counts hand-completed
+  buys it now leaves, the convert dialog still says the payment moves, the phone still lists other lists' waiting
+  scans, and REPRICE?'s count includes exported cards it now skips. Nothing breaks and no data goes wrong.
+- **Deploy the `prices` Edge Function** with the push (decision 347; release skill step 9 asks first).
+- **Help out of date** (only when the owner asks), besides the list below: Backups → Restore (two presses; backups
+  hold the learned matches, decision 348); REPRICE? ("every card": not exported ones, decision 345); nothing says
+  an exported card can't be changed (decision 345); scanning: waiting cards come in when the phone pairs with
+  their list again (decision 343).
 - **Help out of date** (only when the owner asks): `README.md` "A buy's ⋯ menu" Convert to collection row ("what was
   paid": only when the whole buy moves, decision 341) and the day's **Mark Paid/Ours again…** row (~line 1059:
   hand-completed Magic buys stay, decision 340); "Convert to buy…" (~line 968: a kept-buy project starts at $0, and
   an exported project can't convert, decision 339); "How prices are worked out" / "Condition prices" (decision 338).
-- **The full launch review** (`C:\ClaudeProjects\temp\launch-review-full-2026-10-19.md`; raw reports in
-  `launch-review-full\`): 7 fix-before-launch, 20 should-fix. Suggested order, one shippable piece each:
-  1. **A4** test run burns 18 buy numbers a run: `scripts/db-test-run.mjs` puts `buys_number_seq` back after itself.
-  2. **A2** leaving the price screen deletes waiting scans: `scan_session_end` / `useScanSession.js` and the cascade
-     in 0069.
-  3. **A3** the phone sends a card twice on slow wifi: one `client_id` per card until settled (`Scanner.jsx`
-     `sendCard`, `useScans.js`).
-  4. **A1** a stamped line is frozen: the seven collection writers and twin helpers, `BuyList.jsx`, RepriceModal,
-     the file-only export filter (`CollectionPage.jsx:792`) and print (list in `launch-review-full\F2-…md`).
-  5. **A5** `cc_candidates` paging (`src/lib/ccExport.js:86`) and "Max rows" recorded as a prod setup step.
-  6. **A6** the Edge Function's `anotherCard` check on every path (`supabase/functions/prices/index.ts:344`; deploy).
-  7. **A7** disaster recovery: restore sets `buys_number_seq`; `restore_rows` uses column defaults; backups add the
-     learned-match tables; the safety download confirmed; a runbook.
-  Then the B groups (scanner B1–B5 first), then the first review's leftover B items.
-- **The owner's answers for those fixes (2026-10-19), to record as decision rows when each lands:**
-  - A1: freeze stamped lines; × (and edit, merge, strike) on an exported card refuses with "Undo export… first";
-    Undo export stays whole, not per part.
-  - A4: prod's buy numbers **start at 1** (dev-era numbers may repeat on labels; Custom SKUs carry the date). The
-    test run still puts the sequence back after itself, so prod's first real buy is Buy 1.
-  - A7: backups include `cc_product_links`, `cc_set_map` and `import_links`; **prod starts empty** of them
-    (decision 332 as is).
-  - Buy numbers through a project: a project converted back to a buy **keeps its original number** (decision 290
-    as written; the code gives a new one today, so that's a fix).
-- **Small edges left from the A2 and A3 reviews:** a buy with both exported and hand-completed Magic cards, after its
-  export is undone, shows Mark as completed instead of Mark Paid/Ours again (`src/pages/day/BuyPanel.jsx`, `byHand`):
-  Mark as completed, then Mark Paid/Ours again, brings everything back. Unlocking a kept-buy collection and marking
-  it Paid/Ours again asks for a price: typing the buy's payment there counts it twice.
+- **The full launch review's B and C findings** (`C:\ClaudeProjects\temp\launch-review-full-2026-10-19.md`; raw
+  reports in `launch-review-full\`): the owner reviews before any are done. Scanner B1–B5 first (B1/B2: a walk-in's
+  waiting cards can still go into the next customer's buy, decision 343 notes it), then the first review's leftover
+  B items.
+- **Buy numbers through a project** (the owner's answer, 2026-10-19, not done yet): a project converted back to a buy
+  keeps its original number, as decision 290 says; `project_to_buy` gives a new one today.
+- **Small edges left from the reviews:**
+  - a buy with both exported and hand-completed Magic cards, after its export is undone, shows Mark as completed
+    instead of Mark Paid/Ours again (`src/pages/day/BuyPanel.jsx`, `byHand`): Mark as completed, then Mark Paid/Ours
+    again, brings everything back;
+  - unlocking a kept-buy collection and marking it Paid/Ours again asks for a price: typing the buy's payment there
+    counts it twice (decision 341);
+  - a backup with columns the database lacks restores without them, silently; a hand-edited backup with empty rows in
+    a learned-match table empties it (decision 348);
+  - the "Exported: Undo export… first" wording also shows on Can't upload cards (decision 345);
+  - SQUASH.md's Max rows blank (section 10) to fill in from dev's dashboard.
 - **Before the squash:** a full smoke test pass, `docs/TEST.md` (184 cases), on dev.
-- **Phase 10 launch** (owner's go): the squash and the switch to prod, `SQUASH.md` sections 1–10 (N is 0079; the
+- **Phase 10 launch** (owner's go): the squash and the switch to prod, `SQUASH.md` sections 1–10 (N is 0082; the
   baseline `0001_baseline.sql`). Decide the **Supabase plan for prod** first (`docs/DESIGN_SPEC.md` Appendix D 2:
   Free vs Pro).
 - **After launch:**
@@ -53,6 +48,24 @@ and function.
 
 ## Done
 
+- 2026-10-19: The full launch review's seven fix-before-launch findings, one commit each, every migration reviewed
+  by pug-reviewer (and re-reviewed after its findings) before dev; db-test-run 499 checks:
+  - A4, decision 342 (prod's buys start at 1): `scripts/db-test-run.mjs` `putBuysBack` puts `buys_number_seq` back
+    after a run, failed runs too (`a2728a7`);
+  - A2, decision 343, migration 0080: scans belong to the computer (key to `devices`) and remember their list
+    (`target_kind`, `target_buy_id`); `scan_claim` takes only its list's; the receiver stops a batch when its screen
+    goes; the phone lists only its list's scans (`ed771ed`);
+  - A3, decision 344: one send per card at a time, its id kept until answered, lost connections retried
+    (`Scanner.jsx` `sendCard`, `useScans.js` `send`; `80abb9e`);
+  - A1, decision 345, migration 0081: a stamped line is frozen (`line_exported`; seven SQL functions, `BuyList.jsx`,
+    `RepriceModal.jsx`, the file-only export; `fc0de17`);
+  - A5, decision 346: `allPages` in `src/lib/inChunks.js` for the `cc_candidates` reads (export, audit print,
+    import); SQUASH.md's Max rows step (`9ed1577`);
+  - A6, decision 347: the another-card check on every price answer (`refusedFor` in the `prices` function,
+    `src/lib/anotherCard.js` in the browser; not deployed yet; `82b57a4`);
+  - A7, decision 348, migration 0082: restore moves the buy counter on, older backups restore with defaults, backups
+    hold the learned matches, Restore takes two presses, `docs/SETUP.md` has the new-project steps (`9227fe6`);
+  - SQUASH.md: N is 0082 and the counts at 0082.
 - 2026-10-19: The launch review's six fix-before-launch findings (each reviewed by pug-reviewer before dev):
   - A1, decision 339, migration 0077: `project_to_buy` refuses a project with exported or Can't upload cards
     (`project_exported`); the project's ⋯ greys Convert to buy… and the Collections table's ⋯ stops before its
