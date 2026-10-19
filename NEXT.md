@@ -6,10 +6,23 @@ and function.
 
 ## Open
 
-- **Unpushed:** decision 337 (CONFIRM BUY's customer name capped at 80), the Help's struck-cards wording, and
-  decision 338 (better conditions from JustTCG's best price).
+- **Unpushed, and worth pushing soon:** decisions 337–341 and the Help's struck-cards wording. Migrations 0077–0079
+  are already on dev, which the live site uses, while the live app is the old code: until the push, Convert to buy on
+  an exported project shows a raw `project_exported` error, the day's undo dialog counts hand-completed buys it now
+  leaves, and the convert dialog still says the payment moves.
+- **Help out of date** (only when the owner asks): `README.md` "A buy's ⋯ menu" Convert to collection row ("what was
+  paid": only when the whole buy moves, decision 341) and the day's **Mark Paid/Ours again…** row (~line 1059:
+  hand-completed Magic buys stay, decision 340); "Convert to buy…" (~line 968: a kept-buy project starts at $0, and
+  an exported project can't convert, decision 339); "How prices are worked out" / "Condition prices" (decision 338).
+- **The launch review's other findings:** `C:\ClaudeProjects\temp\launch-review-2026-10-19.md`, tiers B (9
+  should-fix) and C. Its session is still tracing the phone scanner and has two new serious findings (scans deleted
+  when the computer leaves the price screen; after Unpair, waiting cards landing in another customer's draft).
+- **Small edges left from the A2 and A3 reviews:** a buy with both exported and hand-completed Magic cards, after its
+  export is undone, shows Mark as completed instead of Mark Paid/Ours again (`src/pages/day/BuyPanel.jsx`, `byHand`):
+  Mark as completed, then Mark Paid/Ours again, brings everything back. Unlocking a kept-buy collection and marking
+  it Paid/Ours again asks for a price: typing the buy's payment there counts it twice.
 - **Before the squash:** a full smoke test pass, `docs/TEST.md` (181 cases), on dev.
-- **Phase 10 launch** (owner's go): the squash and the switch to prod, `SQUASH.md` sections 1–10 (N is 0076; the
+- **Phase 10 launch** (owner's go): the squash and the switch to prod, `SQUASH.md` sections 1–10 (N is 0079; the
   baseline `0001_baseline.sql`). Decide the **Supabase plan for prod** first (`docs/DESIGN_SPEC.md` Appendix D 2:
   Free vs Pro).
 - **After launch:**
@@ -20,6 +33,19 @@ and function.
 
 ## Done
 
+- 2026-10-19: The launch review's six fix-before-launch findings (each reviewed by pug-reviewer before dev):
+  - A1, decision 339, migration 0077: `project_to_buy` refuses a project with exported or Can't upload cards
+    (`project_exported`); the project's ⋯ greys Convert to buy… and the Collections table's ⋯ stops before its
+    dialog (`PROJECT_EXPORTED` in `src/pages/collections/useCollection.js`);
+  - A2, decision 340, migration 0078 (the owner chose "leave them Completed"): `export_undo_day` and `buy_unexport`
+    skip Magic cards Mark as completed struck; the day's dialog counts only the buys it brings back
+    (`undoable`, `keptByHand` in `src/pages/DayPage.jsx`; `struckByCompletion` in `src/pages/day/dayRules.js`);
+  - A3, decision 341, migration 0079 (the owner chose "the original buy only"): a kept buy's new project or
+    collection is paid $0 with the buy's method; the convert dialog says so (`src/pages/day/DayModals.jsx`);
+  - A4: `SQUASH.md`'s N (0079) and expected counts, from a trial `db-baseline.mjs` run into the scratchpad;
+  - A5: `scripts/db-test-run.sql`'s Privileges fingerprint leaves `schema public` out;
+  - A6: `SQUASH.md`'s prod Edge Function deploy has `--use-api --no-verify-jwt`.
+  No old rows needed fixing (each checked with a read-only query). db-test-run: 485 checks pass.
 - 2026-10-19: Decision 338, better conditions from JustTCG's best price: `priceLadder` in `src/lib/ladder.js` (a
   `filled` field on each entry), the tooltip in `src/pages/price/PriceTable.jsx`, three tests in
   `tests/ladder.test.js`, spec 8.7 and a `docs/TEST.md` case. No database change (`justtcg_fallback` was already
