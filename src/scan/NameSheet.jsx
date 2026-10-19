@@ -3,7 +3,7 @@ import * as scry from '../lib/scryfall.js';
 import { nameSuggestions } from './nameMatch.js';
 
 /**
- * Which card? (owner, 2026-10-19: "as a final-final fallback after even the
+ * Which card? (owner, 2026-10-18: "as a final-final fallback after even the
  * special filter name read for old cards, if it fails, just open a text
  * input field directly with the best scryfall guess name filled in
  * automatically, x button to clear, click to type, submit to open the 'Pick a

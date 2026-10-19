@@ -1,10 +1,10 @@
-// Surge foils TCGplayer sells as their own product (owner, 2026-10-19: Altered Ego, Commander:
+// Surge foils TCGplayer sells as their own product (owner, 2026-10-18: Altered Ego, Commander:
 // FINAL FANTASY 317, asked for a price by hand; decision 316). Scryfall lists a commander deck's
 // card and its surge foil as one printing (finishes nonfoil and foil) and links it to TCGplayer's
 // nonfoil product alone, so its foil has no price anywhere the app looks: TCGplayer sells "Altered
 // Ego (Surge Foil)", product 636749, apart. Scryfall card id → that surge foil product, for the
 // foil finish's JustTCG lookup (lib/prices.js), as an etched printing's own product is.
-// Generated 2026-10-19 from Scryfall (is:surgefoil, both finishes, no foil price: 660 cards) and
+// Generated 2026-10-18 from Scryfall (is:surgefoil, both finishes, no foil price: 660 cards) and
 // TCGplayer's catalogue via tcgcsv.com (the card's own product's group, the "(Surge Foil)" product
 // of the same name and number): 646 found; 14 Ravnica Remastered tokens have no surge product.
 // A new set with surge foils needs this run again (C:/ClaudeProjects/temp/surge).

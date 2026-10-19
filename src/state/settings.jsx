@@ -7,7 +7,7 @@ import { DEFAULT_BULK_VALUES } from '../lib/bulk.js';
 // App settings (spec 6.1 `settings`): key/value rows, live on every computer.
 
 export const DEFAULTS = {
-  // The store's rates (owner, 2026-10-19: "start prod at 33.34/66.68 default too, hardcode that as
+  // The store's rates (owner, 2026-10-18: "start prod at 33.34/66.68 default too, hardcode that as
   // default"; decision 333): until Settings has its own.
   cash_pct: 33.34,
   credit_pct: 66.68,

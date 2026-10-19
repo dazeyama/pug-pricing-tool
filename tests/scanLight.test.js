@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { isDark, lightOf } from '../src/scan/light.js';
 
-// Too dark to read well (owner, 2026-10-19; decision 306).
+// Too dark to read well (owner, 2026-10-18; decision 306).
 
 /** A picture's pixels: `n` of each grey given. */
 const pixels = (...greys) => greys.flatMap(([grey, n]) => Array.from({ length: n }, () => [grey, grey, grey, 255]).flat());

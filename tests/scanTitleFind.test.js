@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { rowEdges, textBands } from '../src/scan/titles.js';
 
-// Finding an older card's title (owner, 2026-10-19; decision 308).
+// Finding an older card's title (owner, 2026-10-18; decision 308).
 
 test('rowEdges counts the changes across each row', () => {
   const w = 10;

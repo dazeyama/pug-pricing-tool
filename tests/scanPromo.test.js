@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { isPromoStrip, promoNumber, resolvePromo } from '../src/scan/promo.js';
 
-// Promos printing PRM for their set (owner, 2026-10-19: Etali, Primal Storm; decision 313).
+// Promos printing PRM for their set (owner, 2026-10-18: Etali, Primal Storm; decision 313).
 
 const STRIP = '100/196 P Promo\nPRM * EN > RAYMOND SWANLAND';
 
@@ -48,7 +48,7 @@ test('not a PRM strip, or no number: nothing', async () => {
   assert.equal(await resolvePromo(['P Promo PRM EN'], { sets: SETS }), null);
 });
 
-// FNM promos of 2014–2018 printing FNM for their set (owner, 2026-10-19: Renegade Rallier; decision 327).
+// FNM promos of 2014–2018 printing FNM for their set (owner, 2026-10-18: Renegade Rallier; decision 327).
 
 const FNM = '009/012 P FNM\nFNM *EN 5 David PALUMBO';
 const fnmCard = (s, n, name, artist, frame = '2015') => ({ id: `${s}-${n}`, set: s, collector_number: n, name, artist, frame });

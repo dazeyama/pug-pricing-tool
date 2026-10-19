@@ -120,7 +120,7 @@ export default function PricingScreen({
   // mimp mode (owner, 2026-10-17; decision 293; "auto mode" in the code): adding a card leaves
   // the search, the card and its choices as they are, for a run of the same card; only Qty
   // goes back to 1. The 🌼 | 🦇 pill after EN | JP: 🌼 clears the search after each card (the
-  // default), 🦇 is mimp mode, keeping it (owner, 2026-10-19: "by default I want the search clear,
+  // default), 🦇 is mimp mode, keeping it (owner, 2026-10-18: "by default I want the search clear,
   // represented by the daisy, the bat, non-default, is the persistent search"; decision 323). Like
   // EN | JP it starts on its default with the page and keeps its setting from buy to buy; nothing
   // is stored.
@@ -304,7 +304,7 @@ export default function PricingScreen({
   // taken out 2026-10-11, put back 2026-10-12); a selection the new results
   // don't include is dropped (spec 8.3, 8.12). While a line is being edited,
   // its own search selects that exact card.
-  // Sooner (owner, 2026-10-19: "Can a card be auto selected sooner? As soon as it visually appears BEFORE
+  // Sooner (owner, 2026-10-18: "Can a card be auto selected sooner? As soon as it visually appears BEFORE
   // the price comes in?"; decision 325): this runs as each game's results come in, not only once the
   // whole search has finished (the other game, a spelling correction). An edit's card is selected the
   // moment it's among them; a lone card once every game has answered; the rest waits as before.

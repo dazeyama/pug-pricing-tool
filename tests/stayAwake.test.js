@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createStayAwake } from '../src/lib/stayAwake.js';
 
-// The computer kept awake while cards arrive (owner, 2026-10-19; decision 320).
+// The computer kept awake while cards arrive (owner, 2026-10-18; decision 320).
 
 function browser() {
   const requests = [];

@@ -128,7 +128,7 @@ test('a reverse holo\'s fallback is the reverse holo\'s market price', () => {
   assert.equal(holo.marketPrice, 1.08);
 });
 
-// Kefka, Dancing Mad FIC 84 (owner, 2026-10-19): one Scryfall printing for the plain card and its
+// Kefka, Dancing Mad FIC 84 (owner, 2026-10-18): one Scryfall printing for the plain card and its
 // surge foil. Surge foil comes with the foil finish only (decision 326).
 test('a special foil on a printing that also comes non-foil is the foil copy\'s (Kefka FIC 84)', () => {
   const kefka = { id: 'k84', set: 'fic', collector_number: '84', finishes: ['nonfoil', 'foil'], promo_types: ['surgefoil', 'ffvi', 'universesbeyond'] };

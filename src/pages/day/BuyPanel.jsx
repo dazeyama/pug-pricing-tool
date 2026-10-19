@@ -228,7 +228,7 @@ export default function BuyPanel({
               onClick: () => onConvert(buy, number),
             },
             {
-              // The same, into a collection (owner, 2026-10-19; decision 335): the buy's name and
+              // The same, into a collection (owner, 2026-10-18; decision 335): the buy's name and
               // phone, the Last 4 ID 1312, its rates and payment.
               label: 'Convert to collection',
               blocked: offOrBusy ?? (!buy.customer_name?.trim() ? 'No customer name on this buy'

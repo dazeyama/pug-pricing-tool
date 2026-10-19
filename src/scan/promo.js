@@ -1,4 +1,4 @@
-// Promo cards that print "PRM" for their set (owner, 2026-10-19: Etali,
+// Promo cards that print "PRM" for their set (owner, 2026-10-18: Etali,
 // Primal Storm "refused to scan in any way"; decision 313). Promos of about
 // 2018–2019 print "100/196 P / PRM ★ EN": PRM where the set code goes. On
 // Scryfall "prm" is Magic Online's promos (digital, so the scanner never
@@ -65,7 +65,7 @@ export async function resolvePromo(texts, {
 
 // ---------------------------------------------------------------- FNM
 
-// Friday Night Magic promos of mid-2014 to 2018 (owner, 2026-10-19: Renegade
+// Friday Night Magic promos of mid-2014 to 2018 (owner, 2026-10-18: Renegade
 // Rallier went in as Prodigal Sorcerer three times; decision 327) print
 // "009/012 P / FNM ★ EN": FNM where the set code goes. On Scryfall "fnm" is
 // the 2000 promos (old frame, no such line), and these sit in year sets,

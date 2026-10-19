@@ -15,7 +15,7 @@ test('a plain collector number also asks for its promo pack "p" printing', () =>
   assert.equal(numberTerm(null), null);
 });
 
-// Owner, 2026-10-19: "rootborn def 26" finds The List's RVR-26 too (decision 329).
+// Owner, 2026-10-18: "rootborn def 26" finds The List's RVR-26 too (decision 329).
 const TAIL = ' game:paper -is:extra';
 const LISTS = '(set:plst or set:mb1 or set:fmb1)';
 

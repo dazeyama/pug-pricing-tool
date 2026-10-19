@@ -1,4 +1,4 @@
-// Too dark to read well (owner, 2026-10-19: "fix", to "No hint in dim
+// Too dark to read well (owner, 2026-10-18: "fix", to "No hint in dim
 // light"; decision 306). A phone's camera brightens a dim picture by itself,
 // and a black-bordered card is dark in any light, so the average says little;
 // how bright the brightest part gets says more: in good light a card's white

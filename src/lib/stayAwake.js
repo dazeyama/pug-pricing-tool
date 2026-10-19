@@ -1,5 +1,5 @@
 // The computer kept awake while cards arrive from the phone (owner,
-// 2026-10-19: "A card arriving on the PC screen should ping the computer to
+// 2026-10-18: "A card arriving on the PC screen should ping the computer to
 // stay awake like a keystroke would, right now it sleeps on me when I'm
 // scanning"; decision 320). A page can't press a key, but it can hold a screen
 // wake lock (navigator.wakeLock: Chrome, Edge, Safari 16.4+), which keeps the

@@ -12,7 +12,7 @@ import Modal from '../../components/Modal.jsx';
  * Convert to project (owner, 2026-10-02): a name (the customer's, else the
  * buy's number and day), then every card moves to a new Paid/Ours project and
  * the buy is deleted. Convert to collection (`to` 'collection', owner,
- * 2026-10-19; decision 335): nothing to type; the collection takes the buy's
+ * 2026-10-18; decision 335): nothing to type; the collection takes the buy's
  * name and phone, the Last 4 ID 1312, its rates and what was paid.
  */
 export function ConvertBuyModal({ buy, number, day, byId, busy, onClose, onConvert, to = 'project' }) {

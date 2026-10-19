@@ -18,7 +18,7 @@ const listeners = new Set();
 // taking 5 s is stuck (owner, 2026-10-18: "stuck on 'Reading...' … forever until a hard
 // refresh"), and the worker is started afresh.
 const READ_MS = 5_000;
-// A fresh worker after this many reads (owner, 2026-10-19: "fix", to "The card reader is never
+// A fresh worker after this many reads (owner, 2026-10-18: "fix", to "The card reader is never
 // restarted"; decision 305): Tesseract's worker grows over a long session, so it's swapped between
 // reads, the new one loading at once so the next read hardly waits.
 const RECYCLE_AFTER = 300;

@@ -37,7 +37,7 @@ import NameSheet from './NameSheet.jsx';
 // Auto scan (docs/SCAN_FUNCTION.md 6.3): the rest between one look at the
 // camera and the next, and the wait before the first.
 const REST_MS = 300;
-// Idle (owner, 2026-10-19: "fix", to "Auto scan never slows down"; decision 304): after this long with
+// Idle (owner, 2026-10-18: "fix", to "Auto scan never slows down"; decision 304): after this long with
 // nothing new in the holder (no card found, the art unchanged, no button pressed), a look a second
 // instead, to spare the battery and the heat; anything new and it's back to REST_MS.
 const IDLE_AFTER_MS = 30_000;
@@ -54,7 +54,7 @@ const FIRST_LOOK_MS = 800;
 // on the card name instead, resetting to the normal bottom position upon
 // the next card"); then it reads the title, two looks naming the same card.
 const OLDER_AFTER = 3;
-// The view found again every so many cards (owner, 2026-10-19: "As the stack gets taller it gets
+// The view found again every so many cards (owner, 2026-10-18: "As the stack gets taller it gets
 // closer in and the old crop loses its accuracy. Quietly resetting and re-cropping will help";
 // decision 312): after this many cards sent with one lock, the next looks find the card's edges again
 // and lock onto it afresh; the old lock stays till a new one's found, and after this many looks
@@ -137,7 +137,7 @@ export function blockedText(session) {
  * truncated"). The computer's name is in the paired bar, not repeated here.
  */
 // A scan still "sending…" or "pricing…" this long after the phone first saw it waiting says so
-// (owner, 2026-10-19; decision 307). Timed on the phone's own clock, from when it first saw it.
+// (owner, 2026-10-18; decision 307). Timed on the phone's own clock, from when it first saw it.
 const STILL_WAITING_MS = 15_000;
 
 function scanStrip(s, { waited = 0, computer = 'the computer' } = {}) {
@@ -334,7 +334,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   /** What more light would take: the torch, where there is one and it's off. */
   const lightTip = () => (camera.torch === false ? 'tap 💡 for the light' : 'more light on the card helps');
   /**
-   * Note a look's light (owner, 2026-10-19: "fix", to "No hint in dim light"; decision 306): after
+   * Note a look's light (owner, 2026-10-18: "fix", to "No hint in dim light"; decision 306): after
    * DARK_AFTER dark looks in a row the strip says so, once; it goes when the light's back.
    */
   function noteLight(dark) {
@@ -546,7 +546,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   function noteSent() {
     sinceLock.current += 1;
     if (lockRef.current && sinceLock.current >= RELOCK_EVERY) relockDue.current = true;
-    // The stack (owner, 2026-10-19: "after 100 cards without resetting the physical scanner device
+    // The stack (owner, 2026-10-18: "after 100 cards without resetting the physical scanner device
     // (the height of the stack) … telling the user to stop the camera and reload the scanner when
     // they get a chance. (but not stopping them from continuing if they want)"; decision 331).
     stackCount.current += 1;
@@ -733,7 +733,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         showCutout(v.older ? titleCutout(frame, lock.card, defaultCreateCanvas) : cut);
         const outOfFocus = strip.sharpness > 0 && strip.sharpness < BLUR_BELOW;
         setBlurry(outOfFocus);
-        // Still moving (owner, 2026-10-19: "the first read is happening slightly too early when waiting
+        // Still moving (owner, 2026-10-18: "the first read is happening slightly too early when waiting
         // for blur to clear after motion … there's 1 wasted early read often that is then, redone";
         // decision 322: 62 of 134 strip reads in the run had a failed read 0.6 s before): auto scan
         // reads once the card's art is the same two looks running, so the card has settled.
@@ -1133,7 +1133,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   }
 
   /**
-   * Stop (owner, 2026-10-19: "The stop button on the phone should cut off the camera faster than it
+   * Stop (owner, 2026-10-18: "The stop button on the phone should cut off the camera faster than it
    * does, as an abort button, do what needs to be done to stop the camera immediately"; decision
    * 321): the camera shut at once (and any opening under way cancelled, camera.js), the look and any
    * Scan card read under way given up, and the card reader stopped, so nothing works on behind it.
@@ -1634,7 +1634,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
               💡
             </button>
           )}
-          {/* An abort (owner, 2026-10-19; decision 321): on the touch itself, not the lift. */}
+          {/* An abort (owner, 2026-10-18; decision 321): on the touch itself, not the lift. */}
           <button
             type="button"
             className="btn scan-stop"

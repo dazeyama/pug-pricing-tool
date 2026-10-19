@@ -1,4 +1,4 @@
-// The scanner's run log, development only (owner, 2026-10-19: a timed run of
+// The scanner's run log, development only (owner, 2026-10-18: a timed run of
 // 417 cards, "time stats, as well as accuracy, and number of times each
 // fallback layer was used"). Each event the phone decides on (a card sent
 // and the path that found it, a fallback opened, a failure, a stop) is

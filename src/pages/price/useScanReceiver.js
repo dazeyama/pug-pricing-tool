@@ -31,7 +31,7 @@ import { createStayAwake } from '../../lib/stayAwake.js';
 
 const POLL_MS = 10_000;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-// Time limits (owner, 2026-10-19: "add timers to the PC side as well so we don't get stuck";
+// Time limits (owner, 2026-10-18: "add timers to the PC side as well so we don't get stuck";
 // decision 307). The scans are priced one at a time, so one call that never answered held every scan
 // after it, and the phone said "pricing…" till the computer was reloaded. Rounded up to 5 s steps
 // from what was measured on 2026-10-18 and 19: a database round trip 0.17 s at worst, so 5 s for a

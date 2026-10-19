@@ -46,7 +46,7 @@ function silentWav() {
 }
 
 /**
- * Start the sound afresh, whatever stopped it (owner, 2026-10-19: "can we make toggling the sound icon
+ * Start the sound afresh, whatever stopped it (owner, 2026-10-18: "can we make toggling the sound icon
  * back and forth a hard reset for sound that always makes it refresh no matter why the iphone has it
  * muted?"; decision 318). Called from the 🔔 tap, the moment a phone allows sound: the old audio closed
  * and a new one started; the page's sound asked to play as media (Safari's audioSession, so the ringer
@@ -96,7 +96,7 @@ function note(freq, at, length, { type = 'sine', volume = 0.16 } = {}) {
 }
 
 /**
- * Play a sound, waking the audio first if it's stopped (owner, 2026-10-19: "It doesn't seem to be
+ * Play a sound, waking the audio first if it's stopped (owner, 2026-10-18: "It doesn't seem to be
  * making the sound anymore"; decision 315): an iPhone stops a page's audio ("interrupted") when the
  * camera starts, restarts or is paused by the phone, and START CAMERA's tap was the only time it was
  * started; now each sound starts it again if it has to.

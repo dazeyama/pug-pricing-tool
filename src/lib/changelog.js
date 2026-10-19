@@ -24,7 +24,7 @@ export const CATEGORIES = [
     // in project view and saved (owner, 2026-10-13); flagged to have its
     // cards' condition checked before export, and checked (owner, 2026-10-14);
     // cards struck (moved elsewhere, kept crossed out) and restored (owner, 2026-10-16).
-    // A buy converted to a collection (owner, 2026-10-19; decision 335).
+    // A buy converted to a collection (owner, 2026-10-18; decision 335).
     actions: ['buy_confirmed', 'buy_cards_removed', 'buy_deleted', 'buy_converted', 'buy_converted_collection',
       'project_converted', 'buy_edited',
       'buy_flagged', 'buy_flag_cleared', 'buy_cards_struck', 'buy_cards_restored'],

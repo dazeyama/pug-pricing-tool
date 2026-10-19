@@ -13,7 +13,7 @@ const LEAD = 0.08;
 // A read this much shorter than the name it matches is only part of a title
 // ("Shivan" of Shivan Dragon, or of Shivan Wurm?): no answer.
 const MIN_LENGTH = 0.7;
-// Words cut off a read's end are short ones only (owner, 2026-10-19: "Fix this"; decision 310): the
+// Words cut off a read's end are short ones only (owner, 2026-10-18: "Fix this"; decision 310): the
 // mana cost read as letters ("Chromatic Sphere Bh"), a stray mark. A real word of the title isn't
 // cut: "{lUrza's Tower N" cut down to "Urza" named another card.
 const CUT_UP_TO = 3;

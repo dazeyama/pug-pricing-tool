@@ -145,7 +145,7 @@ export function numberTerm(number) {
  * Sets that number a reprint by its first set and number, "RVR-26" (decision
  * 329): The List and Mystery Booster, and its foils. Their cards print that
  * set's code and number, so a search by the code or the number should find
- * them beside the card they reprint (owner, 2026-10-19: "rootborn def 26 only
+ * them beside the card they reprint (owner, 2026-10-18: "rootborn def 26 only
  * pulls up the RVR printing, but there is a The List printing with the exact
  * same number").
  */

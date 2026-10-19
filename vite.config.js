@@ -38,7 +38,7 @@ function vendorTesseract() {
 
 // The scanner's run log (src/scan/trace.js), development only: each event the
 // phone posts is appended, with the server's time, to a file outside the repo
-// (owner, 2026-10-19: a timed run of 417 cards, its times and fallbacks).
+// (owner, 2026-10-18: a timed run of 417 cards, its times and fallbacks).
 const SCAN_LOG = 'C:/ClaudeProjects/temp/scan-run/scan-log.jsonl';
 function scanLog() {
   return {

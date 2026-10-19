@@ -17,7 +17,7 @@ const BOTTOM = { top: 0.925, bottom: 0.985, left: 0.03, right: 0.97 };
 // end up about 45px tall, the copyright line's about 30px.
 const BAND_HEIGHT = { title: 72, bottom: 240 };
 
-// Finding the title (owner, 2026-10-19: "Sometimes for older cards the name reading is misaligned …
+// Finding the title (owner, 2026-10-18: "Sometimes for older cards the name reading is misaligned …
 // It detects the name too high (high most often, sometimes low)"; decision 308). The card's outline
 // can sit a little off the card, and a fixed band then lands on the border or the art. So the band
 // is looked for: down the top of the card, from a little above where the outline puts the top to a

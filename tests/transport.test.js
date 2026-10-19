@@ -75,7 +75,7 @@ test('concurrency lanes: that many requests in flight at once, one without it', 
 // The spacing holds between starts even with lanes open: each request starts no sooner than its turn,
 // the first's start plus the spacing for each before it. (Measured from the first, not between
 // neighbours: a timer firing late, up to ~15 ms on Windows, shortened a neighbour gap below the
-// spacing and failed this test now and then, though nothing started early. 2026-10-19.)
+// spacing and failed this test now and then, though nothing started early. 2026-10-18.)
 test('with lanes, requests still start at least the spacing apart', async () => {
   const realFetch = globalThis.fetch;
   const starts = [];

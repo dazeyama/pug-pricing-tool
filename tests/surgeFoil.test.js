@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { SURGE_PRODUCTS, surgeLookup, surgeResult } from '../src/lib/surgeProducts.js';
 
-// Surge foils sold as their own TCGplayer product (owner, 2026-10-19; decision 316). (lib/prices.js
+// Surge foils sold as their own TCGplayer product (owner, 2026-10-18; decision 316). (lib/prices.js
 // calls these; it opens the database when loaded, so it isn't loaded here.)
 
 const EGO = { id: 'fda23b02-c650-4092-a35d-ae330547c425', finishes: ['nonfoil', 'foil'] };   // Altered Ego, FIC 317

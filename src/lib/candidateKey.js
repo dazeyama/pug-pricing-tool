@@ -22,7 +22,7 @@ export function candidateKeyOf(line) {
 }
 
 /**
- * The search an edit opens with (owner, 2026-10-19: "Clicking on a card for
+ * The search an edit opens with (owner, 2026-10-18: "Clicking on a card for
  * edit card should automatically open the same query as the right click
  * instead of just filtering exactly to the 1 card, it's more useful to see
  * like-cards when going to edit"; decision 319): the card's name, every
@@ -38,7 +38,7 @@ export function nameQuery(line) {
 }
 
 /**
- * The suggestions with the card being edited first (owner, 2026-10-19: "The
+ * The suggestions with the card being edited first (owner, 2026-10-18: "The
  * selected card for edit needs to still appear pinned as the first result.
  * THEN show the rest of the search"; decision 324): its name's every printing
  * (decision 319) can run past the ten shown. The rest keep their order. Not

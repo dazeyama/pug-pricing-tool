@@ -17,7 +17,7 @@ smoke test; 0067: Show all finds struck cards), then 0068–0070 (the phone
 scanner, docs/SCAN_FUNCTION.md: scan sessions, scans, undo), then 0071–0076 (buys numbered
 forever, the day's Custom SKU, the completion rules, a collection's Undo export, a scan saved once, Convert to collection), so N is 0076.
 
-*Renumbered for launch, 2026-10-19 (DESIGN_SPEC decision 332):* the baseline is
+*Renumbered for launch, 2026-10-18 (DESIGN_SPEC decision 332):* the baseline is
 **`0001_baseline.sql`** whatever N is (the owner: "is there any way we can rename
 the post squash single migration to 001 again? It would feel cleaner"), and the
 first migration after launch is **0002**. **Prod starts empty** (the owner, the

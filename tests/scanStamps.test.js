@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { STAMP_SEEN, forgetStamped, pickStamp, stampKind, stampedByNumber, stampedOf } from '../src/scan/stamps.js';
 
-// Stamped promos (owner, 2026-10-19: Aziza 174p and Nashi 223s; decision 328).
+// Stamped promos (owner, 2026-10-18: Aziza 174p and Nashi 223s; decision 328).
 
 const promo = (n, name, types) => ({ id: `pdsk-${n}`, set: 'pdsk', collector_number: n, name, promo_types: types });
 const PDSK = [

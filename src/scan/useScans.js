@@ -90,7 +90,7 @@ export function useScans(computerId, phoneId) {
   // The list read again after a write, but never waited on for longer than a write is.
   const settle = useCallback(() => withTimeout(reload(), WRITE_MS).catch(() => {}), [reload]);
 
-  // Sent once (owner, 2026-10-19; decision 302): each scan carries its own id, and a send with no
+  // Sent once (owner, 2026-10-18; decision 302): each scan carries its own id, and a send with no
   // answer in time is tried again with the same one, so a send that landed after all isn't saved
   // twice (scan_send returns the scan it has). After SEND_TRIES, `timeout`.
   const send = useCallback(async (scan) => {

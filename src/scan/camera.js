@@ -128,7 +128,7 @@ export function useCamera(videoRef) {
     return true;
   };
 
-  // Cut off (owner, 2026-10-19: "fix", to "The camera doesn't notice when it's cut off"): a call, Siri
+  // Cut off (owner, 2026-10-18: "fix", to "The camera doesn't notice when it's cut off"): a call, Siri
   // or another app can take the camera while the page stays open, and the picture froze while auto
   // scan read the same frozen picture. Now the camera's track is watched: paused by the phone, the
   // scanner waits and says so; ended, the camera starts again by itself.

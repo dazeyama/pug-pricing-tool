@@ -301,7 +301,7 @@ export function rank(lists, q, oldest = false) {
   const all = lists.flat().map((c) => ({ ...c, score: scoreOf(c, q) }));
   const dir = oldest ? -1 : 1;
   // A number or set code searched: The List's and Mystery Booster's printings after every other
-  // (owner, 2026-10-19: "show The List of Mystery Booster printings after the main ones that come
+  // (owner, 2026-10-18: "show The List of Mystery Booster printings after the main ones that come
   // first in the query always"; decision 329), unless one of those sets is the one asked for.
   const byCode = (q.number || q.setCode) && !scry.LIST_SETS.includes(String(q.setCode ?? '').toLowerCase());
   const late = (c) => (byCode && scry.listedNumber(c.setCode, c.number) ? 1 : 0);

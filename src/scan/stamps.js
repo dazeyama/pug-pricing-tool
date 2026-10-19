@@ -1,4 +1,4 @@
-// Stamped promos (owner, 2026-10-19: "In Magic stamped cards are an entirely
+// Stamped promos (owner, 2026-10-18: "In Magic stamped cards are an entirely
 // different printing categorically, so this matters as much as set detection
 // in a way"; decision 328). A promo pack card has the planeswalker stamp at
 // its art's lower right; a prerelease card the gold year ("20★24") at its
