@@ -66,11 +66,19 @@ export function useDraft(deviceId) {
     reload();
   }, [reload, epoch]);
 
-  /** Run one write function; errors become a toast. */
-  const run = useCallback(async (fn, args, failure) => {
+  /**
+   * Run one write function; errors become a toast. `recover(error)`, if given, may find that the
+   * write saved after all (its answer lost): its result is then the answer, and no error is shown.
+   */
+  const run = useCallback(async (fn, args, failure, recover = null) => {
     setBusy(true);
     try {
       const { data, error } = await supabase.rpc(fn, args);
+      const saved = error && recover ? await recover(error).catch(() => null) : null;
+      if (saved) {
+        await reload();
+        return { ok: true, data: saved };
+      }
       if (error) {
         const code = knownCode(error, CODES);
         if (dbErrorCode(error) === 'stale_version') toast(STALE, 'err');
@@ -129,8 +137,13 @@ export function useDraft(deviceId) {
     userId, customerName, phone, notes, paidPrice, paidMethod, cashPct, creditPct, lineTexts,
   }) => {
     if (!state.buy) return null;
+    const buyId = state.buy.id;
+    // No answer, or a retry refused because the first one saved: the buy, read back, says whether
+    // it was confirmed, so BUY COMPLETE and its 🚩 still happen (decision 363).
+    const recover = (error) => (!knownCode(error, CODES) || dbErrorCode(error) === 'stale_version'
+      ? confirmedBuy(buyId, userId) : Promise.resolve(null));
     const r = await run('confirm_buy', {
-      p_buy_id: state.buy.id,
+      p_buy_id: buyId,
       p_user: userId,
       p_customer_name: customerName,
       p_phone: phone || null,
@@ -141,9 +154,23 @@ export function useDraft(deviceId) {
       p_paid_price: paidPrice,
       p_paid_method: paidMethod,
       p_line_texts: lineTexts,
-    }, "Couldn't confirm the buy");
+    }, "Couldn't confirm the buy", recover);
     return r.ok ? r.data : null;
   }, [run, state.buy]);
 
   return { ...state, busy, add, update, remove, setRates, setLineRate, cancel, confirm };
+}
+
+/**
+ * CONFIRM BUY's answer, read back from the buy when the real one was lost (decision 363): null
+ * unless this user confirmed it. Magic before Pokémon, as confirm_buy lists the games.
+ * @returns {Promise<{ number: number, games: string[], target_name: null }|null>}
+ */
+async function confirmedBuy(buyId, userId) {
+  const { data, error } = await supabase.from('buys')
+    .select('status, number, confirmed_by, buy_lines(game)').eq('id', buyId).maybeSingle();
+  if (error || !data || data.status === 'draft' || data.confirmed_by !== userId || data.number == null) return null;
+  const games = [...new Set(data.buy_lines.map((l) => l.game))]
+    .sort((a, b) => Number(a === 'pokemon') - Number(b === 'pokemon') || a.localeCompare(b));
+  return { number: data.number, games, target_name: null };
 }
