@@ -330,6 +330,7 @@ Four findings, all in the live build too, and the owner's calls:
 
 ### For the next smoke test
 
+- [ ] 🆕 **Selected sooner (decision 325):** a search with one result (Sol Ring 472 CMR) selects it as its picture appears, the price coming in after; clicking a line to edit selects its card as soon as its printings show. A name with results in both games ("Lightning") still selects nothing by itself.
 - [ ] 🆕 **Settled reads (decision 322):** in a run, the run log's failed reads just before a card goes in (no-card about 0.6 s before a sent) fall from about half to few; cards go in at the same pace or faster; the collector box stays whole past card 100.
 - [ ] 🆕 **Stop is an abort (decision 321):** press Stop mid-read (Reading…) and while the camera's refocusing: the picture and the phone's green camera dot go at once and the camera doesn't come back by itself; START CAMERA starts it again.
 - [ ] 🆕 **Awake while scanning (decision 320):** with the computer's display set to sleep after 2 minutes, scan cards from the phone for 5: the screen stays on; 10 minutes after the last card it sleeps as usual.

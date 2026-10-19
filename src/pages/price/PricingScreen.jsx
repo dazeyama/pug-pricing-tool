@@ -304,8 +304,13 @@ export default function PricingScreen({
   // taken out 2026-10-11, put back 2026-10-12); a selection the new results
   // don't include is dropped (spec 8.3, 8.12). While a line is being edited,
   // its own search selects that exact card.
+  // Sooner (owner, 2026-10-19: "Can a card be auto selected sooner? As soon as it visually appears BEFORE
+  // the price comes in?"; decision 325): this runs as each game's results come in, not only once the
+  // whole search has finished (the other game, a spelling correction). An edit's card is selected the
+  // moment it's among them; a lone card once every game has answered; the rest waits as before.
+  const answered = !['searching', 'retrying'].includes(search.games.mtg.status)
+    && !['searching', 'retrying'].includes(search.games.pokemon.status);
   useEffect(() => {
-    if (!search.settled) return;
     // In the order shown: the card being edited pinned first (decision 324), so the highlight matches.
     const found = pinFirst(search.candidates, editing?.key, editing?.card ?? null);
     if (editing && !editing.found) {
@@ -316,6 +321,8 @@ export default function PricingScreen({
         setHighlight(0);   // pinned first (decision 324)
         // Kept, to stay pinned first whatever the search shows next, till the edit ends (decision 324).
         setEditing((e) => e && { ...e, found: true, card: found[index] });
+      } else if (!search.settled) {
+        // Not in yet: the rest of the search may bring it.
       } else if (editing.exact && editing.query !== editing.exact) {
         // Not among the name's printings (one of hundreds, a basic land): its exact search instead.
         setEditing((e) => e && { ...e, query: e.exact });
@@ -326,17 +333,18 @@ export default function PricingScreen({
       }
       return;
     }
-    if (found.length === 1) {
+    if (found.length === 1 && (search.settled || answered)) {
       setSelected(found[0]);
       setHighlight(0);
       return;
     }
+    if (!search.settled) return;   // dropping a selection the results lack waits for all of them
     const cur = selectedRef.current;
     const index = cur ? found.findIndex((c) => c.key === cur.key) : -1;
     setSelected(index >= 0 ? found[index] : null);
     setHighlight(index >= 0 && index < shownCount ? index : -1);
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- once per finished search, not on every re-render of the same results
-  }, [search.runId, search.settled, editing?.key, editing?.found]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- as results come in and once the search finishes, not on every re-render of the same results
+  }, [search.runId, search.settled, search.candidates, answered, editing?.key, editing?.found]);
 
   // The edited line's card is selected: put back what was saved with it (once).
   useEffect(() => {
