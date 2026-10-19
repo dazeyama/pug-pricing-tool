@@ -415,8 +415,9 @@ available). Not pushed: pushing deploys.
 
 Then the launch steps outside the squash (spec, Phase 10 → Launch):
 
-- **Edge Functions on prod:** `npx supabase functions deploy prices --project-ref zvxquzcfffmxwizonxuo`
-  and the same for `secrets`. They read only `SUPABASE_URL`,
+- **Edge Functions on prod:** `npx supabase functions deploy prices --project-ref zvxquzcfffmxwizonxuo --use-api --no-verify-jwt`
+  and the same for `secrets` (`--use-api` bundles without Docker, which this machine doesn't have; the release
+  skill uses the same flags). They read only `SUPABASE_URL`,
   `SUPABASE_SERVICE_ROLE_KEY` and `SUPABASE_SECRET_KEYS`, which Supabase
   provides; nothing to set. The JustTCG key goes in through Settings → API
   keys on the live site, by the owner. `api_usage` gets its row at the first
