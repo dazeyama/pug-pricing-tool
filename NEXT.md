@@ -6,8 +6,6 @@ and function.
 
 ## Open
 
-- **Unpushed:** everything since the 2026-10-18 push (`d565452`): the CLAUDE.md rules and cleanup, the release
-  skill and `scripts/live-check.mjs`, the lint hook, NEXT.md, and the date fixes. Push only on request.
 - **The lint hook hasn't run in a live session yet:** `.claude/settings.json` → `.claude/hooks/lint-edit.mjs`. It
   loads only in a session started in this folder; the first such session can confirm an Edit triggers it.
 - **Help:** `README.md` "A buy's ⋯ menu" table (line ~1113, after **Convert to project**) has no row for **Convert
@@ -24,6 +22,10 @@ and function.
 
 ## Done
 
+- 2026-10-18: Pushed without a bump (the release skill's first run): the CLAUDE.md rules and cleanup, NEXT.md, the
+  release skill and `scripts/live-check.mjs`, the lint hook, pug-reviewer, the review checkpoints, the date fixes.
+  The pre-push review found nothing that stops a push; its five small notes are in the push report. Nothing
+  unpushed.
 - 2026-10-18: pug-reviewer wired in at the two regular points: before every push (release skill step 1b; a
   confirmed serious finding stops the push) and before every migration is applied to dev (CLAUDE.md, Database,
   step 1).
