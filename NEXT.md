@@ -6,9 +6,22 @@ and function.
 
 ## Open
 
-- **Review of the unpushed diff** (2026-10-19): a review agent is checking `git diff origin/main..HEAD` (CLAUDE.md
-  sections, `.claude/skills/release/SKILL.md`, `.claude/hooks/lint-edit.mjs`, `.claude/settings.json`,
-  `eslint.config.mjs`). Findings to report; nothing to fix until the owner says.
+- **The review's findings, waiting on the owner** (nothing fixed yet):
+  - `.claude/skills/release/SKILL.md` step 2: the secrets grep matches the skill's own text and every
+    `service_role` grant in a migration, so it would stop every push.
+  - `SKILL.md` step 3.4: still says to add a "Then live as…" paragraph to CLAUDE.md's history, which no longer
+    exists; should update CLAUDE.md "Where it stands" instead.
+  - `SKILL.md` step 8: updates memory but not NEXT.md or CLAUDE.md "Where it stands".
+  - `SKILL.md` step 7 (Edge Functions): skipped on "push no bump" and checked after the push; move it to pre-flight.
+  - `SKILL.md`: hard-codes the dev project ref; wrong after the move to prod.
+  - `SKILL.md` step 3.1: `git tag` sorts alphabetically; use `git tag --sort=-creatordate`.
+  - `SKILL.md` step 6: the live check reads only the entry chunk; features in split chunks look missing.
+  - `SKILL.md` step 1: no `git fetch` before comparing with `origin/main`.
+  - `.claude/hooks/lint-edit.mjs` line 26: the "this project only" check passes files on another drive (D:), so a
+    `.py` edit in klug alters gets `py_compile` (a `__pycache__` there); a missing Python reports a false error.
+  - `.claude/settings.json`: the hook needs Git Bash and `node` on the PATH; elsewhere it quietly does nothing.
+  - `lint-edit.mjs` line 5: "no jq on this machine" is out of date; an ESLint crash exits 1, not 2.
+  - Dates: today's entries say 2026-10-19 (UTC); the store's clock was still 2026-10-18.
 - **Unpushed:** `bbf06b4`, `aeccf61`, `9769a39`, `752f6b0`, `dd7d243` (CLAUDE.md rules, the release skill, the
   lint hook, ESLint's `.claude/**` globals), plus this file. Push only on request.
 - **The lint hook hasn't run in a live session yet:** `.claude/settings.json` → `.claude/hooks/lint-edit.mjs`. It
@@ -27,6 +40,7 @@ and function.
 
 ## Done
 
+- 2026-10-19: Review of the unpushed diff (read-only, a review agent): findings listed under Open.
 - 2026-10-19: CLAUDE.md cleaned up: the release history cut to a short "Where it stands", stale lines fixed (the
   Changelog lock is 0002; one small change at a time instead of phases), the duplicate QA line gone and the browser
   rule's one exception spelled out, the rules from memory added (Help edits only when asked, nothing about the AI
