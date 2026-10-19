@@ -32,7 +32,7 @@
   buys keeping their custom rates (decision 268, migration 0061), Japanese-only Magic printings in English
   searches (decision 269) and placeholders (decision 270, migration 0062), all migrations on dev.
   Then live as v0.9.9.9-fable: the code review's fixes (FABLE.md; migrations 0063–0065), the Phase 6
-  smoke test (results in docs/TEST.md) and its fixes (decisions 272–273, migration 0066), all on dev.
+  smoke test (results in docs/TEST_RUNS.md) and its fixes (decisions 272–273, migration 0066), all on dev.
   Then pushed without a version change: Show all finds struck cards (decision 275, migration 0067, on dev)
   and cards by game on a collection's name (decision 276).
   Then the phone scanner (docs/SCAN_FUNCTION.md Phases S1–S5, decisions 278–279, migrations 0068–0070 on dev;
@@ -67,4 +67,4 @@
   only with FOIL (326), FNM promos by year (327), stamped promos by their stamp (328), The List and Mystery
   Booster in number searches, after the main printings (329), Help for all of it (330). Migration 0075 on dev.
   Phase 10 launch (the migration squash, SQUASH.md, then prod) waits for the owner's go; the live site runs on the
-  dev project until then. docs/TEST.md holds the smoke tests and the database test run.
+  dev project until then. docs/TEST.md is the smoke test (one pass, tab by tab); docs/TEST_RUNS.md holds each run's results.
