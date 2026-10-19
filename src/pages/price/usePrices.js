@@ -3,6 +3,7 @@ import { fetchPrices, lookupsFor, priceResults, searchTcgplayer } from '../../li
 import { usePriceLimit } from '../../state/priceLimit.jsx';
 import { useConnection } from '../../state/connection.jsx';
 import { isSealed } from '../../lib/justtcgCards.js';
+import { anotherCard } from '../../lib/anotherCard.js';
 
 // Prices only after a card has stayed selected for 400ms (spec 5.3), so
 // arrowing through suggestions doesn't spend the JustTCG allowance. Results
@@ -76,7 +77,14 @@ export function usePrices(selected, { pokemon, versions, jaName, waitName }) {
   const retry = useCallback(() => setAttempt((n) => n + 1), []);
 
   const current = state.key === signature ? state : { status: signature ? 'loading' : 'idle', error: null };
-  const own = signature ? Object.fromEntries(lookups.filter((l) => results.has(l.key)).map((l) => [l.key, results.get(l.key)])) : null;
+  // A product's answer is kept under its key, which another card's lookup may share: read as
+  // refused for a card it isn't (decision 347), and left as it is for the product's own card.
+  const mine = (l) => {
+    const got = results.get(l.key);
+    const why = anotherCard(l, got?.card);
+    return why ? { card: null, fetchedAt: got.fetchedAt, refused: why } : got;
+  };
+  const own = signature ? Object.fromEntries(lookups.filter((l) => results.has(l.key)).map((l) => [l.key, mine(l)])) : null;
   return { status: current.status, error: current.error, results: own, retry };
 }
 

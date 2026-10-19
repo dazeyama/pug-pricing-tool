@@ -210,6 +210,14 @@ function anotherCard(l: Lookup, card: any): string | null {
   }
   return null;
 }
+/**
+ * Why this lookup's card isn't the product's (anotherCard), for a Pokémon product lookup, or
+ * null. A product key is shared by every card TCGdex gives that product, so this runs on every
+ * answer under it: cached, remembered or fresh (decision 347).
+ */
+const refusedFor = (l: Lookup, card: any): string | null =>
+  (card && l.game === 'pokemon' && l.tcgplayerId ? anotherCard(l, card) : null);
+
 const normNumber = (n: unknown) => String(n ?? '').trim().toLowerCase().split('/')[0]
   .replace(/^([a-z]*-?)0+(?=\d)/, '$1');
 /** "Mega Starmie ex - 021/088" → "Mega Starmie ex": JustTCG adds the number to some names. */
@@ -272,7 +280,12 @@ Deno.serve(async (req) => {
       if (m?.justtcg_card_id) {
         const c = cacheBy.get(m.justtcg_card_id);
         if (c && now - Date.parse(c.fetched_at) < maxAge) {
-          results[l.key] = { card: c.payload, fetchedAt: c.fetched_at };     // fresh in the shared cache
+          // Fresh in the shared cache, but under a product key it may be another card's (decision
+          // 347): checked for this card every time, not only when the product is first asked for.
+          const why = refusedFor(l, c.payload);
+          results[l.key] = why
+            ? { card: null, fetchedAt: c.fetched_at, refused: why } as any
+            : { card: c.payload, fetchedAt: c.fetched_at };
           continue;
         }
         batch.push({ lookup: l, item: { cardId: m.justtcg_card_id } });
@@ -340,8 +353,9 @@ Deno.serve(async (req) => {
         // A SKU asked for alone: the one card that came back, if its variants don't say.
         if (!card && item.tcgplayerSkuId && chunk.length === 1 && cards.length === 1) card = cards[0];
         // A Pokémon product that is another card is not priced, and not
-        // remembered either: the product's own card may ask for it next.
-        const why = card && lookup.game === 'pokemon' && item.tcgplayerId ? anotherCard(lookup, card) : null;
+        // remembered either: the product's own card may ask for it next. Asked for
+        // by product or by the card its key already maps to (decision 347).
+        const why = refusedFor(lookup, card);
         if (why) {
           console.log(`prices: ${lookup.key} (${lookup.name} ${lookup.number}, ${setIdOf(lookup)}) is ${card.name} ${card.number} in ${card.set_name}: ${why}; not priced`);
           results[lookup.key] = { card: null, fetchedAt, refused: why } as any;
