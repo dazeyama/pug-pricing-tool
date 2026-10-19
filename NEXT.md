@@ -30,6 +30,9 @@ and function.
 
 ## Done
 
+- 2026-10-18: pug-reviewer reached from a session started in this folder (first use): it loaded with Read, Grep,
+  Glob and Bash, read CLAUDE.md and reviewed the one unpushed commit (`df6f846`, NEXT.md only). One docs note: the
+  push entry below says "five small notes" but Open lists three, and "Nothing unpushed" is stale until the next push.
 - 2026-10-18: Pushed without a bump (the release skill's first run): the CLAUDE.md rules and cleanup, NEXT.md, the
   release skill and `scripts/live-check.mjs`, the lint hook, pug-reviewer, the review checkpoints, the date fixes.
   The pre-push review found nothing that stops a push; its five small notes are in the push report. Nothing
