@@ -111,10 +111,11 @@ export default function ConfirmBuyModal({
       </div>
       <label className="confirm-field">
         <span>Customer name</span>
+        {/* 80, as every name in the database: longer couldn't convert (decision 337). */}
         <CustomerNameInput
           value={customer}
           autoFocus
-          maxLength={120}
+          maxLength={80}
           onChange={setCustomer}
           onPick={({ name, phone: last }) => {
             setCustomer(name);
