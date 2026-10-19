@@ -23,7 +23,8 @@ import { defaultCreateCanvas } from './recognition/canvasUtil.js';
 import { ocrWorker, onOcrStatus, resetOcr } from './ocr.js';
 import { isTimeout, withTimeout } from '../lib/timeout.js';
 import { isMuted, play, resetSounds, setMuted, unlockSounds } from './sounds.js';
-import { printingsFor, readOlderCard, titleAmong } from './older.js';
+import { loadPicture, printingsFor, readOlderCard, titleAmong } from './older.js';
+import { checkStamp } from './stamps.js';
 import { cardNamed, isFnmStrip, isPromoStrip, resolveFnm, resolvePromo } from './promo.js';
 import { trace } from './trace.js';
 import { guessName, matchName } from './nameMatch.js';
@@ -82,6 +83,9 @@ const BAR_DONE_MS = 250;
 // one read, a lookup and two searches, about 4 s, so 10 s (every limit rounded up to 5 s).
 const MANUAL_DEADLINE_MS = 20_000;
 const AUTO_DEADLINE_MS = 10_000;
+// The stamp check's most (decision 328): a set's list and the card's picture fetched, then
+// compared. Longer, and the plain printing goes in.
+const STAMP_MS = 4_000;
 // Reading… can be tapped to stop once it's run this long.
 const STOPPABLE_AFTER_MS = 3_000;
 // Holding Scan card this long starts over: the reader started afresh, what auto scan held forgotten.
@@ -897,6 +901,29 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         }
       }
       if (stale()) return;
+      // A stamped promo (decision 328): a promo pack's planeswalker stamp or a prerelease's year,
+      // on a card the strip named whose set has such a printing of it; checked against the plain
+      // card's picture. The run log has each check's spots, to set the cutoff by.
+      const plain = found.card;
+      if (lock && plain.frame === '2015' && plain.set_type !== 'promo' && !via?.endsWith('+list')) {
+        const startedAt = Date.now();
+        const stamp = await withTimeout(
+          checkStamp(frame, lock.card, plain, { loadImage: loadPicture, createCanvas: defaultCreateCanvas }),
+          STAMP_MS,
+        ).catch((e) => ({ error: isTimeout(e) ? 'timeout' : String(e?.message ?? e).slice(0, 80) }));
+        if (stale()) return;
+        if (stamp) {
+          trace('stamp', {
+            name: plain.name, set: String(plain.set).toUpperCase(), number: plain.collector_number,
+            kinds: Object.keys(stamp.stamped ?? {}), ...(stamp.dists ?? {}), picked: stamp.kind ?? null,
+            error: stamp.error ?? null, ms: Date.now() - startedAt,
+          });
+        }
+        if (stamp?.card) {
+          found = { ...found, card: stamp.card };
+          via = `${via ?? 'strip'}+${stamp.kind}`;
+        }
+      }
       progress?.start('send');
       await sendCard(found.card, { tier: found.tier ?? 1, manual, art, sure: Boolean(found.sure), foilSeen, via, lookMs: Date.now() - lookAt });
       progress?.finish('send');
