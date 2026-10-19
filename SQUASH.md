@@ -15,7 +15,7 @@ third time for the phone scanner:* migrations 0063–0067 landed on dev before
 the squash (0066: bulk counted apart in the Changelog, after the Phase 6
 smoke test; 0067: Show all finds struck cards), then 0068–0070 (the phone
 scanner, docs/SCAN_FUNCTION.md: scan sessions, scans, undo), then 0071–0076 (buys numbered
-forever, the day's Custom SKU, the completion rules, a collection's Undo export, a scan saved once, Convert to collection), and 0077–0079 (the launch review: an exported project isn't converted, undoing an export leaves hand-completed cards, a converted buy paid once), and 0080–0082 (the full launch review: waiting scans kept, an exported card frozen, a backup restored into a new project), so N is 0082.
+forever, the day's Custom SKU, the completion rules, a collection's Undo export, a scan saved once, Convert to collection), and 0077–0079 (the launch review: an exported project isn't converted, undoing an export leaves hand-completed cards, a converted buy paid once), and 0080–0082 (the full launch review: waiting scans kept, an exported card frozen, a backup restored into a new project), and 0083 (buy numbers without gaps), so N is 0083.
 
 *Renumbered for launch, 2026-10-18 (DESIGN_SPEC decision 332):* the baseline is
 **`0001_baseline.sql`** whatever N is (the owner: "is there any way we can rename
@@ -25,23 +25,23 @@ same day): the store's data so far stays on dev, which becomes the test copy,
 and nothing is restored into prod. Localhost always uses dev; only the Pages
 site moves to prod.
 The rehearsal was last run at 0065 (92 functions; nine of nine the same). The generator
-was run again at 0082 for its counts only (2026-10-19, section 3); section 1 runs both
+was run again at 0083 for its counts only (2026-10-19, section 3); section 1 runs both
 again.
 
 ---
 
 ## 0. The shape of it
 
-Dev has 82 migrations (0001–0082), over 17,000 lines, many rewriting the same
-function. Prod is empty and not live. The squash replaces the 82 files with
+Dev has 83 migrations (0001–0083), over 17,000 lines, many rewriting the same
+function. Prod is empty and not live. The squash replaces the 83 files with
 **one baseline file that builds the database as dev has it**, applies it to
 prod, proves prod matches dev, and then tells dev's migration record that the
 baseline is what it has. Nothing in the app changes. Dev's data is never
 touched.
 
-**N** is the last migration on dev when the squash starts (today 0082). The
+**N** is the last migration on dev when the squash starts (today 0083). The
 baseline is always `0001_baseline.sql`, standing in for 0001–N; the first
-migration after launch is 0002. The commands below use 0082 as N; substitute
+migration after launch is 0002. The commands below use 0083 as N; substitute
 if more migrations land first, and if they do, **start again from section 1**:
 a baseline written before the last migration is wrong by definition.
 
@@ -68,7 +68,7 @@ files are archived (section 5).
    back**, with `public.`/`internal.` renamed to scratch schemas, then compares
    the scratch copy's structure fingerprints with dev's (the same formulas
    `db-test-run.sql` uses). It proves the file end to end — syntax, order,
-   all 111 function signatures, 97 constraints, 21 indexes, the trigger, 19
+   all 112 function signatures, 97 constraints, 21 indexes, the trigger, 19
    policies, every grant — without a prod attempt. Passed 2026-10-16 in under 4 s,
    nine of nine the same.
 3. **Prod is inspected before it's touched** (section 6). The spec assumes
@@ -134,12 +134,12 @@ Written in the safety folder, not `supabase/migrations/`: the old
 `0001_init.sql` is still there till section 5 (two 0001s in the folder would
 confuse the CLI, and section 5's archive pattern would take the baseline
 too). The generator reads the old files' numbers from `supabase/migrations/`
-for its header ("standing in for 0001–0082"), so it must run before the
+for its header ("standing in for 0001–0083"), so it must run before the
 archive.
 
-It prints the counts. At 0082 (2026-10-19): `19 tables, 220 columns, 2 sequence(s),
-111 functions, 97 constraints, 21 indexes, 1 trigger(s), 23 policies, 10
-realtime tables, 1 bucket(s)` — 985 lines (each function body on few lines). If a `Note:` lists objects with
+It prints the counts. At 0083 (2026-10-19): `19 tables, 220 columns, 2 sequence(s),
+112 functions, 97 constraints, 21 indexes, 1 trigger(s), 23 policies, 10
+realtime tables, 1 bucket(s)` — 990 lines (each function body on few lines). If a `Note:` lists objects with
 default privileges, that is dev's state (none today after 0051) and the
 baseline keeps it; mention it in the handoff.
 
@@ -148,12 +148,12 @@ and these parts in full (the ones a catalog read can't check for you):
 
 | Section | Must show |
 |---|---|
-| header | "standing in for migrations 0001–0082"; "write migration 0002 and up" |
+| header | "standing in for migrations 0001–0083"; "write migration 0002 and up" |
 | Extensions | `create extension if not exists pg_trgm with schema extensions;` and nothing else (the other extensions on dev — pgcrypto, uuid-ossp, pg_stat_statements, supabase_vault — are Supabase's defaults; prod has them) |
 | Schemas | `create schema if not exists internal;` |
 | Sequences | `public.buys_number_seq` as integer … start with 1, owned by nothing (0071: buy numbers forever), and `public.events_seq_seq` as bigint … start with 1; later `owned by public.events.seq` |
 | Tables | 19 `create table` blocks (with `scan_sessions` and `scans`, 0068–0069), columns only — defaults come after the functions |
-| Functions | `CREATE OR REPLACE FUNCTION …` ×111, `internal.remember_customer` first (the trigger's); 110 with `SET search_path TO 'public', 'internal'` (four of the five security-definer ones also `'pg_temp'`), and `public.restore_backup` with `'public', 'pg_temp'` (it calls no `internal` helper) |
+| Functions | `CREATE OR REPLACE FUNCTION …` ×112, `internal.remember_customer` first (the trigger's); 111 with `SET search_path TO 'public', 'internal'` (four of the five security-definer ones also `'pg_temp'`), and `public.restore_backup` with `'public', 'pg_temp'` (it calls no `internal` helper) |
 | Indexes | `gin_trgm_ops` written `extensions.gin_trgm_ops` (3 indexes) |
 | Triggers | `… ON public.buys FOR EACH ROW EXECUTE FUNCTION internal.remember_customer()` |
 | Row security | `enable row level security` ×19; 19 policies, all `to authenticated`; `secrets` has none |
@@ -220,9 +220,9 @@ section 8).
 
 ```bash
 mkdir -p supabase/migrations-archive
-git mv supabase/migrations/00{01..82}_*.sql supabase/migrations-archive/
+git mv supabase/migrations/00{01..83}_*.sql supabase/migrations-archive/
 ls supabase/migrations            # empty
-ls supabase/migrations-archive | wc -l    # 82
+ls supabase/migrations-archive | wc -l    # 83
 cp /c/ClaudeProjects/temp/pug-squash/0001_baseline.sql supabase/migrations/
 ls supabase/migrations            # exactly one file: 0001_baseline.sql
 ```
@@ -230,7 +230,7 @@ ls supabase/migrations            # exactly one file: 0001_baseline.sql
 Write `supabase/migrations-archive/README.md`:
 
 ```markdown
-# Archived migrations 0001–0082
+# Archived migrations 0001–0083
 
 History only: how the dev database was built between 2026-09-28 and the
 squash (DESIGN_SPEC decisions 192, 332). `supabase/migrations/0001_baseline.sql`
@@ -376,8 +376,8 @@ password). Then Claude:
 
 ```bash
 cat supabase/.temp/project-ref                    # dev
-npx supabase migration list --linked              # remote: 0001–0082; local: 0001 only
-npx supabase migration repair --linked --status reverted $(printf '%04d ' $(seq 1 82))
+npx supabase migration list --linked              # remote: 0001–0083; local: 0001 only
+npx supabase migration repair --linked --status reverted $(printf '%04d ' $(seq 1 83))
 npx supabase migration repair --linked --status applied 0001
 npx supabase migration list --linked              # 0001 on both sides, nothing else
 npx supabase db push --dry-run --linked           # nothing to push
@@ -389,14 +389,14 @@ record of what was applied); dev's tables, functions and data don't change,
 and the last command proves it: every check passes and every fingerprint
 reads `✓ same` against the run saved in section 2.
 
-All 82 reverted first, then 0001 applied: in that order, so 0001 ends up
+All 83 reverted first, then 0001 applied: in that order, so 0001 ends up
 applied (the first command takes it off with the rest).
 
 **Gate:** list shows 0001 only; dry run has nothing to push; test run same.
 
 **If the repair went wrong** (a version missed, the wrong status): repair is
 idempotent — run the two commands again. Worst case, `--status applied` for
-0001–0082 returns the record to where section 1 found it (0001 is in both
+0001–0083 returns the record to where section 1 found it (0001 is in both
 lists, so nothing to revert), and `git checkout pre-squash -- supabase/migrations`
 returns the files.
 
@@ -406,7 +406,7 @@ returns the files.
 
 ```bash
 git add supabase/migrations supabase/migrations-archive SQUASH.md
-git commit   # "Migration squash: 0001–0082 → 0001_baseline.sql (decisions 192, 332)"
+git commit   # "Migration squash: 0001–0083 → 0001_baseline.sql (decisions 192, 332)"
 ```
 
 One commit, with the baseline, the moves, the archive README, and a line in
@@ -547,7 +547,7 @@ directly), and after the squash, so it's 0002. The owner decides the day.
   the file.** The Management API doesn't wrap for you; the rehearsal and
   the test run both write them explicitly.
 - **`set check_function_bodies = off;`** heads the baseline, as pg_dump's
-  output does, so function order doesn't matter (111 functions referencing
+  output does, so function order doesn't matter (112 functions referencing
   each other and tables). Row-typed signatures (`internal.same_line(a
   buy_lines, b buy_lines)`, `internal.buy_event(b buys, …)`) still need the
   tables first — that's why tables come before functions, and column

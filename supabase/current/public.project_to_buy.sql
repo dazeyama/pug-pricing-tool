@@ -81,7 +81,8 @@ begin
                     confirmed_at, confirmed_by, paid_at, paid_price, paid_method,
                     cash_pct, credit_pct, custom_cash_pct, custom_credit_pct,
                     created_by, last_edited_by)
-  values ('walk_in', 'confirmed', nextval('buys_number_seq'), v_customer, v_phone, coalesce(btrim(p_notes), ''), p_device,
+  values ('walk_in', 'confirmed', internal.next_buy_number(),   -- the highest + 1 (decision 349)
+          v_customer, v_phone, coalesce(btrim(p_notes), ''), p_device,
           now(), p_user, now(), p_paid_price, p_paid_method,
           p_cash_pct, p_credit_pct,
           null, null,

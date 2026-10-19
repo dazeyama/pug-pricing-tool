@@ -13,9 +13,10 @@
 -- prints the results and checks that nothing was left behind:
 --   node scripts/db-test-run.mjs
 --
--- While it runs (a few seconds) the restore test holds its tables, so another
--- computer saving something waits until it's done: run it when the store
--- isn't using the app. It reads no secrets and prints no customer data: every
+-- While it runs (under a minute) the restore test holds its tables, and from its
+-- first test buy it holds the buy-number lock (decision 349), so another
+-- computer saving something, a CONFIRM BUY above all, waits until it's done
+-- (or fails, if it waits too long): run it when the store isn't using the app. It reads no secrets and prints no customer data: every
 -- name it makes starts with DBTEST.
 
 begin;
@@ -606,6 +607,21 @@ begin
   -- Convert to project skips Completed cards (0073): the live ones move, the buy stays with the rest.
   v_cb := pg_temp.buy(a, u, 'DBTEST Half Done', '5550100012', array[
     pg_temp.line('Dbtest Bolt', 'DBT', '001', 1, 1.00), pg_temp.line('Dbtestchu', 'DBTP', '025', 1, 4.00, 'pokemon')]);
+  perform pg_temp.ok(s, 'A confirmed buy takes the highest number so far + 1: no gaps (0083)',
+    (select number from buys where id = v_cb) = (select max(number) from buys where id <> v_cb) + 1);
+  -- A confirm rolled back leaves no gap; a deleted newest buy's number is the next one's.
+  v_n := (select number from buys where id = v_cb);
+  begin
+    perform pg_temp.buy(a, u, 'DBTEST Rolled Back', '5550100014', array[pg_temp.line('Dbtest Bolt', 'DBT', '001', 1, 1.00)]);
+    raise exception 'dbt_undo';
+  exception when others then perform pg_temp.err(s, 'A test buy confirmed, then rolled back (0083)', sqlerrm, 'dbt_undo');
+  end;
+  v_cp := pg_temp.buy(a, u, 'DBTEST After Rollback', '5550100015', array[pg_temp.line('Dbtest Bolt', 'DBT', '001', 1, 1.00)]);
+  perform pg_temp.ok(s, '… a confirm that was rolled back leaves no gap (0083)', (select number from buys where id = v_cp) = v_n + 1);
+  perform buy_delete(v_cp, u, a, null);
+  v_cp := pg_temp.buy(a, u, 'DBTEST After Delete', '5550100015', array[pg_temp.line('Dbtest Bolt', 'DBT', '001', 1, 1.00)]);
+  perform pg_temp.ok(s, '… and the newest buy deleted, its number is the next one''s', (select number from buys where id = v_cp) = v_n + 1);
+  perform buy_delete(v_cp, u, a, null);
   perform buy_mark_completed(v_cb, 'mtg', u, a, true);
   v_cp := buy_to_project(v_cb, 'DBTEST Half Project', u, a);
   perform pg_temp.ok(s, 'Convert to project moves the live cards; Completed ones stay, and so does the buy',

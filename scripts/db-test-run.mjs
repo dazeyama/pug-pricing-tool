@@ -168,9 +168,11 @@ function readText(p) {
 }
 
 /**
- * A sequence isn't rolled back, and buy numbers are forever (decision 290): put the buy number back
- * where it was, or just past the highest real buy if one was confirmed meanwhile, so the test run
- * uses up none (decision 342). The Changelog's numbering only moves on, as before.
+ * Buy numbers are forever (decision 290), and a sequence isn't rolled back. Since decision 349 a
+ * confirm takes the highest number + 1 and buys_number_seq is only a floor, but the run's restore
+ * test still raises that floor (restore_backup's setval): put it back where it was, or to the
+ * highest real buy if one was confirmed meanwhile, so the test run uses up no number (decision 342).
+ * The Changelog's numbering only moves on, as before.
  * @returns {number} the next buy's number
  */
 function putBuysBack() {
@@ -180,7 +182,8 @@ function putBuysBack() {
     select case when (select n from top) > ${Number(last)} - ${called ? 0 : 1}
                 then setval('buys_number_seq', (select n from top), true)
                 else setval('buys_number_seq', ${Number(last)}, ${called ? 'true' : 'false'}) end,
-           (select case when is_called then last_value + 1 else last_value end from buys_number_seq) as next`);
+           greatest((select coalesce(max(number), 0) from buys),
+                    (select case when is_called then last_value else last_value - 1 end from buys_number_seq)) + 1 as next`);
   return next;
 }
 

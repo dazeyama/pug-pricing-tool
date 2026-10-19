@@ -166,8 +166,10 @@ what happens. The findings are reported when the pass ends.
       user.
 - [ ] **BUY COMPLETE** (decision 292): "Cards saved in the Calendar page: Magic · <today>" in green, Buy N · customer,
       the count and what was paid; Print MTG? / Print PKM? open that buy's printout; No thanks, × and Esc close it.
-- [ ] **Buys numbered forever** (decision 290): the confirm says "Buy 42" (one more than the last buy of either game);
-      the day page, the Changelog, the header search and the printout show the same number; the next buy is 43.
+- [ ] **Buys numbered forever, without gaps** (decisions 290, 349): the confirm says the next number after the
+      highest buy of either game (Buy 44 after the 2026-10-19 renumber); the day page, the Changelog, the header search
+      and the printout show the same number; the next buy is one more. After a database test run the next number
+      hasn't moved.
 - [ ] The buy is on today's day page, in the user's colour, with a green Paid/Ours chip.
 
 ## 9. Buy tab: bulk

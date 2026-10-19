@@ -6,8 +6,8 @@ and function.
 
 ## Open
 
-- **Unpushed, and worth pushing soon:** decisions 337–348 and the Help's struck-cards wording. Migrations
-  0077–0082 are already on dev, which the live site uses, while the live app is the old code: until the push, the
+- **Unpushed, and worth pushing soon:** decisions 337–349 and the Help's struck-cards wording. Migrations
+  0077–0083 are already on dev, which the live site uses, while the live app is the old code: until the push, the
   new refusals (`project_exported`, `line_exported`) show as raw codes, the day's undo dialog counts hand-completed
   buys it now leaves, the convert dialog still says the payment moves, the phone still lists other lists' waiting
   scans, and REPRICE?'s count includes exported cards it now skips. Nothing breaks and no data goes wrong.
@@ -37,7 +37,7 @@ and function.
   - the "Exported: Undo export… first" wording also shows on Can't upload cards (decision 345);
   - SQUASH.md's Max rows blank (section 10) to fill in from dev's dashboard.
 - **Before the squash:** a full smoke test pass, `docs/TEST.md` (184 cases), on dev.
-- **Phase 10 launch** (owner's go): the squash and the switch to prod, `SQUASH.md` sections 1–10 (N is 0082; the
+- **Phase 10 launch** (owner's go): the squash and the switch to prod, `SQUASH.md` sections 1–10 (N is 0083; the
   baseline `0001_baseline.sql`). Decide the **Supabase plan for prod** first (`docs/DESIGN_SPEC.md` Appendix D 2:
   Free vs Pro).
 - **After launch:**
@@ -48,6 +48,13 @@ and function.
 
 ## Done
 
+- 2026-10-19: Buy numbers without gaps (decision 349, migration 0083; reviewed twice by pug-reviewer): a confirm
+  takes the highest number + 1 under a lock (`internal.next_buy_number`), the old sequence only a floor; the 43
+  buys renumbered 1–43 (only 137 → 42 and 154 → 43 changed; list in `C:\ClaudeProjects\temp\buy-renumber-2026-10-19.txt`)
+  and 84 Changelog titles of existing buys rewritten to match; next buy is Buy 44; db-test-run 503 checks, the next
+  number unmoved. A backup from just before is in `C:\ClaudeProjects\pug-pricing-tool-backups\` (`…-before-0083.json`).
+  On the way, the 0083 rehearsal's setval (not undone by rollback) left the live counter at 43 for about 15 minutes;
+  no buy was confirmed meanwhile, and it was put back to 154 before the migration.
 - 2026-10-19: The full launch review's seven fix-before-launch findings, one commit each, every migration reviewed
   by pug-reviewer (and re-reviewed after its findings) before dev; db-test-run 499 checks:
   - A4, decision 342 (prod's buys start at 1): `scripts/db-test-run.mjs` `putBuysBack` puts `buys_number_seq` back

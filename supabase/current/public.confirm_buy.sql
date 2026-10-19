@@ -64,7 +64,7 @@ begin
   -- Its number, the next ever (0071): the same count for both games, every day.
   update buys
      set status = 'confirmed', confirmed_at = now(), confirmed_by = p_user,
-         number = coalesce(number, nextval('buys_number_seq')),
+         number = coalesce(number, internal.next_buy_number()),   -- the highest + 1 (decision 349)
          customer_name = v_customer, phone = v_phone, notes = coalesce(btrim(p_notes), ''),
          cash_pct = v_cash, credit_pct = v_credit,
          paid_price = p_paid_price, paid_method = p_paid_method, paid_at = now(),
