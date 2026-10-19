@@ -6,13 +6,6 @@ and function.
 
 ## Open
 
-- **Unpushed, and worth pushing soon:** decisions 337–366 and the Help's struck-cards wording. Migrations
-  0077–0084 are already on dev, which the live site uses, while the live app is the old code: until the push, the
-  new refusals (`project_exported`, `line_exported`) show as raw codes, the day's undo dialog counts hand-completed
-  buys it now leaves, the convert dialog still says the payment moves, the phone still lists other lists' waiting
-  scans, and REPRICE?'s count includes exported cards it now skips. Nothing breaks and no data goes wrong.
-- **Deploy the `prices` Edge Function** with the push (decisions 347 and 360; `_shared/justtcg.ts` changed too, so
-  `secrets` is due as well; release skill step 9 asks first).
 - **Help out of date** (only when the owner asks), from Batch 2: a day's EXPORT once exported downloads the day's
   own export only, not Export single buy's cards (decision 361); a Paid/Ours collection with every Magic card
   exported downloads its file again (decision 362); a failed export that went through downloads its file after all
@@ -81,6 +74,10 @@ and function.
 
 ## Done
 
+- 2026-10-19: Pushed as **v0.9.9.15-review** (tag `v0.9.9.15-review`; the owner's "subagent" became "review", since
+  version names are team-facing): decisions 337–366, the launch reviews' A fixes and the full review's B Batches 1
+  and 2, the Help's struck-cards wording. Migrations 0077–0084 were already on dev (it has 0001–0084). The `prices`
+  and `secrets` Edge Functions deployed with it (decisions 347 and 360). Nothing unpushed.
 - 2026-10-19: Batch 2 of the full review's B findings, app only, in small commits by area (lint, 424 unit tests
   and the build before each; untested in the browser):
   - scanner, decisions 355–356: B4 List / Mystery Booster cards by their mark (`listMark.js`, `older.js`); B5 the

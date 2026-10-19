@@ -96,7 +96,7 @@ tests (`npm test`, commit only on `fail 0`) and the build.
 
 ## Where it stands (2026-10-19)
 
-- Live: v0.9.9.14-nightb4, pushed 2026-10-19 (decisions through 336).
+- Live: v0.9.9.15-review, pushed 2026-10-19 (decisions through 366).
   The live site runs on the dev project until launch.
 - Dev has migrations 0001–0084.
 - Phase 10 launch (the squash, then prod) waits for my go.
