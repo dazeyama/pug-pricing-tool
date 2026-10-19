@@ -14,9 +14,29 @@ and function.
   paid": only when the whole buy moves, decision 341) and the day's **Mark Paid/Ours again…** row (~line 1059:
   hand-completed Magic buys stay, decision 340); "Convert to buy…" (~line 968: a kept-buy project starts at $0, and
   an exported project can't convert, decision 339); "How prices are worked out" / "Condition prices" (decision 338).
-- **The launch review's other findings:** `C:\ClaudeProjects\temp\launch-review-2026-10-19.md`, tiers B (9
-  should-fix) and C. Its session is still tracing the phone scanner and has two new serious findings (scans deleted
-  when the computer leaves the price screen; after Unpair, waiting cards landing in another customer's draft).
+- **The full launch review** (`C:\ClaudeProjects\temp\launch-review-full-2026-10-19.md`; raw reports in
+  `launch-review-full\`): 7 fix-before-launch, 20 should-fix. Suggested order, one shippable piece each:
+  1. **A4** test run burns 18 buy numbers a run: `scripts/db-test-run.mjs` puts `buys_number_seq` back after itself.
+  2. **A2** leaving the price screen deletes waiting scans: `scan_session_end` / `useScanSession.js` and the cascade
+     in 0069.
+  3. **A3** the phone sends a card twice on slow wifi: one `client_id` per card until settled (`Scanner.jsx`
+     `sendCard`, `useScans.js`).
+  4. **A1** a stamped line is frozen: the seven collection writers and twin helpers, `BuyList.jsx`, RepriceModal,
+     the file-only export filter (`CollectionPage.jsx:792`) and print (list in `launch-review-full\F2-…md`).
+  5. **A5** `cc_candidates` paging (`src/lib/ccExport.js:86`) and "Max rows" recorded as a prod setup step.
+  6. **A6** the Edge Function's `anotherCard` check on every path (`supabase/functions/prices/index.ts:344`; deploy).
+  7. **A7** disaster recovery: restore sets `buys_number_seq`; `restore_rows` uses column defaults; backups add the
+     learned-match tables; the safety download confirmed; a runbook.
+  Then the B groups (scanner B1–B5 first), then the first review's leftover B items.
+- **The owner's answers for those fixes (2026-10-19), to record as decision rows when each lands:**
+  - A1: freeze stamped lines; × (and edit, merge, strike) on an exported card refuses with "Undo export… first";
+    Undo export stays whole, not per part.
+  - A4: prod's buy numbers **start at 1** (dev-era numbers may repeat on labels; Custom SKUs carry the date). The
+    test run still puts the sequence back after itself, so prod's first real buy is Buy 1.
+  - A7: backups include `cc_product_links`, `cc_set_map` and `import_links`; **prod starts empty** of them
+    (decision 332 as is).
+  - Buy numbers through a project: a project converted back to a buy **keeps its original number** (decision 290
+    as written; the code gives a new one today, so that's a fix).
 - **Small edges left from the A2 and A3 reviews:** a buy with both exported and hand-completed Magic cards, after its
   export is undone, shows Mark as completed instead of Mark Paid/Ours again (`src/pages/day/BuyPanel.jsx`, `byHand`):
   Mark as completed, then Mark Paid/Ours again, brings everything back. Unlocking a kept-buy collection and marking
