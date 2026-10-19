@@ -80,6 +80,19 @@ export async function readOlderCard(frame, { texts = [], card = null, listMark =
 }
 
 /**
+ * Which of a few cards this one is, by its title (decision 327: an FNM promo's
+ * year): the title read where it's found till a reading names one of them.
+ * @param {(text: string, cards: object[]) => object|null} named  promo.js cardNamed
+ * @returns {Promise<object|null>}  the card, or null when no reading named one
+ */
+export async function titleAmong(frame, cards, named, { card = null } = {}) {
+  const reads = { line: (c) => readText(c, PSM_LINE), block: (c) => readText(c, PSM_BLOCK) };
+  let picked = null;
+  const text = await findTitle(frame, reads, defaultCreateCanvas, (t) => (picked = named(t, cards)), { card });
+  return picked ?? named(text, cards);
+}
+
+/**
  * An older card's printings once its name is known (read, or typed in the
  * Which card? box, decision 311): taken by its "123/350" when that fits one,
  * else ranked by how the card looks, best first.

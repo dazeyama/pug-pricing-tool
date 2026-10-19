@@ -23,8 +23,8 @@ import { defaultCreateCanvas } from './recognition/canvasUtil.js';
 import { ocrWorker, onOcrStatus, resetOcr } from './ocr.js';
 import { isTimeout, withTimeout } from '../lib/timeout.js';
 import { isMuted, play, resetSounds, setMuted, unlockSounds } from './sounds.js';
-import { printingsFor, readOlderCard } from './older.js';
-import { isPromoStrip, resolvePromo } from './promo.js';
+import { printingsFor, readOlderCard, titleAmong } from './older.js';
+import { cardNamed, isFnmStrip, isPromoStrip, resolveFnm, resolvePromo } from './promo.js';
 import { trace } from './trace.js';
 import { guessName, matchName } from './nameMatch.js';
 import { isDark, lightIn } from './light.js';
@@ -780,6 +780,31 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         attempts = blocks.length ? await readCollectorLine(frame, pattern, blocks, { all: true, progress }) : [];
         found = await resolveThorough(attempts.map((a) => a.text), known, { pattern, progress });
         via = 'scan-card-unlocked';
+      }
+
+      // An FNM promo of 2014–2018 (decision 327): its "FNM" found Scryfall's 2000 promos, never a card
+      // with this line. Its year's card instead, by the artist on the line, else by the title.
+      // Nothing found on such a strip (FNM has no card 12): the same.
+      if ((!found || found.card?.set === 'fnm') && attempts.some((a) => isFnmStrip(a.text))) {
+        const fnm = await resolveFnm(attempts.map((a) => a.text), { number: found?.card?.collector_number ?? null });
+        if (stale()) return;
+        found = null;
+        if (fnm?.cards.length === 1) {
+          found = { card: fnm.cards[0], tier: 1, sure: true };
+          via = `fnm-${fnm.by}`;
+        } else if (fnm) {
+          const named = await titleAmong(frame, fnm.cards, cardNamed, { card: lock?.card ?? null });
+          if (stale()) return;
+          if (named) {
+            found = { card: named, tier: 1, sure: true };
+            via = 'fnm-title';
+          } else {
+            trace('pick-open', { via: 'pick-fnm', name: 'FNM promo', count: fnm.cards.length, manual });
+            setPick({ tier: 1, name: 'FNM promo', cards: fnm.cards, all: fnm.cards, art, foilSeen, hint: 'Match the picture.', via: 'pick-fnm' });
+            say('muted', 'An FNM promo: pick which one.');
+            return;
+          }
+        }
       }
 
       // A promo printing PRM for its set (decision 313): its main set found by the size read
