@@ -8,7 +8,7 @@ what happens. The findings are reported when the pass ends.
   http://localhost:5180). **Never prod.**
 - **Who:** the owner, or Claude in the browser pane at the owner's request (FABLE.md, "a smoke pass the owner asks
   for"). The owner does the phone, two-computer and store cases.
-- **How long:** about two hours, 182 cases.
+- **How long:** about two hours, 183 cases.
 
 ## Ground rules
 
@@ -188,6 +188,9 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
 - [ ] **Pairing:** the phone lists the laptop's Buy tab, a project and a collection as they open and close; Pokémon
       only or a Paid/Ours collection greys the row with why; a tap pairs, and the laptop shows **📱 <phone> · 0
       scanned** with ×; × or leaving the price screen sends the phone back to its list, saying why.
+- [ ] **One copy on slow wifi** (decision 344): with the phone's network throttled (or wifi dropped for a few seconds
+      mid-send), auto scan one card: it goes in once; pressing Scan card while it's sending says "Still sending that
+      card".
 - [ ] **Waiting scans kept** (decision 343): scanning into a collection with auto scan, open Help on the laptop
       mid-stack; the phone says stopped. Open another collection and pair: none of the first one's cards land there,
       and the phone doesn't list them. Go back to the first collection and pair: its waiting cards come in.

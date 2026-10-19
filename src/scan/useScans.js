@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase.js';
 import { channelName } from '../lib/channels.js';
 import { useConnection } from '../state/connection.jsx';
 import { isTimeout, withTimeout } from '../lib/timeout.js';
+import { dbErrorCode } from '../lib/dbErrors.js';
 
 // This phone's scans into the paired computer (docs/SCAN_FUNCTION.md 9.2):
 // sending one, watching what became of each, and answering one that needs a
@@ -103,12 +104,20 @@ export function useScans(computerId, phoneId, target = null) {
   // Sent once (owner, 2026-10-18; decision 302): each scan carries its own id, and a send with no
   // answer in time is tried again with the same one, so a send that landed after all isn't saved
   // twice (scan_send returns the scan it has). After SEND_TRIES, `timeout`.
+  // A lost connection (no refusal code: "Failed to fetch") is tried again the same way, with the
+  // same id, as the scan may have been saved before the answer was lost (decision 344).
   const send = useCallback(async (scan) => {
     const p_scan = { ...scan, client_id: scan.client_id ?? newId() };
     let result;
     for (let tries = 0; tries < SEND_TRIES; tries++) {
       result = await call('scan_send', { p_device: computerId, p_phone: phoneId, p_scan });
-      if (result.error?.message !== 'timeout') break;
+      if (!result.error) break;
+      const refused = result.error.message !== 'timeout' && dbErrorCode(result.error);
+      if (refused) break;
+    }
+    // Never answered: said as "no answer", the same as a time-out.
+    if (result.error && result.error.message !== 'timeout' && !dbErrorCode(result.error)) {
+      result = { data: null, error: { message: 'timeout' } };
     }
     await settle();
     return result.error ? { error: result.error.message } : { id: result.data };

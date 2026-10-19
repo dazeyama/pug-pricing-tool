@@ -22,6 +22,7 @@ import { findListMark, listNumber } from './listMark.js';
 import { defaultCreateCanvas } from './recognition/canvasUtil.js';
 import { ocrWorker, onOcrStatus, resetOcr } from './ocr.js';
 import { isTimeout, withTimeout } from '../lib/timeout.js';
+import { uuid } from '../lib/uuid.js';
 import { isMuted, play, resetSounds, setMuted, unlockSounds } from './sounds.js';
 import { loadPicture, printingsFor, readOlderCard, titleAmong } from './older.js';
 import { checkStamp } from './stamps.js';
@@ -263,6 +264,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const pressTimer = useRef(null);
   const longPressed = useRef(false);
   const lastSent = useRef(null);                  // the printing and finish last sent (6.3)
+  const sending = useRef(null);                   // the printing and finish being sent now (decision 344)
+  const unsure = useRef(null);                    // { key, id }: a send with no answer, tried again with its id
   /**
    * The chime the moment a card is sent, not when the computer has added it
    * (owner, 2026-10-16): the brighter one for a foil (or etched) card, the
@@ -1233,9 +1236,24 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         return;
       }
     }
+    // One card, one copy (decision 344): while its send is out, the same card isn't sent again (a look
+    // given up at its deadline, a second press); a send with no sure answer is tried again with its id,
+    // so the computer, which keeps one scan per id, never gets it twice.
+    if (sending.current === key) {
+      if (manual) say('warn', 'Still sending that card: wait for its chime.');
+      return;
+    }
     v.pending = null;
+    const clientId = unsure.current?.key === key ? unsure.current.id : uuid();
     const sentAt = Date.now();
-    const r = await send({ ...cardFields(card), finish, condition, tier });
+    sending.current = key;
+    let r;
+    try {
+      r = await send({ ...cardFields(card), finish, condition, tier, client_id: clientId });
+    } finally {
+      sending.current = null;
+    }
+    unsure.current = r.error === 'timeout' ? { key, id: clientId } : null;
     if (r.error) {
       trace('send-error', { error: r.error, via, name: card.name });
       say('err', SEND_MESSAGES[r.error] ?? `Couldn't send it: ${r.error}`);
