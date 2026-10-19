@@ -20,10 +20,34 @@ and function.
   paid": only when the whole buy moves, decision 341) and the day's **Mark Paid/Ours again…** row (~line 1059:
   hand-completed Magic buys stay, decision 340); "Convert to buy…" (~line 968: a kept-buy project starts at $0, and
   an exported project can't convert, decision 339); "How prices are worked out" / "Condition prices" (decision 338).
-- **The full launch review's B and C findings** (`C:\ClaudeProjects\temp\launch-review-full-2026-10-19.md`; raw
-  reports in `launch-review-full\`): the owner reviews before any are done. Scanner B1–B5 first (B1/B2: a walk-in's
-  waiting cards can still go into the next customer's buy, decision 343 notes it), then the first review's leftover
-  B items.
+- **The full launch review's 20 B findings, planned (owner, 2026-10-19)** (details in
+  `C:\ClaudeProjects\temp\launch-review-full-2026-10-19.md`, raw reports in `launch-review-full\`):
+  1. **Batch 1, the database, one review** (the new standing rule in CLAUDE.md, Database), with each item's app side:
+     - B1 + B2: a walk-in scan also remembers its draft; once that buy is confirmed or cancelled, its leftover scans
+       are marked "not added: the buy was finished" and listed on the phone to rescan (the owner's answer), never
+       added to the next customer's buy (`scan_send`, `scan_claim`, `confirm_buy`/`draft_cancel`, `useScanReceiver.js`,
+       `src/scan/useScans.js`);
+     - B3: a merge records the scan's id on the line, so a re-claimed scan sees it went in (`collection_add_line`,
+       `draft_add_line`, `lineOfScan` in `src/lib/scanPrice.js`);
+     - B8: `internal.same_card` compares set, number, `tcgplayer_id` and `justtcg_card_id`;
+     - B11: strike, × and Restore refuse the lines of a walk-in's Completed side (`buy_strike_line`, `buy_remove_line`,
+       `buy_restore_line`; `BuyPanel.jsx`);
+     - B15: Settings save field by field with a version check; a save from an out-of-date screen is **refused**
+       ("Settings changed on another computer: check and save again"; the owner's answer) (`src/state/settings.jsx`,
+       `useSettingField`);
+     - B19: db-test-run checks for these, and for struck, bulk and placeholder lines in front of EXPORT and COMPLETE.
+  2. **App only, small commits by area:**
+     - scanner: B4 (List / Mystery Booster cards marked sure as the original), B5 (the camera left on);
+     - pricing: B6 (a bad JustTCG batch reply caches "no match": Edge Function, deployed at the push), B7 (an error
+       answer cached for the page's life), B9 (version edits while the siblings search is out), B10 (Enter adds the
+       previous card while a search is pending);
+     - day page and exports: B12 ("Download the same file again" gives **that day's export only**: the cards stamped
+       with the day's Custom SKU; the owner's answer), B13 (export retry), B18 (CONFIRM BUY saved but showed an error:
+       re-read the buy before saying so);
+     - reliability: B14 (a failed first lock check), B16 (page the Cash buys file, the Collections tab, Home and the
+       Calendar with `allPages`), B17 (a failed first load reads as empty or all good);
+     - tests: B20 (rounding and CSV builders tested; `supabase.js` loadable under `node --test`).
+  Then the first review's leftover B items.
 - **Buy numbers through a project** (the owner's answer, 2026-10-19, not done yet): a project converted back to a buy
   keeps its original number, as decision 290 says; `project_to_buy` gives a new one today.
 - **Small edges left from the reviews:**

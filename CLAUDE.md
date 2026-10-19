@@ -62,7 +62,9 @@ tests (`npm test`, commit only on `fail 0`) and the build.
 
 - Database changes are new migration files, applied to the dev project (`psucrzljraxeootwnltf`) only unless I say
   otherwise.
-- Each migration, in order:
+- Each migration, in order. The migrations written for one piece of work (a batch of review findings, say) go
+  through these steps together: one review of all of them, one rehearsal of them in order, then applied in order,
+  one snapshot and one test run (owner, 2026-10-19).
   1. **Review it before it's applied.** The live site runs on the dev database, so applying a migration changes the
      live store at once. Hand the new migration file, with the app code and test-run checks that go with it, to the
      **pug-reviewer** agent. A confirmed finding that would break the site or its data: fix it first (it's my call
