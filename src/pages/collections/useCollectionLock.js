@@ -33,10 +33,11 @@ export function useCollectionLock(id, { deviceId, userId }) {
   token.current = session?.access_token ?? null;
   const names = useRef(staff.byId);
   names.current = staff.byId;
+  const saidFailed = useRef(false);
 
-  /** Take the lock if it's free, stale or already ours (or, forced, anyway). */
+  /** Take the lock if it's free, stale or already ours (or, forced, anyway). False when it couldn't ask. */
   const acquire = useCallback(async (force = false) => {
-    if (!deviceId) return;
+    if (!deviceId) return false;
     const { data, error } = await supabase.rpc('lock_acquire', {
       p_buy_id: id, p_device: deviceId, p_user: user.current ?? null, p_force: force,
     });
@@ -46,9 +47,15 @@ export function useCollectionLock(id, { deviceId, userId }) {
         setLock({ status: 'gone', holder: null });
       } else {
         console.error('lock_acquire failed', error);
+        // A first check that failed: asked again every 20s (the beat below), said once (decision 364).
+        if (status.current === 'checking' && !saidFailed.current) {
+          saidFailed.current = true;
+          toast("Couldn't check who is editing this collection: trying again.", 'err');
+        }
       }
-      return;
+      return false;
     }
+    saidFailed.current = false;
     const was = status.current;
     const next = data.held ? 'held' : 'other';
     const holder = {
@@ -63,6 +70,7 @@ export function useCollectionLock(id, { deviceId, userId }) {
     } else if (was === 'other' && next === 'held') {
       toast('You can edit this collection now: the other computer stopped editing.', 'ok');
     }
+    return true;
   }, [id, deviceId, toast]);
 
   // Open: try to take it.
@@ -71,7 +79,7 @@ export function useCollectionLock(id, { deviceId, userId }) {
   }, [acquire]);
 
   // Every 20s: the holder's heartbeat (false = it isn't ours any more), or a
-  // viewer's look for a lock gone free or stale.
+  // viewer's look for a lock gone free or stale, or a first check that failed.
   useEffect(() => {
     const beat = async () => {
       if (status.current === 'held') {
@@ -79,7 +87,7 @@ export function useCollectionLock(id, { deviceId, userId }) {
           p_buy_id: id, p_device: deviceId, p_user: user.current ?? null,
         });
         if (!error && data === false) await acquire(false);
-      } else if (status.current === 'other') {
+      } else if (status.current === 'other' || status.current === 'checking') {
         await acquire(false);
       }
     };
@@ -150,10 +158,15 @@ export function useCollectionLock(id, { deviceId, userId }) {
 
   /** Take over (spec 9.6): the other computer switches to view-only. */
   const takeOver = useCallback(async () => {
+    const was = status.current;
     status.current = 'taking';   // no "the other computer stopped editing" toast for this
-    await acquire(true);
+    if (!(await acquire(true)) && status.current === 'taking') {
+      // It couldn't ask: as it was, so the 20s look and the next take-over still run (decision 364).
+      status.current = was;
+      toast("Couldn't take over: check the connection and try again.", 'err');
+    }
     return status.current === 'held';
-  }, [acquire]);
+  }, [acquire, toast]);
 
   return { ...lock, takeOver, recheck: () => acquire(false) };
 }
