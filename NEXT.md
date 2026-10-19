@@ -6,17 +6,7 @@ and function.
 
 ## Open
 
-- **From the v0.9.9.14-nightb4 pre-push review** (none stopped the push):
-  - **A customer name of 81–120 characters can't be converted to a collection.** `ConfirmBuyModal.jsx:117` allows
-    120 (`maxLength`), but `buy_to_collection` (`supabase/current/public.buy_to_collection.sql:25`) refuses names
-    outside 1–80 with `bad_name`. `BuyPanel.jsx:234` only blocks an empty name, the toast (`DayPage.jsx:39`) asks
-    for a project name, and `convert` in `DayPage.jsx:355` keeps the dialog open with no field to fix. Nothing is
-    written. Already live before this push.
-  - **Help says struck cards "stay behind" on Convert to project and Convert to collection** (`README.md:1113-1114`).
-    The database keeps the buy only for Completed cards; a buy left with only struck cards is deleted, and the
-    Changelog keeps them crossed out. `README.md:1099` and decision 335 are right.
-  - **The published tag `v0.9.9.9-fable`** is still on GitHub, against the "-refactor" rule in CLAUDE.md. Renaming a
-    published tag is the owner's call.
+- **Unpushed:** decision 337 (CONFIRM BUY's customer name capped at 80) and the Help's struck-cards wording.
 - **Before the squash:** a full smoke test pass, `docs/TEST.md` (180 cases), on dev.
 - **Phase 10 launch** (owner's go): the squash and the switch to prod, `SQUASH.md` sections 1–10 (N is 0076; the
   baseline `0001_baseline.sql`). Decide the **Supabase plan for prod** first (`docs/DESIGN_SPEC.md` Appendix D 2:
@@ -29,6 +19,14 @@ and function.
 
 ## Done
 
+- 2026-10-19: The v0.9.9.14-nightb4 review's notes:
+  - decision 337: CONFIRM BUY's Customer name stops at 80 characters (`src/pages/price/ConfirmBuyModal.jsx`, was
+    120), as `buy_to_collection` and `buy_to_project` require; no buy on dev had a longer name. Left as they are:
+    the collection name fields (120 typed, "Keep the name to 80 characters" past 80) and `confirm_buy`, which has no
+    length check of its own (no migration);
+  - Help, `README.md` "A buy's ⋯ menu": struck cards stay on the buy if it stays, and the Changelog keeps them if
+    it's deleted (was "stay behind");
+  - the published tag `v0.9.9.9-fable`: closed by the owner, left as it is.
 - 2026-10-19: Pushed as **v0.9.9.14-nightb4** (tag `v0.9.9.14-nightb4`), the release skill's first run in its new
   order (record edits reviewed before the record commit, the deploy run found by commit): the Help's Convert to
   collection row, the release skill and `scripts/live-check.mjs` fixes, and the NEXT.md notes. No migrations (dev
