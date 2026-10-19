@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ConvertToBuyModal, DeleteCollectionModal } from './CollectionModals.jsx';
-import { useCollection } from './useCollection.js';
+import { PROJECT_EXPORTED, useCollection } from './useCollection.js';
 import { collectionRates } from './status.js';
 import { tiersFrom } from '../../lib/rates.js';
 import { useDevice } from '../../state/device.jsx';
@@ -31,7 +31,9 @@ export default function RowAction({ id, action, onClose }) {
   const done = useRef(false);   // our own delete or convert: it's meant to disappear
   const buy = col.buy;
 
-  // Gone before (or while) its dialog was open, or nothing to convert.
+  // Gone before (or while) its dialog was open, nothing to convert, or exported (decision 339:
+  // the table's list doesn't load the cards, so it can't grey the item).
+  const exported = col.lines.some((l) => l.cc_status);
   useEffect(() => {
     if (!col.loaded || done.current) return;
     if (col.missing) {
@@ -40,9 +42,12 @@ export default function RowAction({ id, action, onClose }) {
     } else if (action === 'convert' && buy && !col.lines.length) {
       toast('No cards to convert.', 'err');
       onClose();
+    } else if (action === 'convert' && buy && exported) {
+      toast(PROJECT_EXPORTED, 'err');
+      onClose();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps -- action is fixed for the dialog's life; onClose and toast are the caller's
-  }, [col.loaded, col.missing, buy, col.lines.length]);
+  }, [col.loaded, col.missing, buy, col.lines.length, exported]);
 
   if (!col.loaded || !buy) return null;
 

@@ -13,6 +13,12 @@ import { channelName } from '../../lib/channels.js';
 // and the version last read.
 
 /** What the database's refusals mean to the person at the counter. */
+/**
+ * Convert to buy… on a project with exported cards (decision 339): its day would export them again. Undo
+ * export doesn't take back a file already uploaded (decision 298), so it says when that's safe.
+ */
+export const PROJECT_EXPORTED = "Part of this project is exported: Undo export… first, only if its file wasn't uploaded to Crystal Commerce.";
+
 const MESSAGES = {
   ...DB_MESSAGES,
   stale_version: 'This collection changed on another computer — reloaded.',
@@ -45,6 +51,7 @@ const MESSAGES = {
   // Convert to buy… (owner, 2026-10-10): a project that can't go (the name and phone CONFIRM BUY
   // asks for are DB_MESSAGES').
   project_completed: 'This project is Completed: reopen it (back to Paid/Ours) first.',
+  project_exported: PROJECT_EXPORTED,
   empty_buy: 'There are no cards to convert.',
   // Import Collection (owner, 2026-10-09).
   not_empty: 'This collection already has cards: a file can only go into an empty one.',

@@ -48,6 +48,10 @@ begin
   if p.status <> 'paid' or exists (select 1 from buy_lines where buy_id = p.id and completed_at is not null) then
     raise exception 'project_completed';
   end if;
+  -- Exported, or in Can't upload cards: the buy's day would export it again (decision 339).
+  if exists (select 1 from buy_lines where buy_id = p.id and cc_status is not null) then
+    raise exception 'project_exported';
+  end if;
   if p_expected_version is not null and p.version <> p_expected_version then
     raise exception 'stale_version';
   end if;

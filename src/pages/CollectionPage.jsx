@@ -18,7 +18,7 @@ import { tiersFrom } from '../lib/rates.js';
 import { isStruck, movesOn } from '../lib/struck.js';
 import { ConfirmModal, ConvertToBuyModal, DeleteCollectionModal, RejectModal } from './collections/CollectionModals.jsx';
 import { OfferModal, PaidModal } from './collections/DealModals.jsx';
-import { useCollection } from './collections/useCollection.js';
+import { PROJECT_EXPORTED, useCollection } from './collections/useCollection.js';
 import { useCollectionLock } from './collections/useCollectionLock.js';
 import ExportButton from '../components/ExportButton.jsx';
 import { useSettings } from '../state/settings.jsx';
@@ -346,6 +346,7 @@ function CollectionScreen({ id }) {
     [viewOnly, `${holderLabel} is editing this project: take over first`],
     [lock.status !== 'held', 'Checking who is editing this project'],
     [buy?.status === 'completed', 'Completed: reopen it (back to Paid/Ours) first'],
+    [exportedLines.length > 0, PROJECT_EXPORTED],
     [!col.lines.length, 'No cards to convert'],
   ]);
   // Undo export… (owner, 2026-10-18; decision 298): from the computer holding the lock, like EXPORT.

@@ -2394,6 +2394,16 @@ begin
     raise exception 'dbt_no_error';
   exception when others then perform pg_temp.err(s, 'A Completed project can''t be converted to a buy', sqlerrm, 'project_completed');
   end;
+  v_pp := project_create('DBTEST Exported Project', '', u, a);
+  perform lock_acquire(v_pp, a, u);
+  perform collection_add_line(v_pp, pg_temp.line('Dbtest Mystery', 'DBT', '004', 1, 1.00), true, u, a, null, null);
+  perform export_lines(jsonb_build_object('kind', 'collection', 'buy_id', v_pp, 'version', pg_temp.version(v_pp)), '[]',
+                       array(select id from buy_lines where buy_id = v_pp), '[]', u, a);
+  begin
+    perform project_to_buy(v_pp, u, a, 'DBTEST Gary', '5550100004', 1, 'cash', '', 50, 65);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'An exported project can''t be converted to a buy (0077)', sqlerrm, 'project_exported');
+  end;
 exception when others then
   declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;
   perform pg_temp.crashed(s, sqlerrm, v_ctx); end;

@@ -283,7 +283,9 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
 - [ ] REPRICE? on the project says "rounded up, as in every project".
 - [ ] **Convert to buy…** (from the details ⋯ and the table's ⋯) asks CONFIRM BUY's questions; with `SMOKE Misty`,
       `(555) 010-0002`, $5 credit, the buy lands on today's day page, the project is gone and the day page opens.
-- [ ] Convert to buy… is greyed on a Completed project and stops with a message on an empty one.
+- [ ] Convert to buy… is greyed on a Completed project and stops with a message on an empty one; on an exported
+      project it's greyed on the project's own ⋯, and the table's ⋯ stops with the same message before the dialog
+      ("Part of this project is exported: Undo export… first, only if…"; decision 339).
 - [ ] A project can be marked Completed with no export.
 
 ## 13. Collections tab: Import Collection
