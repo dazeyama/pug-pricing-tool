@@ -4,11 +4,14 @@ import { createClient } from '@supabase/supabase-js';
 // .env.production / GitHub Actions variables (the Pages build). The
 // publishable key is public by design; Row Level Security protects the data.
 // The secret key (sb_secret_…) never belongs in the front end.
-const url = import.meta.env.VITE_SUPABASE_URL;
-const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+// Under `node --test` there's no import.meta.env: no client, so modules that import this one
+// load in the unit tests (their pure helpers are tested; nothing reaches a database).
+const env = import.meta.env ?? {};
+const url = env.VITE_SUPABASE_URL;
+const publishableKey = env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 /** The one Auth account the store signs in as (spec 4.4). Not secret. */
-export const STORE_LOGIN_EMAIL = import.meta.env.VITE_STORE_LOGIN_EMAIL;
+export const STORE_LOGIN_EMAIL = env.VITE_STORE_LOGIN_EMAIL;
 
 /** Names of any required settings missing from the build, for the setup screen. */
 export const missingConfig = [

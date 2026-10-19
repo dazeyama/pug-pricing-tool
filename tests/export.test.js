@@ -98,6 +98,19 @@ test('the CSV: header, quotes only where needed, Custom SKU last, no BOM', () =>
   assert.equal(fileSafe('Jordan Reyes!'), 'jordan-reyes');
 });
 
+test('the CSV: quotes, line breaks and a name that starts with +', () => {
+  const csv = massCreateCsv(massCreateRows([
+    stamped({ cc_product_name: 'Kongming, "Sleeping Dragon"', cc_category: 'Commander' }),
+    stamped({ cc_product_name: 'Line\nTwo', cc_category: 'Commander' }),
+    // Crystal Commerce matches the name as written: not escaped like a spreadsheet formula.
+    stamped({ cc_product_name: '+2 Mace', cc_category: 'Commander' }),
+  ]));
+  assert.equal(csv, 'Add Qty,Product Name,Category,Condition,Language,Sell Price,Custom SKU\n'
+    + '1,+2 Mace,Commander,Near Mint,English,12.00,100126\n'
+    + '1,"Kongming, ""Sleeping Dragon""",Commander,Near Mint,English,12.00,100126\n'
+    + '1,"Line\nTwo",Commander,Near Mint,English,12.00,100126');
+});
+
 // Owner, 2026-10-11: CC prices every condition from Near Mint.
 const MTG_PCT = { NM: 100, LP: 90, MP: 80, HP: 70, DMG: 60 };
 

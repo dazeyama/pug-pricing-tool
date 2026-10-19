@@ -6,6 +6,7 @@ import { createStayAwake } from '../src/lib/stayAwake.js';
 
 function browser() {
   const requests = [];
+  const locks = [];
   const listeners = {};
   const doc = {
     visibilityState: 'visible',
@@ -18,6 +19,7 @@ function browser() {
         requests.push(type);
         const lock = { released: false, handlers: {}, addEventListener(t, fn) { this.handlers[t] = fn; },
           async release() { this.released = true; this.handlers.release?.(); } };
+        locks.push(lock);
         return lock;
       },
     },
@@ -25,7 +27,7 @@ function browser() {
   let t = 0;
   const timers = [];
   return {
-    nav, doc, requests, listeners, timers,
+    nav, doc, requests, locks, listeners, timers,
     now: () => t,
     advance: (ms) => { t += ms; },
     setTimer: (fn, ms) => { const id = { fn, at: t + ms, done: false }; timers.push(id); return id; },
@@ -58,15 +60,39 @@ test('the tab hidden drops the lock; shown again while wanted, it is taken again
   const awake = createStayAwake({ ...b, ms: 600 });
   awake.ping();
   await Promise.resolve();
-  // The browser releases it when hidden.
+  assert.equal(b.requests.length, 1);
+  // The browser releases it when hidden (its 'release' event), and nothing is asked for while hidden.
   b.doc.visibilityState = 'hidden';
-  // (a real browser fires 'release'; here the next request shows it was asked again)
+  await b.locks[0].release();
+  assert.equal(awake.held(), false);
+  b.listeners.visibilitychange();
+  await Promise.resolve();
+  assert.equal(b.requests.length, 1, 'not asked for while hidden');
+  // Shown again within the ten minutes: taken again.
   b.doc.visibilityState = 'visible';
   b.listeners.visibilitychange();
   await Promise.resolve();
-  assert.ok(b.requests.length >= 1);
+  assert.equal(b.requests.length, 2);
+  assert.equal(awake.held(), true);
   awake.stop();
   assert.equal(awake.held(), false);
+});
+
+test('shown again after the ten minutes: not taken again', async () => {
+  const b = browser();
+  const awake = createStayAwake({ ...b, ms: 600 });
+  awake.ping();
+  await Promise.resolve();
+  b.doc.visibilityState = 'hidden';
+  await b.locks[0].release();
+  b.advance(700);
+  b.fire();
+  b.doc.visibilityState = 'visible';
+  b.listeners.visibilitychange();
+  await Promise.resolve();
+  assert.equal(b.requests.length, 1);
+  assert.equal(awake.held(), false);
+  awake.stop();
 });
 
 test('no wake lock in this browser: nothing breaks', () => {
