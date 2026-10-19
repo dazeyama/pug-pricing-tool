@@ -77,6 +77,9 @@ tests (`npm test`, commit only on `fail 0`) and the build.
 - `docs/SCAN_LEARNINGS.md`: what the first attempt at auto scanning taught us (rolled back 2026-10-16).
 - `docs/TEST.md`: the smoke test, one pass, tab by tab; a pass reports its findings when it ends.
 - `docs/SETUP.md`: running, deploying, and the phone scanner's LAN link.
+- `.claude/agents/pug-reviewer.md`: the standard review. When I ask for a review, hand it to this agent (read-only;
+  it reports, it doesn't fix) and relay its findings.
+- `.claude/skills/release/SKILL.md`: the push, with or without a version bump.
 - Retired docs (the export and scanner specs, the completion map, the Pokémon price audit, smoke test results): the
   "Retired documents" row at the top of `docs/DESIGN_SPEC.md`. Code comments citing them mean those copies,
   `git show d158ee3:<path>`.

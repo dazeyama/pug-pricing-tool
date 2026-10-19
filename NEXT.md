@@ -24,6 +24,9 @@ and function.
 
 ## Done
 
+- 2026-10-18: The standard review agent: `.claude/agents/pug-reviewer.md` (read-only tools, this project's rules,
+  ranked findings, no fixes); listed in CLAUDE.md "Where things are". First use: in a session started in this
+  folder (this session started in `klug alters`, so it can't load it).
 - 2026-10-18: The review's 13 findings fixed:
   - the release skill (`.claude/skills/release/SKILL.md`): a secrets check for real keys only, on added lines (no
     hits in all of history; catches fake keys); the push recorded in NEXT.md and CLAUDE.md "Where it stands" before
