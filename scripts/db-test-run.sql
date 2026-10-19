@@ -5,7 +5,8 @@
 -- runs in ONE transaction that is rolled back at the end, so nothing it makes
 -- is kept: no buys, collections, users, computers, inventory or settings.
 -- (The only trace: the Changelog's numbering skips the numbers its entries
--- used.) It also prints fingerprints of the database's structure, so a run on
+-- used. Buy numbers are used up too, as a sequence isn't rolled back, so
+-- db-test-run.mjs puts buys_number_seq back afterwards: decision 342.) It also prints fingerprints of the database's structure, so a run on
 -- prod after the migration squash can be compared with a run on dev.
 --
 -- Run it with scripts/db-test-run.mjs, which checks which project is linked,

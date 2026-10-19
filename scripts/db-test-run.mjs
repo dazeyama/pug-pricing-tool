@@ -55,12 +55,22 @@ const SNAPSHOT = `select jsonb_build_object(
           + (select count(*) from customers where name like 'DBTEST%')
           + (select count(*) from cc_products where product_id like 'DBTEST%')
           + (select count(*) from master_inventory_files where storage_path like 'dbtest/%'),
-  'events_seq', (select last_value from events_seq_seq)) as snapshot`;
+  'events_seq', (select last_value from events_seq_seq),
+  'buys_seq', (select jsonb_build_object('last', last_value, 'called', is_called) from buys_number_seq)) as snapshot`;
 
 const before = query(SNAPSHOT)[0].snapshot;
 const started = Date.now();
 const rows = query(null, path.join(root, 'scripts', 'db-test-run.sql'));
 const seconds = ((Date.now() - started) / 1000).toFixed(1);
+// A sequence isn't rolled back, and buy numbers are forever (decision 290): put the buy number
+// back where it was, or just past the highest real buy if one was confirmed meanwhile, so the
+// test run uses up none (decision 342). The Changelog's numbering only moves on, as before.
+const { last, called } = before.buys_seq;
+const [{ next: nextBuy }] = query(`with top as (select max(number) as n from buys)
+  select case when (select n from top) > ${Number(last)} - ${called ? 0 : 1}
+              then setval('buys_number_seq', (select n from top), true)
+              else setval('buys_number_seq', ${Number(last)}, ${called ? 'true' : 'false'}) end,
+         (select case when is_called then last_value + 1 else last_value end from buys_number_seq) as next`);
 const after = query(SNAPSHOT)[0].snapshot;
 
 // The results, section by section.
@@ -84,13 +94,14 @@ for (const r of rows) {
 const leftovers = [];
 const changed = [];
 for (const key of Object.keys(before)) {
-  if (key === 'events_seq') continue;
+  if (key === 'events_seq' || key === 'buys_seq') continue;
   if (JSON.stringify(before[key]) !== JSON.stringify(after[key])) (key === 'dbtest' ? leftovers : changed).push(key);
 }
 if (after.dbtest !== 0) leftovers.push('dbtest');
 if (Number(after.events_seq) < Number(before.events_seq)) leftovers.push('events_seq went back');
 console.log('\nAfterwards');
 console.log(`  ${leftovers.length ? '✗' : '✓'} Nothing the test made was kept${leftovers.length ? `: ${leftovers.join(', ')}` : ''}`);
+console.log(`  ✓ Buy numbers put back: the next buy is Buy ${nextBuy}`);
 if (changed.length) {
   console.log(`  ! Changed during the run: ${changed.join(', ')} (someone using the app? Run it again when it's quiet.)`);
 }

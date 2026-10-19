@@ -338,7 +338,8 @@ node scripts/db-test-run.mjs --confirm zvxquzcfffmxwizonxuo --compare /c/ClaudeP
 ```
 
 Expected: every section's checks `✓` (the same count as dev's run), "Nothing
-the test made was kept", and under "Compared with psucrzljraxeootwnltf":
+the test made was kept", "Buy numbers put back: the next buy is Buy 1" (prod's
+buys start at 1, decision 342), and under "Compared with psucrzljraxeootwnltf":
 **every fingerprint `✓ same`** — Server functions, Tables and columns,
 Constraints, Indexes, Row security policies, Triggers, Privileges, Live
 updates (10 tables), All of the above.
