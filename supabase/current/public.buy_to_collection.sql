@@ -57,7 +57,9 @@ begin
                     paid_price, paid_method, created_by, last_edited_by)
   values ('collection', 'paid', false, v_name, b.phone, '1312', coalesce(b.notes, ''), coalesce(b.confirmed_at, now()),
           b.cash_pct, b.credit_pct, b.custom_cash_pct, b.custom_credit_pct,
-          b.paid_price, b.paid_method, coalesce(b.confirmed_by, p_user), p_user)
+          -- Paid once: while the buy stays it keeps the payment, $0 here (decision 341).
+          case when v_keep and b.paid_method is not null then 0 else b.paid_price end, b.paid_method,
+          coalesce(b.confirmed_by, p_user), p_user)
   returning * into p;
 
   -- The cards keep the rates CONFIRM BUY saved on them.

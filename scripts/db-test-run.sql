@@ -613,6 +613,16 @@ begin
     and exists (select 1 from buys where id = v_cb)
     and exists (select 1 from events where action = 'buy_converted' and target_id = v_cp
                   and summary like 'Project started from Buy % · %: DBTEST Half Project; its Completed cards stay on the buy.'));
+  perform pg_temp.ok(s, '… and the payment stays on the buy: the project is paid $0, the method kept (0079)',
+    (select paid_price = 0 and paid_method = 'cash' from buys where id = v_cp)
+    and (select paid_price = 1 and paid_method = 'cash' from buys where id = v_cb));
+  v_cb := pg_temp.buy(a, u, 'DBTEST Half Kept', '5550100013', array[
+    pg_temp.line('Dbtest Bolt', 'DBT', '001', 1, 1.00), pg_temp.line('Dbtestchu', 'DBTP', '025', 1, 4.00, 'pokemon')]);
+  perform buy_mark_completed(v_cb, 'mtg', u, a, true);
+  v_cp := buy_to_collection(v_cb, u, a);
+  perform pg_temp.ok(s, 'Convert to collection with the buy staying: the payment stays on the buy too (0079)',
+    (select paid_price = 0 and paid_method = 'cash' and status = 'paid' from buys where id = v_cp)
+    and (select paid_price = 1 and paid_method = 'cash' from buys where id = v_cb));
   begin
     perform buy_to_project(v_cb, 'DBTEST X', u, a);
     raise exception 'dbt_no_error';

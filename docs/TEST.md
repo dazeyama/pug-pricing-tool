@@ -318,10 +318,13 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
 - [ ] **Striking:** × on one copy strikes that copy; every card of one game struck makes that side Completed; Restore
       brings a card back.
 - [ ] **Convert to project…** makes a project with the same prices (and Convert to buy… back again); a buy with one game
-      Completed moves only its live cards, the dialog says so (decision 296); a buy with nothing live is blocked.
+      Completed moves only its live cards, the dialog says so (decision 296); a buy with nothing live is blocked. When
+      the buy stays like that, the dialog says the payment stays with the buy, the new project is paid $0, and the
+      Calendar's **Export Cash Buys** counts the cash once, on the buy (the project's row reads $0; decision 341).
 - [ ] **Convert to collection…** (decision 335) asks once with nothing to type, showing the buy's name, phone and Last
       4 ID 1312; the collection opens, Paid/Ours, with the buy's cards, rates and what was paid; the Changelog says "Buy
-      converted to collection"; Completed cards stay on the buy; with no customer name it's greyed.
+      converted to collection"; with no customer name it's greyed. With Completed cards the buy stays with them and
+      keeps the payment: the collection is paid $0, same colour and filter as the buy's method (decision 341).
 - [ ] **Delete buy…** asks first.
 - [ ] A buy with both games links "Also has N Pokémon cards →" to the other game's day.
 - [ ] **A Pokémon day's COMPLETE** works out today's Sell Prices and shows them in green.

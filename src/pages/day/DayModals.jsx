@@ -13,7 +13,8 @@ import Modal from '../../components/Modal.jsx';
  * buy's number and day), then every card moves to a new Paid/Ours project and
  * the buy is deleted. Convert to collection (`to` 'collection', owner,
  * 2026-10-18; decision 335): nothing to type; the collection takes the buy's
- * name and phone, the Last 4 ID 1312, its rates and what was paid.
+ * name and phone, the Last 4 ID 1312, its rates and what was paid (all of it
+ * only when the whole buy moves: a buy that stays keeps the payment; decision 341).
  */
 export function ConvertBuyModal({ buy, number, day, byId, busy, onClose, onConvert, to = 'project' }) {
   const collection = to === 'collection';
@@ -28,6 +29,10 @@ export function ConvertBuyModal({ buy, number, day, byId, busy, onClose, onConve
   const single = counts.cards === 1 && !counts.bulk;
   const cards = single ? 'its 1 card' : `all ${countText({ ...counts, struck: 0 })}`;
   const who = byId(buy.confirmed_by)?.name ?? 'someone';
+  // What was paid goes along only when the whole buy does; a buy that stays keeps it (decision 341).
+  let takes = ' (a project has no rates)';
+  if (collection) takes = done > 0 ? ' and rates' : ', rates and what was paid';
+  const paidStays = done > 0 && buy.paid_method ? ', with what was paid' : '';
   const ready = name.trim().length > 0;
   return (
     <Modal
@@ -51,10 +56,9 @@ export function ConvertBuyModal({ buy, number, day, byId, busy, onClose, onConve
         <strong>Buy {number}</strong> ({who}, {formatTime(buy.confirmed_at)}) becomes a new{' '}
         <strong>{collection ? 'Paid/Ours collection' : 'project'}</strong>:{' '}
         <strong>{cards}</strong>{bothGames ? ', both games,' : ''} {single ? 'moves' : 'move'} there as{' '}
-        {single ? 'it is' : 'they are'}, with the buy's notes
-        {collection ? ', rates and what was paid' : ' (a project has no rates)'}
+        {single ? 'it is' : 'they are'}, with the buy's notes{takes}
         {done > 0
-          ? <>. Its <strong>{done} Completed card{done === 1 ? '' : 's'}</strong> stay{done === 1 ? 's' : ''} here, and so does the buy.</>
+          ? <>. Its <strong>{done} Completed card{done === 1 ? '' : 's'}</strong> stay{done === 1 ? 's' : ''} here, and so does the buy{paidStays}.</>
           : ', and the buy is deleted from this day.'}
         {counts.struck > 0 && (
           <> Its <strong>{counts.struck} struck card{counts.struck === 1 ? '' : 's'}</strong> stay out of the {to}:

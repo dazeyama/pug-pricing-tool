@@ -61,7 +61,10 @@ begin
   insert into buys (kind, status, project, customer_name, phone, notes, paid_at,
                     cash_pct, credit_pct, paid_price, paid_method, created_by, last_edited_by)
   values ('collection', 'paid', true, v_name, b.phone, coalesce(b.notes, ''), coalesce(b.confirmed_at, now()),
-          null, null, b.paid_price, b.paid_method, coalesce(b.confirmed_by, p_user), p_user)
+          null, null,
+          -- Paid once: while the buy stays it keeps the payment, $0 here (decision 341).
+          case when v_keep and b.paid_method is not null then 0 else b.paid_price end, b.paid_method,
+          coalesce(b.confirmed_by, p_user), p_user)
   returning * into p;
 
   update buy_lines set buy_id = p.id where buy_id = b.id and struck_at is null and completed_at is null;
