@@ -63,4 +63,7 @@ test('pinFirst: the edited card first, the rest in order; nothing to pin, the li
   assert.equal(pinFirst(list, 'a'), list);
   assert.equal(pinFirst(list, 'zz'), list);
   assert.equal(pinFirst(list, null), list);
+  // Not in the search (it changed during the edit): the edited card first anyway.
+  assert.deepEqual(pinFirst(list, 'zz', { key: 'zz' }).map((c) => c.key), ['zz', 'a', 'b', 'c', 'd']);
+  assert.deepEqual(pinFirst(list, 'c', { key: 'c' }).map((c) => c.key), ['c', 'a', 'b', 'd']);
 });

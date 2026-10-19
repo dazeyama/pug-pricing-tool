@@ -41,18 +41,23 @@ export function nameQuery(line) {
  * The suggestions with the card being edited first (owner, 2026-10-19: "The
  * selected card for edit needs to still appear pinned as the first result.
  * THEN show the rest of the search"; decision 324): its name's every printing
- * (decision 319) can run past the ten shown. The rest keep their order; no
- * card being edited, or not among them, and the list is as it was. Pure.
+ * (decision 319) can run past the ten shown. The rest keep their order. Not
+ * among them (the search changed during the edit), `card` (the edited card,
+ * once found) goes first anyway: "for as long as that's the card that cancel
+ * would revert to, it should be pinned there". No card being edited: the list
+ * as it was. Pure.
  * @template {{ key: string }} T
  * @param {T[]} list
  * @param {string|null|undefined} key  the edited card's key
+ * @param {T|null} [card]  the edited card itself, to put first when the list hasn't it
  * @returns {T[]}
  */
-export function pinFirst(list, key) {
+export function pinFirst(list, key, card = null) {
   if (!key) return list;
   const at = list.findIndex((c) => c.key === key);
-  if (at <= 0) return list;
-  return [list[at], ...list.slice(0, at), ...list.slice(at + 1)];
+  if (at === 0) return list;
+  if (at > 0) return [list[at], ...list.slice(0, at), ...list.slice(at + 1)];
+  return card ? [card, ...list] : list;
 }
 
 /**

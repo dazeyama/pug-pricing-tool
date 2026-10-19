@@ -140,7 +140,10 @@ export default function PricingScreen({
   // saves over it. { line, key, query, found, restored } or null.
   const [editing, setEditing] = useState(null);
   // Defined here, before anything reads it (a use above its line crashed the screen). The suggestions, the card being edited pinned first (decision 324), the rest in the search's order.
-  const candidates = useMemo(() => pinFirst(search.candidates, editing?.key), [search.candidates, editing?.key]);
+  const candidates = useMemo(
+    () => pinFirst(search.candidates, editing?.key, editing?.card ?? null),
+    [search.candidates, editing?.key, editing?.card],
+  );
   const editingRef = useRef(null);
   editingRef.current = editing;
 
@@ -304,14 +307,15 @@ export default function PricingScreen({
   useEffect(() => {
     if (!search.settled) return;
     // In the order shown: the card being edited pinned first (decision 324), so the highlight matches.
-    const found = pinFirst(search.candidates, editing?.key);
+    const found = pinFirst(search.candidates, editing?.key, editing?.card ?? null);
     if (editing && !editing.found) {
       if (search.query !== editing.query) return;   // the edit's search hasn't run yet
       const index = found.findIndex((c) => c.key === editing.key);
       if (index >= 0) {
         setSelected(found[index]);
         setHighlight(0);   // pinned first (decision 324)
-        setEditing((e) => e && { ...e, found: true });
+        // Kept, to stay pinned first whatever the search shows next, till the edit ends (decision 324).
+        setEditing((e) => e && { ...e, found: true, card: found[index] });
       } else if (editing.exact && editing.query !== editing.exact) {
         // Not among the name's printings (one of hundreds, a basic land): its exact search instead.
         setEditing((e) => e && { ...e, query: e.exact });
@@ -687,6 +691,7 @@ export default function PricingScreen({
             )}
             <Suggestions
               search={search}
+              candidates={candidates}
               lang={lang}
               highlight={highlight}
               selectedKey={selected?.key}

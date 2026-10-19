@@ -186,11 +186,13 @@ function Status({ search, lang }) {
  * there are more.
  */
 export default function Suggestions({
-  search, lang, highlight, selectedKey, onPick, onSearchName, onShowAll, oldest, onOldest, count: shown = ROW, cols = 5,
+  search, candidates = search.candidates, lang, highlight, selectedKey, onPick, onSearchName, onShowAll, oldest, onOldest,
+  count: shown = ROW, cols = 5,
 }) {
-  const visible = search.candidates.slice(0, shown);
-  const more = search.candidates.length > shown;
-  const count = search.hasMore ? `${search.candidates.length}+` : search.candidates.length;
+  // `candidates`: the order to show, the card being edited pinned first (decision 324); the search's otherwise.
+  const visible = candidates.slice(0, shown);
+  const more = candidates.length > shown;
+  const count = search.hasMore ? `${candidates.length}+` : candidates.length;
 
   return (
     <div className="area-thumbs">
