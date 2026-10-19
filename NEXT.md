@@ -6,6 +6,30 @@ and function.
 
 ## Open
 
+- **The v0.9.9.15-review release review's notes** (none stopped the push; the owner's call on each):
+  1. `src/pages/price/useDraft.js` `confirmedBuy` (confirmed): a second tab on this computer, same user, pressing
+     CONFIRM BUY after the first tab confirmed shows BUY COMPLETE and prints from its own, possibly stale, cards,
+     name and price; before decision 363 it said the buy changed. Fix: compare the buy's name, price and cards with
+     what this tab sent;
+  2. `useDraft.js` `confirm`, `src/pages/PricePage.jsx` `confirmBuy` (plausible): the recovery works only on the
+     press that failed; once the reload empties the draft, pressing again does nothing, with no message;
+  3. `src/pages/price/PricingScreen.jsx` ~297 (confirmed): with the TCGplayer versions search failed (a daily
+     limit), a TCGplayer-only English Pokémon version can't be added even at a manual price (Alt+M) until 00:00 UTC;
+     an edit whose saved `jt:` version isn't in a search that worked stays blocked (the server keeps it a week);
+  4. `supabase/functions/prices/index.ts` `unanswered` (plausible): a remembered card's last kept price comes back
+     however old, as a normal answer, and the export doesn't check its age (`src/lib/todaysPrices.js`);
+  5. `src/pages/price/usePrices.js` catch (confirmed): on a 429 or 502 the partial results, `failed` ones included,
+     are kept for the page's life, decision 357's bug by another way;
+  6. `src/pages/export/ExportDialog.jsx` `save` (plausible): the read-back can run before a slow save commits and
+     say "nothing was exported"; the retry then finds it;
+  7. `src/pages/CollectionPage.jsx` `startExport` (plausible): a Paid/Ours collection's file again takes every
+     export's cards and Can't upload restamps, so re-uploading repeats rows; a day exported before 0071 too
+     (`src/pages/day/dayRules.js` `dayExportLines`'s fallback);
+  8. `src/lib/inChunks.js` `allPages` (low): one extra, empty request a load; the live `buys` tables reload on every
+     change to buys;
+  9. `supabase/functions/_shared/justtcg.ts` `call` (plausible): an unreadable reply is retried up to 6 times
+     (about 61 s), which can pass the function's time limit and may count against the JustTCG allowance;
+  10. `docs/TEST.md`: no cases for decisions 356–366.
 - **Help out of date** (only when the owner asks), from Batch 2: a day's EXPORT once exported downloads the day's
   own export only, not Export single buy's cards (decision 361); a Paid/Ours collection with every Magic card
   exported downloads its file again (decision 362); a failed export that went through downloads its file after all
