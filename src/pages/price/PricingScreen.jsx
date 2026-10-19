@@ -267,6 +267,10 @@ export default function PricingScreen({
 
   // ADD CARD's requirements (spec 8.8), besides a user (GuardButton).
   const pricesLoading = prices.status === 'loading' || prices.status === 'waiting';
+  // A search typed and not answered yet (decision 358): the card still selected is the last search's,
+  // so Enter would add it again; nothing is added till the new results are in.
+  const typed = text.trim();
+  const searchPending = typed.length >= 2 && (typed !== search.query || !search.settled);
   const unitPrice = bulk ? manual ?? bulk.value : manual ?? ladder[condition]?.price ?? null;
   let addBlocked = null;
   if (locked) addBlocked = locked;
@@ -275,6 +279,7 @@ export default function PricingScreen({
     // Several suggestions and none picked yet: ↓ picks the first.
     addBlocked = candidates.length ? 'Select a card first: ↓ picks the first suggestion' : 'Select a card first';
   }
+  else if (searchPending) addBlocked = 'Waiting for the search';
   else if (bulk) {
     // Bulk: a quantity of items, nothing to wait for. A placeholder's price is always typed in.
     if (bulk.item.placeholder && unitPrice == null) addBlocked = "Type its price: a placeholder has none of its own";
@@ -284,6 +289,15 @@ export default function PricingScreen({
     else if (offline) addBlocked = 'No connection';
   }
   else if (magic ? !finish : !version) addBlocked = "Waiting for the card's versions";
+  // A version only TCGplayer's search prices (a stamp it sells apart) isn't priced as the plain card:
+  // its search still running, failed, or the saved one it didn't bring back (decision 359).
+  else if (editing?.lostVersion && version?.id !== editing.lostVersion) {
+    addBlocked = "Its TCGplayer version didn't load: reload the page to try again, or cancel the edit";
+  }
+  else if (!magic && !version.tcgplayerId && !tcgSiblings.settled) addBlocked = 'Waiting for its TCGplayer versions';
+  else if (!magic && !version.tcgplayerId && tcgSiblings.failed) {
+    addBlocked = "Its TCGplayer versions didn't load: reload the page to try again";
+  }
   else if (pricesLoading) addBlocked = 'Waiting for prices';
   else if (unitPrice == null) addBlocked = 'No price: enter a manual price (Alt+M)';
   else if (parseQty(qty) == null) addBlocked = 'Quantity must be 1 to 99';
@@ -351,6 +365,7 @@ export default function PricingScreen({
   useEffect(() => {
     if (!editing?.found || editing.restored || selected?.key !== editing.key) return;
     const { line } = editing;
+    let lostVersion = null;
     if (isBulk(line)) {
       setPricing({
         key: editing.key, condition: 'NM', manual: line.price_source === 'manual' ? Number(line.unit_price) : null, override: null,
@@ -365,6 +380,9 @@ export default function PricingScreen({
       // A TCGplayer-only version comes with the card's TCGplayer search.
       const saved = line.price_snapshot?.version;
       if (saved?.startsWith('jt:') && !versions.some((x) => x.id === saved) && !tcgSiblings.settled) return;
+      // Its TCGplayer-only version didn't come back (the search failed): not switched for the default
+      // without a word, SAVE EDIT waits (decision 359).
+      if (saved?.startsWith('jt:') && !versions.some((x) => x.id === saved)) lostVersion = saved;
       const same = (v) => JSON.stringify([...(v.treatments ?? [])].sort()) === JSON.stringify(line.treatments ?? []);
       const v = versions.find((x) => x.id === line.price_snapshot?.version)
         ?? versions.find((x) => x.finish === line.finish && Boolean(x.firstEdition) === line.first_edition && same(x));
@@ -379,7 +397,7 @@ export default function PricingScreen({
       override: line.price_snapshot?.override ?? null,
     });
     setQty(String(line.quantity));
-    setEditing((e) => e && { ...e, restored: true });
+    setEditing((e) => e && { ...e, restored: true, lostVersion });
   // eslint-disable-next-line react-hooks/exhaustive-deps -- versions.length stands for versions, a new array every render
   }, [editing, selected?.key, pokemon.resolved, versions.length, tcgSiblings.settled]);
 

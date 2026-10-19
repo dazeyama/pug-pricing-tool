@@ -4,6 +4,7 @@ import { usePriceLimit } from '../../state/priceLimit.jsx';
 import { useConnection } from '../../state/connection.jsx';
 import { isSealed } from '../../lib/justtcgCards.js';
 import { anotherCard } from '../../lib/anotherCard.js';
+import { didNotAnswer } from '../../lib/priceAnswers.js';
 
 // Prices only after a card has stayed selected for 400ms (spec 5.3), so
 // arrowing through suggestions doesn't spend the JustTCG allowance. Results
@@ -50,9 +51,20 @@ export function usePrices(selected, { pokemon, versions, jaName, waitName }) {
     let alive = true;
     const timer = setTimeout(async () => {
       try {
-        const got = await fetchPrices(wanted.filter((l) => !results.has(l.key)));
-        for (const [k, v] of Object.entries(got)) results.set(k, v);
-        if (alive) setState({ key: signature, status: 'ok', error: null });
+        const asked = wanted.filter((l) => !results.has(l.key));
+        const got = await fetchPrices(asked);
+        // A search JustTCG didn't answer (the function doesn't remember it either): not kept for the
+        // page's life, so the card is asked for again; shown as an error with Retry (decision 357).
+        let unanswered = false;
+        for (const [k, v] of Object.entries(got)) {
+          if (didNotAnswer(v, asked.find((l) => l.key === k))) unanswered = true;
+          else results.set(k, v);
+        }
+        if (alive) {
+          setState(unanswered
+            ? { key: signature, status: 'error', error: "JustTCG didn't answer for this card" }
+            : { key: signature, status: 'ok', error: null });
+        }
       } catch (e) {
         for (const [k, v] of Object.entries(e.payload?.results ?? {})) results.set(k, v);
         if (!alive) return;
@@ -122,7 +134,7 @@ export function usePokemonSiblings(selected, pokemon, { needed = true } = {}) {
         .catch((e) => {
           // No extra versions this time; the card's own still price as usual.
           console.warn('TCGplayer versions failed', e);
-          if (alive) setState({ key, cards: [] });
+          if (alive) setState({ key, cards: [], failed: true });
         });
     }, SETTLE_MS);
     return () => {
@@ -134,7 +146,8 @@ export function usePokemonSiblings(selected, pokemon, { needed = true } = {}) {
 
   if (!key) return { cards: null, settled: true, canAsk: false, byHand: false, ask };
   if (!wanted) return { cards: null, settled: true, canAsk: true, byHand: false, ask };
+  // failed: the search errored, so a version only it could price isn't priced as the plain card (decision 359).
   return state.key === key
-    ? { cards: state.cards, settled: true, canAsk: false, byHand, ask }
+    ? { cards: state.cards, settled: true, failed: Boolean(state.failed), canAsk: false, byHand, ask }
     : { cards: null, settled: Boolean(offline), canAsk: false, byHand, ask };
 }
