@@ -174,7 +174,9 @@ begin
           select format('%s %s', c.relname, coalesce(c.relacl::text, 'default'))
             from pg_class c where c.relnamespace = 'public'::regnamespace and c.relkind in ('r', 'S', 'v')
           union all
-          select format('schema %s %s', nspname, nspacl) from pg_namespace where nspname in ('public', 'internal')) x;
+          -- Only ours: `public` is Supabase's schema, which the baseline never writes (db-baseline.mjs),
+          -- so its grants may differ between projects without anything being wrong.
+          select format('schema %s %s', nspname, nspacl) from pg_namespace where nspname = 'internal') x;
   perform pg_temp.ok(s, 'Privileges', true, v_hash);
   v_all := v_all || v_hash;
 
