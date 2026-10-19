@@ -1449,6 +1449,10 @@ closer than about 15 cm: if it stays blurry, raise the phone a little.
 **Too dark?** After a few dark looks the strip says *"Too dark to read well"*, with the fix: tap 💡, or
 more light on the card.
 
+**A tall stack?** After 100 cards since the camera started (+1 copies included), an amber note under
+the picture says so. Scanning carries on; when there's a moment, **■ Stop**, empty the holder and
+**START CAMERA** again. Tapping the note hides it until 100 more.
+
 **Nothing new in the holder?** After 30 seconds auto scan looks less often, to spare the battery. The
 next card wakes it.
 

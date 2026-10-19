@@ -60,6 +60,9 @@ const OLDER_AFTER = 3;
 // and lock onto it afresh; the old lock stays till a new one's found, and after this many looks
 // without one it's kept till the next round.
 const RELOCK_EVERY = 20;
+// Cards laid since the camera started before the stack's too tall (decision 331): a note to empty
+// the holder, again each this many more if it's hidden.
+const TALL_STACK = 100;
 const RELOCK_TRIES = 10;
 // Which card? (decision 311): this many title reads in a row naming nothing, on the same card, and
 // auto scan stops trying and asks for the name.
@@ -199,7 +202,10 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   });
   const [autoOn, setAutoState] = useState(() => readSession(AUTO_KEY) !== '0');
   const [muted, setMutedState] = useState(isMuted);
-  const [local, setLocal] = useState(null);       // the phone's own message: { tone, title?, text, at }
+  const [local, setLocal] = useState(null);
+  // Cards laid on the holder's stack since the camera started, and the note that it's tall (decision 331).
+  const stackCount = useRef(0);
+  const [tallStack, setTallStack] = useState(false);       // the phone's own message: { tone, title?, text, at }
   const [reading, setReading] = useState(false);
   // Scan card's loading bar (progress.js), while it reads; and Scan card waiting for an auto look to end.
   const [progress, setProgress] = useState(null);
@@ -514,6 +520,9 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     markActive();
     unlockSounds();
     if (await camera.start()) {
+      // A fresh start: the holder emptied, as the tall-stack note asks (decision 331).
+      stackCount.current = 0;
+      setTallStack(false);
       // Ready the reader and the set list while the card is being lined up.
       ocrWorker()
         .catch((e) => console.warn('The card reader failed to load', e))
@@ -537,6 +546,14 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   function noteSent() {
     sinceLock.current += 1;
     if (lockRef.current && sinceLock.current >= RELOCK_EVERY) relockDue.current = true;
+    // The stack (owner, 2026-10-19: "after 100 cards without resetting the physical scanner device
+    // (the height of the stack) … telling the user to stop the camera and reload the scanner when
+    // they get a chance. (but not stopping them from continuing if they want)"; decision 331).
+    stackCount.current += 1;
+    if (stackCount.current % TALL_STACK === 0) {
+      trace('tall-stack', { cards: stackCount.current });
+      setTallStack(true);
+    }
   }
 
   /** One more look with no set code at the bottom; enough of them, and it's read as an older card. */
@@ -1468,6 +1485,14 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           />
         )}
       </div>
+
+      {/* The stack's tall (decision 331): a note, nothing stopped; a tap hides it till 100 more. */}
+      {camera.on && tallStack && (
+        <button type="button" className="scan-notice warn scan-stack-note" onClick={() => setTallStack(false)}>
+          {stackCount.current} cards on the stack: when you get a chance, ■ Stop, empty the holder and start the
+          camera again. Tap to hide.
+        </button>
+      )}
 
       {/* The collector corner, enlarged and cleaned, for the person scanning (owner, 2026-10-16). */}
       {/* The info box: the collector strip or an older card's title, enlarged; Title / Number

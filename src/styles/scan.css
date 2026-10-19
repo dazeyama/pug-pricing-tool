@@ -435,3 +435,15 @@ html[data-scan] .toast { max-width: none; }
   background: var(--panel);
   border-top: 1px solid var(--border);
 }
+
+/* The stack's tall (decision 331): a slim note under the picture, tapped away. */
+.scan-stack-note {
+  flex: none;
+  width: 100%;
+  padding: 6px 10px;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
