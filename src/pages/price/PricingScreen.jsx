@@ -210,6 +210,7 @@ export default function PricingScreen({
     deviceId: scanTarget ? scanDevice : null,
     label: deviceLabel ?? 'The computer',
     session: scan.session,
+    target: scanTarget ? { kind: scanTarget.kind, buyId: scanTarget.buyId ?? null } : null,
     list,
     roundUp,
     onAdded: (id, added) => {

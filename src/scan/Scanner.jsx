@@ -176,7 +176,8 @@ function scanStrip(s, { waited = 0, computer = 'the computer' } = {}) {
  */
 export default function Scanner({ computerId, phoneId, onEnd }) {
   const { session, unpair, check } = usePairing(computerId, phoneId, onEnd);
-  const { scans, send, answer, undo } = useScans(computerId, phoneId);
+  const { scans, send, answer, undo } = useScans(computerId, phoneId,
+    session ? { kind: session.target_kind, buyId: session.buy_id ?? null } : null);
   const videoRef = useRef(null);
   const camera = useCamera(videoRef);
   // The space the camera has (the screen less the controls and buttons), measured.

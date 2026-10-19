@@ -27,6 +27,10 @@ const opt = (name) => {
   return i >= 0 ? args[i + 1] : null;
 };
 
+// Read by fail(), declared before its first call: a run that dies part-way still puts the buy number back.
+let before = null;
+let buysPutBack = false;
+
 const ref = readText(path.join(root, 'supabase', '.temp', 'project-ref'))?.trim();
 if (!ref) fail('No linked project: run `npx supabase link` first.');
 const devUrl = readText(path.join(root, '.env.development'))?.match(/VITE_SUPABASE_URL\s*=\s*https:\/\/([a-z0-9]+)\./)?.[1];
@@ -58,19 +62,11 @@ const SNAPSHOT = `select jsonb_build_object(
   'events_seq', (select last_value from events_seq_seq),
   'buys_seq', (select jsonb_build_object('last', last_value, 'called', is_called) from buys_number_seq)) as snapshot`;
 
-const before = query(SNAPSHOT)[0].snapshot;
+before = query(SNAPSHOT)[0].snapshot;
 const started = Date.now();
 const rows = query(null, path.join(root, 'scripts', 'db-test-run.sql'));
 const seconds = ((Date.now() - started) / 1000).toFixed(1);
-// A sequence isn't rolled back, and buy numbers are forever (decision 290): put the buy number
-// back where it was, or just past the highest real buy if one was confirmed meanwhile, so the
-// test run uses up none (decision 342). The Changelog's numbering only moves on, as before.
-const { last, called } = before.buys_seq;
-const [{ next: nextBuy }] = query(`with top as (select max(number) as n from buys)
-  select case when (select n from top) > ${Number(last)} - ${called ? 0 : 1}
-              then setval('buys_number_seq', (select n from top), true)
-              else setval('buys_number_seq', ${Number(last)}, ${called ? 'true' : 'false'}) end,
-         (select case when is_called then last_value + 1 else last_value end from buys_number_seq) as next`);
+const nextBuy = putBuysBack();
 const after = query(SNAPSHOT)[0].snapshot;
 
 // The results, section by section.
@@ -171,7 +167,31 @@ function readText(p) {
   }
 }
 
+/**
+ * A sequence isn't rolled back, and buy numbers are forever (decision 290): put the buy number back
+ * where it was, or just past the highest real buy if one was confirmed meanwhile, so the test run
+ * uses up none (decision 342). The Changelog's numbering only moves on, as before.
+ * @returns {number} the next buy's number
+ */
+function putBuysBack() {
+  buysPutBack = true;
+  const { last, called } = before.buys_seq;
+  const [{ next }] = query(`with top as (select max(number) as n from buys)
+    select case when (select n from top) > ${Number(last)} - ${called ? 0 : 1}
+                then setval('buys_number_seq', (select n from top), true)
+                else setval('buys_number_seq', ${Number(last)}, ${called ? 'true' : 'false'}) end,
+           (select case when is_called then last_value + 1 else last_value end from buys_number_seq) as next`);
+  return next;
+}
+
 function fail(message) {
   console.error(message);
+  if (before && !buysPutBack) {
+    try {
+      console.error(`Buy numbers put back: the next buy is Buy ${putBuysBack()}.`);
+    } catch {
+      console.error('The buy number could not be put back: run the test again, or set buys_number_seq by hand.');
+    }
+  }
   process.exit(2);
 }

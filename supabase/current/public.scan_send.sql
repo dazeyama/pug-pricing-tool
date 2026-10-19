@@ -37,11 +37,13 @@ begin
   end if;
 
   delete from scans where created_at < now() - interval '7 days';
+  -- The list it's for (decision 343): only that list claims it.
   insert into scans (session_device_id, phone_device_id, scryfall_id, name, set_code, collector_number,
-                     finish, condition, tier, client_id)
+                     finish, condition, tier, client_id, target_kind, target_buy_id)
   values (p_device, p_phone, btrim(p_scan ->> 'scryfall_id'), coalesce(p_scan ->> 'name', ''),
           coalesce(p_scan ->> 'set_code', ''), coalesce(p_scan ->> 'collector_number', ''),
-          p_scan ->> 'finish', p_scan ->> 'condition', coalesce(p_scan ->> 'tier', '1')::smallint, v_client)
+          p_scan ->> 'finish', p_scan ->> 'condition', coalesce(p_scan ->> 'tier', '1')::smallint, v_client,
+          v.target_kind, v.buy_id)
   on conflict (phone_device_id, client_id) where client_id is not null do nothing
   returning id into v_id;
   -- The same scan arriving twice at once (the retry while the first was still on its way).

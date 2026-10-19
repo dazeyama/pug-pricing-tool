@@ -56,13 +56,15 @@ const RESOLVE_REFUSALS = new Set(['scan_gone', 'not_session', 'bad_status']);
  * @param {string|null} p.deviceId  this computer
  * @param {string} p.label  its name, for the phone's messages
  * @param {object|null} p.session  its scan session (useScanSession)
+ * @param {{ kind: 'walk_in'|'collection', buyId: string|null }|null} p.target  the list open here: only the
+ *   scans sent to it are claimed (decision 343)
  * @param {{ busy: boolean, lines: object[], add: (line: object, userId: string) => Promise<string|null>,
  *   remove: (line: object, qty: number, userId: string) => Promise<unknown> }} p.list
  * @param {boolean} p.roundUp  a project: prices round up
  * @param {(lineId: string, added: { card: object, finish: string }) => void} p.onAdded  flash the line,
  *   and show the card (its Scryfall card and finish) in the Selected card frame
  */
-export function useScanReceiver({ deviceId, label, session, list, roundUp, onAdded }) {
+export function useScanReceiver({ deviceId, label, session, target, list, roundUp, onAdded }) {
   const { epoch } = useConnection();
   const { reachedLimit } = usePriceLimit();
   const { values } = useSettings();
@@ -76,6 +78,15 @@ export function useScanReceiver({ deviceId, label, session, list, roundUp, onAdd
     phone: session?.phone_label ?? 'the phone',
   };
   const running = useRef(false);
+  // This screen still open: a batch stops when it goes (Help, another collection), and what's left
+  // waits for the list (decision 343) rather than failing on a lock already let go.
+  const open = useRef(true);
+  useEffect(() => {
+    open.current = true;
+    return () => {
+      open.current = false;
+    };
+  }, []);
   const again = useRef(false);
   // Awake while cards arrive (decision 320): each one keeps the screen on for ten minutes more.
   const awake = useRef(null);
@@ -204,9 +215,13 @@ export function useScanReceiver({ deviceId, label, session, list, roundUp, onAdd
     return ok ? { status: 'undone' } : { status: 'added', note: `${now.label} couldn't take it off: its screen says why.` };
   }, []);
 
-  /** Every waiting scan (or undo), oldest first; again if more arrive meanwhile. */
+  // Only the scans sent to the list open here (decision 343).
+  const targetKind = target?.kind ?? null;
+  const targetBuy = target?.buyId ?? null;
+
+  /** Every waiting scan (or undo) for this list, oldest first; again if more arrive meanwhile. */
   const pump = useCallback(async () => {
-    if (!deviceId) return;
+    if (!deviceId || !targetKind) return;
     if (running.current) {
       again.current = true;
       return;
@@ -216,10 +231,12 @@ export function useScanReceiver({ deviceId, label, session, list, roundUp, onAdd
       do {
         again.current = false;
         // No answer in time: looked for again on the next message or poll.
-        const { data, error } = await within(supabase
+        const mine = supabase
           .from('scans')
           .select('id')
           .eq('session_device_id', deviceId)
+          .eq('target_kind', targetKind);
+        const { data, error } = await within((targetBuy ? mine.eq('target_buy_id', targetBuy) : mine.is('target_buy_id', null))
           .in('status', ['sent', 'pricing', 'undo', 'undoing'])
           .order('created_at')
           .limit(20), DB_MS, { data: null, error: { message: 'timeout' } });
@@ -228,14 +245,16 @@ export function useScanReceiver({ deviceId, label, session, list, roundUp, onAdd
           break;
         }
         for (const { id } of data ?? []) {
+          if (!open.current) break;
           // No answer in time: left as it is, claimed on the next look (one left "pricing" in a minute).
-          const { data: scan, error: claimError } = await within(supabase.rpc('scan_claim', { p_id: id, p_device: deviceId }),
-            DB_MS, { data: null, error: { message: 'timeout' } });
+          const { data: scan, error: claimError } = await within(supabase.rpc('scan_claim', {
+            p_id: id, p_device: deviceId, p_kind: targetKind, p_buy_id: targetBuy,
+          }), DB_MS, { data: null, error: { message: 'timeout' } });
           if (claimError || !scan) continue;   // another tab of this computer has it, or it's been answered
           let out;
           let alive = true;
           try {
-            const work = scan.status === 'undoing' ? undo(scan) : handle(scan, () => alive);
+            const work = scan.status === 'undoing' ? undo(scan) : handle(scan, () => alive && open.current);
             out = await withTimeout(work, SCAN_MS);
           } catch (e) {
             alive = false;   // given up: a late answer adds nothing
@@ -250,6 +269,8 @@ export function useScanReceiver({ deviceId, label, session, list, roundUp, onAdd
               out = { status: 'failed', note: `Something went wrong on ${latest.current.label}: ${e.message}` };
             }
           }
+          // The screen went mid-way (decision 343): left "pricing", so its list claims it again later.
+          if (!out && !open.current) continue;
           if (!out) out = { status: 'failed', note: `It took too long on ${latest.current.label}: check its list, then scan it again.` };
           // Tried three times on a blip (review, 2026-10-16): a scan left "pricing" or "undoing" is
           // claimed again in a minute, and the card would go in, or come off, twice. The function's
@@ -270,12 +291,15 @@ export function useScanReceiver({ deviceId, label, session, list, roundUp, onAdd
           }
           if (resolveError) console.warn('scan_resolve failed', resolveError);
         }
-      } while (again.current);
+      } while (again.current && open.current);
     } finally {
       running.current = false;
     }
-  }, [deviceId, handle, undo]);
+  }, [deviceId, targetKind, targetBuy, handle, undo]);
 
+  // Cards left waiting when this list was last open (Help, F5, another collection) stay for it
+  // (decision 343) and come in once the phone pairs with it again: pairing needs a screen that
+  // can add, so they never go into a list that's locked, view-only or still loading.
   useEffect(() => {
     if (!deviceId || !paired) return undefined;
     pump();

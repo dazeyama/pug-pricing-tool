@@ -2805,6 +2805,18 @@ begin
   update scans set handled_at = now() - interval '2 minutes' where id = v_id;
   perform pg_temp.ok(s, '… and can be claimed again once it''s gone quiet for a minute', scan_claim(v_id, a) is not null);
 
+  -- Each scan is for the list it was sent to (0080).
+  v_id := scan_send(a, ph, card);
+  perform pg_temp.ok(s, 'A scan remembers the list it was sent to (0080)',
+    (select target_kind = 'walk_in' and target_buy_id is null from scans where id = v_id));
+  perform pg_temp.ok(s, '… another list doesn''t claim it', scan_claim(v_id, a, 'collection', gen_random_uuid()) is null);
+  update scans set target_kind = 'collection', target_buy_id = gen_random_uuid() where id = v_id;
+  perform pg_temp.ok(s, '… nor another collection, by name or as the screen''s open list',
+    scan_claim(v_id, a, 'collection', gen_random_uuid()) is null and scan_claim(v_id, a) is null);
+  update scans set target_kind = 'walk_in', target_buy_id = null where id = v_id;
+  v := scan_claim(v_id, a, 'walk_in', null);
+  perform pg_temp.ok(s, '… its own does', v ->> 'status' = 'pricing', v::text);
+
   update scan_sessions set heartbeat_at = now() - interval '2 minutes' where device_id = a;
   begin
     perform scan_send(a, ph, card);
@@ -2812,7 +2824,9 @@ begin
   exception when others then perform pg_temp.err(s, 'Nothing is sent to a computer that''s gone quiet', sqlerrm, 'session_stale');
   end;
   perform scan_session_end(a);
-  perform pg_temp.ok(s, 'A session''s scans end with it', not exists (select 1 from scans where session_device_id = a));
+  perform pg_temp.ok(s, 'Leaving the price screen keeps its scans waiting for their list (0080)',
+    exists (select 1 from scans where session_device_id = a)
+    and not exists (select 1 from scan_sessions where device_id = a));
   begin
     perform scan_send(a, ph, card);
     raise exception 'dbt_no_error';

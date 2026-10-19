@@ -45,23 +45,33 @@ async function call(fn, args) {
  *   reload: () => Promise<void> }}
  *   scans: this pairing's latest ten, newest first
  */
-export function useScans(computerId, phoneId) {
+export function useScans(computerId, phoneId, target = null) {
   const { epoch } = useConnection();
   const [scans, setScans] = useState([]);
   const ticket = useRef(0);
+  // Only the scans for the list this phone is paired with (decision 343): cards left waiting for
+  // another list aren't shown, so Undo and FOIL? never act on them from here.
+  const targetKind = target?.kind ?? null;
+  const targetBuy = target?.buyId ?? null;
 
   const reload = useCallback(async () => {
     const mine = ++ticket.current;
-    const { data, error } = await supabase
+    if (!targetKind) {
+      setScans([]);
+      return;
+    }
+    const query = supabase
       .from('scans')
       .select('*')
       .eq('phone_device_id', phoneId)
       .eq('session_device_id', computerId)
+      .eq('target_kind', targetKind);
+    const { data, error } = await (targetBuy ? query.eq('target_buy_id', targetBuy) : query.is('target_buy_id', null))
       .order('created_at', { ascending: false })
       .limit(10);
     if (error || mine !== ticket.current) return;
     setScans(data ?? []);
-  }, [computerId, phoneId]);
+  }, [computerId, phoneId, targetKind, targetBuy]);
 
   useEffect(() => {
     reload();

@@ -41,7 +41,7 @@ and function.
   export is undone, shows Mark as completed instead of Mark Paid/Ours again (`src/pages/day/BuyPanel.jsx`, `byHand`):
   Mark as completed, then Mark Paid/Ours again, brings everything back. Unlocking a kept-buy collection and marking
   it Paid/Ours again asks for a price: typing the buy's payment there counts it twice.
-- **Before the squash:** a full smoke test pass, `docs/TEST.md` (181 cases), on dev.
+- **Before the squash:** a full smoke test pass, `docs/TEST.md` (182 cases), on dev.
 - **Phase 10 launch** (owner's go): the squash and the switch to prod, `SQUASH.md` sections 1–10 (N is 0079; the
   baseline `0001_baseline.sql`). Decide the **Supabase plan for prod** first (`docs/DESIGN_SPEC.md` Appendix D 2:
   Free vs Pro).
