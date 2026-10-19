@@ -27,6 +27,9 @@ begin
   if v_old.struck_at is null then
     raise exception 'line_not_struck';
   end if;
+  if v_old.cc_status is not null then
+    raise exception 'line_exported';   -- frozen (decision 345)
+  end if;
 
   v_id := internal.restore_line(v_old.id);
   update buys set version = version + 1, updated_at = now(), last_edited_by = p_user where id = b.id;

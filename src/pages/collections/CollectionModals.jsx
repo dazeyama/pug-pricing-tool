@@ -91,8 +91,8 @@ export function NewProjectModal({ busy, onCreate, onClose }) {
         }}
       >
         <p className="hint">
-          For pricing cards the store already owns (a box from the back, not from any buy). It starts as
-          Paid/Ours, and EXPORT marks it Completed.
+          For pricing cards the store already owns (a box from the back, not from any buy). It stays
+          Paid/Ours while it's exported in parts; a card exported can't be changed after.
         </p>
         <label className="field">
           <span>Name</span>

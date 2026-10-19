@@ -8,7 +8,7 @@ what happens. The findings are reported when the pass ends.
   http://localhost:5180). **Never prod.**
 - **Who:** the owner, or Claude in the browser pane at the owner's request (FABLE.md, "a smoke pass the owner asks
   for"). The owner does the phone, two-computer and store cases.
-- **How long:** about two hours, 183 cases.
+- **How long:** about two hours, 184 cases.
 
 ## Ground rules
 
@@ -271,6 +271,9 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
 - [ ] **Undo export…** (decision 298): on an exported Paid/Ours collection, ⋯ → Undo export… asks, then the SKU chip
       goes, the prices turn white, the Changelog says "Export undone", and EXPORT offers the cards again; on a
       collection never exported the item is greyed.
+- [ ] **An exported card is frozen** (decision 345): EXPORT that collection again; × on an exported card says "That
+      card is exported: Undo export… first". In a project, EXPORT, then: clicking an exported card or its × says
+      the same; adding the same card again makes a new line beside it, which the next EXPORT sends; REPRICE? leaves the exported cards' prices (greyed when every card is exported).
 - [ ] **Rejected:** `SMOKE Rejected`, from Priced, rejected with a reason, locks (no adding, editing, REPRICE? or
       EXPORT), shows $0 paid in red and is left out of the header search unless Show all; **Reopen** goes back to Priced
       with its offer; the Paid/Ours dialog's **Mark as Rejected?** switches to the Reject dialog.

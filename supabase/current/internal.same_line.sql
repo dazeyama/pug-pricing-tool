@@ -17,6 +17,8 @@ AS $function$
      and a.custom_credit_pct is not distinct from b.custom_credit_pct
      and a.cash_pct is not distinct from b.cash_pct
      and a.credit_pct is not distinct from b.credit_pct
+     -- Stamped and unstamped are never one line (decision 345).
+     and a.cc_status is not distinct from b.cc_status
 $function$;
 
 -- Granted: {postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}

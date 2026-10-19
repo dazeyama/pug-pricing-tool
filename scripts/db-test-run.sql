@@ -2301,6 +2301,7 @@ declare
   v_x uuid;
   v_c3 uuid;
   v_pp uuid;
+  v_id uuid;
   v jsonb;
 begin
   v_x := collection_create('DBTEST Not Paid', null, '', u, a);
@@ -2387,6 +2388,17 @@ begin
                     jsonb_build_array(pg_temp.match(c1, 'DBTEST-P1', 1.25)), '{}', '[]', u, a);
   perform pg_temp.ok(s, '… and EXPORT offers the cards again',
     (v ->> 'cards')::integer = 3 and (select cc_status = 'exported' and cc_custom_sku = v_sku from buy_lines where id = c1), v::text);
+  -- An exported card is frozen (0081): in a Paid/Ours customer collection, × can't remove or strike it.
+  begin
+    perform collection_remove_line(c1, 1, u, a, null, null);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'An exported card can''t be removed (0081)', sqlerrm, 'line_exported');
+  end;
+  begin
+    perform collection_strike_line(c1, 1, u, a, null, null);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, '… nor struck', sqlerrm, 'line_exported');
+  end;
   v_x := collection_create('DBTEST Collection Three', null, '', u, a);
   perform lock_acquire(v_x, a, u);
   perform collection_add_line(v_x, pg_temp.line('Dbtest Mystery', 'DBT', '003', 2, 1.00), true, u, a, null, null);
@@ -2435,6 +2447,30 @@ begin
     perform project_to_buy(v_pp, u, a, 'DBTEST Gary', '5550100004', 1, 'cash', '', 50, 65);
     raise exception 'dbt_no_error';
   exception when others then perform pg_temp.err(s, 'An exported project can''t be converted to a buy (0077)', sqlerrm, 'project_exported');
+  end;
+  v := collection_reprice(v_pp, jsonb_build_array(jsonb_build_object('line_id', (select id from buy_lines where buy_id = v_pp),
+         'unit_price', 9.00, 'market_price', 9.00, 'price_source', 'justtcg', 'price_snapshot', '{}'::jsonb)), u, a, null);
+  perform pg_temp.ok(s, 'REPRICE? leaves an exported card''s price (0081)',
+    (v ->> 'lines')::integer = 0 and (select unit_price = 1.00 from buy_lines where buy_id = v_pp), v::text);
+  -- In a project, still open to adding and editing (0081).
+  select id into v_c3 from buy_lines where buy_id = v_pp;
+  v_id := collection_add_line(v_pp, (select jsonb_set(to_jsonb(l), '{quantity}', '1') from buy_lines l where l.id = v_c3),
+                              true, u, a, null, null);
+  perform pg_temp.ok(s, 'A copy of an exported card goes on a line of its own, never into the exported one (0081)',
+    v_id <> v_c3 and (select cc_status is null from buy_lines where id = v_id)
+    and (select quantity = 1 from buy_lines where id = v_c3));
+  begin
+    perform collection_update_line(v_c3, (select to_jsonb(l) from buy_lines l where l.id = v_c3), u, a, null, null, null);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, '… an exported card can''t be edited', sqlerrm, 'line_exported');
+  end;
+  perform collection_update_line(v_id, (select to_jsonb(l) from buy_lines l where l.id = v_id), u, a, null, null, null);
+  perform pg_temp.ok(s, '… nor does an edit fold the new copy into it',
+    (select count(*) from buy_lines where buy_id = v_pp) = 2 and (select quantity = 1 from buy_lines where id = v_c3));
+  begin
+    perform collection_remove_line(v_c3, 1, u, a, null, null);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, '… and × on it refuses', sqlerrm, 'line_exported');
   end;
 exception when others then
   declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;

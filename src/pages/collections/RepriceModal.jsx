@@ -18,7 +18,8 @@ import { isStruck } from '../../lib/struck.js';
  * @param {() => void} p.onClose
  */
 export default function RepriceModal({ lines: all, roundUp = false, onReprice, onClose }) {
-  const lines = all.filter((l) => !isStruck(l));
+  // Not struck cards, nor exported ones: their price is frozen (decision 345).
+  const lines = all.filter((l) => !isStruck(l) && !l.cc_status);
   const { values } = useSettings();
   const [phase, setPhase] = useState('ask');   // ask | working | error
   const [step, setStep] = useState('');

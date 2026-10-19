@@ -10,6 +10,7 @@ import { BULK_ITEMS, bulkItem, bulkShortText, cardCounts, countText, isValuedBul
 import CustomRateMark from '../../components/CustomRateMark.jsx';
 import RemoveModal from '../../components/RemoveModal.jsx';
 import { isStruck, struckNote } from '../../lib/struck.js';
+import { LINE_EXPORTED } from '../collections/useCollection.js';
 import { useStaff } from '../../state/staff.jsx';
 import { GAMES } from '../../lib/games.js';
 import { useDismiss } from '../../lib/useDismiss.js';
@@ -456,10 +457,18 @@ export default function BuyList({
       onDone();
     }
   }
+  /** Click on a card: edit it, unless it's struck (Restore first) or exported (frozen, decision 345). */
+  function clickLine(l) {
+    if (isStruck(l)) return;
+    if (!canEdit) editBlocked();
+    else if (l.cc_status) toast(LINE_EXPORTED, 'err');
+    else onEdit(l);
+  }
   /** Restore (owner, 2026-10-16): a struck card back, blocked like removing. */
   async function restore(l) {
     setRateMenu(null);
     if (!canRemove) removeBlocked();
+    else if (l.cc_status) toast(LINE_EXPORTED, 'err');
     else {
       await onRestore(l);
       onDone();
@@ -468,6 +477,7 @@ export default function BuyList({
   /** ×: strikes first in a Paid/Ours list; a struck card's removes it for good. */
   function startRemove(l) {
     if (!canRemove) removeBlocked();
+    else if (l.cc_status) toast(LINE_EXPORTED, 'err');
     else setRemoving({ line: l, mode: isStruck(l) ? 'struck' : onStrike ? 'strike' : 'remove' });
   }
   const closeRate = useCallback(() => {
@@ -596,9 +606,8 @@ export default function BuyList({
                       ? 'Being edited: SAVE EDIT saves the changes, Esc leaves it as it was'
                       : isStruck(l)
                         ? `${struckNote(l, staff.byId)}.${onRestore ? '\nRight-click → Restore puts it back; × removes it for good.' : ''}`
-                        : `${l.name_en ? `${l.name} · ` : ''}${formatMoney(l.unit_price)} each${locked ? '' : ' · click to edit'}${rateNote(l, rates) ? `\n${rateNote(l, rates)}` : ''}`}
-                    // A struck card isn't edited: Restore it first.
-                    onClick={() => (isStruck(l) ? null : canEdit ? onEdit(l) : editBlocked())}
+                        : `${l.name_en ? `${l.name} · ` : ''}${formatMoney(l.unit_price)} each${locked || l.cc_status ? '' : ' · click to edit'}${l.cc_status ? '\nExported: Undo export… first to change it' : ''}${rateNote(l, rates) ? `\n${rateNote(l, rates)}` : ''}`}
+                    onClick={() => clickLine(l)}
                   >
                     {lineText(l)}
                     {/* Its own rate (Set Rate): Credit / Cash, in their colours. */}

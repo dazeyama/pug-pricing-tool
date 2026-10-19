@@ -25,6 +25,10 @@ begin
   if b.status = 'completed' then
     raise exception 'collection_completed';
   end if;
+  -- Exported, or in Can't upload cards: Undo export first (decision 345).
+  if v_old.cc_status is not null then
+    raise exception 'line_exported';
+  end if;
 
   v_n := least(greatest(coalesce(p_qty, 1), 1), v_old.quantity);
   if v_n >= v_old.quantity then

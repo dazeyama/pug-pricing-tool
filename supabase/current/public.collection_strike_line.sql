@@ -37,6 +37,9 @@ begin
   if v_old.struck_at is not null then
     raise exception 'line_struck';
   end if;
+  if v_old.cc_status is not null then
+    raise exception 'line_exported';   -- frozen (decision 345)
+  end if;
 
   v_n := least(greatest(coalesce(p_qty, 1), 1), v_old.quantity);
   v_id := internal.strike_line(v_old.id, v_n, p_user);

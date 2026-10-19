@@ -23,6 +23,7 @@ begin
      where l.buy_id = p_buy_id
        and internal.same_card(l, r)   -- the same printing at the same price (0065)
        and l.struck_at is null   -- never into a struck line
+       and l.cc_status is null   -- nor an exported one (decision 345)
      limit 1;   -- the same card, own rate or not: the copies take the line's rate (owner, 2026-10-15)
   end if;
 

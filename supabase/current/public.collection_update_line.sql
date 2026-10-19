@@ -23,6 +23,9 @@ begin
   if v_old.struck_at is not null then
     raise exception 'line_struck';
   end if;
+  if v_old.cc_status is not null then
+    raise exception 'line_exported';   -- frozen (decision 345)
+  end if;
 
   r := jsonb_populate_record(null::buy_lines, p_line);
   if r.quantity is null or r.quantity < 1 then
@@ -47,6 +50,7 @@ begin
    where l.buy_id = v_old.buy_id and l.id <> p_line_id
      and internal.same_card(l, r)   -- the same printing at the same price (0065)
      and l.struck_at is null   -- never into a struck line
+     and l.cc_status is null   -- nor fold an exported one (decision 345)
    order by l.position
    limit 1;
 

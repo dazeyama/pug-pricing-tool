@@ -33,7 +33,8 @@ begin
     justtcg_card_id    = e ->> 'justtcg_card_id',
     justtcg_variant_id = e ->> 'justtcg_variant_id'
   from jsonb_array_elements(coalesce(p_lines, '[]'::jsonb)) e
-  where l.id = (e ->> 'line_id')::uuid and l.buy_id = p_buy_id;
+  where l.id = (e ->> 'line_id')::uuid and l.buy_id = p_buy_id
+    and l.cc_status is null;   -- an exported card keeps its price (decision 345)
   get diagnostics v_n = row_count;
 
   select coalesce(sum(unit_price * quantity), 0) into v_after from buy_lines where buy_id = p_buy_id;

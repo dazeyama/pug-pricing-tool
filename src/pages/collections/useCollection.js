@@ -17,6 +17,9 @@ import { channelName } from '../../lib/channels.js';
  * Convert to buy… on a project with exported cards (decision 339): its day would export them again. Undo
  * export doesn't take back a file already uploaded (decision 298), so it says when that's safe.
  */
+/** A card that's exported or in Can't upload cards is frozen (decision 345): only Undo export changes it. */
+export const LINE_EXPORTED = "That card is exported: Undo export… first to change it.";
+
 export const PROJECT_EXPORTED = "Part of this project is exported: Undo export… first, only if its file wasn't uploaded to Crystal Commerce.";
 
 const MESSAGES = {
@@ -44,6 +47,7 @@ const MESSAGES = {
   line_completed: "That card is Completed: its rate doesn't change.",
   // Struck cards (owner, 2026-10-16).
   line_struck: 'That card is struck: right-click → Restore it first.',
+  line_exported: LINE_EXPORTED,
   strike_paid_only: 'Only a Paid/Ours collection strikes cards: here × removes them.',
   system_collection: "Can't upload cards doesn't strike: its × removes the card.",
   project_no_strike: "A project doesn't strike: its × removes the card.",

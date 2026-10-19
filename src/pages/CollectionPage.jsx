@@ -124,6 +124,8 @@ function CollectionScreen({ id }) {
     [lock.status !== 'held', 'Checking who is editing this collection'],
     [locked && !system, locked],
     [!col.lines.some((l) => !isStruck(l)), 'No cards to reprice'],
+    // Exported cards keep their price (decision 345).
+    [!col.lines.some((l) => !isStruck(l) && !l.cc_status), 'Every card here is exported: their prices stay'],
   ]);
 
   // A CSV dropped on an empty collection or project imports into it (owner,
@@ -224,7 +226,8 @@ function CollectionScreen({ id }) {
         toast('No connection: the export needs it to match Crystal Commerce products.', 'err');
         return;
       }
-      if (!col.lines.some((l) => l.game === 'mtg' && movesOn(l))) toast('No Magic cards here to export.', 'err');
+      // As the file's own list: not the cards already exported (decision 345).
+      if (!col.lines.some((l) => l.game === 'mtg' && movesOn(l) && !l.cc_status)) toast('No Magic cards here left to export.', 'err');
       else setExportStep('file');
       return;
     }
@@ -789,7 +792,8 @@ function CollectionScreen({ id }) {
               mode="export"
               fileOnly={statusLabel(buy.status)}
               title={`Export ${buy.customer_name} to Crystal Commerce (file only)`}
-              items={col.lines.filter((l) => l.game === 'mtg' && movesOn(l)).map((line) => ({ line, where: '' }))}
+              // Not the cards already exported: they went in their own file (decision 345).
+              items={col.lines.filter((l) => l.game === 'mtg' && movesOn(l) && !l.cc_status).map((line) => ({ line, where: '' }))}
               target={{ kind: 'collection', buy_id: buy.id, version: buy.version }}
               fileName={`cc-mass-create-${fileSafe(buy.customer_name)}-${fileStamp(new Date())}.csv`}
               onExported={exported}
