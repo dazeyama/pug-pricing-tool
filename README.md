@@ -414,6 +414,10 @@ She types what's printed on the card: the name, then the collector number, then 
 part can be left out. The sample text shows one: `Lightning Bolt 117/331 2X2`.
 
 - The number works with or without the set size (`117` or `117/331`).
+- A number also finds the card's promo pack printing (*229* finds 229 and the promos' 229p), and its
+  **The List** and **Mystery Booster** printings, which carry the code and number of the card they
+  reprint: *Rootborn Defenses 26* and *RVR 26* both show RVR 26, then The List's RVR-26. Those always
+  come after the main printings.
 - A misspelt name still finds the card. The line under the bar says *"Showing results for …"*.
 - With no match it says *"No cards match. Check the number and set code."*
 
@@ -482,7 +486,8 @@ Up to 10 matching printings, in two rows of 5. A shorter window shows one row of
 | **… show all (N)** | Opens every match in a window. Arrow keys move, **Enter** picks, **Esc** closes. |
 | **Hover** | Shows the set symbol in its rarity colour. |
 
-A search with one match selects it straight away. When Scryfall or TCGdex is slow or busy, a line
+A search with one match selects it straight away, as soon as its picture shows, without waiting for
+its prices. When Scryfall or TCGdex is slow or busy, a line
 above the suggestions says so and retries by itself.
 
 ### The selected card
@@ -525,6 +530,7 @@ Three links open the card on other sites, each in its own pop-up window:
 | **FOIL switch** | Green **FOIL ON** or red **FOIL OFF**. A 🔒 means this printing only comes one way. |
 | **Etched** | Switches to the etched foil printing. Shows only when one exists. |
 | **Tick boxes** | Traits that differ between printings in this set, like Borderless or Showcase. Ticking one moves to that printing. |
+| **Special foils** | Surge foil, Galaxy foil and the like. Where the same printing also comes plain, its tick box goes with FOIL: ticking it turns FOIL on, and FOIL off unticks it. A non-foil card never carries it. |
 | **Grey chips** | Traits every printing in this set shares. For reading only. |
 
 ### Finish and Details: Pokémon
@@ -599,7 +605,7 @@ the cards. The heading counts the cards, and bulk apart: *42 cards + 1,000 bulk*
 |---|---|
 | **Price** | The price for one copy (for bulk, one item). |
 | **Hover a line** | Shows the card's picture beside the list. |
-| **Click a line** | Loads the card back to edit it. The button reads **SAVE EDIT** and saves over the line. **CANCEL** or **Esc** leaves it as it was. Edited cards take today's price. |
+| **Click a line** | Loads the card back to edit it. The suggestions show every printing of its name, with the card being edited first (and selected), even after another search, till the edit ends. The button reads **SAVE EDIT** and saves over the line. **CANCEL** or **Esc** leaves it as it was. Edited cards take today's price. |
 | **Right-click a card** | **Set Rate**: the card's own Cash % and Credit %, beside the card. **Maintain ratio** keeps Credit at twice Cash; a red box warns when Cash is above Credit. **Clear Rate** takes it off. A card with its own rate is tinted, with a ✎ tag. |
 | **Right-click bulk** | **Set value**: the line's own price per item, showing what it pays as she types. **Back to $1.50** (or **Clear value**) goes back to Settings. |
 | **×** | Removes the card, after asking. With several copies, it asks how many. **Remove all N** takes every copy. |
@@ -1390,6 +1396,8 @@ Tap one to scan into it.
 - **One phone per computer.** Pairing a second phone replaces the first, which says so.
 - The computer's list shows **📱 Chase's phone · 23 scanned** under its heading. **×** unpairs it.
   After a minute without hearing from the phone, the chip says **away**.
+- While cards are coming in, the computer stays awake, as if someone were typing. Ten minutes after
+  the last card it can sleep again.
 - The pairing ends when the computer leaves its price screen. CONFIRM BUY doesn't end it: the next
   buy's cards go into the new list.
 
@@ -1413,7 +1421,7 @@ the sounds, **Unpair**); the **condition**; the **finish**; the camera; the **in
    **Reset view**. The info box under it shows the card's **set code and number**, enlarged, set
    level and cleaned up to black on white.
 5. Lay each card in turn. With **Auto?** ticked, a card goes in by itself once its picture has
-   changed from the last card's and the reading is sure: on one look when its set code, number,
+   changed from the last card's, it has stopped moving, and the reading is sure: on one look when its set code, number,
    rarity and artist all agree, otherwise when two looks agree. It chimes the moment it's sent:
    **two notes for a normal card, a brighter three for a foil.**
 
@@ -1422,10 +1430,10 @@ the sounds, **Unpair**); the **condition**; the **finish**; the camera; the **in
 | **Scan card** | Reads the card in view now, more thoroughly: every line of text on it, every search. A bar fills the button as it goes. Auto scan waits while it reads. **Hold it** to start over: see *Stuck?* below. |
 | **+1** | Another copy of the last card, exactly as it went in (printing, finish, condition), without reading anything. **Tapping the middle of the picture** does the same. Auto scan never adds the same card twice in a row by itself: use +1 for a second copy. |
 | **Auto?** | Unticked, nothing goes in by itself. Scan card and +1 still work. |
-| **Reset view** | Lets go of the card; the next card found locks the view again. Nothing else moves the view, not even Stop. |
+| **Reset view** | Lets go of the card; the next card found locks the view again. The scanner also finds the card again by itself every 20 cards, and when the camera comes back after an interruption, so the view keeps up as the stack grows. Stop doesn't move it. |
 | **💡** | The torch, where the phone has one. |
-| **■ Stop** | Stops the camera. |
-| **🔔 / 🔇** | Sounds on or off on this phone. |
+| **■ Stop** | Stops the camera at once, even in the middle of a read: that read is dropped. |
+| **🔔 / 🔇** | Sounds on or off on this phone. **No sound when there should be?** Turn it off and on again: that starts the phone's sound afresh. |
 
 **The last card** sits under the info box: its name, then its set and number, its price, and how many
 are in the list (*HOB 87 · $0.25*). Beside it:
@@ -1437,6 +1445,15 @@ are in the list (*HOB 87 · $0.25*). Beside it:
 **Blurry?** The info box gets an amber border and auto scan waits for a sharp picture. After a few
 blurry looks the camera refocuses by itself (the picture stops for a moment). The camera can't focus
 closer than about 15 cm: if it stays blurry, raise the phone a little.
+
+**Too dark?** After a few dark looks the strip says *"Too dark to read well"*, with the fix: tap 💡, or
+more light on the card.
+
+**Nothing new in the holder?** After 30 seconds auto scan looks less often, to spare the battery. The
+next card wakes it.
+
+**A call, or another app, takes the camera:** the strip says so, and scanning carries on when the
+camera comes back.
 
 - A card printed in another language is refused: add it on the computer.
 - **Couldn't read this card:** set it aside and add it on the computer.
@@ -1450,8 +1467,12 @@ closer than about 15 cm: if it stays blurry, raise the phone a little.
   **Reset view** lets go of the card.
 - On a slow connection, a read stops by itself after 20 seconds and says *"That took too long"*.
   Press Scan card again.
-- *"No answer from the computer yet"*: the card may have gone in anyway. Check the list on the
-  computer before scanning it again.
+- *"Still waiting on …: is its price screen open?"* shows when the computer hasn't taken a card
+  after 15 seconds. *"No answer from the computer yet"*: the card may have gone in anyway. Check the
+  list on the computer before scanning it again.
+- A card sent twice over a bad connection goes in once.
+- The computer has time limits too: a card it can't look up or price in time says *"It took too long
+  on …"* on the phone instead of holding up the cards behind it. Check the list, then scan it again.
 
 ### Prices
 
@@ -1482,6 +1503,9 @@ Cards printed before 2014 have no set code at the bottom.
   artist, set symbol and copyright year. One clearly ahead goes in by itself, once two looks agree;
   otherwise the printing list opens, best matches first. Tap the one whose set symbol matches.
   **View all** shows every printing, oldest to newest. **Skip this card** adds nothing.
+- **Couldn't read the name. Which card is it?** opens when no reading names the title: after a few
+  looks on its own, at once from Scan card. The best guess is typed in. Correct it or pick from the
+  names under it, and the printing list opens. **Skip this card** adds nothing.
 - An older card goes in as normal on Detect: it has no foil star to go by. Pick **Foil**, or use
   **FOIL?** after.
 
@@ -1491,6 +1515,20 @@ A card from **The List** (or from the first **Mystery Booster**) is its original
 planeswalker symbol in the black border at its bottom-left corner. The scanner looks for that mark:
 when it's there, the card goes in as its List printing. **Mystery Booster 2** cards have their own
 frame and no set code at the bottom, so they're read as older cards.
+
+### Promos
+
+- **Promo pack and prerelease cards** print the same collector line as the plain card. The promo pack
+  card has the planeswalker stamp at the lower right of its art; the prerelease card has the gold
+  year (*20★24*) at the lower left. When a set has such a printing of the card, the phone compares
+  those two spots with the plain card's picture. A stamp seen sends the stamped printing instead (a
+  prerelease always as foil). It's new: check stamped cards on the computer, and click a line to
+  change its printing if it's wrong.
+- **Promos printed with PRM** where the set code goes (2018 and 2019) are found by their number and
+  set size. When there are several (promo pack, prerelease), the printing list opens: match the stamp.
+- **Friday Night Magic promos of 2014 to 2018** print FNM where the set code goes. They go in as
+  their year's card, picked by the artist on the line, else by the title. If neither says, the list
+  opens: match the picture.
 
 <br>
 
