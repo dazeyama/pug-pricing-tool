@@ -6,12 +6,17 @@ and function.
 
 ## Open
 
-- **Unpushed, and worth pushing soon:** decisions 337–354 and the Help's struck-cards wording. Migrations
+- **Unpushed, and worth pushing soon:** decisions 337–366 and the Help's struck-cards wording. Migrations
   0077–0084 are already on dev, which the live site uses, while the live app is the old code: until the push, the
   new refusals (`project_exported`, `line_exported`) show as raw codes, the day's undo dialog counts hand-completed
   buys it now leaves, the convert dialog still says the payment moves, the phone still lists other lists' waiting
   scans, and REPRICE?'s count includes exported cards it now skips. Nothing breaks and no data goes wrong.
-- **Deploy the `prices` Edge Function** with the push (decision 347; release skill step 9 asks first).
+- **Deploy the `prices` Edge Function** with the push (decisions 347 and 360; `_shared/justtcg.ts` changed too, so
+  `secrets` is due as well; release skill step 9 asks first).
+- **Help out of date** (only when the owner asks), from Batch 2: a day's EXPORT once exported downloads the day's
+  own export only, not Export single buy's cards (decision 361); a Paid/Ours collection with every Magic card
+  exported downloads its file again (decision 362); a failed export that went through downloads its file after all
+  (decision 362).
 - **Help out of date** (only when the owner asks), besides the list below: Backups → Restore (two presses; backups
   hold the learned matches, decision 348); REPRICE? ("every card": not exported ones, decision 345); nothing says
   an exported card can't be changed (decision 345); scanning: waiting cards come in when the phone pairs with
@@ -24,18 +29,22 @@ and function.
   `C:\ClaudeProjects\temp\launch-review-full-2026-10-19.md`, raw reports in `launch-review-full\`):
   1. **Batch 1, the database: done** (decisions 350–354, migration 0084; see Done; what's left of it is under "Left
      from Batch 1" below).
-  2. **App only, small commits by area:**
-     - scanner: B4 (List / Mystery Booster cards marked sure as the original), B5 (the camera left on);
-     - pricing: B6 (a bad JustTCG batch reply caches "no match": Edge Function, deployed at the push), B7 (an error
-       answer cached for the page's life), B9 (version edits while the siblings search is out), B10 (Enter adds the
-       previous card while a search is pending);
-     - day page and exports: B12 ("Download the same file again" gives **that day's export only**: the cards stamped
-       with the day's Custom SKU; the owner's answer), B13 (export retry), B18 (CONFIRM BUY saved but showed an error:
-       re-read the buy before saying so);
-     - reliability: B14 (a failed first lock check), B16 (page the Cash buys file, the Collections tab, Home and the
-       Calendar with `allPages`), B17 (a failed first load reads as empty or all good);
-     - tests: B20 (rounding and CSV builders tested; `supabase.js` loadable under `node --test`).
+  2. **Batch 2, app only: done** (decisions 355–366; see Done; what's left of it is under "Left from Batch 2"
+     below).
   Then the first review's leftover B items.
+- **Left from Batch 2 (owner's call on each):**
+  - a single buy's file has no "download it again": Export single buy is blocked once the buy is Completed, and the
+    day's EXPORT now leaves single-buy cards out (decision 361). A proposal, not built: "Download its file again" in
+    the buy's ⋯ (`src/pages/day/BuyPanel.jsx`, `DayPage.jsx`);
+  - a Can't upload cards export whose answer was lost can't be told apart, since its exported copies are deleted:
+    the dialog says it may have gone through (`ExportDialog.jsx` `save`, decision 362);
+  - the rest of B18: ADD CARD, × and creating a collection repeated after a lost answer happen twice; a short drop
+    with the wifi up never reloads; the Supabase client has no request timeout (`src/lib/supabase.js`,
+    `src/state/connection.jsx`, decision 363);
+  - the rest of B15: Settings that failed their first load are now "not loaded" (decision 364), but the Price screen
+    still prices with the built-in defaults meanwhile (`src/state/settings.jsx` `values`);
+  - the rest of B16: Import Collection's remembered picks past 1,000 (`importCollection.js`; loses saved matches,
+    never picks a wrong product).
 - **Buy numbers through a project** (the owner's answer, 2026-10-19, not done yet): a project converted back to a buy
   keeps its original number, as decision 290 says; `project_to_buy` gives a new one today.
 - **Left from Batch 1 (0084):**
@@ -72,6 +81,24 @@ and function.
 
 ## Done
 
+- 2026-10-19: Batch 2 of the full review's B findings, app only, in small commits by area (lint, 424 unit tests
+  and the build before each; untested in the browser):
+  - scanner, decisions 355–356: B4 List / Mystery Booster cards by their mark (`listMark.js`, `older.js`); B5 the
+    camera, stale sheets, waiting scans, pictures (`camera.js`, `Scanner.jsx`, `useScans.js`, `printingMatch.js`);
+  - pricing, decisions 357–359: B7 a failed search isn't kept (`priceAnswers.js`, `usePrices.js`); B10 Enter waits
+    for the search; B9 TCGplayer versions (`PricingScreen.jsx`);
+  - B6, decision 360: a JustTCG reply that didn't answer isn't remembered as "no match" (`prices/index.ts`,
+    `_shared/justtcg.ts`; takes effect when deployed);
+  - B12, decision 361: a day's file again is the day's export only (`dayRules.js` `dayExportLines`);
+  - B13, decision 362: export retry after a changed buy or a lost answer, and a Paid/Ours collection's file again
+    (`ExportDialog.jsx`, `ccExport.js` `exportLanded`, `CollectionPage.jsx`, `DayPage.jsx`);
+  - B18, decision 363: a CONFIRM BUY that saved but lost its answer goes on (`useDraft.js` `confirmedBuy`);
+  - B14 and B17, decision 364: a failed first lock check or live-table load is asked again (`useCollectionLock.js`,
+    `useLiveTable.js`);
+  - B16, decision 365: long lists read page by page (`cashBuys.js`, `CollectionsPage.jsx`, `HomePage.jsx`,
+    `CalendarPage.jsx`);
+  - B20, decision 366: tests for rounding, the Cash buys file, CSV quoting and stay awake; `supabase.js` loads under
+    `node --test`.
 - 2026-10-19: Batch 1 of the full review's B findings, the database ones, as one migration with one review (and a
   re-review after its findings), migration 0084, db-test-run 522 checks:
   - B1/B2, decision 350: a walk-in scan knows its buy (`scans.target_draft_id`, opened by the scan if none);
