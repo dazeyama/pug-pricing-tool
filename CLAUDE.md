@@ -57,5 +57,13 @@
   migration 0074 on dev); the scanner's time limits, Stop and hold to start over (decision 300), the
   flagged-buy banner on printouts (301), a scan saved once (302, migration 0075 on dev). The squash's numbers
   moved on: baseline 0076, the Changelog lock 0077.
+  Then live as v0.9.9.13-scanner2.0 (2026-10-19; v0.9.9.12 was already henry): the scanner's smoothness and
+  accuracy round (decisions 302–322: a scan saved once, the camera cut off noticed, idle rest, the reader recycled,
+  too dark, the computer's time limits, older titles found and read white, trailing words, Which card?, re-crops
+  every 20 cards / after an interruption / once settled, PRM promos, the bell reset, Stop as an abort, the
+  computer kept awake, a dev-only run log), surge foils priced from their own product (316), edit opening every
+  printing with the edited card pinned (319, 324), mimp reversed (323), auto-select sooner (325), special foils
+  only with FOIL (326), FNM promos by year (327), stamped promos by their stamp (328), The List and Mystery
+  Booster in number searches, after the main printings (329), Help for all of it (330). Migration 0075 on dev.
   Phase 10 launch (the migration squash, SQUASH.md, then prod) waits for the owner's go; the live site runs on the
   dev project until then. docs/TEST.md holds the smoke tests and the database test run.
