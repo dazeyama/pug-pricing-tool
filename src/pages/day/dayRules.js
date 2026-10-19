@@ -1,4 +1,5 @@
 // Rules a day page and its buy panels share (FABLE_REPORT C2).
+import { customSkuForDay } from '../../lib/massCreate.js';
 
 export const COMPLETED_LOCK = 'Completed (exported): its ⋯ → Mark Paid/Ours again, or the whole day\u2019s (⋯ next to EXPORT), to change it';
 // A buy marked Completed from its own ⋯, not exported (owner, 2026-10-02).
@@ -10,3 +11,19 @@ export const markedByHand = (l) => Boolean(l.completed_at) && l.cc_status == nul
  * leaves it Completed (decision 340): only its buy's own Mark Paid/Ours again brings it back.
  */
 export const struckByCompletion = (l) => l.struck_at != null && l.struck_at === l.completed_at;
+
+/**
+ * The day's own export, for "Download the same file again" (decision 361): the exported cards
+ * stamped with the day's Custom SKU, not a single buy's ("101626-42") nor a later Can't upload
+ * export's (stamped the day it ran). A day exported before migration 0071 was stamped the day its
+ * export ran: then its exported cards with no buy number.
+ * @returns {{ lines: object[], skus: string[] }}
+ */
+export function dayExportLines(lines, day) {
+  const exported = lines.filter((l) => l.cc_status === 'exported');
+  const sku = customSkuForDay(day);
+  const own = exported.filter((l) => l.cc_custom_sku === sku);
+  if (own.length) return { lines: own, skus: [sku] };
+  const old = exported.filter((l) => l.cc_custom_sku && !l.cc_custom_sku.includes('-'));
+  return { lines: old, skus: [...new Set(old.map((l) => l.cc_custom_sku))] };
+}

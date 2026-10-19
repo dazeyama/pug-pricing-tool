@@ -207,17 +207,28 @@ function CollectionScreen({ id }) {
    * then the dialog.
    */
   function startExport() {
+    const stamped = col.lines.filter((l) => l.cc_status === 'exported');
+    /** The same file again from the stamps: it changes nothing, so it needs no user or edit lock. */
+    const downloadAgain = () => {
+      const rows = downloadMassCreate(stamped, `cc-mass-create-${fileSafe(buy.customer_name)}-${fileStamp(new Date(exportedAt))}.csv`,
+        values.fallback_pct_mtg);
+      toast(`Downloaded the same file again: ${rows} row${rows === 1 ? '' : 's'}, Custom SKU ${skus.join(', ')}.`, 'ok');
+    };
     if (buy && !system && buy.status === 'completed') {
-      const stamped = col.lines.filter((l) => l.cc_status === 'exported');
       if (!stamped.length) {
         toast(col.lines.some((l) => l.cc_status === 'cant_upload')
           ? "Nothing here could be uploaded: there's no file."
           : 'Completed with nothing exported: reopen it (back to Paid/Ours) to export.', 'err');
         return;
       }
-      const rows = downloadMassCreate(stamped, `cc-mass-create-${fileSafe(buy.customer_name)}-${fileStamp(new Date(exportedAt))}.csv`,
-        values.fallback_pct_mtg);
-      toast(`Downloaded the same file again: ${rows} row${rows === 1 ? '' : 's'}, Custom SKU ${skus.join(', ')}.`, 'ok');
+      downloadAgain();
+      return;
+    }
+    // Paid/Ours with every Magic card exported: it stays Paid/Ours until Completed is set by hand
+    // (decision 294), and its file comes again the same way (decision 362).
+    if (buy && !system && buy.status === 'paid' && stamped.length
+      && !col.lines.some((l) => l.game === 'mtg' && movesOn(l) && !l.cc_status)) {
+      downloadAgain();
       return;
     }
     if (buy && !system && buy.status !== 'paid') {
@@ -253,7 +264,7 @@ function CollectionScreen({ id }) {
     // Pokémon cards are left out entirely (owner, 2026-09-30), and cards exported already (0073).
     const left = col.lines.some((l) => l.game === 'mtg' && movesOn(l) && !l.cc_status);
     if (left) setExportStep('dialog');
-    else if (magic) toast('Every Magic card here is exported already.', 'err');
+    else if (magic) toast("Nothing here could be uploaded: there's no file.", 'err');   // all Can't upload
     else toast('No Magic cards here to export. Completed is set from the status menu.', 'err');
   }
 

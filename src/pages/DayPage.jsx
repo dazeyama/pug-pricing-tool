@@ -29,7 +29,7 @@ import { DB_MESSAGES, dbErrorCode, dbMessage } from '../lib/dbErrors.js';
 import { channelName } from '../lib/channels.js';
 import BuyPanel from './day/BuyPanel.jsx';
 import { ConvertBuyModal, DeleteBuyModal } from './day/DayModals.jsx';
-import { COMPLETED_LOCK, markedByHand, struckByCompletion } from './day/dayRules.js';
+import { COMPLETED_LOCK, dayExportLines, markedByHand, struckByCompletion } from './day/dayRules.js';
 
 const MESSAGES = {
   ...DB_MESSAGES,
@@ -193,6 +193,8 @@ function DayScreen({ game, day }) {
   const exportedCards = doneLines.filter((l) => l.cc_status === 'exported').reduce((n, l) => n + l.quantity, 0);
   const cantCards = doneLines.filter((l) => l.cc_status === 'cant_upload').reduce((n, l) => n + l.quantity, 0);
   const fileName = `cc-mass-create-${game === 'mtg' ? 'magic' : game}-${day}.csv`;
+  // Export single buy's buy as the page has it now, so its dialog sees a newer version (decision 362).
+  const exportBuyNow = exportingBuy && (mine.find((b) => b.id === exportingBuy.buy.id) ?? exportingBuy.buy);
   // EXPORT (n) on Magic days (owner, 2026-10-02): the cards to count in the
   // real pile first. The cards the export will take; once the day is all
   // Completed, every card that day.
@@ -449,15 +451,19 @@ function DayScreen({ game, day }) {
       if (guard()) unlessFlagged(pending, () => setExporting(true));
       return;
     }
-    const stamped = doneLines.filter((l) => l.cc_status === 'exported');
-    if (!stamped.length) {
+    const stamped = dayExportLines(doneLines, day);
+    if (!stamped.lines.length && doneLines.some((l) => l.cc_status === 'exported')) {
+      toast("This day's cards were exported one buy at a time (Export single buy), so there's no day file to download again.", 'err');
+      return;
+    }
+    if (!stamped.lines.length) {
       toast(cantCards
         ? "Nothing here could be uploaded: there's no file. Every card is Can't upload."
         : "These buys were marked Completed without being exported, so there's no file: mark them Paid/Ours again (⋯), then EXPORT.", 'err');
       return;
     }
-    const rows = downloadMassCreate(stamped, fileName, settingValues.fallback_pct_mtg);
-    toast(`Downloaded the same file again: ${rows} row${rows === 1 ? '' : 's'}, Custom SKU ${skus.join(', ')}.`, 'ok');
+    const rows = downloadMassCreate(stamped.lines, fileName, settingValues.fallback_pct_mtg);
+    toast(`Downloaded the same file again: ${rows} row${rows === 1 ? '' : 's'}, Custom SKU ${stamped.skus.join(', ')}.`, 'ok');
   }
 
   /**
@@ -848,10 +854,10 @@ function DayScreen({ game, day }) {
         <ExportDialog
           mode="export"
           title={`Export Buy ${exportingBuy.number} (${GAME_NAMES[game]}, ${dayDate(day)}) to Crystal Commerce`}
-          items={exportingBuy.buy.buy_lines
+          items={exportBuyNow.buy_lines
             .filter((l) => l.game === game && !l.completed_at && movesOn(l))
             .map((line) => ({ line, where: `Buy ${exportingBuy.number}` }))}
-          target={{ kind: 'buy', buy_id: exportingBuy.buy.id, game, version: exportingBuy.buy.version, day, number: exportingBuy.number }}
+          target={{ kind: 'buy', buy_id: exportBuyNow.id, game, version: exportBuyNow.version, day, number: exportingBuy.number }}
           fileName={`cc-mass-create-${game === 'mtg' ? 'magic' : game}-${day}-buy-${exportingBuy.number}.csv`}
           onExported={exported}
           onClose={() => {

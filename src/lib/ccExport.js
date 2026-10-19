@@ -224,6 +224,25 @@ export async function saveExport({ target, matches, cant, setMaps, userId, devic
 }
 
 /**
+ * An export whose answer was lost on the way back (flaky wifi; decision 362): did it go through?
+ * Its matched cards, read back, each carry the export id the dialog stamped in their Sell Price
+ * basis when it did, and not another computer's export of the same cards.
+ * @param {string[]} lineIds  the matched cards' line ids
+ * @param {string} exportId
+ * @returns {Promise<object[]|null>}  the cards as export_lines returns them, or null if it didn't land
+ */
+export async function exportLanded(lineIds, exportId) {
+  if (!lineIds.length) return null;
+  const { data, error } = await inChunks((part) => supabase.from('buy_lines')
+    .select('id, quantity, cc_status, cc_product_name, cc_category, cc_condition, cc_sell_price, cc_sell_basis, cc_custom_sku')
+    .in('id', part), lineIds);
+  if (error) throw new Error(`Couldn't check: ${error.message}`);
+  const landed = data.length === lineIds.length
+    && data.every((l) => l.cc_status === 'exported' && l.cc_sell_basis?.exportId === exportId);
+  return landed ? data : null;
+}
+
+/**
  * Hand the browser the Mass Create file (export spec 4.3).
  * @param {Record<string, number>} pct  Master Fallback Percentages (Magic): worse conditions' NM prices
  */

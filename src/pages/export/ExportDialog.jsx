@@ -10,8 +10,10 @@ import { formatMoney } from '../../lib/money.js';
 import { openPopup, popupName } from '../../lib/popup.js';
 import { CONDITION_WORDS, customSkuFor, customSkuForDay, massCreateRows, nearMintPrices, productKey } from '../../lib/massCreate.js';
 import {
-  downloadMassCreate, forgetLink, linkKey, matchLines, saveExport, saveLink, saveSetMap, searchProducts, sellPrices,
+  downloadMassCreate, exportLanded, forgetLink, linkKey, matchLines, saveExport, saveLink, saveSetMap, searchProducts,
+  sellPrices,
 } from '../../lib/ccExport.js';
+import { uuid } from '../../lib/uuid.js';
 
 // The export dialog (docs/EXPORT_FUNCTION.md 8.3): Matching, then Review in
 // three groups (Needs a choice, Matched, Can't upload). In 'check' mode (the
@@ -45,7 +47,14 @@ export default function ExportDialog({
   // and hands over the same cards anew; matching again then threw away every
   // pick and typed price. A buy that really changed meanwhile is caught when
   // saving (stale_version, from these versions).
-  const [{ items, target }] = useState(() => ({ items: itemsNow, target: targetNow }));
+  const [{ items, target }, setFrozen] = useState(() => ({ items: itemsNow, target: targetNow }));
+  // What the page hands over now, for a save refused as stale_version (decision 362).
+  const latest = useRef(null);
+  latest.current = { items: itemsNow, target: targetNow };
+  // Stamped in every card's Sell Price basis, so an export whose answer was lost can be told
+  // from another computer's export of the same cards (exportLanded, decision 362).
+  const [exportId] = useState(() => uuid());
+  const lostAnswer = useRef(false);   // a save failed with no answer: it may have gone through
   const staff = useStaff();
   const toast = useToast();
   const { deviceId } = useDevice();
@@ -234,7 +243,7 @@ export default function ExportDialog({
         product_id: s.product.product_id,
         sell_price: sell.price,
         // The condition's percentage, so the same file comes out again later (massCreate.js).
-        sell_basis: { ...sell.basis, conditionPct: pct?.[r.line.condition] != null ? Number(pct[r.line.condition]) : null },
+        sell_basis: { ...sell.basis, conditionPct: pct?.[r.line.condition] != null ? Number(pct[r.line.condition]) : null, exportId },
         link: s.by === 'staff' ? 'staff' : s.by === 'match' ? 'auto' : null,
       };
     });
@@ -258,7 +267,48 @@ export default function ExportDialog({
         setRun((n) => n + 1);
         return;
       }
-      setSaveError(e.message);
+      // A lost answer (flaky wifi) is no answer at all, or, on the next try, the refusals of an
+      // export already saved. The cards say whether this dialog's export went through; if it did,
+      // the file comes from them (decision 362). Can't upload cards' exported copies are gone, so
+      // there it can't be told.
+      if (!e.code) lostAnswer.current = true;
+      const knowable = matches.length > 0 && target?.kind !== 'cant_upload';
+      let checked = false;
+      if (knowable && (!e.code || e.code === 'stale_version' || e.code === 'nothing_to_export')) {
+        try {
+          const landed = await exportLanded(matches.map((m) => m.line_id), exportId);
+          if (landed) {
+            const cards = landed.reduce((n, l) => n + l.quantity, 0);
+            const rows = cards > 0 ? downloadMassCreate(landed, fileName, pct) : 0;
+            onExported?.({ cards, cant: cardsIn(groups.cant), sku: landed[0].cc_custom_sku, lines: landed, rows });
+            return;
+          }
+          checked = true;
+        } catch {
+          // Still no connection: said below.
+        }
+      }
+      if (e.code === 'stale_version') {
+        const now = latest.current;
+        const same = sameCards(items, now.items);
+        if (lostAnswer.current && !checked) {
+          setSaveError('Something changed since this opened (on another computer, or this export, if its answer was lost): Cancel and look at the page before exporting again.');
+        } else if (same && JSON.stringify(now.target) !== JSON.stringify(target)) {
+          // A buy changed but not its cards (a note, a payment): the picks stand, saved against its version now.
+          setFrozen({ items, target: now.target });
+          setSaveError('A buy here changed on another computer, but not its cards: nothing was exported yet. Press Export again to go ahead.');
+        } else {
+          setSaveError(same
+            ? 'Something changed on another computer since this opened: nothing was exported. Cancel, then EXPORT again.'
+            : 'The cards changed on another computer since this opened: nothing was exported. Cancel, then EXPORT again to see the change.');
+        }
+      } else if (!e.code) {
+        setSaveError(checked
+          ? `${e.message}: nothing was exported. Try again.`
+          : `${e.message}. If the connection dropped, it may have exported anyway: Cancel and look at the page before trying again.`);
+      } else {
+        setSaveError(e.message);
+      }
       setPhase('confirm');
     }
   }
@@ -523,6 +573,10 @@ export default function ExportDialog({
     </Modal>
   );
 }
+
+/** The same cards as when the dialog opened, as the page has them now (decision 362). */
+const sameCards = (a, b) => a.length === b.length
+  && a.every((x, i) => JSON.stringify(x.line) === JSON.stringify(b[i].line));
 
 /**
  * The card's exact printing on Scryfall, by its set and collector number
