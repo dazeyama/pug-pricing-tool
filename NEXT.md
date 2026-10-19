@@ -6,6 +6,17 @@ and function.
 
 ## Open
 
+- **From the v0.9.9.14-nightb4 pre-push review** (none stopped the push):
+  - **A customer name of 81–120 characters can't be converted to a collection.** `ConfirmBuyModal.jsx:117` allows
+    120 (`maxLength`), but `buy_to_collection` (`supabase/current/public.buy_to_collection.sql:25`) refuses names
+    outside 1–80 with `bad_name`. `BuyPanel.jsx:234` only blocks an empty name, the toast (`DayPage.jsx:39`) asks
+    for a project name, and `convert` in `DayPage.jsx:355` keeps the dialog open with no field to fix. Nothing is
+    written. Already live before this push.
+  - **Help says struck cards "stay behind" on Convert to project and Convert to collection** (`README.md:1113-1114`).
+    The database keeps the buy only for Completed cards; a buy left with only struck cards is deleted, and the
+    Changelog keeps them crossed out. `README.md:1099` and decision 335 are right.
+  - **The published tag `v0.9.9.9-fable`** is still on GitHub, against the "-refactor" rule in CLAUDE.md. Renaming a
+    published tag is the owner's call.
 - **Before the squash:** a full smoke test pass, `docs/TEST.md` (180 cases), on dev.
 - **Phase 10 launch** (owner's go): the squash and the switch to prod, `SQUASH.md` sections 1–10 (N is 0076; the
   baseline `0001_baseline.sql`). Decide the **Supabase plan for prod** first (`docs/DESIGN_SPEC.md` Appendix D 2:
