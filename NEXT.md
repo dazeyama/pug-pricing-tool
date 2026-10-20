@@ -16,8 +16,8 @@ and function.
      an edit whose saved `jt:` version isn't in a search that worked stays blocked (the server keeps it a week);
   4. `supabase/functions/prices/index.ts` `unanswered` (plausible): a remembered card's last kept price comes back
      however old, as a normal answer, and the export doesn't check its age (`src/lib/todaysPrices.js`);
-  5. `src/pages/price/usePrices.js` catch (confirmed): on a 429 or 502 the partial results, `failed` ones included,
-     are kept for the page's life, decision 357's bug by another way;
+  5. **done** (decision 368): a reply's answers only are kept, on errors too, and in the scan receiver
+     (`src/lib/priceAnswers.js` `keepAnswers`, `usePrices.js`, `useScanReceiver.js`);
   6. `src/pages/export/ExportDialog.jsx` `save` (plausible): the read-back can run before a slow save commits and
      say "nothing was exported"; the retry then finds it;
   7. `src/pages/CollectionPage.jsx` `startExport` (plausible): a Paid/Ours collection's file again takes every
