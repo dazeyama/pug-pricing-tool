@@ -4,7 +4,7 @@ import { usePriceLimit } from '../../state/priceLimit.jsx';
 import { useConnection } from '../../state/connection.jsx';
 import { isSealed } from '../../lib/justtcgCards.js';
 import { anotherCard } from '../../lib/anotherCard.js';
-import { didNotAnswer } from '../../lib/priceAnswers.js';
+import { keepAnswers } from '../../lib/priceAnswers.js';
 
 // Prices only after a card has stayed selected for 400ms (spec 5.3), so
 // arrowing through suggestions doesn't spend the JustTCG allowance. Results
@@ -50,23 +50,20 @@ export function usePrices(selected, { pokemon, versions, jaName, waitName }) {
     setState({ key: signature, status: 'loading', error: null });
     let alive = true;
     const timer = setTimeout(async () => {
+      const asked = wanted.filter((l) => !results.has(l.key));
       try {
-        const asked = wanted.filter((l) => !results.has(l.key));
         const got = await fetchPrices(asked);
         // A search JustTCG didn't answer (the function doesn't remember it either): not kept for the
         // page's life, so the card is asked for again; shown as an error with Retry (decision 357).
-        let unanswered = false;
-        for (const [k, v] of Object.entries(got)) {
-          if (didNotAnswer(v, asked.find((l) => l.key === k))) unanswered = true;
-          else results.set(k, v);
-        }
+        const unanswered = keepAnswers(got, asked, results);
         if (alive) {
           setState(unanswered
             ? { key: signature, status: 'error', error: "JustTCG didn't answer for this card" }
             : { key: signature, status: 'ok', error: null });
         }
       } catch (e) {
-        for (const [k, v] of Object.entries(e.payload?.results ?? {})) results.set(k, v);
+        // A 429 or 502 still answers what it got to: kept, the rest asked again (decision 368).
+        keepAnswers(e.payload?.results, asked, results);
         if (!alive) return;
         if (e.code === 'DAILY_LIMIT_EXCEEDED' || e.code === 'REQUEST_LIMIT_EXCEEDED') {
           reachedLimit(e.payload?.resetAt ? new Date(e.payload.resetAt) : null);

@@ -8,6 +8,7 @@ import { priceLadder } from '../../lib/ladder.js';
 import {
   cardmarketPrice, conditionPrices, conditionVariants, fallbackPrice, fetchPrices, lookupsFor, priceResults, resultFor,
 } from '../../lib/prices.js';
+import { keepAnswers } from '../../lib/priceAnswers.js';
 import { loadEurUsd } from '../../lib/useEurUsd.js';
 import { lineOfScan, scanFinish, scanQuote } from '../../lib/scanPrice.js';
 import { useConnection } from '../../state/connection.jsx';
@@ -151,13 +152,14 @@ export function useScanReceiver({ deviceId, label, session, target, list, roundU
           const missing = lookups.filter((l) => !priceResults.has(l.key));
           if (missing.length) {
             // No answer in time: thrown, so it goes on to Cardmarket as on any JustTCG failure.
-            for (const [k, v] of Object.entries(await withTimeout(fetchPrices(missing), PRICE_MS))) priceResults.set(k, v);
+            // Only answers are kept: this cache is the Price screen's too (decision 368).
+            keepAnswers(await withTimeout(fetchPrices(missing), PRICE_MS), missing, priceResults);
           }
           const results = Object.fromEntries(lookups.filter((l) => priceResults.has(l.key)).map((l) => [l.key, priceResults.get(l.key)]));
           result = resultFor(candidate, results, { finish }) ?? null;
           market = conditionPrices(result?.card, { game: 'mtg', lang: candidate.lang, finish });
         } catch (e) {
-          for (const [k, v] of Object.entries(e.payload?.results ?? {})) priceResults.set(k, v);
+          keepAnswers(e.payload?.results, lookupsFor(candidate, {}), priceResults);
           if (e.code === 'DAILY_LIMIT_EXCEEDED' || e.code === 'REQUEST_LIMIT_EXCEEDED') {
             now.reachedLimit(e.payload?.resetAt ? new Date(e.payload.resetAt) : null);
           }
