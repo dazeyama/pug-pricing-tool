@@ -64,9 +64,10 @@ and function.
   - a backup with columns the database lacks restores without them, silently; a hand-edited backup with empty rows in
     a learned-match table empties it (decision 348);
   - the "Exported: Undo export… first" wording also shows on Can't upload cards (decision 345).
-- **After the launch push (v1.0.0-launch, 2026-10-19), the owner's setup on the live site:** sign in with prod's
-  store password; name the computer, add the users, enter the JustTCG key (Settings → API keys), upload the CC CSV;
-  every store computer signs in again. The **Supabase plan for prod** (`docs/DESIGN_SPEC.md` Appendix D 2: Free vs
+- **After the launch push (v1.0.0-launch, 2026-10-19), the owner's setup on the live site.** Done the same night:
+  signed in with prod's store password, the JustTCG key saved and a price came back, so `secrets` and `prices` are
+  proven on prod. Left as the owner gets to them: name the computer, add the users, upload the CC CSV; every store
+  computer signs in again. The **Supabase plan for prod** (`docs/DESIGN_SPEC.md` Appendix D 2: Free vs
   Pro) is still to decide. The clean-up (the spec's Phase 10 list, `C:\ClaudeProjects\temp\pug-squash\` included)
   waits until prod has run a while.
 - **The smoke test pass** (`docs/TEST.md`, 200 cases): planned before the squash and the switch, not done; neither
