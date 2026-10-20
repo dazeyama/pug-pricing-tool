@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Modal from '../../components/Modal.jsx';
 import LinePreview, { previewFor } from '../../components/LinePreview.jsx';
 import { useStaff } from '../../state/staff.jsx';
-import { useSettings } from '../../state/settings.jsx';
+import { useSettings, useSettingsReady } from '../../state/settings.jsx';
 import { useDevice } from '../../state/device.jsx';
 import { useToast } from '../../components/Toast.jsx';
 import { lineTextWithCondition } from '../../lib/lineFormat.js';
@@ -60,6 +60,7 @@ export default function ExportDialog({
   const toast = useToast();
   const { deviceId } = useDevice();
   const { values: settings } = useSettings();
+  const ready = useSettingsReady();
   const exporting = mode === 'export';
   const [phase, setPhase] = useState('matching');   // matching | review | confirm | saving | error
   const [run, setRun] = useState(0);                // bumped to match again (the inventory changed)
@@ -223,6 +224,8 @@ export default function ExportDialog({
   const nearMint = exporting ? nearMintPrices(fileLines, pct) : new Map();
 
   async function save() {
+    // Sell Prices from the store's Fallback Percentages, not the built-in ones (decision 389).
+    if (!ready()) return;
     // The file only: downloaded as it would be, its Custom SKU today's; nothing saved, so no user needed.
     if (fileOnly) {
       const sku = customSkuFor(new Date());

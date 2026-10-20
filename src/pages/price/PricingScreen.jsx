@@ -29,6 +29,7 @@ import {
 import { BulkFinish, BulkPrice, BulkSelected } from './Bulk.jsx';
 import { useStaff } from '../../state/staff.jsx';
 import { useConnection } from '../../state/connection.jsx';
+import { SETTINGS_WAIT, useSettings } from '../../state/settings.jsx';
 import { useToast } from '../../components/Toast.jsx';
 import { useDevice } from '../../state/device.jsx';
 import { useScanSession } from './useScanSession.js';
@@ -102,6 +103,7 @@ export default function PricingScreen({
   urlSearch = null,
 }) {
   const [text, setText] = useState('');
+  const { loaded: settingsLoaded } = useSettings();
   // EN | JP for Pokémon: EN every time a screen opens, not remembered
   // (owner, 2026-10-02; spec 8.2).
   const [lang, setLang] = useState('en');
@@ -279,6 +281,7 @@ export default function PricingScreen({
   const unitPrice = bulk ? manual ?? bulk.value : manual ?? ladder[condition]?.price ?? null;
   let addBlocked = null;
   if (locked) addBlocked = locked;
+  else if (!settingsLoaded) addBlocked = SETTINGS_WAIT;   // not at the built-in defaults (decision 389)
   else if (addLocked && !editing) addBlocked = addLocked;
   else if (!selected) {
     // Several suggestions and none picked yet: ↓ picks the first.

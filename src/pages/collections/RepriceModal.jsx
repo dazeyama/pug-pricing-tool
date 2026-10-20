@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Modal from '../../components/Modal.jsx';
-import { useSettings } from '../../state/settings.jsx';
+import { useSettings, useSettingsReady } from '../../state/settings.jsx';
 import { todaysPrices } from '../../lib/todaysPrices.js';
 import { repricedLine } from '../../lib/reprice.js';
 import { bulkValuesFrom, cardCounts, countText, isBulk, repricedBulk } from '../../lib/bulk.js';
@@ -21,6 +21,7 @@ export default function RepriceModal({ lines: all, roundUp = false, onReprice, o
   // Not struck cards, nor exported ones: their price is frozen (decision 345).
   const lines = all.filter((l) => !isStruck(l) && !l.cc_status);
   const { values } = useSettings();
+  const ready = useSettingsReady();   // not at the built-in defaults (decision 389)
   const [phase, setPhase] = useState('ask');   // ask | working | error
   const [step, setStep] = useState('');
   const [error, setError] = useState(null);
@@ -29,6 +30,7 @@ export default function RepriceModal({ lines: all, roundUp = false, onReprice, o
   const requests = Math.max(1, Math.ceil(lines.length / 100));
 
   async function run() {
+    if (!ready()) return;
     setPhase('working');
     setError(null);
     try {

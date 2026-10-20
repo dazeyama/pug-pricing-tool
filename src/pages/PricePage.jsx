@@ -9,7 +9,7 @@ import { useDraft } from './price/useDraft.js';
 import { lineText } from '../lib/lineFormat.js';
 import { tiersFrom } from '../lib/rates.js';
 import { cardCounts, countText } from '../lib/bulk.js';
-import { useSettings } from '../state/settings.jsx';
+import { SETTINGS_WAIT, useSettings } from '../state/settings.jsx';
 import { useDevice } from '../state/device.jsx';
 import { useStaff } from '../state/staff.jsx';
 import { useToast } from '../components/Toast.jsx';
@@ -33,7 +33,7 @@ export default function PricePage() {
   const draft = useDraft(deviceId);
   const { current: user, pulse, forget } = useStaff();
   const toast = useToast();
-  const { values } = useSettings();
+  const { values, loaded: settingsLoaded } = useSettings();
   const [confirming, setConfirming] = useState(false);
   const [resetKey, setResetKey] = useState(0);
   // BUY COMPLETE (owner, 2026-10-17; decision 292): the dialog after a confirm, with the printouts on offer.
@@ -133,6 +133,8 @@ export default function PricePage() {
             label={countText(cardCounts(draft.lines))}
             busy={draft.busy}
             canEdit={canEdit}
+            // Its rates are Settings' (decision 389): CONFIRM BUY waits for them.
+            waiting={settingsLoaded ? null : SETTINGS_WAIT}
             onCancel={cancelBuy}
             onConfirm={() => (canEdit ? setConfirming(true) : editBlocked())}
           />

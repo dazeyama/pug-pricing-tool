@@ -69,7 +69,7 @@ const RESOLVE_REFUSALS = new Set(['scan_gone', 'not_session', 'bad_status']);
 export function useScanReceiver({ deviceId, label, session, target, list, roundUp, onAdded }) {
   const { epoch } = useConnection();
   const { reachedLimit } = usePriceLimit();
-  const { values } = useSettings();
+  const { values, loaded: settingsLoaded } = useSettings();
   const staff = useStaff();
   const paired = Boolean(session?.phone_device_id);
 
@@ -77,7 +77,7 @@ export function useScanReceiver({ deviceId, label, session, target, list, roundU
   const latest = useRef({});
   latest.current = {
     list, user: staff.current, touch: staff.touch, roundUp, onAdded, label, pct: values.fallback_pct_mtg, reachedLimit,
-    phone: session?.phone_label ?? 'the phone',
+    phone: session?.phone_label ?? 'the phone', settingsLoaded,
   };
   const running = useRef(false);
   // This screen still open: a batch stops when it goes (Help, another collection), and what's left
@@ -226,6 +226,8 @@ export function useScanReceiver({ deviceId, label, session, target, list, roundU
   /** Every waiting scan (or undo) for this list, oldest first; again if more arrive meanwhile. */
   const pump = useCallback(async () => {
     if (!deviceId || !targetKind) return;
+    // Nothing priced at the built-in defaults (decision 389): the scans wait, claimed on a later look.
+    if (!latest.current.settingsLoaded) return;
     if (running.current) {
       again.current = true;
       return;

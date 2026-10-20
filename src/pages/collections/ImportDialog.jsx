@@ -3,7 +3,7 @@ import Modal from '../../components/Modal.jsx';
 import LinePreview, { previewFor } from '../../components/LinePreview.jsx';
 import { useStaff } from '../../state/staff.jsx';
 import { useDevice } from '../../state/device.jsx';
-import { useSettings } from '../../state/settings.jsx';
+import { useSettings, useSettingsReady } from '../../state/settings.jsx';
 import { useToast } from '../../components/Toast.jsx';
 import { formatMoney } from '../../lib/money.js';
 import { formatShortDate } from '../../lib/time.js';
@@ -43,6 +43,7 @@ export default function ImportDialog({ file, target, onDone, onClose }) {
   const toast = useToast();
   const { deviceId } = useDevice();
   const { values: settings } = useSettings();
+  const ready = useSettingsReady();
   const pct = settings.fallback_pct_mtg;
   const pctRef = useRef(pct);
   pctRef.current = pct;
@@ -130,6 +131,7 @@ export default function ImportDialog({ file, target, onDone, onClose }) {
       staff.pulse();
       return;
     }
+    if (!ready()) return;   // not at the built-in defaults (decision 389)
     const back = phase;
     setPhase('saving');
     setSaveError(null);

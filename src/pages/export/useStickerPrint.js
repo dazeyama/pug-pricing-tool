@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useToast } from '../../components/Toast.jsx';
-import { useSettings } from '../../state/settings.jsx';
+import { useSettings, useSettingsReady } from '../../state/settings.jsx';
 import { pokemonPrintLines } from '../../lib/auditPrint.js';
 import { sellPriceFor } from '../../lib/sellPrice.js';
 import { todaysPrices } from '../../lib/todaysPrices.js';
@@ -20,10 +20,11 @@ import { deliver, openPrintTab, setStep } from './printTab.js';
 export function useStickerPrint() {
   const toast = useToast();
   const { values } = useSettings();
+  const ready = useSettingsReady();   // not at the built-in defaults (decision 389)
   const [printing, setPrinting] = useState(false);
 
   const print = useCallback(async ({ lines, title, fileName }) => {
-    if (printing) return;
+    if (printing || !ready()) return;
     const chosen = pokemonPrintLines(lines);
     if (!chosen.length) {
       toast('No Pokémon cards to put stickers on.', 'err');
@@ -48,7 +49,7 @@ export function useStickerPrint() {
     } finally {
       setPrinting(false);
     }
-  }, [printing, toast, values]);
+  }, [printing, ready, toast, values]);
 
   return { print, printing };
 }

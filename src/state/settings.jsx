@@ -1,12 +1,18 @@
-import { createContext, useContext, useMemo } from 'react';
+import { createContext, useCallback, useContext, useMemo } from 'react';
 import { supabase } from '../lib/supabase.js';
 import { useLiveTable } from '../lib/useLiveTable.js';
 import { DEFAULT_TIERS } from '../lib/rates.js';
 import { DEFAULT_BULK_VALUES } from '../lib/bulk.js';
 import { dbErrorCode } from '../lib/dbErrors.js';
+import { useToast } from '../components/Toast.jsx';
 
 /** A save refused because this screen was out of date (decision 354). */
 const STALE_SETTINGS = 'Settings changed on another computer: check and save again';
+/**
+ * Why nothing is priced yet (decision 389): until Settings has loaded, the built-in defaults
+ * would stand in for the store's rates and percentages, so every pricing action waits.
+ */
+export const SETTINGS_WAIT = "Settings haven't loaded yet: nothing is priced until they do";
 
 // App settings (spec 6.1 `settings`): key/value rows, live on every computer.
 
@@ -28,7 +34,7 @@ export const DEFAULTS = {
 const SettingsContext = createContext(null);
 
 export function SettingsProvider({ children }) {
-  const { data, loaded, reload } = useLiveTable('settings', () =>
+  const { data, loaded, error, reload } = useLiveTable('settings', () =>
     supabase.from('settings').select('key, value, updated_at, updated_by'));
 
   const values = useMemo(() => {
@@ -65,7 +71,7 @@ export function SettingsProvider({ children }) {
   }
 
   return (
-    <SettingsContext.Provider value={{ loaded, values, save }}>
+    <SettingsContext.Provider value={{ loaded, failed: !loaded && Boolean(error), values, save, reload }}>
       {children}
     </SettingsContext.Provider>
   );
@@ -73,4 +79,15 @@ export function SettingsProvider({ children }) {
 
 export function useSettings() {
   return useContext(SettingsContext);
+}
+
+/** A pricing action's check (decision 389): false, with a toast, while Settings haven't loaded. */
+export function useSettingsReady() {
+  const { loaded } = useSettings();
+  const toast = useToast();
+  return useCallback(() => {
+    if (loaded) return true;
+    toast(`${SETTINGS_WAIT}.`, 'err');
+    return false;
+  }, [loaded, toast]);
 }

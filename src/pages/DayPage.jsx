@@ -18,7 +18,7 @@ import { downloadMassCreate, restampTimes } from '../lib/ccExport.js';
 import { withoutRestamps } from '../lib/massCreate.js';
 import { todaysPrices } from '../lib/todaysPrices.js';
 import { sellPriceFor } from '../lib/sellPrice.js';
-import { useSettings } from '../state/settings.jsx';
+import { useSettings, useSettingsReady } from '../state/settings.jsx';
 import RemoveModal from '../components/RemoveModal.jsx';
 import { walkInStatus } from './collections/status.js';
 import { useConnection } from '../state/connection.jsx';
@@ -96,6 +96,7 @@ function DayScreen({ game, day }) {
   const [askComplete, setAskComplete] = useState(false); // after Print PKM Stickers?: complete the day? (decision 297)
   const [completeStep, setCompleteStep] = useState('');   // what COMPLETE is doing (today's prices…)
   const { values: settingValues } = useSettings();
+  const settingsReady = useSettingsReady();
   // Print? and Print buy (docs/TEAM_FEEDBACK.md 3): the audit printout, changing nothing.
   const { print, printing } = useAuditPrint();
   // Print PKM Stickers? on a Pokémon day (decision 282): price tags at today's sell prices, saving nothing.
@@ -390,6 +391,7 @@ function DayScreen({ game, day }) {
 
   /** The day's Paid/Ours buys in this game marked Completed, nothing exported (`day_complete`). */
   async function complete() {
+    if (!settingsReady()) return;   // Sell Prices not at the built-in percentages (decision 389)
     setBusy(true);
     // Today's Sell Prices first, worked out as the export does (owner,
     // 2026-10-09): shown in green once the day is Completed. Without today's

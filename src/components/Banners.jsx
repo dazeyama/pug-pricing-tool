@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useInventory } from '../state/inventory.jsx';
 import { useConnection } from '../state/connection.jsx';
 import { usePriceLimit } from '../state/priceLimit.jsx';
-import { useSettings } from '../state/settings.jsx';
+import { SETTINGS_WAIT, useSettings } from '../state/settings.jsx';
 import { formatTime } from '../lib/time.js';
 import { backupDue, daysSince } from '../lib/backup.js';
 import { useBackupDownload } from '../lib/useBackupDownload.js';
@@ -72,9 +72,17 @@ export default function Banners() {
   const inventory = useInventory();
   const { offline } = useConnection();
   const { limitUntil } = usePriceLimit();
+  const settings = useSettings();
 
   return (
     <>
+      {/* Settings that failed to load (decision 389): nothing is priced until they do. */}
+      {settings.failed && !offline && (
+        <div className="banner err banner-row">
+          <span>{SETTINGS_WAIT}. It tries again by itself.</span>
+          <button type="button" className="btn small banner-btn" onClick={() => settings.reload()}>Retry</button>
+        </div>
+      )}
       {inventory.loaded && !inventory.current && (
         <div className="banner err">
           <strong>Master Crystal Inventory required.</strong> Upload your Crystal Commerce
