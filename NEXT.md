@@ -6,6 +6,11 @@ and function.
 
 ## Open
 
+- **Unpushed** (2026-10-20): 13 commits since v1.0.0-launch, `e1e8a7d`..`725afe5`. What reaches the live site
+  when pushed: the Pokémon stickers in whole dollars (decision 384) and its Help section. The DEV watermark
+  (decision 382) is dev-server only and never in a build; the rest is docs, scripts, the lint hook (383) and
+  migrations 0002–0003, already on prod. No new migration and no Edge Function change. Push only on the owner's ask
+  (the release skill).
 - **Help out of date** (only when the owner asks), from the release review's fixes: a TCGplayer-only Pokémon version
   whose search failed is added at a manual price, and an edit keeps it as **As saved** (decision 369); "the same
   file again" leaves out cards exported from Can't upload cards, and needs the connection (decision 372).
