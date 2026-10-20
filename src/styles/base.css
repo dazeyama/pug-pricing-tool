@@ -20,7 +20,7 @@ html.dev-db body::after {
   inset: 0;
   z-index: 9999;
   pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='86'%3E%3Cg fill='rgba(255,255,255,0.04)' font-family='Segoe UI,system-ui,sans-serif' font-size='20' font-weight='700' letter-spacing='4'%3E%3Ctext x='12' y='42' transform='rotate(-30 12 42)'%3EDEV%3C/text%3E%3Ctext x='82' y='85' transform='rotate(-30 82 85)'%3EDEV%3C/text%3E%3C/g%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='86'%3E%3Cg fill='rgba(255,255,255,0.03)' font-family='Segoe UI,system-ui,sans-serif' font-size='20' font-weight='700' letter-spacing='4'%3E%3Ctext x='12' y='42' transform='rotate(-30 12 42)'%3EDEV%3C/text%3E%3Ctext x='82' y='85' transform='rotate(-30 82 85)'%3EDEV%3C/text%3E%3C/g%3E%3C/svg%3E");
   background-repeat: repeat;
 }
 @media print { html.dev-db body::after { display: none; } }
