@@ -24,6 +24,11 @@ import './styles/scan.css';
 watchUiZoom();
 // A phone (or #/scan) is the scanner: no desktop-only notice, no laptop zoom (lib/mobile.js).
 watchScanMode();
+// Localhost on dev wears a faint DEV watermark, so it can't be taken for the live site (decision 382; base.css).
+// Written as import.meta.env.DEV itself: a build replaces it with false and drops the line, dev's ref with it.
+if (import.meta.env.DEV && import.meta.env.VITE_SUPABASE_URL?.startsWith('https://psucrzljraxeootwnltf.')) {
+  document.documentElement.classList.add('dev-db');
+}
 
 // HashRouter: GitHub Pages can't rewrite deep links, and #/routes survive a refresh.
 createRoot(document.getElementById('root')).render(

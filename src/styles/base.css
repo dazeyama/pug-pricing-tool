@@ -11,6 +11,20 @@ body {
   font-size: 14px;
 }
 
+/* Localhost on dev: a faint diagonal DEV DEV DEV over every screen, on top of everything and never in
+   the way of a click (decision 382). main.jsx adds the class only under the dev server on dev's database,
+   so the live site never shows it. Off when printing. */
+html.dev-db body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='150'%3E%3Cg fill='rgba(255,107,107,0.09)' font-family='Segoe UI,system-ui,sans-serif' font-size='30' font-weight='700' letter-spacing='6'%3E%3Ctext x='24' y='78' transform='rotate(-30 24 78)'%3EDEV%3C/text%3E%3Ctext x='144' y='148' transform='rotate(-30 144 148)'%3EDEV%3C/text%3E%3C/g%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+@media print { html.dev-db body::after { display: none; } }
+
 button { font-family: inherit; }
 
 a { color: var(--accent); }
