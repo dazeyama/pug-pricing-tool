@@ -1144,9 +1144,13 @@ buy's red banner shows here too.
 Price-tag stickers for a batch's Pokémon cards, on the store's sticker sheets (Letter, 160 stickers:
 8 across × 20 down, each 1 in × ½ in). It changes nothing.
 
-- First it fetches today's prices and works out each card's **Sell Price** as an export would (the
-  full market price for its condition, rounded up, at least $0.40). Nothing is saved: the batch's
-  prices stay as they are.
+- First it fetches today's prices and works out each card's price as an export would (the full
+  market price for its condition). Nothing is saved: the batch's prices stay as they are.
+- The sticker rounds that price to the **nearest whole dollar**: $1.49 is **$1**, $1.50 is **$2**.
+  The cheap ones match the store's loose-card prices: **50¢** for a card worth 50¢ or less (unsleeved),
+  **$1** for one between 51¢ and 99¢ (penny-sleeved).
+- A sticker can differ from the green Sell Price that **Complete day…** saves, which still rounds up
+  by the store's steps (a sticker's $3 against $3.25).
 - One sticker per copy, in Print PKM?'s order (by set, then collector number), so a sheet follows
   the printout. More than 160 run on to another sheet.
 - Each sticker: the name's first letters and the collector number, the price, and the condition in a
