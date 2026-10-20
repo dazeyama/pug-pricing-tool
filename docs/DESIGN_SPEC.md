@@ -1820,6 +1820,8 @@ Ten phases, each small enough to build in one sitting and check on `localhost`. 
 
 **Migration squash at launch** (owner's decision, 2026-10-02)
 
+*Changed since, by decision 332 (2026-10-18) and `SQUASH.md`: the baseline is `0001_baseline.sql` (not N+1), the first migration after it 0002, prod starts empty, and `scripts/db-baseline.mjs` with its rehearsal replaces steps 3–4's dump (no Docker on this machine), so there is no `dev-schema-before.sql`. The steps below are the plan as first written; `SQUASH.md` is the runbook.*
+
 By launch dev will have had many migrations, each a small step, several rewriting the same function (0001–0035 on 2026-10-02, 0001–0051 on 2026-10-12, and **more may come before launch**). Prod is still empty, so it can start from **one baseline file** that builds the database as it stands in one go, and the old files are archived.
 
 **The numbers:** below, **N** is the last migration applied to dev when the squash starts (`npx supabase migration list`), so the old files are **0001–N**, the baseline is **N+1** (`<N+1>_baseline.sql`, four digits like the rest), and the first migration after launch is **N+2**. On 2026-10-12 that would be 0001–0051, `0052_baseline.sql`, then 0053. Nothing about the app changes; only how the database is set up. Prod doubles as the test database for the baseline (the Free plan allows two projects, and prod is empty and not live until launch). The steps, in order:

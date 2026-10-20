@@ -105,7 +105,8 @@ const ident = (s) => (/^[a-z_][a-z0-9_]*$/.test(s) ? s : `"${s.replace(/"/g, '""
 const qn = (schema, name) => `${ident(schema)}.${ident(name)}`;
 const lit = (s) => `'${String(s).replace(/'/g, "''")}'`;
 const fnSig = (f) => `${qn(f.schema, f.name)}(${f.args})`;
-const today = new Date().toISOString().slice(0, 10);
+// The store's date, not UTC's: the clock is Pacific, and an evening run is already tomorrow in UTC.
+const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
 const N = Number(path.basename(out).slice(0, 4));
 const num = (n) => String(n).padStart(4, '0');
 // The old migrations it stands in for: every numbered file in supabase/migrations/ but this one.
@@ -219,8 +220,10 @@ put(`-- The master percentages start at the store's 33.34 / 66.68 (decision 333;
   `-- 0028: the Can't upload cards collection.`,
   `select public.cant_upload_ensure();`);
 
-fs.writeFileSync(out, L.join('\n') + '\n');
-console.log(`Wrote ${out}: ${L.length} lines — ${tables.length} tables, ${columns.length} columns, ${sequences.length} sequence(s), ${functions.length} functions, `
+const text = L.join('\n') + '\n';
+fs.writeFileSync(out, text);
+// File lines: a function body is one entry of L but many lines.
+console.log(`Wrote ${out}: ${text.split('\n').length - 1} lines — ${tables.length} tables, ${columns.length} columns, ${sequences.length} sequence(s), ${functions.length} functions, `
   + `${constraints.length} constraints, ${indexes.length} indexes, ${triggers.length} trigger(s), ${policies.length} policies, ${publication.length} realtime tables, ${buckets.length} bucket(s).`);
 const nullAcl = [...tables, ...sequences, ...functions.map((f) => ({ ...f, name: fnSig(f) }))].filter((x) => x.acl == null);
 if (nullAcl.length) console.log(`Note: ${nullAcl.length} object(s) have default privileges (no explicit grants) on dev; the baseline leaves them so: ${nullAcl.map((x) => x.name).join(', ')}`);

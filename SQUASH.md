@@ -24,16 +24,15 @@ first migration after launch is **0002**. **Prod starts empty** (the owner, the
 same day): the store's data so far stays on dev, which becomes the test copy,
 and nothing is restored into prod. Localhost always uses dev; only the Pages
 site moves to prod.
-The rehearsal was last run at 0065 (92 functions; nine of nine the same). The generator
-was run again at 0084 for its counts only (2026-10-19, section 3); section 1 runs both
-again.
+The rehearsal was last run at 0084 (2026-10-19: 114 functions, nine of nine the same, 4.3 s;
+the generator needed no change since its 0065 run). Section 1 runs both again.
 
 ---
 
 ## 0. The shape of it
 
-Dev has 84 migrations (0001–0084), over 17,000 lines, many rewriting the same
-function. Prod is empty and not live. The squash replaces the 84 files with
+Dev has 84 migrations (0001–0084), 19,692 lines, many rewriting the same
+function (`export_lines` and `collection_add_line` ten times each). Prod is empty and not live. The squash replaces the 84 files with
 **one baseline file that builds the database as dev has it**, applies it to
 prod, proves prod matches dev, and then tells dev's migration record that the
 baseline is what it has. Nothing in the app changes. Dev's data is never
@@ -68,9 +67,9 @@ files are archived (section 5).
    back**, with `public.`/`internal.` renamed to scratch schemas, then compares
    the scratch copy's structure fingerprints with dev's (the same formulas
    `db-test-run.sql` uses). It proves the file end to end — syntax, order,
-   all 114 function signatures, 97 constraints, 21 indexes, the trigger, 19
-   policies, every grant — without a prod attempt. Passed 2026-10-16 in under 4 s,
-   nine of nine the same.
+   every function signature, constraint, index, trigger, policy and grant —
+   without a prod attempt. Passed at 0065 (2026-10-16) and at 0084 (2026-10-19),
+   in under 5 s, nine of nine the same.
 3. **Prod is inspected before it's touched** (section 6). The spec assumes
    prod has no tables; the step here checks, and says what to do if it has.
 4. **Who types what.** `supabase link` asks for the database password, which
@@ -139,7 +138,7 @@ archive.
 
 It prints the counts. At 0084 (2026-10-19): `19 tables, 221 columns, 2 sequence(s),
 114 functions, 97 constraints, 21 indexes, 1 trigger(s), 23 policies, 10
-realtime tables, 1 bucket(s)` — 1001 lines (each function body on few lines). If a `Note:` lists objects with
+realtime tables, 1 bucket(s)` — 5,118 lines, about 4,100 of them the 114 function bodies. If a `Note:` lists objects with
 default privileges, that is dev's state (none today after 0051) and the
 baseline keeps it; mention it in the handoff.
 
@@ -351,7 +350,7 @@ select (select jsonb_object_agg(key, value) from public.settings) as settings,  
        (select count(*) from public.buys where system_key = 'cant_upload') as cant_upload,  -- 1
        (select file_size_limit from storage.buckets where id = 'master-inventory') as bucket, -- 52428800
        (select count(*) from pg_policies where schemaname = 'storage') as storage_policies,  -- 4
-       (select jsonb_agg(tablename order by tablename) from pg_publication_tables where pubname = 'supabase_realtime') as realtime, -- the 8
+       (select jsonb_agg(tablename order by tablename) from pg_publication_tables where pubname = 'supabase_realtime') as realtime, -- the 10
        exists (select 1 from pg_extension where extname = 'pg_trgm') as trgm;                -- true
 ```
 
@@ -486,8 +485,8 @@ so the store's role keeps that right until then.
 every entry the database writes is inserted *as the signed-in role*
 (`authenticated`), through the `insert` grant (`0002_rls.sql:56`) and the
 policy `"store: append"` (`0002_rls.sql:61`). Revoking those alone would
-stop every entry, not just the browser's. On dev at 0075 these functions
-insert into `events` themselves: `internal.buy_event`,
+stop every entry, not just the browser's. On dev at 0084 (checked 2026-10-19)
+these functions insert into `events` themselves: `internal.buy_event`,
 `internal.collection_event`, `public.buy_log_cash_download`,
 `public.confirm_buy`, `public.project_to_buy`, `public.day_complete`,
 `public.export_lines`, `public.export_undo_day` (and `public.restore_backup`,
