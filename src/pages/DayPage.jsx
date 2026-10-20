@@ -463,7 +463,7 @@ function DayScreen({ game, day }) {
     const stamped = dayExportLines(doneLines, day, restamped);
     const ownExported = withoutRestamps(doneLines, restamped);
     if (!stamped.lines.length && ownExported.length) {
-      toast("This day's cards were exported one buy at a time (Export single buy), so there's no day file to download again.", 'err');
+      toast("This day's cards were exported one buy at a time (Export single buy), so there's no day file to download again: each buy's ⋯ → Download its file again.", 'err');
       return;
     }
     if (!stamped.lines.length && doneLines.some((l) => l.cc_status === 'exported')) {
@@ -478,6 +478,31 @@ function DayScreen({ game, day }) {
     }
     const rows = downloadMassCreate(stamped.lines, fileName, settingValues.fallback_pct_mtg);
     toast(`Downloaded the same file again: ${rows} row${rows === 1 ? '' : 's'}, Custom SKU ${stamped.skus.join(', ')}.`, 'ok');
+  }
+
+  /**
+   * A buy's ⋯ → Download its file again (decision 386): Export single buy's file, from its cards'
+   * stamps ("<day>-<number>"), as the day's EXPORT does for the day. Nothing changes; not the cards
+   * a later Can't upload cards export stamped, which went in that export's file (decision 372).
+   */
+  async function downloadBuyAgain(buy, number) {
+    const own = buySkus(buy);
+    const lines = buy.buy_lines.filter((l) => l.game === game && l.cc_status === 'exported' && own.includes(l.cc_custom_sku));
+    let restamped;
+    try {
+      restamped = await restampTimes(lines);
+    } catch (e) {
+      toast(`${e.message}.`, 'err');
+      return;
+    }
+    const mineOnly = withoutRestamps(lines, restamped);
+    if (!mineOnly.length) {
+      toast(`Buy ${number}'s exported cards went out from Can't upload cards, so it has no file of its own to download again.`, 'err');
+      return;
+    }
+    const rows = downloadMassCreate(mineOnly, `cc-mass-create-${game === 'mtg' ? 'magic' : game}-${day}-buy-${number}.csv`,
+      settingValues.fallback_pct_mtg);
+    toast(`Downloaded Buy ${number}'s file again: ${rows} row${rows === 1 ? '' : 's'}, Custom SKU ${own.join(', ')}.`, 'ok');
   }
 
   /**
@@ -701,6 +726,7 @@ function DayScreen({ game, day }) {
               onPrintStickers={printBuyStickers}
               printing={printing || stickers.printing}
               onUnexport={(b, n) => guard() && setUnexportingBuy({ buy: b, number: n })}
+              onDownloadAgain={downloadBuyAgain}
               // Edit in project view (owner, 2026-10-13): the buy's cards on the pricing screen.
               onEditView={(b, n) => navigate(`/calendar/${game}/${day}/buy/${b.id}`, { state: { number: n } })}
             />

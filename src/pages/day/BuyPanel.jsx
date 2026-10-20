@@ -100,7 +100,7 @@ function ConditionChip({ buy, byId, blocked, onChecked }) {
 export default function BuyPanel({
   buy, number, skus = [], game, other, day, byId, busy, offline, hits, flash, onRemove, onRestore, onDelete, onComplete, onConvert,
   onConvertCollection,
-  onExport, onUnexport, onEditView, onPrint, onPrintStickers, printing, onFlag, tiers,
+  onExport, onUnexport, onDownloadAgain, onEditView, onPrint, onPrintStickers, printing, onFlag, tiers,
 }) {
   const [preview, setPreview] = useState(null);   // { src, top, left } while a line is hovered
   const hidePreview = useCallback(() => setPreview(null), []);
@@ -120,6 +120,9 @@ export default function BuyPanel({
   // Completed from this ⋯ rather than by an export (owner, 2026-10-02): it can go back on its own.
   // Bulk and struck cards are never completed: only the others say how.
   const byHand = completed && lines.filter(movesOn).every(markedByHand);
+  // Some cards still Completed by hand on a buy that isn't (its export undone, decision 340): they
+  // come back from here too, not only after Mark as completed has completed the rest (decision 396).
+  const someByHand = !completed && lines.some(markedByHand);
   const lockedWhy = (l) => (markedByHand(l) ? MARKED_LOCK : COMPLETED_LOCK);
   const locked = buy.buy_lines.find((l) => l.completed_at);
   // This game's side Completed: every line of it locked, bulk, placeholders and struck cards too (decision 353).
@@ -183,13 +186,28 @@ export default function BuyPanel({
               title: `Mark this buy's ${GAME_NAMES[game]} cards Completed without exporting them${game === 'mtg' ? ', and struck (something else happened to them)' : ''}: locked, left out of the header search and of this day's export`,
               onClick: () => onComplete(buy, number, true),
             },
+            ...(someByHand ? [{
+              label: 'Mark Paid/Ours again',
+              blocked: offOrBusy,
+              title: `Unlock this buy's ${GAME_NAMES[game]} cards marked Completed by hand: back in the header search and this day's export`,
+              onClick: () => onComplete(buy, number, false),
+            }] : []),
             // Export single buy (owner, 2026-10-09): Magic only, like EXPORT, but any day, today's too.
             ...(game === 'mtg' ? [{
               label: 'Export single buy',
-              blocked: offOrBusy ?? (completed ? 'Already Completed' : lines.length ? null : 'No Magic cards in this buy'),
+              blocked: offOrBusy ?? (completed ? (skus.length ? "Already Completed: ⋯ → Download its file again" : 'Already Completed')
+                : lines.length ? null : 'No Magic cards in this buy'),
               title: "Export just this buy's Magic cards to Crystal Commerce now; the buy is Completed, the rest of the day isn't",
               onClick: () => onExport(buy, number),
-            }, {
+            },
+            // Its own file again (decision 386), once exported on its own: nothing changes.
+            ...(skus.length ? [{
+              label: 'Download its file again',
+              needsUser: false,
+              blocked: offline ? 'No connection' : null,
+              title: "Download the same file Export single buy made for this buy, from its exported cards. Changes nothing.",
+              onClick: () => onDownloadAgain(buy, number),
+            }] : []), {
               // Print buy (owner, 2026-10-14; docs/TEAM_FEEDBACK.md 3.1): this buy's
               // Magic cards by Crystal Commerce category, for a single-buy export.
               label: 'Print buy',
