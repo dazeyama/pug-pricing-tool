@@ -6,11 +6,6 @@ and function.
 
 ## Open
 
-- **Unpushed** (2026-10-20): 28 commits since v1.0.0-launch, from `e1e8a7d`. What reaches the live site when pushed:
-  the Pokémon stickers in whole dollars (decision 384), the Help sections, and the review leftovers' fixes
-  (decisions 385–399; migration 0004 is on prod already). The DEV watermark (decision 382) is dev-server only and
-  never in a build; the rest is docs, scripts and the lint hook (383). No Edge Function change. Push only on the
-  owner's ask (the release skill).
 - **Help out of date** (only when the owner asks), from the review leftovers: a buy's ⋯ has **Download its file
   again** (386) and, partly hand-completed, **Mark Paid/Ours again** (396); "a single buy's file can't be downloaded
   again" in The file is now wrong; 3. Confirm's "can't tell … a Can't upload cards export" (387); Convert to project
@@ -22,7 +17,14 @@ and function.
   computer signs in again. The Supabase plan: Free for now (decision 376). The clean-up (the spec's Phase 10 list, `C:\ClaudeProjects\temp\pug-squash\` included)
   waits until prod has run a while.
 - **The smoke test pass** (`docs/TEST.md`, 217 cases): planned before the squash and the switch, not done; neither
-  changed behaviour, so it still covers this build (on dev, or on the live site once it has data).
+  changed behaviour, so it still covers this build. On dev only, never the live site (decision 380); TEST.md's
+  "pair on the live site's address and scan a stack" case and SETUP.md's "price one card" check after restoring a
+  paused project write to prod and need rewording to fit that rule (the pre-push review, 2026-10-20).
+- **The phone's Undo, a fast network error** (decision 392 not quite closed): an Undo whose removal fails at once
+  with a network error (not the 10 s time limit) is answered "couldn't take it off", though it may have gone
+  through; FOIL? / NONFOIL? then sends no new copy. Pressing FOIL? or Undo again on the same screen puts it right;
+  after F5 it doesn't. The fix: `useDraft.remove` / `useCollection.remove` say when the answer was lost, and `undo`
+  in `src/pages/price/useScanReceiver.js` leaves those "undoing" too (the request id makes the next try safe).
 - **TEST.md has no case for decision 374** (the launch review): the 🚩 following the press that went through, and
   Confirming… while a later press reads back.
 - **After launch:**
@@ -31,6 +33,13 @@ and function.
     (`C:\ClaudeProjects\temp\scan-run\scan-log.jsonl`, LAN dev server only).
 
 ## Done
+
+- 2026-10-20: Pushed without a bump (still v1.0.0-launch): the 28 commits since it (`e1e8a7d` on), with this record.
+  Out with it: the Pokémon stickers in whole dollars (384), the Help sections brought up to date (338–341, 343, 345,
+  348, 361, 362, 369, 372, 385), decision 385 (no code), and the review leftovers' fixes (386–399). Migration 0004
+  was already on prod; no Edge Function change. The DEV watermark (382) never shows on the live site: its CSS rule
+  is in the build, but nothing there turns it on. The pre-push review found nothing that stops a push. Nothing
+  unpushed.
 
 - 2026-10-20: **Every review leftover closed** (the owner: "fix every last one of these opens now as a batch"),
   decisions 386–399, one migration (0004) with one pug-reviewer review; lint, 446 unit tests and the build before each

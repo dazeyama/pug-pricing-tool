@@ -110,10 +110,10 @@ tests (`npm test`, commit only on `fail 0`) and the build.
   "Retired documents" row at the top of `docs/DESIGN_SPEC.md`. Code comments citing them mean those copies,
   `git show d158ee3:<path>`.
 
-## Where it stands (2026-10-19)
+## Where it stands (2026-10-20)
 
-- Live: **v1.0.0-launch** (2026-10-19, decisions through 381), the first build on **prod** (`zvxquzcfffmxwizonxuo`):
-  the GitHub Actions variables point there. Localhost and the phone scanner's LAN link stay on dev
+- Live: **v1.0.0-launch** (2026-10-19), the first build on **prod** (`zvxquzcfffmxwizonxuo`), then pushes without a
+  bump, the last on 2026-10-20 (decisions through 399): the GitHub Actions variables point there. Localhost and the phone scanner's LAN link stay on dev
   (`.env.development`), which keeps the store's data from before launch as the test copy.
 - The migrations were squashed on 2026-10-19: the baseline `0001` stands in for the old 0001–0084 (now in
   `supabase/migrations-archive/`). Dev and prod both have 0001–0004 (0002 the Changelog lock, 0003 the counter
