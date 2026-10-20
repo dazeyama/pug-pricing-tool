@@ -6,8 +6,6 @@ and function.
 
 ## Open
 
-- **Unpushed:** decisions 367–373 and TEST.md's new cases. At the push, deploy `prices` and `secrets` again
-  (decision 370 changed both; release skill step 9 asks first).
 - **Help out of date** (only when the owner asks), from the release review's fixes: a TCGplayer-only Pokémon version
   whose search failed is added at a manual price, and an edit keeps it as **As saved** (decision 369); "the same
   file again" leaves out cards exported from Can't upload cards, and needs the connection (decision 372).
@@ -79,6 +77,9 @@ and function.
 
 ## Done
 
+- 2026-10-19: Pushed without a bump: decisions 367–373 (the v0.9.9.15-review release review's ten notes) and
+  TEST.md's new cases. No migrations (dev has 0001–0084). The `prices` and `secrets` Edge Functions deployed with it
+  (decision 370). Nothing unpushed.
 - 2026-10-19: The v0.9.9.15-review release review's ten notes, all fixed (lint, 432 unit tests and the build before
   each commit; untested in the browser):
   - notes 1 and 2, decision 367: CONFIRM BUY's read-back must match what this tab sent, and a press after a lost
