@@ -132,9 +132,22 @@ export function useDraft(deviceId) {
   [run]);
 
   const cancel = useCallback(async () => {
-    if (!state.buy) return true;
-    return (await run('draft_cancel', { p_buy_id: state.buy.id }, "Couldn't cancel the buy")).ok;
-  }, [run, state.buy]);
+    // A phone's scan can open this computer's buy before the computer has loaded it, and when
+    // that scan never adds, the buy is only in the database: it's cancelled too, failing its
+    // scans so the phone says so (decision 395).
+    let buyId = state.buy?.id ?? null;
+    if (!buyId && deviceId) {
+      const { data, error } = await supabase.from('buys').select('id')
+        .eq('kind', 'walk_in').eq('status', 'draft').eq('draft_device_id', deviceId).maybeSingle();
+      if (error) {
+        toast(`Couldn't cancel the buy: ${error.message}`, 'err');
+        return false;
+      }
+      buyId = data?.id ?? null;
+    }
+    if (!buyId) return true;
+    return (await run('draft_cancel', { p_buy_id: buyId }, "Couldn't cancel the buy")).ok;
+  }, [run, state.buy, deviceId, toast]);
 
   /**
    * CONFIRM BUY. Its answer, plus the buy it confirmed, its cards, what was sent and its 🚩 box: a
