@@ -19,6 +19,10 @@ import { channelName } from '../../lib/channels.js';
  */
 /** A card that's exported or in Can't upload cards is frozen (decision 345): only Undo export changes it. */
 export const LINE_EXPORTED = "That card is exported: Undo export… first to change it.";
+/** One with a copy in Can't upload cards wasn't exported: said so (decision 399). */
+export const LINE_CANT_UPLOAD = "That card is in Can't upload cards: Undo export… first to change it.";
+/** Why a stamped card can't change, in its own words (decisions 345, 399). */
+export const frozenNote = (line) => (line.cc_status === 'cant_upload' ? LINE_CANT_UPLOAD : LINE_EXPORTED);
 
 export const PROJECT_EXPORTED = "Part of this project is exported: Undo export… first, only if its file wasn't uploaded to Crystal Commerce.";
 
@@ -47,7 +51,8 @@ const MESSAGES = {
   line_completed: "That card is Completed: its rate doesn't change.",
   // Struck cards (owner, 2026-10-16).
   line_struck: 'That card is struck: right-click → Restore it first.',
-  line_exported: LINE_EXPORTED,
+  // The database doesn't say which (decision 399): both.
+  line_exported: "That card is exported or in Can't upload cards: Undo export… first to change it.",
   strike_paid_only: 'Only a Paid/Ours collection strikes cards: here × removes them.',
   system_collection: "Can't upload cards doesn't strike: its × removes the card.",
   project_no_strike: "A project doesn't strike: its × removes the card.",
