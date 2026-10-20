@@ -3,7 +3,8 @@ import { supabase } from '../lib/supabase.js';
 
 // Connection required (spec 7.9). Offline means the browser says so, or
 // Supabase Realtime has been disconnected for over 10 seconds. When the
-// connection comes back, `epoch` ticks and every live table reloads.
+// connection comes back, `epoch` ticks and every live table reloads; after
+// a shorter drop too, which never showed the banner (decision 388).
 
 const REALTIME_GRACE_MS = 10_000;
 
@@ -28,8 +29,13 @@ export function ConnectionProvider({ children }) {
   useEffect(() => {
     // Counts from page load too, so a socket that never connects shows the banner.
     let downSince = Date.now();
+    let everUp = false;
     const timer = setInterval(() => {
       if (supabase.realtime.isConnected()) {
+        // Back after a drop too short for the banner (decision 388): other computers' changes
+        // may have been missed meanwhile, so what's on screen reloads, as after a long one.
+        if (everUp && downSince != null && Date.now() - downSince <= REALTIME_GRACE_MS) setEpoch((n) => n + 1);
+        everUp = true;
         downSince = null;
         setRealtimeDown(false);
       } else {

@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { timedFetch } from './timedFetch.js';
 
 // URL and publishable key come from .env.development (npm run dev) or
 // .env.production / GitHub Actions variables (the Pages build). The
@@ -30,4 +31,6 @@ export const supabase = missingConfig.length
         // so never try to read a session out of it.
         detectSessionInUrl: false,
       },
+      // Every request ends in time on flaky wifi (decision 388).
+      global: { fetch: timedFetch },
     });
