@@ -6,7 +6,9 @@ and function.
 
 ## Open
 
-- **Unpushed:** decision 374 (`useDraft.js`, `PricePage.jsx`) and NEXT.md's notes. No migrations, no Edge Functions.
+- **Unpushed:** decision 374 (`useDraft.js`, `PricePage.jsx`), NEXT.md's notes, SQUASH.md and the generator at 0084
+  (ea030c8), and the squash commit (`supabase/migrations/0001_baseline.sql`, the archive, the records). No Edge
+  Functions; nothing to push to either database (both record `0001`).
 - **Help out of date** (only when the owner asks), from the release review's fixes: a TCGplayer-only Pokémon version
   whose search failed is added at a manual price, and an edit keeps it as **As saved** (decision 369); "the same
   file again" leaves out cards exported from Can't upload cards, and needs the connection (decision 372).
@@ -66,18 +68,44 @@ and function.
     a learned-match table empties it (decision 348);
   - the "Exported: Undo export… first" wording also shows on Can't upload cards (decision 345);
   - SQUASH.md's Max rows blank (section 10) to fill in from dev's dashboard.
-- **Before the squash:** a full smoke test pass, `docs/TEST.md` (200 cases), on dev.
-- **Phase 10 launch** (owner's go): the squash and the switch to prod, `SQUASH.md` sections 1–10 (N is 0084; the
-  baseline `0001_baseline.sql`). Decide the **Supabase plan for prod** first (`docs/DESIGN_SPEC.md` Appendix D 2:
-  Free vs Pro).
+- **Before the switch to prod:** a full smoke test pass, `docs/TEST.md` (200 cases), on dev. It was planned before
+  the squash and didn't happen; the squash changed no behaviour, so it still covers the same build.
+- **Phase 10 launch** (owner's go): the squash is done (2026-10-19). What's left is the switch to prod, `SQUASH.md`
+  section 10's launch steps: the `prices` and `secrets` Edge Functions deployed to prod; prod's Max rows checked (the
+  blank in section 10); public sign-ups off on prod; the GitHub Actions variables set to `.env.production`'s values;
+  the push on the owner's go and the Pages run confirmed; sign in on the live site and see prod (empty); the owner's
+  tasks (computer name, users, JustTCG key, CC CSV); the clean-up last, `C:\ClaudeProjects\temp\pug-squash\`
+  included once prod has run a while. Decide the **Supabase plan for prod** first (`docs/DESIGN_SPEC.md` Appendix
+  D 2: Free vs Pro).
 - **After launch:**
   - migration **0002**, the Changelog lock (`SQUASH.md` section 11a), on the owner's day;
+  - a migration revoking Supabase's default grant to `anon` on `buys_number_seq` (0071 never did; seen in the
+    baseline read, 2026-10-19; harmless on its own, as `anon` can't write `buys`);
   - watch JustTCG usage and the plan (Appendix D 4);
   - tune the stamp cutoff `STAMP_SEEN = 0.53` in `src/scan/stamps.js` from the run log's `stamp` lines
     (`C:\ClaudeProjects\temp\scan-run\scan-log.jsonl`, LAN dev server only).
 
 ## Done
 
+- 2026-10-19: **The migration squash (decisions 192, 332; SQUASH.md sections 1–9).** The freeze (0001–0084 all
+  applied; the test run's 522 checks, saved as `C:\ClaudeProjects\temp\pug-squash\dev-run.json`); tag `pre-squash`
+  (ea030c8) and the owner's dev backup in that folder; the baseline written at 0084 (5,118 lines) and rehearsed nine
+  of nine; the 84 files moved to `supabase/migrations-archive/` (README there); prod probed untouched (PostgreSQL
+  17.6, no tables, no `supabase_migrations` schema yet, one auth user); the baseline pushed by the owner in one
+  transaction (`npx.cmd`, since PowerShell's script policy blocks `npx`; the session's permission mode refused the
+  push itself); prod's test run 522 checks, nine of nine fingerprints the same as dev's, and section 8's hand checks
+  as listed (`prod-run.json` saved); dev's record repaired to `0001`, `db push --dry-run` up to date, dev's test run
+  the same after as before (its next buy still 44). Records: CLAUDE.md Where it stands, decision 192's row,
+  SQUASH.md's Done note, this file. The unit tests pass with the baseline as the only file in `supabase/migrations/`
+  (`tests/dbErrors.test.js` reads that folder for the raised codes).
+- 2026-10-19: SQUASH.md checked against the scripts, the CLI's flags and dev's catalog (nothing on dev outside what
+  the generator writes: no enums, domains, views, procedures or rules; the counts as section 3 says) and brought up
+  to date: 19,692 lines of migrations, the baseline's 5,118 file lines, Realtime's 10 tables in section 8's hand
+  check, section 11a's nine event writers re-checked at 0084; the spec's Phase 10 block now points at decision 332
+  and the runbook. `scripts/db-baseline.mjs`: the header dated by the store's clock, not UTC, and file lines
+  counted. The rehearsal at 0084 passed with no generator change (ea030c8). Found and left for a migration after
+  launch: `buys_number_seq` carries Supabase's default grant to `anon` (0071 didn't revoke it); the baseline copies
+  dev as it is, and the rehearsal's Privileges fingerprint depends on that.
 - 2026-10-19: The 2026-10-19 push's seven review notes (lint, 432 unit tests and the build; untested in the browser):
   - notes 2 and 3, decision 374: `src/pages/price/useDraft.js` `confirm` keeps each press's 🚩 box
     (`attempt.flagCondition`) and returns it with the answer, so `src/pages/PricePage.jsx` `confirmBuy` flags the buy

@@ -27,6 +27,15 @@ site moves to prod.
 The rehearsal was last run at 0084 (2026-10-19: 114 functions, nine of nine the same, 4.3 s;
 the generator needed no change since its 0065 run). Section 1 runs both again.
 
+***Done 2026-10-19.*** Sections 1–9 ran as written, with these notes: `npx` in PowerShell
+is blocked by the script policy, so the owner's commands are typed `npx.cmd …`; `supabase link`
+asked for no password, and `db push`, `migration list` and the test run all reached prod without
+one; prod had no `supabase_migrations` schema at all before its first push (the section 6 probe's
+`migrations` field must be guarded); the owner ran section 7's push (the session's permission
+mode refused a push to prod). Prod: 522 checks, nine of nine the same as `dev-run.json`; dev's
+record repaired to `0001`, its run the same after as before. Sections 10 (launch) and 11 on
+are what's left and what applies from now on. The safety folder stays until the clean-up.
+
 ---
 
 ## 0. The shape of it

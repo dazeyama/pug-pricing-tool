@@ -96,10 +96,12 @@ tests (`npm test`, commit only on `fail 0`) and the build.
 
 ## Where it stands (2026-10-19)
 
-- Live: v0.9.9.15-review, then pushes without a bump, the last on 2026-10-19 (decisions through 373).
+- Live: v0.9.9.15-review, then pushes without a bump, the last on 2026-10-19 (decisions through 374).
   The live site runs on the dev project until launch.
-- Dev has migrations 0001–0084.
-- Phase 10 launch (the squash, then prod) waits for my go.
+- The migrations were squashed on 2026-10-19: dev and prod both record the baseline `0001` (standing in for the
+  old 0001–0084, now in `supabase/migrations-archive/`), and the next migration is 0002. Prod is built and proven
+  against dev, and empty.
+- Phase 10 launch: the switch of the live site to prod (SQUASH.md section 10's launch steps) waits for my go.
 - The release history is the spec's decisions and `git tag`; what's open is NEXT.md.
 
 ## Coding Conventions
