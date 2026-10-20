@@ -379,8 +379,8 @@ listed. Save the run: add `--save /c/ClaudeProjects/temp/pug-squash/prod-run.jso
 
 *After launch (decision 380): the full test run never runs on prod again; on prod it's
 `--structure-only`, the fingerprints alone. The launch night's run above was the last,
-and it left one trace, `events_seq_seq` moved to 162 with no entries, put back to 1 on the
-owner's word.*
+and it left one trace, `events_seq_seq` moved to 162 with no entries, put back to 1 the same
+night on the owner's word, with the Changelog still empty.*
 
 ---
 

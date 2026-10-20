@@ -74,17 +74,16 @@ and function.
 - **TEST.md has no case for decision 374** (the launch review): the 🚩 following the press that went through, and
   Confirming… while a later press reads back.
 - **After launch:**
-  - **prod's Changelog counter put back to 1** (decision 380): the launch night's full test run on prod left
-    `events_seq_seq` at 162 with no entries, so the first real entry would be number 163. On the owner's word,
-    while `events` is still empty: `select case when (select count(*) from events) = 0 then
-    setval('events_seq_seq', 1, false) end;` on prod (`db query --linked --project-ref zvxquzcfffmxwizonxuo -f`),
-    then read the counter back;
   - watch JustTCG usage and the plan (Appendix D 4);
   - tune the stamp cutoff `STAMP_SEEN = 0.53` in `src/scan/stamps.js` from the run log's `stamp` lines
     (`C:\ClaudeProjects\temp\scan-run\scan-log.jsonl`, LAN dev server only).
 
 ## Done
 
+- 2026-10-19: **Prod's Changelog counter put back to 1** (decision 380), on the owner's word: one guarded statement
+  on prod (`setval('events_seq_seq', 1, false)` only if `events` is empty; it was, 0 rows), read back as not yet
+  called, so prod's first Changelog entry is number 1. Dev's counter untouched (9,067, called). Not a migration.
+  Prod now has no trace of any test.
 - 2026-10-19: **Migrations 0002 and 0003 on prod**, and the rule that dev and prod stay on the same migrations at
   all times (decision 381; CLAUDE.md Database, step 6). The dry run listed the two; pushed with `db push --linked
   --project-ref zvxquzcfffmxwizonxuo` (the CLI linked to dev throughout); prod's record 0001–0003; the structure-only
