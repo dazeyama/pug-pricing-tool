@@ -471,7 +471,8 @@ Then the launch steps outside the squash (spec, Phase 10 → Launch):
 - Every migration: rehearse `(echo "begin;"; cat f; echo "rollback;")` on
   dev → `db push` to dev → `node scripts/db-snapshot.mjs` (commit
   `supabase/current/` with the migration) → `node scripts/db-test-run.mjs
-  --save <fresh dev run>` → when the owner says so, `db push --linked
+  --save <fresh dev run>` → the same sitting (decision 381: dev and prod stay
+  on the same migrations), `db push --linked
   --project-ref zvxquzcfffmxwizonxuo` → `node scripts/db-test-run.mjs
   --structure-only --project-ref zvxquzcfffmxwizonxuo --confirm
   zvxquzcfffmxwizonxuo --compare <that run>`: the fingerprints only, nothing

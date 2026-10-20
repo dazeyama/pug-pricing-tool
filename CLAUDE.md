@@ -67,9 +67,14 @@ tests (`npm test`, commit only on `fail 0`) and the build.
   scans, imports and every other try-out run on dev (localhost) only. On prod the only checks are read-only:
   `migration list`, `node scripts/db-test-run.mjs --structure-only` (the fingerprints, nothing run or written) and
   the live check. Whatever must be checked on prod is checked by looking, never by making something there.
+- **Dev and prod stay on the same migrations at all times** (owner, 2026-10-19; decision 381). A migration batch
+  isn't done until it's on both, in one sitting: the steps below on dev, then the prod push and the structure-only
+  comparison (step 6). That prod push has my standing go; the one thing to pick is the moment (the store not using
+  the app). No session ends with dev ahead of prod: if prod can't take it, the handoff's first line and NEXT.md's
+  first Open item say so.
 - Database changes are new migration files (0002 and up), applied to the dev project (`psucrzljraxeootwnltf`)
-  first. They go to prod (`zvxquzcfffmxwizonxuo`, the live site's project since v1.0.0-launch) only when I say so,
-  and app code that needs a migration isn't pushed before prod has it.
+  first and to prod (`zvxquzcfffmxwizonxuo`, the live site's project since v1.0.0-launch) in the same sitting.
+  App code that needs a migration isn't pushed before prod has it.
 - Each migration, in order. The migrations written for one piece of work (a batch of review findings, say) go
   through these steps together: one review of all of them, one rehearsal of them in order, then applied in order,
   one snapshot and one test run (owner, 2026-10-19).
@@ -82,7 +87,10 @@ tests (`npm test`, commit only on `fail 0`) and the build.
      taken out, and check the counter (`select last_value, is_called from buys_number_seq`) before and after.
   3. `npx supabase db push --linked`.
   4. `node scripts/db-snapshot.mjs` (commit `supabase/current/` with it).
-  5. `node scripts/db-test-run.mjs` ("All passed").
+  5. `node scripts/db-test-run.mjs --save <a fresh dev run, outside the repo>` ("All passed").
+  6. Prod, the same sitting (decision 381): `npx supabase db push --linked --project-ref zvxquzcfffmxwizonxuo`,
+     then `node scripts/db-test-run.mjs --structure-only --project-ref zvxquzcfffmxwizonxuo --confirm
+     zvxquzcfffmxwizonxuo --compare <that dev run>`: every fingerprint the same. The CLI stays linked to dev.
 - Helpers only the database's own functions call live in the `internal` schema (migration 0040), which the API
   doesn't serve. A function that calls one must `set search_path = public, internal` (security-definer:
   `public, internal, pg_temp`); a plain `= public` can't find them.
@@ -104,12 +112,12 @@ tests (`npm test`, commit only on `fail 0`) and the build.
 
 ## Where it stands (2026-10-19)
 
-- Live: **v1.0.0-launch** (2026-10-19, decisions through 379), the first build on **prod** (`zvxquzcfffmxwizonxuo`):
+- Live: **v1.0.0-launch** (2026-10-19, decisions through 381), the first build on **prod** (`zvxquzcfffmxwizonxuo`):
   the GitHub Actions variables point there. Localhost and the phone scanner's LAN link stay on dev
   (`.env.development`), which keeps the store's data from before launch as the test copy.
 - The migrations were squashed on 2026-10-19: the baseline `0001` stands in for the old 0001–0084 (now in
-  `supabase/migrations-archive/`). Dev has 0001–0003 (0002 the Changelog lock, 0003 the counter grant, both
-  2026-10-19); prod has 0001 until I say to apply them. The next migration is 0004, dev first.
+  `supabase/migrations-archive/`). Dev and prod both have 0001–0003 (0002 the Changelog lock, 0003 the counter
+  grant, 2026-10-19) and stay equal from here on (decision 381). The next migration is 0004.
 - The CLI stays linked to dev (`supabase/.temp/project-ref`). Anything aimed at prod names it:
   `--linked --project-ref zvxquzcfffmxwizonxuo` for `migration list`, `db push` and `db query` (the flag overrides
   the link for that one command; the function deploys take `--project-ref` alone); no password was asked for it

@@ -74,12 +74,6 @@ and function.
 - **TEST.md has no case for decision 374** (the launch review): the 🚩 following the press that went through, and
   Confirming… while a later press reads back.
 - **After launch:**
-  - **migrations 0002 and 0003 to prod** (decisions 378, 379; on dev since 2026-10-19, the dev run saved as
-    `C:\ClaudeProjects\temp\pug-migrations\dev-run-0003.json`): on the owner's word, at a time the store isn't using
-    the app: `npx supabase db push --linked --project-ref zvxquzcfffmxwizonxuo`, then `node scripts/db-test-run.mjs
-    --structure-only --project-ref zvxquzcfffmxwizonxuo --confirm zvxquzcfffmxwizonxuo --compare <that file>` (the
-    nine fingerprints the same; nothing run or written on prod, decision 380). Until then prod's Changelog is
-    written the old way; the app works either way;
   - **prod's Changelog counter put back to 1** (decision 380): the launch night's full test run on prod left
     `events_seq_seq` at 162 with no entries, so the first real entry would be number 163. On the owner's word,
     while `events` is still empty: `select case when (select count(*) from events) = 0 then
@@ -91,6 +85,11 @@ and function.
 
 ## Done
 
+- 2026-10-19: **Migrations 0002 and 0003 on prod**, and the rule that dev and prod stay on the same migrations at
+  all times (decision 381; CLAUDE.md Database, step 6). The dry run listed the two; pushed with `db push --linked
+  --project-ref zvxquzcfffmxwizonxuo` (the CLI linked to dev throughout); prod's record 0001–0003; the structure-only
+  comparison with `C:\ClaudeProjects\temp\pug-migrations\dev-run-0003.json`: nine fingerprints the same, 2.7 s,
+  nothing run or written on prod. Dev and prod are equal.
 - 2026-10-19: **The hard rule: prod holds the store's data and nothing else, ever; testing is dev only** (decision
   380; CLAUDE.md QA Handoff and Database; the reviewer's brief). `scripts/db-test-run.mjs` refuses its full run on
   any project but dev, before it touches the database, and gained `--structure-only` (the kit and the Fingerprints
