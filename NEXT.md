@@ -6,28 +6,11 @@ and function.
 
 ## Open
 
-- **The v0.9.9.15-review release review's notes** (none stopped the push; the owner's call on each):
-  1. **done** (decision 367): CONFIRM BUY's read-back matches the buy to what this tab sent
-     (`src/pages/price/confirmReadBack.js` `readBack`);
-  2. **done** (decision 367): a press whose answer was lost is remembered, and the next press finds out what
-     happened to it (`src/pages/price/useDraft.js` `confirm`, `src/pages/PricePage.jsx` `confirmBuy`);
-  3. `src/pages/price/PricingScreen.jsx` ~297 (confirmed): with the TCGplayer versions search failed (a daily
-     limit), a TCGplayer-only English Pokémon version can't be added even at a manual price (Alt+M) until 00:00 UTC;
-     an edit whose saved `jt:` version isn't in a search that worked stays blocked (the server keeps it a week);
-  4. `supabase/functions/prices/index.ts` `unanswered` (plausible): a remembered card's last kept price comes back
-     however old, as a normal answer, and the export doesn't check its age (`src/lib/todaysPrices.js`);
-  5. **done** (decision 368): a reply's answers only are kept, on errors too, and in the scan receiver
-     (`src/lib/priceAnswers.js` `keepAnswers`, `usePrices.js`, `useScanReceiver.js`);
-  6. `src/pages/export/ExportDialog.jsx` `save` (plausible): the read-back can run before a slow save commits and
-     say "nothing was exported"; the retry then finds it;
-  7. `src/pages/CollectionPage.jsx` `startExport` (plausible): a Paid/Ours collection's file again takes every
-     export's cards and Can't upload restamps, so re-uploading repeats rows; a day exported before 0071 too
-     (`src/pages/day/dayRules.js` `dayExportLines`'s fallback);
-  8. `src/lib/inChunks.js` `allPages` (low): one extra, empty request a load; the live `buys` tables reload on every
-     change to buys;
-  9. `supabase/functions/_shared/justtcg.ts` `call` (plausible): an unreadable reply is retried up to 6 times
-     (about 61 s), which can pass the function's time limit and may count against the JustTCG allowance;
-  10. `docs/TEST.md`: no cases for decisions 356–366.
+- **Unpushed:** decisions 367–373 and TEST.md's new cases. At the push, deploy `prices` and `secrets` again
+  (decision 370 changed both; release skill step 9 asks first).
+- **Help out of date** (only when the owner asks), from the release review's fixes: a TCGplayer-only Pokémon version
+  whose search failed is added at a manual price, and an edit keeps it as **As saved** (decision 369); "the same
+  file again" leaves out cards exported from Can't upload cards, and needs the connection (decision 372).
 - **Help out of date** (only when the owner asks), from Batch 2: a day's EXPORT once exported downloads the day's
   own export only, not Export single buy's cards (decision 361); a Paid/Ours collection with every Magic card
   exported downloads its file again (decision 362); a failed export that went through downloads its file after all
@@ -84,7 +67,7 @@ and function.
     a learned-match table empties it (decision 348);
   - the "Exported: Undo export… first" wording also shows on Can't upload cards (decision 345);
   - SQUASH.md's Max rows blank (section 10) to fill in from dev's dashboard.
-- **Before the squash:** a full smoke test pass, `docs/TEST.md` (186 cases), on dev.
+- **Before the squash:** a full smoke test pass, `docs/TEST.md` (200 cases), on dev.
 - **Phase 10 launch** (owner's go): the squash and the switch to prod, `SQUASH.md` sections 1–10 (N is 0084; the
   baseline `0001_baseline.sql`). Decide the **Supabase plan for prod** first (`docs/DESIGN_SPEC.md` Appendix D 2:
   Free vs Pro).
@@ -96,6 +79,24 @@ and function.
 
 ## Done
 
+- 2026-10-19: The v0.9.9.15-review release review's ten notes, all fixed (lint, 432 unit tests and the build before
+  each commit; untested in the browser):
+  - notes 1 and 2, decision 367: CONFIRM BUY's read-back must match what this tab sent, and a press after a lost
+    answer finds out what happened (`confirmReadBack.js` `readBack`, `useDraft.js` `confirm`, `PricePage.jsx`);
+  - note 3, decision 369: a TCGplayer-only version whose search failed is added at a manual price; an edit keeps
+    its saved version ("As saved"; `usePrinting.js` `savedVersion`, `PricingScreen.jsx`);
+  - notes 4 and 9, decision 370: the prices function answers a missing remembered card as not answered, not with
+    an old price; an unreadable reply is tried once more, then fails (`prices/index.ts` `unanswered`,
+    `_shared/justtcg.ts` `call`; not deployed yet);
+  - note 5, decision 368: only answers are kept in the page-long price cache (`priceAnswers.js` `keepAnswers`);
+  - note 6, decision 371: a lost answer is looked at twice, two seconds apart (`timeout.js` `pause`,
+    `ExportDialog.jsx`, `useDraft.js`);
+  - note 7, decision 372 (the owner: every round of its own): "the same file again" leaves out cards exported from
+    Can't upload cards, found by that export's changelog time (`ccExport.js` `restampTimes`, `massCreate.js`
+    `withoutRestamps`, `dayRules.js`, `CollectionPage.jsx`, `DayPage.jsx`);
+  - note 8, decision 373: a paged read with its count takes one request (`inChunks.js` `allPages`; SQUASH.md's Max
+    rows note);
+  - note 10: `docs/TEST.md` has cases for decisions 355–372, 200 in all.
 - 2026-10-19: Pushed as **v0.9.9.15-review** (tag `v0.9.9.15-review`; the owner's "subagent" became "review", since
   version names are team-facing): decisions 337–366, the launch reviews' A fixes and the full review's B Batches 1
   and 2, the Help's struck-cards wording. Migrations 0077–0084 were already on dev (it has 0001–0084). The `prices`
