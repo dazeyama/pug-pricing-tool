@@ -270,14 +270,17 @@ export default function ExportDialog({
       }
       // A lost answer (flaky wifi) is no answer at all, or, on the next try, the refusals of an
       // export already saved. The cards say whether this dialog's export went through; if it did,
-      // the file comes from them (decision 362). Can't upload cards' exported copies are gone, so
-      // there it can't be told.
+      // the file comes from them (decision 362). Can't upload cards' exported copies are gone, but
+      // the cards they were copied from are restamped with their stamps, this export's id
+      // included: those are read instead (decision 387).
       if (!e.code) lostAnswer.current = true;
-      const knowable = matches.length > 0 && target?.kind !== 'cant_upload';
+      const ids = target?.kind === 'cant_upload'
+        ? matches.map((m) => lines.find((l) => l.id === m.line_id)?.source_line_id ?? null)
+        : matches.map((m) => m.line_id);
+      const knowable = matches.length > 0 && ids.every(Boolean);
       let checked = false;
       if (knowable && (!e.code || e.code === 'stale_version' || e.code === 'nothing_to_export')) {
         try {
-          const ids = matches.map((m) => m.line_id);
           let landed = await exportLanded(ids, exportId);
           // No answer at all: the save may still be running. Looked at once more (decision 371).
           if (!landed && !e.code) {
