@@ -30,12 +30,15 @@ export async function loadCashBuys(month) {
   const range = (query, column) => allPages((a, b) => query().gte(column, from.toISOString())
     .lt(column, to.toISOString()).order(column).order('id').range(a, b));
   const [walkIns, collections] = await Promise.all([
+    // With their counts: one request each (decision 373).
     range(() => supabase.from('buys')
-      .select('id, confirmed_at, confirmed_by, customer_name, phone, paid_price, buy_lines(unit_price, quantity)')
+      .select('id, confirmed_at, confirmed_by, customer_name, phone, paid_price, buy_lines(unit_price, quantity)',
+        { count: 'exact' })
       .eq('kind', 'walk_in').eq('status', 'confirmed').eq('paid_method', 'cash'), 'confirmed_at'),
     // Paid/Ours or Completed since: still paid. Can't upload cards is never paid.
     range(() => supabase.from('buys')
-      .select('id, paid_at, created_by, project, customer_name, phone, paid_price, buy_lines(unit_price, quantity)')
+      .select('id, paid_at, created_by, project, customer_name, phone, paid_price, buy_lines(unit_price, quantity)',
+        { count: 'exact' })
       .eq('kind', 'collection').in('status', ['paid', 'completed']).eq('paid_method', 'cash')
       .is('system_key', null), 'paid_at'),
   ]);

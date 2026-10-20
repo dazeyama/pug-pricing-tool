@@ -87,7 +87,7 @@ function HomeScreen({ today }) {
   // (decision 365): a backlog past 1,000 cards was cut short, and days dropped off the list.
   const pending = useLiveTable('buys', () => allPages((a, b) => supabase
     .from('buy_lines')
-    .select('quantity, buy_id, buys!inner(kind, status, confirmed_at)')
+    .select('quantity, buy_id, buys!inner(kind, status, confirmed_at)', { count: 'exact' })   // one request (decision 373)
     .eq('game', 'mtg')
     .is('completed_at', null)
     .is('bulk_kind', null)   // bulk never waits to be exported

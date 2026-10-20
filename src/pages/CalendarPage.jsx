@@ -145,10 +145,11 @@ function CalendarMonth({ month }) {
   const { byId } = useStaff();
   const { from, to } = monthRange(month);
   // Live (spec 10.1): any change to buys reloads the month. Every page (decision 365): the API
-  // returns at most 1,000 rows a request; buys_in_range orders them by confirmed_at, id.
+  // returns at most 1,000 rows a request; buys_in_range orders them by confirmed_at, id. With its
+  // count, one request (decision 373).
   const { data, loaded } = useLiveTable('buys', () => allPages((a, b) => supabase.rpc('buys_in_range', {
     p_from: from.toISOString(), p_to: to.toISOString(),
-  }).range(a, b)));
+  }, { count: 'exact' }).range(a, b)));
 
   // Per game: day → the buys confirmed that day (store time), in order.
   const days = useMemo(() => {

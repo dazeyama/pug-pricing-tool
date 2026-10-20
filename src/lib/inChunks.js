@@ -19,17 +19,21 @@
  * and the lines past the cut went to Can't upload cards. `build(from, to)` makes the query for one
  * page (its `.range(from, to)`, on a stable order); pages are read until one comes back empty, so a
  * smaller server limit still reads everything. The same shape as a Supabase result.
- * @param {(from: number, to: number) => PromiseLike<{ data: any[]|null, error: any }>} build
+ * A read that asks for its count (`select(…, { count: 'exact' })`) stops once it has that many
+ * rows, without the empty request that ends the others (decision 373): the live lists reload on
+ * every change, and each of their loads took two requests. Still right under any limit.
+ * @param {(from: number, to: number) => PromiseLike<{ data: any[]|null, error: any, count?: number|null }>} build
  * @param {number} [size]  rows asked for per request
  * @returns {Promise<{ data: any[]|null, error: any }>}
  */
 export async function allPages(build, size = 1000) {
   const data = [];
   for (;;) {
-    const { data: part, error } = await build(data.length, data.length + size - 1);
+    const { data: part, error, count } = await build(data.length, data.length + size - 1);
     if (error) return { data: null, error };
     if (!part?.length) return { data, error: null };
     data.push(...part);
+    if (count != null && data.length >= count) return { data, error: null };
   }
 }
 

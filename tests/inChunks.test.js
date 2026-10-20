@@ -30,6 +30,23 @@ test('a server limit smaller than the page still reads everything', async () => 
   assert.deepEqual(data.map((r) => r.i), Array.from({ length: 1234 }, (_, i) => i));
 });
 
+// Decision 373: a read that asks for its count stops without the empty request.
+test('a read with its count stops once it has them all, under any server limit', async () => {
+  const counted = (total, cap) => {
+    const s = server(total, cap);
+    return { ...s, build: async (from, to) => ({ ...(await s.build(from, to)), count: total }) };
+  };
+  const small = counted(40, 1000);
+  assert.equal((await allPages(small.build)).data.length, 40);
+  assert.deepEqual(small.asked, [[0, 999]], 'one request, not two');
+  const big = counted(2500, 1000);
+  assert.equal((await allPages(big.build)).data.length, 2500);
+  assert.deepEqual(big.asked, [[0, 999], [1000, 1999], [2000, 2999]]);
+  const capped = counted(1234, 300);
+  assert.deepEqual((await allPages(capped.build, 1000)).data.map((r) => r.i), Array.from({ length: 1234 }, (_, i) => i));
+  assert.equal(capped.asked.length, 5);
+});
+
 test('stops at an error, and an empty read is one request', async () => {
   let calls = 0;
   const failing = await allPages(async () => {

@@ -139,7 +139,7 @@ export default function CollectionsPage() {
     .select('id, customer_name, phone, status, notes, created_at, updated_at, last_edited_by, '
       + 'offer_cash, offer_credit, paid_price, paid_method, system_key, project, '
       // Its cards, counted by game for the name's chip (decision 276).
-      + 'buy_lines(game, quantity, bulk_kind, struck_at)')
+      + 'buy_lines(game, quantity, bulk_kind, struck_at)', { count: 'exact' })   // one request (decision 373)
     .eq('kind', 'collection')
     .order('created_at').order('id').range(a, b)));
   const locks = useLiveTable('collection_locks', () => supabase
@@ -184,7 +184,7 @@ export default function CollectionsPage() {
         title: `A PDF of this ${what}'s Magic cards by Crystal Commerce category, to check them by hand. Changes nothing.`,
         onClick: () => print({
           load: async () => {
-            const { data: rows, error } = await allPages((a, b) => supabase.from('buy_lines').select('*')
+            const { data: rows, error } = await allPages((a, b) => supabase.from('buy_lines').select('*', { count: 'exact' })
               .eq('buy_id', c.id).order('position').order('id').range(a, b));   // over 1,000 cards too (decision 365)
             if (error) throw new Error(error.message);
             return rows ?? [];
