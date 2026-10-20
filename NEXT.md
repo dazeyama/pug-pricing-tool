@@ -6,59 +6,28 @@ and function.
 
 ## Open
 
-- **Unpushed** (2026-10-20): 16 commits since v1.0.0-launch, from `e1e8a7d`. What reaches the live site
-  when pushed: the Pokémon stickers in whole dollars (decision 384) and the Help (its sticker section, and
-  the sections brought up to date for decisions 338–341, 343, 345, 348, 361, 362, 369, 372 and 385). The DEV watermark
-  (decision 382) is dev-server only and never in a build; the rest is docs, scripts, the lint hook (383) and
-  migrations 0002–0003, already on prod. No new migration and no Edge Function change. Push only on the owner's ask
-  (the release skill).
-- **The full launch review's 20 B findings, planned (owner, 2026-10-19)** (details in
-  `C:\ClaudeProjects\temp\launch-review-full-2026-10-19.md`, raw reports in `launch-review-full\`):
-  1. **Batch 1, the database: done** (decisions 350–354, migration 0084; see Done; what's left of it is under "Left
-     from Batch 1" below).
-  2. **Batch 2, app only: done** (decisions 355–366; see Done; what's left of it is under "Left from Batch 2"
-     below).
-  Then the first review's leftover B items.
-- **Left from Batch 2 (owner's call on each):**
-  - a single buy's file has no "download it again": Export single buy is blocked once the buy is Completed, and the
-    day's EXPORT now leaves single-buy cards out (decision 361). A proposal, not built: "Download its file again" in
-    the buy's ⋯ (`src/pages/day/BuyPanel.jsx`, `DayPage.jsx`);
-  - a Can't upload cards export whose answer was lost can't be told apart, since its exported copies are deleted:
-    the dialog says it may have gone through (`ExportDialog.jsx` `save`, decision 362);
-  - the rest of B18: ADD CARD, × and creating a collection repeated after a lost answer happen twice; a short drop
-    with the wifi up never reloads; the Supabase client has no request timeout (`src/lib/supabase.js`,
-    `src/state/connection.jsx`, decision 363);
-  - the rest of B15: Settings that failed their first load are now "not loaded" (decision 364), but the Price screen
-    still prices with the built-in defaults meanwhile (`src/state/settings.jsx` `values`);
-  - the rest of B16: Import Collection's remembered picks past 1,000 (`importCollection.js`; loses saved matches,
-    never picks a wrong product).
-- **Left from Batch 1 (0084):**
-  - edits that fold two lines together keep only the surviving line's scan id, so a scan re-claimed later can't
-    find its line (`draft_update_line`, `collection_update_line`; decision 351);
-  - the rest of B3: an Undo after a lost answer takes two copies off; FOIL?/NON FOIL? can leave none; refusal notes
-    never shown after a plain Undo (`Scanner.jsx`, `useScanReceiver.js`);
-  - Convert to project / collection still moves bulk and placeholders off a Completed side (`buy_to_project`,
-    `buy_to_collection`; decision 353);
-  - `settings_save` edges: two first saves of a new key both pass; a quick Tab between two boxes of one object
-    setting (Fallback, Tiers, Bulk) can be refused falsely (decision 354);
-  - a scan can open a walk-in buy the computer doesn't know about until its next write; if that scan never adds,
-    Cancel on the computer doesn't fail it (decision 350);
-  - B19's day EXPORT and COMPLETE checks with struck, bulk and placeholder lines (only Export single buy is tested).
-- **Small edges left from the reviews:**
-  - a buy with both exported and hand-completed Magic cards, after its export is undone, shows Mark as completed
-    instead of Mark Paid/Ours again (`src/pages/day/BuyPanel.jsx`, `byHand`): Mark as completed, then Mark Paid/Ours
-    again, brings everything back;
-  - unlocking a kept-buy collection and marking it Paid/Ours again asks for a price: typing the buy's payment there
-    counts it twice (decision 341);
-  - a backup with columns the database lacks restores without them, silently; a hand-edited backup with empty rows in
-    a learned-match table empties it (decision 348);
-  - the "Exported: Undo export… first" wording also shows on Can't upload cards (decision 345).
+- **Prod doesn't have migration 0004 yet** (2026-10-20): dev has 0001–0004, prod 0001–0003. Decision 381 says
+  they're equal at the end of the sitting: the owner picks the moment (ask first; warn between 11:30am and 9:30pm,
+  when the store is open). The step: CLAUDE.md, Database, step 6, comparing with
+  `C:\ClaudeProjects\temp\pug-0004\dev-run-0004.json` (542 checks, all passed). 0004 keeps the live site working
+  (every new parameter has a default), so it can go on prod before the app is pushed; the app code that needs it
+  (`p_request`, `backup_columns`, `kept_buy_id`) can't be pushed before prod has it.
+- **Unpushed** (2026-10-20): 26 commits since v1.0.0-launch, from `e1e8a7d`. What reaches the live site when pushed:
+  the Pokémon stickers in whole dollars (decision 384), the Help sections, and the review leftovers' fixes
+  (decisions 385–399; migration 0004 must be on prod first). The DEV watermark (decision 382) is dev-server only and
+  never in a build; the rest is docs, scripts and the lint hook (383). No Edge Function change. Push only on the
+  owner's ask (the release skill).
+- **Help out of date** (only when the owner asks), from the review leftovers: a buy's ⋯ has **Download its file
+  again** (386) and, partly hand-completed, **Mark Paid/Ours again** (396); "a single buy's file can't be downloaded
+  again" in The file is now wrong; 3. Confirm's "can't tell … a Can't upload cards export" (387); Convert to project
+  / collection leave a Completed game whole (393); Mark as Paid/Ours on a kept buy's collection starts at $0 (397);
+  Backups → Restore lists columns it would leave out and keeps empty match lists (398); the red Settings bar (389).
 - **After the launch push (v1.0.0-launch, 2026-10-19), the owner's setup on the live site.** Done the same night:
   signed in with prod's store password, the JustTCG key saved and a price came back, so `secrets` and `prices` are
   proven on prod. Left as the owner gets to them: name the computer, add the users, upload the CC CSV; every store
   computer signs in again. The Supabase plan: Free for now (decision 376). The clean-up (the spec's Phase 10 list, `C:\ClaudeProjects\temp\pug-squash\` included)
   waits until prod has run a while.
-- **The smoke test pass** (`docs/TEST.md`, 200 cases): planned before the squash and the switch, not done; neither
+- **The smoke test pass** (`docs/TEST.md`, 217 cases): planned before the squash and the switch, not done; neither
   changed behaviour, so it still covers this build (on dev, or on the live site once it has data).
 - **TEST.md has no case for decision 374** (the launch review): the 🚩 following the press that went through, and
   Confirming… while a later press reads back.
@@ -68,6 +37,31 @@ and function.
     (`C:\ClaudeProjects\temp\scan-run\scan-log.jsonl`, LAN dev server only).
 
 ## Done
+
+- 2026-10-20: **Every review leftover closed** (the owner: "fix every last one of these opens now as a batch"),
+  decisions 386–399, one migration (0004) with one pug-reviewer review; lint, 446 unit tests and the build before each
+  commit; db-test-run on dev 542 checks, all passed; untested in the app (TEST.md has a case for each, 217 cases).
+  The owner's answers: a single buy's file again yes (386); block pricing until Settings loads (389); prefill $0 on a
+  kept buy's collection (397). Closed, with where:
+  - Left from Batch 2: a single buy's file again (386, `downloadBuyAgain`, `DayPage.jsx`); a Can't upload cards
+    export's lost answer read from the originals (387, `ExportDialog.jsx` `save`); a write pressed again after a
+    lost answer done once, a 30 s / 120 s request limit, a reload after a short drop (388, `requests.js`,
+    `timedFetch.js`, `connection.jsx`, migration 0004); nothing priced until Settings loads (389,
+    `useSettingsReady`); the set choices read page by page (390; the import's candidates were already paged, 346).
+  - Left from Batch 1: an edit keeps its lines' scans (391, `internal.with_scans`); the phone's Undo and FOIL? once
+    each, refusals said (392, `useScanReceiver.js` `undo`, `Scanner.jsx` `refinish`); Convert leaves a Completed
+    game whole (393, `buy_to_project`, `buy_to_collection`, `convertLines`); Settings saves one at a time per key and
+    a new key's first save once (394, `settings.jsx` `save`, `settings_save`); CANCEL finds an empty buy a scan
+    opened (395, `useDraft.js` `cancel`); B19's day EXPORT and COMPLETE checks (db-test-run, "Review leftovers").
+  - Small edges: Mark Paid/Ours again on a partly hand-completed buy (396, `BuyPanel.jsx` `someByHand`); $0 and the
+    kept buy's number on Mark as Paid/Ours (397, `buys.kept_buy_id`, `useKeptBuy`, `PaidModal`); restore lists the
+    columns it would leave out and keeps empty match lists (398, `backup_columns`, `extraColumns`, `restore_backup`);
+    a card in Can't upload cards says so (399, `frozenNote`).
+  - The review's own findings fixed before applying: CANCEL never discards a buy with cards unseen; the lost-answer
+    id is staff's only, once, for two minutes, saying "Done once"; a second FOIL? waits, an unanswered Undo is claimed
+    again; the Convert dialog's wording; stronger test-run checks. Its note that the Settings first-save race can't
+    be tested in one transaction stands (the check runs the saves one after the other).
+  - Applied to dev only; prod is the first Open item.
 
 - 2026-10-20: **Help brought up to date** for decisions 338–341, 343, 345, 348, 361, 362, 369 and 372, on the
   owner's ask (`README.md`): How prices are worked out (new step 4), Finish and Details: Pokémon (Version row), What

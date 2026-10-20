@@ -8,7 +8,7 @@ what happens. The findings are reported when the pass ends.
   http://localhost:5180). **Never prod.**
 - **Who:** the owner, or Claude in the browser pane at the owner's request (FABLE.md, "a smoke pass the owner asks
   for"). The owner does the phone, two-computer and store cases.
-- **How long:** about two hours, 200 cases.
+- **How long:** about two hours, 217 cases.
 
 ## Ground rules
 
@@ -186,6 +186,12 @@ what happens. The findings are reported when the pass ends.
       the buy is confirmed once (BUY COMPLETE, one buy on the day page).
 - [ ] **Two tabs, one confirm** (decision 367): the Buy tab open twice, same user; confirm in one; in the other,
       change the price and press Confirm buy: "This buy changed on another computer — reloaded.", no BUY COMPLETE.
+- [ ] **ADD CARD after a lost answer** (decision 388): add a card with the wifi pulled mid-press, so the toast says
+      it couldn't add; wifi back, press ADD CARD again: one copy in the list, and "Done once: …"; press again: two.
+- [ ] **CANCEL with another tab's cards** (decision 395): open the Buy tab in two tabs; add a card in the first; in
+      the second (still empty), CANCEL: it shows the first tab's buy and says so, nothing is discarded.
+- [ ] **Settings not loaded** (decision 389): with Settings failing to load (block the request in the browser), a red
+      bar with **Retry** shows; ADD CARD and CONFIRM BUY say "Settings haven't loaded yet…"; unblock, Retry: they work.
 
 ## 9. Buy tab: bulk
 
@@ -280,6 +286,12 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       phone's camera indicator goes off.
 - [ ] **A card waiting for a price stays listed** (decision 356): with more than ten cards scanned while the computer
       is behind, one waiting for a price still shows on the phone until it's priced.
+- [ ] **A refused Undo says why** (decision 392): scan a card, unpick the user on the computer, Undo on the phone: the
+      phone says "Pick a user on …, then Undo again." with the error sound.
+- [ ] **FOIL? one at a time** (decision 392): FOIL? on the last card, and at once FOIL? on the next: the second says
+      it's still waiting; the first's foil copy goes in when its normal one is off.
+- [ ] **A scan's buy cancelled** (decision 395): with nothing on the computer's list, scan a card the computer can't
+      price (it asks the phone for a price); CANCEL on the computer: the phone lists it "The buy was cancelled…".
 
 ## 11. Collections tab: collections
 
@@ -313,6 +325,13 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
 - [ ] **A Paid/Ours collection's file again** (decisions 362, 372): once every Magic card in a Paid/Ours collection is
       exported, EXPORT downloads the same file again: every round it was exported in, without cards later exported
       from Can't upload cards.
+- [ ] **$0 again on a kept buy's collection** (decision 397): Convert to collection a buy with a Completed Magic side;
+      on the new collection, 🔒 Unlock, then Mark as Paid/Ours: the price starts at $0 and says "The payment is on
+      Buy N…".
+- [ ] **A card in Can't upload cards** (decision 399): in a collection whose export sent a card to Can't upload
+      cards, click that card: "That card is in Can't upload cards: Undo export… first to change it."
+- [ ] **Can't upload cards, lost answer** (decision 387): EXPORT from Can't upload cards with the wifi pulled as it
+      saves; wifi back: the dialog says whether it went through, and if it did, the file downloads.
 
 ## 12. Collections tab: projects
 
@@ -381,6 +400,14 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
 - [ ] **A day's file again** (decisions 361, 372): a day exported with EXPORT, one of its buys exported earlier with
       Export single buy: EXPORT again downloads the day's file without that buy's cards (Custom SKU "<day>-<number>");
       a day exported only one buy at a time says there's no day file.
+- [ ] **A single buy's file again** (decision 386): on a buy exported with Export single buy, ⋯ → **Download its file
+      again**: the same `…-buy-N.csv`, nothing changes; Export single buy is greyed, pointing to it.
+- [ ] **Mark Paid/Ours again, partly by hand** (decision 396): a Magic buy with some cards exported and some Mark as
+      completed; the day's ⋯ → Mark Paid/Ours again…; the buy's ⋯ now has both Mark as completed and **Mark Paid/Ours
+      again**, which brings the hand-completed cards back.
+- [ ] **Convert leaves a Completed game whole** (decision 393): a buy with Magic cards, bulk and a placeholder and
+      Pokémon cards; Mark as completed the Magic side; Convert to project: only the Pokémon cards move, the dialog
+      saying the Magic bulk and placeholders stay; the buy keeps them.
 
 ## 15. The export file
 
@@ -416,6 +443,12 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
       typing RESTORE and pressing Restore downloads `…-before-restore.json` and says to check it, without restoring
       (decision 348); then Cancel.
 - [ ] **This computer:** Sign out signs out only this computer; the footer shows the version and the data sources.
+- [ ] **Two fallback boxes quickly** (decision 394): type in Fallback LP, Tab, type in MP, Tab: both save, and LP
+      keeps its new value.
+- [ ] **Restore with an empty match list** (decision 398): pick a backup file whose `cc_set_map` list is empty: the
+      dialog says the set choices stay as they are; then Cancel.
+- [ ] **Set choices past the first page** (decision 390): Settings → Crystal Commerce matching lists every set
+      choice (only checkable with over 1,000; otherwise it lists them all, newest first).
 
 ## 17. Changelog tab
 
@@ -438,6 +471,8 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
 - [ ] Two tabs on one computer share the walk-in draft; a stale write reloads instead of losing anything.
 - [ ] **A page loaded offline** (decision 364): load Home with the connection off: it stays "Loading…", not "✓
       Everything's exported"; connection on: it fills in within seconds.
+- [ ] **A short drop reloads** (decision 388): a collection open on two computers; pull one's wifi for about 5 s
+      (no banner) while the other adds a card; wifi back: the card shows without a refresh.
 
 ## 19. At the store (the owner)
 
@@ -460,7 +495,7 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
 
 - [ ] `node scripts/db-test-run.mjs` on dev calls every server function (buys, collections and their statuses, the
       conversions, REPRICE?, export and undo, Can't upload cards, import, delete, the locks, restore) inside one
-      transaction that's rolled back, and prints "All passed: N checks" (526 at migration 0003). It runs after every
+      transaction that's rolled back, and prints "All passed: N checks" (542 at migration 0004). It runs after every
       migration: on dev with `--save`, then, once the migration is on prod, there with `--structure-only
       --project-ref zvxquzcfffmxwizonxuo --confirm zvxquzcfffmxwizonxuo --compare <that dev run>`: the fingerprints
       only, every one the same. The checks themselves never run on prod (decision 380; SQUASH.md section 11).
