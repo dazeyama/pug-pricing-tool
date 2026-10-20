@@ -294,6 +294,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   // sent again in the other finish, priced as that. The count of cards scanned stays.
   const swap = useRef(null);                       // { id, fields, seenUndo, was }
   const [swapping, setSwapping] = useState(null);  // the scan whose finish is being changed
+  const refinished = useRef(new Set());            // scans FOIL? / NONFOIL? took off: their notes are its own
   async function refinish(scan, toFoil) {
     if (swapping) return;
     trace('refinish', { name: scan.name, set: scan.set_code, number: scan.collector_number, toFoil });
@@ -320,12 +321,14 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         seenUndo: false,
         was,
       };
+      refinished.current.add(scan.id);
       say('muted', `Making it ${toFoil ? 'foil' : 'nonfoil'}: taking the ${was} copy off ${computer}…`, scanText(scan));
+      // The buttons come back, but the swap isn't dropped (decision 392): the computer can still take
+      // the old copy off after this, and then the new one has to go, or neither copy is left.
       setTimeout(() => {
         if (swap.current?.id !== scan.id) return;
-        swap.current = null;
         setSwapping(null);
-        say('err', `${computer} didn't take the ${was} copy off: check the list there.`, scanText(scan));
+        say('warn', `${computer} hasn't taken the ${was} copy off yet: the ${toFoil ? 'foil' : 'nonfoil'} one goes in when it does.`, scanText(scan));
       }, FOIL_GIVE_UP_MS);
     } catch (e) {
       say('err', `Couldn't change it: ${e.message}`, scanText(scan));
@@ -462,7 +465,14 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       // Added: no sound, the chime played when it was sent; these two are news.
       if (s.status === 'needs_price') play('needs_price');
       else if (s.status === 'failed') play('error');
+      // A plain Undo the computer refused (no user, the card gone): back to "added", and the strip
+      // shows a tick, so its note is said here (decision 392). FOIL? / NONFOIL? says its own.
+      else if ((was === 'undo' || was === 'undoing') && s.status === 'added' && !refinished.current.has(s.id)) {
+        play('error');
+        say('err', s.note ?? `${computer} couldn't take it off.`, scanText(s));
+      }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs on new scans only; say and the computer's name are read as they are then
   }, [scans]);
 
   // The card reader loads its model on the first scan (about 3 MB): say so.

@@ -206,14 +206,19 @@ export function useScanReceiver({ deviceId, label, session, target, list, roundU
     return { status: 'added', lineId: id, price: line.unit_price, source: line.price_source };
   }, []);
 
-  /** The phone's Undo: one copy of the scan's line off the list. */
-  const undo = useCallback(async (scan) => {
+  /**
+   * The phone's Undo: one copy of the scan's line off the list. `live`: false once it's been given
+   * up (too long), when it takes nothing off late, since the phone has been told it's still there
+   * (decision 392).
+   */
+  const undo = useCallback(async (scan, live = () => true) => {
     const now = latest.current;
     now.touch?.();
     if (!now.user) return { status: 'added', note: `Pick a user on ${now.label}, then Undo again.` };
     const line = now.list.lines.find((l) => l.id === scan.line_id);
     if (!line) return { status: 'added', note: 'That card is no longer in the list.' };
     for (let i = 0; i < 25 && latest.current.list.busy; i++) await sleep(200);
+    if (!live()) return null;
     const ok = await within(latest.current.list.remove(line, 1, now.user.id), WRITE_MS, 'timeout');
     if (ok === 'timeout') return { status: 'added', note: `No answer taking it off on ${now.label}: check the list there.` };
     return ok ? { status: 'undone' } : { status: 'added', note: `${now.label} couldn't take it off: its screen says why.` };
@@ -262,7 +267,7 @@ export function useScanReceiver({ deviceId, label, session, target, list, roundU
           let out;
           let alive = true;
           try {
-            const work = scan.status === 'undoing' ? undo(scan) : handle(scan, () => alive && open.current);
+            const work = scan.status === 'undoing' ? undo(scan, () => alive && open.current) : handle(scan, () => alive && open.current);
             out = await withTimeout(work, SCAN_MS);
           } catch (e) {
             alive = false;   // given up: a late answer adds nothing
