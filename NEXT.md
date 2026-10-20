@@ -6,22 +6,7 @@ and function.
 
 ## Open
 
-- **The 2026-10-19 push's review notes** (none stopped the push; the owner's call on each):
-  1. `src/pages/price/useDraft.js` `confirm` (plausible): two lost answers in a row keep only the second press in
-     `unsure`; if the first went through with other details (the price changed between presses), the next press
-     says it was finished elsewhere, with no BUY COMPLETE;
-  2. `useDraft.js` `confirm`'s first branch (confirmed): no busy state while a later press reads back, so Confirm buy
-     stays live; a second press can show BUY COMPLETE twice (it can't confirm twice);
-  3. `src/pages/PricePage.jsx` `confirmBuy` (confirmed): when a later press reports an earlier press's confirm, the
-     🚩 follows the box in the dialog open now, not the first press's; `last.sent` doesn't keep it;
-  4. `src/lib/inChunks.js` `allPages` (plausible): with `count: 'exact'`, a list that shrinks between pages can be
-     answered 416 (PGRST103) instead of an empty page; `useLiveTable` keeps the old rows and retries in 2 s;
-  5. `docs/TEST.md` decision 369's case (plausible): blocking `prices` also blocks the edited line's own price, so
-     SAVE EDIT asks for a manual price unless the line was manual or its price is cached;
-  6. `supabase/functions/prices/index.ts` `unanswered` (plausible): decision 370 also leaves an Import Collection
-     row unmatched when JustTCG's reply misses a remembered SKU (`importCollection.js`); 370 doesn't say so;
-  7. `src/pages/export/ExportDialog.jsx` `save` (plausible): "it didn't go through" after the two-second second look
-     can still be wrong for a very slow save; pressing again reads it back.
+- **Unpushed:** decision 374 (`useDraft.js`, `PricePage.jsx`) and NEXT.md's notes. No migrations, no Edge Functions.
 - **Help out of date** (only when the owner asks), from the release review's fixes: a TCGplayer-only Pokémon version
   whose search failed is added at a manual price, and an edit keeps it as **As saved** (decision 369); "the same
   file again" leaves out cards exported from Can't upload cards, and needs the connection (decision 372).
@@ -93,6 +78,12 @@ and function.
 
 ## Done
 
+- 2026-10-19: The 2026-10-19 push's seven review notes (lint, 432 unit tests and the build; untested in the browser):
+  - notes 2 and 3, decision 374: `src/pages/price/useDraft.js` `confirm` keeps each press's 🚩 box
+    (`attempt.flagCondition`) and returns it with the answer, so `src/pages/PricePage.jsx` `confirmBuy` flags the buy
+    from the press that went through (either press's 🚩 when both match); the later press's read-back
+    (`unsure.current`'s branch) sets busy, so Confirm buy shows Confirming… until it's answered;
+  - notes 1, 4, 5, 6 and 7: closed by the owner without a change (listed in decision 374).
 - 2026-10-19: Pushed without a bump: decisions 367–373 (the v0.9.9.15-review release review's ten notes) and
   TEST.md's new cases. No migrations (dev has 0001–0084). The `prices` and `secrets` Edge Functions deployed with it
   (decision 370). Nothing unpushed.

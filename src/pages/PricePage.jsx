@@ -80,16 +80,18 @@ export default function PricePage() {
       cashPct: rates.cash,
       creditPct: rates.credit,
       lineTexts: Object.fromEntries(draft.lines.map((l) => [l.id, lineText(l)])),
+      flagCondition,
     });
     if (!done) return;
-    // The buy confirmed, its cards and what was sent, from the answer: a press after a lost answer
-    // can report an earlier press's confirm, whose draft has left this screen (decision 367).
-    const { buyId, lines, sent } = done;
+    // The buy confirmed, its cards, what was sent and its 🚩 box, from the answer: a press after a
+    // lost answer can report an earlier press's confirm, whose draft has left this screen
+    // (decisions 367, 374).
+    const { buyId, lines, sent, flagCondition: wantsFlag } = done;
     setConfirming(false);
     const names = done.games.map((g) => GAME_NAMES[g]).join(' + ');
     // 🚩 Flag check for condition (owner, 2026-10-14): set once it's confirmed.
     let flagged = '';
-    if (flagCondition && buyId) {
+    if (wantsFlag && buyId) {
       const { error } = await supabase.rpc('buy_set_condition_check', {
         p_buy_id: buyId, p_flag: true, p_user: user.id, p_device: deviceId,
       });
@@ -101,7 +103,7 @@ export default function PricePage() {
       flagged.includes("couldn't") ? 'warn' : 'ok');
     setCompleted({
       number: done.number, games: done.games, lines, customer: sent.customerName, paid: sent.paidPrice, method: sent.paidMethod,
-      flagged: Boolean(flagCondition) && !flagged.includes("couldn't"),
+      flagged: wantsFlag && !flagged.includes("couldn't"),
     });
     // The next buy may be someone else's: they pick themselves (owner, 2026-10-11).
     forget();

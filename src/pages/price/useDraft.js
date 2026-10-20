@@ -137,37 +137,44 @@ export function useDraft(deviceId) {
   }, [run, state.buy]);
 
   /**
-   * CONFIRM BUY. Its answer, plus the buy it confirmed, its cards and what was sent: a press after a
-   * lost answer may report an earlier press's confirm (decision 367).
+   * CONFIRM BUY. Its answer, plus the buy it confirmed, its cards, what was sent and its 🚩 box: a
+   * press after a lost answer may report an earlier press's confirm (decisions 367, 374).
    * @returns {Promise<{ number: number, games: string[], target_name: string|null, buyId: string,
-   *   lines: object[], sent: object }|null>}
+   *   lines: object[], sent: object, flagCondition: boolean }|null>}
    */
   const confirm = useCallback(async ({
-    userId, customerName, phone, notes, paidPrice, paidMethod, cashPct, creditPct, lineTexts,
+    userId, customerName, phone, notes, paidPrice, paidMethod, cashPct, creditPct, lineTexts, flagCondition = false,
   }) => {
     // The last press lost its answer and couldn't tell, and its draft has gone from this screen
-    // since (decision 367): this press finds out what happened to it.
+    // since (decision 367): this press finds out what happened to it, busy meanwhile (decision 374).
     const last = unsure.current;
     if (last && last.buyId !== state.buy?.id) {
-      let got = null;
+      setBusy(true);
       try {
-        got = readBack(await readBuy(last.buyId), last);
-      } catch {
-        // Still no connection: said below.
-      }
-      if (!got) {
-        toast("Couldn't tell whether the buy was confirmed: check the connection, then press Confirm buy again.", 'err');
+        let got = null;
+        try {
+          got = readBack(await readBuy(last.buyId), last);
+        } catch {
+          // Still no connection: said below.
+        }
+        if (!got) {
+          toast("Couldn't tell whether the buy was confirmed: check the connection, then press Confirm buy again.", 'err');
+          return null;
+        }
+        unsure.current = null;
+        if (got.state === 'mine') {
+          return { ...got.result, buyId: last.buyId, lines: last.lines, sent: last.sent, flagCondition: last.flagCondition };
+        }
+        if (got.state === 'draft') {
+          await reload();
+          toast("It wasn't confirmed: the buy is still open. Press Confirm buy again.", 'err');
+        } else {
+          toast('This buy was finished on another tab or computer, not by this Confirm: nothing was confirmed here. Close this and look at the day page.', 'err');
+        }
         return null;
+      } finally {
+        setBusy(false);
       }
-      unsure.current = null;
-      if (got.state === 'mine') return { ...got.result, buyId: last.buyId, lines: last.lines, sent: last.sent };
-      if (got.state === 'draft') {
-        await reload();
-        toast("It wasn't confirmed: the buy is still open. Press Confirm buy again.", 'err');
-      } else {
-        toast('This buy was finished on another tab or computer, not by this Confirm: nothing was confirmed here. Close this and look at the day page.', 'err');
-      }
-      return null;
     }
     if (!state.buy) {
       toast("There's no buy here to confirm: it was confirmed or cancelled on another tab or computer.", 'err');
@@ -175,6 +182,7 @@ export function useDraft(deviceId) {
     }
     const attempt = {
       buyId: state.buy.id, userId, lines: state.lines, sent: { customerName, phone, notes, paidPrice, paidMethod },
+      flagCondition: Boolean(flagCondition),
     };
     // No answer, or a retry refused because the first one saved: the buy, read back, says whether
     // this tab's confirm went through, so BUY COMPLETE and its 🚩 still happen (decisions 363, 367).
@@ -194,14 +202,13 @@ export function useDraft(deviceId) {
       }
       known = true;
       // This press, or the earlier one whose answer was lost: the dialog may have changed since.
-      for (const a of [attempt, last].filter((x) => x?.buyId === attempt.buyId)) {
-        const got = readBack(saved, a);
-        if (got.state === 'mine') {
-          matched = a;
-          return got.result;
-        }
-      }
-      return null;
+      const mine = [attempt, last].filter((x) => x?.buyId === attempt.buyId)
+        .map((a) => ({ a, got: readBack(saved, a) })).filter((m) => m.got.state === 'mine');
+      if (!mine.length) return null;
+      // Both match when only the 🚩 box changed between them, and which one went through can't be
+      // told: either one's 🚩 counts (decision 374).
+      matched = { ...mine[0].a, flagCondition: mine.some((m) => m.a.flagCondition) };
+      return mine[0].got.result;
     };
     unsure.current = null;
     const r = await run('confirm_buy', {
@@ -217,7 +224,9 @@ export function useDraft(deviceId) {
       p_paid_method: paidMethod,
       p_line_texts: lineTexts,
     }, "Couldn't confirm the buy", recover);
-    if (r.ok) return { ...r.data, buyId: matched.buyId, lines: matched.lines, sent: matched.sent };
+    if (r.ok) {
+      return { ...r.data, buyId: matched.buyId, lines: matched.lines, sent: matched.sent, flagCondition: matched.flagCondition };
+    }
     if (!known) {
       unsure.current = attempt;
       toast('Its answer was lost: it may have gone through. Press Confirm buy again to find out.', 'warn');
