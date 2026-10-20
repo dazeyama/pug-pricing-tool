@@ -6,26 +6,12 @@ and function.
 
 ## Open
 
-- **Unpushed** (2026-10-20): 13 commits since v1.0.0-launch, `e1e8a7d`..`725afe5`. What reaches the live site
-  when pushed: the Pokémon stickers in whole dollars (decision 384) and its Help section. The DEV watermark
+- **Unpushed** (2026-10-20): 16 commits since v1.0.0-launch, from `e1e8a7d`. What reaches the live site
+  when pushed: the Pokémon stickers in whole dollars (decision 384) and the Help (its sticker section, and
+  the sections brought up to date for decisions 338–341, 343, 345, 348, 361, 362, 369, 372 and 385). The DEV watermark
   (decision 382) is dev-server only and never in a build; the rest is docs, scripts, the lint hook (383) and
   migrations 0002–0003, already on prod. No new migration and no Edge Function change. Push only on the owner's ask
   (the release skill).
-- **Help out of date** (only when the owner asks), from the release review's fixes: a TCGplayer-only Pokémon version
-  whose search failed is added at a manual price, and an edit keeps it as **As saved** (decision 369); "the same
-  file again" leaves out cards exported from Can't upload cards, and needs the connection (decision 372).
-- **Help out of date** (only when the owner asks), from Batch 2: a day's EXPORT once exported downloads the day's
-  own export only, not Export single buy's cards (decision 361); a Paid/Ours collection with every Magic card
-  exported downloads its file again (decision 362); a failed export that went through downloads its file after all
-  (decision 362).
-- **Help out of date** (only when the owner asks), besides the list below: Backups → Restore (two presses; backups
-  hold the learned matches, decision 348); REPRICE? ("every card": not exported ones, decision 345); nothing says
-  an exported card can't be changed (decision 345); scanning: waiting cards come in when the phone pairs with
-  their list again (decision 343).
-- **Help out of date** (only when the owner asks): `README.md` "A buy's ⋯ menu" Convert to collection row ("what was
-  paid": only when the whole buy moves, decision 341) and the day's **Mark Paid/Ours again…** row (~line 1059:
-  hand-completed Magic buys stay, decision 340); "Convert to buy…" (~line 968: a kept-buy project starts at $0, and
-  an exported project can't convert, decision 339); "How prices are worked out" / "Condition prices" (decision 338).
 - **The full launch review's 20 B findings, planned (owner, 2026-10-19)** (details in
   `C:\ClaudeProjects\temp\launch-review-full-2026-10-19.md`, raw reports in `launch-review-full\`):
   1. **Batch 1, the database: done** (decisions 350–354, migration 0084; see Done; what's left of it is under "Left
@@ -46,8 +32,6 @@ and function.
     still prices with the built-in defaults meanwhile (`src/state/settings.jsx` `values`);
   - the rest of B16: Import Collection's remembered picks past 1,000 (`importCollection.js`; loses saved matches,
     never picks a wrong product).
-- **Buy numbers through a project** (the owner's answer, 2026-10-19, not done yet): a project converted back to a buy
-  keeps its original number, as decision 290 says; `project_to_buy` gives a new one today.
 - **Left from Batch 1 (0084):**
   - edits that fold two lines together keep only the surviving line's scan id, so a scan re-claimed later can't
     find its line (`draft_update_line`, `collection_update_line`; decision 351);
@@ -84,6 +68,19 @@ and function.
     (`C:\ClaudeProjects\temp\scan-run\scan-log.jsonl`, LAN dev server only).
 
 ## Done
+
+- 2026-10-20: **Help brought up to date** for decisions 338–341, 343, 345, 348, 361, 362, 369 and 372, on the
+  owner's ask (`README.md`): How prices are worked out (new step 4), Finish and Details: Pokémon (Version row), What
+  can change in each status (an exported card can't change), REPRICE?, EXPORT, Convert to buy…, the day's ⋯ and a
+  buy's ⋯ menus, 3. Confirm (when Export N cards fails), The file (the same file again), Pairing (waiting scans)
+  and Backups (Restore's two presses). The four "Help out of date" items are closed.
+- 2026-10-20: **Buy numbers through a project closed** (decision 385): the owner is fine with Convert to buy…
+  giving the next number in line, as `project_to_buy` already does. Decision 290's last sentence is struck. No
+  code change. The Help's Convert to buy… says so.
+- 2026-10-20: The owner believes the review leftovers (Left from Batch 1, Left from Batch 2, Small edges) are done.
+  A read-only look found no commit or decision after 366 that covers them, and the code as described:
+  `src/lib/supabase.js` has no request timeout, `BuyPanel.jsx` `byHand` is unchanged, and `settings.jsx` still
+  prices with `DEFAULTS` before Settings loads. They stay open until the owner says otherwise.
 
 - 2026-10-20: **Help: Print PKM Stickers?** brought up to date with decision 384 (README.md, "Print PKM
   Stickers?"): whole dollars, 50¢ and $1 for the cheap cards, and that a sticker can differ from Complete day's

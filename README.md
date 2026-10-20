@@ -538,7 +538,7 @@ Three links open the card on other sites, each in its own pop-up window:
 | | |
 |---|---|
 | **NORMAL \| HOLO \| REVERSE** | The finish. A finish never printed is greyed out. |
-| **Version** | When a finish has several versions (1st Edition, Poké Ball pattern…), she picks one here. A **TCGplayer** tag marks a version only TCGplayer lists. |
+| **Version** | When a finish has several versions (1st Edition, Poké Ball pattern…), she picks one here. A **TCGplayer** tag marks a version only TCGplayer lists. If TCGplayer's versions can't load (JustTCG's daily limit, say), a version TCGplayer sells on its own goes in only at a manual price (<kbd>Alt</kbd>+<kbd>M</kbd>): ADD CARD says so. A card already saved on one keeps it when edited: the list shows it as **As saved**. |
 | **Other TCGplayer versions…** | Under the versions. Asks TCGplayer for versions the card database doesn't list (stamped reprints, Prize Pack cards…). They join the list with the **TCGplayer** tag, or it says *No other TCGplayer versions*. It costs a JustTCG lookup, so it waits to be clicked unless the card is missing a product of its own. |
 | **From TCGplayer** | The card itself is from TCGplayer's catalogue: TCGdex doesn't list it yet. |
 | **Chips** | Rarity and language. |
@@ -733,21 +733,26 @@ The same list sits at the bottom of the screen.
    **Settings → Master Fallback Percentages**.
 3. **With no JustTCG NM price**, the fallback starts from TCGplayer's Market Price instead (through
    Scryfall for Magic, TCGdex for Pokémon).
-4. **Prices never go up as the condition gets worse.** A JustTCG price higher than a better
+4. **With no NM price anywhere**, JustTCG's best priced condition stands in. The better conditions
+   take that same price, marked **fallback**, so two or more buttons can show one price on purpose.
+   The worse conditions get that price times their percentages. The store never pays more than
+   market for a card. Hovering says so: *fallback $1,300: JustTCG's MP $1,300, as JustTCG has no NM
+   price*.
+5. **Prices never go up as the condition gets worse.** A JustTCG price higher than a better
    condition's is thrown out and replaced by a fallback. A fallback that would match or beat the
    better condition is set 10% below it for Magic, 15% for Pokémon.
-5. **Japanese Pokémon** come from JustTCG's Japanese catalogue. A Poké Ball or Master Ball pattern
+6. **Japanese Pokémon** come from JustTCG's Japanese catalogue. A Poké Ball or Master Ball pattern
    version is priced as its own product. A Japanese card with no JustTCG price uses Cardmarket
    automatically.
-6. **A version TCGplayer sells on its own** (a Poké Ball or Master Ball pattern, a Cosmos foil, a
+7. **A version TCGplayer sells on its own** (a Poké Ball or Master Ball pattern, a Cosmos foil, a
    stamped reprint) is priced as that product, in English too, with JustTCG's five conditions.
-7. **The product has to be this card.** The card database points some cards at another card's
+8. **The product has to be this card.** The card database points some cards at another card's
    TCGplayer product (Charmander 44/225 SVP at Fuecoco 2, say). The app knows the right product
    for those, and a product that turns out to be a different card is never priced or linked: the
    card goes without a JustTCG price rather than with a wrong one, and the price is typed by hand.
-8. **A Poké Ball pattern is never priced above the same card's Master Ball pattern.** When TCGdex's
+9. **A Poké Ball pattern is never priced above the same card's Master Ball pattern.** When TCGdex's
    figures have the two the wrong way round, the app swaps them back.
-9. **Every price is rounded down** by the store's steps. In a project, every price is rounded
+10. **Every price is rounded down** by the store's steps. In a project, every price is rounded
    **up** instead (see [Rounding](#rounding)).
 
 <br>
@@ -902,6 +907,11 @@ Commerce, the stock there is fixed by hand.
 In Paid/Ours, **×** strikes a card first: see [Struck cards](#struck-cards). A project's and Can't
 upload cards' **×** removes at once.
 
+**An exported card can't change**, whatever the status: one that's exported, or one with a copy in
+Can't upload cards. Clicking it, **×**, **Restore** and **SAVE EDIT** say *That card is exported:
+Undo export… first to change it*. **REPRICE?** leaves it, and a new copy of the same card goes on a
+line of its own. **Set Rate** still works on it: rates don't reach the export.
+
 ### 📞 Calls
 
 On a Priced collection, **📞 (N)** sits beside the phone number. She clicks it after each call to
@@ -910,7 +920,7 @@ call is a Changelog entry.
 
 ### REPRICE?
 
-Gives every card today's buy price for its condition. Works on Processing and Priced collections,
+Gives every card not exported yet today's buy price for its condition. Works on Processing and Priced collections,
 projects, and Can't upload cards. It asks first.
 
 - Each card is priced the way it was priced before, Use TCGplayer and Use Cardmarket included.
@@ -930,7 +940,7 @@ Sends the collection's Magic cards to Crystal Commerce. See
 | Status | What EXPORT does |
 |---|---|
 | Processing, Priced, Rejected | Opens the export, but only downloads the file. **Nothing is saved:** the status stays, and the cards can be exported again. No user needed. |
-| Paid/Ours, Ours | Opens the export for the Magic cards not exported yet. Afterwards those cards are marked exported, with the **Custom SKU** and their Sell Prices in green. The status stays: she marks it **Completed** herself when it's done with. EXPORT again says every Magic card is exported already. |
+| Paid/Ours, Ours | Opens the export for the Magic cards not exported yet. Afterwards those cards are marked exported, with the **Custom SKU** and their Sell Prices in green. The status stays: she marks it **Completed** herself when it's done with. Once every Magic card is exported, EXPORT downloads the same file again (see [The file](#the-file)). |
 | Paid/Ours, no Magic cards | Says so: there's nothing to export. Completed is set from the status menu. |
 | Completed | Downloads the same file again. Nothing changes. |
 
@@ -966,15 +976,20 @@ from a buy's **Convert to project**.
 
 It asks what **CONFIRM BUY** asks: **Customer name**, **Phone number**, **Purchase price** (Cash or
 Credit, and what was paid) and **Notes**. All but Notes are required. The name suggests past
-customers. What the project already has is filled in: a project made from a buy kept its phone,
-price paid and notes, and its name is the customer's.
+customers. What the project already has is filled in: a project made from a buy kept its phone and
+notes, and its name is the customer's. It kept the price paid too when the whole buy moved. When
+Completed cards kept the buy on its day, the payment stayed with that buy and the project starts at
+**$0**.
 
 **Convert to buy** moves every card, both games, to a new buy confirmed by her now, at the prices
-they have. The project is deleted and today's day page opens. The Changelog shows it under
-**Buys** as *Project converted to buy*.
+they have. The buy gets the next number in line, not the one it had before it was a project. The
+project is deleted and today's day page opens. The Changelog shows it under **Buys** as *Project
+converted to buy*.
 
 It's greyed out while another computer is editing the project, once the project is Completed
-(Reopen it first), or when it has no cards.
+(Reopen it first), or when it has no cards. It's greyed out too while any of its cards is exported
+or in Can't upload cards: *Part of this project is exported: Undo export… first, only if its file
+wasn't uploaded to Crystal Commerce*.
 
 ### Delete collection…
 
@@ -1056,7 +1071,7 @@ A line under it says when the day was exported, by whom, and how many cards coul
 | | |
 |---|---|
 | **Check Crystal Commerce matches** | Magic days. A practice run of the export. Nothing is exported. Products she picks are remembered. |
-| **Mark Paid/Ours again…** | Once buys are Completed. Puts the day's Completed buys back to Paid/Ours: unlocked, back in the search, showing buy prices again. For a day exported or completed too early. |
+| **Mark Paid/Ours again…** | Once buys are Completed. Puts the day's Completed buys back to Paid/Ours: unlocked, back in the search, showing buy prices again. For a day exported or completed too early. Magic buys marked Completed by hand stay Completed, their cards crossed out: each one's own ⋯ → **Mark Paid/Ours again** brings it back. The dialog says how many buys go back and how many stay. With only hand-completed buys, it's greyed out. |
 
 Marking a day Paid/Ours again doesn't undo the downloaded file. If it was uploaded to Crystal
 Commerce, the stock there is fixed by hand.
@@ -1105,13 +1120,13 @@ the list, crossed out, as a record that it went elsewhere: straight into the cas
 |---|---|
 | **✅ Condition checked** | Flagged buys only, first in the menu. Takes the 🚩 flag off. |
 | **Mark as completed** | Completes this game's cards in this buy without exporting them: locked, and left out of the search and the day's export. On a Magic buy they're **struck** as well: a Magic buy Completed instead of exported means its cards went somewhere else. On a Pokémon buy it's Complete day… for one buy, without the Sell Prices. |
-| **Mark Paid/Ours again** | Undoes Mark as completed, and restores the cards it struck. On an exported buy it reads **Mark Paid/Ours again…** and undoes this buy's export only. |
+| **Mark Paid/Ours again** | Undoes Mark as completed, and restores the cards it struck. On an exported buy it reads **Mark Paid/Ours again…** and undoes this buy's export only: Magic cards struck by Mark as completed stay Completed. |
 | **Export single buy** | Magic only. Exports just this buy, on any day, today included. The rest of the day stays as it is. Its Custom SKU is the day's with the buy's number after a dash, *101626-42*, shown on the buy. |
 | **Print buy** | The audit printout of this buy's cards: Magic by Crystal Commerce category, Pokémon by set. |
 | **Print stickers** | Pokémon only. Price-tag stickers for this buy's cards. See [Print PKM Stickers?](#print-pkm-stickers). |
 | **Edit in project view** | Opens the buy's cards on the pricing screen, in the game's colour, to fix a card before an export (its condition or treatment, mostly). Click a card, change it, then **SAVE EDIT**; **×** takes cards out. Nothing is saved until **SAVE BUY**, which goes back to the day page. The buy stays on its day; cards can't be added and the rates don't change. |
-| **Convert to project** | Moves every live card, both games, into a new project with the buy's notes (a project has no rates). Completed cards stay behind: the buy stays on its day with them, or is deleted when none are left. Struck cards don't move either: they stay on the buy if it stays, and if it's deleted the Changelog keeps them, crossed out. The name starts as the customer's. The cards keep their prices until a **REPRICE?** rounds them up. |
-| **Convert to collection** | The same, into a new **Paid/Ours collection** instead of a project. Nothing to type: the collection takes the buy's customer name, phone and notes, Last 4 ID **1312**, what was paid and when, and the buy's rates, custom ones too. The cards keep the rates CONFIRM BUY saved on them. Completed and struck cards work as above. The new collection opens. Needs a customer name on the buy. |
+| **Convert to project** | Moves every live card, both games, into a new project with the buy's notes (a project has no rates). Completed cards stay behind: the buy stays on its day with them, or is deleted when none are left. Struck cards don't move either: they stay on the buy if it stays, and if it's deleted the Changelog keeps them, crossed out. The name starts as the customer's. The cards keep their prices until a **REPRICE?** rounds them up. The payment goes with them only when the whole buy moves. When the buy stays, the project is paid **$0** with the buy's method, and the payment stays on the buy, so **Export Cash Buys** counts it once. The dialog says so. |
+| **Convert to collection** | The same, into a new **Paid/Ours collection** instead of a project. Nothing to type: the collection takes the buy's customer name, phone and notes, Last 4 ID **1312**, what was paid and when, and the buy's rates, custom ones too. The cards keep the rates CONFIRM BUY saved on them. Completed and struck cards, and the payment, work as above. If such a $0 collection is unlocked and marked Paid/Ours again, it asks for a price: typing the buy's payment there would count it twice. The new collection opens. Needs a customer name on the buy. |
 | **Delete buy…** | Deletes the buy and every card in it, both games. Asks first. |
 
 **Edit in project view** and **Delete buy…** are locked once any of the buy's cards are Completed.
@@ -1277,6 +1292,16 @@ and ticks **I've pulled these cards out of the batch**. They're left out of the 
 **Completed**; a collection's or project's are marked exported, and its status stays as it is. With
 nothing matched, the button reads **Mark them Can't upload** and no file is made.
 
+**When Export N cards fails:**
+
+- **A buy changed on another computer, but not its cards** (a note, a payment): nothing was exported
+  yet. The picks stay. She presses **Export** again.
+- **The cards changed on another computer:** nothing was exported. **Cancel**, then **EXPORT** again.
+- **The answer was lost** (flaky wifi): the dialog looks at the cards to see whether the export went
+  through. If it did, the file downloads and the page shows it exported. If it can't tell (still no
+  connection, or a Can't upload cards export), it says it may have exported anyway: **Cancel** and
+  look at the page before trying again.
+
 The app never uploads the file. She uploads it in Crystal Commerce's Mass Create page.
 
 ### The Sell Price
@@ -1301,8 +1326,15 @@ After the export, Sell Prices show in green wherever the card appears.
 | **Rows** | One per product and condition. Quantities are added together. |
 | **Quantity** | Added to the stock already in Crystal Commerce. |
 
-**EXPORT** on an exported day, or a Completed collection, downloads the same file again. Nothing
-changes.
+**EXPORT** on an exported day, or on a collection whose Magic cards are all exported, downloads the
+same file again. Nothing changes. It needs the connection.
+
+- **A day's file is the day's export only.** Cards sent with **Export single buy** aren't in it. A
+  day exported only one buy at a time has no day file to download again, and a single buy's file
+  can't be downloaded again.
+- **A collection or project exported in rounds** gets every round in the file.
+- **Cards sent later from Can't upload cards** were in that export's file, so they're left out. A day
+  or collection whose exported cards all went out that way has no file of its own.
 
 ### Remembered matches
 
@@ -1406,6 +1438,11 @@ Tap one to scan into it.
   the last card it can sleep again.
 - The pairing ends when the computer leaves its price screen. CONFIRM BUY doesn't end it: the next
   buy's cards go into the new list.
+- **Scanned cards aren't lost** when the computer leaves its screen (Help, F5, another collection).
+  The ones it hadn't added yet wait for their own list, and come in when the phone pairs with that
+  list again. A card scanned for one list never goes into another. A walk-in buy's waiting cards go
+  only into that buy: once it's confirmed or cancelled, the phone lists them to scan again. Cards
+  still waiting after a week are cleared.
 
 ### The scanning screen
 
@@ -1622,7 +1659,7 @@ A forgotten match is worked out again on the next export.
 
 | | |
 |---|---|
-| **Download backup** | Saves a file of every buy, collection, card, Changelog entry, staff user and setting. It doesn't hold the Crystal Commerce CSVs or the API key. |
+| **Download backup** | Saves a file of every buy, collection, card, Changelog entry, staff user and setting, and the remembered Crystal Commerce matches. It doesn't hold the Crystal Commerce CSVs or the API key. |
 | **Last backup** | When the last one was downloaded. |
 | **Restore from backup…** | Replaces everything with a backup file. See below. |
 
@@ -1630,8 +1667,14 @@ The free plan has no automatic daily backups. A backup should be downloaded at l
 The banner under the header reminds everyone after 7 days.
 
 **Restoring** shows what's in the file beside what's here now. She types **RESTORE** and presses
-**Restore**. A backup of what's here downloads first. Then everything is replaced, on every
-computer. Computer names, the Crystal Commerce CSVs and the API key stay as they are.
+**Restore** twice:
+
+1. The first press downloads a backup of what's here now. She checks it's in the Downloads folder.
+2. The second press, within two minutes, restores. Later than that, a fresh backup downloads first.
+
+Then everything is replaced, on every computer. Computer names, the Crystal Commerce CSVs and the
+API key stay as they are. Buy numbers carry on after the highest one restored. An older backup
+restores too: anything it doesn't have takes its default.
 
 The foot of the tab lists where the app's data comes from, and the app's version.
 
