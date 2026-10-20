@@ -4,6 +4,7 @@ import { useConnection } from '../../state/connection.jsx';
 import { useToast } from '../../components/Toast.jsx';
 import { DB_MESSAGES, dbErrorCode, knownCode } from '../../lib/dbErrors.js';
 import { readBack } from './confirmReadBack.js';
+import { SECOND_LOOK_MS, pause } from '../../lib/timeout.js';
 
 // This computer's walk-in draft (spec 8.10): one per device, saved on every
 // change, so a refresh or crash loses nothing. Only this device edits it, so
@@ -184,7 +185,13 @@ export function useDraft(deviceId) {
         known = true;   // a refusal: nothing was saved
         return null;
       }
-      const saved = await readBuy(attempt.buyId);   // a failed read leaves it unknown
+      let saved = await readBuy(attempt.buyId);   // a failed read leaves it unknown
+      // No answer at all, and still a draft: the confirm may still be running. Looked at once more
+      // (decision 371); pressing again is safe, as a buy can't be confirmed twice.
+      if (!dbErrorCode(error) && saved?.status === 'draft') {
+        await pause(SECOND_LOOK_MS);
+        saved = await readBuy(attempt.buyId);
+      }
       known = true;
       // This press, or the earlier one whose answer was lost: the dialog may have changed since.
       for (const a of [attempt, last].filter((x) => x?.buyId === attempt.buyId)) {

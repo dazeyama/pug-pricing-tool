@@ -14,6 +14,7 @@ import {
   sellPrices,
 } from '../../lib/ccExport.js';
 import { uuid } from '../../lib/uuid.js';
+import { SECOND_LOOK_MS, pause } from '../../lib/timeout.js';
 
 // The export dialog (docs/EXPORT_FUNCTION.md 8.3): Matching, then Review in
 // three groups (Needs a choice, Matched, Can't upload). In 'check' mode (the
@@ -276,7 +277,13 @@ export default function ExportDialog({
       let checked = false;
       if (knowable && (!e.code || e.code === 'stale_version' || e.code === 'nothing_to_export')) {
         try {
-          const landed = await exportLanded(matches.map((m) => m.line_id), exportId);
+          const ids = matches.map((m) => m.line_id);
+          let landed = await exportLanded(ids, exportId);
+          // No answer at all: the save may still be running. Looked at once more (decision 371).
+          if (!landed && !e.code) {
+            await pause(SECOND_LOOK_MS);
+            landed = await exportLanded(ids, exportId);
+          }
           if (landed) {
             const cards = landed.reduce((n, l) => n + l.quantity, 0);
             const rows = cards > 0 ? downloadMassCreate(landed, fileName, pct) : 0;
@@ -304,7 +311,7 @@ export default function ExportDialog({
         }
       } else if (!e.code) {
         setSaveError(checked
-          ? `${e.message}: nothing was exported. Try again.`
+          ? `${e.message}: it didn't go through. Try again: the same cards can't be exported twice.`
           : `${e.message}. If the connection dropped, it may have exported anyway: Cancel and look at the page before trying again.`);
       } else {
         setSaveError(e.message);

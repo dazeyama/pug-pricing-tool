@@ -26,5 +26,11 @@ export function withTimeout(promise, ms) {
   return Promise.race([promise, late]).finally(() => clearTimeout(timer));
 }
 
+/** A wait of `ms`: before a second look at a save whose answer was lost (decision 371). */
+export const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// A save still running on the server when its answer was lost lands a moment later.
+export const SECOND_LOOK_MS = 2000;
+
 /** True for a time limit reached (ours, or the browser's AbortSignal.timeout). */
 export const isTimeout = (error) => error?.name === 'TimeoutError';
