@@ -7,12 +7,10 @@ and function.
 ## Open
 
 - **The v0.9.9.15-review release review's notes** (none stopped the push; the owner's call on each):
-  1. `src/pages/price/useDraft.js` `confirmedBuy` (confirmed): a second tab on this computer, same user, pressing
-     CONFIRM BUY after the first tab confirmed shows BUY COMPLETE and prints from its own, possibly stale, cards,
-     name and price; before decision 363 it said the buy changed. Fix: compare the buy's name, price and cards with
-     what this tab sent;
-  2. `useDraft.js` `confirm`, `src/pages/PricePage.jsx` `confirmBuy` (plausible): the recovery works only on the
-     press that failed; once the reload empties the draft, pressing again does nothing, with no message;
+  1. **done** (decision 367): CONFIRM BUY's read-back matches the buy to what this tab sent
+     (`src/pages/price/confirmReadBack.js` `readBack`);
+  2. **done** (decision 367): a press whose answer was lost is remembered, and the next press finds out what
+     happened to it (`src/pages/price/useDraft.js` `confirm`, `src/pages/PricePage.jsx` `confirmBuy`);
   3. `src/pages/price/PricingScreen.jsx` ~297 (confirmed): with the TCGplayer versions search failed (a daily
      limit), a TCGplayer-only English Pokémon version can't be added even at a manual price (Alt+M) until 00:00 UTC;
      an edit whose saved `jt:` version isn't in a search that worked stays blocked (the server keeps it a week);
