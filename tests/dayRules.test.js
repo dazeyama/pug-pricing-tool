@@ -44,6 +44,23 @@ test("the day's file again: a day exported before 0071, stamped the day it ran",
   assert.deepEqual(got.skus, ['101226']);
 });
 
+// Decision 372: a Can't upload cards export run on the day itself stamps the day's code too.
+test("the day's file again: not the cards a Can't upload cards export stamped", () => {
+  const DAY_EXPORT = '2026-10-17T09:00:00.123456+00:00';
+  const CANT_EXPORT = '2026-10-16T22:00:00.5+00:00';
+  const lines = [
+    { id: 1, cc_status: 'exported', cc_custom_sku: '101626', cc_exported_at: DAY_EXPORT },
+    { id: 2, cc_status: 'exported', cc_custom_sku: '101626', cc_exported_at: CANT_EXPORT },
+  ];
+  const got = dayExportLines(lines, '2026-10-16', new Set([CANT_EXPORT]));
+  assert.deepEqual(got.lines.map((l) => l.id), [1]);
+  // Before 0071, the fallback leaves them out too.
+  const old = dayExportLines([{ ...lines[0], cc_custom_sku: '101226' }, { ...lines[1], cc_custom_sku: '101326' }],
+    '2026-10-11', new Set([CANT_EXPORT]));
+  assert.deepEqual(old.lines.map((l) => l.id), [1]);
+  assert.deepEqual(old.skus, ['101226']);
+});
+
 test("the day's file again: single buys only is no day file", () => {
   const got = dayExportLines([{ id: 1, cc_status: 'exported', cc_custom_sku: '101626-42' }], '2026-10-16');
   assert.deepEqual(got.lines, []);

@@ -243,6 +243,23 @@ export async function exportLanded(lineIds, exportId) {
 }
 
 /**
+ * Which of these exported cards' stamp times are Can't upload cards exports (decision 372): a card
+ * exported from there is restamped with that export's time, the same moment as the export's
+ * changelog entry (both the transaction's now()).
+ * @param {object[]} lines  exported lines (cc_exported_at)
+ * @returns {Promise<Set<string>>}  rejects when it can't be read
+ */
+export async function restampTimes(lines) {
+  const times = [...new Set(lines.filter((l) => l.cc_status === 'exported' && l.cc_exported_at)
+    .map((l) => l.cc_exported_at))];
+  if (!times.length) return new Set();
+  const { data, error } = await inChunks((part) => supabase.from('events').select('at')
+    .eq('action', 'cant_upload_exported').in('at', part), times, 50);
+  if (error) throw new Error(`Couldn't check which cards were exported from Can't upload cards: ${error.message}`);
+  return new Set(data.map((e) => e.at));
+}
+
+/**
  * Hand the browser the Mass Create file (export spec 4.3).
  * @param {Record<string, number>} pct  Master Fallback Percentages (Magic): worse conditions' NM prices
  */

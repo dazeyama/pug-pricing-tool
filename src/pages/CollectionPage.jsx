@@ -8,8 +8,8 @@ import { useStickerPrint } from './export/useStickerPrint.js';
 import RepriceModal from './collections/RepriceModal.jsx';
 import { formatMoney } from '../lib/money.js';
 import { fileStamp } from '../lib/time.js';
-import { fileSafe } from '../lib/massCreate.js';
-import { downloadMassCreate } from '../lib/ccExport.js';
+import { fileSafe, withoutRestamps } from '../lib/massCreate.js';
+import { downloadMassCreate, restampTimes } from '../lib/ccExport.js';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import PricingScreen from './price/PricingScreen.jsx';
 import CollectionDetails from './collections/CollectionDetails.jsx';
@@ -208,11 +208,27 @@ function CollectionScreen({ id }) {
    */
   function startExport() {
     const stamped = col.lines.filter((l) => l.cc_status === 'exported');
-    /** The same file again from the stamps: it changes nothing, so it needs no user or edit lock. */
-    const downloadAgain = () => {
-      const rows = downloadMassCreate(stamped, `cc-mass-create-${fileSafe(buy.customer_name)}-${fileStamp(new Date(exportedAt))}.csv`,
+    /**
+     * The same file again from the stamps: it changes nothing, so it needs no user or edit lock.
+     * Every export of its own (the owner, 2026-10-19), not the cards a Can't upload cards export
+     * stamped later, which went in that export's file (decision 372).
+     */
+    const downloadAgain = async () => {
+      let own;
+      try {
+        own = withoutRestamps(stamped, await restampTimes(stamped));
+      } catch (e) {
+        toast(`${e.message}.`, 'err');
+        return;
+      }
+      if (!own.length) {
+        toast("Its exported cards went out from Can't upload cards, so it has no file of its own to download again.", 'err');
+        return;
+      }
+      const rows = downloadMassCreate(own, `cc-mass-create-${fileSafe(buy.customer_name)}-${fileStamp(new Date(exportedAt))}.csv`,
         values.fallback_pct_mtg);
-      toast(`Downloaded the same file again: ${rows} row${rows === 1 ? '' : 's'}, Custom SKU ${skus.join(', ')}.`, 'ok');
+      const ownSkus = [...new Set(own.map((l) => l.cc_custom_sku).filter(Boolean))];
+      toast(`Downloaded the same file again: ${rows} row${rows === 1 ? '' : 's'}, Custom SKU ${ownSkus.join(', ')}.`, 'ok');
     };
     if (buy && !system && buy.status === 'completed') {
       if (!stamped.length) {

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { SELL_FLOOR, roundUpPrice } from '../src/lib/money.js';
 import { sellPriceFor } from '../src/lib/sellPrice.js';
 import {
-  customSkuFor, customSkuForDay, fileSafe, massCreateCsv, massCreateRows, nearMintPrice, nearMintPrices,
+  customSkuFor, customSkuForDay, fileSafe, massCreateCsv, massCreateRows, nearMintPrice, nearMintPrices, withoutRestamps,
 } from '../src/lib/massCreate.js';
 
 // docs/EXPORT_FUNCTION.md 5.3: the buy steps, upward.
@@ -109,6 +109,21 @@ test('the CSV: quotes, line breaks and a name that starts with +', () => {
     + '1,+2 Mace,Commander,Near Mint,English,12.00,100126\n'
     + '1,"Kongming, ""Sleeping Dragon""",Commander,Near Mint,English,12.00,100126\n'
     + '1,"Line\nTwo",Commander,Near Mint,English,12.00,100126');
+});
+
+// Decision 372: a collection's file again is every export of its own, not Can't upload's restamps.
+test("the same file again: every own export, not a Can't upload cards export's cards", () => {
+  const FIRST = '2026-10-10T18:00:00.1+00:00';
+  const SECOND = '2026-10-12T18:00:00.2+00:00';
+  const CANT = '2026-10-13T18:00:00.3+00:00';
+  const lines = [
+    stamped({ id: 1, cc_exported_at: FIRST }),
+    stamped({ id: 2, cc_exported_at: SECOND }),
+    stamped({ id: 3, cc_exported_at: CANT }),                        // restamped from Can't upload cards
+    stamped({ id: 4, cc_status: 'cant_upload', cc_exported_at: FIRST }), // still can't upload
+  ];
+  assert.deepEqual(withoutRestamps(lines, new Set([CANT])).map((l) => l.id), [1, 2]);
+  assert.deepEqual(withoutRestamps(lines, new Set()).map((l) => l.id), [1, 2, 3]);
 });
 
 // Owner, 2026-10-11: CC prices every condition from Near Mint.

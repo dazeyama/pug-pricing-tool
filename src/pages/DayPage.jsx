@@ -14,7 +14,8 @@ import ExportButton from '../components/ExportButton.jsx';
 import ExportDialog from './export/ExportDialog.jsx';
 import { useAuditPrint } from './export/useAuditPrint.js';
 import { useStickerPrint } from './export/useStickerPrint.js';
-import { downloadMassCreate } from '../lib/ccExport.js';
+import { downloadMassCreate, restampTimes } from '../lib/ccExport.js';
+import { withoutRestamps } from '../lib/massCreate.js';
 import { todaysPrices } from '../lib/todaysPrices.js';
 import { sellPriceFor } from '../lib/sellPrice.js';
 import { useSettings } from '../state/settings.jsx';
@@ -438,7 +439,7 @@ function DayScreen({ game, day }) {
    * once they're all Completed, the same file again from the stamps, and
    * nothing changes.
    */
-  function startExport() {
+  async function startExport() {
     if (exportBlocked) {
       toast(`${exportBlocked}.`, 'err');
       return;
@@ -451,9 +452,22 @@ function DayScreen({ game, day }) {
       if (guard()) unlessFlagged(pending, () => setExporting(true));
       return;
     }
-    const stamped = dayExportLines(doneLines, day);
-    if (!stamped.lines.length && doneLines.some((l) => l.cc_status === 'exported')) {
+    // Not the cards a Can't upload cards export stamped: they went in its file (decision 372).
+    let restamped;
+    try {
+      restamped = await restampTimes(doneLines);
+    } catch (e) {
+      toast(`${e.message}.`, 'err');
+      return;
+    }
+    const stamped = dayExportLines(doneLines, day, restamped);
+    const ownExported = withoutRestamps(doneLines, restamped);
+    if (!stamped.lines.length && ownExported.length) {
       toast("This day's cards were exported one buy at a time (Export single buy), so there's no day file to download again.", 'err');
+      return;
+    }
+    if (!stamped.lines.length && doneLines.some((l) => l.cc_status === 'exported')) {
+      toast("This day's exported cards went out from Can't upload cards, so the day has no file of its own to download again.", 'err');
       return;
     }
     if (!stamped.lines.length) {

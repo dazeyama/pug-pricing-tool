@@ -147,6 +147,15 @@ export function massCreateRows(lines, pct) {
     || CONDITION_ORDER.indexOf(a.Condition) - CONDITION_ORDER.indexOf(b.Condition));
 }
 
+/**
+ * The exported cards a page's own export stamped, for "Download the same file again" (decision
+ * 372): not those a later Can't upload cards export stamped, which went in that export's file.
+ * @param {object[]} lines
+ * @param {Set<string>} restamped  stamp times of Can't upload cards exports (ccExport.js restampTimes)
+ */
+export const withoutRestamps = (lines, restamped) => lines
+  .filter((l) => l.cc_status === 'exported' && !restamped.has(l.cc_exported_at));
+
 /** The CSV text: UTF-8, no byte-order mark, \n line endings, quotes only where needed (spec 4.3). */
 export function massCreateCsv(rows) {
   return Papa.unparse({ fields: COLUMNS, data: rows.map((r) => COLUMNS.map((c) => r[c])) }, { newline: '\n' });
