@@ -1,4 +1,4 @@
--- PUG Pricing Tool: the database test run (docs/TEST.md, section 18).
+-- PUG Pricing Tool: the database test run (docs/TEST.md, section 21).
 --
 -- Calls every server function the app uses, as the app's own signed-in role
 -- (authenticated), and checks what each one does and what it refuses. It all
@@ -224,6 +224,23 @@ begin
   perform pg_temp.ok(s, 'Signed out, the internal schema can''t be used',
     not has_schema_privilege('anon', 'internal', 'USAGE'));
 
+  -- 0003: Supabase's default grants had opened the buy number counter to anon.
+  perform pg_temp.ok(s, 'Signed out, neither counter can be used',
+    not has_sequence_privilege('anon', 'public.buys_number_seq', 'USAGE')
+    and not has_sequence_privilege('anon', 'public.buys_number_seq', 'UPDATE')
+    and not has_sequence_privilege('anon', 'public.events_seq_seq', 'USAGE'));
+
+  -- 0002: the Changelog is written only by the database (decision 378).
+  perform pg_temp.ok(s, 'The Changelog can only be read by the app',
+    not has_table_privilege('authenticated', 'public.events', 'INSERT')
+    and not has_table_privilege('authenticated', 'public.events', 'UPDATE')
+    and not has_table_privilege('authenticated', 'public.events', 'DELETE')
+    and has_table_privilege('authenticated', 'public.events', 'SELECT')
+    and not has_sequence_privilege('authenticated', 'public.events_seq_seq', 'USAGE')
+    and not has_sequence_privilege('authenticated', 'public.events_seq_seq', 'UPDATE')
+    and not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'events'
+                     and policyname = 'store: append'));
+
   select string_agg(p.proname, ', ' order by p.proname) into v
     from pg_proc p where p.pronamespace = 'public'::regnamespace
      and not has_function_privilege('authenticated', p.oid, 'EXECUTE');
@@ -233,7 +250,7 @@ begin
     from pg_proc p join pg_namespace ns on ns.oid = p.pronamespace
    where ns.nspname in ('public', 'internal') and p.prosecdef;
   perform pg_temp.ok(s, 'Only the expected functions run with the owner''s rights',
-    v = 'internal.remember_customer, public.cc_products_load, public.master_inventory_abort, '
+    v = 'internal.insert_event, internal.remember_customer, public.cc_products_load, public.master_inventory_abort, '
         || 'public.master_inventory_finish, public.restore_backup', v);
 
   select string_agg(ns.nspname || '.' || p.proname, ', ' order by ns.nspname || '.' || p.proname) into v
@@ -302,6 +319,18 @@ begin
     perform pg_temp.ok(s, 'The Changelog can''t be deleted', v = 0, v || ' deleted');
   exception when insufficient_privilege then
     perform pg_temp.ok(s, 'The Changelog can''t be deleted', true);
+  end;
+  begin
+    insert into events (kind, action) values ('app', 'dbtest');
+    raise exception 'dbt_no_error';
+  exception when others then
+    perform pg_temp.ok(s, 'The Changelog is only written by the server (0002)', sqlstate = '42501', sqlerrm);
+  end;
+  begin
+    perform nextval('events_seq_seq');
+    raise exception 'dbt_no_error';
+  exception when others then
+    perform pg_temp.ok(s, 'The Changelog''s counter is only moved by the server (0002)', sqlstate = '42501', sqlerrm);
   end;
   begin
     insert into customers (name_key, name) values ('dbtest x', 'DBTEST X');

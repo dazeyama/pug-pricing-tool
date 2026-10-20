@@ -9,10 +9,8 @@ declare
 begin
   if p_user is null then raise exception 'no_user'; end if;
   select * into v_user from staff_users where id = p_user;
-  insert into events (staff_user_id, staff_user_name, staff_user_color, device_id, kind, action,
-                      target_name, day, summary)
-  values (p_user, v_user.name, v_user.color, p_device, 'buy', 'cash_buys_downloaded',
-          'Cash buys · ' || to_char(v_month, 'FMMonth YYYY'), v_month, coalesce(p_summary, ''));
+  perform internal.insert_event(p_user, v_user.name, v_user.color, p_device, 'buy', 'cash_buys_downloaded',
+    p_target_name => 'Cash buys · ' || to_char(v_month, 'FMMonth YYYY'), p_day => v_month, p_summary => p_summary);
 end;
 $function$;
 

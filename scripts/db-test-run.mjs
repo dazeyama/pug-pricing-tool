@@ -9,9 +9,13 @@
 //                                                     another project (prod),
 //                                                     its fingerprints checked
 //                                                     against a saved dev run
+//   node scripts/db-test-run.mjs --project-ref <ref> --confirm <ref> --compare dev.json
+//                                                     the same, with the CLI
+//                                                     still linked to dev
 //
 // It runs `npx supabase db query --linked`, so the project is whichever one
-// `npx supabase link` last linked. A project other than the dev one in
+// `npx supabase link` last linked, unless --project-ref <ref> names another
+// (prod, with dev still linked). A project other than the dev one in
 // .env.development needs --confirm with its ref. It reads no secrets and the
 // saved file holds only the results (DBTEST data, counts and fingerprints).
 
@@ -31,8 +35,11 @@ const opt = (name) => {
 let before = null;
 let buysPutBack = false;
 
-const ref = readText(path.join(root, 'supabase', '.temp', 'project-ref'))?.trim();
-if (!ref) fail('No linked project: run `npx supabase link` first.');
+// --project-ref <ref> runs on that project while the CLI stays linked to dev (decision 377).
+const named = opt('--project-ref');
+if (args.includes('--project-ref') && (!named || named.startsWith('--'))) fail('--project-ref needs the project ref after it.');
+const ref = named ?? readText(path.join(root, 'supabase', '.temp', 'project-ref'))?.trim();
+if (!ref) fail('No linked project: run `npx supabase link` first, or pass --project-ref <ref>.');
 const devUrl = readText(path.join(root, '.env.development'))?.match(/VITE_SUPABASE_URL\s*=\s*https:\/\/([a-z0-9]+)\./)?.[1];
 const isDev = ref === devUrl;
 if (!isDev && opt('--confirm') !== ref) {
@@ -135,7 +142,7 @@ function query(sql, file) {
     tmp = path.join(os.tmpdir(), `pug-db-test-${process.pid}.sql`);
     fs.writeFileSync(tmp, sql);
   }
-  const res = spawnSync('npx', ['supabase', 'db', 'query', '--linked', '-f', `"${tmp ?? file}"`], {
+  const res = spawnSync('npx', ['supabase', 'db', 'query', ...(named ? ['--project-ref', named] : ['--linked']), '-f', `"${tmp ?? file}"`], {
     cwd: root, encoding: 'utf8', shell: true, maxBuffer: 64 * 1024 * 1024,
   });
   if (tmp) fs.rmSync(tmp, { force: true });

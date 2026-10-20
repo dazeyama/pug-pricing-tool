@@ -40,17 +40,15 @@ begin
   v_returned := cant_upload_return(v_lines, v_from, p_user, p_device);
 
   select * into v_user from staff_users where id = p_user;
-  insert into events (staff_user_id, staff_user_name, staff_user_color, device_id, kind, action,
-                      target_name, games, day, fields, summary)
-  values (p_user, v_user.name, v_user.color, p_device, 'buy', 'day_unexported',
-          v_from, array[p_game], p_day,
-          jsonb_build_array(jsonb_build_object('field', 'status', 'before', 'Completed', 'after', 'Paid/Ours')),
-          format('%s %s buy%s marked Paid/Ours again%s.', v_count, v_game,
-                 case when v_count = 1 then '' else 's' end,
-                 case when v_returned > 0
-                      then format('; %s card%s taken back out of Can''t upload cards', v_returned,
-                                  case when v_returned = 1 then '' else 's' end)
-                      else '' end));
+  perform internal.insert_event(p_user, v_user.name, v_user.color, p_device, 'buy', 'day_unexported',
+    p_target_name => v_from, p_games => array[p_game], p_day => p_day,
+    p_fields => jsonb_build_array(jsonb_build_object('field', 'status', 'before', 'Completed', 'after', 'Paid/Ours')),
+    p_summary => format('%s %s buy%s marked Paid/Ours again%s.', v_count, v_game,
+                        case when v_count = 1 then '' else 's' end,
+                        case when v_returned > 0
+                             then format('; %s card%s taken back out of Can''t upload cards', v_returned,
+                                         case when v_returned = 1 then '' else 's' end)
+                             else '' end));
   return v_count;
 end;
 $function$;

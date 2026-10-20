@@ -93,16 +93,15 @@ begin
   -- "5 cards bought from Alex M., (555) 123-4567; paid $120 in cash."
   v_from := concat_ws(', ', v_customer, format_phone(v_phone));
 
-  insert into events (staff_user_id, staff_user_name, staff_user_color, device_id, kind, action,
-                      target_id, target_name, games, added, totals, lines, summary)
-  values (p_user, v_user.name, v_user.color, b.draft_device_id, 'buy', 'buy_confirmed',
-          p_buy_id, v_target, v_games, (internal.line_counts(array(select l from buy_lines l where l.buy_id = p_buy_id))).cards,
-          internal.lines_totals(b, array(select l from buy_lines l where l.buy_id = b.id)),
-          coalesce(v_lines, '[]'::jsonb),
-          -- Bulk apart, as CONFIRM BUY's dialog counts it (0066).
-          sentence(format('%s bought from %s; paid %s in %s',
-                          internal.lines_count_text(array(select l from buy_lines l where l.buy_id = p_buy_id)), v_from,
-                          money_text(p_paid_price), p_paid_method)));
+  perform internal.insert_event(p_user, v_user.name, v_user.color, b.draft_device_id, 'buy', 'buy_confirmed',
+    p_target_id => p_buy_id, p_target_name => v_target, p_games => v_games,
+    p_added => (internal.line_counts(array(select l from buy_lines l where l.buy_id = p_buy_id))).cards,
+    p_totals => internal.lines_totals(b, array(select l from buy_lines l where l.buy_id = b.id)),
+    p_lines => v_lines,
+    -- Bulk apart, as CONFIRM BUY's dialog counts it (0066).
+    p_summary => sentence(format('%s bought from %s; paid %s in %s',
+                                 internal.lines_count_text(array(select l from buy_lines l where l.buy_id = p_buy_id)), v_from,
+                                 money_text(p_paid_price), p_paid_method)));
 
   return jsonb_build_object('number', v_number, 'games', to_jsonb(v_games), 'target_name', v_target);
 end;

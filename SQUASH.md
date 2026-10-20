@@ -466,9 +466,11 @@ Then the launch steps outside the squash (spec, Phase 10 → Launch):
 - Every migration: rehearse `(echo "begin;"; cat f; echo "rollback;")` on
   dev → `db push` to dev → `node scripts/db-snapshot.mjs` (commit
   `supabase/current/` with the migration) → `node scripts/db-test-run.mjs
-  --save <fresh dev run>` → (owner links prod) `db push` to prod →
-  `node scripts/db-test-run.mjs --confirm zvxquzcfffmxwizonxuo --compare
-  <that run>` when the store isn't using the app → (owner links dev again).
+  --save <fresh dev run>` → when the owner says so, `db push --project-ref
+  zvxquzcfffmxwizonxuo` → `node scripts/db-test-run.mjs --project-ref
+  zvxquzcfffmxwizonxuo --confirm zvxquzcfffmxwizonxuo --compare <that run>`
+  when the store isn't using the app. The CLI stays linked to dev throughout
+  (decision 377).
 - **The first one, 0002, locks the Changelog to the database** (section 11a).
 - `scripts/db-baseline.mjs` is **not run again** for prod: the baseline is
   history once applied. It stays useful two ways: `--rehearse` on a
@@ -488,9 +490,10 @@ Then the launch steps outside the squash (spec, Phase 10 → Launch):
 **Where it stands.** Step 1 is done: migration 0064 added
 `public.collection_log_call` (a collection's "Called") and
 `public.buy_log_cash_download` (the Cash buys file), and the app since then
-calls them, so the browser no longer writes Changelog entries itself. The
-live site keeps inserting into `events` directly until the app is pushed,
-so the store's role keeps that right until then.
+calls them, so the browser no longer writes Changelog entries itself. Step 2
+is migration 0002 (decision 378), written as below with one definer,
+`internal.insert_event`, and applied to dev on 2026-10-19; prod on the
+owner's word.
 
 **Why step 2 isn't one line.** The event writers are security invoker:
 every entry the database writes is inserted *as the signed-in role*
@@ -542,7 +545,7 @@ directly), and after the squash, so it's 0002. The owner decides the day.
 | 8 (prod differs) | baseline incomplete | fix generator → rewrite → rehearse → empty prod (6) → push (7) → prove (8) |
 | 9 (dev record wrong) | repair missed/duplicated | re-run the two `repair` commands; they're idempotent |
 | any | dev's data | untouched by every step here; the backup from section 2 exists anyway |
-| any | wrong project linked | `cat supabase/.temp/project-ref` before every `--linked`; `db-baseline.mjs` refuses non-dev, `db-test-run.mjs` refuses non-dev without `--confirm`; `db push`, `db reset` and `migration repair` have **no guard** — the `cat` is the guard |
+| any | wrong project linked | `cat supabase/.temp/project-ref` before every `--linked`; `db-baseline.mjs` refuses non-dev, `db-test-run.mjs` refuses non-dev without `--confirm`; `db push`, `db reset` and `migration repair` have **no guard** — the `cat` is the guard. Since decision 377 prod is named with `--project-ref zvxquzcfffmxwizonxuo`, which has no guard either: the ref typed in the command is the guard, and the link stays on dev |
 
 ---
 

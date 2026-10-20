@@ -97,13 +97,15 @@ tests (`npm test`, commit only on `fail 0`) and the build.
 
 ## Where it stands (2026-10-19)
 
-- Live: **v1.0.0-launch** (2026-10-19, decisions through 375), the first build on **prod** (`zvxquzcfffmxwizonxuo`):
+- Live: **v1.0.0-launch** (2026-10-19, decisions through 379), the first build on **prod** (`zvxquzcfffmxwizonxuo`):
   the GitHub Actions variables point there. Localhost and the phone scanner's LAN link stay on dev
   (`.env.development`), which keeps the store's data from before launch as the test copy.
-- The migrations were squashed on 2026-10-19: dev and prod both record the baseline `0001` (standing in for the
-  old 0001–0084, now in `supabase/migrations-archive/`), and the next migration is 0002: dev first, then prod.
-- A push needs prod linked for the release skill's migration check (`npx.cmd supabase link --project-ref
-  zvxquzcfffmxwizonxuo`; no password was asked), then dev linked back for the day's work.
+- The migrations were squashed on 2026-10-19: the baseline `0001` stands in for the old 0001–0084 (now in
+  `supabase/migrations-archive/`). Dev has 0001–0003 (0002 the Changelog lock, 0003 the counter grant, both
+  2026-10-19); prod has 0001 until I say to apply them. The next migration is 0004, dev first.
+- The CLI stays linked to dev (`supabase/.temp/project-ref`). Anything aimed at prod names it:
+  `--project-ref zvxquzcfffmxwizonxuo` (the release skill's migration check, `db push`, the function deploys);
+  no password was asked for it (decision 377).
 - The release history is the spec's decisions and `git tag`; what's open is NEXT.md.
 
 ## Coding Conventions

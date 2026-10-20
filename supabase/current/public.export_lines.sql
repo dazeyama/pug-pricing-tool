@@ -99,15 +99,13 @@ begin
       from buy_lines l where l.id = any(v_lines);
 
     select * into v_user from staff_users where id = p_user;
-    insert into events (staff_user_id, staff_user_name, staff_user_color, device_id, kind, action,
-                        target_name, games, day, fields, summary)
-    values (p_user, v_user.name, v_user.color, p_device, 'buy', 'day_exported',
-            v_from, array[v_game], v_day,
-            jsonb_build_array(jsonb_build_object('field', 'status', 'before', 'Paid/Ours', 'after', 'Completed')),
-            format('%s Magic card%s exported (Custom SKU %s)%s.', v_cards,
-                   case when v_cards = 1 then '' else 's' end, v_sku,
-                   case when v_cant > 0 then format('; %s can''t upload, copied to Can''t upload cards', v_cant)
-                        else '' end));
+    perform internal.insert_event(p_user, v_user.name, v_user.color, p_device, 'buy', 'day_exported',
+      p_target_name => v_from, p_games => array[v_game], p_day => v_day,
+      p_fields => jsonb_build_array(jsonb_build_object('field', 'status', 'before', 'Paid/Ours', 'after', 'Completed')),
+      p_summary => format('%s Magic card%s exported (Custom SKU %s)%s.', v_cards,
+                          case when v_cards = 1 then '' else 's' end, v_sku,
+                          case when v_cant > 0 then format('; %s can''t upload, copied to Can''t upload cards', v_cant)
+                               else '' end));
 
     return jsonb_build_object('buys', array_length(v_buys, 1), 'cards', v_cards, 'cant', v_cant,
                               'sku', v_sku, 'lines', coalesce(v_rows, '[]'::jsonb));

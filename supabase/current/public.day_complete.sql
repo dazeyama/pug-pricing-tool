@@ -46,14 +46,12 @@ begin
   update buys set version = version + 1, updated_at = now() where id = any(v_ids);
 
   select * into v_user from staff_users where id = p_user;
-  insert into events (staff_user_id, staff_user_name, staff_user_color, device_id, kind, action,
-                      target_name, games, day, fields, summary)
-  values (p_user, v_user.name, v_user.color, p_device, 'buy', 'day_completed',
-          v_game || ' · ' || to_char(p_day, 'FMMonth FMDD, YYYY'), array[p_game], p_day,
-          jsonb_build_array(jsonb_build_object('field', 'status', 'before', 'Paid/Ours', 'after', 'Completed')),
-          format('%s %s buy%s (%s card%s) marked Completed, not exported.', v_count, v_game,
-                 case when v_count = 1 then '' else 's' end, v_cards,
-                 case when v_cards = 1 then '' else 's' end));
+  perform internal.insert_event(p_user, v_user.name, v_user.color, p_device, 'buy', 'day_completed',
+    p_target_name => v_game || ' · ' || to_char(p_day, 'FMMonth FMDD, YYYY'), p_games => array[p_game], p_day => p_day,
+    p_fields => jsonb_build_array(jsonb_build_object('field', 'status', 'before', 'Paid/Ours', 'after', 'Completed')),
+    p_summary => format('%s %s buy%s (%s card%s) marked Completed, not exported.', v_count, v_game,
+                        case when v_count = 1 then '' else 's' end, v_cards,
+                        case when v_cards = 1 then '' else 's' end));
   return v_count;
 end;
 $function$;

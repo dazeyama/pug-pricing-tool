@@ -67,26 +67,36 @@ and function.
 - **After the launch push (v1.0.0-launch, 2026-10-19), the owner's setup on the live site.** Done the same night:
   signed in with prod's store password, the JustTCG key saved and a price came back, so `secrets` and `prices` are
   proven on prod. Left as the owner gets to them: name the computer, add the users, upload the CC CSV; every store
-  computer signs in again. The **Supabase plan for prod** (`docs/DESIGN_SPEC.md` Appendix D 2: Free vs
-  Pro) is still to decide. The clean-up (the spec's Phase 10 list, `C:\ClaudeProjects\temp\pug-squash\` included)
+  computer signs in again. The Supabase plan: Free for now (decision 376). The clean-up (the spec's Phase 10 list, `C:\ClaudeProjects\temp\pug-squash\` included)
   waits until prod has run a while.
 - **The smoke test pass** (`docs/TEST.md`, 200 cases): planned before the squash and the switch, not done; neither
   changed behaviour, so it still covers this build (on dev, or on the live site once it has data).
 - **TEST.md has no case for decision 374** (the launch review): the 🚩 following the press that went through, and
   Confirming… while a later press reads back.
-- **The release skill's pre-flight** now needs prod linked for its migration check, then dev linked back (the link
-  asked no password on 2026-10-19). A small change could name the project in that check (`--project-ref`) so the
-  link stays on dev; propose it, don't just do it.
 - **After launch:**
-  - migration **0002**, the Changelog lock (`SQUASH.md` section 11a), on the owner's day;
-  - a migration revoking Supabase's default grant to `anon` on `buys_number_seq` (0071 never did; seen in the
-    baseline read, 2026-10-19; harmless on its own, as `anon` can't write `buys`);
+  - **migrations 0002 and 0003 to prod** (decisions 378, 379; on dev since 2026-10-19, the dev run saved as
+    `C:\ClaudeProjects\temp\pug-migrations\dev-run-0003.json`): on the owner's word, at a time the store isn't using
+    the app: `npx supabase db push --project-ref zvxquzcfffmxwizonxuo`, then `node scripts/db-test-run.mjs
+    --project-ref zvxquzcfffmxwizonxuo --confirm zvxquzcfffmxwizonxuo --compare <that file>` (every check, every
+    fingerprint the same). Until then prod's Changelog is written the old way; the app works either way;
   - watch JustTCG usage and the plan (Appendix D 4);
   - tune the stamp cutoff `STAMP_SEEN = 0.53` in `src/scan/stamps.js` from the run log's `stamp` lines
     (`C:\ClaudeProjects\temp\scan-run\scan-log.jsonl`, LAN dev server only).
 
 ## Done
 
+- 2026-10-19: **Migrations 0002 and 0003 on dev** (decisions 378, 379), as one batch: one pug-reviewer review (every
+  one of the eight mappings traced; nothing blocking), one rehearsal inside begin/rollback on dev, applied in order,
+  one snapshot (`supabase/current/`: `internal.insert_event.sql` new, eight bodies changed), one test run (526
+  checks; four new: neither counter open to anon, the Changelog read-only for the app, a direct insert and a
+  `nextval` refused 42501). 0002: the Changelog is written only by the database through `internal.insert_event`
+  (SQUASH.md 11a). 0003: `buys_number_seq` revoked from anon. The migration files were written by a one-off
+  generator outside the repo as exact-text patches of `supabase/current/`. **Not on prod yet** (Open, After launch).
+- 2026-10-19: The release skill names the live site's project with `--project-ref` (decision 377): step 1's
+  migration check, and `scripts/db-test-run.mjs --project-ref <ref>` for a prod test run, so the CLI stays linked to
+  dev; CLAUDE.md, SQUASH.md sections 11 and 12, SETUP.md's new-project steps agree. The Supabase plan closed: Free
+  for now (decision 376; Appendix D 2 struck), and `docs/SETUP.md` → "Restoring a paused project" written from
+  Supabase's own page (7 idle days to pause; Resume project in the dashboard; a 1-year restore window).
 - 2026-10-19: Pushed as **v1.0.0-launch** (tag `v1.0.0-launch`): **the launch**. The live site now builds against
   **prod** (`zvxquzcfffmxwizonxuo`): the Actions variables `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`
   set from `.env.production` (decision 375); `prices` and `secrets` deployed to prod; sign-ups off and Max rows

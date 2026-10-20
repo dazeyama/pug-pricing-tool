@@ -7,11 +7,9 @@ declare
   v_user staff_users;
 begin
   select * into v_user from staff_users where id = p_user;
-  insert into events (staff_user_id, staff_user_name, staff_user_color, device_id, kind, action,
-                      target_id, target_name, games, removed, totals, lines, summary)
-  values (p_user, v_user.name, v_user.color, p_device, 'buy', p_action, b.id, p_target,
-          coalesce(p_games, '{}'), coalesce(p_removed, 0), p_totals,
-          coalesce(p_lines, '[]'::jsonb), coalesce(p_summary, ''));
+  perform internal.insert_event(p_user, v_user.name, v_user.color, p_device, 'buy', p_action,
+    p_target_id => b.id, p_target_name => p_target, p_games => p_games, p_removed => p_removed,
+    p_totals => p_totals, p_lines => p_lines, p_summary => p_summary);
 end;
 $function$;
 

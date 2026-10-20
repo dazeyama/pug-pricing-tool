@@ -100,8 +100,8 @@ CSVs and the API keys stay as they are. Try it on **dev** first.
 
 1. Create the Supabase project; in it, Authentication → Users → add the store account (the store email,
    Auto Confirm User), and turn **off** "Allow new users to sign up".
-2. Link it (`npx supabase link --project-ref <new ref>`, the owner types the database password), then
-   `npx supabase db push --linked`: the baseline and every migration after it.
+2. `npx supabase db push --project-ref <new ref>`: the baseline and every migration after it. The CLI stays
+   linked to dev (decision 377); if the CLI asks for the new project's database password, the owner types it.
 3. Deploy the Edge Functions: `npx supabase functions deploy prices --project-ref <new ref> --use-api --no-verify-jwt`,
    and the same for `secrets`.
 4. Point the site at it: the GitHub Actions variables `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`, then
@@ -114,10 +114,36 @@ CSVs and the API keys stay as they are. Try it on **dev** first.
    `select setval('buys_number_seq', greatest(<highest number on a label>, (select last_value from buys_number_seq)), true);`
 7. Upload the Master Crystal Inventory CSV again (it lived in the old project's storage), and put the JustTCG key
    back in Settings → API keys. Everyone signs in again; computers keep their names.
-8. Link the CLI back to dev (`npx supabase link --project-ref psucrzljraxeootwnltf`), unless the new project is
-   the one to work on from now: `db push --linked` goes to whichever is linked.
+8. Check the CLI is still linked to dev (`supabase/.temp/project-ref` reads `psucrzljraxeootwnltf`): a plain
+   `db push --linked` goes to whichever project is linked, so the link stays on dev and prod is always named.
 
 Try it on a throwaway project before it's needed.
+
+### Restoring a paused project
+
+Prod is on the Free plan (decision 376), and Supabase pauses a Free project that has had
+little database activity over seven days: the store's daily use keeps it awake, but a
+week closed (a holiday) can pause it. Supabase emails the project owner about a week
+before, and again when it's paused. Nothing is lost: a paused project keeps its data and
+settings, and can be restored for a year after it was paused ("Once the project is paused,
+there is a 1-year window to restore the project on the platform from within Supabase
+Studio").
+
+**What it looks like:** the live site loads but can't sign in, or shows "Couldn't load"
+messages everywhere, and the Supabase dashboard shows the project as paused.
+
+**To restore it:** Supabase dashboard → your organization → the paused project →
+**Resume project**, and confirm. It takes a few minutes. Then, on the live site: sign in,
+price one card (the API key and the Edge Functions are kept), and open the Changelog.
+Live updates come back with it; nothing has to be set again.
+
+**To keep it from pausing** during a planned closure: open the live site and sign in once
+during the week, or visit the project in the dashboard when the warning email comes.
+Paid plans are never paused.
+
+**If the year has passed** and the project can't be resumed, it's gone: follow "Restoring
+into a new project" above with the newest backup file. That's the reason for the weekly
+backup download.
 
 If prod moves to the Pro plan (daily backups), set `CLOUD_BACKUPS` to `true` in
 `src/lib/backup.js`; the reminder banner then stops.
