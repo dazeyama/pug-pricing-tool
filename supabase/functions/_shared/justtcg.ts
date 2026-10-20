@@ -31,6 +31,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
  */
 export async function call(key: string, path: string, init: RequestInit = {}): Promise<any> {
   let wait = 1000;
+  let unreadable = 0;
   for (let attempt = 0; attempt < 6; attempt++) {
     const res = await fetch(`${API}${path}`, {
       ...init,
@@ -48,9 +49,16 @@ export async function call(key: string, path: string, init: RequestInit = {}): P
     if (code === 'DAILY_LIMIT_EXCEEDED' || code === 'REQUEST_LIMIT_EXCEEDED') {
       throw new QuotaError(code, body?.error ?? code);
     }
-    // A reply that won't read is tried again like a server error (decision 360): read as "no cards",
-    // it remembered every lookup in the batch as "no match" for 7 days.
-    if (res.status === 429 || res.status >= 500 || (res.ok && body == null)) {
+    // A reply that won't read (decision 360): read as "no cards", it remembered every lookup in the
+    // batch as "no match" for 7 days. Tried once more after a second, then an error: the server
+    // errors' backoff, up to a minute, could outlast the function's time and spend the allowance
+    // on a reply that won't read again (decision 370).
+    if (res.ok && body == null) {
+      if (unreadable++ >= 1) throw new Error("JustTCG's reply couldn't be read");
+      await sleep(1000);
+      continue;
+    }
+    if (res.status === 429 || res.status >= 500) {
       const retryAfter = Number(res.headers.get('Retry-After'));
       const delay = Number.isFinite(retryAfter) && retryAfter > 0
         ? retryAfter * 1000

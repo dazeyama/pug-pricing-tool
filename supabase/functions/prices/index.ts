@@ -339,14 +339,11 @@ Deno.serve(async (req) => {
         mapRows.push({ source_key: l.key, justtcg_card_id: null, resolved_at: fetchedAt });
       }
     };
-    // Not answered this time: a remembered card's last kept price, or marked failed. Neither is
-    // remembered as "no match" (decision 360).
-    const unanswered = (l: Lookup, cardId?: string) => {
-      const old = cardId ? cacheBy.get(cardId) : undefined;
-      const why = old ? refusedFor(l, old.payload) : null;
-      results[l.key] = !old ? { card: null, fetchedAt: null, failed: true } as any
-        : why ? { card: null, fetchedAt: old.fetched_at, refused: why } as any
-        : { card: old.payload, fetchedAt: old.fetched_at };
+    // Not answered this time: marked failed, not remembered as "no match" (decision 360). Not the
+    // last kept price either: it's only asked for when older than the caller allows, and read as
+    // an answer it passed as today's, an export's Sell Price included (decision 370).
+    const unanswered = (l: Lookup) => {
+      results[l.key] = { card: null, fetchedAt: null, failed: true } as any;
     };
 
     // 2. One batch request (≤100 items on Starter/Pro) for everything missing.
@@ -357,7 +354,7 @@ Deno.serve(async (req) => {
       // from it, and each lookup is answered as not answered (decision 360).
       if (!Array.isArray(res?.data)) {
         console.error('prices: a batch reply had no card list', JSON.stringify(res).slice(0, 300));
-        for (const { lookup, item } of chunk) unanswered(lookup, item.cardId);
+        for (const { lookup } of chunk) unanswered(lookup);
         continue;
       }
       const cards: any[] = res.data;
@@ -370,11 +367,11 @@ Deno.serve(async (req) => {
         // A SKU asked for alone: the one card that came back, if its variants don't say.
         if (!card && item.tcgplayerSkuId && chunk.length === 1 && cards.length === 1) card = cards[0];
         // A remembered card missing from the reply (a hiccup, or an id JustTCG retired or renamed): not
-        // turned into "no match" for 7 days on every computer. Its last price, if kept, and the match
-        // let go, so the next ask finds the card by its own ids again (decision 360).
+        // turned into "no match" for 7 days on every computer. Not answered, and the match let go,
+        // so the next ask finds the card by its own ids again (decisions 360, 370).
         if (!card && item.cardId && mapBy.get(lookup.key)?.justtcg_card_id === item.cardId) {
           forget.push(lookup.key);
-          unanswered(lookup, item.cardId);
+          unanswered(lookup);
           continue;
         }
         // A Pokémon product that is another card is not priced, and not
