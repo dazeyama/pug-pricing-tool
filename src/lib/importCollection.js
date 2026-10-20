@@ -10,7 +10,7 @@ import { fetchPrices } from './prices.js';
 import { allPages, inChunks } from './inChunks.js';
 import { scryfallCards, scryfallCollection } from './todaysPrices.js';
 import { normNumber } from './query.js';
-import { saveLink } from './ccExport.js';
+import { readSetMap, saveLink } from './ccExport.js';
 import { fold } from './ccMatch.js';
 import { nameKey } from './normalize.js';
 import { magicTreatments } from './printings.js';
@@ -230,7 +230,7 @@ export async function matchImport(rows, onStep, format = 'cc') {
   const keys = [...new Set(ok.map(importKey))];
   const [{ data: catList, error: catError }, { data: mapRows, error: mapError }, sets, { data: picked, error: pickError }] = await Promise.all([
     supabase.rpc('cc_categories'),
-    supabase.from('cc_set_map').select('scryfall_set, promo_kind, category'),
+    readSetMap(),
     loadSets(),
     inChunks((part) => supabase.from('import_links').select('*').in('key', part), keys, KEY_CHUNK),
   ]);

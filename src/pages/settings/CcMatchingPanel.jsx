@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase.js';
+import { allPages } from '../../lib/inChunks.js';
 import { formatShortDate } from '../../lib/time.js';
 import Modal from '../../components/Modal.jsx';
 import UserTag from '../../components/UserTag.jsx';
@@ -28,7 +29,9 @@ export default function CcMatchingPanel() {
   const [browsing, setBrowsing] = useState(false);
 
   const loadSets = useCallback(async () => {
-    const { data, error } = await supabase.from('cc_set_map').select('*').order('updated_at', { ascending: false });
+    // Page by page past the API's 1,000 rows (decision 390), newest first.
+    const { data, error } = await allPages((from, to) => supabase.from('cc_set_map').select('*')
+      .order('updated_at', { ascending: false }).order('scryfall_set').order('promo_kind').range(from, to));
     if (error) toast(`Couldn't load the set choices: ${error.message}`, 'err');
     else setSets(data ?? []);
   }, [toast]);

@@ -32,11 +32,21 @@ export const linkKey = (line) => `${line.scryfall_id}|${line.finish}`;
  * @param {(text: string) => void} [onStep]
  * @returns {Promise<{ results: object[], cards: Map<string, object> }>}
  */
+/**
+ * Every set choice staff made ("Always use the picked product's category for…"), page by page
+ * (decision 390): the API stops at 1,000 rows, and a set past them would lose its choice.
+ * @returns {Promise<{ data: object[]|null, error: any }>}
+ */
+export const readSetMap = () => allPages((from, to) => supabase.from('cc_set_map')
+  .select('scryfall_set, promo_kind, category')
+  .order('scryfall_set').order('promo_kind')
+  .range(from, to));
+
 export async function matchLines(lines, onStep) {
   onStep?.(`Matching ${lines.length} card${lines.length === 1 ? '' : 's'}…`);
   const [{ data: catList, error: catError }, { data: mapRows, error: mapError }] = await Promise.all([
     supabase.rpc('cc_categories'),
-    supabase.from('cc_set_map').select('scryfall_set, promo_kind, category'),
+    readSetMap(),
   ]);
   fail(catError, "Couldn't read the inventory's categories");
   fail(mapError, "Couldn't read the set choices");
