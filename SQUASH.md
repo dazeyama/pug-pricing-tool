@@ -432,7 +432,7 @@ Then the launch steps outside the squash (spec, Phase 10 → Launch):
   keys on the live site, by the owner. `api_usage` gets its row at the first
   price lookup; the Settings meter says "No usage recorded yet" until then.
 - **API row limit:** Project Settings → Data API → **Max rows** on prod set to dev's value (the hosted default is
-  1,000; write the number here when it's checked: ____). The export's and Import Collection's product reads, and
+  1,000; checked 2026-10-19: **1,000**, the default, left as is). The export's and Import Collection's product reads, and
   the Cash buys file, the Collections tab, Home's days to export and the Calendar, page through any limit
   (decisions 346, 365, 373), so a lower value is slower, not wrong.
 - **Auth:** the store account exists on prod (section 6's probe, `auth_users: 1`);
