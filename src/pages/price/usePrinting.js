@@ -13,9 +13,10 @@ const ownProductCards = (versions) => [...new Set(versions.map((v) => v.tcgplaye
  * The selected card's printing (PricingScreen; FABLE_REPORT C1): the finish
  * chosen (Magic) or the version (Pokémon), the card's details and siblings
  * they're chosen from, and setPrinting to choose. `selected` is the
- * selection, `card` the same unless it's bulk (then null).
+ * selection, `card` the same unless it's bulk (then null). `savedVersion`: the
+ * TCGplayer-only version a line being edited was saved on (lineVersion).
  */
-export function usePrinting(selected, card, { needSiblings = false } = {}) {
+export function usePrinting(selected, card, { needSiblings = false, savedVersion = null } = {}) {
   // The chosen finish (Magic) or version (Pokémon) of the selected card. Tied
   // to the card's key, so a newly selected card starts on its defaults.
   const [printing, setPrinting] = useState({ key: null, finish: null, version: null });
@@ -36,8 +37,13 @@ export function usePrinting(selected, card, { needSiblings = false } = {}) {
     : card.source === 'justtcg' ? justtcgVersions(card.justtcg, card.suffix, card.lang) : pokemonVersions(pokemon.card);
   const needed = needSiblings || ownVersions.some((v) => !v.tcgplayerId);
   const tcgSiblings = usePokemonSiblings(card, pokemon, { needed });
-  const versions = card?.game !== 'pokemon' ? ownVersions
+  const listed = card?.game !== 'pokemon' ? ownVersions
     : withTcgplayerVersions(ownVersions, tcgSiblings.cards?.length ? tcgSiblings.cards : ownProductCards(ownVersions), card);
+  // A line saved on a TCGplayer-only version the search didn't bring back (it failed, or the
+  // week-old search the server keeps lacks it): kept as it was saved, priced by its own product,
+  // not switched for the default (decision 369).
+  const versions = savedVersion && tcgSiblings.settled && !listed.some((v) => v.id === savedVersion.id)
+    ? [...listed, savedVersion] : listed;
   const version = versions.find((v) => own && v.id === printing.version) ?? defaultPokemonVersion(versions);
 
   // Every card starts on its defaults (owner's decision, 2026-09-29): a choice

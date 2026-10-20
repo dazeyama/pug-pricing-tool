@@ -21,6 +21,7 @@ import { magicFinishes, POKEMON_FINISHES } from '../../lib/printings.js';
 import { CONDITIONS } from '../../lib/prices.js';
 import { showsTcgplayer } from '../../lib/ladder.js';
 import { buildLine } from '../../lib/buyLine.js';
+import { lineVersion } from '../../lib/justtcgCards.js';
 import { lineRate, whyText } from '../../lib/rates.js';
 import {
   PLACEHOLDER_NAME, buildBulkLine, buildPlaceholderLine, bulkItem, bulkValuesFrom, isBulk, isPlaceholder, isValuedBulk,
@@ -151,7 +152,11 @@ export default function PricingScreen({
   // A line saved on a TCGplayer-only version needs the TCGplayer search to find it again.
   const needSiblings = Boolean(editing?.found && selected?.key === editing.key
     && String(editing.line?.price_snapshot?.version ?? '').startsWith('jt:'));
-  const { setPrinting, pokemon, siblings, magic, finish, tcgSiblings, versions, version } = usePrinting(selected, card, { needSiblings });
+  // That version as saved, should the search not bring it back (decision 369).
+  const savedVersion = needSiblings ? { ...lineVersion(editing.line), label: 'As saved' } : null;
+  const { setPrinting, pokemon, siblings, magic, finish, tcgSiblings, versions, version } = usePrinting(selected, card, {
+    needSiblings, savedVersion,
+  });
 
   // Condition, manual price and override, the manual price box, a placeholder's name (usePricing.js).
   const {
@@ -289,14 +294,11 @@ export default function PricingScreen({
     else if (offline) addBlocked = 'No connection';
   }
   else if (magic ? !finish : !version) addBlocked = "Waiting for the card's versions";
-  // A version only TCGplayer's search prices (a stamp it sells apart) isn't priced as the plain card:
-  // its search still running, failed, or the saved one it didn't bring back (decision 359).
-  else if (editing?.lostVersion && version?.id !== editing.lostVersion) {
-    addBlocked = "Its TCGplayer version didn't load: reload the page to try again, or cancel the edit";
-  }
+  // A version only TCGplayer's search prices (a stamp it sells apart) isn't priced as the plain card
+  // while its search is running or after it failed (decision 359); a manual price is its own (369).
   else if (!magic && !version.tcgplayerId && !tcgSiblings.settled) addBlocked = 'Waiting for its TCGplayer versions';
-  else if (!magic && !version.tcgplayerId && tcgSiblings.failed) {
-    addBlocked = "Its TCGplayer versions didn't load: reload the page to try again";
+  else if (!magic && !version.tcgplayerId && tcgSiblings.failed && manual == null) {
+    addBlocked = "Its TCGplayer versions didn't load: enter a manual price (Alt+M), or reload the page to try again";
   }
   else if (pricesLoading) addBlocked = 'Waiting for prices';
   else if (unitPrice == null) addBlocked = 'No price: enter a manual price (Alt+M)';
@@ -365,7 +367,6 @@ export default function PricingScreen({
   useEffect(() => {
     if (!editing?.found || editing.restored || selected?.key !== editing.key) return;
     const { line } = editing;
-    let lostVersion = null;
     if (isBulk(line)) {
       setPricing({
         key: editing.key, condition: 'NM', manual: line.price_source === 'manual' ? Number(line.unit_price) : null, override: null,
@@ -377,12 +378,10 @@ export default function PricingScreen({
     }
     if (line.game === 'pokemon') {
       if (!pokemon.resolved) return;   // its versions are still loading
-      // A TCGplayer-only version comes with the card's TCGplayer search.
+      // A TCGplayer-only version comes with the card's TCGplayer search, or as saved once it's
+      // settled without it (usePrinting's savedVersion, decision 369).
       const saved = line.price_snapshot?.version;
       if (saved?.startsWith('jt:') && !versions.some((x) => x.id === saved) && !tcgSiblings.settled) return;
-      // Its TCGplayer-only version didn't come back (the search failed): not switched for the default
-      // without a word, SAVE EDIT waits (decision 359).
-      if (saved?.startsWith('jt:') && !versions.some((x) => x.id === saved)) lostVersion = saved;
       const same = (v) => JSON.stringify([...(v.treatments ?? [])].sort()) === JSON.stringify(line.treatments ?? []);
       const v = versions.find((x) => x.id === line.price_snapshot?.version)
         ?? versions.find((x) => x.finish === line.finish && Boolean(x.firstEdition) === line.first_edition && same(x));
@@ -397,7 +396,7 @@ export default function PricingScreen({
       override: line.price_snapshot?.override ?? null,
     });
     setQty(String(line.quantity));
-    setEditing((e) => e && { ...e, restored: true, lostVersion });
+    setEditing((e) => e && { ...e, restored: true });
   // eslint-disable-next-line react-hooks/exhaustive-deps -- versions.length stands for versions, a new array every render
   }, [editing, selected?.key, pokemon.resolved, versions.length, tcgSiblings.settled]);
 
