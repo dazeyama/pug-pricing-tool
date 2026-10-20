@@ -87,7 +87,8 @@ and function.
 - 2026-10-19: **A DEV watermark on localhost** (decision 382): a faint diagonal DEV DEV DEV over every screen when
   the dev server runs on dev's database. `src/main.jsx` adds the `dev-db` class; the `html.dev-db body::after` rule
   in `src/styles/base.css` draws it. A build drops the check (dev's ref isn't in `dist/`), so never on the live
-  site. Untested: the owner checks it on localhost.
+  site. Then, on the owner's first look, larger, fainter, white and sparser (white at 4%, 64px, a 520×320 tile).
+  Untested: the owner checks it on localhost.
 - 2026-10-19: **Prod's Changelog counter put back to 1** (decision 380), on the owner's word: one guarded statement
   on prod (`setval('events_seq_seq', 1, false)` only if `events` is empty; it was, 0 rows), read back as not yet
   called, so prod's first Changelog entry is number 1. Dev's counter untouched (9,067, called). Not a migration.
