@@ -6,15 +6,9 @@ and function.
 
 ## Open
 
-- **Prod doesn't have migration 0004 yet** (2026-10-20): dev has 0001–0004, prod 0001–0003. Decision 381 says
-  they're equal at the end of the sitting: the owner picks the moment (ask first; warn between 11:30am and 9:30pm,
-  when the store is open). The step: CLAUDE.md, Database, step 6, comparing with
-  `C:\ClaudeProjects\temp\pug-0004\dev-run-0004.json` (542 checks, all passed). 0004 keeps the live site working
-  (every new parameter has a default), so it can go on prod before the app is pushed; the app code that needs it
-  (`p_request`, `backup_columns`, `kept_buy_id`) can't be pushed before prod has it.
 - **Unpushed** (2026-10-20): 26 commits since v1.0.0-launch, from `e1e8a7d`. What reaches the live site when pushed:
   the Pokémon stickers in whole dollars (decision 384), the Help sections, and the review leftovers' fixes
-  (decisions 385–399; migration 0004 must be on prod first). The DEV watermark (decision 382) is dev-server only and
+  (decisions 385–399; migration 0004 is on prod already). The DEV watermark (decision 382) is dev-server only and
   never in a build; the rest is docs, scripts and the lint hook (383). No Edge Function change. Push only on the
   owner's ask (the release skill).
 - **Help out of date** (only when the owner asks), from the review leftovers: a buy's ⋯ has **Download its file
@@ -61,7 +55,10 @@ and function.
     id is staff's only, once, for two minutes, saying "Done once"; a second FOIL? waits, an unanswered Undo is claimed
     again; the Convert dialog's wording; stronger test-run checks. Its note that the Settings first-save race can't
     be tested in one transaction stands (the check runs the saves one after the other).
-  - Applied to dev only; prod is the first Open item.
+  - Applied to dev, then to prod the same sitting on the owner's word (04:32, store closed): `db push --linked
+    --project-ref zvxquzcfffmxwizonxuo`, prod's record 0001–0004, the structure-only comparison with
+    `C:\ClaudeProjects\temp\pug-0004\dev-run-0004.json`: nine fingerprints the same, 2.7 s, nothing run or written on
+    prod. Dev and prod are equal; the CLI stays linked to dev.
 
 - 2026-10-20: **Help brought up to date** for decisions 338–341, 343, 345, 348, 361, 362, 369 and 372, on the
   owner's ask (`README.md`): How prices are worked out (new step 4), Finish and Details: Pokémon (Version row), What
