@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { PER_SHEET, PRINTER_OFFSET, SHEET, stickerBox, stickerLabel, stickerPdf, stickerRows } from '../src/lib/stickerPdf.js';
+import {
+  PER_SHEET, PRINTER_OFFSET, SHEET, stickerBox, stickerLabel, stickerPdf, stickerPrice, stickerRows,
+} from '../src/lib/stickerPdf.js';
 
 // Print PKM Stickers? (decision 281): price tags on the store's 160-sticker sheets.
 
@@ -22,13 +24,28 @@ test("a sticker a copy, in Print PKM?'s order: by set name, then by number, NM f
     line({ name: 'Pikachu', collector_number: '25', quantity: 2 }),
     line({ name: 'Mew', collector_number: '151', set_code: 'mew', set_name: '151' }),
     line({ name: 'Charmander', collector_number: '4', condition: 'LP' }),
-  ], (l) => ({ Pikachu: 1.5, Mew: 12, Charmander: 0.4 })[l.name]);
+  ], (l) => ({ Pikachu: 1.5, Mew: 12.2, Charmander: 0.4 })[l.name]);
   assert.deepEqual(rows.map((r) => [r.label, r.price, r.condition]), [
-    ['Mew [151]', 12, 'NM'],
-    ['Pikach [25]', 1.5, 'NM'],
-    ['Pikach [25]', 1.5, 'NM'],
-    ['Charma [4]', 0.4, 'LP'],
+    ['Mew [151]', '$12', 'NM'],
+    ['Pikach [25]', '$2', 'NM'],
+    ['Pikach [25]', '$2', 'NM'],
+    ['Charma [4]', '50¢', 'LP'],
   ]);
+});
+
+test("a sticker's price (decision 384): 50¢ up to $0.50, $1 under a dollar, then the nearest whole dollar", () => {
+  const cases = [
+    [0, '50¢'], [0.01, '50¢'], [0.49, '50¢'], [0.5, '50¢'], [0.51, '$1'], [0.99, '$1'], [0.999, '$1'],
+    [1, '$1'], [1.49, '$1'], [1.4999, '$1'], [1.5, '$2'], [2.5, '$3'], [12.2, '$12'], [99.5, '$100'],
+    [1234.56, '$1,235'],
+  ];
+  for (const [value, text] of cases) assert.equal(stickerPrice(value), text, `${value}`);
+  // Float error from a price × percentage: 0.5 × 100% is 0.5, not just over it.
+  assert.equal(stickerPrice(0.1 + 0.4), '50¢');
+  assert.equal(stickerPrice(1.15 * 1.3), '$1');   // 1.4949999…
+  // No price at all: the bottom tag, as the old $0.40 floor was.
+  assert.equal(stickerPrice(null), '50¢');
+  assert.equal(stickerPrice(NaN), '50¢');
 });
 
 test('the sheet: 8 x 20 stickers of 1 in x 1/2 in from 0.29 in, 0.49 in; a printer offset moves them all', () => {
@@ -49,7 +66,7 @@ test('the sheet: 8 x 20 stickers of 1 in x 1/2 in from 0.29 in, 0.49 in; a print
 });
 
 test('the pages: 160 stickers a sheet, the 161st on a second; a partly used sheet starts further in', () => {
-  const rows = (n) => Array.from({ length: n }, (_, i) => ({ label: `Card ${i}`, price: 1 + i, condition: 'NM' }));
+  const rows = (n) => Array.from({ length: n }, (_, i) => ({ label: `Card ${i}`, price: stickerPrice(1 + i), condition: 'NM' }));
   assert.equal(stickerPdf([]).getNumberOfPages(), 1);
   assert.equal(stickerPdf(rows(160)).getNumberOfPages(), 1);
   assert.equal(stickerPdf(rows(161)).getNumberOfPages(), 2);

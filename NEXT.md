@@ -6,6 +6,9 @@ and function.
 
 ## Open
 
+- **Help out of date** (only when the owner asks), from decision 384: README.md's "Print PKM Stickers?" section
+  says the sticker shows the Sell Price (rounded up, at least $0.40); it's now whole dollars, with 50¢ and $1 at
+  the bottom.
 - **Help out of date** (only when the owner asks), from the release review's fixes: a TCGplayer-only Pokémon version
   whose search failed is added at a manual price, and an edit keeps it as **As saved** (decision 369); "the same
   file again" leaves out cards exported from Can't upload cards, and needs the connection (decision 372).
@@ -80,6 +83,10 @@ and function.
 
 ## Done
 
+- 2026-10-20: **Pokémon stickers in whole dollars** (decision 384): `stickerPrice` in `src/lib/stickerPdf.js`
+  (50¢ up to $0.50, $1 under a dollar, then the nearest dollar) from `sellPriceFor`'s new unrounded `value`
+  (`src/lib/sellPrice.js`), used by `useStickerPrint.js`. Complete day's saved Sell Price unchanged. Unit tests in
+  `tests/stickerPdf.test.js` and `tests/export.test.js`; TEST.md section 14 has the case. Untested in the app.
 - 2026-10-19: **The lint hook doesn't block between edits** (decision 383): in `.claude/hooks/lint-edit.mjs`,
   `BETWEEN_EDITS` (`no-unused-vars`, `no-undef`) alone give Claude a note instead of a blocking error; anything
   else still blocks, and the full lint before each commit catches leftovers. Tried on sample files outside the

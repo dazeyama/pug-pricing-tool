@@ -58,6 +58,17 @@ test('a manual price: the higher of it and today\'s, rounded up; alone when ther
   assert.equal(sellPriceFor(line({ market_price: 7.3 }), nothing).price, 7.50);
 });
 
+// Decision 384: the Pokémon stickers round the true price, so value is it before the steps and floor.
+test("value: the same price before the steps and the $0.40 floor", () => {
+  const today = { market: { NM: 1.01, LP: null, MP: null, HP: null, DMG: 0.1 }, fallback: null, cardmarketUsd: null, pct };
+  assert.deepEqual([sellPriceFor(line({}), today).price, sellPriceFor(line({}), today).value], [1.25, 1.01]);
+  assert.deepEqual([sellPriceFor(line({ condition: 'DMG' }), today).price, sellPriceFor(line({ condition: 'DMG' }), today).value], [0.40, 0.1]);
+  // LP: NM × 90%, unrounded.
+  assert.ok(Math.abs(sellPriceFor(line({ condition: 'LP' }), today).value - 0.909) < 1e-9);
+  // A manual price above today's: the manual price itself.
+  assert.equal(sellPriceFor(line({ price_source: 'manual', unit_price: 2.10 }), today).value, 2.10);
+});
+
 // 4.4: month with no leading zero, the day always two digits.
 test('the Custom SKU from the export\'s date (store time)', () => {
   const at = (iso) => customSkuFor(new Date(iso));

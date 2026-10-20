@@ -9,9 +9,11 @@ import { deliver, openPrintTab, setStep } from './printTab.js';
 /**
  * EXPORT ▾ → Print PKM Stickers? (decision 281): the batch's Pokémon cards
  * priced again as the export prices Magic cards (today's prices, the Sell
- * Price rule: the full market price for the condition, rounded up, at least
- * $0.40), then a sticker a copy on the store's 160-sticker sheets
- * (lib/stickerPdf.js), downloaded and opened in the tab like the printouts.
+ * Price rule: the full market price for the condition), then a sticker a copy
+ * on the store's 160-sticker sheets (lib/stickerPdf.js), downloaded and opened
+ * in the tab like the printouts. The sticker rounds that price, unrounded, to
+ * whole dollars, with 50¢ and $1 at the bottom (stickerPrice, decision 384),
+ * not the Sell Price's steps and $0.40 floor.
  * Nothing is saved: the collection's prices stay as they are.
  * @returns {{ print: (p: { lines: object[], title: string, fileName: string }) => Promise<void>, printing: boolean }}
  */
@@ -32,7 +34,7 @@ export function useStickerPrint() {
     try {
       const today = await todaysPrices(chosen, { onStep: (text) => setStep(tab, text) });
       const pct = values.fallback_pct_pokemon;
-      const priceOf = (line) => sellPriceFor(line, { ...today.get(line.id), pct }).price;
+      const priceOf = (line) => sellPriceFor(line, { ...today.get(line.id), pct }).value;
       setStep(tab, 'Laying out the stickers…');
       // The PDF library loads only when something is printed: the app starts as light as before.
       const { PER_SHEET, stickerPdf, stickerRows } = await import('../../lib/stickerPdf.js');

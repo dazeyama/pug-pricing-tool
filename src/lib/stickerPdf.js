@@ -8,8 +8,9 @@
 // rectangle: no skew. One sticker a copy, in Print PKM?'s order, so a sheet
 // follows the printout. Each sticker (owner, 2026-10-16): the name's first
 // letters and the collector number in brackets, small, at the top; the
-// price, big and centred, as the app shows money ("$12", "$1.50"); the
-// condition in a chip centred under it; 0.12 in kept clear at the sides and
+// price, big and centred, in whole dollars (stickerPrice: "$12", "$1", "50¢";
+// decision 384, was as the app shows money, "$1.50"); the condition in a chip
+// centred under it; 0.12 in kept clear at the sides and
 // about 0.08 in top and bottom (two test prints: a chip at the price's
 // right sat on the right cut line, the name on the top one). Built with jsPDF
 // like the audit printout; the pure parts are tested under Node.
@@ -62,17 +63,32 @@ export function stickerLabel(name, number) {
 }
 
 /**
+ * A sticker's price (owner, 2026-10-19; decision 384), from the card's true price today, before
+ * the Sell Price's rounding and $0.40 floor: up to $0.50 "50¢", under a dollar "$1", then the
+ * nearest whole dollar ($1.49 "$1", $1.50 "$2"). The cheap ones match the store's loose prices:
+ * an unsleeved card is 50¢, a penny-sleeved one $1. No price at all reads "50¢", as the floor did.
+ * @param {number} value
+ * @returns {string}
+ */
+export function stickerPrice(value) {
+  const cents = Number((Number(value) * 100).toFixed(6));
+  if (!(cents > 50)) return '50¢';
+  if (cents < 100) return '$1';
+  return formatMoney(Math.round(cents / 100));
+}
+
+/**
  * One sticker a copy, in Print PKM?'s order (by set name, then as a set's rows).
  * @param {object[]} lines  buy_lines rows (pokemonPrintLines')
- * @param {(line: object) => number} priceOf  the line's sell price today
- * @returns {{ label: string, price: number, condition: string }[]}
+ * @param {(line: object) => number} priceOf  the line's true price today, unrounded (sellPriceFor's value)
+ * @returns {{ label: string, price: string, condition: string }[]}  price: the sticker's text
  */
 export function stickerRows(lines, priceOf) {
   const out = [];
   for (const line of pokemonOrder(lines)) {
     const row = {
       label: stickerLabel(line.name_en || line.name, line.collector_number),
-      price: priceOf(line),
+      price: stickerPrice(priceOf(line)),
       condition: line.condition || 'NM',
     };
     for (let i = 0; i < Math.max(1, Number(line.quantity) || 1); i++) out.push(row);
@@ -135,9 +151,8 @@ export function stickerPdf(rows, { offset = PRINTER_OFFSET, start = 1, outline =
     doc.setTextColor(0, 0, 0);
     sizeToFit(doc, label, room, LABEL_PT, 4);
     doc.text(label, mid, y + LABEL_TOP + LABEL_PT * 0.72, { align: 'center' });
-    // The price, big, centred.
-    // As the app shows money: "$12", "$1.50", "$0.40" (owner, after seeing both: no "empty .00").
-    const price = formatMoney(row.price);
+    // The price, big, centred: stickerPrice's text, "$12", "$1", "50¢" (decision 384).
+    const price = pdfSafe(row.price);
     sizeToFit(doc, price, room, PRICE_PT, PRICE_MIN_PT);
     doc.text(price, mid, y + PRICE_BASELINE, { align: 'center' });
     // The condition's chip, centred under the price (owner, second test print: "a LOT of space

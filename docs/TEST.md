@@ -376,6 +376,8 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
 - [ ] **Print PKM?** prints a Pokémon day by set and number.
 - [ ] **Print PKM Stickers?** (decision 297) prints price-tag stickers on the 160-sticker sheet, then asks "Complete the
       day?"; Complete day… opens the usual step, Not yet closes; today, or a Completed day, doesn't ask.
+- [ ] **Sticker prices** (decision 384): every sticker is a whole dollar ("$3", never "$3.25"); a card worth $0.50
+      or less reads "50¢", one between $0.51 and $0.99 reads "$1"; the name, number and chip are on those too.
 - [ ] **A day's file again** (decisions 361, 372): a day exported with EXPORT, one of its buys exported earlier with
       Export single buy: EXPORT again downloads the day's file without that buy's cards (Custom SKU "<day>-<number>");
       a day exported only one buy at a time says there's no day file.

@@ -20,7 +20,9 @@ import { SELL_FLOOR, roundUpPrice } from './money.js';
  * @param {{ condition: string, unit_price: number, market_price: number|null, price_source: string,
  *   price_snapshot?: { override?: string|null, manual?: number|null } }} line
  * @param {Today} today
- * @returns {{ price: number, basis: object }}
+ * @returns {{ price: number, value: number, basis: object }}
+ *   price: the Sell Price (rounded up by steps, at least $0.40); value: the same price before
+ *   that rounding and floor, for the Pokémon stickers' whole dollars (decision 384)
  */
 export function sellPriceFor(line, today) {
   // The ladder as the Price screen builds it (spec 8.7), with today's data and
@@ -49,6 +51,7 @@ export function sellPriceFor(line, today) {
   const price = Math.max(SELL_FLOOR, roundUpPrice(value) ?? SELL_FLOOR);
   return {
     price,
+    value,
     basis: {
       source: line.price_source,
       override: wanted,
