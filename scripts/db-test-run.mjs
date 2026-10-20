@@ -9,9 +9,16 @@
 //                                                     another project (prod),
 //                                                     its fingerprints checked
 //                                                     against a saved dev run
-//   node scripts/db-test-run.mjs --project-ref <ref> --confirm <ref> --compare dev.json
-//                                                     the same, with the CLI
-//                                                     still linked to dev
+//   node scripts/db-test-run.mjs --structure-only --project-ref <ref> --confirm <ref> --compare dev.json
+//                                                     another project (prod), with
+//                                                     the CLI still linked to dev:
+//                                                     its fingerprints read and
+//                                                     compared, nothing run or
+//                                                     written there
+//
+// The full run is dev only: it writes DBTEST rows (rolled back) and moves the
+// counters, and prod holds the store's data and nothing else, ever (CLAUDE.md,
+// owner 2026-10-19). On any other project it refuses without --structure-only.
 //
 // It runs `npx supabase db query --linked`, so the project is whichever one
 // `npx supabase link` last linked, unless --project-ref <ref> names another
@@ -42,10 +49,18 @@ const ref = named ?? readText(path.join(root, 'supabase', '.temp', 'project-ref'
 if (!ref) fail('No linked project: run `npx supabase link` first, or pass --project-ref <ref>.');
 const devUrl = readText(path.join(root, '.env.development'))?.match(/VITE_SUPABASE_URL\s*=\s*https:\/\/([a-z0-9]+)\./)?.[1];
 const isDev = ref === devUrl;
-if (!isDev && opt('--confirm') !== ref) {
-  fail(`Linked to ${ref}${devUrl ? `, not the dev project (${devUrl})` : ''}. To run here anyway: --confirm ${ref}`);
+// --structure-only reads the fingerprints and nothing else: no DBTEST rows, no counter moved. The full
+// run is dev only (CLAUDE.md, owner 2026-10-19: prod holds the store's data and nothing else, ever).
+const structureOnly = args.includes('--structure-only');
+if (!isDev && !structureOnly) {
+  fail(`${ref} isn't the dev project${devUrl ? ` (${devUrl})` : ''}. The full run writes DBTEST rows and moves the counters, `
+    + 'and testing is dev only (CLAUDE.md, owner 2026-10-19): on any other project run it with --structure-only.');
 }
-console.log(`Database test run on ${ref}${isDev ? ' (dev)' : ''}\n`);
+if (!isDev && opt('--confirm') !== ref) {
+  fail(`${ref} isn't the dev project${devUrl ? ` (${devUrl})` : ''}. To read its structure anyway: --confirm ${ref}`);
+}
+const SQL = path.join(root, 'scripts', 'db-test-run.sql');
+console.log(`Database ${structureOnly ? 'structure read' : 'test run'} on ${ref}${isDev ? ' (dev)' : ''}\n`);
 
 const SNAPSHOT = `select jsonb_build_object(
   'counts', backup_counts(),
@@ -69,12 +84,12 @@ const SNAPSHOT = `select jsonb_build_object(
   'events_seq', (select last_value from events_seq_seq),
   'buys_seq', (select jsonb_build_object('last', last_value, 'called', is_called) from buys_number_seq)) as snapshot`;
 
-before = query(SNAPSHOT)[0].snapshot;
+if (!structureOnly) before = query(SNAPSHOT)[0].snapshot;
 const started = Date.now();
-const rows = query(null, path.join(root, 'scripts', 'db-test-run.sql'));
+const rows = structureOnly ? query(structureScript()) : query(null, SQL);
 const seconds = ((Date.now() - started) / 1000).toFixed(1);
-const nextBuy = putBuysBack();
-const after = query(SNAPSHOT)[0].snapshot;
+const nextBuy = structureOnly ? null : putBuysBack();
+const after = structureOnly ? null : query(SNAPSHOT)[0].snapshot;
 
 // The results, section by section.
 let failed = 0;
@@ -94,21 +109,23 @@ for (const r of rows) {
 }
 
 // Nothing left behind: the same rows as before (the Changelog's numbering only moves on).
-const leftovers = [];
-const changed = [];
-for (const key of Object.keys(before)) {
-  if (key === 'events_seq' || key === 'buys_seq') continue;
-  if (JSON.stringify(before[key]) !== JSON.stringify(after[key])) (key === 'dbtest' ? leftovers : changed).push(key);
+if (!structureOnly) {
+  const leftovers = [];
+  const changed = [];
+  for (const key of Object.keys(before)) {
+    if (key === 'events_seq' || key === 'buys_seq') continue;
+    if (JSON.stringify(before[key]) !== JSON.stringify(after[key])) (key === 'dbtest' ? leftovers : changed).push(key);
+  }
+  if (after.dbtest !== 0) leftovers.push('dbtest');
+  if (Number(after.events_seq) < Number(before.events_seq)) leftovers.push('events_seq went back');
+  console.log('\nAfterwards');
+  console.log(`  ${leftovers.length ? '✗' : '✓'} Nothing the test made was kept${leftovers.length ? `: ${leftovers.join(', ')}` : ''}`);
+  console.log(`  ✓ Buy numbers put back: the next buy is Buy ${nextBuy}`);
+  if (changed.length) {
+    console.log(`  ! Changed during the run: ${changed.join(', ')} (someone using the app? Run it again when it's quiet.)`);
+  }
+  if (leftovers.length) failed++;
 }
-if (after.dbtest !== 0) leftovers.push('dbtest');
-if (Number(after.events_seq) < Number(before.events_seq)) leftovers.push('events_seq went back');
-console.log('\nAfterwards');
-console.log(`  ${leftovers.length ? '✗' : '✓'} Nothing the test made was kept${leftovers.length ? `: ${leftovers.join(', ')}` : ''}`);
-console.log(`  ✓ Buy numbers put back: the next buy is Buy ${nextBuy}`);
-if (changed.length) {
-  console.log(`  ! Changed during the run: ${changed.join(', ')} (someone using the app? Run it again when it's quiet.)`);
-}
-if (leftovers.length) failed++;
 
 console.log('\nFingerprints');
 for (const { label, hash } of Object.values(fingerprints)) console.log(`  ${hash}  ${label}`);
@@ -131,10 +148,23 @@ if (savePath) {
 }
 
 const total = rows.filter((r) => r.section !== 'Fingerprints').length;
-console.log(`\n${failed ? `${failed} failed` : 'All passed'}: ${total} checks in ${seconds}s.`);
+const what = structureOnly ? `${Object.keys(fingerprints).length} fingerprints read, nothing run or written` : `${total} checks`;
+console.log(`\n${failed ? `${failed} failed` : 'All passed'}: ${what} in ${seconds}s.`);
 process.exit(failed ? 1 : 0);
 
 // ----------------------------------------------------------------------------
+
+/**
+ * The test file's kit and its Fingerprints block, rolled back: catalog reads into temp objects
+ * that the rollback and the session's end both discard. Nothing of the test's own runs.
+ */
+function structureScript() {
+  const text = fs.readFileSync(SQL, 'utf8');
+  const start = text.indexOf('\nbegin;');
+  const end = text.indexOf('-- ======================================================== Security (as the owner)');
+  if (start < 0 || end < 0) fail("db-test-run.sql's layout changed: the structure-only cut needs `begin;` and the Security marker.");
+  return `${text.slice(start, end)}\nreset role;\nselect n, section, name, ok, detail from pg_temp.dbt order by n;\nrollback;\n`;
+}
 
 function query(sql, file) {
   let tmp = null;
@@ -142,7 +172,8 @@ function query(sql, file) {
     tmp = path.join(os.tmpdir(), `pug-db-test-${process.pid}.sql`);
     fs.writeFileSync(tmp, sql);
   }
-  const res = spawnSync('npx', ['supabase', 'db', 'query', ...(named ? ['--project-ref', named] : ['--linked']), '-f', `"${tmp ?? file}"`], {
+  // --project-ref goes with --linked, which it overrides for this one command.
+  const res = spawnSync('npx', ['supabase', 'db', 'query', '--linked', ...(named ? ['--project-ref', named] : []), '-f', `"${tmp ?? file}"`], {
     cwd: root, encoding: 'utf8', shell: true, maxBuffer: 64 * 1024 * 1024,
   });
   if (tmp) fs.rmSync(tmp, { force: true });

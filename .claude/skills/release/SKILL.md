@@ -19,13 +19,14 @@ git status --short                         # empty: commit (or ask about) anythi
 git log --oneline origin/main..main        # what will go out
 live=$(gh variable get VITE_SUPABASE_URL | sed -E 's#https://([a-z0-9]+)\.supabase\.co.*#\1#')
 echo "live site's project: $live"          # zvxquzcfffmxwizonxuo (prod) since v1.0.0-launch, 2026-10-19
-npx supabase migration list --project-ref "$live"   # every local migration is on the live site's project
+npx supabase migration list --linked --project-ref "$live"   # every local migration is on the live site's project
 git diff --stat origin/main..main -- supabase/functions   # Edge Functions changed? (step 9)
 ```
 
 - **The CLI's link stays on dev** (`supabase/.temp/project-ref`, `psucrzljraxeootwnltf`, for the day's work): the
-  commands here that touch the live site's project name it with `--project-ref $live`, so nothing is relinked
-  for a push (decision 377; the CLI asked no password for prod on 2026-10-19).
+  commands here that touch the live site's project name it with `--linked --project-ref $live` (the flag overrides
+  the link for that one command), so nothing is relinked for a push (decision 377; the CLI asked no password for
+  prod on 2026-10-19).
 - **A migration that isn't on the live site's project yet:** stop and ask. Code that needs an unapplied migration
   breaks the site.
 - **Edge Functions changed** (anything under `supabase/functions/`): note which, for step 9. A change under

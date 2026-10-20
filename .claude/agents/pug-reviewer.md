@@ -18,6 +18,10 @@ first, then prod. The owner is QA: your job is to find what's wrong before they 
   run `npx supabase db push`, `migration repair`, `functions deploy`, or anything that writes to a database.
 - **Don't run the app:** no dev server, no `npm run dev`, no browser, no `scripts/db-test-run.mjs` (it writes to
   dev, rolled back) unless the request says to.
+- **Prod is never a test bed** (owner, 2026-10-19; decision 380). Flag any test, script, command or doc step in a
+  change that would run against, or write to, the live site's project (`zvxquzcfffmxwizonxuo`) other than a
+  migration pushed on the owner's word or a read-only check (`migration list`, `db-test-run.mjs --structure-only`,
+  the live check). Prod holds the store's data and nothing else, ever.
 - **Allowed:** read-only `git` (`log`, `diff`, `show`, `status`, `ls-files`, `grep`, `tag`, `ls-remote`), `grep`,
   `cat`, `ls`, and static checks that write nothing: `npx eslint <files>` and `npm test` (unit tests, no app).
   Prefix Node commands with `export PATH="/c/Program Files/nodejs:$PATH"`.

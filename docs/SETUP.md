@@ -100,7 +100,7 @@ CSVs and the API keys stay as they are. Try it on **dev** first.
 
 1. Create the Supabase project; in it, Authentication → Users → add the store account (the store email,
    Auto Confirm User), and turn **off** "Allow new users to sign up".
-2. `npx supabase db push --project-ref <new ref>`: the baseline and every migration after it. The CLI stays
+2. `npx supabase db push --linked --project-ref <new ref>`: the baseline and every migration after it. The CLI stays
    linked to dev (decision 377); if the CLI asks for the new project's database password, the owner types it.
 3. Deploy the Edge Functions: `npx supabase functions deploy prices --project-ref <new ref> --use-api --no-verify-jwt`,
    and the same for `secrets`.

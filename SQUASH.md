@@ -377,6 +377,11 @@ every future prod comes from.
 **Gate:** all checks pass, all fingerprints same, the hand checks read as
 listed. Save the run: add `--save /c/ClaudeProjects/temp/pug-squash/prod-run.json`.
 
+*After launch (decision 380): the full test run never runs on prod again; on prod it's
+`--structure-only`, the fingerprints alone. The launch night's run above was the last,
+and it left one trace, `events_seq_seq` moved to 162 with no entries, put back to 1 on the
+owner's word.*
+
 ---
 
 ## 9. Switch dev's record over
@@ -466,11 +471,13 @@ Then the launch steps outside the squash (spec, Phase 10 → Launch):
 - Every migration: rehearse `(echo "begin;"; cat f; echo "rollback;")` on
   dev → `db push` to dev → `node scripts/db-snapshot.mjs` (commit
   `supabase/current/` with the migration) → `node scripts/db-test-run.mjs
-  --save <fresh dev run>` → when the owner says so, `db push --project-ref
-  zvxquzcfffmxwizonxuo` → `node scripts/db-test-run.mjs --project-ref
-  zvxquzcfffmxwizonxuo --confirm zvxquzcfffmxwizonxuo --compare <that run>`
-  when the store isn't using the app. The CLI stays linked to dev throughout
-  (decision 377).
+  --save <fresh dev run>` → when the owner says so, `db push --linked
+  --project-ref zvxquzcfffmxwizonxuo` → `node scripts/db-test-run.mjs
+  --structure-only --project-ref zvxquzcfffmxwizonxuo --confirm
+  zvxquzcfffmxwizonxuo --compare <that run>`: the fingerprints only, nothing
+  run or written on prod (decision 380: testing is dev only; prod holds the
+  store's data and nothing else, ever). The CLI stays linked to dev throughout
+  (decision 377; `--project-ref` goes with `--linked`, which it overrides).
 - **The first one, 0002, locks the Changelog to the database** (section 11a).
 - `scripts/db-baseline.mjs` is **not run again** for prod: the baseline is
   history once applied. It stays useful two ways: `--rehearse` on a
@@ -545,7 +552,7 @@ directly), and after the squash, so it's 0002. The owner decides the day.
 | 8 (prod differs) | baseline incomplete | fix generator → rewrite → rehearse → empty prod (6) → push (7) → prove (8) |
 | 9 (dev record wrong) | repair missed/duplicated | re-run the two `repair` commands; they're idempotent |
 | any | dev's data | untouched by every step here; the backup from section 2 exists anyway |
-| any | wrong project linked | `cat supabase/.temp/project-ref` before every `--linked`; `db-baseline.mjs` refuses non-dev, `db-test-run.mjs` refuses non-dev without `--confirm`; `db push`, `db reset` and `migration repair` have **no guard** — the `cat` is the guard. Since decision 377 prod is named with `--project-ref zvxquzcfffmxwizonxuo`, which has no guard either: the ref typed in the command is the guard, and the link stays on dev |
+| any | wrong project linked | `cat supabase/.temp/project-ref` before every `--linked`; `db-baseline.mjs` refuses non-dev, `db-test-run.mjs` refuses non-dev without `--confirm`; `db push`, `db reset` and `migration repair` have **no guard** — the `cat` is the guard. Since decision 377 prod is named with `--linked --project-ref zvxquzcfffmxwizonxuo`, which has no guard either: the ref typed in the command is the guard, and the link stays on dev |
 
 ---
 

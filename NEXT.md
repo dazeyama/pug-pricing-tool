@@ -76,15 +76,29 @@ and function.
 - **After launch:**
   - **migrations 0002 and 0003 to prod** (decisions 378, 379; on dev since 2026-10-19, the dev run saved as
     `C:\ClaudeProjects\temp\pug-migrations\dev-run-0003.json`): on the owner's word, at a time the store isn't using
-    the app: `npx supabase db push --project-ref zvxquzcfffmxwizonxuo`, then `node scripts/db-test-run.mjs
-    --project-ref zvxquzcfffmxwizonxuo --confirm zvxquzcfffmxwizonxuo --compare <that file>` (every check, every
-    fingerprint the same). Until then prod's Changelog is written the old way; the app works either way;
+    the app: `npx supabase db push --linked --project-ref zvxquzcfffmxwizonxuo`, then `node scripts/db-test-run.mjs
+    --structure-only --project-ref zvxquzcfffmxwizonxuo --confirm zvxquzcfffmxwizonxuo --compare <that file>` (the
+    nine fingerprints the same; nothing run or written on prod, decision 380). Until then prod's Changelog is
+    written the old way; the app works either way;
+  - **prod's Changelog counter put back to 1** (decision 380): the launch night's full test run on prod left
+    `events_seq_seq` at 162 with no entries, so the first real entry would be number 163. On the owner's word,
+    while `events` is still empty: `select case when (select count(*) from events) = 0 then
+    setval('events_seq_seq', 1, false) end;` on prod (`db query --linked --project-ref zvxquzcfffmxwizonxuo -f`),
+    then read the counter back;
   - watch JustTCG usage and the plan (Appendix D 4);
   - tune the stamp cutoff `STAMP_SEEN = 0.53` in `src/scan/stamps.js` from the run log's `stamp` lines
     (`C:\ClaudeProjects\temp\scan-run\scan-log.jsonl`, LAN dev server only).
 
 ## Done
 
+- 2026-10-19: **The hard rule: prod holds the store's data and nothing else, ever; testing is dev only** (decision
+  380; CLAUDE.md QA Handoff and Database; the reviewer's brief). `scripts/db-test-run.mjs` refuses its full run on
+  any project but dev, before it touches the database, and gained `--structure-only` (the kit and the Fingerprints
+  block inside begin/rollback: nine catalog reads, no DBTEST row, no counter moved), tried on dev: 9 fingerprints
+  the same as the saved run in 3.0 s. Every doc's prod step now reads `--linked --project-ref zvxquzcfffmxwizonxuo`
+  (`db query` insists on both flags; the flag overrides the link for that one command) and, for the test run,
+  `--structure-only`. A read-only look at prod found no DBTEST row anywhere and the buy counter never called; the
+  one trace of the launch night's full run is `events_seq_seq` at 162 with no entries (Open, After launch).
 - 2026-10-19: **Migrations 0002 and 0003 on dev** (decisions 378, 379), as one batch: one pug-reviewer review (every
   one of the eight mappings traced; nothing blocking), one rehearsal inside begin/rollback on dev, applied in order,
   one snapshot (`supabase/current/`: `internal.insert_event.sql` new, eight bodies changed), one test run (526

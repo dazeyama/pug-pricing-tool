@@ -20,6 +20,8 @@ tests (`npm test`, commit only on `fail 0`) and the build.
   something is untested rather than implying it's proven.
 - The one browser use allowed without asking: measuring a live element when I ask for a size, height or
   alignment change (UI Sizing & Layout below).
+- Testing is dev only: nothing is ever tried out on the live site or its database, prod (owner, 2026-10-19;
+  Database below).
 
 ## How we work
 
@@ -60,6 +62,11 @@ tests (`npm test`, commit only on `fail 0`) and the build.
 
 ## Database
 
+- **Prod holds the store's data and nothing else, ever** (owner, 2026-10-19; decision 380). No test rows, test
+  users, test files or test scans on prod, and no counter moved by a test. The database test run, the smoke test,
+  scans, imports and every other try-out run on dev (localhost) only. On prod the only checks are read-only:
+  `migration list`, `node scripts/db-test-run.mjs --structure-only` (the fingerprints, nothing run or written) and
+  the live check. Whatever must be checked on prod is checked by looking, never by making something there.
 - Database changes are new migration files (0002 and up), applied to the dev project (`psucrzljraxeootwnltf`)
   first. They go to prod (`zvxquzcfffmxwizonxuo`, the live site's project since v1.0.0-launch) only when I say so,
   and app code that needs a migration isn't pushed before prod has it.
@@ -104,8 +111,9 @@ tests (`npm test`, commit only on `fail 0`) and the build.
   `supabase/migrations-archive/`). Dev has 0001–0003 (0002 the Changelog lock, 0003 the counter grant, both
   2026-10-19); prod has 0001 until I say to apply them. The next migration is 0004, dev first.
 - The CLI stays linked to dev (`supabase/.temp/project-ref`). Anything aimed at prod names it:
-  `--project-ref zvxquzcfffmxwizonxuo` (the release skill's migration check, `db push`, the function deploys);
-  no password was asked for it (decision 377).
+  `--linked --project-ref zvxquzcfffmxwizonxuo` for `migration list`, `db push` and `db query` (the flag overrides
+  the link for that one command; the function deploys take `--project-ref` alone); no password was asked for it
+  (decision 377).
 - The release history is the spec's decisions and `git tag`; what's open is NEXT.md.
 
 ## Coding Conventions
