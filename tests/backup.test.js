@@ -1,6 +1,26 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { backupDue, backupFileName, checkBackup, countsOf, daysSince } from '../src/lib/backup.js';
+import {
+  backupDue, backupFileName, checkBackup, countsOf, daysSince, emptyLearned, extraColumns,
+} from '../src/lib/backup.js';
+
+// Decision 398: what a restore would leave out, and what it leaves as it is.
+test("the file's columns the database lacks, table by table", () => {
+  const tables = {
+    buys: [{ id: 'b1', kind: 'walk_in', kept_buy_id: null, future_col: 1 }, { id: 'b2', other_new: 'x' }],
+    buy_lines: [{ id: 'l1', name: 'Bolt' }],
+    events: [],
+    unknown_table: [{ id: 'u' }],
+  };
+  const columns = { buys: ['id', 'kind', 'kept_buy_id'], buy_lines: ['id', 'name'], events: ['seq'] };
+  assert.deepEqual(extraColumns(tables, columns), [{ table: 'buys', columns: ['future_col', 'other_new'] }]);
+  assert.deepEqual(extraColumns(tables, {}), [], "a table the database doesn't list isn't guessed at");
+});
+
+test('a learned-match list that is there but empty is kept as it is here', () => {
+  assert.deepEqual(emptyLearned({ cc_set_map: [], cc_product_links: [{ scryfall_id: 'x' }] }), ['cc_set_map']);
+  assert.deepEqual(emptyLearned({}), [], 'an older file without them restores as before');
+});
 
 const good = () => ({
   format: 'pug-pricing-backup',

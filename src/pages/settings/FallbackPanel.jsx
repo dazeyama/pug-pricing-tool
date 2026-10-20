@@ -16,7 +16,8 @@ function PctBox({ game, code }) {
   const box = useSettingField({
     stored: Number(all[code]),
     problem: (raw, next) => (!VALID.test(raw) || next > 100 ? 'Enter a number from 0 to 100, with up to 2 decimals.' : null),
-    save: (next) => save(game.key, { ...all, [code]: next }, current?.id),
+    // From the value saved now, not as this screen last showed it (decision 394).
+    save: (next) => save(game.key, (now) => ({ ...now, [code]: next }), current?.id),
     saved: (next) => `${game.name} ${code} fallback saved: ${next}%.`,
   });
 

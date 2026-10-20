@@ -6,8 +6,10 @@ import { useStaff } from '../../state/staff.jsx';
 import { useDevice } from '../../state/device.jsx';
 import { useConnection } from '../../state/connection.jsx';
 import { useToast } from '../../components/Toast.jsx';
-import { CLOUD_BACKUPS, REMINDER_DAYS, checkBackup, daysSince } from '../../lib/backup.js';
-import { currentCounts, restoreBackup, saveBackup } from '../../lib/backupIO.js';
+import {
+  CLOUD_BACKUPS, LEARNED, REMINDER_DAYS, checkBackup, daysSince, emptyLearned, extraColumns,
+} from '../../lib/backup.js';
+import { currentCounts, databaseColumns, restoreBackup, saveBackup } from '../../lib/backupIO.js';
 import { useBackupDownload } from '../../lib/useBackupDownload.js';
 import { formatDateTime, timeAgo } from '../../lib/time.js';
 
@@ -128,15 +130,22 @@ function RestoreModal({ fileName, data, check, onClose }) {
   const [safety, setSafety] = useState(null);   // { name, at }: the before-restore file, once downloaded
   const [error, setError] = useState(null);
 
+  // The file's columns this database lacks (decision 398): the restore leaves them out, so said first.
+  const [extra, setExtra] = useState([]);
+  const keptLearned = emptyLearned(data.tables);
+
   useEffect(() => {
     let alive = true;
     currentCounts()
       .then((c) => alive && setNow(c))
       .catch((e) => alive && setNowError(e.message));
+    databaseColumns()
+      .then((cols) => alive && setExtra(extraColumns(data.tables, cols)))
+      .catch((e) => console.error("Couldn't read the database's columns", e));
     return () => {
       alive = false;
     };
-  }, []);
+  }, [data]);
 
   const working = step === 'saving' || step === 'restoring';
   const ready = typed.trim() === 'RESTORE' && !offline && !working && step !== 'done';
@@ -211,6 +220,19 @@ function RestoreModal({ fileName, data, check, onClose }) {
         </tbody>
       </table>
       {nowError && <p className="hint">Couldn’t count what’s here now: {nowError}</p>}
+      {extra.length > 0 && (
+        <div className="banner warn">
+          <strong>Left out by the restore:</strong> this database has no{' '}
+          {extra.map((x) => `${x.columns.join(', ')} (${x.table})`).join('; ')}. The file is newer than the database:
+          restore it only after the database has every update.
+        </div>
+      )}
+      {keptLearned.length > 0 && (
+        <p className="hint">
+          The file’s {keptLearned.map((t) => LEARNED[t]).join(' and ')} {keptLearned.length === 1 ? 'is' : 'are'} empty:
+          what’s here now stays.
+        </p>
+      )}
       <div className="banner err restore-warning">
         <strong>Everything currently in the database will be replaced.</strong> Every buy, collection,
         changelog entry, staff user and setting (and the Crystal Commerce matches staff picked, if the file has them)

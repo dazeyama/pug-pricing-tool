@@ -297,6 +297,11 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const refinished = useRef(new Set());            // scans FOIL? / NONFOIL? took off: their notes are its own
   async function refinish(scan, toFoil) {
     if (swapping) return;
+    // One at a time, past the 30 s too: a second would forget the first, whose new copy then never goes.
+    if (swap.current) {
+      say('warn', `Still waiting on ${computer} to take the last card's old copy off: try again once it has.`, scanText(scan));
+      return;
+    }
     trace('refinish', { name: scan.name, set: scan.set_code, number: scan.collector_number, toFoil });
     const was = toFoil ? 'normal' : 'foil';
     setSwapping(scan.id);

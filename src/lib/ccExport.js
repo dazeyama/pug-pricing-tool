@@ -23,16 +23,6 @@ const fail = (error, what) => {
 export const linkKey = (line) => `${line.scryfall_id}|${line.finish}`;
 
 /**
- * Match Magic lines to CC products (export spec 7). Each result says where
- * the line stands:
- *  - 'auto'   matched (by a remembered link, or one clear candidate);
- *  - 'choose' staff must pick (candidates, but no clear one; or no category);
- *  - 'none'   no candidates at all (can't upload, unless staff find one).
- * @param {object[]} lines  buy_lines rows (Magic)
- * @param {(text: string) => void} [onStep]
- * @returns {Promise<{ results: object[], cards: Map<string, object> }>}
- */
-/**
  * Every set choice staff made ("Always use the picked product's category for…"), page by page
  * (decision 390): the API stops at 1,000 rows, and a set past them would lose its choice.
  * @returns {Promise<{ data: object[]|null, error: any }>}
@@ -42,6 +32,16 @@ export const readSetMap = () => allPages((from, to) => supabase.from('cc_set_map
   .order('scryfall_set').order('promo_kind')
   .range(from, to));
 
+/**
+ * Match Magic lines to CC products (export spec 7). Each result says where
+ * the line stands:
+ *  - 'auto'   matched (by a remembered link, or one clear candidate);
+ *  - 'choose' staff must pick (candidates, but no clear one; or no category);
+ *  - 'none'   no candidates at all (can't upload, unless staff find one).
+ * @param {object[]} lines  buy_lines rows (Magic)
+ * @param {(text: string) => void} [onStep]
+ * @returns {Promise<{ results: object[], cards: Map<string, object> }>}
+ */
 export async function matchLines(lines, onStep) {
   onStep?.(`Matching ${lines.length} card${lines.length === 1 ? '' : 's'}…`);
   const [{ data: catList, error: catError }, { data: mapRows, error: mapError }] = await Promise.all([

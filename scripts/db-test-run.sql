@@ -250,8 +250,9 @@ begin
     from pg_proc p join pg_namespace ns on ns.oid = p.pronamespace
    where ns.nspname in ('public', 'internal') and p.prosecdef;
   perform pg_temp.ok(s, 'Only the expected functions run with the owner''s rights',
-    v = 'internal.insert_event, internal.remember_customer, public.cc_products_load, public.master_inventory_abort, '
-        || 'public.master_inventory_finish, public.restore_backup', v);
+    -- internal.request_begin / request_end (0004): the only way to the done requests, which the app can't read.
+    v = 'internal.insert_event, internal.remember_customer, internal.request_begin, internal.request_end, '
+        || 'public.cc_products_load, public.master_inventory_abort, public.master_inventory_finish, public.restore_backup', v);
 
   select string_agg(ns.nspname || '.' || p.proname, ', ' order by ns.nspname || '.' || p.proname) into v
     from pg_proc p join pg_namespace ns on ns.oid = p.pronamespace
@@ -3046,6 +3047,127 @@ exception when others then
   perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
 end $$;
 
+-- ============================================ The review leftovers (0004)
+do $$
+declare
+  s text := 'Review leftovers (0004)';
+  u uuid := pg_temp.id('u1');
+  a uuid := pg_temp.id('devA');
+  d date := date '2001-03-04';
+  b uuid;
+  c uuid;
+  v_id uuid;
+  v_other uuid;
+  v_line uuid;
+  v_req uuid := gen_random_uuid();
+  v_n integer;
+  v jsonb;
+begin
+  -- B19: the day's EXPORT and COMPLETE, not only Export single buy, leave out bulk, a placeholder
+  -- and a struck card.
+  perform pg_temp.ok(s, 'The test day (Mar 4, 2001) has no buys',
+    not exists (select 1 from buys where kind = 'walk_in' and status = 'confirmed'
+                 and (confirmed_at at time zone 'America/Los_Angeles')::date = d));
+  b := pg_temp.buy(a, u, 'DBTEST Day Mixed', '5550100020', array[
+    pg_temp.line('Dbtest Bolt', 'DBT', '001', 2, 1.00),
+    pg_temp.bulk('mtg_100_common', 10, 1.50),
+    pg_temp.bulk('mtg_placeholder', 1, 3.00) || '{"price_source": "manual"}',
+    pg_temp.line('Dbtestchu', 'DBTP', '025', 2, 4.00, 'pokemon'),
+    pg_temp.bulk('pkm_100', 10, 1.00),
+    pg_temp.bulk('pkm_placeholder', 1, 2.00) || '{"price_source": "manual"}']);
+  update buys set confirmed_at = (d + time '12:00') at time zone 'America/Los_Angeles' where id = b;
+  perform buy_strike_line(pg_temp.line_id(b, 'Dbtest Bolt'), 1, u, a, null, null);
+  perform buy_strike_line(pg_temp.line_id(b, 'Dbtestchu'), 1, u, a, null, null);
+  v_line := (select id from buy_lines where buy_id = b and name = 'Dbtest Bolt' and struck_at is null);
+  v := export_lines(jsonb_build_object('kind', 'day', 'day', d, 'game', 'mtg',
+         'versions', jsonb_build_object(b::text, pg_temp.version(b))),
+         jsonb_build_array(pg_temp.match(v_line, 'DBTEST-P1', 1.25)), '{}', '[]', u, a);
+  perform pg_temp.ok(s, 'The day''s EXPORT sends the live card and leaves out bulk, a placeholder and a struck card (B19)',
+    (v ->> 'cards')::integer = 1 and (select cc_status = 'exported' from buy_lines where id = v_line)
+    and not exists (select 1 from buy_lines where buy_id = b and game = 'mtg' and (bulk_kind is not null or struck_at is not null)
+                      and (cc_status is not null or completed_at is not null)), v::text);
+  v_line := (select id from buy_lines where buy_id = b and name = 'Dbtestchu' and struck_at is null);
+  v_n := day_complete(d, 'pokemon', u, a, jsonb_build_array(jsonb_build_object('line_id', v_line, 'sell_price', 6.5,
+           'sell_basis', '{"test": "dbtest"}'::jsonb)));
+  perform pg_temp.ok(s, 'The day''s COMPLETE marks the live card and leaves out bulk, a placeholder and a struck card (B19)',
+    v_n = 1 and (select completed_at is not null from buy_lines where id = v_line)
+    and not exists (select 1 from buy_lines where buy_id = b and game = 'pokemon'
+                      and (bulk_kind is not null or struck_at is not null) and completed_at is not null), v_n::text);
+
+  -- 393 and 397: Convert leaves a Completed game whole; the new one remembers the buy that kept the payment.
+  b := pg_temp.buy(a, u, 'DBTEST Whole Side', '5550100021', array[
+    pg_temp.line('Dbtest Bolt', 'DBT', '001', 1, 1.00), pg_temp.bulk('mtg_100_common', 10, 1.50),
+    pg_temp.bulk('mtg_placeholder', 1, 3.00) || '{"price_source": "manual"}',
+    pg_temp.line('Dbtestchu', 'DBTP', '025', 1, 4.00, 'pokemon')]);
+  perform buy_mark_completed(b, 'mtg', u, a, true);
+  c := buy_to_project(b, 'DBTEST Whole Side Project', u, a);
+  perform pg_temp.ok(s, 'Convert to project leaves a Completed game whole on the buy, its bulk and placeholder too (0004)',
+    (select count(*) from buy_lines where buy_id = b and game = 'mtg') = 3
+    and (select count(*) from buy_lines where buy_id = c) = 1
+    and exists (select 1 from buy_lines where buy_id = c and game = 'pokemon'));
+  perform pg_temp.ok(s, '… and the project, paid $0, remembers the buy that kept the payment (0004)',
+    (select kept_buy_id = b and paid_price = 0 from buys where id = c));
+  b := pg_temp.buy(a, u, 'DBTEST Whole Side Two', '5550100022', array[
+    pg_temp.line('Dbtest Bolt', 'DBT', '001', 1, 1.00), pg_temp.bulk('mtg_100_common', 10, 1.50),
+    pg_temp.line('Dbtestchu', 'DBTP', '025', 1, 4.00, 'pokemon')]);
+  perform buy_mark_completed(b, 'mtg', u, a, true);
+  c := buy_to_collection(b, u, a);
+  perform pg_temp.ok(s, '… Convert to collection too',
+    (select count(*) from buy_lines where buy_id = b) = 2 and (select count(*) from buy_lines where buy_id = c) = 1
+    and (select kept_buy_id from buys where id = c) = b);
+
+  -- 388: a write pressed again after its answer was lost happens once.
+  v_id := draft_add_line(a, pg_temp.line('Dbtest Once', 'DBT', '077', 1, 1.00), u, true, null, v_req);
+  v_other := draft_add_line(a, pg_temp.line('Dbtest Once', 'DBT', '077', 1, 1.00), u, true, null, v_req);
+  perform pg_temp.ok(s, 'ADD CARD pressed again after a lost answer adds once (0004)',
+    v_other = v_id and (select quantity from buy_lines where id = v_id) = 1);
+  perform draft_add_line(a, pg_temp.line('Dbtest Once', 'DBT', '077', 1, 1.00), u, true);
+  perform pg_temp.ok(s, '… a new press adds again', (select quantity from buy_lines where id = v_id) = 2);
+  v_req := gen_random_uuid();
+  perform draft_remove_line(v_id, 1, u, v_req);
+  perform draft_remove_line(v_id, 1, u, v_req);
+  perform pg_temp.ok(s, '× pressed again after a lost answer takes one copy off (0004)',
+    (select quantity from buy_lines where id = v_id) = 1);
+  v_req := gen_random_uuid();
+  c := collection_create('DBTEST Once', null, '', u, a, null, v_req);
+  perform pg_temp.ok(s, 'Create pressed again makes one collection (0004)',
+    collection_create('DBTEST Once', null, '', u, a, null, v_req) = c
+    and (select count(*) from buys where customer_name = 'DBTEST Once') = 1);
+  perform pg_temp.ok(s, 'The done requests aren''t open to the app (0004)',
+    not has_table_privilege('authenticated', 'internal.done_requests', 'select, insert, update, delete')
+    and not has_table_privilege('anon', 'internal.done_requests', 'select, insert, update, delete'));
+
+  -- 391: an edit keeps the scans its line came from; lines folded together keep both.
+  v_id := draft_add_line(a, pg_temp.line('Dbtest Scanned', 'DBT', '078', 1, 1.00)
+            || '{"price_snapshot": {"scan": {"scan_id": "dbtest-scan-a"}}}', u, true);
+  v_other := draft_add_line(a, pg_temp.line('Dbtest Scanned', 'DBT', '079', 1, 1.00)
+               || '{"price_snapshot": {"scan": {"scan_id": "dbtest-scan-b"}}}', u, true);
+  v_line := draft_update_line(v_other, pg_temp.line('Dbtest Scanned', 'DBT', '078', 1, 1.00), u);
+  perform pg_temp.ok(s, 'Lines an edit folds together keep both lines'' scans (0004)',
+    v_line = v_id and (select quantity = 2 and internal.scan_ids(price_snapshot) @> '["dbtest-scan-a", "dbtest-scan-b"]'
+                         from buy_lines where id = v_id),
+    (select price_snapshot::text from buy_lines where id = v_id));
+  v_line := draft_update_line(v_id, pg_temp.line('Dbtest Scanned', 'DBT', '078', 2, 1.00, p_cond => 'LP'), u);
+  perform pg_temp.ok(s, '… and an edit keeps them',
+    (select internal.scan_ids(price_snapshot) @> '["dbtest-scan-a", "dbtest-scan-b"]' from buy_lines where id = v_line));
+
+  -- 394: a new key's first save, once. Two at the same moment need two sessions, which this run
+  -- can't make; this checks the new path's answer one after the other: the second is refused.
+  perform settings_save('dbtest_first_key', '1', u, null);
+  begin
+    perform settings_save('dbtest_first_key', '2', u, null);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'A second first save of a new Settings key is refused (0004)', sqlerrm, 'settings_changed');
+  end;
+
+  -- 398: the restore dialog's columns.
+  perform pg_temp.ok(s, 'The database lists its backup tables'' columns for the restore dialog (0004)',
+    (backup_columns() -> 'buys') ? 'kept_buy_id' and (backup_columns() -> 'buy_lines') ? 'price_snapshot');
+exception when others then
+  declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;
+  perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
+end $$;
+
 -- ======================================================= Backup and restore
 -- The restore resets the Changelog's numbering; it's set back after.
 reset role;
@@ -3111,6 +3233,10 @@ begin
   perform pg_temp.ok(s, 'An older backup restores: a column it lacks takes its default (0082)',
     (v_res ->> 'lines') = (v_counts ->> 'lines') and not exists (select 1 from buys where project));
   perform pg_temp.ok(s, '… and leaves the learned matches as they are',
+    exists (select 1 from cc_set_map where scryfall_set = 'dbt' and category = 'DBTEST Set'));
+  -- A file whose list of them is there but empty leaves them as they are too (0004).
+  v_res := restore_backup(jsonb_set(v_payload, '{tables,cc_set_map}', '[]'), 'dbtest-empty-matches.json', u, a, 'RESTORE');
+  perform pg_temp.ok(s, 'An empty list of set choices in the file leaves the ones here (0004)',
     exists (select 1 from cc_set_map where scryfall_set = 'dbt' and category = 'DBTEST Set'));
 
   -- Something made after the backup, for the restore to undo.

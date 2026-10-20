@@ -18,7 +18,7 @@ import { tiersFrom } from '../lib/rates.js';
 import { isStruck, movesOn } from '../lib/struck.js';
 import { ConfirmModal, ConvertToBuyModal, DeleteCollectionModal, RejectModal } from './collections/CollectionModals.jsx';
 import { OfferModal, PaidModal } from './collections/DealModals.jsx';
-import { PROJECT_EXPORTED, useCollection } from './collections/useCollection.js';
+import { PROJECT_EXPORTED, useCollection, useKeptBuy } from './collections/useCollection.js';
 import { useCollectionLock } from './collections/useCollectionLock.js';
 import ExportButton from '../components/ExportButton.jsx';
 import { useSettings } from '../state/settings.jsx';
@@ -71,6 +71,7 @@ function CollectionScreen({ id }) {
   const [repricing, setRepricing] = useState(false);    // REPRICE? (owner, 2026-10-01)
   const [dragging, setDragging] = useState(false);      // a file held over the window
   const [dropped, setDropped] = useState(null);         // the CSV dropped, while its import dialog is open
+  const keptBuy = useKeptBuy(buy?.kept_buy_id);         // the buy that kept the payment (decision 397)
   const back = () => navigate('/collections');
 
   // Deleted on another computer while open: say so and go back to the table.
@@ -536,6 +537,7 @@ function CollectionScreen({ id }) {
                 credit: buy.status === 'processing' ? null : buy.offer_credit,
               }}
               busy={col.busy}
+              keptBuy={keptBuy}
               onClose={() => {
                 setAsking(null);
                 api.focusSearch();

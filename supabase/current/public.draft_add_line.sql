@@ -1,13 +1,19 @@
-CREATE OR REPLACE FUNCTION public.draft_add_line(p_device uuid, p_line jsonb, p_user uuid, p_merge boolean DEFAULT true, p_draft_id uuid DEFAULT NULL::uuid)
+CREATE OR REPLACE FUNCTION public.draft_add_line(p_device uuid, p_line jsonb, p_user uuid, p_merge boolean DEFAULT true, p_draft_id uuid DEFAULT NULL::uuid, p_request uuid DEFAULT NULL::uuid)
  RETURNS uuid
  LANGUAGE plpgsql
  SET search_path TO 'public', 'internal'
 AS $function$
 declare
+  v_seen   jsonb;
   v_buy  uuid;
   v_line uuid;
   r      buy_lines;
 begin
+  -- This request done already (its answer lost): its answer again, nothing done twice (decision 388).
+  v_seen := internal.request_begin(p_request);
+  if v_seen is not null then
+    return (v_seen ->> 'result')::uuid;
+  end if;
   r := jsonb_populate_record(null::buy_lines, p_line);
   if r.quantity is null or r.quantity < 1 then
     raise exception 'quantity must be at least 1';
@@ -55,6 +61,7 @@ begin
   end if;
 
   update buys set version = version + 1, updated_at = now(), last_edited_by = p_user where id = v_buy;
+  perform internal.request_end(p_request, v_line::text);
   return v_line;
 end;
 $function$;

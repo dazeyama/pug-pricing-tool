@@ -1,13 +1,19 @@
-CREATE OR REPLACE FUNCTION public.collection_remove_line(p_line_id uuid, p_qty integer, p_user uuid, p_device uuid, p_expected_version integer, p_text text)
+CREATE OR REPLACE FUNCTION public.collection_remove_line(p_line_id uuid, p_qty integer, p_user uuid, p_device uuid, p_expected_version integer, p_text text, p_request uuid DEFAULT NULL::uuid)
  RETURNS void
  LANGUAGE plpgsql
  SET search_path TO 'public', 'internal'
 AS $function$
 declare
+  v_seen   jsonb;
   b     buys;
   v_old buy_lines;
   v_n   integer;
 begin
+  -- This request done already (its answer lost): its answer again, nothing done twice (decision 388).
+  v_seen := internal.request_begin(p_request);
+  if v_seen is not null then
+    return;
+  end if;
   if p_user is null then
     raise exception 'no_user';
   end if;
@@ -46,6 +52,7 @@ begin
       'unit_price', v_old.unit_price, 'text', coalesce(p_text, v_n || ' ' || v_old.name),
       'cash_pct', internal.line_pct(v_old, b, 'cash'), 'credit_pct', internal.line_pct(v_old, b, 'credit'))),
     '[]', sentence(internal.lines_count_text(array[v_old]) || ' removed'));
+  perform internal.request_end(p_request, null);
 end;
 $function$;
 

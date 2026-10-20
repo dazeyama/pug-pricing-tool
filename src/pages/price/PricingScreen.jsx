@@ -63,7 +63,7 @@ const NO_POKEMON = { resolved: true, card: null, info: null, page: null };
  * @param {{ lines: object[], loaded: boolean, busy: boolean,
  *   add: (line: object, userId: string) => Promise<string|null>,
  *   update: (old: object, line: object, userId: string) => Promise<string|null>,
- *   remove: (line: object, qty: number, userId: string) => Promise<unknown>,
+ *   remove: (line: object, qty: number, userId: string, requestId?: string) => Promise<unknown>,
  *   setRates: ((cash: number|null, credit: number|null, userId: string) => Promise<unknown>)|null,
  *   (setRates and setLineRate null: no rate controls at all, a project's list)
  *   setLineRate?: (line: object, cash: number|null, credit: number|null, userId: string) => Promise<unknown> }} p.list

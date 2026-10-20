@@ -1,8 +1,26 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { dayExportLines, markedByHand, struckByCompletion } from '../src/pages/day/dayRules.js';
+import { convertLines, dayExportLines, markedByHand, struckByCompletion } from '../src/pages/day/dayRules.js';
 
 const AT = '2026-10-19T08:00:00.123+00:00';
+
+// Decision 393: Convert leaves a Completed game whole on the buy.
+test('Convert moves the live cards of games with nothing Completed, bulk and placeholders with them', () => {
+  const line = (id, game, more = {}) => ({ id, game, completed_at: null, struck_at: null, bulk_kind: null, ...more });
+  const buy = {
+    buy_lines: [
+      line(1, 'mtg', { completed_at: AT }),
+      line(2, 'mtg', { bulk_kind: 'mtg_100_common' }),
+      line(3, 'mtg', { bulk_kind: 'mtg_placeholder' }),
+      line(4, 'mtg', { struck_at: AT }),
+      line(5, 'pokemon'),
+      line(6, 'pokemon', { bulk_kind: 'pkm_100_common' }),
+    ],
+  };
+  assert.deepEqual(convertLines(buy).map((l) => l.id), [5, 6]);
+  assert.deepEqual(convertLines({ buy_lines: [line(1, 'mtg'), line(2, 'mtg', { struck_at: AT })] }).map((l) => l.id), [1, 2],
+    'nothing Completed: every line but Completed ones (struck counted apart by the callers)');
+});
 
 // Decision 340: undoing an export leaves the cards Mark as completed struck.
 test('a card Mark as completed struck: struck and completed in the same moment', () => {

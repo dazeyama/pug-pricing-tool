@@ -11,8 +11,17 @@ begin
   if (v.key is null and p_expected is not null) or (v.key is not null and v.updated_at is distinct from p_expected) then
     raise exception 'settings_changed';
   end if;
-  insert into settings (key, value, updated_at, updated_by) values (p_key, p_value, v_at, p_user)
-  on conflict (key) do update set value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by;
+  if v.key is null then
+    -- A new key's first save: two at once both found no row. The second one's insert waits for
+    -- the first's, then is refused like any out-of-date save (decision 394).
+    insert into settings (key, value, updated_at, updated_by) values (p_key, p_value, v_at, p_user)
+    on conflict (key) do nothing;
+    if not found then
+      raise exception 'settings_changed';
+    end if;
+  else
+    update settings set value = p_value, updated_at = v_at, updated_by = p_user where key = p_key;
+  end if;
   return v_at;
 end;
 $function$;

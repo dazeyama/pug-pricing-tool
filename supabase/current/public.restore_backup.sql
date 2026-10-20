@@ -56,16 +56,17 @@ begin
                             (select case when is_called then last_value else last_value - 1 end from public.buys_number_seq)),
                    true);
   end if;
-  -- The learned matches, when the file has them (decision 348; older backups don't).
-  if jsonb_typeof(t -> 'cc_set_map') = 'array' then
+  -- The learned matches, when the file has them (decision 348; older backups don't). An empty list
+  -- leaves what's here: a hand-edited file shouldn't empty what staff taught (decision 398).
+  if jsonb_typeof(t -> 'cc_set_map') = 'array' and jsonb_array_length(t -> 'cc_set_map') > 0 then
     delete from cc_set_map;
     perform restore_rows('cc_set_map', t -> 'cc_set_map');
   end if;
-  if jsonb_typeof(t -> 'cc_product_links') = 'array' then
+  if jsonb_typeof(t -> 'cc_product_links') = 'array' and jsonb_array_length(t -> 'cc_product_links') > 0 then
     delete from cc_product_links;
     perform restore_rows('cc_product_links', t -> 'cc_product_links');
   end if;
-  if jsonb_typeof(t -> 'import_links') = 'array' then
+  if jsonb_typeof(t -> 'import_links') = 'array' and jsonb_array_length(t -> 'import_links') > 0 then
     delete from import_links;
     perform restore_rows('import_links', t -> 'import_links');
   end if;

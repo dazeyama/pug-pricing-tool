@@ -118,10 +118,12 @@ export function OfferModal({ lines, rates, current, busy, onSave, onClose }) {
  * Mark as Paid/Ours → "Set a final purchase price": what was actually paid,
  * and whether it was cash or credit, always typed in by hand: choosing one
  * fills nothing in (owner, 2026-09-30). "Mark as Rejected?" switches to the
- * Reject dialog instead (owner, 2026-10-09).
+ * Reject dialog instead (owner, 2026-10-09). Made from a buy that kept the payment
+ * (`keptBuy`, its number), the price starts at $0 and says why: the buy's payment typed
+ * here would count twice (decisions 341, 397).
  */
-export function PaidModal({ lines, rates, offer, busy, onSave, onReject, onClose }) {
-  const [text, setText] = useState('');
+export function PaidModal({ lines, rates, offer, busy, keptBuy = null, onSave, onReject, onClose }) {
+  const [text, setText] = useState(keptBuy != null ? '0' : '');
   const [method, setMethod] = useState(null);
   const price = parseMoney(text);
   const ready = price != null && method != null && !busy;
@@ -158,6 +160,9 @@ export function PaidModal({ lines, rates, offer, busy, onSave, onReject, onClose
       )}
       <PayMethod method={method} onChoose={setMethod} />
       <MoneyInput label="Set a final purchase price" value={text} onChange={setText} onEnter={save} autoFocus />
+      {keptBuy != null && (
+        <p className="hint">The payment is on Buy {keptBuy}, which kept it: $0 here counts it once.</p>
+      )}
       <p className="hint">The collection will be locked.</p>
     </Modal>
   );

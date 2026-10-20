@@ -7,6 +7,7 @@ import { nameKey } from '../lib/normalize.js';
 import { formatPhone } from '../lib/phone.js';
 import { formatRecent, formatShortDate } from '../lib/time.js';
 import { withLoading } from '../lib/loading.js';
+import { createRequests, requestKey } from '../lib/requests.js';
 import GuardButton from '../components/GuardButton.jsx';
 import UserTag from '../components/UserTag.jsx';
 import CardCountsName from '../components/CardCountsName.jsx';
@@ -156,6 +157,7 @@ export default function CollectionsPage() {
     return want === 'project' || want === 'collection' ? want : null;
   });
   const [busy, setBusy] = useState(false);
+  const [requests] = useState(() => createRequests());   // Create, once per press (decision 388)
   // Import Collection (owner, 2026-10-09): the CSV picked, while its dialog is open.
   const [importing, setImporting] = useState(null);
   const filePicker = useRef(null);
@@ -252,25 +254,29 @@ export default function CollectionsPage() {
     setSort((s) => (s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' }));
   }
 
-  /** + Price Collection, or + Start Project (just a name and notes). */
+  /**
+   * + Price Collection, or + Start Project (just a name and notes). Create pressed again after its
+   * answer was lost makes one, not two (decision 388): the same request id, done once.
+   */
   async function create({ name, phone, idLast4, notes }) {
     const project = creating === 'project';
-    setBusy(true);
-    const { data: id, error } = await withLoading(() => (project
-      ? supabase.rpc('project_create', {
-        p_name: name,
-        p_notes: notes,
-        p_user: staff.current?.id ?? null,
-        p_device: deviceId,
-      })
-      : supabase.rpc('collection_create', {
+    const fn = project ? 'project_create' : 'collection_create';
+    const args = project
+      ? { p_name: name, p_notes: notes, p_user: staff.current?.id ?? null, p_device: deviceId }
+      : {
         p_name: name,
         p_phone: phone || null,   // none: Ctrl+click Create (migration 0045)
         p_notes: notes,
         p_user: staff.current?.id ?? null,
         p_device: deviceId,
         p_id_last4: idLast4 || null,
-      })));
+      };
+    const key = requestKey(fn, args);
+    // Pressed again after a lost answer: the one it made opens (the same id gives its id back).
+    const { id: requestId } = requests.idFor(key);
+    setBusy(true);
+    const { data: id, error } = await withLoading(() => supabase.rpc(fn, { ...args, p_request: requestId }));
+    requests.settle(key, requestId, error);
     setBusy(false);
     if (error) {
       toast(errorMessage(error, project ? "Couldn't start the project" : "Couldn't create the collection"), 'err');

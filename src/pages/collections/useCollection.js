@@ -5,6 +5,8 @@ import { useConnection } from '../../state/connection.jsx';
 import { useToast } from '../../components/Toast.jsx';
 import { DB_MESSAGES, dbMessage, knownCode } from '../../lib/dbErrors.js';
 import { channelName } from '../../lib/channels.js';
+import { DONE_ONCE, createRequests, requestKey } from '../../lib/requests.js';
+import { uuid } from '../../lib/uuid.js';
 
 // One collection and its lines (spec 9.4), kept live through Realtime: every
 // write bumps the collection's row, so watching `buys` catches added and
@@ -21,6 +23,29 @@ import { channelName } from '../../lib/channels.js';
 export const LINE_EXPORTED = "That card is exported: Undo export… first to change it.";
 /** One with a copy in Can't upload cards wasn't exported: said so (decision 399). */
 export const LINE_CANT_UPLOAD = "That card is in Can't upload cards: Undo export… first to change it.";
+/**
+ * The number of the buy that kept this project's or collection's payment (decision 397), or
+ * null: there's none, or that buy is gone since, its payment with it.
+ * @param {string|null|undefined} keptBuyId  the collection's `kept_buy_id`
+ * @returns {number|null}
+ */
+export function useKeptBuy(keptBuyId) {
+  const [number, setNumber] = useState(null);
+  useEffect(() => {
+    setNumber(null);
+    if (!keptBuyId) return undefined;
+    let live = true;
+    supabase.from('buys').select('number').eq('id', keptBuyId).eq('status', 'confirmed').maybeSingle()
+      .then(({ data }) => {
+        if (live) setNumber(data?.number ?? null);
+      });
+    return () => {
+      live = false;
+    };
+  }, [keptBuyId]);
+  return number;
+}
+
 /** Why a stamped card can't change, in its own words (decisions 345, 399). */
 export const frozenNote = (line) => (line.cc_status === 'cant_upload' ? LINE_CANT_UPLOAD : LINE_EXPORTED);
 
@@ -158,6 +183,21 @@ export function useCollection(id, { deviceId, onLockLost }) {
     }
   }, [reload, toast]);
 
+  /**
+   * A write a press can repeat (decision 388): sent with a request id, the lost one's when it's
+   * pressed again after a lost answer, so it happens once. `fixedId`: the caller's own (a phone's
+   * Undo sends its scan's).
+   */
+  const [requests] = useState(() => createRequests());
+  const runOnce = useCallback(async (fn, args, failure, fixedId = null) => {
+    const key = requestKey(fn, args);
+    const { id: requestId, again } = fixedId ? { id: fixedId, again: false } : requests.idFor(key);
+    const r = await run(fn, { ...args, p_request: requestId }, failure);
+    if (!fixedId) requests.settle(key, requestId, r.ok ? null : r.error);
+    if (again && r.ok) toast(DONE_ONCE, 'ok');
+    return r;
+  }, [run, requests, toast]);
+
   // Who's writing, from where, against which version (read when called, so always the latest).
   const mine = useCallback(
     (userId) => ({ p_user: userId, p_device: deviceId, p_expected_version: version.current }),
@@ -169,11 +209,12 @@ export function useCollection(id, { deviceId, onLockLost }) {
     // the line's text, then "· 📱 scanned on <the phone's name>".
     const scan = line.price_snapshot?.scan;
     const scanned = scan?.from === 'phone' ? ` · 📱 scanned on ${scan.phone ?? 'the phone'}` : '';
-    const r = await run('collection_add_line', {
+    // A scan's add has its own id (lineOfScan keeps it from going in twice): never staff's lost one.
+    const r = await runOnce('collection_add_line', {
       p_buy_id: id, p_line: line, p_merge: true, ...mine(userId), p_text: lineText(line) + scanned,
-    }, "Couldn't add the card");
+    }, "Couldn't add the card", scan ? uuid() : null);
     return r.ok ? r.data : null;
-  }, [id, run, mine]);
+  }, [id, runOnce, mine]);
 
   const update = useCallback(async (old, line, userId) => {
     const r = await run('collection_update_line', {
@@ -182,20 +223,21 @@ export function useCollection(id, { deviceId, onLockLost }) {
     return r.ok ? r.data : null;
   }, [run, mine]);
 
-  const remove = useCallback(async (line, qty, userId) => {
-    const r = await run('collection_remove_line', {
+  /** `requestId`: the phone's Undo sends its scan's id, so it takes one copy off once (decision 392). */
+  const remove = useCallback(async (line, qty, userId, requestId = null) => {
+    const r = await runOnce('collection_remove_line', {
       p_line_id: line.id, p_qty: qty, ...mine(userId), p_text: lineText(line, Math.min(qty, line.quantity)),
-    }, "Couldn't remove the card");
+    }, "Couldn't remove the card", requestId);
     return r.ok;
-  }, [run, mine]);
+  }, [runOnce, mine]);
 
   /** × in a Paid/Ours collection or project (owner, 2026-10-16): strike copies, kept crossed out. */
   const strike = useCallback(async (line, qty, userId) => {
-    const r = await run('collection_strike_line', {
+    const r = await runOnce('collection_strike_line', {
       p_line_id: line.id, p_qty: qty, ...mine(userId), p_text: lineText(line, Math.min(qty, line.quantity)),
     }, "Couldn't strike the card");
     return r.ok;
-  }, [run, mine]);
+  }, [runOnce, mine]);
 
   /** Right-click → Restore: a struck card back on the list. */
   const restore = useCallback(async (line, userId) => {

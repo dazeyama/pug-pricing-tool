@@ -13,6 +13,17 @@ export const markedByHand = (l) => Boolean(l.completed_at) && l.cc_status == nul
 export const struckByCompletion = (l) => l.struck_at != null && l.struck_at === l.completed_at;
 
 /**
+ * The lines Convert to project / collection moves (decisions 296, 393): not Completed ones, and
+ * nothing of a game whose cards are Completed, which stays whole on the buy (its bulk,
+ * placeholders and struck cards too). Struck cards among them don't move either: the callers
+ * count them apart.
+ */
+export function convertLines(buy) {
+  const done = new Set(buy.buy_lines.filter((l) => l.completed_at).map((l) => l.game));
+  return buy.buy_lines.filter((l) => !l.completed_at && !done.has(l.game));
+}
+
+/**
  * The day's own export, for "Download the same file again" (decision 361): the exported cards
  * stamped with the day's Custom SKU, not a single buy's ("101626-42") nor a later Can't upload
  * export's (stamped the day it ran). A day exported before migration 0071 was stamped the day its

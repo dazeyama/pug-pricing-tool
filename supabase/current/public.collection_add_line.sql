@@ -1,14 +1,20 @@
-CREATE OR REPLACE FUNCTION public.collection_add_line(p_buy_id uuid, p_line jsonb, p_merge boolean, p_user uuid, p_device uuid, p_expected_version integer, p_text text)
+CREATE OR REPLACE FUNCTION public.collection_add_line(p_buy_id uuid, p_line jsonb, p_merge boolean, p_user uuid, p_device uuid, p_expected_version integer, p_text text, p_request uuid DEFAULT NULL::uuid)
  RETURNS uuid
  LANGUAGE plpgsql
  SET search_path TO 'public', 'internal'
 AS $function$
 declare
+  v_seen   jsonb;
   b      buys;
   r      buy_lines;
   v_line uuid;
   v_rec  buy_lines;
 begin
+  -- This request done already (its answer lost): its answer again, nothing done twice (decision 388).
+  v_seen := internal.request_begin(p_request);
+  if v_seen is not null then
+    return (v_seen ->> 'result')::uuid;
+  end if;
   if p_user is null then
     raise exception 'no_user';
   end if;
@@ -62,6 +68,7 @@ begin
       'unit_price', r.unit_price, 'text', coalesce(p_text, r.quantity || ' ' || r.name),
       'cash_pct', internal.line_pct(v_rec, b, 'cash'), 'credit_pct', internal.line_pct(v_rec, b, 'credit'))),
     '[]', sentence(internal.lines_count_text(array[r]) || ' added'));
+  perform internal.request_end(p_request, v_line::text);
   return v_line;
 end;
 $function$;

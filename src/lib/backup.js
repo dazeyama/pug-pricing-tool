@@ -67,6 +67,38 @@ export function checkBackup(data) {
   return { ok: true, counts: countsOf(tables), exportedAt: data.exported_at ?? null, appVersion: data.app_version ?? null };
 }
 
+/** The matches staff taught, in backups since decision 348, with what the restore dialog calls them. */
+export const LEARNED = {
+  cc_set_map: 'set choices',
+  cc_product_links: 'remembered product matches',
+  import_links: 'remembered import picks',
+};
+
+/**
+ * The file's columns the database lacks, table by table (decision 398): a restore leaves them
+ * out, so the dialog lists them first.
+ * @param {object} tables  the backup's tables
+ * @param {Record<string, string[]>} columns  each table's columns here (backup_columns)
+ * @returns {{ table: string, columns: string[] }[]}
+ */
+export function extraColumns(tables, columns) {
+  const out = [];
+  for (const [table, rows] of Object.entries(tables ?? {})) {
+    const here = columns?.[table];
+    if (!Array.isArray(rows) || !Array.isArray(here)) continue;
+    const known = new Set(here);
+    const keys = new Set(rows.flatMap((r) => (r && typeof r === 'object' ? Object.keys(r) : [])));
+    const extra = [...keys].filter((c) => !known.has(c)).sort();
+    if (extra.length) out.push({ table, columns: extra });
+  }
+  return out;
+}
+
+/** The learned-match tables the file has with no rows: a restore leaves what's here (decision 398). */
+export function emptyLearned(tables) {
+  return Object.keys(LEARNED).filter((t) => Array.isArray(tables?.[t]) && tables[t].length === 0);
+}
+
 /** Whole days since `when`, or null if there's no date. */
 export function daysSince(when, now = Date.now()) {
   if (!when) return null;

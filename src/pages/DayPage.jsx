@@ -28,6 +28,7 @@ import { useToast } from '../components/Toast.jsx';
 import { GAME_NAMES, otherGame } from '../lib/games.js';
 import { DB_MESSAGES, dbErrorCode, dbMessage } from '../lib/dbErrors.js';
 import { channelName } from '../lib/channels.js';
+import { DONE_ONCE, createRequests, requestKey } from '../lib/requests.js';
 import BuyPanel from './day/BuyPanel.jsx';
 import { ConvertBuyModal, DeleteBuyModal } from './day/DayModals.jsx';
 import { COMPLETED_LOCK, dayExportLines, markedByHand, struckByCompletion } from './day/dayRules.js';
@@ -254,19 +255,33 @@ function DayScreen({ game, day }) {
   /** Who's writing, from where, and (given a buy) the version of it last read. */
   const by = (buy = null) => ({ p_user: user.id, p_device: deviceId, ...(buy && { p_expected_version: buy.version }) });
 
+  /**
+   * × pressed again after its answer was lost strikes or removes once (decision 388): the same
+   * request id, which the database does once.
+   */
+  const [requests] = useState(() => createRequests());
+  async function runOnce(fn, args, failure) {
+    const key = requestKey(fn, args);
+    const { id: requestId, again } = requests.idFor(key);
+    const result = await run(fn, { ...args, p_request: requestId }, failure);
+    requests.settle(key, requestId, result.error);
+    if (again && !result.error) toast(DONE_ONCE, 'ok');
+    return result;
+  }
+
   async function remove(line, qty) {
     const { buy, number, mode } = removing;
     setRemoving(null);
     const args = { p_line_id: line.id, p_qty: qty, ...by(buy), p_text: lineText(line, Math.min(qty, line.quantity)) };
     if (mode === 'strike') {
-      await run('buy_strike_line', args, "Couldn't strike the card");
+      await runOnce('buy_strike_line', args, "Couldn't strike the card");
     } else if (buy.buy_lines.length === 1 && qty >= line.quantity) {
       setDeleting({ buy, number, lastCard: true });
       return;
     } else {
       // The buy's last card: Delete buy… instead, no toast.
       const lastCard = (e) => dbErrorCode(e) === 'last_card';
-      const { error } = await run('buy_remove_line', args, (e) => (lastCard(e) ? null : "Couldn't remove the card"));
+      const { error } = await runOnce('buy_remove_line', args, (e) => (lastCard(e) ? null : "Couldn't remove the card"));
       if (lastCard(error)) setDeleting({ buy, number, lastCard: true });
     }
     await reload();

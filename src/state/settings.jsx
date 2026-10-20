@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo } from 'react';
+import { createContext, useCallback, useContext, useMemo, useRef } from 'react';
 import { supabase } from '../lib/supabase.js';
 import { useLiveTable } from '../lib/useLiveTable.js';
 import { DEFAULT_TIERS } from '../lib/rates.js';
@@ -49,25 +49,55 @@ export function SettingsProvider({ children }) {
     return out;
   }, [data]);
 
+  // This screen's own last save of each key ({ at, value }, settings_save's answer), until the
+  // reload has it; and each key's saves, one after another (decision 394).
+  const dataRef = useRef(data);
+  dataRef.current = data;
+  const written = useRef({});
+  const queue = useRef({});
+
+  /** A key's latest value and version: this screen's own save, if the reload doesn't have it yet. */
+  const latestOf = (key) => {
+    const row = (dataRef.current ?? []).find((r) => r.key === key) ?? null;
+    const mine = written.current[key];
+    if (mine && (!row || Date.parse(mine.at) >= Date.parse(row.updated_at))) return mine;
+    return { at: row?.updated_at ?? null, value: row ? row.value : undefined };
+  };
+
   /**
    * Save one setting, from the version this screen last read (decision 354): a save from an
    * out-of-date screen (another computer saved since, or the first load failed) is refused.
+   * One key's saves go one at a time (decision 394): a second box of one object setting saved
+   * straight after the first builds on the first's save, not on what the screen showed before it
+   * (which wrote the first box's old value back), and isn't refused as out of date.
    * @param {string} key
-   * @param {any} value  stored as JSON
+   * @param {any} next  stored as JSON; or a function of the value now (defaults merged in) giving it
    * @param {string|null} userId  the picked staff user, if any
    * @returns {Promise<string|null>} an error message, or null
    */
-  async function save(key, value, userId) {
-    const seen = (data ?? []).find((row) => row.key === key)?.updated_at ?? null;
-    const { error } = await supabase.rpc('settings_save', {
-      p_key: key, p_value: value, p_user: userId ?? null, p_expected: seen,
-    });
-    if (error) {
+  function save(key, next, userId) {
+    const run = async () => {
+      const latest = latestOf(key);
+      const base = DEFAULTS[key];
+      const now = base && typeof base === 'object' && latest.value && typeof latest.value === 'object'
+        ? { ...base, ...latest.value }
+        : latest.value ?? base;
+      const value = typeof next === 'function' ? next(now) : next;
+      const { data: at, error } = await supabase.rpc('settings_save', {
+        p_key: key, p_value: value, p_user: userId ?? null, p_expected: latest.at,
+      });
+      if (error) {
+        delete written.current[key];
+        await reload();
+        return dbErrorCode(error) === 'settings_changed' ? STALE_SETTINGS : error.message;
+      }
+      written.current[key] = { at, value };
       await reload();
-      return dbErrorCode(error) === 'settings_changed' ? STALE_SETTINGS : error.message;
-    }
-    await reload();
-    return null;
+      return null;
+    };
+    const done = (queue.current[key] ?? Promise.resolve()).then(run);
+    queue.current[key] = done.catch(() => null);
+    return done;
   }
 
   return (

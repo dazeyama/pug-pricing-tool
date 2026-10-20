@@ -5,6 +5,8 @@ import { useToast } from '../../components/Toast.jsx';
 import { DB_MESSAGES, dbErrorCode, knownCode } from '../../lib/dbErrors.js';
 import { readBack } from './confirmReadBack.js';
 import { SECOND_LOOK_MS, pause } from '../../lib/timeout.js';
+import { DONE_ONCE, createRequests, requestKey } from '../../lib/requests.js';
+import { uuid } from '../../lib/uuid.js';
 
 // This computer's walk-in draft (spec 8.10): one per device, saved on every
 // change, so a refresh or crash loses nothing. Only this device edits it, so
@@ -92,7 +94,7 @@ export function useDraft(deviceId) {
           toast(`${failure}: ${error.message}`, 'err');
         }
         await reload();
-        return { ok: false };
+        return { ok: false, error };
       }
       await reload();
       return { ok: true, data };
@@ -101,13 +103,30 @@ export function useDraft(deviceId) {
     }
   }, [reload, toast]);
 
+  /**
+   * A write a press can repeat (decision 388): sent with a request id, the lost one's when it's
+   * pressed again after a lost answer, so it happens once. `fixedId`: the caller's own (a phone's
+   * Undo sends its scan's).
+   */
+  const [requests] = useState(() => createRequests());
+  const runOnce = useCallback(async (fn, args, failure, fixedId = null) => {
+    const key = requestKey(fn, args);
+    const { id: requestId, again } = fixedId ? { id: fixedId, again: false } : requests.idFor(key);
+    const r = await run(fn, { ...args, p_request: requestId }, failure);
+    if (!fixedId) requests.settle(key, requestId, r.ok ? null : r.error);
+    if (again && r.ok) toast(DONE_ONCE, 'ok');
+    return r;
+  }, [run, requests, toast]);
+
   // draftId: a phone's scan goes into the buy it was scanned for, or nowhere (decision 350).
+  // A scan's add has its own id: lineOfScan already keeps it from going in twice, and it never
+  // takes or clears staff's lost one.
   const add = useCallback(async (line, userId, draftId = null) => {
-    const r = await run('draft_add_line', {
+    const r = await runOnce('draft_add_line', {
       p_device: deviceId, p_line: line, p_user: userId, p_merge: true, ...(draftId ? { p_draft_id: draftId } : {}),
-    }, "Couldn't add the card");
+    }, "Couldn't add the card", line.price_snapshot?.scan ? uuid() : null);
     return r.ok ? r.data : null;
-  }, [deviceId, run]);
+  }, [deviceId, runOnce]);
 
   /** Save an edited line over the old one; returns the line's id (another's, if they merged). */
   const update = useCallback(async (lineId, line, userId) => {
@@ -116,9 +135,11 @@ export function useDraft(deviceId) {
     return r.ok ? r.data : null;
   }, [run]);
 
-  const remove = useCallback(async (lineId, qty, userId) =>
-    (await run('draft_remove_line', { p_line_id: lineId, p_qty: qty, p_user: userId }, "Couldn't remove the card")).ok,
-  [run]);
+  /** `requestId`: the phone's Undo sends its scan's id, so it takes one copy off once (decision 392). */
+  const remove = useCallback(async (lineId, qty, userId, requestId = null) =>
+    (await runOnce('draft_remove_line', { p_line_id: lineId, p_qty: qty, p_user: userId }, "Couldn't remove the card",
+      requestId)).ok,
+  [runOnce]);
 
   const setRates = useCallback(async (cash, credit, userId) =>
     (await run('draft_set_custom_rates', { p_device: deviceId, p_cash: cash, p_credit: credit, p_user: userId },
@@ -135,19 +156,26 @@ export function useDraft(deviceId) {
     // A phone's scan can open this computer's buy before the computer has loaded it, and when
     // that scan never adds, the buy is only in the database: it's cancelled too, failing its
     // scans so the phone says so (decision 395).
+    // Only an empty one: a buy with cards (another tab's, or one this screen failed to load) is
+    // loaded instead, never thrown away unseen.
     let buyId = state.buy?.id ?? null;
     if (!buyId && deviceId) {
-      const { data, error } = await supabase.from('buys').select('id')
+      const { data, error } = await supabase.from('buys').select('id, buy_lines(id)')
         .eq('kind', 'walk_in').eq('status', 'draft').eq('draft_device_id', deviceId).maybeSingle();
       if (error) {
         toast(`Couldn't cancel the buy: ${error.message}`, 'err');
+        return false;
+      }
+      if (data?.buy_lines?.length) {
+        await reload();
+        toast("This computer has a buy with cards in it (from another tab): it's shown now. CANCEL again to discard it.", 'warn');
         return false;
       }
       buyId = data?.id ?? null;
     }
     if (!buyId) return true;
     return (await run('draft_cancel', { p_buy_id: buyId }, "Couldn't cancel the buy")).ok;
-  }, [run, state.buy, deviceId, toast]);
+  }, [run, reload, state.buy, deviceId, toast]);
 
   /**
    * CONFIRM BUY. Its answer, plus the buy it confirmed, its cards, what was sent and its 🚩 box: a

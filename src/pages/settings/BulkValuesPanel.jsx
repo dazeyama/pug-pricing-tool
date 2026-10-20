@@ -16,7 +16,8 @@ function ValueBox({ item }) {
     stored: all[item.kind],
     clean: (t) => t.trim().replace(/^\$/, ''),
     problem: (raw) => (VALID_MONEY.test(raw) ? null : 'Enter a dollar amount, with up to 2 decimals.'),
-    save: (next) => save('bulk_values', { ...all, [item.kind]: next }, current?.id),
+    // From the value saved now, not as this screen last showed it (decision 394).
+    save: (next) => save('bulk_values', (now) => ({ ...bulkValuesFrom(now), [item.kind]: next }), current?.id),
     saved: (next) => `${item.name} saved: ${formatMoney(next)} per ${item.per}.`,
   });
 

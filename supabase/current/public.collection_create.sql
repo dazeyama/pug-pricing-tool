@@ -1,15 +1,21 @@
-CREATE OR REPLACE FUNCTION public.collection_create(p_name text, p_phone text, p_notes text, p_user uuid, p_device uuid, p_id_last4 text DEFAULT NULL::text)
+CREATE OR REPLACE FUNCTION public.collection_create(p_name text, p_phone text, p_notes text, p_user uuid, p_device uuid, p_id_last4 text DEFAULT NULL::text, p_request uuid DEFAULT NULL::uuid)
  RETURNS uuid
  LANGUAGE plpgsql
  SET search_path TO 'public', 'internal'
 AS $function$
 declare
+  v_seen   jsonb;
   v_name  text := btrim(regexp_replace(coalesce(p_name, ''), '\s+', ' ', 'g'));
   v_notes text := btrim(coalesce(p_notes, ''));
   v_last4 text := nullif(upper(btrim(coalesce(p_id_last4, ''))), '');
   v_phone text := nullif(btrim(coalesce(p_phone, '')), '');
   b       buys;
 begin
+  -- This request done already (its answer lost): its answer again, nothing done twice (decision 388).
+  v_seen := internal.request_begin(p_request);
+  if v_seen is not null then
+    return (v_seen ->> 'result')::uuid;
+  end if;
   if p_user is null then
     raise exception 'no_user';
   end if;
@@ -41,6 +47,7 @@ begin
             then jsonb_build_array(jsonb_build_object('field', 'notes', 'before', null, 'after', v_notes))
             else '[]'::jsonb end,
     sentence(format('Collection created for %s', v_name)));
+  perform internal.request_end(p_request, b.id::text);
   return b.id;
 end;
 $function$;

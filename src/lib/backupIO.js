@@ -49,6 +49,13 @@ export async function currentCounts() {
   return data;
 }
 
+/** Each backup table's columns here (decision 398), to list a file's that a restore would leave out. */
+export async function databaseColumns() {
+  const { data, error } = await supabase.rpc('backup_columns');
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 const RESTORE_ERRORS = {
   bad_backup: "That file isn't a backup this version can restore.",
   not_confirmed: 'Type RESTORE to confirm.',

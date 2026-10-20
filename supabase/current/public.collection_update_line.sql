@@ -39,7 +39,8 @@ begin
     finish = r.finish, first_edition = coalesce(r.first_edition, false),
     treatments = coalesce(r.treatments, '[]'::jsonb), condition = r.condition,
     quantity = r.quantity, unit_price = r.unit_price, market_price = r.market_price,
-    price_source = r.price_source, price_snapshot = r.price_snapshot, priced_at = r.priced_at,
+    -- The scans the line came from stay with it (decision 391).
+    price_source = r.price_source, price_snapshot = internal.with_scans(r.price_snapshot, internal.scan_ids(v_old.price_snapshot)), priced_at = r.priced_at,
     scryfall_id = r.scryfall_id, oracle_id = r.oracle_id, tcgdex_id = r.tcgdex_id,
     tcgplayer_id = r.tcgplayer_id, justtcg_card_id = r.justtcg_card_id,
     justtcg_variant_id = r.justtcg_variant_id, image_url = r.image_url,
@@ -58,6 +59,7 @@ begin
     if v_opos < v_old.position then
       update buy_lines o
          set quantity = o.quantity + r.quantity,
+             price_snapshot = internal.with_scans(o.price_snapshot, internal.scan_ids(e.price_snapshot)),
              custom_cash_pct = coalesce(o.custom_cash_pct, e.custom_cash_pct),
              custom_credit_pct = coalesce(o.custom_credit_pct, e.custom_credit_pct)
         from buy_lines e
@@ -67,6 +69,7 @@ begin
     else
       update buy_lines o
          set quantity = o.quantity + x.quantity,
+             price_snapshot = internal.with_scans(o.price_snapshot, internal.scan_ids(x.price_snapshot)),
              custom_cash_pct = coalesce(o.custom_cash_pct, x.custom_cash_pct),
              custom_credit_pct = coalesce(o.custom_credit_pct, x.custom_credit_pct)
         from buy_lines x

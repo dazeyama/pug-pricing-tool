@@ -15,7 +15,7 @@ import LinePreview, { previewFor } from '../../components/LinePreview.jsx';
 import { statusLabel, statusTone, walkInStatus } from '../collections/status.js';
 import { GAME_NAMES } from '../../lib/games.js';
 import { useDismiss } from '../../lib/useDismiss.js';
-import { COMPLETED_LOCK, MARKED_LOCK, markedByHand } from './dayRules.js';
+import { COMPLETED_LOCK, MARKED_LOCK, convertLines, markedByHand } from './dayRules.js';
 
 // A buy on a day page (spec 10.2): its panel, with its cards, totals, chips and ⋯ (FABLE_REPORT C2).
 
@@ -241,9 +241,10 @@ export default function BuyPanel({
             },
             {
               label: 'Convert to project',
-              // Completed cards are skipped, and the buy stays with them (decision 296).
-              blocked: offOrBusy ?? (buy.buy_lines.some((l) => !l.completed_at && !l.struck_at && !l.bulk_kind)
-                ? null : 'Nothing left to move: every card is Completed or struck'),
+              // Completed cards are skipped, and the buy stays with them (decision 296), with all of a
+              // Completed game (decision 393).
+              blocked: offOrBusy ?? (convertLines(buy).some((l) => !l.struck_at && !l.bulk_kind)
+                ? null : 'Nothing left to move: every card is Completed, struck, or in a Completed game'),
               title: 'Move this buy\'s live cards, both games, into a new project; Completed cards stay here',
               onClick: () => onConvert(buy, number),
             },
@@ -252,8 +253,8 @@ export default function BuyPanel({
               // phone, the Last 4 ID 1312, its rates and payment.
               label: 'Convert to collection',
               blocked: offOrBusy ?? (!buy.customer_name?.trim() ? 'No customer name on this buy'
-                : buy.buy_lines.some((l) => !l.completed_at && !l.struck_at && !l.bulk_kind)
-                  ? null : 'Nothing left to move: every card is Completed or struck'),
+                : convertLines(buy).some((l) => !l.struck_at && !l.bulk_kind)
+                  ? null : 'Nothing left to move: every card is Completed, struck, or in a Completed game'),
               title: 'Move this buy\'s live cards, both games, into a new Paid/Ours collection under its customer; Completed cards stay here',
               onClick: () => onConvertCollection(buy, number),
             },

@@ -61,7 +61,7 @@ const RESOLVE_REFUSALS = new Set(['scan_gone', 'not_session', 'bad_status']);
  *   scans sent to it are claimed (decision 343)
  * @param {{ busy: boolean, lines: object[], draftId?: string|null,
  *   add: (line: object, userId: string, draftId?: string|null) => Promise<string|null>,
- *   remove: (line: object, qty: number, userId: string) => Promise<unknown> }} p.list
+ *   remove: (line: object, qty: number, userId: string, requestId?: string) => Promise<unknown> }} p.list
  * @param {boolean} p.roundUp  a project: prices round up
  * @param {(lineId: string, added: { card: object, finish: string }) => void} p.onAdded  flash the line,
  *   and show the card (its Scryfall card and finish) in the Selected card frame
@@ -90,6 +90,7 @@ export function useScanReceiver({ deviceId, label, session, target, list, roundU
     };
   }, []);
   const again = useRef(false);
+  const tried = useRef(new Set());   // Undos this screen has sent a removal for (decision 392)
   // Awake while cards arrive (decision 320): each one keeps the screen on for ten minutes more.
   const awake = useRef(null);
   useEffect(() => {
@@ -216,11 +217,19 @@ export function useScanReceiver({ deviceId, label, session, target, list, roundU
     now.touch?.();
     if (!now.user) return { status: 'added', note: `Pick a user on ${now.label}, then Undo again.` };
     const line = now.list.lines.find((l) => l.id === scan.line_id);
+    // Its line gone after this screen's own try whose answer was lost: that try took it off.
+    if (!line && tried.current.has(scan.id)) return { status: 'undone' };
     if (!line) return { status: 'added', note: 'That card is no longer in the list.' };
     for (let i = 0; i < 25 && latest.current.list.busy; i++) await sleep(200);
     if (!live()) return null;
-    const ok = await within(latest.current.list.remove(line, 1, now.user.id), WRITE_MS, 'timeout');
-    if (ok === 'timeout') return { status: 'added', note: `No answer taking it off on ${now.label}: check the list there.` };
+    tried.current.add(scan.id);
+    // The scan's id as the request's: claimed again after its "undone" was lost, it takes nothing
+    // more off (decision 392).
+    const ok = await within(latest.current.list.remove(line, 1, now.user.id, scan.id), WRITE_MS, 'timeout');
+    // No answer: it may have gone through. Left "undoing" and claimed again later, when the same
+    // request id takes it off once or says it's done (decision 392), never "still there" while
+    // it's gone, which left FOIL? / NONFOIL? with no copy.
+    if (ok === 'timeout') return null;
     return ok ? { status: 'undone' } : { status: 'added', note: `${now.label} couldn't take it off: its screen says why.` };
   }, []);
 
@@ -273,9 +282,10 @@ export function useScanReceiver({ deviceId, label, session, target, list, roundU
             alive = false;   // given up: a late answer adds nothing
             if (isTimeout(e)) {
               console.warn('A scan took too long', scan.id);
-              // An undo given up leaves the card added (as a refused undo does); a scan, failed.
+              // An undo given up stays "undoing", claimed again later (its request id makes that
+              // safe, decision 392); a scan, failed.
               out = scan.status === 'undoing'
-                ? { status: 'added', note: `No answer taking it off on ${latest.current.label}: check the list there.` }
+                ? null
                 : { status: 'failed', note: `It took too long on ${latest.current.label}: check its list, then scan it again.` };
             } else {
               console.error('A scan failed', e);
@@ -283,7 +293,8 @@ export function useScanReceiver({ deviceId, label, session, target, list, roundU
             }
           }
           // The screen went mid-way (decision 343): left "pricing", so its list claims it again later.
-          if (!out && !open.current) continue;
+          // An Undo with no answer, likewise (decision 392).
+          if (!out && (!open.current || scan.status === 'undoing')) continue;
           if (!out) out = { status: 'failed', note: `It took too long on ${latest.current.label}: check its list, then scan it again.` };
           // Tried three times on a blip (review, 2026-10-16): a scan left "pricing" or "undoing" is
           // claimed again in a minute, and the card would go in, or come off, twice. The function's

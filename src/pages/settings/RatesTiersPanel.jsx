@@ -25,8 +25,11 @@ function TierBox({ tier, field, money = false, label }) {
       if (tier === 'high' && next <= tiers.low.under) return `The high end has to stay above the low end (${formatMoney(tiers.low.under)}).`;
       return null;
     },
-    // The whole setting is saved at once, with the box changed.
-    save: (next) => save('rate_tiers', { ...tiers, [tier]: { ...tiers[tier], [field]: next } }, current?.id),
+    // The whole setting is saved at once, with the box changed, from the value saved now (decision 394).
+    save: (next) => save('rate_tiers', (now) => {
+      const fresh = tiersFrom(now);
+      return { ...fresh, [tier]: { ...fresh[tier], [field]: next } };
+    }, current?.id),
     saved: (next) => `${label} saved: ${money ? formatMoney(next) : `${next}%`}.`,
   });
 

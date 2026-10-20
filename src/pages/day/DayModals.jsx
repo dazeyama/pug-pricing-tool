@@ -5,6 +5,7 @@ import { isStruck } from '../../lib/struck.js';
 import { formatPhone } from '../../lib/phone.js';
 import { formatTime } from '../../lib/time.js';
 import Modal from '../../components/Modal.jsx';
+import { convertLines } from './dayRules.js';
 
 // A day page's dialogs for one buy: Convert to project or collection, Delete buy (FABLE_REPORT C2).
 
@@ -19,9 +20,13 @@ import Modal from '../../components/Modal.jsx';
 export function ConvertBuyModal({ buy, number, day, byId, busy, onClose, onConvert, to = 'project' }) {
   const collection = to === 'collection';
   const [name, setName] = useState(() => (buy.customer_name || `Buy ${number} · ${dayDate(day)}`).slice(0, 80));
-  // Completed cards stay on the buy (decision 296): only the live ones move.
-  const live = buy.buy_lines.filter((l) => !l.completed_at);
-  const done = buy.buy_lines.length - live.length;
+  // Completed cards stay on the buy (decision 296), and all of a Completed game (decision 393).
+  const live = convertLines(buy);
+  const done = buy.buy_lines.filter((l) => l.completed_at).length;
+  // The buy stays when anything stays: it keeps the payment then (decision 341, as the database's v_keep).
+  const stays = live.length < buy.buy_lines.length;
+  // A Completed game's bulk and placeholders stay with its cards (decision 393).
+  const sideRest = buy.buy_lines.some((l) => !l.completed_at && !l.struck_at && !live.includes(l));
   const counts = cardCounts(live);
   const bothGames = new Set(live.filter((l) => !isStruck(l)).map((l) => l.game)).size > 1;
   // "its 1 card" / "all 12 cards, both games" (smoke test 2026-10-02 #8); bulk apart (T3).
@@ -31,8 +36,8 @@ export function ConvertBuyModal({ buy, number, day, byId, busy, onClose, onConve
   const who = byId(buy.confirmed_by)?.name ?? 'someone';
   // What was paid goes along only when the whole buy does; a buy that stays keeps it (decision 341).
   let takes = ' (a project has no rates)';
-  if (collection) takes = done > 0 ? ' and rates' : ', rates and what was paid';
-  const paidStays = done > 0 && buy.paid_method ? ', with what was paid' : '';
+  if (collection) takes = stays ? ' and rates' : ', rates and what was paid';
+  const paidStays = stays && buy.paid_method ? ', with what was paid' : '';
   const ready = name.trim().length > 0;
   return (
     <Modal
@@ -57,8 +62,9 @@ export function ConvertBuyModal({ buy, number, day, byId, busy, onClose, onConve
         <strong>{collection ? 'Paid/Ours collection' : 'project'}</strong>:{' '}
         <strong>{cards}</strong>{bothGames ? ', both games,' : ''} {single ? 'moves' : 'move'} there as{' '}
         {single ? 'it is' : 'they are'}, with the buy's notes{takes}
-        {done > 0
-          ? <>. Its <strong>{done} Completed card{done === 1 ? '' : 's'}</strong> stay{done === 1 ? 's' : ''} here, and so does the buy{paidStays}.</>
+        {stays
+          ? <>. Its <strong>{done} Completed card{done === 1 ? '' : 's'}</strong> stay{done === 1 ? 's' : ''} here
+            {sideRest ? ', with the bulk and placeholders of that game,' : ','} and so does the buy{paidStays}.</>
           : ', and the buy is deleted from this day.'}
         {counts.struck > 0 && (
           <> Its <strong>{counts.struck} struck card{counts.struck === 1 ? '' : 's'}</strong> stay out of the {to}:

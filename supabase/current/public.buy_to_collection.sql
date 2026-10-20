@@ -13,6 +13,7 @@ declare
   v_struck jsonb;
   v_gone   integer;
   v_keep   boolean;
+  v_done   text[];
 begin
   if p_user is null then
     raise exception 'no_user';
@@ -25,7 +26,10 @@ begin
   if char_length(v_name) not between 1 and 80 then
     raise exception 'bad_name';
   end if;
-  if not exists (select 1 from buy_lines where buy_id = b.id and completed_at is null and struck_at is null) then
+  -- A game with Completed cards stays whole on the buy: its bulk, placeholders and struck cards too (decision 393).
+  v_done := array(select distinct game from buy_lines where buy_id = b.id and completed_at is not null);
+  if not exists (select 1 from buy_lines where buy_id = b.id and completed_at is null and struck_at is null
+                   and not (game = any(v_done))) then
     raise exception 'buy_completed';
   end if;
   v_keep := exists (select 1 from buy_lines where buy_id = b.id and completed_at is not null);
@@ -36,20 +40,21 @@ begin
   v_target := buy_target_name(b.id);
   select array_agg(g order by g = 'pokemon', g)
     into v_games
-    from (select distinct game as g from buy_lines where buy_id = b.id and completed_at is null and struck_at is null) t;
+    from (select distinct game as g from buy_lines where buy_id = b.id and completed_at is null and struck_at is null
+                   and not (game = any(v_done))) t;
   select jsonb_agg(jsonb_build_object(
            'qty', quantity, 'game', game, 'unit_price', unit_price,
            'text', coalesce(p_line_texts ->> id::text, quantity || ' ' || name))
          order by game = 'pokemon', position)
     into v_lines
-    from buy_lines where buy_id = b.id and struck_at is null and completed_at is null;
+    from buy_lines where buy_id = b.id and struck_at is null and completed_at is null and not (game = any(v_done));
   -- Struck cards stay out of the collection, crossed out in its entry.
   select jsonb_agg(jsonb_build_object(
            'sign', '-', 'struck', true, 'qty', quantity, 'game', game, 'unit_price', unit_price,
            'text', coalesce(p_line_texts ->> id::text, quantity || ' ' || name))
          order by game = 'pokemon', position), sum(quantity)
     into v_struck, v_gone
-    from buy_lines where buy_id = b.id and struck_at is not null and completed_at is null;
+    from buy_lines where buy_id = b.id and struck_at is not null and completed_at is null and not (game = any(v_done));
 
   -- The buy's customer, phone, notes, payment and rates; its user as the maker.
   insert into buys (kind, status, project, customer_name, phone, id_last4, notes, paid_at,
@@ -61,9 +66,13 @@ begin
           case when v_keep and b.paid_method is not null then 0 else b.paid_price end, b.paid_method,
           coalesce(b.confirmed_by, p_user), p_user)
   returning * into p;
+  -- The buy kept the payment: remembered, for Mark Paid/Ours again (decision 397).
+  if v_keep and b.paid_method is not null then
+    update buys set kept_buy_id = b.id where id = p.id returning * into p;
+  end if;
 
   -- The cards keep the rates CONFIRM BUY saved on them.
-  update buy_lines set buy_id = p.id where buy_id = b.id and struck_at is null and completed_at is null;
+  update buy_lines set buy_id = p.id where buy_id = b.id and struck_at is null and completed_at is null and not (game = any(v_done));
 
   perform collection_event(p, p_user, p_device, 'buy_converted_collection', coalesce(v_games, '{}'),
     (internal.line_counts(array(select l from buy_lines l where l.buy_id = p.id))).cards, 0,
@@ -75,7 +84,8 @@ begin
     sentence(format('Collection started from %s: %s', v_target, v_name)
              || case when v_gone > 0
                      then '; ' || internal.lines_count_text(array(select l from buy_lines l
-                                                                  where l.buy_id = b.id and l.struck_at is not null and l.completed_at is null),
+                                                                  where l.buy_id = b.id and l.struck_at is not null and l.completed_at is null
+                                                                    and not (l.game = any(v_done))),
                                                             'struck') || case when v_keep then ' stay on the buy' else ' left out' end
                      else '' end
              || case when v_keep then '; its Completed cards stay on the buy' else '' end));

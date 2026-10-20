@@ -57,7 +57,7 @@ export default function PricePage() {
     draftId: draft.buy?.id ?? null,
     add: (line, userId, draftId) => draft.add(line, userId, draftId),
     update: (old, line, userId) => draft.update(old.id, line, userId),
-    remove: (line, n, userId) => draft.remove(line.id, n, userId),
+    remove: (line, n, userId, requestId) => draft.remove(line.id, n, userId, requestId),
     setRates: (cash, credit, userId) => draft.setRates(cash, credit, userId),
     setLineRate: (line, cash, credit, userId) => draft.setLineRate(line.id, cash, credit, userId),
   };
