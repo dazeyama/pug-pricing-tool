@@ -3,12 +3,12 @@
 One pass through the whole app, tab by tab, before a release or the move to prod. Each case says what to do and
 what happens. The findings are reported when the pass ends.
 
-- **Build under test:** the Settings footer shows it (0.9.9.13-scanner2.0 or later).
+- **Build under test:** the Settings footer shows it (0.9.9.15-review or later).
 - **Where:** the dev project only (`psucrzljraxeootwnltf`), through the local dev server (`start.bat` →
   http://localhost:5180). **Never prod.**
 - **Who:** the owner, or Claude in the browser pane at the owner's request (FABLE.md, "a smoke pass the owner asks
   for"). The owner does the phone, two-computer and store cases.
-- **How long:** about two hours, 186 cases.
+- **How long:** about two hours, 200 cases.
 
 ## Ground rules
 
@@ -93,6 +93,8 @@ what happens. The findings are reported when the pass ends.
       "switch to JP" hint, as does `125/197 OBF` with JP on; the link switches and searches again.
 - [ ] A Japanese card shows its English name beside the Japanese one, a trainer's included (*Misty's Starmie*).
 - [ ] An English card TCGdex doesn't list comes up from TCGplayer, marked **From TCGplayer**.
+- [ ] **Enter waits for the search** (decision 358): with a card selected, type a new search and press Enter at once:
+      nothing is added ("Waiting for the search"); once the results are in, Enter adds the new card.
 
 ## 6. Buy tab: the card, finish and versions
 
@@ -128,6 +130,11 @@ what happens. The findings are reported when the pass ends.
       show JustTCG's five conditions, with no fallback tag.
 - [ ] **The name search by the set's home** (decision 288): `Purugly 36/130` (Diamond & Pearl) and a Sun & Moon base
       card get prices.
+- [ ] **A TCGplayer version still loading** (decision 359): pick a stamped version TCGplayer sells apart and press
+      ADD CARD at once: "Waiting for its TCGplayer versions", then it adds at the version's own price.
+- [ ] **A failed TCGplayer versions search** (decision 369): with the `prices` request blocked (DevTools → Network),
+      ADD CARD on such a version says to enter a manual price; Alt+M with a price adds it. Editing a line saved on a
+      TCGplayer-only version while the search is blocked shows it as **As saved**, and SAVE EDIT keeps its version.
 
 ## 7. Buy tab: prices and rates
 
@@ -143,6 +150,9 @@ what happens. The findings are reported when the pass ends.
 - [ ] **Right-click a card → Set Rate:** its own Cash % and Credit %, Maintain ratio, a red box when Cash is over
       Credit; the line is tinted with ✎; **Clear Rate** takes it off.
 - [ ] A custom rate for the whole buy shows its percentage with ✎ in the totals.
+- [ ] **A failed price lookup isn't kept** (decisions 357, 368): with the `prices` request blocked (DevTools →
+      Network), select a card: "Couldn't load prices" with Retry; unblock it and press Retry: the prices come in
+      without a reload.
 
 ## 8. Buy tab: the buy list and CONFIRM BUY
 
@@ -171,6 +181,11 @@ what happens. The findings are reported when the pass ends.
       and the printout show the same number; the next buy is one more. After a database test run the next number
       hasn't moved.
 - [ ] The buy is on today's day page, in the user's colour, with a green Paid/Ours chip.
+- [ ] **CONFIRM BUY with the connection gone** (decisions 363, 367, 371): wifi off, press Confirm buy: an error, then
+      "Its answer was lost: it may have gone through. Press Confirm buy again to find out."; wifi on, press again:
+      the buy is confirmed once (BUY COMPLETE, one buy on the day page).
+- [ ] **Two tabs, one confirm** (decision 367): the Buy tab open twice, same user; confirm in one; in the other,
+      change the price and press Confirm buy: "This buy changed on another computer — reloaded.", no BUY COMPLETE.
 
 ## 9. Buy tab: bulk
 
@@ -259,6 +274,12 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
 - [ ] **🔔 resets the sound** (decision 318): when the chimes go quiet, 🔔 off and on plays a chime at once and the next
       cards chime, with the iPhone's silent switch on too.
 - [ ] The desktop app is unchanged at 1200 × 650 and up.
+- [ ] **A List card by its mark** (decision 355): scan an older The List or Mystery Booster card showing its mark: it
+      goes in as its List printing (set PLST), not the original.
+- [ ] **The camera stops with the screen** (decision 356): leave the scanning screen while it's refocusing: the
+      phone's camera indicator goes off.
+- [ ] **A card waiting for a price stays listed** (decision 356): with more than ten cards scanned while the computer
+      is behind, one waiting for a price still shows on the phone until it's priced.
 
 ## 11. Collections tab: collections
 
@@ -287,6 +308,11 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
 - [ ] ⋯ → **Print collection** opens its Magic cards' printout.
 - [ ] A second tab of the same computer shares the collection's lock.
 - [ ] **Delete collection…** (from the details ⋯ and the table's ⋯) takes two steps and the typed name.
+- [ ] **The lock after a failed check** (decision 364): open a collection with the connection off: "Couldn't check who
+      is editing this collection: trying again."; connection on: it can be edited within 20 seconds.
+- [ ] **A Paid/Ours collection's file again** (decisions 362, 372): once every Magic card in a Paid/Ours collection is
+      exported, EXPORT downloads the same file again: every round it was exported in, without cards later exported
+      from Can't upload cards.
 
 ## 12. Collections tab: projects
 
@@ -350,6 +376,9 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
 - [ ] **Print PKM?** prints a Pokémon day by set and number.
 - [ ] **Print PKM Stickers?** (decision 297) prints price-tag stickers on the 160-sticker sheet, then asks "Complete the
       day?"; Complete day… opens the usual step, Not yet closes; today, or a Completed day, doesn't ask.
+- [ ] **A day's file again** (decisions 361, 372): a day exported with EXPORT, one of its buys exported earlier with
+      Export single buy: EXPORT again downloads the day's file without that buy's cards (Custom SKU "<day>-<number>");
+      a day exported only one buy at a time says there's no day file.
 
 ## 15. The export file
 
@@ -364,6 +393,9 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
 - [ ] The review screen shows **sets NM $X** on such a card, with the working on hover.
 - [ ] EXPORT on a day or collection already exported downloads the same file again; nothing changes.
 - [ ] A card that can't match goes to **Can't upload cards** and isn't in the file.
+- [ ] **An export with the connection gone** (decisions 362, 371): wifi off, press Export: it says it may have
+      exported and to look at the page; wifi on, press Export again: it exports once, or, if the first went through,
+      downloads that file. A retry never exports the same cards twice.
 
 ## 16. Settings tab
 
@@ -402,6 +434,8 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
       only: the real key stays).
 - [ ] A slow Scryfall or TCGdex puts a yellow line over the suggestions that retries by itself.
 - [ ] Two tabs on one computer share the walk-in draft; a stale write reloads instead of losing anything.
+- [ ] **A page loaded offline** (decision 364): load Home with the connection off: it stays "Loading…", not "✓
+      Everything's exported"; connection on: it fills in within seconds.
 
 ## 19. At the store (the owner)
 
