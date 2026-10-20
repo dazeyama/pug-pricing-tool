@@ -60,13 +60,14 @@ tests (`npm test`, commit only on `fail 0`) and the build.
 
 ## Database
 
-- Database changes are new migration files, applied to the dev project (`psucrzljraxeootwnltf`) only unless I say
-  otherwise.
+- Database changes are new migration files (0002 and up), applied to the dev project (`psucrzljraxeootwnltf`)
+  first. They go to prod (`zvxquzcfffmxwizonxuo`, the live site's project since v1.0.0-launch) only when I say so,
+  and app code that needs a migration isn't pushed before prod has it.
 - Each migration, in order. The migrations written for one piece of work (a batch of review findings, say) go
   through these steps together: one review of all of them, one rehearsal of them in order, then applied in order,
   one snapshot and one test run (owner, 2026-10-19).
-  1. **Review it before it's applied.** The live site runs on the dev database, so applying a migration changes the
-     live store at once. Hand the new migration file, with the app code and test-run checks that go with it, to the
+  1. **Review it before it's applied.** Prod is the live store, so a migration applied there changes it at once;
+     dev, where it's applied first, is the test copy. Hand the new migration file, with the app code and test-run checks that go with it, to the
      **pug-reviewer** agent. A confirmed finding that would break the site or its data: fix it first (it's my call
      if unsure). Report the rest with the handoff.
   2. Rehearse it inside `begin; … rollback;` (`npx supabase db query --linked -f`). A rollback doesn't undo a
@@ -96,12 +97,13 @@ tests (`npm test`, commit only on `fail 0`) and the build.
 
 ## Where it stands (2026-10-19)
 
-- Live: v0.9.9.15-review, then pushes without a bump, the last on 2026-10-19 (decisions through 374).
-  The live site runs on the dev project until launch.
+- Live: **v1.0.0-launch** (2026-10-19, decisions through 375), the first build on **prod** (`zvxquzcfffmxwizonxuo`):
+  the GitHub Actions variables point there. Localhost and the phone scanner's LAN link stay on dev
+  (`.env.development`), which keeps the store's data from before launch as the test copy.
 - The migrations were squashed on 2026-10-19: dev and prod both record the baseline `0001` (standing in for the
-  old 0001–0084, now in `supabase/migrations-archive/`), and the next migration is 0002. Prod is built and proven
-  against dev, and empty.
-- Phase 10 launch: the switch of the live site to prod (SQUASH.md section 10's launch steps) waits for my go.
+  old 0001–0084, now in `supabase/migrations-archive/`), and the next migration is 0002: dev first, then prod.
+- A push needs prod linked for the release skill's migration check (`npx.cmd supabase link --project-ref
+  zvxquzcfffmxwizonxuo`; no password was asked), then dev linked back for the day's work.
 - The release history is the spec's decisions and `git tag`; what's open is NEXT.md.
 
 ## Coding Conventions

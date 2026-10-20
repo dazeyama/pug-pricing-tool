@@ -128,8 +128,9 @@ Pushing to `main` runs `.github/workflows/deploy.yml`: it builds with the reposi
 Actions variables and publishes `dist/` to GitHub Pages. Only push when the site should
 change.
 
-**For now the live site runs on dev** (owner's decision, 2026-09-30): the three Actions
-variables hold the **`pug-pricing-dev`** values from `.env.development`, so version
-0.9.0-dev, then 0.9.1-final (2026-09-30), 0.9.9-export (2026-10-01), 0.9.9-day0 and 0.9.9.1-smoke (2026-10-02), can be tried at the store against the dev data before launch. **At launch
-(Phase 10), set them back to the `.env.production` values** (prod, `zvxquzcfffmxwizonxuo`)
-after prod is migrated, then push again or re-run the workflow.
+**The live site runs on prod** (`zvxquzcfffmxwizonxuo`) since v1.0.0-launch, 2026-10-19: the
+three Actions variables hold the `.env.production` values. Before that (2026-09-30 to
+2026-10-19) they held `.env.development`'s, so the builds up to v0.9.9.15-review ran at the
+store against dev's data. To point the site at another project, set `VITE_SUPABASE_URL` and
+`VITE_SUPABASE_PUBLISHABLE_KEY` to that project's values and push or re-run the workflow
+(about three minutes). `localhost` is unaffected: `start.bat` reads `.env.development`.

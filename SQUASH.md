@@ -33,8 +33,10 @@ asked for no password, and `db push`, `migration list` and the test run all reac
 one; prod had no `supabase_migrations` schema at all before its first push (the section 6 probe's
 `migrations` field must be guarded); the owner ran section 7's push (the session's permission
 mode refused a push to prod). Prod: 522 checks, nine of nine the same as `dev-run.json`; dev's
-record repaired to `0001`, its run the same after as before. Sections 10 (launch) and 11 on
-are what's left and what applies from now on. The safety folder stays until the clean-up.
+record repaired to `0001`, its run the same after as before. Section 10's launch steps ran the
+same evening as **v1.0.0-launch** (`prices` and `secrets` on prod, sign-ups off, Max rows 1,000,
+the two Actions variables, the push); the owner's setup tasks and the clean-up remain. Section 11
+on applies from now on. The safety folder stays until the clean-up.
 
 ---
 

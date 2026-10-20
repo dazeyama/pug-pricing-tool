@@ -6,9 +6,6 @@ and function.
 
 ## Open
 
-- **Unpushed:** decision 374 (`useDraft.js`, `PricePage.jsx`), NEXT.md's notes, SQUASH.md and the generator at 0084
-  (ea030c8), and the squash commit (`supabase/migrations/0001_baseline.sql`, the archive, the records). No Edge
-  Functions; nothing to push to either database (both record `0001`).
 - **Help out of date** (only when the owner asks), from the release review's fixes: a TCGplayer-only Pokémon version
   whose search failed is added at a manual price, and an edit keeps it as **As saved** (decision 369); "the same
   file again" leaves out cards exported from Can't upload cards, and needs the connection (decision 372).
@@ -66,17 +63,19 @@ and function.
     counts it twice (decision 341);
   - a backup with columns the database lacks restores without them, silently; a hand-edited backup with empty rows in
     a learned-match table empties it (decision 348);
-  - the "Exported: Undo export… first" wording also shows on Can't upload cards (decision 345);
-  - SQUASH.md's Max rows blank (section 10) to fill in from dev's dashboard.
-- **Before the switch to prod:** a full smoke test pass, `docs/TEST.md` (200 cases), on dev. It was planned before
-  the squash and didn't happen; the squash changed no behaviour, so it still covers the same build.
-- **Phase 10 launch** (owner's go): the squash is done (2026-10-19). What's left is the switch to prod, `SQUASH.md`
-  section 10's launch steps: the `prices` and `secrets` Edge Functions deployed to prod; prod's Max rows checked (the
-  blank in section 10); public sign-ups off on prod; the GitHub Actions variables set to `.env.production`'s values;
-  the push on the owner's go and the Pages run confirmed; sign in on the live site and see prod (empty); the owner's
-  tasks (computer name, users, JustTCG key, CC CSV); the clean-up last, `C:\ClaudeProjects\temp\pug-squash\`
-  included once prod has run a while. Decide the **Supabase plan for prod** first (`docs/DESIGN_SPEC.md` Appendix
-  D 2: Free vs Pro).
+  - the "Exported: Undo export… first" wording also shows on Can't upload cards (decision 345).
+- **After the launch push (v1.0.0-launch, 2026-10-19), the owner's setup on the live site:** sign in with prod's
+  store password; name the computer, add the users, enter the JustTCG key (Settings → API keys), upload the CC CSV;
+  every store computer signs in again. The **Supabase plan for prod** (`docs/DESIGN_SPEC.md` Appendix D 2: Free vs
+  Pro) is still to decide. The clean-up (the spec's Phase 10 list, `C:\ClaudeProjects\temp\pug-squash\` included)
+  waits until prod has run a while.
+- **The smoke test pass** (`docs/TEST.md`, 200 cases): planned before the squash and the switch, not done; neither
+  changed behaviour, so it still covers this build (on dev, or on the live site once it has data).
+- **TEST.md has no case for decision 374** (the launch review): the 🚩 following the press that went through, and
+  Confirming… while a later press reads back.
+- **The release skill's pre-flight** now needs prod linked for its migration check, then dev linked back (the link
+  asked no password on 2026-10-19). A small change could name the project in that check (`--project-ref`) so the
+  link stays on dev; propose it, don't just do it.
 - **After launch:**
   - migration **0002**, the Changelog lock (`SQUASH.md` section 11a), on the owner's day;
   - a migration revoking Supabase's default grant to `anon` on `buys_number_seq` (0071 never did; seen in the
@@ -87,6 +86,12 @@ and function.
 
 ## Done
 
+- 2026-10-19: Pushed as **v1.0.0-launch** (tag `v1.0.0-launch`): **the launch**. The live site now builds against
+  **prod** (`zvxquzcfffmxwizonxuo`): the Actions variables `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`
+  set from `.env.production` (decision 375); `prices` and `secrets` deployed to prod; sign-ups off and Max rows
+  1,000 checked by the owner. Out with it: decision 374, the squash (`0001_baseline.sql` on both projects), SQUASH.md
+  and the generator at 0084. No migrations to push (both projects record `0001`); no Edge Function changes in the
+  range. Localhost stays on dev (`.env.development`). Nothing unpushed.
 - 2026-10-19: **The migration squash (decisions 192, 332; SQUASH.md sections 1–9).** The freeze (0001–0084 all
   applied; the test run's 522 checks, saved as `C:\ClaudeProjects\temp\pug-squash\dev-run.json`); tag `pre-squash`
   (ea030c8) and the owner's dev backup in that folder; the baseline written at 0084 (5,118 lines) and rehearsed nine
