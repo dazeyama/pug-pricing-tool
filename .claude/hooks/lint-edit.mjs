@@ -2,13 +2,20 @@
 // rule break (no-use-before-define caught the blank Buy screen of decision 324) shows at
 // once. JS/JSX/MJS: the project's own ESLint (eslint.config.mjs). Python: a syntax check
 // that writes nothing (no __pycache__). Exit 2 with the problems on stderr feeds them back
-// to Claude; anything else passes. Only files inside this project, on its own drive.
+// to Claude as a blocking error; a note on stdout (BETWEEN_EDITS below) doesn't block;
+// anything else passes. Only files inside this project, on its own drive.
 // Reads the hook's JSON on stdin with Node, so it needs nothing else installed.
 
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+// Two rules fire between the steps of every change made in several edits: an import added before
+// the code that uses it (no-unused-vars), or code added before its import (no-undef). When those
+// are a file's only errors, the hook passes them on as a note instead of blocking; any other error
+// still blocks, and the full `npx eslint .` before each commit fails on any left over (decision 383).
+const BETWEEN_EDITS = new Set(['no-unused-vars', 'no-undef']);
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const fail = (text) => {
@@ -44,10 +51,21 @@ if (/\.(m?js|jsx)$/i.test(full)) {
     // ESLint itself failed (eslint.config.mjs broken mid-edit, node_modules missing): say so.
     fail(`ESLint couldn't lint ${rel}: ${e.message}`);
   }
-  const errors = results.reduce((n, r) => n + r.errorCount, 0);
-  if (errors) {
+  const errors = results.flatMap((r) => r.messages.filter((m) => m.severity === 2));
+  if (errors.some((m) => !BETWEEN_EDITS.has(m.ruleId))) {
     const formatter = await eslint.loadFormatter('stylish');
-    fail(`ESLint found ${errors} error(s) in ${rel}:\n${await formatter.format(results)}`);
+    fail(`ESLint found ${errors.length} error(s) in ${rel}:\n${await formatter.format(results)}`);
+  }
+  if (errors.length) {
+    // Only the between-edits rules: a note Claude reads, not a blocking error.
+    const lines = errors.map((m) => `  ${m.line}:${m.column}  ${m.message}  ${m.ruleId}`).join('\n');
+    process.stdout.write(JSON.stringify({
+      hookSpecificOutput: {
+        hookEventName: 'PostToolUse',
+        additionalContext: `Not blocking (likely mid-edit) in ${rel}; fix if it's still there once the edits are done:\n${lines}`,
+      },
+    }));
+    process.exit(0);
   }
 } else if (/\.py$/i.test(full)) {
   try {

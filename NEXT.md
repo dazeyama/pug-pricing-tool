@@ -80,6 +80,10 @@ and function.
 
 ## Done
 
+- 2026-10-19: **The lint hook doesn't block between edits** (decision 383): in `.claude/hooks/lint-edit.mjs`,
+  `BETWEEN_EDITS` (`no-unused-vars`, `no-undef`) alone give Claude a note instead of a blocking error; anything
+  else still blocks, and the full lint before each commit catches leftovers. Tried on sample files outside the
+  repo (`C:\ClaudeProjects\temp\pug-lint-hook\bed`, can go).
 - 2026-10-19: **A DEV watermark on localhost** (decision 382): a faint diagonal DEV DEV DEV over every screen when
   the dev server runs on dev's database. `src/main.jsx` adds the `dev-db` class; the `html.dev-db body::after` rule
   in `src/styles/base.css` draws it. A build drops the check (dev's ref isn't in `dist/`), so never on the live
