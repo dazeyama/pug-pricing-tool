@@ -26,7 +26,7 @@ and function.
   From the review, left as is: the live build shows the new action names raw on Home until a
   push; `settings_log` takes the app's sentence as written; the key and match entries are guarded for a user only by
   the app and `settings_log`.
-- **Unpushed** (2026-10-20): 14 commits since the last push: the stamp check removed (400), the team's six
+- **Unpushed** (2026-10-20): 16 commits since the last push: the stamp check removed (400), the team's six
   feedback items (401–407, migration 0005), Export single buy's and Print buy's splits (408, 409), the by-color
   sort's loading state (410), the $24 bulk defaults (411), settings in the Changelog (412, migration 0006), the
   mixed-rates * (413) and the inventory cleared in batches (414, migration 0007).
@@ -55,17 +55,17 @@ and function.
   changed behaviour, so it still covers this build. On dev only, never the live site (decision 380); TEST.md's
   "pair on the live site's address and scan a stack" case and SETUP.md's "price one card" check after restoring a
   paused project write to prod and need rewording to fit that rule (the pre-push review, 2026-10-20).
-- **The phone's Undo, a fast network error** (decision 392 not quite closed): an Undo whose removal fails at once
-  with a network error (not the 10 s time limit) is answered "couldn't take it off", though it may have gone
-  through; FOIL? / NONFOIL? then sends no new copy. Pressing FOIL? or Undo again on the same screen puts it right;
-  after F5 it doesn't. The fix: `useDraft.remove` / `useCollection.remove` say when the answer was lost, and `undo`
-  in `src/pages/price/useScanReceiver.js` leaves those "undoing" too (the request id makes the next try safe).
 - **TEST.md has no case for decision 374** (the launch review): the 🚩 following the press that went through, and
   Confirming… while a later press reads back.
 - **After launch:**
   - watch JustTCG usage and the plan (Appendix D 4);
 
 ## Done
+
+- 2026-10-20: **The phone's Undo after a network error stays "undoing"** (decision 415, the last of 392), on the
+  owner's ask: `remove` in `useDraft.js` / `useCollection.js` returns null for a lost answer, and `undo` in
+  `src/pages/price/useScanReceiver.js` leaves those "undoing" to be claimed again. No database change. Untested in the
+  app (a network error at the exact moment of an Undo is hard to stage by hand).
 
 - 2026-10-20: **100 bulk rares/mythics and 100 EXs are $24** (decision 411), on the owner's word ("a math error from
   the beginning"): `DEFAULT_BULK_VALUES` in `src/lib/bulk.js`, decision 266, `docs/TEAM_FEEDBACK.md`; dev's saved

@@ -226,10 +226,10 @@ export function useScanReceiver({ deviceId, label, session, target, list, roundU
     // The scan's id as the request's: claimed again after its "undone" was lost, it takes nothing
     // more off (decision 392).
     const ok = await within(latest.current.list.remove(line, 1, now.user.id, scan.id), WRITE_MS, 'timeout');
-    // No answer: it may have gone through. Left "undoing" and claimed again later, when the same
-    // request id takes it off once or says it's done (decision 392), never "still there" while
-    // it's gone, which left FOIL? / NONFOIL? with no copy.
-    if (ok === 'timeout') return null;
+    // No answer, in time or at all (a network error): it may have gone through. Left "undoing" and
+    // claimed again later, when the same request id takes it off once or says it's done (decision
+    // 392), never "still there" while it's gone, which left FOIL? / NONFOIL? with no copy.
+    if (ok === 'timeout' || ok === null) return null;
     return ok ? { status: 'undone' } : { status: 'added', note: `${now.label} couldn't take it off: its screen says why.` };
   }, []);
 

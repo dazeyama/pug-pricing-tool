@@ -135,11 +135,15 @@ export function useDraft(deviceId) {
     return r.ok ? r.data : null;
   }, [run]);
 
-  /** `requestId`: the phone's Undo sends its scan's id, so it takes one copy off once (decision 392). */
-  const remove = useCallback(async (lineId, qty, userId, requestId = null) =>
-    (await runOnce('draft_remove_line', { p_line_id: lineId, p_qty: qty, p_user: userId }, "Couldn't remove the card",
-      requestId)).ok,
-  [runOnce]);
+  /**
+   * `requestId`: the phone's Undo sends its scan's id, so it takes one copy off once (decision 392).
+   * Returns true, false (refused), or null when the answer was lost: it may have gone through.
+   */
+  const remove = useCallback(async (lineId, qty, userId, requestId = null) => {
+    const r = await runOnce('draft_remove_line', { p_line_id: lineId, p_qty: qty, p_user: userId },
+      "Couldn't remove the card", requestId);
+    return r.ok ? true : dbErrorCode(r.error) ? false : null;
+  }, [runOnce]);
 
   const setRates = useCallback(async (cash, credit, userId) =>
     (await run('draft_set_custom_rates', { p_device: deviceId, p_cash: cash, p_credit: credit, p_user: userId },

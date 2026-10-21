@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase.js';
 import { lineText } from '../../lib/lineFormat.js';
 import { useConnection } from '../../state/connection.jsx';
 import { useToast } from '../../components/Toast.jsx';
-import { DB_MESSAGES, dbMessage, knownCode } from '../../lib/dbErrors.js';
+import { DB_MESSAGES, dbErrorCode, dbMessage, knownCode } from '../../lib/dbErrors.js';
 import { channelName } from '../../lib/channels.js';
 import { DONE_ONCE, createRequests, requestKey } from '../../lib/requests.js';
 import { uuid } from '../../lib/uuid.js';
@@ -228,12 +228,15 @@ export function useCollection(id, { deviceId, onLockLost }) {
     return r.ok ? r.data : null;
   }, [run, mine]);
 
-  /** `requestId`: the phone's Undo sends its scan's id, so it takes one copy off once (decision 392). */
+  /**
+   * `requestId`: the phone's Undo sends its scan's id, so it takes one copy off once (decision 392).
+   * Returns true, false (refused), or null when the answer was lost: it may have gone through.
+   */
   const remove = useCallback(async (line, qty, userId, requestId = null) => {
     const r = await runOnce('collection_remove_line', {
       p_line_id: line.id, p_qty: qty, ...mine(userId), p_text: lineText(line, Math.min(qty, line.quantity)),
     }, "Couldn't remove the card", requestId);
-    return r.ok;
+    return r.ok ? true : dbErrorCode(r.error) ? false : null;
   }, [runOnce, mine]);
 
   /** × in a Paid/Ours collection or project (owner, 2026-10-16): strike copies, kept crossed out. */
