@@ -54,7 +54,23 @@
 .lang-toggle button:disabled:hover { color: var(--muted); }
 /* mimp mode (decision 293): a 🌼 | 🦇 pill after EN | JP, exactly the language toggle's shape; the
    lit side is the mode (owner, 2026-10-17): 🌼 on (the default), 🦇 off. */
-.mode-toggle button { min-width: 52px; font-size: 21px; }
+.mode-toggle button { min-width: 52px; font-size: 21px; position: relative; }
+/* AUTO under 🌼, OFF under 🦇, small and faint (owner, 2026-10-20). Neither takes layout space: the
+   word sits on the button's bottom edge and the mark moves up by a transform, so the pill, and the
+   search bar, keep their height. */
+.mode-toggle .mode-mark { display: inline-block; transform: translateY(-5px); }
+.mode-toggle .mode-word {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 3px;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  line-height: 1;
+  opacity: .55;
+  pointer-events: none;
+}
 /* MTG | PKM: each game on or off, in its badge colours when on. The last one
    on can't be switched off (owner, 2026-09-29). */
 .game-toggle button.mtg.on { background: var(--pal-indigo); color: #fff; }

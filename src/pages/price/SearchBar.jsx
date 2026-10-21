@@ -89,8 +89,9 @@ export default function SearchBar({
         </div>
         {onAuto && (
           <div className="lang-toggle mode-toggle" role="radiogroup" aria-label="mimp mode">
-            {/* 🌼 clears the search after each card, the default; 🦇 is mimp mode, keeping it (decision 323). */}
-            {[[false, '🌼'], [true, '🦇']].map(([on, mark]) => (
+            {/* 🌼 clears the search after each card, the default; 🦇 is mimp mode, keeping it (decision 323).
+                Each says so underneath, small and faint: AUTO, OFF (owner, 2026-10-20). */}
+            {[[false, '🌼', 'AUTO'], [true, '🦇', 'OFF']].map(([on, mark, word]) => (
               <button
                 key={mark}
                 type="button"
@@ -100,7 +101,8 @@ export default function SearchBar({
                 title={on ? 'mimp mode: keep the search after each card' : 'Clear the search after each card'}
                 onClick={() => auto !== on && onAuto(on)}
               >
-                {mark}
+                <span className="mode-mark">{mark}</span>
+                <span className="mode-word" aria-hidden="true">{word}</span>
               </button>
             ))}
           </div>

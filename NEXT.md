@@ -67,6 +67,10 @@ and function.
 
 ## Done
 
+- 2026-10-20: **AUTO and OFF on the 🌼 | 🦇 pill** (decision 418), on the owner's ask: `SearchBar.jsx` (`mode-mark`,
+  `mode-word`), `src/styles/price/search.css`. The pill's live height wasn't measured (the built-in browser refused
+  https://localhost:5180); the words take no layout space instead. Untested in the app.
+
 - 2026-10-20: **Export sell floor, set in Settings; "Export rates for bulk"** (decision 417), on the owner's ask:
   `SellFloorPanel.jsx` (the Floor box, the rounding table with Buy / Sell, help), `sellFloorFrom` in `money.js`,
   `useSellFloor` in `settings.jsx`, `sellPriceFor`'s `floor`, `sellPrices` in `ccExport.js`, `DayPage.jsx`,
