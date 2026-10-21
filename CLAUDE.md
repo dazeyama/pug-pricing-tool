@@ -110,16 +110,16 @@ tests (`npm test`, commit only on `fail 0`) and the build.
   "Retired documents" row at the top of `docs/DESIGN_SPEC.md`. Code comments citing them mean those copies,
   `git show d158ee3:<path>`.
 
-## Where it stands (2026-10-20)
+## Where it stands (2026-10-21)
 
-- Live: **v1.0.0-launch** (2026-10-19), the first build on **prod** (`zvxquzcfffmxwizonxuo`), then pushes without a
-  bump, the last on 2026-10-20 (decisions through 399): the GitHub Actions variables point there. Localhost and the phone scanner's LAN link stay on dev
-  (`.env.development`), which keeps the store's data from before launch as the test copy.
+- Live: **v1.0.1-day1** (2026-10-21, decisions through 425), on **prod** (`zvxquzcfffmxwizonxuo`, the live site's
+  project since v1.0.0-launch, 2026-10-19): the GitHub Actions variables point there. Localhost and the phone
+  scanner's LAN link stay on dev (`.env.development`), which keeps the store's data from before launch as the test
+  copy.
 - The migrations were squashed on 2026-10-19: the baseline `0001` stands in for the old 0001–0084 (now in
-  `supabase/migrations-archive/`). Prod has 0001–0004 (0002 the Changelog lock, 0003 the counter grant,
-  2026-10-19; 0004 the review leftovers, 2026-10-20). Dev also has 0005 (pulled bulk), 0006 (settings logged) and
-  0007 (inventory cleared in batches), held by the owner on 2026-10-20 to go to prod together (NEXT.md's first Open
-  item). They stay equal from then on (decision 381). The next migration is 0008.
+  `supabase/migrations-archive/`). Prod and dev both have 0001–0007 (0002 the Changelog lock, 0003 the counter
+  grant, 2026-10-19; 0004 the review leftovers, 2026-10-20; 0005 pulled bulk, 0006 settings logged and 0007 the
+  inventory cleared in batches, on prod 2026-10-21). They stay equal (decision 381). The next migration is 0008.
 - The CLI stays linked to dev (`supabase/.temp/project-ref`). Anything aimed at prod names it:
   `--linked --project-ref zvxquzcfffmxwizonxuo` for `migration list`, `db push` and `db query` (the flag overrides
   the link for that one command; the function deploys take `--project-ref` alone); no password was asked for it

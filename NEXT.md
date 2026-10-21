@@ -6,44 +6,31 @@ and function.
 
 ## Open
 
-- **Prod doesn't have migrations 0005–0007 yet** (2026-10-20, 9:30 PM): dev has 0001–0007, prod 0001–0004
-  (decision 381). The owner held the 9:30 PM push for 0007, so all three go to prod together. The step: CLAUDE.md,
-  Database, step 6, comparing with `C:\ClaudeProjects\temp\pug-0007\dev-run-0007.json`; ask the owner first, after
-  9:30 PM recommended. 0005 keeps the live site working (`export_lines`' new `p_pulled` defaults to none). 0006
-  refuses a Settings save with no user picked, which the live build already prevents for the boxes. The app code that
-  needs them can't be pushed before prod has them.
-- **Push the app soon after prod has 0007** (decision 414, review finding): with 0007, the live build's uploads no
-  longer time out, but it never clears the old file, so each upload from it leaves another full copy (~152k
-  products) in the database (Free plan, 500 MB). The live site most likely also holds the copy from the owner's
-  timed-out upload (its undo, `master_inventory_abort`, is the same single delete). The first upload from the new
-  build clears both.
-- **Inventory leftovers** (decision 414): `master_inventory_abort` is unused by the new build (kept for the live
-  one); retire it in a later migration, with its test-run checks and its place in the security-definer list. A
-  stored `.gz` can be left in the `master-inventory` bucket if the clearing's last answer is lost
-  (`pruneProducts`, `src/lib/masterInventory.js`).
-- **Settings in the Changelog** (decision 412, migration 0006, on dev): settings saved, the inventory uploaded, the
-  JustTCG key saved or removed and a match forgotten go under Actions with a "Settings" chip. Untested in the app.
-  From the review, left as is: the live build shows the new action names raw on Home until a
-  push; `settings_log` takes the app's sentence as written; the key and match entries are guarded for a user only by
-  the app and `settings_log`.
-- **Unpushed** (2026-10-21): the commits since the last push: the stamp check removed (400), the team's six
-  feedback items (401–407, migration 0005), Export single buy's and Print buy's splits (408, 409), the by-color
-  sort's loading state (410), the $24 bulk defaults (411), settings in the Changelog (412, migration 0006), the
-  mixed-rates * (413), the inventory cleared in batches (414, migration 0007), the phone's Undo fix (415), the
-  Export rates for bulk (416), the Export sell floor (417), AUTO / OFF on the pill (418) and the owner's batch of
-  2026-10-21 (419–424, no migration). The app code that needs 0005–0007 can't be pushed before prod has them.
-- **The live site's bulk values** (decision 411, the owner's to do): Settings → Bulk values on the live site, type
-  **24** in Rares & Mythics and in EXs. Prod isn't written from the CLI (decision 380). Until then, if prod has no
-  saved `bulk_values`, the live site takes the code's defaults, $24 once pushed and $2.40 before. Push only on the owner's ask, once prod has 0005.
-- **Not built, from the feedback batch:** Home has no tile for Bulk pulled from exports (it's on the Collections tab, System); the `settings_save` first-save race is tested only one save
-  after the other.
+- **The live site's first inventory upload on v1.0.1-day1** (decision 414): the live site most likely holds a
+  second full copy of the Master Crystal Inventory (~152k products) from the owner's timed-out upload on the old
+  build, and any uploads since. The first upload from the new build clears them ("Clearing the old file…").
+- **For migration 0008, when there's a reason to write one** (the v1.0.1-day1 pre-push review): the database's
+  words still say "under $1" and "(>$1)" where the cut is now a setting (decision 416): `pulled_ensure`'s fixed note
+  on Bulk pulled from exports ("Cards under $1 pulled out of an Export MTG csv (>$1) batch…", shown on its details
+  bar), `internal.pulled_copy`'s and `export_lines`' Changelog summaries ("N under $1 pulled"). Stored summaries
+  stay as written. And retire `master_inventory_abort`, unused by the new build (decision 414), with its test-run
+  checks and its place in the security-definer list. A stored `.gz` can be left in the `master-inventory` bucket if
+  the clearing's last answer is lost (`pruneProducts`, `src/lib/masterInventory.js`).
+- **Two small edges from the v1.0.1-day1 pre-push review** (plausible, not confirmed): a Pokémon buy's ⋯ → ◂ Print
+  → Print buy isn't greyed offline though the printout fetches today's prices (decision 404; `BuyPanel.jsx`, the
+  Magic one is), so offline it fails with a toast instead; `ApiKeysPanel.jsx` reads `staff.current.id` for the
+  Changelog entry after the key's save returns, so a user un-picked meanwhile loses the entry (the key is saved).
+- **Settings in the Changelog** (decision 412, migration 0006): from the review, left as is: `settings_log` takes
+  the app's sentence as written; the key and match entries are guarded for a user only by the app and
+  `settings_log`.
+- **From the feedback batch:** the `settings_save` first-save race is tested only one save after the other.
 - **After the launch push (v1.0.0-launch, 2026-10-19), the owner's setup on the live site.** Done the same night:
   signed in with prod's store password, the JustTCG key saved and a price came back, so `secrets` and `prices` are
   proven on prod. Left as the owner gets to them: name the computer, add the users, upload the CC CSV; every store
   computer signs in again. The Supabase plan: Free for now (decision 376). The clean-up (the spec's Phase 10 list, `C:\ClaudeProjects\temp\pug-squash\` included)
   waits until prod has run a while.
-- **The smoke test pass** (`docs/TEST.md`, 215 cases): planned before the squash and the switch, not done; neither
-  changed behaviour, so it still covers this build. On dev only, never the live site (decision 380); TEST.md's
+- **The smoke test pass** (`docs/TEST.md`, 237 cases): planned before the squash and the switch, not done; the
+  owner will run it soon (2026-10-21). On dev only, never the live site (decision 380); TEST.md's
   "pair on the live site's address and scan a stack" case and SETUP.md's "price one card" check after restoring a
   paused project write to prod and need rewording to fit that rule (the pre-push review, 2026-10-20).
 - **TEST.md has no case for decision 374** (the launch review): the 🚩 following the press that went through, and
@@ -52,6 +39,23 @@ and function.
   - watch JustTCG usage and the plan (Appendix D 4);
 
 ## Done
+
+- 2026-10-21: Pushed as **v1.0.1-day1** (tag `v1.0.1-day1`), on the owner's ask: the 42 commits since
+  v1.0.0-launch's last no-bump push (the version commit, "+ Start project" and TEST.md's cut words included),
+  decisions 400–425: the stamp check removed (400), the team's six feedback items
+  (401–407), the split exports and prints (408, 409), the by-color sort's loading state (410), the $24 bulk
+  defaults (411), settings in the Changelog (412), the mixed-rates * (413), the inventory cleared in batches (414),
+  the phone's Undo fix (415), Export rates for bulk and Export sell floor (416, 417), AUTO / OFF on the pill
+  (418), the batch of seven (419–424), the flyouts to the left (425), and Help brought up to date for all of it.
+  **Migrations 0005–0007 went to prod first**, at about 2:07 AM with the store closed, on the owner's word: the dry run
+  listed the three, `db push --linked --project-ref zvxquzcfffmxwizonxuo` applied them, prod's record reads
+  0001–0007, and the structure-only comparison with `C:\ClaudeProjects\temp\pug-0007\dev-run-0007.json` read nine
+  fingerprints the same in 8.6 s, nothing run or written on prod. Dev and prod are equal; the CLI stays linked to
+  dev. No Edge Function changes. Nothing unpushed.
+
+- 2026-10-21: The owner's closures: the live site's Bulk values are 24 (decision 411, done by the owner); no Home
+  tile for Bulk pulled from exports ("We don't need it"); the owner QA'd the commits since 400 as they were made
+  ("Don't worry. Closed."), the smoke pass still to come.
 
 - 2026-10-21: **Group flyouts open to the left, the arrow on the left** (decision 425), on the owner's screenshot:
   `GroupRow` in `MenuItems.jsx` (right only with no room on the left; ← or → opens, the arrow pointing back closes),
