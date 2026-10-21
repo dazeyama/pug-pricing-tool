@@ -3,7 +3,8 @@
 
 import { supabase } from './supabase.js';
 import { withLoading } from './loading.js';
-import { backupFileName } from './backup.js';
+import { FORMAT, READ_ORDER, VERSION, backupFileName, tidyTables } from './backup.js';
+import { allPages } from './inChunks.js';
 import { dbMessage } from './dbErrors.js';
 
 /* global __APP_VERSION__ */
@@ -22,14 +23,33 @@ function downloadJson(data, name) {
 }
 
 /**
+ * Every backup table, a table and a page at a time (decision 426: the one-call `backup_export`
+ * neared the app's 8 s statement limit and timed out twice), made whole by `tidyTables`. The file is
+ * the same as `backup_export`'s, so restores and older files are unchanged.
+ */
+async function readBackup() {
+  const exportedAt = new Date().toISOString();
+  const tables = {};
+  for (const { table, order } of READ_ORDER) {
+    const { data, error } = await allPages((a, b) => {
+      let q = supabase.from(table).select('*', { count: 'exact' });
+      for (const column of order) q = q.order(column);
+      return q.range(a, b);
+    });
+    if (error) throw new Error(`Couldn't make the backup (${table}): ${error.message}`);
+    tables[table] = data;
+  }
+  return { format: FORMAT, version: VERSION, exported_at: exportedAt, tables: tidyTables(tables) };
+}
+
+/**
  * Download a backup of everything now, and record when (last_backup_at, which
  * the reminder banner reads on every computer).
  * @param {{ userId?: string|null, note?: string }} [opts]  note: "before-restore" for the automatic one
  * @returns {Promise<string>} the file name
  */
 export async function saveBackup({ userId = null, note = '' } = {}) {
-  const { data, error } = await withLoading(() => supabase.rpc('backup_export'));
-  if (error) throw new Error(`Couldn't make the backup: ${error.message}`);
+  const data = await withLoading(readBackup);
   const name = backupFileName(new Date(), note);
   downloadJson({ ...data, app_version: __APP_VERSION__ }, name);
   const { error: stampError } = await supabase.from('settings').upsert({
