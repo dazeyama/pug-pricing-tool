@@ -228,7 +228,7 @@ function HomeScreen({ today }) {
             <button type="button" className="btn" onClick={() => go('/price')}>Buy cards</button>
             <button type="button" className="btn" onClick={() => go(`/calendar/mtg/${today}`)}>Today's day</button>
             {/* They make something, so they need a user like the Collections tab's (smoke test 2026-10-11, F1). */}
-            <GuardButton className="btn" onClick={() => go('/collections', { create: 'project' })}>+ Start Project</GuardButton>
+            <GuardButton className="btn" onClick={() => go('/collections', { create: 'project' })}>+ Start project</GuardButton>
             <GuardButton className="btn" onClick={() => go('/collections', { create: 'overnight' })}>+ Overnight buy</GuardButton>
           </div>
         </section>

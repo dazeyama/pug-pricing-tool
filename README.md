@@ -365,7 +365,7 @@ The background band takes the current user's colour.
 |---|---|
 | **Buy cards** | Opens the **Buy** tab. |
 | **Today's day** | Opens today's Magic day page. |
-| **+ Start Project** | Opens **Collections** with the new project form. |
+| **+ Start project** | Opens **Collections** with the new project form. |
 | **+ Overnight buy** | Opens **Collections** with the new overnight buy form. |
 
 ### Overnight buys and projects
@@ -807,7 +807,7 @@ Every overnight buy, project and system collection, in three tables.
 | | |
 |---|---|
 | **Import Collection** | Picks a CSV file and turns it into a new project. See [Import Collection](#-import-collection). |
-| **+ Start Project** | Opens the new project form. |
+| **+ Start project** | Opens the new project form. |
 | **+ Overnight buy** | Opens the new overnight buy form. |
 | **Search name or phone…** | Narrows all three tables. |
 | **Status pills** | On the Overnight buys table: **All**, **Processing**, **Priced**, **Paid/Ours Cash**, **Paid/Ours Credit**, **Completed**, **Rejected**. |
@@ -844,7 +844,7 @@ The name suggests past customers, as on CONFIRM BUY. Picking one fills in the ph
 
 **Create** makes the overnight buy in **Processing** and opens it.
 
-### + Start Project
+### + Start project
 
 A **Name** and optional **Notes**. **Start** makes the project and opens it. A project starts as
 **Ours** and has no phone, ID, offer or price paid.

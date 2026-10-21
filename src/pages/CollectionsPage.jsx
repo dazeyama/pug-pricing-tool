@@ -118,7 +118,7 @@ const columns = (by, menu) => [
 /**
  * The Collections tab (spec 9.1): every collection, live, in three tables
  * (owner, 2026-10-01): Overnight buys (+ Overnight buy, with the status
- * filter; "Collections" until decision 421), Projects (the store's own cards, + Start Project) and System
+ * filter; "Collections" until decision 421), Projects (the store's own cards, + Start project) and System
  * (Can't upload cards), in that order since 2026-10-14 (owner). One
  * name/phone search and one sort for all three, and a line on the ones open
  * on another computer.
@@ -151,7 +151,7 @@ export default function CollectionsPage() {
   const [status, setStatus] = useState('all');
   const [query, setQuery] = useState('');
   const location = useLocation();
-  // Home's + Start Project / + Overnight buy arrive with the window to open.
+  // Home's + Start project / + Overnight buy arrive with the window to open.
   const [creating, setCreating] = useState(() => {
     const want = location.state?.create;
     return want === 'project' || want === 'overnight' ? want : null;
@@ -255,7 +255,7 @@ export default function CollectionsPage() {
   }
 
   /**
-   * + Overnight buy, or + Start Project (just a name and notes). Create pressed again after its
+   * + Overnight buy, or + Start project (just a name and notes). Create pressed again after its
    * answer was lost makes one, not two (decision 388): the same request id, done once.
    */
   async function create({ name, phone, idLast4, notes }) {
@@ -389,7 +389,7 @@ export default function CollectionsPage() {
           }}
         />
         <GuardButton className="btn primary big new-col-btn" onClick={() => setCreating('project')}>
-          + Start Project
+          + Start project
         </GuardButton>
         <GuardButton className="btn primary big new-col-btn" onClick={() => setCreating('overnight')}>
           + Overnight buy
@@ -411,7 +411,7 @@ export default function CollectionsPage() {
         noMatch: 'No overnight buys match.',
       })}
       {section('project', 'Projects', {
-        empty: 'No projects yet. Press + Start Project to price a box of the store’s own cards.',
+        empty: 'No projects yet. Press + Start project to price a box of the store’s own cards.',
         noMatch: 'No projects match.',
       })}
       {section('system', 'System', {

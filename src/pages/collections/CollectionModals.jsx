@@ -58,7 +58,7 @@ export function nameError(text) {
 }
 
 /**
- * + Start Project (owner, 2026-10-01): a box of cards the store already
+ * + Start project (owner, 2026-10-01; "+ Start Project" until 2026-10-21): a box of cards the store already
  * owns, priced for an export. Just a name and notes: no phone, no ID.
  */
 export function NewProjectModal({ busy, onCreate, onClose }) {

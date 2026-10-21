@@ -105,7 +105,7 @@ export const PAGES = [
   {
     id: 'new-collection', chapter: 'Collections', start: 'Collections tab > + Overnight buy',
     title: 'New overnight buys and projects',
-    images: [{ src: 'new-collection', caption: '+ Overnight buy' }, { src: 'new-project', caption: '+ Start Project' }],
+    images: [{ src: 'new-collection', caption: '+ Overnight buy' }, { src: 'new-project', caption: '+ Start project' }],
   },
 
   // A collection

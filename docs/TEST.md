@@ -367,7 +367,7 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
 
 ## 12. Collections tab: projects
 
-- [ ] **+ Start Project** `SMOKE Project` opens it as Ours, with no phone, ID, offer or paid rows.
+- [ ] **+ Start project** `SMOKE Project` opens it as Ours, with no phone, ID, offer or paid rows.
 - [ ] **Prices round up:** the same card and condition costs as much or more in the project as in a collection ($12.40
       → $13 here, $12 there); the tooltips, Use TCGplayer and Use Cardmarket say "rounded up from"; Cash and Credit
       still round down.
