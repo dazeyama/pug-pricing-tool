@@ -6,11 +6,20 @@ and function.
 
 ## Open
 
-- **Unpushed** (2026-10-21): the smoke pass's fixes and notes (decisions 426, 427): Show all after a customer
-  search, backups a table and a page at a time, the Convert count, the buy's undo naming Bulk pulled, the one-rate
-  *, TEST.md's reworded cases and decision 329's note; the lock on a finish switch, CONFIRM BUY closing when its
-  buy is gone, "Ours" for projects, "are empty", today's prints; Help's "worker" and they/them (428); Help reworded
-  in the plain style (429). None needs a migration.
+- **F2 reopened: the backup can hit the 8 s statement limit** (decision 430): a Download backup failed with a 500
+  once, and Restore's first press with "canceling statement due to statement timeout" (`backup_export`, one call for
+  every table, 2 to 7.7 s on dev). The paged read that fixed it (decision 426) could leave cards out of the file
+  when anything changed while it read, so it was undone. A fix must keep one read at one instant, so it needs the
+  database (a migration): take it with the next one.
+- **From the 2026-10-21 pre-push review, small, not fixed:** reopening a closed customer search shows Show all off
+  until a letter is typed (`SearchBox.jsx`, the search effect keyed on `[text, showAll]`); a list whose every card
+  is low-end (one rate, not the list's) shows no "*" (`rates.js` `mixedRateLines`, as decision 426 words it);
+  TEST.md has no cases for decisions 426 and 427's changes (the lock on a finish switch, CONFIRM BUY closing,
+  "Ours", today's prints, Show all staying off, the one-rate *, the Convert count), nor for 430's CONFIRM BUY
+  (wifi pulled mid-press so the buy saves and its answer is lost; wifi back: the dialog stays open at 0 cards and
+  the next press gives BUY COMPLETE). Plausible, not confirmed: if the connection comes back while that press is
+  still checking its own answer, and the check fails anyway, the dialog can still close (`useDraft.js` clears
+  `unsure` before `confirm_buy` and sets it again only after `run` returns).
 - **Not run by Claude in the 2026-10-21 smoke pass, still the owner's:** section 10 (the phone), the two-computer,
   network-off and store cases.
 - **The live site's first inventory upload on v1.0.1-day1** (decision 414): the live site most likely holds a
@@ -44,6 +53,14 @@ and function.
   - watch JustTCG usage and the plan (Appendix D 4);
 
 ## Done
+
+- 2026-10-21: Pushed, no bump (still v1.0.1-day1), on the owner's ask: the commits since v1.0.1-day1, decisions
+  426–430: the smoke pass's fixes and notes (Show all after a customer search, the Convert count, the buy's undo
+  naming Bulk pulled, the one-rate *, the lock on a finish switch, CONFIRM BUY closing when its buy is gone but not
+  while a lost answer waits, "Ours" for projects, "are empty", today's prints), TEST.md's reworded cases, decision
+  329's note, and Help: "the worker" and they/them, then reworded in the plain style. The paged backup (426) was
+  undone before the push, on the review's finding (430): Download backup is the one call to `backup_export`, as on
+  v1.0.1-day1. No migrations (prod and dev on 0001–0007), no Edge Function changes. Nothing unpushed.
 
 - 2026-10-21: **Help reworded in the plain style, every fact kept** (decision 429, the owner's ask): `README.md`,
   1,836 lines to 1,850, wording only; headings, links, pictures, keys, amounts and bold labels identical. The fact

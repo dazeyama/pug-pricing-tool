@@ -112,8 +112,9 @@ tests (`npm test`, commit only on `fail 0`) and the build.
 
 ## Where it stands (2026-10-21)
 
-- Live: **v1.0.1-day1** (2026-10-21, decisions through 425), on **prod** (`zvxquzcfffmxwizonxuo`, the live site's
-  project since v1.0.0-launch, 2026-10-19): the GitHub Actions variables point there. Localhost and the phone
+- Live: **v1.0.1-day1** (2026-10-21), then pushes without a bump, the last on 2026-10-21 (decisions through 430),
+  on **prod** (`zvxquzcfffmxwizonxuo`, the live site's project since v1.0.0-launch, 2026-10-19): the GitHub Actions
+  variables point there. Localhost and the phone
   scanner's LAN link stay on dev (`.env.development`), which keeps the store's data from before launch as the test
   copy.
 - The migrations were squashed on 2026-10-19: the baseline `0001` stands in for the old 0001–0084 (now in
