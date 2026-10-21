@@ -6,6 +6,8 @@ AS $function$
 declare
   v_id uuid;
 begin
+  -- A user, always (decision 412): the upload is in the Changelog under their name.
+  if p_uploaded_by is null then raise exception 'no_user'; end if;
   insert into master_inventory_files
     (storage_path, original_filename, size_bytes, row_count, columns, uploaded_by, is_current)
   values

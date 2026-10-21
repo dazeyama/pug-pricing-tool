@@ -5,6 +5,9 @@ import { DEFAULT_TIERS } from '../lib/rates.js';
 import { DEFAULT_BULK_VALUES } from '../lib/bulk.js';
 import { dbErrorCode } from '../lib/dbErrors.js';
 import { useToast } from '../components/Toast.jsx';
+import { PICK_USER_FIRST, useStaff } from './staff.jsx';
+import { useDevice } from './device.jsx';
+import { settingSummary } from '../lib/settingText.js';
 
 /** A save refused because this screen was out of date (decision 354). */
 const STALE_SETTINGS = 'Settings changed on another computer: check and save again';
@@ -34,6 +37,8 @@ export const DEFAULTS = {
 const SettingsContext = createContext(null);
 
 export function SettingsProvider({ children }) {
+  const staff = useStaff();
+  const { deviceId } = useDevice();
   const { data, loaded, error, reload } = useLiveTable('settings', () =>
     supabase.from('settings').select('key, value, updated_at, updated_by'));
 
@@ -76,6 +81,11 @@ export function SettingsProvider({ children }) {
    * @returns {Promise<string|null>} an error message, or null
    */
   function save(key, next, userId) {
+    // A user, and a Changelog entry saying what changed (decision 412).
+    if (!userId) {
+      staff.pulse();
+      return Promise.resolve(PICK_USER_FIRST);
+    }
     const run = async () => {
       const latest = latestOf(key);
       const base = DEFAULTS[key];
@@ -84,7 +94,8 @@ export function SettingsProvider({ children }) {
         : latest.value ?? base;
       const value = typeof next === 'function' ? next(now) : next;
       const { data: at, error } = await supabase.rpc('settings_save', {
-        p_key: key, p_value: value, p_user: userId ?? null, p_expected: latest.at,
+        p_key: key, p_value: value, p_user: userId, p_expected: latest.at,
+        p_device: deviceId ?? null, p_summary: settingSummary(key, now, value),
       });
       if (error) {
         delete written.current[key];

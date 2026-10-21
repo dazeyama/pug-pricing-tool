@@ -59,7 +59,9 @@ export const CATEGORIES = [
       'buy_exported', 'buy_unexported',
       'cash_buys_downloaded',
       // 📞 on a Priced collection (owner, 2026-10-02).
-      'collection_called'],
+      'collection_called',
+      // Settings changes (decision 412): a setting saved, the inventory uploaded, the JustTCG key, a match forgotten.
+      'setting_changed', 'inventory_uploaded', 'justtcg_key_saved', 'justtcg_key_removed', 'cc_match_forgotten'],
   },
 ];
 /** Milestones are always shown (a backup restore, Phase 10). */
@@ -116,6 +118,11 @@ export const HEADLINES = {
   pulled_exported: 'Exported from pulled bulk',
   pulled_returned: 'Pulled bulk returned',
   backup_restored: 'Backup restored',
+  setting_changed: 'Setting changed',
+  inventory_uploaded: 'Master Crystal Inventory uploaded',
+  justtcg_key_saved: 'JustTCG key saved',
+  justtcg_key_removed: 'JustTCG key deleted',
+  cc_match_forgotten: 'Remembered match forgotten',
 };
 /**
  * An entry's headline: HEADLINES by its action, except a project made, which

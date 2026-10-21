@@ -419,7 +419,7 @@ function Entry({ view, side, targets, game, onFunnel }) {
           <div className="tl-title">
             <span className={`ch-kind ${first.kind}`}>
               {DAY_ACTIONS.has(first.action) ? 'Day' : MONTH_ACTIONS.has(first.action) ? 'Month'
-                : first.kind === 'buy' ? 'Buy' : 'Collection'}
+                : first.kind === 'buy' ? 'Buy' : first.kind === 'app' ? 'Settings' : 'Collection'}
             </span>
             <strong>
               {to ? <Link to={to}>{first.target_name}</Link>

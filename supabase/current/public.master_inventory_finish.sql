@@ -21,6 +21,10 @@ begin
     delete from master_inventory_files where id <> p_file_id returning storage_path
   )
   select coalesce(array_agg(storage_path), '{}') into pruned from gone;
+  -- The Changelog (decision 412), under the user who started the upload.
+  perform internal.settings_event(f.uploaded_by, null, 'inventory_uploaded', 'Master Crystal Inventory', '[]'::jsonb,
+    format('Master Crystal Inventory uploaded: %s, %s products.', f.original_filename, f.products_loaded))
+    from master_inventory_files f where f.id = p_file_id;
   return pruned;
 end;
 $function$;

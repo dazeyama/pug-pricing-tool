@@ -3,6 +3,9 @@ import { callFunction } from '../../lib/functions.js';
 import { formatDateTime } from '../../lib/time.js';
 import { useToast } from '../../components/Toast.jsx';
 import { useConnection } from '../../state/connection.jsx';
+import { useStaff } from '../../state/staff.jsx';
+import { useDevice } from '../../state/device.jsx';
+import { logSetting } from '../../lib/settingsLog.js';
 import Modal from '../../components/Modal.jsx';
 
 // Settings → API keys (spec 4.5, 11.2). Everything goes through the
@@ -12,6 +15,8 @@ const PROVIDERS = [{ id: 'justtcg', name: 'JustTCG', note: 'Condition prices for
 
 function KeyRow({ provider, status, reload }) {
   const toast = useToast();
+  const staff = useStaff();
+  const { deviceId } = useDevice();
   const { offline } = useConnection();
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState('');
@@ -31,17 +36,26 @@ function KeyRow({ provider, status, reload }) {
     }
   }
 
-  const save = () => run('save', { action: 'set', provider: provider.id, value }, () => {
+  // A key saved or deleted needs a user and goes in the Changelog, never the key (decision 412).
+  const needUser = () => {
+    if (staff.current) return true;
+    staff.pulse();
+    toast('Pick a user first.', 'err');
+    return false;
+  };
+  const save = () => needUser() && run('save', { action: 'set', provider: provider.id, value }, () => {
     setEditing(false);
     setValue('');
     setTest(null);
     toast(`${provider.name} key saved.`, 'ok');
+    logSetting('justtcg_key_saved', `${provider.name} key saved.`, staff.current.id, deviceId);
     reload();
   });
-  const remove = () => run('delete', { action: 'delete', provider: provider.id }, () => {
+  const remove = () => needUser() && run('delete', { action: 'delete', provider: provider.id }, () => {
     setConfirmDelete(false);
     setTest(null);
     toast(`${provider.name} key deleted.`, 'ok');
+    logSetting('justtcg_key_removed', `${provider.name} key deleted.`, staff.current.id, deviceId);
     reload();
   });
   const runTest = () => run('test', { action: 'test', provider: provider.id }, (data) => setTest(data));

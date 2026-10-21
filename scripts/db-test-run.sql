@@ -3245,6 +3245,53 @@ exception when others then
   perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
 end $$;
 
+-- ============================================ Settings in the Changelog (0006)
+do $$
+declare
+  s text := 'Settings logged (0006)';
+  u uuid := pg_temp.id('u1');
+  a uuid := pg_temp.id('devA');
+  v_at timestamptz;
+begin
+  v_at := (select updated_at from settings where key = 'cash_pct');
+  begin
+    perform settings_save('cash_pct', '51', null, v_at);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'A Settings save needs a user (0006)', sqlerrm, 'no_user');
+  end;
+  perform settings_save('cash_pct', '51', u, v_at, a, 'Master Buy Percentages: Cash 50% → 51%.');
+  perform pg_temp.ok(s, '… and goes in the Changelog under Actions, saying what changed (0006)',
+    exists (select 1 from events where action = 'setting_changed' and kind = 'app' and staff_user_id = u and device_id = a
+              and target_name = 'Master Buy Percentages' and summary = 'Master Buy Percentages: Cash 50% → 51%.'
+              and fields = '[]'::jsonb));
+  perform settings_save('dbtest_tiers', '{"low": 1, "high": 2}', u, null, a, repeat('x', 400));
+  perform pg_temp.ok(s, '… a setting with no name of its own keeps its key, and a long sentence is cut at 300',
+    exists (select 1 from events where action = 'setting_changed' and target_name = 'dbtest_tiers'
+              and length(summary) = 300));
+  perform settings_save('cash_pct', '50', u, (select updated_at from settings where key = 'cash_pct'), a, null);
+  begin
+    perform settings_log(u, a, 'something_else', 'x');
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'settings_log takes only its own actions', sqlerrm, 'bad_action');
+  end;
+  begin
+    perform settings_log(null, a, 'cc_match_forgotten', 'x');
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, '… with a user', sqlerrm, 'no_user');
+  end;
+  perform settings_log(u, a, 'justtcg_key_saved', 'JustTCG key saved.');
+  perform pg_temp.ok(s, 'A JustTCG key saved goes in the Changelog, without the key (0006)',
+    exists (select 1 from events where action = 'justtcg_key_saved' and staff_user_id = u and summary = 'JustTCG key saved.'));
+  begin
+    perform master_inventory_start('dbtest/none.csv.gz', 'none.csv', 1, 1, array['x'], null);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'A Master Crystal Inventory upload needs a user (0006)', sqlerrm, 'no_user');
+  end;
+exception when others then
+  declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;
+  perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
+end $$;
+
 -- ======================================================= Backup and restore
 -- The restore resets the Changelog's numbering; it's set back after.
 reset role;

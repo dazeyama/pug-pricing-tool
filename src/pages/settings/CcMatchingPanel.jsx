@@ -5,6 +5,8 @@ import { formatShortDate } from '../../lib/time.js';
 import Modal from '../../components/Modal.jsx';
 import UserTag from '../../components/UserTag.jsx';
 import { useStaff } from '../../state/staff.jsx';
+import { useDevice } from '../../state/device.jsx';
+import { logSetting } from '../../lib/settingsLog.js';
 import { useConnection } from '../../state/connection.jsx';
 import { useToast } from '../../components/Toast.jsx';
 
@@ -22,6 +24,7 @@ const PAGE = 50;
 
 export default function CcMatchingPanel() {
   const staff = useStaff();
+  const { deviceId } = useDevice();
   const { offline, epoch } = useConnection();
   const toast = useToast();
   const [sets, setSets] = useState(null);
@@ -49,10 +52,20 @@ export default function CcMatchingPanel() {
   }, [loadSets, loadCounts, epoch]);
 
   async function forgetSet(row) {
+    // Needs a user, and goes in the Changelog (decision 412).
+    if (!staff.current) {
+      staff.pulse();
+      toast('Pick a user first.', 'err');
+      return;
+    }
     const { error } = await supabase.from('cc_set_map').delete()
       .eq('scryfall_set', row.scryfall_set).eq('promo_kind', row.promo_kind);
     if (error) toast(`Couldn't forget it: ${error.message}`, 'err');
-    else toast(`Forgot ${row.scryfall_set.toUpperCase()} → ${row.category}.`, 'ok');
+    else {
+      toast(`Forgot ${row.scryfall_set.toUpperCase()} → ${row.category}.`, 'ok');
+      logSetting('cc_match_forgotten', `Set choice forgotten: ${row.scryfall_set.toUpperCase()} → ${row.category}.`,
+        staff.current.id, deviceId);
+    }
     await loadSets();
   }
 
@@ -139,6 +152,7 @@ function ForgetButton({ offline, what, onClick }) {
  */
 function ProductsModal({ offline, onChanged, onClose }) {
   const staff = useStaff();
+  const { deviceId } = useDevice();
   const toast = useToast();
   const [text, setText] = useState('');
   const [rows, setRows] = useState(null);
@@ -173,10 +187,19 @@ function ProductsModal({ offline, onChanged, onClose }) {
   }, [text, limit, reload, toast]);
 
   async function forget(row) {
+    // Needs a user, and goes in the Changelog (decision 412).
+    if (!staff.current) {
+      staff.pulse();
+      toast('Pick a user first.', 'err');
+      return;
+    }
     const { error } = await supabase.from('cc_product_links').delete()
       .eq('scryfall_id', row.scryfall_id).eq('finish', row.finish);
     if (error) toast(`Couldn't forget it: ${error.message}`, 'err');
-    else toast(`Forgot ${row.product_name}.`, 'ok');
+    else {
+      toast(`Forgot ${row.product_name}.`, 'ok');
+      logSetting('cc_match_forgotten', `Remembered match forgotten: ${row.product_name}.`, staff.current.id, deviceId);
+    }
     setReload((n) => n + 1);
     onChanged();
   }

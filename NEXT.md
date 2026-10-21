@@ -6,11 +6,19 @@ and function.
 
 ## Open
 
-- **Prod doesn't have migration 0005 yet** (2026-10-20, 8:34 PM, the store open): dev has 0001–0005, prod
-  0001–0004 (decision 381). The step: CLAUDE.md, Database, step 6, comparing with
-  `C:\ClaudeProjects\temp\pug-0005\dev-run-0005.json` (550 checks, all passed); ask the owner first, after 9:30 PM
-  recommended. 0005 keeps the live site working (`export_lines`' new `p_pulled` defaults to none); the app code that
-  needs it (Export MTG csv (>$1), Bulk pulled from exports) can't be pushed before prod has it.
+- **Prod doesn't have migrations 0005 and 0006 yet** (2026-10-20, 9:30 PM): dev has 0001–0006, prod 0001–0004
+  (decision 381). The owner held the 9:30 PM push for one more migration (0007), so all three go to prod together.
+  The step: CLAUDE.md, Database, step 6, comparing with the newest dev run (0006's is
+  `C:\ClaudeProjects\temp\pug-0006\dev-run-0006.json`, 557 checks, all passed); ask the owner first, after 9:30 PM
+  recommended. 0005 keeps the live site working (`export_lines`' new `p_pulled` defaults to none). 0006 refuses a
+  Settings save with no user picked, which the live build already prevents for the boxes. The app code that needs them
+  can't be pushed before prod has them.
+- **Settings in the Changelog** (decision 412, migration 0006, on dev): settings saved, the inventory uploaded, the
+  JustTCG key saved or removed and a match forgotten go under Actions with a "Settings" chip. Untested in the app.
+  Not covered by the test run: the `inventory_uploaded` entry from `master_inventory_finish` (running it replaces
+  dev's inventory). From the review, left as is: the live build shows the new action names raw on Home until a
+  push; `settings_log` takes the app's sentence as written; the key and match entries are guarded for a user only by
+  the app and `settings_log`.
 - **Unpushed** (2026-10-20): 11 commits since the last push: the stamp check removed (400), the team's six
   feedback items (401–407, migration 0005), Export single buy's and Print buy's splits (408, 409), the by-color
   sort's loading state (410) and the $24 bulk defaults (411).

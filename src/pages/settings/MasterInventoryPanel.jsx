@@ -25,7 +25,13 @@ export default function MasterInventoryPanel() {
   async function onPicked(e) {
     const file = e.target.files?.[0];
     e.target.value = '';                      // so picking the same file again still fires
-    if (!file || !staff.current) return;
+    if (!file) return;
+    // An upload needs a user, and the database puts it in the Changelog (decision 412).
+    if (!staff.current) {
+      staff.pulse();
+      setError('Pick a user first, then choose the file again.');
+      return;
+    }
     setError('');
     setBusy(true);
     setStage({ step: 'check', pct: 0 });
