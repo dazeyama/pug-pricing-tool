@@ -113,7 +113,9 @@
 /* Bulk export rates (decision 416): 1¢ to $3, red to the first dot, amber to the second, the
    rest kept; the dots move only after EDIT. */
 .cut-bottom { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: end; margin-top: 14px; }
-.cut-foot { display: flex; justify-content: flex-end; gap: 6px; }
+/* EDIT (or CANCEL / SAVE) pinned to the panel's bottom right corner, big (owner, 2026-10-20). */
+.cut-panel { position: relative; }
+.cut-foot { position: absolute; right: 12px; bottom: 12px; display: flex; gap: 8px; }
 .cut-slider { margin: 30px 12px 4px; }
 .cut-track { position: relative; height: 6px; }
 .cut-band { position: absolute; top: 0; bottom: 0; }

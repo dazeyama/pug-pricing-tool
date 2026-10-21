@@ -108,7 +108,7 @@ export default function BulkExportRatesPanel() {
   }
 
   return (
-    <section className="cardpanel settings-panel">
+    <section className="cardpanel settings-panel cut-panel">
       <div className="cardpanel-head"><strong>Bulk export rates</strong></div>
       <div className="cardpanel-body">
         <p className="hint">
@@ -130,16 +130,16 @@ export default function BulkExportRatesPanel() {
           <div className="cut-foot">
             {draft ? (
               <>
-                <button type="button" className="btn small ghost" disabled={saving} onClick={() => setDraft(null)}>
+                <button type="button" className="btn big ghost" disabled={saving} onClick={() => setDraft(null)}>
                   CANCEL
                 </button>
-                <GuardButton className="btn small primary" disabled={saving} onClick={onSave}>
+                <GuardButton className="btn big primary" disabled={saving} onClick={onSave}>
                   {saving ? 'Saving…' : 'SAVE'}
                 </GuardButton>
               </>
             ) : (
               <GuardButton
-                className="btn small"
+                className="btn big"
                 disabled={!loaded}
                 title={loaded ? undefined : "Settings haven't loaded yet"}
                 onClick={() => setDraft({ red: cents(cut.red), amber: cents(cut.amber) })}
