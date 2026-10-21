@@ -447,15 +447,16 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       prints nothing.
 - [ ] **Print buy (>$1)** (decision 409): a Magic buy's ⋯ → Print ▸ Print buy (>$1): only its cards at $1.00 or more
       today, with their prices; Print buy (all) prints them all.
-- [ ] **A buy's ⋯ in groups** (decision 422): a Magic buy's ⋯ reads Mark as completed, Print ▸, Export ▸, Convert ▸,
-      Edit in project view, Delete buy…; pointing at Print ▸ opens its two items beside the menu (to the left, the
-      menu being at the panel's right edge), pointing at Export ▸ swaps to its items, a click on a group toggles it,
-      → opens and ← closes from the keyboard; a greyed item in a group shows its reason. A Pokémon buy's Print ▸ has
+- [ ] **A buy's ⋯ in groups** (decisions 422, 425): a Magic buy's ⋯ reads Mark as completed, ◂ Print, ◂ Export,
+      ◂ Convert, Edit in project view, Delete buy…; pointing at ◂ Print opens its two items to the left of the menu,
+      pointing at ◂ Export swaps to its items, a click on a group toggles it, ← or → opens and → (pointing back at
+      the group) closes from the keyboard; a greyed item in a group shows its reason. A Pokémon buy's ◂ Print has
       Print buy and Print stickers.
-- [ ] **EXPORT ▾ in groups** (decision 422): a Magic day's EXPORT ▾ shows Print ▸ (Print MTG (all), (>$1.49)) and
-      Export ▸ (Export MTG csv (all), (>$1.49)); a Pokémon day's shows Print ▸ (Print PKM?, Print PKM Stickers?) and
-      Complete day… on its own; a collection's Print ▸ has all four prints; Can't upload cards' Export csv is on its
-      own. A blocked Export item still says why when clicked.
+- [ ] **EXPORT ▾ in groups** (decisions 422, 425): a Magic day's EXPORT ▾ shows ◂ Print (Print MTG (all), (>$1.49))
+      and ◂ Export (Export MTG csv (all), (>$1.49)), each opening to the left; a Pokémon day's shows ◂ Print (Print
+      PKM?, Print PKM Stickers?) and Complete day… on its own; a collection's ◂ Print has all four prints; Can't upload
+      cards' Export csv is on its own. A blocked Export item still says why when clicked. With the window narrowed
+      so a flyout can't fit to the left of the day page's ⋯, it opens to the right and the arrow reads "Print ▸".
 - [ ] **The printout's foot** (decision 419): on Print MTG (all), "Page 1 of N" sits at the right margin and the key
       ("Today's market price: amber = …, red = …") runs from the left without touching it.
 - [ ] **Export single buy (>$1)** (decision 408): a Magic buy's ⋯ → Export single buy (>$1): its cards under $1 are

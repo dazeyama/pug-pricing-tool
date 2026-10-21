@@ -10,10 +10,12 @@ import { flattenGroups } from '../lib/menuGroups.js';
  * - a leaf: `{ label, onClick, title?, blocked?, danger?, needsUser?, saysWhy? }`.
  *   `blocked` is why it can't run, for its tooltip; it's greyed and inert
  *   unless `saysWhy`, when it still runs (EXPORT's items toast the reason).
- * - a group: `{ label, items }`. It ends in ▸ and opens its items in a flyout
- *   beside it, on hover (the way a Windows menu does) or a click; → opens it
- *   from the keyboard, ← closes it. It opens to the left when the window's
- *   edge is near, and upward when the foot is.
+ * - a group: `{ label, items }`. It starts with ◂ and opens its items in a
+ *   flyout to its left (owner, 2026-10-21; decision 425), on hover (the way a
+ *   Windows menu does) or a click; ← or → opens it from the keyboard, and the
+ *   arrow key pointing back at the group closes it. Only with no room on the
+ *   left does it open to the right, the arrow moving to that side; it opens
+ *   upward when the window's foot is near.
  *
  * A group with one item is shown as that item, on the root (owner: nothing
  * hides behind an arrow alone); one with none is left out (lib/menuGroups.js).
@@ -74,10 +76,10 @@ function Leaf({ item, onPick, needsUser, onHover }) {
 function GroupRow({ item, open, onHover, onToggle, onPick, needsUser }) {
   const row = useRef(null);
   const sub = useRef(null);
-  const [place, setPlace] = useState({ left: false, up: false });
-  // Where the flyout fits, once it's drawn: beside the item to the right, else to the left; down
-  // from its top, else up from its foot. Measured on the screen, then in the zoomed app's own px
-  // (lib/uiScale.js), as MoreMenu's float placement is.
+  const [place, setPlace] = useState({ right: false, up: false });
+  // Where the flyout fits, once it's drawn: to the item's left (decision 425), else to the right;
+  // down from its top, else up from its foot. Measured on the screen, then in the zoomed app's own
+  // px (lib/uiScale.js), as MoreMenu's float placement is.
   useLayoutEffect(() => {
     if (!open || !row.current || !sub.current) return;
     const r = row.current.getBoundingClientRect();
@@ -85,10 +87,11 @@ function GroupRow({ item, open, onHover, onToggle, onPick, needsUser }) {
     const w = sub.current.offsetWidth * zoom;
     const h = sub.current.offsetHeight * zoom;
     setPlace({
-      left: r.right + 2 + w > document.documentElement.clientWidth - 8,
+      right: r.left - 2 - w < 8,
       up: r.top + h > window.innerHeight - 8,
     });
   }, [open]);
+  const side = place.right ? ' right' : '';
   return (
     <div className="menu-row" ref={row}>
       <button
@@ -96,12 +99,12 @@ function GroupRow({ item, open, onHover, onToggle, onPick, needsUser }) {
         role="menuitem"
         aria-haspopup="menu"
         aria-expanded={open}
-        className={`more-item group${open ? ' open' : ''}`}
+        className={`more-item group${side}${open ? ' open' : ''}`}
         title={item.title}
         onMouseEnter={onHover}
         onClick={() => onToggle(!open)}
         onKeyDown={(e) => {
-          if (e.key === 'ArrowRight') {
+          if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
             e.preventDefault();
             onToggle(true);
             setTimeout(() => sub.current?.querySelector('.more-item')?.focus(), 0);
@@ -113,11 +116,12 @@ function GroupRow({ item, open, onHover, onToggle, onPick, needsUser }) {
       {open && (
         <div
           ref={sub}
-          className={`more-list more-sub${place.left ? ' left' : ''}${place.up ? ' up' : ''}`}
+          className={`more-list more-sub${side}${place.up ? ' up' : ''}`}
           role="menu"
           aria-label={item.label}
           onKeyDown={(e) => {
-            if (e.key === 'ArrowLeft') {
+            // The arrow pointing back at the group closes it: → from a flyout on the left, ← on the right.
+            if (e.key === (place.right ? 'ArrowLeft' : 'ArrowRight')) {
               e.preventDefault();
               onToggle(false);
               row.current?.querySelector('.more-item')?.focus();

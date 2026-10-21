@@ -235,7 +235,7 @@ export default function BuyPanel({
               items: [
                 ...[false, true].map((over1) => ({
                   label: `Export single buy (${over1 ? keptTag(cut) : 'all'})`,
-                  blocked: offOrBusy ?? (completed ? (skus.length ? 'Already Completed: Export ▸ Download its file again' : 'Already Completed')
+                  blocked: offOrBusy ?? (completed ? (skus.length ? 'Already Completed: ◂ Export → Download its file again' : 'Already Completed')
                     : lines.length ? null : 'No Magic cards in this buy'),
                   title: over1
                     ? `Export this buy's Magic cards whose Sell Price is ${keptWords(cut)}; the ones at ${bulkWords(cut)} are pulled to Bulk pulled from exports. The buy is Completed, the rest of the day isn't`

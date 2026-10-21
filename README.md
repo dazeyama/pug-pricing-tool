@@ -984,11 +984,11 @@ Sends the collection's Magic cards to Crystal Commerce. See
 An exported collection shows its **Custom SKU** in the list heading, whatever its status. Its
 exported cards' prices show in green: those are its Sell Prices.
 
-**EXPORT ▾** opens two groups. Pointing at one opens its items beside it; so does clicking it.
-**Print ▸** holds **Print MTG (all)** and **Print MTG (>$1.49)** (the audit printout, see
+**EXPORT ▾** opens two groups. Pointing at one opens its items to its left; so does clicking it.
+**◂ Print** holds **Print MTG (all)** and **Print MTG (>$1.49)** (the audit printout, see
 [Print MTG?](#print-mtg-the-audit-printout)), **Print PKM?** (the Pokémon cards, by set) and
 **Print PKM Stickers?** (price-tag stickers, see [Print PKM Stickers?](#print-pkm-stickers)).
-**Export ▸** holds **Export MTG csv (all)** and **(>$1.49)**. The amount follows **Settings → Export
+**◂ Export** holds **Export MTG csv (all)** and **(>$1.49)**. The amount follows **Settings → Export
 rates for bulk**. On Can't upload cards and Bulk pulled from exports, **Export csv** sits on its own.
 The ⋯ menu has **Print overnight buy** (or **Print project**) too.
 
@@ -1105,8 +1105,8 @@ One game's part of every walk-in buy confirmed that day.
 |---|---|
 | **< BACK** | Back to the Calendar, on the same month. |
 | **⋯** | The day's menu. See below. |
-| **EXPORT (N) ▾** | Magic days: two groups that open beside the menu when pointed at or clicked. **Print ▸** holds **Print MTG (all)** and **Print MTG (>$1.49)**, the audit printout; **Export ▸** holds **Export MTG csv (all)** and **(>$1.49)**, the day's export (the cut follows Settings → Export rates for bulk). N is the cards to export: count the pile first. |
-| **EXPORT (N) ▾** | Pokémon days: **Print ▸** holds **Print PKM?** (the cards by set) and **Print PKM Stickers?** (price-tag stickers); **Complete day…** sits on its own (see below). N is the cards to mark Completed. |
+| **EXPORT (N) ▾** | Magic days: two groups that open to the left of the menu when pointed at or clicked. **◂ Print** holds **Print MTG (all)** and **Print MTG (>$1.49)**, the audit printout; **◂ Export** holds **Export MTG csv (all)** and **(>$1.49)**, the day's export (the cut follows Settings → Export rates for bulk). N is the cards to export: count the pile first. |
+| **EXPORT (N) ▾** | Pokémon days: **◂ Print** holds **Print PKM?** (the cards by set) and **Print PKM Stickers?** (price-tag stickers); **Complete day…** sits on its own (see below). N is the cards to mark Completed. |
 
 The title shows the date and game. Once the day is exported it also shows **Exported** and the day's
 **Custom SKU**. A buy exported on its own shows its own SKU on its panel instead.
@@ -1169,13 +1169,13 @@ the list, crossed out, as a record that it went elsewhere: straight into the cas
 | **✅ Condition checked** | Flagged buys only, first in the menu. Takes the 🚩 flag off. |
 | **Mark as completed** | Completes this game's cards in this buy without exporting them: locked, and left out of the search and the day's export. On a Magic buy they're **struck** as well: a Magic buy Completed instead of exported means its cards went somewhere else. On a Pokémon buy it's Complete day… for one buy, without the Sell Prices. |
 | **Mark Paid/Ours again** | Undoes Mark as completed, and restores the cards it struck. On an exported buy it reads **Mark Paid/Ours again…** and undoes this buy's export only: Magic cards struck by Mark as completed stay Completed. While some of this game's cards are still Completed by hand and the buy isn't (its export undone, say), the menu has both Mark as completed and Mark Paid/Ours again, which brings those cards back. |
-| **Print ▸** | A group: pointing at it, or clicking it, opens its items beside the menu. **Print buy (all)** and **Print buy (>$1.49)**: the audit printout of this buy's Magic cards by Crystal Commerce category, every card or only the ones over the amount (Settings → Export rates for bulk). On a Pokémon buy: **Print buy** (its cards by set) and **Print stickers** (price-tag stickers, see [Print PKM Stickers?](#print-pkm-stickers)). |
-| **Export ▸** | Magic only. **Export single buy (all)** and **Export single buy (>$1.49)** export just this buy, on any day, today included; (>$1.49) pulls the bulk to Bulk pulled from exports. The rest of the day stays as it is. Its Custom SKU is the day's with the buy's number after a dash, *101626-42*, shown on the buy. Once the buy has its own file, **Download its file again** is here too: the same file, nothing changes. |
-| **Convert ▸** | **Convert to project** and **Convert to overnight buy**, below. |
+| **◂ Print** | A group: pointing at it, or clicking it, opens its items to the left of the menu (to the right only when there's no room on the left, the arrow moving there). **Print buy (all)** and **Print buy (>$1.49)**: the audit printout of this buy's Magic cards by Crystal Commerce category, every card or only the ones over the amount (Settings → Export rates for bulk). On a Pokémon buy: **Print buy** (its cards by set) and **Print stickers** (price-tag stickers, see [Print PKM Stickers?](#print-pkm-stickers)). |
+| **◂ Export** | Magic only. **Export single buy (all)** and **Export single buy (>$1.49)** export just this buy, on any day, today included; (>$1.49) pulls the bulk to Bulk pulled from exports. The rest of the day stays as it is. Its Custom SKU is the day's with the buy's number after a dash, *101626-42*, shown on the buy. Once the buy has its own file, **Download its file again** is here too: the same file, nothing changes. |
+| **◂ Convert** | **Convert to project** and **Convert to overnight buy**, below. |
 | **Edit in project view** | Opens the buy's cards on the pricing screen, in the game's colour, to fix a card before an export (its condition or treatment, mostly). Click a card, change it, then **SAVE EDIT**; **×** takes cards out. Nothing is saved until **SAVE BUY**, which goes back to the day page. The buy stays on its day; cards can't be added and the rates don't change. |
 | **Delete buy…** | Deletes the buy and every card in it, both games. Asks first. |
 
-The two converts, under **Convert ▸**:
+The two converts, under **◂ Convert**:
 
 | | |
 |---|---|
@@ -1407,7 +1407,7 @@ same file again. Nothing changes. It needs the connection.
 
 - **A day's file is the day's export only.** Cards sent with **Export single buy** aren't in it. A
   day exported only one buy at a time has no day file to download again; each buy's own file comes
-  from its ⋯ → **Export ▸ Download its file again**.
+  from its ⋯ → **◂ Export → Download its file again**.
 - **A collection or project exported in rounds** gets every round in the file.
 - **Cards pulled as bulk** by a (>…) export were never in the file.
 - **Cards sent later from Can't upload cards or Bulk pulled from exports** were in that export's

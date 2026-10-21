@@ -361,14 +361,17 @@
 .more-item:hover:not(.is-disabled) { background: color-mix(in srgb, var(--accent) 16%, transparent); }
 .more-item.danger:hover:not(.is-disabled) { background: rgba(255, 107, 107, .12); }
 .more-item.is-disabled { opacity: .5; cursor: not-allowed; }
-/* Groups (decision 422): "Print ▸" opens its items in a flyout beside it, on hover or a click; to
-   the left when the window's edge is near, upward when its foot is (MenuItems.jsx measures). */
+/* Groups (decision 422): "◂ Print" opens its items in a flyout to its left (owner, 2026-10-21;
+   decision 425), on hover or a click; to the right only with no room on the left, the arrow moving
+   to that side; upward when the window's foot is near (MenuItems.jsx measures). */
 .menu-row { position: relative; }
-.more-item.group { display: flex; justify-content: space-between; align-items: center; gap: 14px; }
-.more-item.group::after { content: '▸'; opacity: .7; font-size: .9em; }
+.more-item.group { display: flex; align-items: center; gap: 8px; }
+.more-item.group::before { content: '◂'; opacity: .7; font-size: .9em; }
+.more-item.group.right::before { content: none; }
+.more-item.group.right::after { content: '▸'; margin-left: auto; padding-left: 6px; opacity: .7; font-size: .9em; }
 .more-item.group.open { background: color-mix(in srgb, var(--accent) 16%, transparent); }
-.more-list.more-sub { top: -6px; right: auto; left: calc(100% + 2px); }
-.more-list.more-sub.left { left: auto; right: calc(100% + 2px); }
+.more-list.more-sub { top: -6px; left: auto; right: calc(100% + 2px); }
+.more-list.more-sub.right { right: auto; left: calc(100% + 2px); }
 .more-list.more-sub.up { top: auto; bottom: -6px; }
 
 /* ---- Edited in place (name, phone, notes) ---- */

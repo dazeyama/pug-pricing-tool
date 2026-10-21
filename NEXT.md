@@ -53,6 +53,11 @@ and function.
 
 ## Done
 
+- 2026-10-21: **Group flyouts open to the left, the arrow on the left** (decision 425), on the owner's screenshot:
+  `GroupRow` in `MenuItems.jsx` (right only with no room on the left; ← or → opens, the arrow pointing back closes),
+  `.more-item.group::before` and `.more-sub` in `collections.css`; Help and TEST.md say "◂ Print". Untested in
+  the app.
+
 - 2026-10-21: **Help brought up to date for every older open item** (401–407, 416, 417, and the review leftovers
   386, 387, 389, 393, 396–398), on the owner's ask (`README.md`): Banners (the red Settings bar), Condition prices
   (the 🔒 locks), The buy list (Added / $ ↓ / WUBRG), Print MTG? and Print PKM? (today's prices, the (>…) print, the
