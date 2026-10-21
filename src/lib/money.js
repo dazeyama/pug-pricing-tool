@@ -13,6 +13,12 @@ export function formatMoney(amount) {
   return Math.round(n * 100) % 100 === 0 ? usdWhole.format(n) : usd.format(n);
 }
 
+/** $1,234.56, $12.00: always two decimals, for the Bulk values and Export sell floor panels (owner, 2026-10-20). */
+export function formatMoneyCents(amount) {
+  if (amount == null || Number.isNaN(Number(amount))) return '—';
+  return usd.format(Number(amount));
+}
+
 /** €2,478.82, €7 (Cardmarket prices, shown only in warnings). */
 export function formatEur(amount) {
   if (amount == null || Number.isNaN(Number(amount))) return '—';

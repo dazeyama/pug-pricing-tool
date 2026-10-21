@@ -1,7 +1,7 @@
 import { useSettings } from '../../state/settings.jsx';
 import { useStaff } from '../../state/staff.jsx';
 import { useSettingField } from './useSettingField.js';
-import { formatMoney } from '../../lib/money.js';
+import { formatMoneyCents } from '../../lib/money.js';
 import { BULK_ITEMS, bulkValuesFrom } from '../../lib/bulk.js';
 import { GAMES } from '../../lib/games.js';
 
@@ -18,7 +18,8 @@ function ValueBox({ item }) {
     problem: (raw) => (VALID_MONEY.test(raw) ? null : 'Enter a dollar amount, with up to 2 decimals.'),
     // From the value saved now, not as this screen last showed it (decision 394).
     save: (next) => save('bulk_values', (now) => ({ ...bulkValuesFrom(now), [item.kind]: next }), current?.id),
-    saved: (next) => `${item.name} saved: ${formatMoney(next)} per ${item.per}.`,
+    saved: (next) => `${item.name} saved: ${formatMoneyCents(next)} per ${item.per}.`,
+    shown: (v) => Number(v).toFixed(2),   // money, two decimals always (owner, 2026-10-20)
   });
 
   return (

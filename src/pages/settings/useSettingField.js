@@ -14,24 +14,28 @@ import { useToast } from '../../components/Toast.jsx';
  * @param {(next: number) => string} o.saved  the toast once it's saved
  * @param {string} [o.failed]  how the toast starts when saving fails
  * @param {(text: string) => string} [o.clean]  what's typed, tidied (a dollar box drops a leading $)
+ * @param {(value: number) => string} [o.shown]  the saved value as the box shows it (a dollar box: "0.40")
  */
-export function useSettingField({ stored, problem, save, saved, failed = "Couldn't save", clean = (t) => t.trim() }) {
+export function useSettingField({
+  stored, problem, save, saved, failed = "Couldn't save", clean = (t) => t.trim(), shown = String,
+}) {
   const toast = useToast();
-  const [text, setText] = useState(String(stored));
+  const [text, setText] = useState(shown(stored));
   const [editing, setEditing] = useState(false);
   // What the box held when it got focus: left as it was, nothing is saved, so a box only clicked
   // into never writes its old value over another computer's change (decision 354).
   const [atFocus, setAtFocus] = useState(null);
 
   // Follow other computers' changes, but never under someone's typing.
+  const display = shown(stored);
   useEffect(() => {
-    if (!editing) setText(String(stored));
-  }, [stored, editing]);
+    if (!editing) setText(display);
+  }, [display, editing]);
 
   async function commit() {
     setEditing(false);
     if (atFocus !== null && clean(text) === clean(atFocus)) {
-      setText(String(stored));
+      setText(shown(stored));
       return;
     }
     const raw = clean(text);
@@ -39,14 +43,14 @@ export function useSettingField({ stored, problem, save, saved, failed = "Couldn
     const why = problem(raw, next);
     if (why) {
       toast(why, 'err');
-      setText(String(stored));
+      setText(shown(stored));
       return;
     }
     if (next === stored) return;
     const err = await save(next);
     if (err) {
       toast(`${failed}: ${err}`, 'err');
-      setText(String(stored));
+      setText(shown(stored));
     } else {
       toast(saved(next), 'ok');
     }

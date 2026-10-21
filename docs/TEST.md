@@ -456,8 +456,9 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
 - [ ] **Master Buy Percentages** read 33.34 / 66.68 (decision 333); a value the app can't use shows red and goes back to
       what was saved.
 - [ ] Low-end and high-end rates, Master Fallback Percentages and Bulk values show and save.
-- [ ] **Export sell floor** (decision 417), beside Export rates for bulk: Floor $0.40; the table shows Sell, $0.237 →
-      $0.40 (floor). Buy shows "Rounded down", $0.237 → $0.23. With no user, changing the floor is refused. Set
+- [ ] **Export sell floor** (decision 417), beside Export rates for bulk: Floor 0.40; the table shows Sell, $0.23 →
+      $0.40 (floor), every amount with two decimals ($12.40 → $13.00). Buy shows "Rounded down", $0.23 → $0.23.
+      Bulk values' boxes show two decimals too (24.00). With no user, changing the floor is refused. Set
       0.75: "Export sell floor saved", and the Changelog has "Setting changed: Export sell floor". 0.30 or 11 are
       refused. An export's Review then shows a cheap card's Sell at $0.75 ("raised to the $0.75 floor"), and typing
       0.50 as its Sell price says "At least $0.75". Put it back to 0.40 after.

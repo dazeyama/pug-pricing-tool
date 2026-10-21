@@ -2,20 +2,18 @@ import { useState } from 'react';
 import { useSellFloor, useSettings } from '../../state/settings.jsx';
 import { useStaff } from '../../state/staff.jsx';
 import { useSettingField } from './useSettingField.js';
-import { SELL_FLOOR, SELL_FLOOR_MAX, formatMoney, roundDownPrice, roundUpPrice } from '../../lib/money.js';
+import { SELL_FLOOR, SELL_FLOOR_MAX, formatMoneyCents, roundDownPrice, roundUpPrice } from '../../lib/money.js';
 
 const VALID_MONEY = /^\d{1,2}(\.\d{1,2})?$/;
 
 // The store's rounding steps (Help, Rounding), each with a price to show it on.
 const STEPS = [
-  { band: 'Under $1', to: 'cent', example: 0.237 },
+  { band: 'Under $1', to: 'cent', example: 0.23 },
   { band: '$1 to $10', to: 'quarter', example: 3.1 },
   { band: '$10 to $100', to: 'dollar', example: 12.4 },
   { band: '$100 to $1,000', to: '$5', example: 123 },
   { band: '$1,000 and up', to: '$10', example: 1234 },
 ];
-
-const exact = (v) => `$${v < 1 ? v.toFixed(3) : v.toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
 
 // Settings → Export sell floor (decision 417): the lowest Sell Price an export sets, and the store's
 // rounding, Buy (down) or Sell (up, then the floor), to explain it.
@@ -28,9 +26,10 @@ export default function SellFloorPanel() {
     stored: floor,
     clean: (t) => t.trim().replace(/^\$/, ''),
     problem: (raw, next) => (VALID_MONEY.test(raw) && next >= SELL_FLOOR && next <= SELL_FLOOR_MAX ? null
-      : `Enter a dollar amount from ${formatMoney(SELL_FLOOR)} to ${formatMoney(SELL_FLOOR_MAX)}.`),
+      : `Enter a dollar amount from ${formatMoneyCents(SELL_FLOOR)} to ${formatMoneyCents(SELL_FLOOR_MAX)}.`),
     save: (next) => save('sell_floor', next, current?.id),
-    saved: (next) => `Export sell floor saved: ${formatMoney(next)}.`,
+    saved: (next) => `Export sell floor saved: ${formatMoneyCents(next)}.`,
+    shown: (v) => Number(v).toFixed(2),   // money, two decimals always (owner, 2026-10-20)
   });
   const sell = side === 'sell';
 
@@ -40,7 +39,7 @@ export default function SellFloorPanel() {
       <div className="cardpanel-body">
         <p className="hint">
           An exported card sells at today’s market price, rounded up, never below this floor (a typed
-          price neither). Cards already exported keep theirs. {formatMoney(SELL_FLOOR)} at the lowest.
+          price neither). Cards already exported keep theirs. {formatMoneyCents(SELL_FLOOR)} at the lowest.
         </p>
         {/* The box on the left, the rounding beside it (owner, 2026-10-20): a table like Collection
             Manager's Activity panel, grey for Buy and green for Sell, switched by a pill. */}
@@ -85,7 +84,7 @@ export default function SellFloorPanel() {
                         <td>{s.band}</td>
                         <td>{s.to}</td>
                         <td className="num">
-                          {exact(s.example)} → <strong>{formatMoney(shown)}</strong>
+                          {formatMoneyCents(s.example)} → <strong>{formatMoneyCents(shown)}</strong>
                           {sell && shown > up && <span className="floor-note"> (floor)</span>}
                         </td>
                       </tr>
