@@ -67,63 +67,6 @@ export function checkBackup(data) {
   return { ok: true, counts: countsOf(tables), exportedAt: data.exported_at ?? null, appVersion: data.app_version ?? null };
 }
 
-/**
- * The backup's tables in the order the app reads them (smoke pass, 2026-10-21; decision 426), each
- * with its sort and its key: one table at a time, a page at a time, so no single statement nears
- * the 8 s the app's statements get (the one-call `backup_export` took 2 to 4 s on dev and timed out
- * twice). Children before parents: a buy, user or computer made while the backup reads is then in
- * it with everything that points at it, or not at all.
- */
-export const READ_ORDER = [
-  { table: 'buy_lines', order: ['buy_id', 'position', 'id'], key: ['id'] },
-  { table: 'events', order: ['seq'], key: ['seq'] },
-  { table: 'settings', order: ['key'], key: ['key'] },
-  { table: 'cc_set_map', order: ['scryfall_set', 'promo_kind'], key: ['scryfall_set', 'promo_kind'] },
-  { table: 'cc_product_links', order: ['scryfall_id', 'finish'], key: ['scryfall_id', 'finish'] },
-  { table: 'import_links', order: ['key'], key: ['key'] },
-  { table: 'buys', order: ['created_at', 'id'], key: ['id'] },
-  { table: 'devices', order: ['id'], key: ['id'] },
-  { table: 'staff_users', order: ['created_at', 'id'], key: ['id'] },
-];
-
-/** Columns the backup leaves out: the Changelog's search copies, which the database rebuilds. */
-export const LEFT_OUT = { events: ['search_text', 'search_digits'] };
-
-/**
- * Tables read one page at a time, made whole as the one-call export was: a row read twice (the
- * pages shifted under a change) kept once; a card whose buy was deleted while the backup read
- * dropped, as the buy took it; a copy pointing at a card that's gone pointed at none, as the
- * database does; the left-out columns taken off.
- * @param {Record<string, object[]>} tables
- * @returns {Record<string, object[]>}
- */
-export function tidyTables(tables) {
-  const out = {};
-  for (const { table, key } of READ_ORDER) {
-    const rows = tables?.[table];
-    if (!Array.isArray(rows)) continue;
-    const seen = new Set();
-    out[table] = rows.filter((r) => {
-      const k = key.map((c) => r?.[c]).join('|');
-      if (seen.has(k)) return false;
-      seen.add(k);
-      return true;
-    }).map((r) => {
-      if (!LEFT_OUT[table]) return r;
-      const copy = { ...r };
-      for (const c of LEFT_OUT[table]) delete copy[c];
-      return copy;
-    });
-  }
-  if (out.buy_lines && out.buys) {
-    const buyIds = new Set(out.buys.map((b) => b.id));
-    out.buy_lines = out.buy_lines.filter((l) => buyIds.has(l.buy_id));
-    const lineIds = new Set(out.buy_lines.map((l) => l.id));
-    out.buy_lines = out.buy_lines.map((l) => (l.source_line_id && !lineIds.has(l.source_line_id) ? { ...l, source_line_id: null } : l));
-  }
-  return out;
-}
-
 /** The matches staff taught, in backups since decision 348, with what the restore dialog calls them. */
 export const LEARNED = {
   cc_set_map: 'set choices',

@@ -279,7 +279,10 @@ export function useDraft(deviceId) {
     return null;
   }, [run, reload, state.buy, state.lines, toast]);
 
-  return { ...state, busy, add, update, remove, setRates, setLineRate, cancel, confirm };
+  // A lost answer waiting for the next press to check it (decision 367): CONFIRM BUY stays open for that press.
+  const answerLost = useCallback(() => Boolean(unsure.current), []);
+
+  return { ...state, busy, add, update, remove, setRates, setLineRate, cancel, confirm, answerLost };
 }
 
 /** The buy, read back for CONFIRM BUY's lost answer (readBack); throws when it can't be read. */

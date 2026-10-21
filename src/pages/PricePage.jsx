@@ -63,11 +63,13 @@ export default function PricePage() {
   };
   const count = draft.lines.reduce((n, l) => n + l.quantity, 0);
   // A buy confirmed on another computer leaves nothing here to confirm (smoke pass; decision 427):
-  // the dialog closes rather than staying open as "Confirm buy — 0 cards".
+  // the dialog closes rather than staying open as "Confirm buy — 0 cards". Not while this computer's
+  // own press lost its answer: the next press reads that buy back (decisions 367, 374, 430).
   const draftEmpty = draft.loaded && draft.lines.length === 0;
+  const { answerLost } = draft;
   useEffect(() => {
-    if (draftEmpty) setConfirming(false);
-  }, [draftEmpty]);
+    if (draftEmpty && !answerLost()) setConfirming(false);
+  }, [draftEmpty, answerLost]);
 
   /** CONFIRM BUY's dialog confirmed (spec 8.10). */
   async function confirmBuy({ customerName, phone, notes, paidPrice, paidMethod, flagCondition }) {

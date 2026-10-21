@@ -1,39 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  READ_ORDER, TABLES, backupDue, backupFileName, checkBackup, countsOf, daysSince, emptyLearned, extraColumns, tidyTables,
+  backupDue, backupFileName, checkBackup, countsOf, daysSince, emptyLearned, extraColumns,
 } from '../src/lib/backup.js';
-
-// Decision 426: the backup read a table and a page at a time, made whole again.
-test('every backup table is read, children before the buys, users and computers they point at', () => {
-  const order = READ_ORDER.map((r) => r.table);
-  for (const t of [...TABLES, 'cc_set_map', 'cc_product_links', 'import_links']) assert.ok(order.includes(t), t);
-  assert.ok(order.indexOf('buy_lines') < order.indexOf('buys'));
-  for (const child of ['buys', 'buy_lines', 'settings', 'cc_set_map', 'cc_product_links', 'import_links']) {
-    assert.ok(order.indexOf(child) < order.indexOf('staff_users'), child);
-  }
-  assert.ok(order.indexOf('buys') < order.indexOf('devices'));
-});
-
-test('pages made whole: a row read twice kept once, a card whose buy went dropped, a dangling copy link cleared', () => {
-  const tables = tidyTables({
-    buys: [{ id: 'b1' }, { id: 'b1' }],
-    buy_lines: [
-      { id: 'l1', buy_id: 'b1', source_line_id: null },
-      { id: 'l2', buy_id: 'b1', source_line_id: 'l9' },
-      { id: 'l2', buy_id: 'b1', source_line_id: 'l9' },
-      { id: 'l9', buy_id: 'gone', source_line_id: null },
-    ],
-    events: [{ seq: 1, search_text: 'x', search_digits: '1', summary: 'a' }, { seq: 1, summary: 'a' }],
-    settings: [{ key: 'a' }],
-    cc_set_map: [{ scryfall_set: 'lea', promo_kind: '' }, { scryfall_set: 'lea', promo_kind: 'prerelease' }],
-  });
-  assert.deepEqual(tables.buys, [{ id: 'b1' }]);
-  assert.deepEqual(tables.buy_lines.map((l) => [l.id, l.source_line_id]), [['l1', null], ['l2', null]]);
-  assert.deepEqual(tables.events, [{ seq: 1, summary: 'a' }]);
-  assert.equal(tables.cc_set_map.length, 2);
-  assert.equal(tables.devices, undefined);   // a table not read stays out
-});
 
 // Decision 398: what a restore would leave out, and what it leaves as it is.
 test("the file's columns the database lacks, table by table", () => {
