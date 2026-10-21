@@ -485,7 +485,7 @@ function DayScreen({ game, day }) {
     const stamped = dayExportLines(doneLines, day, restamped);
     const ownExported = withoutRestamps(doneLines, restamped);
     if (!stamped.lines.length && ownExported.length) {
-      toast("This day's cards were exported one buy at a time (Export single buy), so there's no day file to download again: each buy's ⋯ → Download its file again.", 'err');
+      toast("This day's cards were exported one buy at a time (Export single buy), so there's no day file to download again: each buy's ⋯ → Export ▸ Download its file again.", 'err');
       return;
     }
     if (!stamped.lines.length && doneLines.some((l) => l.cc_status === 'exported')) {

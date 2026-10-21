@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { useDismiss } from '../lib/useDismiss.js';
 import { decklistText } from '../lib/decklist.js';
 import { useToast } from './Toast.jsx';
+import MenuItems from './MenuItems.jsx';
 import { useBulkCut } from '../state/settings.jsx';
 import { bulkWords, keptTag, keptWords } from '../lib/bulkCut.js';
 
@@ -12,15 +13,19 @@ import { bulkWords, keptTag, keptWords } from '../lib/bulkCut.js';
  * `onClick` says why. `count` (with `countTitle`), when given, follows the
  * word: "EXPORT (42)". `label`: COMPLETE on Pokémon days (owner, 2026-10-02).
  *
- * With `onPrint` (docs/TEAM_FEEDBACK.md 3.1), it opens a small menu instead:
- * **Print MTG?** (the audit printout; "Print?" until the owner's 2026-10-16
- * request, decision 280), **Print PKM?** (`onPrintPokemon`, decision 280:
- * the Pokémon cards by set; `printPokemonBlocked` says why not), **Print
- * PKM Stickers?** (`onPrintStickers`, decision 281: price-tag stickers at
- * today's sell prices; `printStickersBlocked`) and **Export csv**
+ * With `onPrint` (docs/TEAM_FEEDBACK.md 3.1), it opens a small menu instead,
+ * in two groups (decision 422; MenuItems): **Print ▸** holds **Print MTG
+ * (all)** and **(>…)** (the audit printout; "Print?" until the owner's
+ * 2026-10-16 request, decision 280; the cut decisions 405, 416), **Print
+ * PKM?** (`onPrintPokemon`, decision 280: the Pokémon cards by set;
+ * `printPokemonBlocked` says why not) and **Print PKM Stickers?**
+ * (`onPrintStickers`, decision 281: price-tag stickers at today's sell
+ * prices; `printStickersBlocked`); **Export ▸** holds **Export csv (all)**
+ * and **(>…)** with `splitExport`, else the one export item sits on the root
  * (`onClick`, exactly the EXPORT it was; `exportLabel` and `exportTitle`
  * word it otherwise, `exportBlocked` greys it alone: a Pokémon day's
- * **Complete Day** before the day is over, decision 282). Print MTG? only
+ * **Complete Day** before the day is over, decision 282). A group of one is
+ * shown as its item. Print MTG only
  * with `onPrint`: a Pokémon day has the other two. Blocked, it still just says why. `up`: the menu opens
  * upward (a button at the foot of the screen); `printing`: a printout is
  * being built.
@@ -80,86 +85,64 @@ export default function ExportButton({
     </button>
   );
   if (!menu) return button;
+
+  // A printout under way blocks every print item; a print blocked for its own reason still says why.
+  const printItem = (label, title, blockedWhy, run) => ({
+    label: printing ? 'Printing…' : label,
+    blocked: printing ? 'Printing…' : blockedWhy,
+    saysWhy: !printing,
+    title,
+    onClick: run,
+  });
+  const items = [
+    {
+      label: 'Print',
+      items: [
+        // Print MTG (all) and (>…) (decision 405): every card, or the ones over the Export rates for
+        // bulk's amber today (decision 416).
+        ...(onPrint ? [false, true].map((over1) => printItem(
+          `Print MTG (${over1 ? keptTag(cut) : 'all'})`,
+          over1
+            ? `A PDF of these Magic cards at ${keptWords(cut)} today, by Crystal Commerce category, with today's prices. Changes nothing.`
+            : "A PDF of these Magic cards by Crystal Commerce category, with today's prices, to check them by hand. Changes nothing.",
+          null,
+          () => onPrint(over1),
+        )) : []),
+        onPrintPokemon && printItem('Print PKM?', 'A PDF of these Pokémon cards by set, to check them by hand. Changes nothing.',
+          printPokemonBlocked, () => onPrintPokemon()),
+        onPrintStickers && printItem('Print PKM Stickers?',
+          "Price-tag stickers for these Pokémon cards at today's sell prices, a sticker a copy, for the store's 160-sticker sheets. Changes nothing.",
+          printStickersBlocked, () => onPrintStickers()),
+      ],
+    },
+    {
+      label: 'Export',
+      // `splitExport` (decision 406): Export MTG csv (all), as it was, and (>…), whose bulk cards (the
+      // Export rates for bulk, decision 416) are pulled to Bulk pulled from exports. Blocked, it says why.
+      items: (splitExport ? [false, true] : [null]).map((over1) => ({
+        label: over1 == null ? exportLabel : `${exportLabel} (${over1 ? keptTag(cut) : 'all'})`,
+        blocked: exportBlocked,
+        saysWhy: true,
+        title: over1
+          ? `The Crystal Commerce Mass Create file of the cards whose Sell Price is ${keptWords(cut)}; the ones at ${bulkWords(cut)} are pulled to Bulk pulled from exports`
+          : exportTitle,
+        onClick: () => (over1 == null ? onClick() : onClick(over1)),
+      })),
+    },
+  ];
   return (
     <span className={`export-menu ${className}`} ref={wrap}>
       {button}
       {open && (
         <div className={`more-list export-list${up ? ' up' : ''}`} role="menu">
-          {/* Print MTG (all) and (>…) (decision 405): every card, or the ones over the Export rates for bulk'
-              amber today (decision 416). */}
-          {onPrint && [false, true].map((over1) => (
-            <button
-              key={over1 ? 'over1' : 'all'}
-              type="button"
-              role="menuitem"
-              className={`more-item${printing ? ' is-disabled' : ''}`}
-              aria-disabled={printing || undefined}
-              title={over1
-                ? `A PDF of these Magic cards at ${keptWords(cut)} today, by Crystal Commerce category, with today's prices. Changes nothing.`
-                : "A PDF of these Magic cards by Crystal Commerce category, with today's prices, to check them by hand. Changes nothing."}
-              onClick={() => {
-                if (printing) return;
-                setOpen(false);
-                onPrint(over1);
-              }}
-            >
-              {printing ? 'Printing…' : `Print MTG (${over1 ? keptTag(cut) : 'all'})`}
-            </button>
-          ))}
-          {onPrintPokemon && (
-            <button
-              type="button"
-              role="menuitem"
-              className={`more-item${printing || printPokemonBlocked ? ' is-disabled' : ''}`}
-              aria-disabled={printing || Boolean(printPokemonBlocked) || undefined}
-              title={printPokemonBlocked ?? 'A PDF of these Pokémon cards by set, to check them by hand. Changes nothing.'}
-              onClick={() => {
-                if (printing) return;
-                setOpen(false);
-                onPrintPokemon();
-              }}
-            >
-              {printing ? 'Printing…' : 'Print PKM?'}
-            </button>
-          )}
-          {onPrintStickers && (
-            <button
-              type="button"
-              role="menuitem"
-              className={`more-item${printing || printStickersBlocked ? ' is-disabled' : ''}`}
-              aria-disabled={printing || Boolean(printStickersBlocked) || undefined}
-              title={printStickersBlocked
-                ?? "Price-tag stickers for these Pokémon cards at today's sell prices, a sticker a copy, for the store's 160-sticker sheets. Changes nothing."}
-              onClick={() => {
-                if (printing) return;
-                setOpen(false);
-                onPrintStickers();
-              }}
-            >
-              {printing ? 'Printing…' : 'Print PKM Stickers?'}
-            </button>
-          )}
-          {/* `splitExport` (decision 406): Export MTG csv (all), as it was, and (>…), whose bulk cards
-              (the Export rates for bulk, decision 416) are pulled to Bulk pulled from exports. */}
-          {(splitExport ? [false, true] : [null]).map((over1) => (
-            <button
-              key={over1 ? 'over1' : 'all'}
-              type="button"
-              role="menuitem"
-              className={`more-item${exportBlocked ? ' is-disabled' : ''}`}
-              aria-disabled={exportBlocked ? true : undefined}
-              title={exportBlocked ?? (over1
-                ? `The Crystal Commerce Mass Create file of the cards whose Sell Price is ${keptWords(cut)}; the ones at ${bulkWords(cut)} are pulled to Bulk pulled from exports`
-                : exportTitle)}
-              onClick={() => {
-                setOpen(false);
-                if (over1 == null) onClick();   // blocked, it says why
-                else onClick(over1);
-              }}
-            >
-              {over1 == null ? exportLabel : `${exportLabel} (${over1 ? keptTag(cut) : 'all'})`}
-            </button>
-          ))}
+          <MenuItems
+            items={items}
+            needsUser={false}
+            onPick={(item) => {
+              setOpen(false);
+              item.onClick();
+            }}
+          />
         </div>
       )}
     </span>

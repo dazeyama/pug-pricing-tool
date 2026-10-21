@@ -7,10 +7,11 @@ import { PICK_USER_FIRST, useStaff } from '../state/staff.jsx';
  * than disabled) so that click can happen.
  *
  * `disabled` covers the action's own reasons (offline, busy); `title` is the
- * tooltip for those.
+ * tooltip for those. `looksDisabled` greys it the same way but leaves it
+ * clickable, for a button that says why it can't run (EXPORT's menu items).
  */
 export default function GuardButton({
-  needsUser = true, disabled = false, title, className = 'btn', onClick, children, ...rest
+  needsUser = true, disabled = false, looksDisabled = false, title, className = 'btn', onClick, children, ...rest
 }) {
   const { current, pulse } = useStaff();
   const noUser = needsUser && !current;
@@ -20,8 +21,8 @@ export default function GuardButton({
     <button
       type="button"
       {...rest}
-      className={`${className}${blocked ? ' is-disabled' : ''}`}
-      aria-disabled={blocked || undefined}
+      className={`${className}${blocked || looksDisabled ? ' is-disabled' : ''}`}
+      aria-disabled={blocked || looksDisabled || undefined}
       title={noUser ? PICK_USER_FIRST : title}
       onClick={(e) => {
         if (noUser) {

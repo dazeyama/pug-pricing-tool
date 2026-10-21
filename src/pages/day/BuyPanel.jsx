@@ -196,51 +196,83 @@ export default function BuyPanel({
               title: `Unlock this buy's ${GAME_NAMES[game]} cards marked Completed by hand: back in the header search and this day's export`,
               onClick: () => onComplete(buy, number, false),
             }] : []),
+            // Print ▸, Export ▸, Convert ▸ (owner, 2026-10-21; decision 422): the eight lines they were
+            // in three groups, each opening beside the menu (MenuItems.jsx).
+            {
+              label: 'Print',
+              items: game === 'mtg'
+                // Print buy (owner, 2026-10-14; docs/TEAM_FEEDBACK.md 3.1): this buy's Magic cards by
+                // Crystal Commerce category, for a single-buy export; (all) and (>…) (decisions 409, 416).
+                ? [false, true].map((over1) => ({
+                  label: `Print buy (${over1 ? keptTag(cut) : 'all'})`,
+                  needsUser: false,
+                  blocked: offline ? 'No connection' : printing ? 'Printing…' : lines.length ? null : 'No Magic cards in this buy',
+                  title: over1
+                    ? `A PDF of this buy's Magic cards at ${keptWords(cut)} today, by Crystal Commerce category, with today's prices. Changes nothing.`
+                    : "A PDF of this buy's Magic cards by Crystal Commerce category, with today's prices, to check them by hand. Changes nothing.",
+                  onClick: () => onPrint(buy, number, over1),
+                }))
+                // A Pokémon buy (decision 283), mirroring a Magic buy's Print buy: its cards by set
+                // (Print PKM?), and price-tag stickers for them (Print PKM Stickers?).
+                : [{
+                  label: 'Print buy',
+                  needsUser: false,
+                  blocked: printing ? 'Printing…' : lines.length ? null : 'No Pokémon cards in this buy',
+                  title: "A PDF of this buy's Pokémon cards by set, to check them by hand. Changes nothing.",
+                  onClick: () => onPrint(buy, number),
+                }, {
+                  label: 'Print stickers',
+                  needsUser: false,
+                  blocked: offline ? 'No connection' : printing ? 'Printing…' : lines.length ? null : 'No Pokémon cards in this buy',
+                  title: "Price-tag stickers for this buy's Pokémon cards at today's sell prices, a sticker a copy, for the store's 160-sticker sheets. Changes nothing.",
+                  onClick: () => onPrintStickers(buy, number),
+                }],
+            },
             // Export single buy (owner, 2026-10-09): Magic only, like EXPORT, but any day, today's too.
             // (all) and (>…) as the day's EXPORT (decision 408): (>…) pulls the bulk cards (decision 416).
-            ...(game === 'mtg' ? [false, true].map((over1) => ({
-              label: `Export single buy (${over1 ? keptTag(cut) : 'all'})`,
-              blocked: offOrBusy ?? (completed ? (skus.length ? "Already Completed: ⋯ → Download its file again" : 'Already Completed')
-                : lines.length ? null : 'No Magic cards in this buy'),
-              title: over1
-                ? `Export this buy's Magic cards whose Sell Price is ${keptWords(cut)}; the ones at ${bulkWords(cut)} are pulled to Bulk pulled from exports. The buy is Completed, the rest of the day isn't`
-                : "Export just this buy's Magic cards to Crystal Commerce now; the buy is Completed, the rest of the day isn't",
-              onClick: () => onExport(buy, number, over1),
-            })).concat([
-            // Its own file again (decision 386), once exported on its own: nothing changes.
-            ...(skus.length ? [{
-              label: 'Download its file again',
-              needsUser: false,
-              blocked: offline ? 'No connection' : null,
-              title: "Download the same file Export single buy made for this buy, from its exported cards. Changes nothing.",
-              onClick: () => onDownloadAgain(buy, number),
+            ...(game === 'mtg' ? [{
+              label: 'Export',
+              items: [
+                ...[false, true].map((over1) => ({
+                  label: `Export single buy (${over1 ? keptTag(cut) : 'all'})`,
+                  blocked: offOrBusy ?? (completed ? (skus.length ? 'Already Completed: Export ▸ Download its file again' : 'Already Completed')
+                    : lines.length ? null : 'No Magic cards in this buy'),
+                  title: over1
+                    ? `Export this buy's Magic cards whose Sell Price is ${keptWords(cut)}; the ones at ${bulkWords(cut)} are pulled to Bulk pulled from exports. The buy is Completed, the rest of the day isn't`
+                    : "Export just this buy's Magic cards to Crystal Commerce now; the buy is Completed, the rest of the day isn't",
+                  onClick: () => onExport(buy, number, over1),
+                })),
+                // Its own file again (decision 386), once exported on its own: nothing changes.
+                ...(skus.length ? [{
+                  label: 'Download its file again',
+                  needsUser: false,
+                  blocked: offline ? 'No connection' : null,
+                  title: "Download the same file Export single buy made for this buy, from its exported cards. Changes nothing.",
+                  onClick: () => onDownloadAgain(buy, number),
+                }] : []),
+              ],
             }] : []),
-            // Print buy (owner, 2026-10-14; docs/TEAM_FEEDBACK.md 3.1): this buy's Magic cards by
-            // Crystal Commerce category, for a single-buy export; (all) and (>…) (decisions 409, 416).
-            ...[false, true].map((over1) => ({
-              label: `Print buy (${over1 ? keptTag(cut) : 'all'})`,
-              needsUser: false,
-              blocked: offline ? 'No connection' : printing ? 'Printing…' : lines.length ? null : 'No Magic cards in this buy',
-              title: over1
-                ? `A PDF of this buy's Magic cards at ${keptWords(cut)} today, by Crystal Commerce category, with today's prices. Changes nothing.`
-                : "A PDF of this buy's Magic cards by Crystal Commerce category, with today's prices, to check them by hand. Changes nothing.",
-              onClick: () => onPrint(buy, number, over1),
-            }))]) : []),
-            // A Pokémon buy (decision 283), mirroring a Magic buy's Print buy: its cards by set
-            // (Print PKM?), and price-tag stickers for them (Print PKM Stickers?).
-            ...(game === 'pokemon' ? [{
-              label: 'Print buy',
-              needsUser: false,
-              blocked: printing ? 'Printing…' : lines.length ? null : 'No Pokémon cards in this buy',
-              title: "A PDF of this buy's Pokémon cards by set, to check them by hand. Changes nothing.",
-              onClick: () => onPrint(buy, number),
-            }, {
-              label: 'Print stickers',
-              needsUser: false,
-              blocked: offline ? 'No connection' : printing ? 'Printing…' : lines.length ? null : 'No Pokémon cards in this buy',
-              title: "Price-tag stickers for this buy's Pokémon cards at today's sell prices, a sticker a copy, for the store's 160-sticker sheets. Changes nothing.",
-              onClick: () => onPrintStickers(buy, number),
-            }] : []),
+            {
+              label: 'Convert',
+              items: [{
+                label: 'Convert to project',
+                // Completed cards are skipped, and the buy stays with them (decision 296), with all of a
+                // Completed game (decision 393).
+                blocked: offOrBusy ?? (convertLines(buy).some((l) => !l.struck_at && !l.bulk_kind)
+                  ? null : 'Nothing left to move: every card is Completed, struck, or in a Completed game'),
+                title: 'Move this buy\'s live cards, both games, into a new project; Completed cards stay here',
+                onClick: () => onConvert(buy, number),
+              }, {
+                // The same, into an overnight buy (owner, 2026-10-18; decision 335; named so by decision
+                // 421): the buy's name and phone, the Last 4 ID 1312, its rates and payment.
+                label: 'Convert to overnight buy',
+                blocked: offOrBusy ?? (!buy.customer_name?.trim() ? 'No customer name on this buy'
+                  : convertLines(buy).some((l) => !l.struck_at && !l.bulk_kind)
+                    ? null : 'Nothing left to move: every card is Completed, struck, or in a Completed game'),
+                title: 'Move this buy\'s live cards, both games, into a new Paid/Ours overnight buy under its customer; Completed cards stay here',
+                onClick: () => onConvertCollection(buy, number),
+              }],
+            },
             // Its cards edited on the pricing screen, saved with SAVE BUY (owner, 2026-10-13):
             // for small fixes (a condition, a treatment) before an export.
             {
@@ -248,25 +280,6 @@ export default function BuyPanel({
               blocked: offOrBusy ?? (anyCompleted ? lockedWhy(locked) : null),
               title: "Open this buy's cards on the pricing screen to edit them (a condition, a treatment…); SAVE BUY saves them here",
               onClick: () => onEditView(buy, number),
-            },
-            {
-              label: 'Convert to project',
-              // Completed cards are skipped, and the buy stays with them (decision 296), with all of a
-              // Completed game (decision 393).
-              blocked: offOrBusy ?? (convertLines(buy).some((l) => !l.struck_at && !l.bulk_kind)
-                ? null : 'Nothing left to move: every card is Completed, struck, or in a Completed game'),
-              title: 'Move this buy\'s live cards, both games, into a new project; Completed cards stay here',
-              onClick: () => onConvert(buy, number),
-            },
-            {
-              // The same, into an overnight buy (owner, 2026-10-18; decision 335; named so by decision
-              // 421): the buy's name and phone, the Last 4 ID 1312, its rates and payment.
-              label: 'Convert to overnight buy',
-              blocked: offOrBusy ?? (!buy.customer_name?.trim() ? 'No customer name on this buy'
-                : convertLines(buy).some((l) => !l.struck_at && !l.bulk_kind)
-                  ? null : 'Nothing left to move: every card is Completed, struck, or in a Completed game'),
-              title: 'Move this buy\'s live cards, both games, into a new Paid/Ours overnight buy under its customer; Completed cards stay here',
-              onClick: () => onConvertCollection(buy, number),
             },
             {
               label: 'Delete buy…',

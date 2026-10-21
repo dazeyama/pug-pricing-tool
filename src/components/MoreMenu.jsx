@@ -1,19 +1,22 @@
 import { useLayoutEffect, useRef, useState } from 'react';
-import GuardButton from './GuardButton.jsx';
+import MenuItems from './MenuItems.jsx';
 import { useDismiss } from '../lib/useDismiss.js';
 
 /**
- * A ⋯ menu for actions kept away from everyday controls (Delete collection…,
+ * A ⋯ menu for actions kept away from everyday controls (Delete overnight buy…,
  * Delete buy…). Each item needs a picked user (GuardButton); `blocked` is why
  * it can't run, for its tooltip. `up` opens it upward (near the window's foot).
  * `float` places it over the page instead (a table row, whose table clips
  * what spills out of it): below the button, or above when there's no room;
  * scrolling closes it.
  *
- * `needsUser: false` on an item that changes nothing (Print buy).
+ * `needsUser: false` on an item that changes nothing (Print buy). An item
+ * with `items` is a group, "Print ▸", opening them beside it (MenuItems,
+ * decision 422); a group of one is shown as that item.
  *
- * @param {{ items: { label: string, onClick: () => void, danger?: boolean,
- *   blocked?: string|null, title?: string, needsUser?: boolean }[], up?: boolean, float?: boolean }} p
+ * @param {{ items: ({ label: string, onClick: () => void, danger?: boolean,
+ *   blocked?: string|null, title?: string, needsUser?: boolean }
+ *   | { label: string, items: object[] })[], up?: boolean, float?: boolean }} p
  */
 export default function MoreMenu({ items, up = false, float = false }) {
   const [open, setOpen] = useState(false);
@@ -70,22 +73,13 @@ export default function MoreMenu({ items, up = false, float = false }) {
             visibility: place ? 'visible' : 'hidden',
           } : undefined}
         >
-          {items.map((item) => (
-            <GuardButton
-              key={item.label}
-              needsUser={item.needsUser ?? true}
-              role="menuitem"
-              className={`more-item${item.danger ? ' danger' : ''}`}
-              disabled={Boolean(item.blocked)}
-              title={item.blocked ?? item.title}
-              onClick={() => {
-                setOpen(false);
-                item.onClick();
-              }}
-            >
-              {item.label}
-            </GuardButton>
-          ))}
+          <MenuItems
+            items={items}
+            onPick={(item) => {
+              setOpen(false);
+              item.onClick();
+            }}
+          />
         </div>
       )}
     </span>
