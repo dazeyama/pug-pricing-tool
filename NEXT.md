@@ -6,6 +6,24 @@ and function.
 
 ## Open
 
+- **Findings from the 2026-10-21 smoke pass** (Claude, browser pane, dev; the full log is
+  `C:\ClaudeProjects\temp\smoke-2026-10-21\findings.md`), none fixed yet, each the owner's call:
+  - P2: Show all comes back on after a customer search once the list has closed, so the next card search shows
+    every status (`SearchBox.jsx`, the flip effect re-running on the same text; decision 424).
+  - P2: the backup sometimes hits the 8 s statement limit: a Download backup failed with a 500, and Restore's first
+    press failed "canceling statement due to statement timeout" (`backup_export`, one call for every table).
+  - P2: a set code before the number finds nothing (`RVR 26`, `CMR 472`); `parseQuery` in `src/lib/query.js` reads
+    a set code only as the last word, though decision 329 gives "RVR 26" as working.
+  - P2, cause not found: Base Set Blastoise 1st Edition Holo has no price in any condition (Unlimited and
+    Shadowless are priced).
+  - P3: the Cash Buys file's Type says "Collection" for an overnight buy (`src/lib/cashBuys.js` line 75, missed by
+    decision 421); Set value's popup "Back to $1.50" leaves an unsaved typed value; a number-only search's empty
+    message mentions a customer; TEST.md's "a second tab adds one to each" (Who's on counts computers).
+  - Notes N1–N10 in the log (wording and small edges), among them: a project's Completed question and Convert to buy
+    reason say "Paid/Ours"; the Convert dialog counts lines as cards; today's Magic EXPORT blocks its Print MTG too;
+    TEST.md cases to reword (Super Rod's stamp now via Other TCGplayer versions…, Rowlet and Exeggcute's "no
+    fallback", the 421 banner wording, Rejected's EXPORT).
+  - Not run by Claude, still the owner's: section 10 (the phone), the two-computer, network-off and store cases.
 - **The live site's first inventory upload on v1.0.1-day1** (decision 414): the live site most likely holds a
   second full copy of the Master Crystal Inventory (~152k products) from the owner's timed-out upload on the old
   build, and any uploads since. The first upload from the new build clears them ("Clearing the old file…").
@@ -29,16 +47,22 @@ and function.
   proven on prod. Left as the owner gets to them: name the computer, add the users, upload the CC CSV; every store
   computer signs in again. The Supabase plan: Free for now (decision 376). The clean-up (the spec's Phase 10 list, `C:\ClaudeProjects\temp\pug-squash\` included)
   waits until prod has run a while.
-- **The smoke test pass** (`docs/TEST.md`, 237 cases): planned before the squash and the switch, not done; the
-  owner will run it soon (2026-10-21). On dev only, never the live site (decision 380); TEST.md's
-  "pair on the live site's address and scan a stack" case and SETUP.md's "price one card" check after restoring a
-  paused project write to prod and need rewording to fit that rule (the pre-push review, 2026-10-20).
+- **The smoke test pass, the owner's part** (`docs/TEST.md`): Claude ran the rest on 2026-10-21 (Done); left are
+  section 10 (the phone), the two-computer and network-off cases, and section 19. On dev only, never the live site
+  (decision 380); TEST.md's "pair on the live site's address and scan a stack" case and SETUP.md's "price one card"
+  check after restoring a paused project write to prod and need rewording to fit that rule.
 - **TEST.md has no case for decision 374** (the launch review): the 🚩 following the press that went through, and
   Confirming… while a later press reads back.
 - **After launch:**
   - watch JustTCG usage and the plan (Appendix D 4);
 
 ## Done
+
+- 2026-10-21: **The smoke pass, run by Claude in the browser pane** on the owner's ask (dev only, v1.0.1-day1, at
+  1366×768, 02:30–03:56): sections 1–9 and 11–18 apart from the phone, two-computer and network-off cases, the
+  clean-up (section 20) and the database test run (section 21: 565 checks passed, the next buy Buy 46). No P1;
+  four P2 and four P3 findings and ten notes, listed under Open; JustTCG 63 requests. The dev server ran as a
+  preview from `.claude/launch.json` (`npm run dev`, port 5180), not committed.
 
 - 2026-10-21: Pushed as **v1.0.1-day1** (tag `v1.0.1-day1`), on the owner's ask: the 42 commits since
   v1.0.0-launch's last no-bump push (the version commit, "+ Start project" and TEST.md's cut words included),
