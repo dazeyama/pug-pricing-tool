@@ -48,6 +48,8 @@ const NAME_X = 37;                           // the name, after the chip, the ti
 const COND_W = 20;
 const PRICE_W = 30;                          // today's market price, last on the row (decision 404)
 const PRICE_PT = 6.8;
+const FOOT_PT = 7.5;                         // the page number and the prices' key, at the foot
+const FOOT_GAP = 12;                         // between the key's end and the page number
 
 // Light on ink (owner, 2026-10-14: colour kept, but outlines over shading):
 // rows and chips are outlines, the colour only where it tells something:
@@ -104,6 +106,24 @@ export function pdfSafe(text) {
     }
   }
   return out;
+}
+
+/**
+ * The foot's key (decision 404): what the prices' colours mean, in parts with
+ * their colour and weight, at the Export rates for bulk (decision 416).
+ * @param {{ red: number, amber: number }} [cut]
+ * @returns {{ text: string, rgb: number[], bold?: boolean }[]}
+ */
+export function footerKey(cut = DEFAULT_BULK_CUT) {
+  const bands = bandWords(cut);
+  const grey = [110, 114, 128];
+  return [
+    { text: "Today's market price:  ", rgb: grey },
+    { text: 'amber', rgb: TONE_RGB.dollar, bold: true },
+    { text: ` = $1 card, ${pdfSafe(bands.amber)}   `, rgb: grey },
+    { text: 'red', rgb: TONE_RGB.bulk, bold: true },
+    { text: ` = true bulk card, ${pdfSafe(bands.red)}`, rgb: grey },
+  ];
 }
 
 /** `text` cut to `width` points in the current font, ending "…". */
@@ -325,28 +345,30 @@ export function auditPdf({ title, sections, symbols = {}, printedAt = new Date()
     }
   }
 
-  // "Page 2 of 5", now that the count is known; the prices' key on the left (decision 404).
+  // "Page 2 of 5" at the right margin, now that the count is known; the prices' key on the left
+  // (decision 404). The number was centred, and once the key carried the Export rates for bulk
+  // (decision 416) the two printed over each other (owner, 2026-10-21; decision 419).
   const pages = doc.getNumberOfPages();
   for (let p = 1; p <= pages; p++) {
     doc.setPage(p);
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.5);
+    doc.setFontSize(FOOT_PT);
     doc.setTextColor(140, 144, 160);
-    doc.text(`Page ${p} of ${pages}`, PAGE.w / 2, PAGE.h - 14, { align: 'center' });
+    const pageText = `Page ${p} of ${pages}`;
+    doc.text(pageText, PAGE.w - MARGIN, PAGE.h - 14, { align: 'right' });
     if (priced) {
+      // Never under the page number: a key that can't fit ends "…" instead.
+      const end = PAGE.w - MARGIN - doc.getTextWidth(pageText) - FOOT_GAP;
       let kx = MARGIN;
-      const part = (text, rgb, bold = false) => {
+      for (const { text, rgb, bold } of footerKey(cut)) {
+        if (end - kx <= 0) break;
         doc.setFont('helvetica', bold ? 'bold' : 'normal');
         doc.setTextColor(...rgb);
-        doc.text(text, kx, PAGE.h - 14);
-        kx += doc.getTextWidth(text);
-      };
-      part("Today's market price:  ", [110, 114, 128]);
-      const bands = bandWords(cut);
-      part('amber', TONE_RGB.dollar, true);
-      part(` = $1 card, ${pdfSafe(bands.amber)}   `, [110, 114, 128]);
-      part('red', TONE_RGB.bulk, true);
-      part(` = true bulk card, ${pdfSafe(bands.red)}`, [110, 114, 128]);
+        const shown = fit(doc, text, end - kx);
+        doc.text(shown, kx, PAGE.h - 14);
+        kx += doc.getTextWidth(shown);
+        if (shown !== text) break;
+      }
     }
   }
   return doc;
