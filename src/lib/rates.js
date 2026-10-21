@@ -142,6 +142,48 @@ export function rateTotals(lines, rates, priceOf = countedPrice) {
   };
 }
 
+/** How each group of cards is described in the mixed-rates note (decision 413). */
+const GROUP_WORDS = {
+  low: (tiers) => `low-end (under ${formatMoney(tiers.low.under)})`,
+  high: (tiers) => `high-end (over ${formatMoney(tiers.high.over)})`,
+  own: () => 'with their own rate (Set Rate)',
+  fixed: () => 'at the rate kept when confirmed',
+  custom: () => "at this list's custom rate",
+  base: () => 'at the master rate',
+};
+const GROUP_ORDER = ['low', 'high', 'own', 'fixed', 'custom', 'base'];
+
+/**
+ * The mixed rates in bullets (decision 413): each group of cards on one rate, by why: "12 low-end
+ * (under $3) cards at Cash 25% / Credit 50%". Struck cards count, as in the totals. Empty when
+ * every card is on the list's own rate.
+ * @param {object[]} lines
+ * @param {object} rates  as rateTotals takes them
+ * @returns {string[]}
+ */
+export function mixedRateLines(lines, rates) {
+  const tiers = rates?.tiers ?? DEFAULT_TIERS;
+  const groups = new Map();
+  for (const l of lines) {
+    const r = lineRate(l, rates);
+    const why = r.why.cash === 'base' ? r.why.credit : r.why.cash;
+    const key = `${why}|${r.cash}|${r.credit}`;
+    const g = groups.get(key) ?? { why, cash: r.cash, credit: r.credit, n: 0 };
+    g.n += l.quantity;
+    groups.set(key, g);
+  }
+  const all = [...groups.values()];
+  if (all.every((g) => g.why === 'base')) return [];
+  return all
+    .sort((a, b) => GROUP_ORDER.indexOf(a.why) - GROUP_ORDER.indexOf(b.why) || b.n - a.n)
+    .map((g) => {
+      const words = (GROUP_WORDS[g.why] ?? GROUP_WORDS.base)(tiers);
+      const cards = g.n === 1 ? 'card' : 'cards';
+      const what = g.why === 'low' || g.why === 'high' ? `${g.n} ${words} ${cards}` : `${g.n} ${cards} ${words}`;
+      return `${what} at Cash ${g.cash}% / Credit ${g.credit}%`;
+    });
+}
+
 /** The CUSTOM chip's tooltip: "2 cards have their own rates (Set Rate)." */
 export function customNote(off) {
   const n = off.own;

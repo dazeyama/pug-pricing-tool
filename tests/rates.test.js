@@ -2,13 +2,28 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { creditOfferFor, payout } from '../src/lib/money.js';
 import {
-  DEFAULT_TIERS, creditOfferForLines, customNote, lineRate, otherRate, rateTotals, tiersFrom,
+  DEFAULT_TIERS, creditOfferForLines, customNote, lineRate, mixedRateLines, otherRate, rateTotals, tiersFrom,
 } from '../src/lib/rates.js';
 
 // Individual rates (docs/TEAM_FEEDBACK.md 4, owner 2026-10-14).
 const tiers = tiersFrom(null);
 const master = { cash: 33, credit: 66, customCash: null, customCredit: null, tiers };
 const line = (unit, extra = {}) => ({ unit_price: unit, quantity: 1, ...extra });
+
+// Decision 413: the mixed rates in bullets.
+test('mixed rates: low end, high end, own rate, the rest at the master rate', () => {
+  const lines = [
+    line(1, { quantity: 12 }), line(50, { quantity: 3 }), line(10, { quantity: 20 }),
+    line(10, { quantity: 2, custom_cash_pct: 45, custom_credit_pct: 70 }),
+  ];
+  assert.deepEqual(mixedRateLines(lines, master), [
+    '12 low-end (under $3) cards at Cash 25% / Credit 50%',
+    '3 high-end (over $35) cards at Cash 40% / Credit 70%',
+    '2 cards with their own rate (Set Rate) at Cash 45% / Credit 70%',
+    '20 cards at the master rate at Cash 33% / Credit 66%',
+  ]);
+  assert.deepEqual(mixedRateLines([line(10, { quantity: 4 })], master), [], 'every card on the master rate: none');
+});
 
 test('the shipped tiers: under $3 at 50/25, over $35 at 70/40', () => {
   assert.deepEqual(tiers, {

@@ -246,6 +246,9 @@
   opacity: .8;
   cursor: help;
 }
+/* Mixed rates (decision 413): a * by Cash and Credit; the row's tooltip lists each group. */
+.mixed-rate-mark { margin-left: 3px; font-weight: 800; font-size: 1.1em; cursor: help; }
+.total-row[title] { cursor: help; }
 /* A card with its own rate: tinted, with ✎ Credit / Cash after its name. */
 .buy-line-row.own-rate { background: color-mix(in srgb, var(--accent) 9%, transparent); }
 .own-rate-tag {

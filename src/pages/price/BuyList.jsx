@@ -3,7 +3,7 @@ import LinePreview, { previewFor } from '../../components/LinePreview.jsx';
 import { lineText } from '../../lib/lineFormat.js';
 import { formatMoney } from '../../lib/money.js';
 import {
-  hasOwnRate, lineRate, otherRate, rateTotals, whyText,
+  hasOwnRate, lineRate, mixedRateLines, otherRate, rateTotals, whyText,
 } from '../../lib/rates.js';
 import { useToast } from '../../components/Toast.jsx';
 import { BULK_ITEMS, bulkItem, bulkShortText, cardCounts, countText, isValuedBulk, perText } from '../../lib/bulk.js';
@@ -336,6 +336,10 @@ function Totals({
   const toast = useToast();
   const t = rateTotals(lines, rates);
   const customChip = <CustomRateMark totals={t} />;
+  // Mixed rates (decision 413): a * by Cash and Credit, and pointing at the row lists each group.
+  const mixed = mixedRateLines(lines, rates);
+  const mixedTitle = mixed.length ? `Mixed rates:\n${mixed.map((m) => `• ${m}`).join('\n')}` : undefined;
+  const star = mixed.length > 0 && <span className="mixed-rate-mark" aria-label="Mixed rates">*</span>;
   const pct = (which, label) => {
     const custom = which === 'cash' ? rates.customCash : rates.customCredit;
     const value = rates[which];
@@ -361,8 +365,12 @@ function Totals({
   return (
     <div className="totals">
       <div className="total-row"><span>Market</span><strong>{formatMoney(t.market)}</strong></div>
-      <div className="total-row cash"><span>{pct('cash', 'Cash')}{customChip}</span><strong>{formatMoney(t.cash)}</strong></div>
-      <div className="total-row credit"><span>{pct('credit', 'Credit')}{customChip}</span><strong>{formatMoney(t.credit)}</strong></div>
+      <div className="total-row cash" title={mixedTitle}>
+        <span>{pct('cash', 'Cash')}{star}{customChip}</span><strong>{formatMoney(t.cash)}</strong>
+      </div>
+      <div className="total-row credit" title={mixedTitle}>
+        <span>{pct('credit', 'Credit')}{star}{customChip}</span><strong>{formatMoney(t.credit)}</strong>
+      </div>
       {ratesOpen && (
         <RatesPanel
           title={ratesTitle}
