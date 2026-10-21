@@ -194,13 +194,16 @@ export default function BuyPanel({
               onClick: () => onComplete(buy, number, false),
             }] : []),
             // Export single buy (owner, 2026-10-09): Magic only, like EXPORT, but any day, today's too.
-            ...(game === 'mtg' ? [{
-              label: 'Export single buy',
+            // (all) and (>$1) as the day's EXPORT (decision 408): (>$1) pulls the cards under $1.
+            ...(game === 'mtg' ? [false, true].map((over1) => ({
+              label: `Export single buy (${over1 ? '>$1' : 'all'})`,
               blocked: offOrBusy ?? (completed ? (skus.length ? "Already Completed: ⋯ → Download its file again" : 'Already Completed')
                 : lines.length ? null : 'No Magic cards in this buy'),
-              title: "Export just this buy's Magic cards to Crystal Commerce now; the buy is Completed, the rest of the day isn't",
-              onClick: () => onExport(buy, number),
-            },
+              title: over1
+                ? "Export this buy's Magic cards whose Sell Price is $1.00 or more; the ones under $1 are pulled to Bulk pulled from exports. The buy is Completed, the rest of the day isn't"
+                : "Export just this buy's Magic cards to Crystal Commerce now; the buy is Completed, the rest of the day isn't",
+              onClick: () => onExport(buy, number, over1),
+            })).concat([
             // Its own file again (decision 386), once exported on its own: nothing changes.
             ...(skus.length ? [{
               label: 'Download its file again',
@@ -216,7 +219,7 @@ export default function BuyPanel({
               blocked: offline ? 'No connection' : printing ? 'Printing…' : lines.length ? null : 'No Magic cards in this buy',
               title: "A PDF of this buy's Magic cards by Crystal Commerce category, to check them by hand. Changes nothing.",
               onClick: () => onPrint(buy, number),
-            }] : []),
+            }]) : []),
             // A Pokémon buy (decision 283), mirroring a Magic buy's Print buy: its cards by set
             // (Print PKM?), and price-tag stickers for them (Print PKM Stickers?).
             ...(game === 'pokemon' ? [{

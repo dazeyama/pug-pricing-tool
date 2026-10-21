@@ -87,7 +87,7 @@ function DayScreen({ game, day }) {
   const [removing, setRemoving] = useState(null);   // { buy, line }
   const [deleting, setDeleting] = useState(null);   // { buy, number, lastCard }
   const [converting, setConverting] = useState(null); // { buy, number }: ⋯ → Convert to project
-  const [exportingBuy, setExportingBuy] = useState(null);     // { buy, number }: ⋯ → Export single buy (owner, 2026-10-09)
+  const [exportingBuy, setExportingBuy] = useState(null);     // { buy, number, over1 }: ⋯ → Export single buy (owner, 2026-10-09; decision 408)
   // 🚩 Flagged buys about to be exported (owner, 2026-10-14): { numbers, go } until answered.
   const [flagWarning, setFlagWarning] = useState(null);
   const [unexportingBuy, setUnexportingBuy] = useState(null); // { buy, number }: ⋯ → Mark Paid/Ours again, after an export
@@ -743,7 +743,7 @@ function DayScreen({ game, day }) {
               onComplete={(b, n, complete) => guard() && markCompleted(b, n, complete)}
               onConvert={(b, n) => guard() && setConverting({ buy: b, number: n, to: 'project' })}
               onConvertCollection={(b, n) => guard() && setConverting({ buy: b, number: n, to: 'collection' })}
-              onExport={(b, n) => guard() && unlessFlagged([b], () => setExportingBuy({ buy: b, number: n }))}
+              onExport={(b, n, over1 = false) => guard() && unlessFlagged([b], () => setExportingBuy({ buy: b, number: n, over1 }))}
               onFlag={(b, n, flag) => guard() && setConditionFlag(b, n, flag)}
               onPrint={printBuy}
               onPrintStickers={printBuyStickers}
@@ -917,7 +917,8 @@ function DayScreen({ game, day }) {
         // Export single buy (owner, 2026-10-09): the day's export, for one buy, today's too.
         <ExportDialog
           mode="export"
-          title={`Export Buy ${exportingBuy.number} (${GAME_NAMES[game]}, ${dayDate(day)}) to Crystal Commerce`}
+          over1={Boolean(exportingBuy.over1)}
+          title={`Export Buy ${exportingBuy.number}${exportingBuy.over1 ? ' ($1 and up)' : ''} (${GAME_NAMES[game]}, ${dayDate(day)}) to Crystal Commerce`}
           items={exportBuyNow.buy_lines
             .filter((l) => l.game === game && !l.completed_at && movesOn(l))
             .map((line) => ({ line, where: `Buy ${exportingBuy.number}` }))}
