@@ -108,6 +108,10 @@ export default function SearchBox({ wide }) {
   // What was typed when a customer match last flipped Show all on (decision 424): once per thing
   // typed, so turning it off by hand sticks.
   const flippedFor = useRef(null);
+  // The list open now, for the search's flip: closing it puts Show all back off and the search runs
+  // again on the same text, which must not flip it back on with the list shut (smoke pass, 2026-10-21).
+  const openRef = useRef(open);
+  openRef.current = open;
   useEffect(() => {
     if (!open) {
       setShowAll(false);
@@ -145,8 +149,8 @@ export default function SearchBox({ wide }) {
         if (plan && !lines.length && plan.retry) lines = await lookUp({ ...plan.retry, ...scope });
         if (mine !== run.current) return;
         // A customer found flips Show all on, once per thing typed (decision 424), so their Completed
-        // buys show too; the search then runs again with it on.
-        if (customers.length && !showAll && flippedFor.current !== query) {
+        // buys show too; the search then runs again with it on. Only while the list is open.
+        if (customers.length && !showAll && openRef.current && flippedFor.current !== query) {
           flippedFor.current = query;
           setShowAll(true);
           return;
