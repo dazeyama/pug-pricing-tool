@@ -156,7 +156,8 @@ exact printing and shows its price in every condition. One key adds it to the bu
 There are three ways cards come in:
 
 - **Walk-in buys.** A customer at the counter. Priced, paid and finished in one go on the **Buy** tab.
-- **Collections.** A bigger lot, priced over hours or days. It moves through statuses until it's paid for.
+- **Overnight buys.** A customer's bigger lot, left with the store and priced over hours or days. It
+  moves through statuses until it's paid for. It lives on the **Collections** tab.
 - **Projects.** Cards the store already owns, priced so they can go into the inventory.
 
 Every card bought lands in one shared record. Magic cards then go to Crystal Commerce, the store's
@@ -204,8 +205,12 @@ Six things make the rest of the app make sense.
 **A buy** is one customer at the counter. She builds it on the **Buy** tab and finishes it with
 **CONFIRM BUY**. It then sits on that day in the **Calendar**.
 
-**A collection** is a larger lot. It gets a customer's name, phone number and the last 4 of their
-ID. It's priced card by card, then offered, then paid for. Its **status** says where it is.
+**A collection** is anything on the **Collections** tab: an overnight buy, a project, or one of the
+two the app keeps itself (Can't upload cards, Bulk pulled from exports).
+
+**An overnight buy** is a customer's larger lot, left to price. It gets the customer's name, phone
+number and the last 4 of their ID. It's priced card by card, then offered, then paid for. Its
+**status** says where it is.
 
 **A project** is a box of the store's own cards. It has no customer. It's priced so it can be
 exported, so its prices round up.
@@ -296,7 +301,8 @@ Esc or a click outside closes the list.
 She types two or more characters: a card name, a collector number, a set code, or any mix. Results
 list every buy and collection holding a matching card.
 
-- **Collections** come first, then **buys** filed under their day (*Today*, *Yesterday*, then the date).
+- **Overnight buys**, **Projects** and **System** come first, each under its own heading, then
+  **buys** filed under their day (*Today*, *Yesterday*, then the date).
 - Each result shows where it is and every matching card, with its condition.
 - Hovering a result shows the card's picture.
 - **↓ ↑** move through results. **Enter** opens one. **Esc** closes the list.
@@ -350,22 +356,22 @@ The background band takes the current user's colour.
 | **Buy cards** | Opens the **Buy** tab. |
 | **Today's day** | Opens today's Magic day page. |
 | **+ Start Project** | Opens **Collections** with the new project form. |
-| **+ Price Collection** | Opens **Collections** with the new collection form. |
+| **+ Overnight buy** | Opens **Collections** with the new overnight buy form. |
 
-### Collections and projects
+### Overnight buys and projects
 
 Five counts. **Collections →** opens the Collections tab.
 
 | | |
 |---|---|
-| **To price** | Collections in Processing. |
-| **Offer out** | Collections in Priced. |
-| **To export** | Collections in Paid/Ours. |
+| **To price** | Overnight buys in Processing. |
+| **Offer out** | Overnight buys in Priced. |
+| **To export** | Overnight buys in Paid/Ours. |
 | **Projects open** | Projects not yet Completed. |
 | **Can't upload** | Cards waiting in Can't upload cards. Click to open it. |
 
-Under the counts are the open projects and the Paid/Ours collections, three at a time. Each shows
-its cards and their value. Pointing at a name shows its cards by game. A collection says *ready
+Under the counts are the open projects and the Paid/Ours overnight buys, three at a time. Each shows
+its cards and their value. Pointing at a name shows its cards by game. An overnight buy says *ready
 to export*. A project says how old its oldest
 price is. That turns amber at 14 days: time for a **REPRICE?**. **+N more on Collections** shows
 the rest.
@@ -763,13 +769,13 @@ The same list sits at the bottom of the screen.
 
 # 📦 Collections tab
 
-Every collection and project, in three tables.
+Every overnight buy, project and system collection, in three tables.
 
 | Table | What's in it |
 |---|---|
-| **Collections** | Customers' collections. |
+| **Overnight buys** | Customers' lots, left with the store to price. This table was called **Collections** before. |
 | **Projects** | The store's own cards, priced for an export. |
-| **System** | **Can't upload cards**, made by the app. |
+| **System** | **Can't upload cards** and **Bulk pulled from exports**, made by the app. |
 
 ### Buttons
 
@@ -777,9 +783,9 @@ Every collection and project, in three tables.
 |---|---|
 | **Import Collection** | Picks a CSV file and turns it into a new project. See [Import Collection](#-import-collection). |
 | **+ Start Project** | Opens the new project form. |
-| **+ Price Collection** | Opens the new collection form. |
+| **+ Overnight buy** | Opens the new overnight buy form. |
 | **Search name or phone…** | Narrows all three tables. |
-| **Status pills** | On the Collections table: **All**, **Processing**, **Priced**, **Paid/Ours Cash**, **Paid/Ours Credit**, **Completed**, **Rejected**. |
+| **Status pills** | On the Overnight buys table: **All**, **Processing**, **Priced**, **Paid/Ours Cash**, **Paid/Ours Credit**, **Completed**, **Rejected**. |
 
 ### The tables
 
@@ -800,7 +806,7 @@ a row opens it.
 
 A row open on another computer says so: *"✎ open on Front Counter (Clio)"*.
 
-### + Price Collection
+### + Overnight buy
 
 | | |
 |---|---|
@@ -811,7 +817,7 @@ A row open on another computer says so: *"✎ open on Front Counter (Clio)"*.
 
 The name suggests past customers, as on CONFIRM BUY. Picking one fills in the phone number.
 
-**Create** makes the collection in **Processing** and opens it.
+**Create** makes the overnight buy in **Processing** and opens it.
 
 ### + Start Project
 
@@ -853,7 +859,7 @@ The header bar always shows the name and status.
 | | |
 |---|---|
 | **Name and status** | Click to fold the details away, or bring them back. |
-| **⋯** | **Print collection** (**Print project**), **Undo export…**, **Convert to buy…** (projects only) and **Delete collection…** (**Delete project…**) |
+| **⋯** | **Print overnight buy** (**Print project**), **Undo export…**, **Convert to buy…** (projects only) and **Delete overnight buy…** (**Delete project…**) |
 | **Arrow button** | Folds or unfolds the details. |
 | **Name, Phone, Last 4 ID, Notes** | Click the ✎ to edit in place. **Enter** saves. Clicking away saves. **Esc** leaves it as it was. Notes save with **Ctrl+Enter**. |
 | **📞 (N)** | On a Priced collection, beside the phone. See below. |
@@ -952,7 +958,7 @@ exported cards' prices show in green: those are its Sell Prices.
 **EXPORT ▾** opens **Print MTG?**, **Print PKM?**, **Print PKM Stickers?** and **Export csv**.
 **Print MTG?** makes the audit printout (see [Print MTG?](#print-mtg-the-audit-printout));
 **Print PKM?** the same for the Pokémon cards, by set; **Print PKM Stickers?** price-tag stickers
-for them (see [Print PKM Stickers?](#print-pkm-stickers)). The ⋯ menu has **Print collection** (or
+for them (see [Print PKM Stickers?](#print-pkm-stickers)). The ⋯ menu has **Print overnight buy** (or
 **Print project**) too.
 
 **Projects have no rates.** They're the store's own cards: no custom rates, no Set Rate.
@@ -991,7 +997,7 @@ It's greyed out while another computer is editing the project, once the project 
 or in Can't upload cards: *Part of this project is exported: Undo export… first, only if its file
 wasn't uploaded to Crystal Commerce*.
 
-### Delete collection…
+### Delete overnight buy…
 
 From the ⋯ menu; on a project it reads **Delete project…**. Two steps. First a warning with the card count and
 **Continue**. Then she types the name. **Delete forever** removes it and every card in it. This can't be undone.
@@ -1111,7 +1117,7 @@ the list, crossed out, as a record that it went elsewhere: straight into the cas
 - **×** on a struck card removes it for good. **Right-click → Restore** puts it back.
 - Hovering it shows who struck it and when. The Changelog records strikes and restores.
 - Projects and Can't upload cards don't strike: their **×** removes at once. **Convert to project**
-  and **Convert to collection** leave a buy's struck cards out.
+  and **Convert to overnight buy** leave a buy's struck cards out.
 - **Edit in project view** strikes and restores too, saved with **SAVE BUY**.
 
 ### A buy's ⋯ menu
@@ -1126,12 +1132,12 @@ the list, crossed out, as a record that it went elsewhere: straight into the cas
 | **Print stickers** | Pokémon only. Price-tag stickers for this buy's cards. See [Print PKM Stickers?](#print-pkm-stickers). |
 | **Edit in project view** | Opens the buy's cards on the pricing screen, in the game's colour, to fix a card before an export (its condition or treatment, mostly). Click a card, change it, then **SAVE EDIT**; **×** takes cards out. Nothing is saved until **SAVE BUY**, which goes back to the day page. The buy stays on its day; cards can't be added and the rates don't change. |
 | **Convert to project** | Moves every live card, both games, into a new project with the buy's notes (a project has no rates). Completed cards stay behind: the buy stays on its day with them, or is deleted when none are left. Struck cards don't move either: they stay on the buy if it stays, and if it's deleted the Changelog keeps them, crossed out. The name starts as the customer's. The cards keep their prices until a **REPRICE?** rounds them up. The payment goes with them only when the whole buy moves. When the buy stays, the project is paid **$0** with the buy's method, and the payment stays on the buy, so **Export Cash Buys** counts it once. The dialog says so. |
-| **Convert to collection** | The same, into a new **Paid/Ours collection** instead of a project. Nothing to type: the collection takes the buy's customer name, phone and notes, Last 4 ID **1312**, what was paid and when, and the buy's rates, custom ones too. The cards keep the rates CONFIRM BUY saved on them. Completed and struck cards, and the payment, work as above. If such a $0 collection is unlocked and marked Paid/Ours again, it asks for a price: typing the buy's payment there would count it twice. The new collection opens. Needs a customer name on the buy. |
+| **Convert to overnight buy** | The same, into a new **Paid/Ours overnight buy** instead of a project. Nothing to type: the overnight buy takes the buy's customer name, phone and notes, Last 4 ID **1312**, what was paid and when, and the buy's rates, custom ones too. The cards keep the rates CONFIRM BUY saved on them. Completed and struck cards, and the payment, work as above. If such a $0 overnight buy is unlocked and marked Paid/Ours again, it asks for a price: typing the buy's payment there would count it twice. The new overnight buy opens. Needs a customer name on the buy. |
 | **Delete buy…** | Deletes the buy and every card in it, both games. Asks first. |
 
 **Edit in project view** and **Delete buy…** are locked once any of the buy's cards are Completed.
-**Convert to project** and **Convert to collection** are locked only when no live card is left (Convert to
-collection also when the buy has no customer name).
+**Convert to project** and **Convert to overnight buy** are locked only when no live card is left (Convert to
+overnight buy also when the buy has no customer name).
 A project can become a buy again: see [Convert to buy…](#convert-to-buy).
 
 ### Print MTG? (the audit printout)

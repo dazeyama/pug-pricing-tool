@@ -37,8 +37,8 @@ export const PAGES = [
   // Home
   { id: 'home', chapter: 'Home', start: 'Home tab', title: 'Home', images: [{ src: 'home', caption: 'The Home tab' }] },
   {
-    id: 'home-collections', chapter: 'Home', start: 'Home tab > Collections and projects',
-    images: [{ src: 'home-tiles', caption: 'Collections and projects' }],
+    id: 'home-collections', chapter: 'Home', start: 'Home tab > Overnight buys and projects',
+    images: [{ src: 'home-tiles', caption: 'Overnight buys and projects' }],
   },
   {
     id: 'home-days', chapter: 'Home', start: 'Home tab > Days to export', title: 'Days to export and recent activity',
@@ -103,9 +103,9 @@ export const PAGES = [
     images: [{ src: 'collections', caption: 'The three tables' }],
   },
   {
-    id: 'new-collection', chapter: 'Collections', start: 'Collections tab > + Price Collection',
-    title: 'New collections and projects',
-    images: [{ src: 'new-collection', caption: '+ Price Collection' }, { src: 'new-project', caption: '+ Start Project' }],
+    id: 'new-collection', chapter: 'Collections', start: 'Collections tab > + Overnight buy',
+    title: 'New overnight buys and projects',
+    images: [{ src: 'new-collection', caption: '+ Overnight buy' }, { src: 'new-project', caption: '+ Start Project' }],
   },
 
   // A collection
@@ -139,7 +139,7 @@ export const PAGES = [
   },
   {
     id: 'convert-delete', chapter: 'A collection', start: 'A collection > Convert to buy…', title: 'Convert to buy and Delete',
-    images: [{ src: 'delete', caption: 'Delete collection' }],
+    images: [{ src: 'delete', caption: 'Delete overnight buy' }],
   },
   {
     id: 'cant-upload', chapter: 'A collection', start: 'A collection > Can\'t upload cards',
