@@ -336,6 +336,7 @@ Bars under the header appear when something needs attention.
 | **No connection — changes are paused** (yellow) | The connection dropped. |
 | **JustTCG daily limit reached** (yellow) | The day's price lookups are used up. It says when they come back. Until then, prices are typed by hand. |
 | **Last backup downloaded N days ago** (yellow) | The last backup is more than 7 days old. **Download backup** saves one. **×** hides the bar until the browser is closed. |
+| **Settings haven't loaded yet: nothing is priced until they do** (red) | The store's settings couldn't be read. ADD CARD, CONFIRM BUY, REPRICE?, EXPORT, Complete day…, the stickers, the phone's scans and imports all wait, each saying the same. **Retry** tries again; it also tries again by itself. |
 
 <br>
 
@@ -581,6 +582,14 @@ Cardmarket.
 | **✎ Manual price** | She types the price herself. It belongs to the picked condition: picking another condition clears it. |
 | **×** | Clears the manual price. |
 
+**Right-click a condition** to lock it, for a whole pile of LP cards, say: this card takes it, and
+every card picked after starts on it instead of NM, with a **🔒** where NM's ⚠️ goes. Right-click it
+again to unlock; clicking another condition changes this card only. **Right-click Use TCGplayer** or
+**Use Cardmarket** locks that source the same way, the button reading **🔒 Use TCGplayer**; a card
+that has no such price unlocks it and says so. Both locks hold while the screen is open, through
+CONFIRM BUY and CLEAR, and are forgotten when she leaves it, like EN | JP. A line being edited and a
+phone's scans keep their own condition.
+
 The line underneath says when the prices were updated. It also says when there's no JustTCG key,
 when the daily limit is reached, or when prices failed to load (with **Retry**).
 
@@ -615,6 +624,13 @@ adding a new line.
 Every card in the buy, in the order added, under **Magic** and **Pokémon** headings. **Bulk sits at the
 top** of its heading, in the order it comes in a search, with a line under it; placeholders stay among
 the cards. The heading counts the cards, and bulk apart: *42 cards + 1,000 bulk*.
+
+**Added**, **$ ↓** and **WUBRG** under the heading sort the list, on every pricing screen (a
+collection's and Edit in project view's too). Added is the order they came; $ ↓ is price per card,
+high to low; WUBRG orders Magic by colour (white, blue, black, red, green, multicolour, colourless,
+then lands), A–Z within each, and leaves a mixed list's Pokémon as added. Bulk stays on top. The
+colours come from Scryfall, so the list says *Sorting by color…* and reorders once they're in. Each
+screen starts on Added.
 
 | | |
 |---|---|
@@ -888,15 +904,19 @@ cash offer. The credit offer is worked out from it, at this collection's rates, 
 
 **Mark as Paid/Ours →** opens **Mark as Paid/Ours**. It shows the totals and the offer. She picks
 **Cash** or **Credit** and types the price actually paid. **Mark Paid/Ours** locks the collection.
-**Mark as Rejected?** switches to the Reject window instead.
+**Mark as Rejected?** switches to the Reject window instead. On a project or overnight buy made by
+**Convert** from a buy that stayed on its day, the price starts at **$0**, saying *The payment is on
+Buy N, which kept it: $0 here counts it once*; another amount can still be typed.
 
 **Rejected** comes from Processing or Priced. She can type a reason (optional). **Reject** locks
 the collection. It's kept with its prices and offer until it's deleted.
 
 **Mark as Completed →** (or the dropdown) marks a Paid/Ours collection or project **Completed**: done
 with, locked, and out of the search. It's a status like the others, set by hand and only from
-Paid/Ours. EXPORT doesn't set it: a collection can be exported and stay Paid/Ours, or be marked
-Completed without ever being exported.
+Paid/Ours. EXPORT doesn't set it by itself: once an export's file has downloaded, or Print PKM
+Stickers? has made its stickers, it asks **Mark this collection Completed?**, and No leaves it
+Paid/Ours. A collection can be exported and stay Paid/Ours, or be marked Completed without ever
+being exported.
 
 ### Going backwards
 
@@ -955,7 +975,7 @@ Sends the collection's Magic cards to Crystal Commerce. See
 | Status | What EXPORT does |
 |---|---|
 | Processing, Priced, Rejected | Opens the export, but only downloads the file. **Nothing is saved:** the status stays, and the cards can be exported again. No user needed. |
-| Paid/Ours, Ours | Opens the export for the Magic cards not exported yet. Afterwards those cards are marked exported, with the **Custom SKU** and their Sell Prices in green. The status stays: she marks it **Completed** herself when it's done with. Once every Magic card is exported, EXPORT downloads the same file again (see [The file](#the-file)). |
+| Paid/Ours, Ours | Opens the export for the Magic cards not exported yet. Afterwards those cards are marked exported, with the **Custom SKU** and their Sell Prices in green. Once the file has downloaded (and after downloading it again, or making stickers) it asks **Mark this collection Completed?**: **Yes, Completed** marks it so, **No, keep it Paid/Ours** leaves the status as it is. Once every Magic card is exported, EXPORT downloads the same file again (see [The file](#the-file)). |
 | Paid/Ours, no Magic cards | Says so: there's nothing to export. Completed is set from the status menu. |
 | Completed | Downloads the same file again. Nothing changes. |
 
@@ -1148,7 +1168,7 @@ the list, crossed out, as a record that it went elsewhere: straight into the cas
 |---|---|
 | **✅ Condition checked** | Flagged buys only, first in the menu. Takes the 🚩 flag off. |
 | **Mark as completed** | Completes this game's cards in this buy without exporting them: locked, and left out of the search and the day's export. On a Magic buy they're **struck** as well: a Magic buy Completed instead of exported means its cards went somewhere else. On a Pokémon buy it's Complete day… for one buy, without the Sell Prices. |
-| **Mark Paid/Ours again** | Undoes Mark as completed, and restores the cards it struck. On an exported buy it reads **Mark Paid/Ours again…** and undoes this buy's export only: Magic cards struck by Mark as completed stay Completed. |
+| **Mark Paid/Ours again** | Undoes Mark as completed, and restores the cards it struck. On an exported buy it reads **Mark Paid/Ours again…** and undoes this buy's export only: Magic cards struck by Mark as completed stay Completed. While some of this game's cards are still Completed by hand and the buy isn't (its export undone, say), the menu has both Mark as completed and Mark Paid/Ours again, which brings those cards back. |
 | **Print ▸** | A group: pointing at it, or clicking it, opens its items beside the menu. **Print buy (all)** and **Print buy (>$1.49)**: the audit printout of this buy's Magic cards by Crystal Commerce category, every card or only the ones over the amount (Settings → Export rates for bulk). On a Pokémon buy: **Print buy** (its cards by set) and **Print stickers** (price-tag stickers, see [Print PKM Stickers?](#print-pkm-stickers)). |
 | **Export ▸** | Magic only. **Export single buy (all)** and **Export single buy (>$1.49)** export just this buy, on any day, today included; (>$1.49) pulls the bulk to Bulk pulled from exports. The rest of the day stays as it is. Its Custom SKU is the day's with the buy's number after a dash, *101626-42*, shown on the buy. Once the buy has its own file, **Download its file again** is here too: the same file, nothing changes. |
 | **Convert ▸** | **Convert to project** and **Convert to overnight buy**, below. |
@@ -1159,7 +1179,7 @@ The two converts, under **Convert ▸**:
 
 | | |
 |---|---|
-| **Convert to project** | Moves every live card, both games, into a new project with the buy's notes (a project has no rates). Completed cards stay behind: the buy stays on its day with them, or is deleted when none are left. Struck cards don't move either: they stay on the buy if it stays, and if it's deleted the Changelog keeps them, crossed out. The name starts as the customer's. The cards keep their prices until a **REPRICE?** rounds them up. The payment goes with them only when the whole buy moves. When the buy stays, the project is paid **$0** with the buy's method, and the payment stays on the buy, so **Export Cash Buys** counts it once. The dialog says so. |
+| **Convert to project** | Moves every live card, both games, into a new project with the buy's notes (a project has no rates). A game with any Completed card stays behind whole, its bulk and placeholders too, so only the other game's cards move: the buy stays on its day with them, or is deleted when none are left. Struck cards don't move either: they stay on the buy if it stays, and if it's deleted the Changelog keeps them, crossed out. The name starts as the customer's. The cards keep their prices until a **REPRICE?** rounds them up. The payment goes with them only when the whole buy moves. When the buy stays, the project is paid **$0** with the buy's method, and the payment stays on the buy, so **Export Cash Buys** counts it once. The dialog says so. |
 | **Convert to overnight buy** | The same, into a new **Paid/Ours overnight buy** instead of a project. Nothing to type: the overnight buy takes the buy's customer name, phone and notes, Last 4 ID **1312**, what was paid and when, and the buy's rates, custom ones too. The cards keep the rates CONFIRM BUY saved on them. Completed and struck cards, and the payment, work as above. If such a $0 overnight buy is unlocked and marked Paid/Ours again, it asks for a price: typing the buy's payment there would count it twice. The new overnight buy opens. Needs a customer name on the buy. |
 
 In a group, an item that can't run now is greyed and its tooltip says why.
@@ -1175,19 +1195,28 @@ A PDF to check a batch by hand before it goes up to Crystal Commerce. It changes
 - The Magic cards still to export (once exported, the ones the export took), sorted by **Crystal
   Commerce category**, each with its set symbol; anything with no product goes under **Unmatched**.
 - In each category: Near Mint first, by collector number, then the other conditions.
-- Each row: quantity, a tick box, the name, its colour, the collector number, condition and finish.
+- Each row: quantity, a tick box, the name, its colour, the collector number, condition and finish,
+  and last **today's market price** for its condition, fetched first (about one JustTCG lookup per
+  100 different cards). It's **red** and bold at the red dot or under (50¢ by default), **amber** and
+  bold up to the amber dot ($1.49), plain above (**Settings → Export rates for bulk**). A card bought
+  at a manual price shows the higher of that and today's.
+- **Print MTG (all)** prints every card. **Print MTG (>$1.49)** prints only the cards over the amber
+  dot by today's price, and says so in its title and file name; with none, it says so and prints
+  nothing. A buy's **Print buy (all)** and **(>$1.49)** are the same for one buy.
 - **A buy flagged 🚩 for a condition check** (and not yet ✅ checked) puts a red banner across the top
   of every page, naming it: *"CHECK CONDITION: Buy 42 is flagged. Check its cards before export."* A
   day's printout names every flagged buy that day.
-- The foot of every page has the key to the prices' colours on the left and **Page 1 of N** at the
-  right margin.
-- It opens in a new tab and downloads. Bulk is never on it.
+- The foot of every page has the key to the prices' colours on the left, with the amounts, and
+  **Page 1 of N** at the right margin.
+- It opens in a new tab and downloads. Bulk is never on it. It needs the connection, and waits for
+  Settings to load.
 
 ### Print PKM? (the Pokémon printout)
 
 The same printout for a batch's Pokémon cards: one section per **set**, its code on the band, Near
-Mint first by collector number, the finish and tags as chips. Nothing is looked up, so it works
-offline. Pokémon cards are never exported, so a Completed batch prints the same cards. A flagged
+Mint first by collector number, the finish and tags as chips, and today's market price at the end
+of each row in the same colours, with the same key. It fetches the prices first, so it needs the
+connection. Pokémon cards are never exported, so a Completed batch prints the same cards. A flagged
 buy's red banner shows here too.
 
 ### Print PKM Stickers?
@@ -1209,6 +1238,8 @@ Price-tag stickers for a batch's Pokémon cards, on the store's sticker sheets (
 - Print at **100% / Actual size**, never "fit to page". The layout is tuned to the store's printer:
   if the stickers land off-centre, say so.
 - It opens in a new tab and downloads. Bulk is never on it.
+- On a Paid/Ours collection or project, once the stickers are made it asks **Mark this collection
+  Completed?**: **Yes, Completed** marks it so, **No, keep it Paid/Ours** leaves it.
 
 ### Complete day… (Pokémon days)
 
@@ -1293,7 +1324,11 @@ ID, so a product renamed in a newer inventory is still found.
 
 ### 2. Review
 
-The cards fall into three groups.
+The cards fall into three groups, four on an **Export MTG csv (>$1.49)**.
+
+**Pulled** (a (>…) export only). The cards whose Sell Price is at or under the amber dot of
+**Settings → Export rates for bulk**: bulk, left out of the file. Each shows its Sell Price. Nothing
+to decide.
 
 **Needs a choice.** More than one product could fit. For each card she picks one:
 
@@ -1303,7 +1338,7 @@ The cards fall into three groups.
 | **A product** | Picks it. Every card of the same printing and finish takes the same pick. |
 | **None of these (can't upload)** | Sends the card to Can't upload. |
 | **Find another CC product…** | Searches the inventory by name. |
-| **Sell price** | Optional. Empty uses the worked-out price. At least $0.40. |
+| **Sell price** | Optional. Empty uses the worked-out price. At least the Export sell floor ($0.40 by default). |
 | **Always use the picked product's category for…** | Shows when the app didn't know the set's category. Ticked, the choice is remembered for the whole set. |
 
 **Matched.** Folded away when there are more than 8. Each card shows its product, its category, and
@@ -1320,13 +1355,17 @@ choice.
 
 A summary: how many cards, how many rows, and the **Custom SKU**.
 
-If any cards can't upload, a red list names them. She pulls those cards out of the physical batch
-and ticks **I've pulled these cards out of the batch**. They're left out of the file. They're marked
-**Can't upload** and copied to **Can't upload cards**.
+If any cards can't upload, a red list names them, and on a (>…) export the pulled cards are listed
+in amber under them. She pulls those cards out of the physical batch and ticks **I've pulled these
+cards out of the batch**. They're left out of the file. The can't-upload ones are marked **Can't
+upload** and copied to **Can't upload cards**; the pulled ones are marked **Pulled**, in amber, and
+copied to **Bulk pulled from exports**. Both are frozen like exported cards: **Undo export…** brings
+their copies back.
 
 **Export N cards** saves everything and downloads the file. A day's or a buy's cards become
 **Completed**; a collection's or project's are marked exported, and its status stays as it is. With
-nothing matched, the button reads **Mark them Can't upload** and no file is made.
+nothing matched, the button reads **Mark them Can't upload** (or **Mark them pulled**) and no file
+is made.
 
 **When Export N cards fails:**
 
@@ -1334,8 +1373,9 @@ nothing matched, the button reads **Mark them Can't upload** and no file is made
   yet. The picks stay. She presses **Export** again.
 - **The cards changed on another computer:** nothing was exported. **Cancel**, then **EXPORT** again.
 - **The answer was lost** (flaky wifi): the dialog looks at the cards to see whether the export went
-  through. If it did, the file downloads and the page shows it exported. If it can't tell (still no
-  connection, or a Can't upload cards export), it says it may have exported anyway: **Cancel** and
+  through (for Can't upload cards and Bulk pulled from exports, at the cards the copies came from).
+  If it did, the file downloads and the page shows it exported. If it can't tell (still no
+  connection, or those original cards are gone), it says it may have exported anyway: **Cancel** and
   look at the page before trying again.
 
 The app never uploads the file. She uploads it in Crystal Commerce's Mass Create page.
@@ -1346,7 +1386,7 @@ Each exported card gets a **Sell Price**: its market price for its condition tod
 
 - It's worked out the same way the buy price was.
 - It's rounded **up** by the store's steps.
-- It's never below **$0.40**.
+- It's never below the **Export sell floor** (**Settings**; $0.40 by default).
 - A card bought at a manual price gets the higher of that price and today's.
 - A card with no price today uses its market price from the day it was bought.
 
@@ -1366,11 +1406,13 @@ After the export, Sell Prices show in green wherever the card appears.
 same file again. Nothing changes. It needs the connection.
 
 - **A day's file is the day's export only.** Cards sent with **Export single buy** aren't in it. A
-  day exported only one buy at a time has no day file to download again, and a single buy's file
-  can't be downloaded again.
+  day exported only one buy at a time has no day file to download again; each buy's own file comes
+  from its ⋯ → **Export ▸ Download its file again**.
 - **A collection or project exported in rounds** gets every round in the file.
-- **Cards sent later from Can't upload cards** were in that export's file, so they're left out. A day
-  or collection whose exported cards all went out that way has no file of its own.
+- **Cards pulled as bulk** by a (>…) export were never in the file.
+- **Cards sent later from Can't upload cards or Bulk pulled from exports** were in that export's
+  file, so they're left out. A day, buy or collection whose exported cards all went out that way has
+  no file of its own.
 
 ### Remembered matches
 
@@ -1677,7 +1719,31 @@ JustTCG doesn't give (see [How prices are worked out](#how-prices-are-worked-out
 ### Bulk values
 
 The market value of each bulk item, Magic and Pokémon side by side: *100 · Commons & Uncommons
-$1.50*. Bulk already in a list keeps its value; **REPRICE?** puts a project's bulk back on it.
+$1.50*, every amount shown as money with two decimals. Bulk already in a list keeps its value;
+**REPRICE?** puts a project's bulk back on it.
+
+### Export rates for bulk
+
+Where a Magic card counts as bulk at an export or on a printout. A slider from 1¢ to $3 with two
+dots: **red** up to the first (true bulk, **50¢** by default), **amber** up to the second (a $1
+card, **$1.49** by default), plain above; the **Key** box says the same. **EDIT** (a user needed)
+frees the dots: drag one, or move it 1¢ with the arrow keys (10¢ with Shift). **SAVE** keeps it and
+the Changelog records it; **CANCEL** puts it back.
+
+The amber dot is the cut every **(>…)** button uses. **Export MTG csv (>$1.49)** and **Export single
+buy (>$1.49)** pull the cards at or under it, by their Sell Price, to Bulk pulled from exports;
+**Print MTG (>$1.49)** and **Print buy (>$1.49)** leave them off, by today's market price. The
+buttons, titles and file names say the amount. The printouts colour prices red and amber by the
+same two dots. A card already pulled stays pulled when the dots move.
+
+### Export sell floor
+
+The lowest Sell Price an export writes, **$0.40** by default: a card whose rounded-up price comes to
+less is raised to it. The **Floor** box saves when she leaves it (a user needed; $0.40 at the lowest,
+$10 at most) and the Changelog records it. Beside it, a small table shows the store's rounding steps
+with a worked example, switched between **Buy** (rounded down) and **Sell** (rounded up, then the
+floor). Cards already exported keep their prices. Printouts and stickers use the price before the
+floor, so they don't change.
 
 ### Crystal Commerce matching
 
@@ -1708,7 +1774,10 @@ The banner under the header reminds everyone after 7 days.
 
 Then everything is replaced, on every computer. Computer names, the Crystal Commerce CSVs and the
 API key stay as they are. Buy numbers carry on after the highest one restored. An older backup
-restores too: anything it doesn't have takes its default.
+restores too: anything it doesn't have takes its default. A file with columns this database doesn't
+have is restored without them, and the dialog lists them first: *Left out by the restore: …*. A file
+whose list of remembered set choices, products or import picks is empty leaves what's here, as a
+missing list does, and the dialog says so.
 
 The foot of the tab lists where the app's data comes from, and the app's version.
 

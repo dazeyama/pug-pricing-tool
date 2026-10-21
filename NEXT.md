@@ -32,26 +32,11 @@ and function.
   mixed-rates * (413), the inventory cleared in batches (414, migration 0007), the phone's Undo fix (415), the
   Export rates for bulk (416), the Export sell floor (417), AUTO / OFF on the pill (418) and the owner's batch of
   2026-10-21 (419–424, no migration). The app code that needs 0005–0007 can't be pushed before prod has them.
-- **Help out of date** (only when the owner asks), from decisions 416 and 417: new Settings sections, **Export rates for
-  bulk** and **Export sell floor**; every "(>$1)" and "under $1" for Print MTG, Export MTG csv, Export single buy,
-  Print buy and Bulk pulled from exports now follows the setting ($1.49 by default), and the printout key gives the
-  amounts; The Sell Price's "never below $0.40" is now the floor's setting.
 - **The live site's bulk values** (decision 411, the owner's to do): Settings → Bulk values on the live site, type
   **24** in Rares & Mythics and in EXs. Prod isn't written from the CLI (decision 380). Until then, if prod has no
   saved `bulk_values`, the live site takes the code's defaults, $24 once pushed and $2.40 before. Push only on the owner's ask, once prod has 0005.
-- **Help out of date** (only when the owner asks), from the team's feedback (401–407): the condition and price-source
-  locks (right-click, 🔒; "Condition prices"), the buy list's sort buttons ("The buy list"), today's prices and the
-  amounts in the key on Print MTG / Print PKM ("Print MTG?", "Print PKM?"), the (>…) export's pulled cards in
-  "Exporting to Crystal Commerce", and the "Mark this collection Completed?" question ("Moving through the
-  statuses"). Print PKM? now needs the connection. (The 2026-10-21 Help pass covered EXPORT ▾'s groups on "The top
-  row" and "EXPORT", and Bulk pulled from exports with its Pulled chip.)
 - **Not built, from the feedback batch:** Home has no tile for Bulk pulled from exports (it's on the Collections tab, System); the `settings_save` first-save race is tested only one save
   after the other.
-- **Help out of date** (only when the owner asks), from the review leftovers: a buy's ⋯ has **Download its file
-  again** (386) and, partly hand-completed, **Mark Paid/Ours again** (396); "a single buy's file can't be downloaded
-  again" in The file is now wrong; 3. Confirm's "can't tell … a Can't upload cards export" (387); Convert to project
-  / collection leave a Completed game whole (393); Mark as Paid/Ours on a kept buy's collection starts at $0 (397);
-  Backups → Restore lists columns it would leave out and keeps empty match lists (398); the red Settings bar (389).
 - **After the launch push (v1.0.0-launch, 2026-10-19), the owner's setup on the live site.** Done the same night:
   signed in with prod's store password, the JustTCG key saved and a price came back, so `secrets` and `prices` are
   proven on prod. Left as the owner gets to them: name the computer, add the users, upload the CC CSV; every store
@@ -67,6 +52,16 @@ and function.
   - watch JustTCG usage and the plan (Appendix D 4);
 
 ## Done
+
+- 2026-10-21: **Help brought up to date for every older open item** (401–407, 416, 417, and the review leftovers
+  386, 387, 389, 393, 396–398), on the owner's ask (`README.md`): Banners (the red Settings bar), Condition prices
+  (the 🔒 locks), The buy list (Added / $ ↓ / WUBRG), Print MTG? and Print PKM? (today's prices, the (>…) print, the
+  key's amounts, the connection), Print PKM Stickers? and EXPORT and Moving through the statuses (the "Mark this
+  collection Completed?" question), Mark as Paid/Ours's $0 on a kept buy's collection, 2. Review (the Pulled group,
+  the floor), 3. Confirm (pulled cards, the lost answer read from the originals), The Sell Price (the floor), The file
+  (a buy's file again, pulled cards), A buy's ⋯ menu (a Completed game stays whole, Mark Paid/Ours again partly by
+  hand), Backups (Restore's left-out columns and empty lists), and two new Settings sections, **Export rates for
+  bulk** and **Export sell floor** (a Help page of their own in `help/pages.js`). No Help item is open.
 
 - 2026-10-21: **Help brought up to date for the batch** (419–424), on the owner's ask (`README.md`): Header search
   (customers and phone numbers, Show all switching itself on, Bulk pulled's cards never shown), a day page's The top

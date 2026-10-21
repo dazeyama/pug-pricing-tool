@@ -223,6 +223,10 @@ export const PAGES = [
     images: [{ src: 'settings-pct', caption: 'Master Buy and Fallback Percentages' }],
   },
   {
+    id: 'export-rates', chapter: 'Settings', start: 'Settings tab > Export rates for bulk',
+    title: 'Export rates for bulk and Export sell floor',
+  },
+  {
     id: 'cc-matching', chapter: 'Settings', start: 'Settings tab > Crystal Commerce matching',
     images: [{ src: 'settings-bottom', caption: 'Crystal Commerce matching and Backups' }],
   },
