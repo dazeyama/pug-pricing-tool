@@ -191,6 +191,8 @@ main { width: 100%; padding: 24px; max-width: 1400px; margin: 0 auto; }
   pointer-events: none;
 }
 .counts-chip.above { transform: translateY(-100%); }
+/* A note's chip (decision 433): the same chip, its text wrapped and its lines kept. */
+.counts-chip.note-chip { display: block; max-width: 320px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .counts-chip .game-badge { margin-right: 8px; padding: 3px 7px; font-size: 12px; }
 .game-badge.off { background: var(--panel-2); color: var(--muted); }
 

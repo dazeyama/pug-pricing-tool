@@ -11,6 +11,7 @@ import { createRequests, requestKey } from '../lib/requests.js';
 import GuardButton from '../components/GuardButton.jsx';
 import UserTag from '../components/UserTag.jsx';
 import CardCountsName from '../components/CardCountsName.jsx';
+import HoverChip from '../components/HoverChip.jsx';
 import { NewCollectionModal, NewProjectModal } from './collections/CollectionModals.jsx';
 import ImportDialog from './collections/ImportDialog.jsx';
 import RowAction from './collections/RowAction.jsx';
@@ -25,6 +26,7 @@ import { useToast } from '../components/Toast.jsx';
 import { useAuditPrint } from './export/useAuditPrint.js';
 import { fileSafe } from '../lib/massCreate.js';
 
+const NOTE_CHIP_HEIGHT = 160;   // a note's chip, a few lines tall: fits above the * when it has this much room
 const STALE_MS = 60_000;   // a lock without a heartbeat for 60s is stale (spec 9.6)
 const STATUS_ORDER = { processing: 0, priced: 1, paid: 2, completed: 3, rejected: 4 };
 
@@ -44,10 +46,14 @@ const columns = (by, menu) => [
       <td key="name" className="col-name">
         {/* Pointing at the name shows its cards by game (decision 276). */}
         <CardCountsName lines={c.buy_lines}>{c.customer_name}</CardCountsName>
-        {/* A note: a * after the name, the note on pointing at it (owner, 2026-10-21; decision 432). Not the
-            System collections' own fixed notes, which say what they're for. */}
+        {/* A note: a * after the name, the note on pointing at it in the cards-by-game chip's style (owner,
+            2026-10-21; decisions 432, 433). Not the System collections' own fixed notes, which say what
+            they're for. */}
         {!c.system_key && c.notes?.trim() && (
-          <span className="note-mark" title={c.notes} aria-label={`Note: ${c.notes}`}>*</span>
+          <HoverChip className="note-mark" chipClass="note-chip" height={NOTE_CHIP_HEIGHT} chip={() => c.notes.trim()}
+            aria-label={`Note: ${c.notes}`}>
+            *
+          </HoverChip>
         )}
         {elsewhere && <span className="lock-line">✎ open on {elsewhere}</span>}
       </td>

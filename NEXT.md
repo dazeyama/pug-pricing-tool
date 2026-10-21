@@ -7,7 +7,7 @@ and function.
 ## Open
 
 - **Unpushed** (2026-10-21): no Notes column on the Collections tab, its width to the name (decision 431); a note's
-  * after the name, the note on pointing at it (432). Help's "The tables" (Collections) still lists **Notes** and
+  * after the name, the note on pointing at it (432), in the cards-by-game chip's style (433). Help's "The tables" (Collections) still lists **Notes** and
   doesn't mention the *: out of date until the owner asks for Help.
 - **F2 reopened: the backup can hit the 8 s statement limit** (decision 430): a Download backup failed with a 500
   once, and Restore's first press with "canceling statement due to statement timeout" (`backup_export`, one call for
@@ -56,6 +56,11 @@ and function.
   - watch JustTCG usage and the plan (Appendix D 4);
 
 ## Done
+
+- 2026-10-21: **The note's chip like the cards-by-game chip** (decision 433, the owner's ask): pointing at a note's *
+  shows the note in the same floating chip, wrapped at 320 px; the chip's placement shared as
+  `src/components/HoverChip.jsx`, which `CardCountsName.jsx` uses too. Lint, tests and the build pass; untested in
+  the app.
 
 - 2026-10-21: **A note's * after the name on the Collections tab** (decision 432, the owner's ask): a bold * after a
   name with a note, the note in its tooltip; none on the System rows (`CollectionsPage.jsx` name cell,
