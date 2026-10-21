@@ -62,6 +62,12 @@ export default function PricePage() {
     setLineRate: (line, cash, credit, userId) => draft.setLineRate(line.id, cash, credit, userId),
   };
   const count = draft.lines.reduce((n, l) => n + l.quantity, 0);
+  // A buy confirmed on another computer leaves nothing here to confirm (smoke pass; decision 427):
+  // the dialog closes rather than staying open as "Confirm buy — 0 cards".
+  const draftEmpty = draft.loaded && draft.lines.length === 0;
+  useEffect(() => {
+    if (draftEmpty) setConfirming(false);
+  }, [draftEmpty]);
 
   /** CONFIRM BUY's dialog confirmed (spec 8.10). */
   async function confirmBuy({ customerName, phone, notes, paidPrice, paidMethod, flagCondition }) {

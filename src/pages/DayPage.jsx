@@ -529,14 +529,11 @@ function DayScreen({ game, day }) {
 
   /**
    * EXPORT ▾ → Print? (docs/TEAM_FEEDBACK.md 3.1): the cards EXPORT would
-   * take, or once the day is exported, what it exported; blocked when EXPORT is.
+   * take, or once the day is exported, what it exported. Today's too: it changes nothing (smoke pass;
+   * decision 427).
    */
   /** `over1`: Print MTG (>…) (decisions 405, 416), only the cards over the Export rates for bulk' amber today. */
   function printDay(over1 = false) {
-    if (exportBlocked) {
-      toast(`${exportBlocked}.`, 'err');
-      return;
-    }
     if (!mine.length) {
       toast(`No ${GAME_NAMES[game]} buys that day.`, 'err');
       return;
@@ -677,9 +674,9 @@ function DayScreen({ game, day }) {
             exportLabel={completeOnly ? 'Complete day…' : 'Export MTG csv'}
             splitExport={!completeOnly}
             exportTitle={completeOnly ? "Mark the day's Pokémon buys Completed, with today's sell prices" : undefined}
-            exportBlocked={completeOnly ? exportBlocked : null}
+            // Today greys the Export items alone, saying why; the prints change nothing (decision 427).
+            exportBlocked={exportBlocked}
             printing={printing || stickers.printing}
-            blocked={completeOnly ? null : exportBlocked}
             copyLines={dayLines}
             count={state.loaded ? pileCards : null}
             countTitle={toExport.length

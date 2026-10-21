@@ -229,7 +229,7 @@ function RestoreModal({ fileName, data, check, onClose }) {
       )}
       {keptLearned.length > 0 && (
         <p className="hint">
-          The file’s {keptLearned.map((t) => LEARNED[t]).join(' and ')} {keptLearned.length === 1 ? 'is' : 'are'} empty:
+          The file’s {keptLearned.map((t) => LEARNED[t]).join(' and ')} are empty:
           what’s here now stays.
         </p>
       )}

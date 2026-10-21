@@ -13,7 +13,7 @@ import { downloadMassCreate, restampTimes } from '../lib/ccExport.js';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import PricingScreen from './price/PricingScreen.jsx';
 import CollectionDetails from './collections/CollectionDetails.jsx';
-import { collectionKind, collectionRates, isClosed, statusLabel } from './collections/status.js';
+import { collectionKind, collectionRates, isClosed, statusLabel, statusText } from './collections/status.js';
 import { tiersFrom } from '../lib/rates.js';
 import { isStruck, movesOn } from '../lib/struck.js';
 import { ConfirmModal, ConvertToBuyModal, DeleteCollectionModal, RejectModal } from './collections/CollectionModals.jsx';
@@ -407,7 +407,7 @@ function CollectionScreen({ id }) {
     NO_CONNECTION,
     [viewOnly, `${holderLabel} is editing this project: take over first`],
     [lock.status !== 'held', 'Checking who is editing this project'],
-    [buy?.status === 'completed', 'Completed: reopen it (back to Paid/Ours) first'],
+    [buy?.status === 'completed', 'Completed: reopen it (back to Ours) first'],   // a project's word (decision 427)
     [exportedLines.length > 0, PROJECT_EXPORTED],
     [!col.lines.length, 'No cards to convert'],
   ]);
@@ -588,7 +588,7 @@ function CollectionScreen({ id }) {
             <ConfirmModal
               title={`Mark this ${buy.project ? 'project' : 'collection'} Completed?`}
               yes="Yes, Completed"
-              no="No, keep it Paid/Ours"
+              no={`No, keep it ${statusText(buy)}`}
               onClose={() => {
                 setAsking(null);
                 api.focusSearch();
@@ -601,10 +601,11 @@ function CollectionScreen({ id }) {
               }}
             >
               <p>
-                <strong>{buy.customer_name}</strong> is Paid/Ours. Completed means done with: locked, and out of the
-                header search. Mark it Completed now, with this export?
+                {/* A project is "Ours", as on its chip (smoke pass; decision 427). */}
+                <strong>{buy.customer_name}</strong> is {statusText(buy)}. Completed means done with: locked, and out
+                of the header search. Mark it Completed now, with this export?
               </p>
-              <p className="hint">Reopen takes it back to Paid/Ours.</p>
+              <p className="hint">Reopen takes it back to {statusText(buy)}.</p>
             </ConfirmModal>
           )}
           {asking === 'reopen' && (

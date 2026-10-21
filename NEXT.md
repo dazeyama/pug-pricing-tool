@@ -6,20 +6,16 @@ and function.
 
 ## Open
 
-- **Unpushed** (2026-10-21): the smoke pass's fixes (decision 426): Show all after a customer search, backups a
-  table and a page at a time, the Convert count, the buy's undo naming Bulk pulled, the one-rate *, TEST.md's
-  reworded cases and decision 329's note. None needs a migration.
-- **Notes from the 2026-10-21 smoke pass the owner hasn't answered yet** (the full log is
-  `C:\ClaudeProjects\temp\smoke-2026-10-21\findings.md`; the rest are fixed or closed, decision 426):
-  - N2: switching a selected card's finish to one with no TCGplayer price keeps "🔒 Use TCGplayer" and prices it
-    from JustTCG with no toast; only a newly selected card drops the lock (decision 402).
-  - N3: after a stale confirm, the dialog stays open as "Confirm buy — 0 cards" with Confirm live.
-  - N5: a project's Completed question says "SMOKE Project is Paid/Ours", and its greyed Convert to buy's reason
-    says Paid/Ours too.
-  - N8 (question): today's Magic EXPORT is blocked as a whole, so EXPORT ▾'s Print MTG can't be reached on today's
-    day page.
-  - N9: the restore dialog says "The file's remembered import picks is empty" (is → are).
-  - Not run by Claude, still the owner's: section 10 (the phone), the two-computer, network-off and store cases.
+- **Today's EXPORT and COMPLETE unblocked** (decision 427, the owner: "unblock all of them"): waiting on the
+  owner's go for migration 0008 and its prod moment. 0008 drops the `day_not_over` raise from `export_lines` and
+  `day_complete`; the app drops `notOver`, `NOT_OVER` and `NOT_OVER_COMPLETE` (`src/pages/DayPage.jsx`) and the
+  `day_not_over` message. Today's prints are already open (app only).
+- **Unpushed** (2026-10-21): the smoke pass's fixes and notes (decisions 426, 427): Show all after a customer
+  search, backups a table and a page at a time, the Convert count, the buy's undo naming Bulk pulled, the one-rate
+  *, TEST.md's reworded cases and decision 329's note; the lock on a finish switch, CONFIRM BUY closing when its
+  buy is gone, "Ours" for projects, "are empty", today's prints. None needs a migration.
+- **Not run by Claude in the 2026-10-21 smoke pass, still the owner's:** section 10 (the phone), the two-computer,
+  network-off and store cases.
 - **The live site's first inventory upload on v1.0.1-day1** (decision 414): the live site most likely holds a
   second full copy of the Master Crystal Inventory (~152k products) from the owner's timed-out upload on the old
   build, and any uploads since. The first upload from the new build clears them ("Clearing the old file…").
@@ -51,6 +47,13 @@ and function.
   - watch JustTCG usage and the plan (Appendix D 4);
 
 ## Done
+
+- 2026-10-21: **The smoke pass's notes N2, N3, N5, N8 and N9** (decision 427). The 🔒 price-source lock is checked
+  again on each finish or version (`PricingScreen.jsx` `settledFor`); CONFIRM BUY closes when the draft has no
+  cards left (`PricePage.jsx`); projects say "Ours" in the Completed question and Convert to buy's reason
+  (`CollectionPage.jsx`); the restore dialog says "are empty" (`BackupsPanel.jsx`); EXPORT ▾ opens on today's
+  Magic day with its prints working, the Export items greyed (`DayPage.jsx`). Lint, 464 tests and the build pass;
+  untested in the app.
 
 - 2026-10-21: **The smoke pass's findings, as the owner answered them** (decision 426). Fixed: Show all stays off
   once the header search's list closes (`SearchBox.jsx`); backups read a table and a page at a time

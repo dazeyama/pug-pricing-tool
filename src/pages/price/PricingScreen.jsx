@@ -277,8 +277,10 @@ export default function PricingScreen({
   const pricesLoading = prices.status === 'loading' || prices.status === 'waiting';
 
   // A locked price source this card doesn't have (decision 402): the lock goes, and a toast says
-  // why. Looked at once the card and its prices are in (a Pokémon card's after its details load).
-  const settledFor = card && !pricesLoading && (magic || pokemon.resolved) ? card.key : null;
+  // why. Looked at once the card and its prices are in (a Pokémon card's after its details load),
+  // and again for each finish or version picked on it (smoke pass; decision 427).
+  const settledFor = card && !pricesLoading && (magic || pokemon.resolved)
+    ? `${card.key}|${finish ?? ''}|${version?.id ?? ''}` : null;
   useEffect(() => {
     if (!settledFor || !lockedSource) return;
     const missing = lockedSource === 'fallback' ? fallback == null : cardmarketEur == null;
