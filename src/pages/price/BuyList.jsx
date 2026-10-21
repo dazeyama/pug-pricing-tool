@@ -433,6 +433,11 @@ export default function BuyList({
   const missingKey = sort === 'color'
     ? [...new Set(lines.filter((l) => l.game === 'mtg' && l.scryfall_id && !COLOR_CARDS.has(l.scryfall_id)).map((l) => l.scryfall_id))].join(',')
     : '';
+  // While the colors load (Scryfall can be slow on a long list), the list fades, takes no clicks
+  // and says so, keeping the order it had; it reorders once, when they're in (decision 410).
+  const colorLoading = sort === 'color' && Boolean(missingKey);
+  const shownSort = useRef('added');
+  if (!colorLoading) shownSort.current = sort;
   useEffect(() => {
     if (!missingKey) return undefined;
     let alive = true;
@@ -442,7 +447,10 @@ export default function BuyList({
         for (const id of missingKey.split(',')) COLOR_CARDS.set(id, found.get(id) ?? null);
         if (alive) setColors(Object.fromEntries(COLOR_CARDS));
       })
-      .catch((e) => toast(`Couldn't get the cards' colors from Scryfall: ${e.message}`, 'err'));
+      .catch((e) => {
+        toast(`Couldn't get the cards' colors from Scryfall: ${e.message}. Back to the order added.`, 'err');
+        if (alive) setSort('added');
+      });
     return () => {
       alive = false;
     };
@@ -596,7 +604,8 @@ export default function BuyList({
                 type="button"
                 className={`list-sort-btn${sort === s.key ? ' on' : ''}`}
                 aria-pressed={sort === s.key}
-                title={s.title}
+                title={colorLoading ? "Getting the cards' colors from Scryfall…" : s.title}
+                disabled={colorLoading}
                 onClick={() => {
                   setSort(s.key);
                   onDone();
@@ -610,7 +619,14 @@ export default function BuyList({
       </div>
       {scanChip && <div className="list-scan">{scanChip}</div>}
 
-      <div className="list-body" ref={list}>
+      {colorLoading && (
+        <div className="list-sorting" role="status" aria-live="polite">
+          <span className="list-sorting-spin" aria-hidden="true" />
+          <strong>Sorting by color…</strong>
+          <span>Getting the cards&apos; colors from Scryfall</span>
+        </div>
+      )}
+      <div className={`list-body${colorLoading ? ' is-sorting' : ''}`} ref={list} aria-busy={colorLoading || undefined}>
         {loaded && !lines.length && <p className="list-empty">Cards you add will appear here.</p>}
         {GAMES.map((g) => {
           const all = lines.filter((l) => l.game === g.key);
@@ -620,7 +636,7 @@ export default function BuyList({
           // seeing them mixed in").
           const bulk = all.filter(isValuedBulk).sort((a, b) => bulkRank(a) - bulkRank(b));
           // The cards in the order picked (decision 403); by color is Magic's only, Pokémon stay as added.
-          const order = sort === 'color' && g.key !== 'mtg' ? 'added' : sort;
+          const order = shownSort.current === 'color' && g.key !== 'mtg' ? 'added' : shownSort.current;
           const mine = [...bulk, ...sortLines(all.filter((l) => !isValuedBulk(l)), order, (l) => colors[l.scryfall_id])];
           const firstCard = bulk.length < mine.length ? mine[bulk.length].id : null;
           return (

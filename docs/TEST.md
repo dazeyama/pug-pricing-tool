@@ -160,7 +160,9 @@ what happens. The findings are reported when the pass ends.
       priced from TCGplayer; select a card with no TCGplayer price: the lock goes, with a toast saying why.
 - [ ] **Sorting the list** (decision 403): a list of Magic and Pokémon cards: **$ ↓** orders each game's cards by
       price, high first; **WUBRG** orders the Magic ones white, blue, black, red, green, multicolor, colorless,
-      lands (A–Z in each), the Pokémon ones as added; **Added** puts them back; bulk stays on top throughout.
+      lands (A–Z in each), the Pokémon ones as added; **Added** puts them back; bulk stays on top throughout. On a
+      long list (decision 410), WUBRG fades the list and shows "Sorting by color…" until the colors come back, clicks
+      on the list do nothing meanwhile, and it reorders once at the end.
 
 ## 8. Buy tab: the buy list and CONFIRM BUY
 

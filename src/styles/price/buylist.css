@@ -33,6 +33,38 @@
 }
 .list-sort-btn:hover { color: var(--text, #fff); }
 .list-sort-btn.on { color: var(--text, #fff); border-color: currentColor; font-weight: 600; }
+.list-sort-btn:disabled { cursor: progress; opacity: .6; }
+/* Sorting by color while Scryfall answers (decision 410): the list faded and locked, a clear note over it. */
+.list-body.is-sorting { opacity: .25; pointer-events: none; user-select: none; transition: opacity .15s; }
+.list-sorting {
+  position: absolute;
+  top: 120px;
+  left: 50%;
+  z-index: 5;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: min(260px, 85%);
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(16, 19, 33, .96);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .45);
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+}
+.list-sorting strong { font-size: 16px; color: var(--text); }
+.list-sorting-spin {
+  width: 30px;
+  height: 30px;
+  border: 4px solid rgba(108, 140, 255, .25);
+  border-top-color: #6c8cff;
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
 .list-empty { margin: 18px 16px; color: var(--muted); font-size: 13px; }
 /* No top padding on the scroller itself: the sticky game headers would stop
    that far down, and rows scrolling past would show above them. */
