@@ -8,7 +8,10 @@ declare
   v_count integer;
 begin
   if auth.uid() is null then raise exception 'not_signed_in'; end if;
-  if not exists (select 1 from master_inventory_files where id = p_file_id and not is_current) then
+  -- An upload started before the current file is over (decision 414): its products are being cleared.
+  if not exists (select 1 from master_inventory_files f
+                  where f.id = p_file_id and not f.is_current
+                    and not exists (select 1 from master_inventory_files c where c.is_current and c.uploaded_at > f.uploaded_at)) then
     raise exception 'upload_gone';
   end if;
   if jsonb_typeof(p_rows) is distinct from 'array' or jsonb_array_length(p_rows) > 5000 then

@@ -20,7 +20,7 @@ export default function MasterInventoryPanel() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   // Where a big upload is (owner, 2026-09-30: the real file is 40 MB+).
-  const [stage, setStage] = useState(null);   // null | { step, pct? }: check, compress, upload, load, save
+  const [stage, setStage] = useState(null);   // null | { step, pct? }: check, compress, upload, load, save, prune
 
   async function onPicked(e) {
     const file = e.target.files?.[0];
@@ -88,6 +88,7 @@ export default function MasterInventoryPanel() {
             {stage.step === 'upload' && 'Uploading…'}
             {stage.step === 'load' && `Loading products… ${stage.pct ?? 0}%`}
             {stage.step === 'save' && 'Saving…'}
+            {stage.step === 'prune' && 'Clearing the old file…'}
           </p>
         )}
 

@@ -6,17 +6,24 @@ and function.
 
 ## Open
 
-- **Prod doesn't have migrations 0005 and 0006 yet** (2026-10-20, 9:30 PM): dev has 0001–0006, prod 0001–0004
-  (decision 381). The owner held the 9:30 PM push for one more migration (0007), so all three go to prod together.
-  The step: CLAUDE.md, Database, step 6, comparing with the newest dev run (0006's is
-  `C:\ClaudeProjects\temp\pug-0006\dev-run-0006.json`, 557 checks, all passed); ask the owner first, after 9:30 PM
-  recommended. 0005 keeps the live site working (`export_lines`' new `p_pulled` defaults to none). 0006 refuses a
-  Settings save with no user picked, which the live build already prevents for the boxes. The app code that needs them
-  can't be pushed before prod has them.
+- **Prod doesn't have migrations 0005–0007 yet** (2026-10-20, 9:30 PM): dev has 0001–0007, prod 0001–0004
+  (decision 381). The owner held the 9:30 PM push for 0007, so all three go to prod together. The step: CLAUDE.md,
+  Database, step 6, comparing with `C:\ClaudeProjects\temp\pug-0007\dev-run-0007.json`; ask the owner first, after
+  9:30 PM recommended. 0005 keeps the live site working (`export_lines`' new `p_pulled` defaults to none). 0006
+  refuses a Settings save with no user picked, which the live build already prevents for the boxes. The app code that
+  needs them can't be pushed before prod has them.
+- **Push the app soon after prod has 0007** (decision 414, review finding): with 0007, the live build's uploads no
+  longer time out, but it never clears the old file, so each upload from it leaves another full copy (~152k
+  products) in the database (Free plan, 500 MB). The live site most likely also holds the copy from the owner's
+  timed-out upload (its undo, `master_inventory_abort`, is the same single delete). The first upload from the new
+  build clears both.
+- **Inventory leftovers** (decision 414): `master_inventory_abort` is unused by the new build (kept for the live
+  one); retire it in a later migration, with its test-run checks and its place in the security-definer list. A
+  stored `.gz` can be left in the `master-inventory` bucket if the clearing's last answer is lost
+  (`pruneProducts`, `src/lib/masterInventory.js`).
 - **Settings in the Changelog** (decision 412, migration 0006, on dev): settings saved, the inventory uploaded, the
   JustTCG key saved or removed and a match forgotten go under Actions with a "Settings" chip. Untested in the app.
-  Not covered by the test run: the `inventory_uploaded` entry from `master_inventory_finish` (running it replaces
-  dev's inventory). From the review, left as is: the live build shows the new action names raw on Home until a
+  From the review, left as is: the live build shows the new action names raw on Home until a
   push; `settings_log` takes the app's sentence as written; the key and match entries are guarded for a user only by
   the app and `settings_log`.
 - **Unpushed** (2026-10-20): 11 commits since the last push: the stamp check removed (400), the team's six

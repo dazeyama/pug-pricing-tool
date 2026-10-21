@@ -463,6 +463,9 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
 - [ ] **API keys:** the JustTCG key shows masked; **Test** shows the plan and today's and this month's lookups.
 - [ ] **JustTCG usage** shows Today and This month bars, the plan and the reset time.
 - [ ] **Master Crystal Inventory** shows the current file, who uploaded it and its rows.
+- [ ] **Upload Crystal Commerce Database** with a file already there (decision 414): it runs through Loading
+      products… and Saving… to **Clearing the old file…** (about half a minute for the full export), then shows the new
+      file, with no "statement timeout". The Changelog has "Master Crystal Inventory uploaded" under Actions.
 - [ ] **Crystal Commerce matching** lists remembered sets and products; Browse remembered products… searches them.
 - [ ] **Backups:** Last backup updates after the download; **Restore from backup…** shows the file beside what's here;
       typing RESTORE and pressing Restore downloads `…-before-restore.json` and says to check it, without restoring

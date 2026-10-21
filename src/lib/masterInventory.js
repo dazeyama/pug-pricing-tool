@@ -143,6 +143,22 @@ async function loadProducts(file, fileId, onProgress) {
   onProgress?.(1);
 }
 
+/**
+ * Delete an old or abandoned file's products a batch at a time (decision 414):
+ * one call each, every one well under the database's 8 s limit. Its row goes
+ * once it's empty.
+ * @param {string|null} fileId  an unfinished upload, or null for the files before the current one
+ * @param {string[]} paths  gets the storage files of the rows that went, even if a later call fails
+ */
+async function pruneProducts(fileId, paths) {
+  for (;;) {
+    const { data, error } = await supabase.rpc('master_inventory_prune', { p_file_id: fileId });
+    if (error) throw new Error(`Clearing the old inventory failed: ${error.message}`);
+    paths.push(...(data.paths ?? []));
+    if (data.done || !data.deleted) return;
+  }
+}
+
 /** Storage keys allow a limited character set; the real name is kept in the table. */
 function safeKeyName(name) {
   return name.replace(/[^A-Za-z0-9._() -]/g, '_');
@@ -156,7 +172,7 @@ function safeKeyName(name) {
  * @param {File} file
  * @param {CsvSummary} summary
  * @param {string} userId  the picked staff user
- * @param {(step: 'compress'|'upload'|'load'|'save', fraction?: number) => void} [onStep]
+ * @param {(step: 'compress'|'upload'|'load'|'save'|'prune', fraction?: number) => void} [onStep]
  */
 export async function uploadCsv(file, summary, userId, onStep) {
   onStep?.('compress');
@@ -195,16 +211,31 @@ export async function uploadCsv(file, summary, userId, onStep) {
     onStep?.('save');
     const { data, error } = await supabase.rpc('master_inventory_finish', { p_file_id: fileId });
     if (error) throw new Error(`Saving the upload failed: ${error.message}`);
-    pruned = data;
+    pruned = data ?? [];
   } catch (e) {
-    // Half-loaded: the new file and its products go; the current one stays.
-    await supabase.rpc('master_inventory_abort', { p_file_id: fileId });
-    await supabase.storage.from(BUCKET).remove([path]);
+    // Half-loaded: the new file and its products go, in batches; the current one stays. Its stored
+    // copy goes only once its row has: if the save did go through, unheard, the file is current.
+    const undone = [];
+    try {
+      await pruneProducts(fileId, undone);
+    } catch (undoError) {
+      console.error('Removing the unfinished upload failed', undoError);
+    }
+    if (undone.length) await supabase.storage.from(BUCKET).remove(undone);
     throw e;
   }
 
+  // The new file is current; the one it replaces goes, its products in batches. If that's cut short,
+  // the next upload finishes it.
+  onStep?.('prune');
+  try {
+    await pruneProducts(null, pruned);
+  } catch (e) {
+    console.error(e);
+  }
+
   // The file this one replaces: its row is gone; remove the file too.
-  if (pruned?.length) {
+  if (pruned.length) {
     const { error: rmError } = await supabase.storage.from(BUCKET).remove(pruned);
     if (rmError) console.error('Removing old inventory files failed', rmError);
   }

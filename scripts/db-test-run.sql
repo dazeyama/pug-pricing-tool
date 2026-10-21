@@ -252,7 +252,8 @@ begin
   perform pg_temp.ok(s, 'Only the expected functions run with the owner''s rights',
     -- internal.request_begin / request_end (0004): the only way to the done requests, which the app can't read.
     v = 'internal.insert_event, internal.remember_customer, internal.request_begin, internal.request_end, '
-        || 'public.cc_products_load, public.master_inventory_abort, public.master_inventory_finish, public.restore_backup', v);
+        || 'public.cc_products_load, public.master_inventory_abort, public.master_inventory_finish, '
+        || 'public.master_inventory_prune, public.restore_backup', v);
 
   select string_agg(ns.nspname || '.' || p.proname, ', ' order by ns.nspname || '.' || p.proname) into v
     from pg_proc p join pg_namespace ns on ns.oid = p.pronamespace
@@ -1987,8 +1988,15 @@ declare
   s text := 'Inventory';
   u uuid := pg_temp.id('u1');
   v_old uuid := cc_current_file();
+  v_old_path text := (select storage_path from master_inventory_files where is_current);
+  v_old_had boolean := exists (select 1 from cc_products where file_id = cc_current_file());
   v_f uuid;
   v_f2 uuid;
+  v_f3 uuid;
+  v_r jsonb;
+  v_calls integer := 0;
+  v_max integer := 0;
+  v_gone text[] := '{}';
   v_n integer;
   v_path text;
   v_pruned text[];
@@ -2018,6 +2026,11 @@ begin
     raise exception 'dbt_no_error';
   exception when others then perform pg_temp.err(s, '… and abandoning one', sqlerrm, 'not_signed_in');
   end;
+  begin
+    perform master_inventory_prune();
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, '… and clearing an old file (0007)', sqlerrm, 'not_signed_in');
+  end;
   perform set_config('request.jwt.claims', '{"sub":"dddddddd-0000-4000-8000-00000000d0b7","role":"authenticated"}', true);
 
   v_f := master_inventory_start('dbtest/inventory-dbtest.csv', 'inventory-dbtest.csv', 1234, 4,
@@ -2044,10 +2057,59 @@ begin
     perform pg_temp.ok(s, 'Products can only be loaded through the server', sqlstate = '42501', sqlerrm);
   end;
   v_pruned := master_inventory_finish(v_f);
-  perform pg_temp.ok(s, 'Finishing makes it the current file and drops the old one',
+  -- 0007: the old file's products go in batches after, not in this one statement.
+  perform pg_temp.ok(s, 'Finishing makes it the current file; the old one goes now only if it has no products (0007)',
     cc_current_file() = v_f and (select products_loaded from master_inventory_files where id = v_f) = 4
-    and (v_old is null or (not exists (select 1 from master_inventory_files where id = v_old) and cardinality(v_pruned) = 1)),
+    and (v_old is null
+         or (v_old_had and exists (select 1 from master_inventory_files where id = v_old) and cardinality(v_pruned) = 0)
+         or (not v_old_had and not exists (select 1 from master_inventory_files where id = v_old) and cardinality(v_pruned) = 1)),
     'dropped ' || cardinality(v_pruned));
+  perform pg_temp.ok(s, '… and goes in the Changelog under who started it (0006)',
+    exists (select 1 from events where action = 'inventory_uploaded' and kind = 'app' and staff_user_id = u
+              and target_name = 'Master Crystal Inventory'
+              and summary = 'Master Crystal Inventory uploaded: inventory-dbtest.csv, 4 products.'));
+  if v_old_had then
+    begin
+      perform cc_products_load(v_old, v_rows);
+      raise exception 'dbt_no_error';
+    exception when others then
+      perform pg_temp.err(s, 'An upload started before the current file can''t load more (0007)', sqlerrm, 'upload_gone');
+    end;
+    begin
+      perform master_inventory_finish(v_old);
+      raise exception 'dbt_no_error';
+    exception when others then perform pg_temp.err(s, '… or finish (0007)', sqlerrm, 'upload_gone');
+    end;
+  end if;
+  loop
+    v_r := master_inventory_prune();
+    v_calls := v_calls + 1;
+    v_max := greatest(v_max, (v_r ->> 'deleted')::int);
+    v_gone := v_gone || array(select jsonb_array_elements_text(v_r -> 'paths'));
+    exit when (v_r ->> 'done')::boolean or v_calls > 1000;
+  end loop;
+  perform pg_temp.ok(s, 'The old file''s products are cleared in batches of 5,000 at most, then its row goes (0007)',
+    (v_r ->> 'done')::boolean and v_max <= 5000 and cc_current_file() = v_f
+    and (v_old is null or (not exists (select 1 from master_inventory_files where id = v_old)
+                           and not exists (select 1 from cc_products where file_id = v_old)
+                           and (not v_old_had or v_old_path = any(v_gone)))),
+    v_calls || ' calls, largest ' || v_max || ', ' || cardinality(v_gone) || ' files');
+  v_r := master_inventory_prune(v_f);
+  perform pg_temp.ok(s, '… never the current file''s (0007)',
+    (v_r ->> 'deleted')::int = 0 and cc_current_file() = v_f
+    and (select count(*) from cc_products where file_id = v_f) = 4);
+  v_f3 := master_inventory_start('dbtest/inventory-dbtest-3.csv', 'inventory-dbtest-3.csv', 1, 4, '{}', u);
+  perform cc_products_load(v_f3, v_rows);
+  v_r := master_inventory_prune();
+  -- (Started in this same run, so at the same moment as the current file: not before it.)
+  perform pg_temp.ok(s, '… nor an upload not started before it, still loading (0007)',
+    exists (select 1 from master_inventory_files where id = v_f3)
+    and (select count(*) from cc_products where file_id = v_f3) = 4);
+  v_r := master_inventory_prune(v_f3);
+  perform pg_temp.ok(s, 'A failed upload is undone the same way: its products, then its row (0007)',
+    (v_r ->> 'done')::boolean and v_r -> 'paths' = '["dbtest/inventory-dbtest-3.csv"]'::jsonb
+    and not exists (select 1 from master_inventory_files where id = v_f3)
+    and not exists (select 1 from cc_products where file_id = v_f3), v_r::text);
   begin
     perform cc_products_load(v_f, v_rows);
     raise exception 'dbt_no_error';
