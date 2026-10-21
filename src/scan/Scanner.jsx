@@ -841,7 +841,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
             via = 'fnm-title';
           } else {
             trace('pick-open', { via: 'pick-fnm', name: 'FNM promo', count: fnm.cards.length, manual });
-            setPick({ tier: 1, name: 'FNM promo', cards: fnm.cards, all: fnm.cards, art, foilSeen, hint: 'Match the picture.', via: 'pick-fnm' });
+            setPick({ tier: 1, name: 'FNM promo', cards: fnm.cards, all: fnm.cards, art, frame, foilSeen, hint: 'Match the picture.', via: 'pick-fnm' });
             say('muted', 'An FNM promo: pick which one.');
             return;
           }
@@ -859,7 +859,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           via = 'promo';
         } else if (promo) {
           trace('pick-open', { via: 'pick-promo', name: promo.name, count: promo.cards.length, manual });
-          setPick({ tier: 1, name: promo.name, cards: promo.cards, all: promo.all, art, foilSeen, hint: 'A promo: match the stamp.', via: 'pick-promo' });
+          setPick({ tier: 1, name: promo.name, cards: promo.cards, all: promo.all, art, frame, foilSeen, hint: 'A promo: match the stamp.', via: 'pick-promo' });
           say('muted', `${promo.name}: a promo, pick which one.`);
           return;
         }
@@ -904,7 +904,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           via = `title-${old.how}-${old.tier === 2 ? 'number' : 'look'}`;
         } else if (old) {
           trace('pick-open', { via: `pick-title-${old.how}`, name: old.name, count: old.cards.length, manual });
-          setPick({ ...old, art, via: `pick-title-${old.how}` });
+          setPick({ ...old, art, frame, via: `pick-title-${old.how}` });
           say('muted', `${old.name}: pick its printing.`);
           return;
         }
@@ -1083,7 +1083,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         return;
       }
       trace('pick-open', { via: `pick-title-press-${old.how}`, name: old.name, count: old.cards.length, manual: true });
-      setPick({ ...old, art, via: `pick-title-press-${old.how}` });
+      setPick({ ...old, art, frame, via: `pick-title-press-${old.how}` });
       say('muted', `${old.name}: pick its printing.`);
     } catch (e) {
       if (readRun.current !== run || (ticket != null && scanTicket.current !== ticket)) return;
@@ -1189,7 +1189,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       if (!old) return `Scryfall has no printing of ${name}.`;
       trace('name-typed', { typed, name, guessed: typed === ask.guess, count: old.cards.length });
       setNameAsk(null);
-      setPick({ ...old, art: ask.art, via: 'pick-name' });
+      setPick({ ...old, art: ask.art, frame: ask.frame, via: 'pick-name' });
       say('muted', `${old.name}: pick its printing.`);
       return null;
     } catch (e) {
@@ -1480,12 +1480,23 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
               setPick(null);
               say('muted', 'Skipped: set it aside and add it on the computer.');
             }}
+            onType={() => {
+              // Let me type it (owner, 2026-10-21; decision 420): the reader named the wrong card. The
+              // list closes and the name box opens empty; the typed name's printings are ranked by
+              // the list's photo where it has one (the pick carries its frame), else listed oldest first.
+              trace('pick-type', { via: pick.via ?? 'pick', name: pick.name });
+              const { art, frame } = pick;
+              setPick(null);
+              setNameAsk({ guess: '', frame: frame ?? null, card: lock?.card ?? null, listMark: null, texts: [], art: art ?? null, from: 'pick' });
+              say('muted', "Type the card's name, then pick its printing.");
+            }}
           />
         )}
         {!needs && !pick && nameAsk && (
           <NameSheet
             key={nameAsk.guess ?? ''}
             guess={nameAsk.guess}
+            title={nameAsk.from === 'pick' ? "Which card is it? Type its name." : undefined}
             onSubmit={nameTyped}
             onSkip={() => {
               // Skipped: held, as a skipped printing list is, so auto scan leaves this card be.

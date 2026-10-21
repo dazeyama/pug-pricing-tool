@@ -96,7 +96,9 @@ export async function titleAmong(frame, cards, named, { card = null } = {}) {
 /**
  * An older card's printings once its name is known (read, or typed in the
  * Which card? box, decision 311): taken by its "123/350" when that fits one,
- * else ranked by how the card looks, best first.
+ * else ranked by how the card looks, best first. With no picture to go by
+ * (`frame` null: the name typed over a printing list that had no frame,
+ * decision 420), every printing, oldest first, to pick by the set symbol.
  * @returns {Promise<{ tier: 2|3, name: string, number: string|null, cards: object[], all: object[] }|null>}
  *   null: Scryfall has no printing of that name
  */
@@ -104,7 +106,7 @@ export async function printingsFor(name, frame, { texts = [], card = null, listM
   const match = { name };
   const bottoms = [...texts];
   let old = bottoms.map(parseOldNumber).find(Boolean) ?? null;
-  if (!old) {
+  if (!old && frame) {
     bottoms.push(await readBottom(frame, (c) => readText(c, PSM_BLOCK), defaultCreateCanvas, { card }));
     old = parseOldNumber(bottoms.at(-1));
   }
@@ -130,7 +132,7 @@ export async function printingsFor(name, frame, { texts = [], card = null, listM
   const number = hits.length ? old.number : null;
   const year = bottoms.map(parseCopyrightYear).find(Boolean) ?? null;
   // Every printing ranked by how the card looks; one clearly ahead is taken.
-  try {
+  if (frame) try {
     const { ranked, winner } = await rankPrintings(frame, card ?? guideRect(frame.width, frame.height), printings, {
       text: bottoms.join(' '),
       year,

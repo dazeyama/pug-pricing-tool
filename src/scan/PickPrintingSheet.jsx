@@ -12,11 +12,13 @@ const FIRST = 3;
  * likely printings, oldest first, to pick from by the set symbol on the card
  * in hand; View all shows every printing of that name, oldest to newest
  * (owner, 2026-10-16: "doesn't offer enough options, there needs to be a
- * "view all" button"). Skip sends nothing.
+ * "view all" button"). Skip sends nothing. Let me type it (owner,
+ * 2026-10-21; decision 420): the reader named the wrong card, so the name
+ * box opens instead, empty, and the typed name's printings are listed.
  * @param {{ pick: { name: string, cards: object[], all?: object[] }, onPick: (card: object) => void,
- *   onSkip: () => void }} props
+ *   onSkip: () => void, onType: () => void }} props
  */
-export default function PickPrintingSheet({ pick, onPick, onSkip }) {
+export default function PickPrintingSheet({ pick, onPick, onSkip, onType }) {
   const [viewAll, setViewAll] = useState(false);
   const all = pick.all ?? pick.cards;
   const likely = pick.cards.slice(0, FIRST);
@@ -43,6 +45,7 @@ export default function PickPrintingSheet({ pick, onPick, onSkip }) {
             {viewAll ? 'Fewer' : `View all (${all.length})`}
           </button>
         )}
+        <button type="button" className="btn ghost" title="The name's wrong: type the card's name instead" onClick={onType}>Let me type it</button>
         <button type="button" className="btn ghost" onClick={onSkip}>Skip this card</button>
       </div>
     </div>

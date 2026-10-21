@@ -12,11 +12,12 @@ import { nameSuggestions } from './nameMatch.js';
  * with the reader's closest name; typing lists the names that fit (every
  * card name is on the phone already, so it needs no connection); Find
  * printings, Enter or a suggestion opens the printing list for that name.
- * Skip sets the card aside.
- * @param {{ guess: string, onSubmit: (name: string) => Promise<string|null>, onSkip: () => void }} props
+ * Skip sets the card aside. Opened from a printing list by Let me type it
+ * (decision 420), the box is empty and `title` says so.
+ * @param {{ guess: string, title?: string, onSubmit: (name: string) => Promise<string|null>, onSkip: () => void }} props
  *   onSubmit: an error to show, or null (the printing list opens)
  */
-export default function NameSheet({ guess, onSubmit, onSkip }) {
+export default function NameSheet({ guess, title = "Couldn't read the name. Which card is it?", onSubmit, onSkip }) {
   const [text, setText] = useState(guess ?? '');
   const [typed, setTyped] = useState(false);   // suggestions once the person types, not for the guess
   const [names, setNames] = useState(null);
@@ -46,7 +47,7 @@ export default function NameSheet({ guess, onSubmit, onSkip }) {
 
   return (
     <div className="scan-sheet pick" role="dialog" aria-label="Which card is it?">
-      <strong className="scan-pick-title">Couldn't read the name. Which card is it?</strong>
+      <strong className="scan-pick-title">{title}</strong>
       <form
         className="scan-name-row"
         onSubmit={(e) => {
@@ -58,6 +59,7 @@ export default function NameSheet({ guess, onSubmit, onSkip }) {
           <input
             ref={input}
             type="text"
+            autoFocus={!guess}
             autoComplete="off"
             autoCapitalize="words"
             spellCheck={false}
