@@ -23,6 +23,8 @@ test('mixed rates: low end, high end, own rate, the rest at the master rate', ()
     '20 cards at the master rate at Cash 33% / Credit 66%',
   ]);
   assert.deepEqual(mixedRateLines([line(10, { quantity: 4 })], master), [], 'every card on the master rate: none');
+  const custom = { ...master, customCash: 40, customCredit: 70 };
+  assert.deepEqual(mixedRateLines([line(10, { quantity: 4 }), line(20)], custom), [], 'every card at one custom rate: none');
 });
 
 test('the shipped tiers: under $3 at 50/25, over $35 at 70/40', () => {

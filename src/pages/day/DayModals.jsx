@@ -23,7 +23,8 @@ export function ConvertBuyModal({ buy, number, day, byId, busy, onClose, onConve
   const [name, setName] = useState(() => (buy.customer_name || `Buy ${number} · ${dayDate(day)}`).slice(0, 80));
   // Completed cards stay on the buy (decision 296), and all of a Completed game (decision 393).
   const live = convertLines(buy);
-  const done = buy.buy_lines.filter((l) => l.completed_at).length;
+  // Copies, not lines: 3 Wild Growth on one line are 3 cards (smoke pass, decision 426).
+  const done = buy.buy_lines.filter((l) => l.completed_at).reduce((n, l) => n + l.quantity, 0);
   // The buy stays when anything stays: it keeps the payment then (decision 341, as the database's v_keep).
   const stays = live.length < buy.buy_lines.length;
   // A Completed game's bulk and placeholders stay with its cards (decision 393).

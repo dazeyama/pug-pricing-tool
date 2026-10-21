@@ -952,7 +952,7 @@ function DayScreen({ game, day }) {
           <p>
             <strong>Buy {unexportingBuy.number}</strong>'s {GAME_NAMES[game]} cards go back to <strong>Paid/Ours</strong>:
             unlocked, back in the header search and this day's export, showing their buy prices again, and taken back
-            out of Can't upload cards. The rest of the day stays as it is.
+            out of Can't upload cards or Bulk pulled from exports. The rest of the day stays as it is.
           </p>
           <p className="hint">
             The file already downloaded isn't undone: if it was uploaded to Crystal Commerce, fix the stock there by
