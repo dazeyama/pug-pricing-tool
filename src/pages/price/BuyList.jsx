@@ -14,6 +14,11 @@ import { frozenNote } from '../collections/useCollection.js';
 import { useStaff } from '../../state/staff.jsx';
 import { GAMES } from '../../lib/games.js';
 import { useDismiss } from '../../lib/useDismiss.js';
+import { LIST_SORTS, sortLines } from '../../lib/listSort.js';
+import { scryfallCards } from '../../lib/todaysPrices.js';
+
+// Scryfall cards by id, for the by-color order (decision 403): kept for the page's life.
+const COLOR_CARDS = new Map();
 
 /** Where a bulk line's item comes among the bulk suggestions in a search (lib/bulk.js BULK_ITEMS). */
 const bulkRank = (l) => BULK_ITEMS.findIndex((item) => item.kind === l.bulk_kind);
@@ -419,6 +424,28 @@ export default function BuyList({
 
   // Real cards and bulk counted apart (docs/TEAM_FEEDBACK.md 5.5).
   const counts = cardCounts(lines);
+
+  // The list's order (decision 403): as added, price high to low, or Magic by color, whose colors
+  // come from Scryfall (a line doesn't keep them), fetched once for the cards not seen yet.
+  const [sort, setSort] = useState('added');
+  const [colors, setColors] = useState(() => Object.fromEntries(COLOR_CARDS));
+  const hasMagic = lines.some((l) => l.game === 'mtg' && !isValuedBulk(l));
+  const missingKey = sort === 'color'
+    ? [...new Set(lines.filter((l) => l.game === 'mtg' && l.scryfall_id && !COLOR_CARDS.has(l.scryfall_id)).map((l) => l.scryfall_id))].join(',')
+    : '';
+  useEffect(() => {
+    if (!missingKey) return undefined;
+    let alive = true;
+    scryfallCards(missingKey.split(','))
+      .then((found) => {
+        for (const [id, c] of found) COLOR_CARDS.set(id, c);
+        if (alive) setColors(Object.fromEntries(COLOR_CARDS));
+      })
+      .catch((e) => toast(`Couldn't get the cards' colors from Scryfall: ${e.message}`, 'err'));
+    return () => {
+      alive = false;
+    };
+  }, [missingKey, toast]);
   const rateLine = rateFor ? lines.find((l) => l.id === rateFor) ?? null : null;
 
   // A point on the screen, in the sidebar's own px (it may be zoomed: lib/uiScale.js).
@@ -559,6 +586,26 @@ export default function BuyList({
         <span className="list-title">{title}</span>
         {badge}
         <span className="list-count">{countText(counts)}</span>
+        {/* The list's order (decision 403): kept while the screen is open. By color: Magic only. */}
+        {lines.length > 1 && (
+          <span className="list-sort" role="group" aria-label="Sort the list">
+            {LIST_SORTS.filter((s) => s.key !== 'color' || hasMagic).map((s) => (
+              <button
+                key={s.key}
+                type="button"
+                className={`list-sort-btn${sort === s.key ? ' on' : ''}`}
+                aria-pressed={sort === s.key}
+                title={s.title}
+                onClick={() => {
+                  setSort(s.key);
+                  onDone();
+                }}
+              >
+                {s.label}
+              </button>
+            ))}
+          </span>
+        )}
       </div>
       {scanChip && <div className="list-scan">{scanChip}</div>}
 
@@ -571,7 +618,9 @@ export default function BuyList({
           // then the cards (placeholders among them) as added (owner, 2026-10-16: "It's confusing
           // seeing them mixed in").
           const bulk = all.filter(isValuedBulk).sort((a, b) => bulkRank(a) - bulkRank(b));
-          const mine = [...bulk, ...all.filter((l) => !isValuedBulk(l))];
+          // The cards in the order picked (decision 403); by color is Magic's only, Pokémon stay as added.
+          const order = sort === 'color' && g.key !== 'mtg' ? 'added' : sort;
+          const mine = [...bulk, ...sortLines(all.filter((l) => !isValuedBulk(l)), order, (l) => colors[l.scryfall_id])];
           const firstCard = bulk.length < mine.length ? mine[bulk.length].id : null;
           return (
             <section key={g.key} className="list-group">

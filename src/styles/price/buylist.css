@@ -19,6 +19,20 @@
 }
 .list-title { font-size: .78rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
 .list-count { font-size: 13px; color: var(--muted); }
+/* The list's order (decision 403): a row of small toggles under the heading. */
+.list-head { flex-wrap: wrap; }
+.list-sort { flex-basis: 100%; display: flex; gap: 4px; margin-top: 8px; }
+.list-sort-btn {
+  padding: 2px 9px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+.list-sort-btn:hover { color: var(--text, #fff); }
+.list-sort-btn.on { color: var(--text, #fff); border-color: currentColor; font-weight: 600; }
 .list-empty { margin: 18px 16px; color: var(--muted); font-size: 13px; }
 /* No top padding on the scroller itself: the sticky game headers would stop
    that far down, and rows scrolling past would show above them. */
