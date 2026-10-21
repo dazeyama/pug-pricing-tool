@@ -184,16 +184,17 @@ export async function searchProducts(text) {
  * @param {Map<string, object>} cards  Scryfall cards by id (matchLines)
  * @param {Record<string, number>} pct  the Master Fallback Percentages (Magic)
  * @param {(text: string) => void} [onStep]
+ * @param {number} [floor]  the Export sell floor (decision 417); $0.40 if left out
  * @returns {Promise<Map<string, { price: number, basis: object }>>} by line id
  */
-export async function sellPrices(lines, cards, pct, onStep) {
+export async function sellPrices(lines, cards, pct, onStep, floor) {
   let today;
   try {
     today = await todaysPrices(lines, { cards, onStep });
   } catch (e) {
     throw new Error(`${e.message} Nothing was exported.`);
   }
-  return new Map(lines.map((line) => [line.id, sellPriceFor(line, { ...today.get(line.id), pct })]));
+  return new Map(lines.map((line) => [line.id, sellPriceFor(line, { ...today.get(line.id), pct, floor })]));
 }
 
 // ------------------------------------------------------------ the export

@@ -6,7 +6,7 @@ import {
 import { settingSummary } from '../src/lib/settingText.js';
 import { targetOf } from '../src/lib/changelog.js';
 
-// Decision 416: the Bulk export rates, red 1¢ to 50¢ and amber 51¢ to $1.49 by default.
+// Decision 416: the Export rates for bulk, red 1¢ to 50¢ and amber 51¢ to $1.49 by default.
 test('the defaults, and a saved setting checked', () => {
   assert.deepEqual(DEFAULT_BULK_CUT, { red: 0.5, amber: 1.49 });
   assert.deepEqual(bulkCutFrom(null), DEFAULT_BULK_CUT);
@@ -44,8 +44,8 @@ test('the words on buttons, titles, files and the printout key', () => {
 
 test('its Changelog entry: the sentence, and the name shown for its key', () => {
   assert.equal(settingSummary('bulk_export_rates', { red: 0.5, amber: 1.49 }, { red: 0.5, amber: 1.99 }),
-    'Bulk export rates: amber up to $1.49 → $1.99.');
-  assert.equal(targetOf({ action: 'setting_changed', target_name: 'bulk_export_rates' }), 'Bulk export rates');
+    'Export rates for bulk: amber up to $1.49 → $1.99.');
+  assert.equal(targetOf({ action: 'setting_changed', target_name: 'bulk_export_rates' }), 'Export rates for bulk');
   assert.equal(targetOf({ action: 'setting_changed', target_name: 'Bulk values' }), 'Bulk values');
   assert.equal(targetOf({ action: 'buy_confirmed', target_name: 'bulk_export_rates' }), 'bulk_export_rates');
 });

@@ -456,10 +456,15 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
 - [ ] **Master Buy Percentages** read 33.34 / 66.68 (decision 333); a value the app can't use shows red and goes back to
       what was saved.
 - [ ] Low-end and high-end rates, Master Fallback Percentages and Bulk values show and save.
-- [ ] **Bulk export rates** (decision 416): red to 50¢, amber to $1.49; the dots don't move. With no user, EDIT
+- [ ] **Export sell floor** (decision 417), beside Export rates for bulk: Floor $0.40; the table shows Sell, $0.237 →
+      $0.40 (floor). Buy shows "Rounded down", $0.237 → $0.23. With no user, changing the floor is refused. Set
+      0.75: "Export sell floor saved", and the Changelog has "Setting changed: Export sell floor". 0.30 or 11 are
+      refused. An export's Review then shows a cheap card's Sell at $0.75 ("raised to the $0.75 floor"), and typing
+      0.50 as its Sell price says "At least $0.75". Put it back to 0.40 after.
+- [ ] **Export rates for bulk** (decision 416): red to 50¢, amber to $1.49; the dots don't move. With no user, EDIT
       pulses the user button. EDIT, drag the amber dot (or arrow keys, 1¢; Shift, 10¢): the values follow, the dots
-      stay a cent apart. CANCEL puts it back. EDIT again, move it, SAVE: "Bulk export rates saved", and on another
-      computer the slider moves too. The Changelog has "Setting changed: Bulk export rates" under Actions. A day's
+      stay a cent apart. CANCEL puts it back. EDIT again, move it, SAVE: "Export rates for bulk saved", and on another
+      computer the slider moves too. The Changelog has "Setting changed: Export rates for bulk" under Actions. A day's
       EXPORT ▾ then reads Print MTG (>$…) and Export MTG csv (>$…) at the new amber, and Print MTG's key gives the
       amounts. Put it back to 50¢ / $1.49 after.
 - [ ] **Settings saves don't overwrite** (decision 354): Settings open on two computers; a change on one shows on the

@@ -315,7 +315,7 @@ function CollectionScreen({ id }) {
    * Commerce category; once Completed, what it exported. In any status (team
    * feedback, 2026-10-16), and it needs no user or edit lock: it changes nothing.
    */
-  /** `over1`: Print MTG (>…) (decisions 405, 416), only the cards over the Bulk export rates' amber today. */
+  /** `over1`: Print MTG (>…) (decisions 405, 416), only the cards over the Export rates for bulk' amber today. */
   function printCollection(over1 = false) {
     if (offline) {
       toast('No connection: printing needs it to find the Crystal Commerce categories.', 'err');

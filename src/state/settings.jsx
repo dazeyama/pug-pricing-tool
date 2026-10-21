@@ -4,6 +4,7 @@ import { useLiveTable } from '../lib/useLiveTable.js';
 import { DEFAULT_TIERS } from '../lib/rates.js';
 import { DEFAULT_BULK_VALUES } from '../lib/bulk.js';
 import { DEFAULT_BULK_CUT, bulkCutFrom } from '../lib/bulkCut.js';
+import { SELL_FLOOR, sellFloorFrom } from '../lib/money.js';
 import { dbErrorCode } from '../lib/dbErrors.js';
 import { useToast } from '../components/Toast.jsx';
 import { PICK_USER_FIRST, useStaff } from './staff.jsx';
@@ -33,8 +34,10 @@ export const DEFAULTS = {
   rate_tiers: DEFAULT_TIERS,
   // Bulk values (docs/TEAM_FEEDBACK.md 5.2): read with bulk.js bulkValuesFrom.
   bulk_values: DEFAULT_BULK_VALUES,
-  // Bulk export rates (decision 416): read with bulkCut.js bulkCutFrom, or useBulkCut.
+  // Export rates for bulk (decision 416): read with bulkCut.js bulkCutFrom, or useBulkCut.
   bulk_export_rates: DEFAULT_BULK_CUT,
+  // Export sell floor (decision 417): read with money.js sellFloorFrom, or useSellFloor.
+  sell_floor: SELL_FLOOR,
 };
 
 const SettingsContext = createContext(null);
@@ -125,11 +128,17 @@ export function useSettings() {
   return useContext(SettingsContext);
 }
 
-/** The Bulk export rates (decision 416), checked: { red, amber }. */
+/** The Export rates for bulk (decision 416), checked: { red, amber }. */
 export function useBulkCut() {
   const { values } = useSettings();
   const saved = values.bulk_export_rates;
   return useMemo(() => bulkCutFrom(saved), [saved]);
+}
+
+/** The Export sell floor (decision 417), checked: dollars, $0.40 at least. */
+export function useSellFloor() {
+  const { values } = useSettings();
+  return sellFloorFrom(values.sell_floor);
 }
 
 /** A pricing action's check (decision 389): false, with a toast, while Settings haven't loaded. */

@@ -29,11 +29,14 @@ and function.
 - **Unpushed** (2026-10-20): the commits since the last push: the stamp check removed (400), the team's six
   feedback items (401–407, migration 0005), Export single buy's and Print buy's splits (408, 409), the by-color
   sort's loading state (410), the $24 bulk defaults (411), settings in the Changelog (412, migration 0006), the
-  mixed-rates * (413), the inventory cleared in batches (414, migration 0007), the phone's Undo fix (415) and the
-  Bulk export rates (416).
-- **Help out of date** (only when the owner asks), from decision 416: a new Settings section, **Bulk export rates**;
-  every "(>$1)" and "under $1" for Print MTG, Export MTG csv, Export single buy, Print buy and Bulk pulled from
-  exports now follows the setting ($1.49 by default), and the printout key gives the amounts.
+  mixed-rates * (413), the inventory cleared in batches (414, migration 0007), the phone's Undo fix (415), the
+  Export rates for bulk (416) and the Export sell floor (417).
+- **Help out of date** (only when the owner asks), from decisions 416 and 417: new Settings sections, **Export rates for
+  bulk** and **Export sell floor**; every "(>$1)" and "under $1" for Print MTG, Export MTG csv, Export single buy,
+  Print buy and Bulk pulled from exports now follows the setting ($1.49 by default), and the printout key gives the
+  amounts; The Sell Price's "never below $0.40" is now the floor's setting.
+- **The Export sell floor can't go below $0.40** (decision 417): the database's `internal.export_check` refuses a
+  lower Sell Price. Lowering it means a migration changing that check (to the setting, or a lower fixed number).
 - **The live site's bulk values** (decision 411, the owner's to do): Settings → Bulk values on the live site, type
   **24** in Rares & Mythics and in EXs. Prod isn't written from the CLI (decision 380). Until then, if prod has no
   saved `bulk_values`, the live site takes the code's defaults, $24 once pushed and $2.40 before. Push only on the owner's ask, once prod has 0005.
@@ -66,7 +69,12 @@ and function.
 
 ## Done
 
-- 2026-10-20: **Bulk export rates, set in Settings** (decision 416), on the owner's ask: `BulkExportRatesPanel.jsx`
+- 2026-10-20: **Export sell floor, set in Settings; "Export rates for bulk"** (decision 417), on the owner's ask:
+  `SellFloorPanel.jsx` (the Floor box, the rounding table with Buy / Sell, help), `sellFloorFrom` in `money.js`,
+  `useSellFloor` in `settings.jsx`, `sellPriceFor`'s `floor`, `sellPrices` in `ccExport.js`, `DayPage.jsx`,
+  `ExportDialog.jsx`; the Bulk export rates panel renamed. No migration. Untested in the app.
+
+- 2026-10-20: **Export rates for bulk, set in Settings** (decision 416), on the owner's ask: `BulkExportRatesPanel.jsx`
   (slider, EDIT / SAVE / CANCEL, a user for each), `src/lib/bulkCut.js` (defaults red 50¢, amber $1.49; the bands,
   the cut, the words), `useBulkCut` in `settings.jsx`; the prints, exports and their buttons follow it. No migration
   (`targetOf`, `changelog.js`, names the setting in the Changelog). Untested in the app, the slider's drag included.

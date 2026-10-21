@@ -78,7 +78,7 @@ const INK = [20, 20, 26];        // text, the bands
 const FLAG_RGB = [200, 30, 30];
 const FLAG_BANNER = 20;
 const LINE = [190, 192, 200];    // the rows' hairlines
-// A row's price (decision 404): red (true bulk), amber (a $1 card), else ink, at the Bulk export rates (416).
+// A row's price (decision 404): red (true bulk), amber (a $1 card), else ink, at the Export rates for bulk (416).
 const TONE_RGB = { bulk: [200, 30, 30], dollar: [196, 120, 0] };
 
 // PDF's built-in fonts draw Windows-1252 (Latin-1 and a few more: curly
@@ -122,7 +122,7 @@ function fit(doc, text, width) {
  * @param {Record<string, { data: string, ratio: number }>} [p.symbols]  set code → its symbol (a white PNG; width / height)
  * @param {Date} [p.printedAt]
  * @param {string|null} [p.flagText]  a flagged buy's banner (decision 301), red across every page under its header
- * @param {{ red: number, amber: number }} [p.cut]  the Bulk export rates (decision 416)
+ * @param {{ red: number, amber: number }} [p.cut]  the Export rates for bulk (decision 416)
  * @returns {jsPDF}
  */
 export function auditPdf({ title, sections, symbols = {}, printedAt = new Date(), flagText = null, cut = DEFAULT_BULK_CUT }) {

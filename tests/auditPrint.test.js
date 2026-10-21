@@ -95,7 +95,7 @@ test("a card's colour group, as pull-pdf's", () => {
   assert.equal(cardBucket(null), 'unknown');
 });
 
-// Decision 404's bands, at the Bulk export rates' defaults (decision 416): red to 50¢, amber to $1.49.
+// Decision 404's bands, at the Export rates for bulk' defaults (decision 416): red to 50¢, amber to $1.49.
 test('price bands: true bulk, a $1 card, the rest', () => {
   assert.equal(priceTone(0.1), 'bulk');
   assert.equal(priceTone(0.5), 'bulk');

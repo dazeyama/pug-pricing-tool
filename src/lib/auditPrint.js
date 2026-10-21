@@ -9,7 +9,7 @@ import { lineTags } from './lineFormat.js';
 /** The last section: cards with no Crystal Commerce product (team plan 3.3). */
 export const UNMATCHED = 'Unmatched';
 
-// A printout row's price band, red or amber (decision 404), at the Settings' Bulk export rates
+// A printout row's price band, red or amber (decision 404), at the Settings' Export rates for bulk
 // (decision 416).
 export { priceTone } from './bulkCut.js';
 

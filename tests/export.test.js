@@ -1,7 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { SELL_FLOOR, roundUpPrice } from '../src/lib/money.js';
+import { SELL_FLOOR, roundUpPrice, sellFloorFrom } from '../src/lib/money.js';
 import { sellPriceFor } from '../src/lib/sellPrice.js';
+import { settingSummary } from '../src/lib/settingText.js';
+import { targetOf } from '../src/lib/changelog.js';
 import {
   customSkuFor, customSkuForDay, fileSafe, massCreateCsv, massCreateRows, nearMintPrice, nearMintPrices, withoutRestamps,
 } from '../src/lib/massCreate.js';
@@ -26,6 +28,23 @@ test('a JustTCG-priced card: today\'s price for its condition, rounded up, floor
   const cheap = sellPriceFor(line({ condition: 'DMG' }), today);
   assert.equal(cheap.price, 0.40);
   assert.ok(cheap.basis.floored);
+  // Decision 417: the Export sell floor from Settings.
+  const higher = sellPriceFor(line({ condition: 'MP' }), { ...today, floor: 0.75 });
+  assert.equal(higher.price, 0.75);
+  assert.ok(higher.basis.floored);
+  assert.equal(higher.basis.floor, 0.75);
+  assert.equal(sellPriceFor(line({}), { ...today, floor: 0.75 }).price, 1.25, 'above the floor: unchanged');
+});
+
+// Decision 417: the saved floor, checked: $0.40 (the database's own lowest) to $10, whole cents.
+test('the Export sell floor setting', () => {
+  assert.equal(sellFloorFrom(undefined), 0.4);
+  assert.equal(sellFloorFrom(0.75), 0.75);
+  assert.equal(sellFloorFrom(0.3), 0.4, 'never below $0.40');
+  assert.equal(sellFloorFrom(10.01), 0.4, 'at most $10');
+  assert.equal(sellFloorFrom('nonsense'), 0.4);
+  assert.equal(settingSummary('sell_floor', 0.4, 0.5), 'Export sell floor: $0.40 → $0.50.');
+  assert.equal(targetOf({ action: 'setting_changed', target_name: 'sell_floor' }), 'Export sell floor');
 });
 
 test('a fallback card that JustTCG prices today takes JustTCG\'s price', () => {

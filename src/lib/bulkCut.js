@@ -1,4 +1,4 @@
-// Bulk export rates (decision 416): the two prices that sort a card as bulk, set in Settings. Red up
+// Export rates for bulk (decision 416): the two prices that sort a card as bulk, set in Settings. Red up
 // to the first (true bulk), amber up to the second (a $1 card); every card up to the second is the
 // bulk that Export MTG csv (>…) pulls and Print MTG (>…) leaves off. Pure: the setting comes in.
 

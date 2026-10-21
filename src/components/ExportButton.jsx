@@ -85,7 +85,7 @@ export default function ExportButton({
       {button}
       {open && (
         <div className={`more-list export-list${up ? ' up' : ''}`} role="menu">
-          {/* Print MTG (all) and (>…) (decision 405): every card, or the ones over the Bulk export rates'
+          {/* Print MTG (all) and (>…) (decision 405): every card, or the ones over the Export rates for bulk'
               amber today (decision 416). */}
           {onPrint && [false, true].map((over1) => (
             <button
@@ -140,7 +140,7 @@ export default function ExportButton({
             </button>
           )}
           {/* `splitExport` (decision 406): Export MTG csv (all), as it was, and (>…), whose bulk cards
-              (the Bulk export rates, decision 416) are pulled to Bulk pulled from exports. */}
+              (the Export rates for bulk, decision 416) are pulled to Bulk pulled from exports. */}
           {(splitExport ? [false, true] : [null]).map((over1) => (
             <button
               key={over1 ? 'over1' : 'all'}

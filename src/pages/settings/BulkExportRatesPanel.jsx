@@ -79,7 +79,7 @@ function CutSlider({ value, editing, onChange }) {
   );
 }
 
-// Settings → Bulk export rates (decision 416): which cards are bulk. Red and amber on Print MTG /
+// Settings → Export rates for bulk (decision 416): which cards are bulk. Red and amber on Print MTG /
 // Print PKM, and everything up to amber pulled from Export MTG csv (>…) and left off Print MTG (>…).
 // Shown, not moved, until EDIT; nothing is saved until SAVE; both need a user.
 export default function BulkExportRatesPanel() {
@@ -100,16 +100,16 @@ export default function BulkExportRatesPanel() {
     const error = await save('bulk_export_rates', next, current?.id);
     setSaving(false);
     if (error) {
-      toast(`Couldn't save the Bulk export rates: ${error}`, 'err');
+      toast(`Couldn't save the Export rates for bulk: ${error}`, 'err');
       return;
     }
     setDraft(null);
-    toast(`Bulk export rates saved: red ${bandWords(next).red}, amber ${bandWords(next).amber}.`, 'ok');
+    toast(`Export rates for bulk saved: red ${bandWords(next).red}, amber ${bandWords(next).amber}.`, 'ok');
   }
 
   return (
     <section className="cardpanel settings-panel cut-panel">
-      <div className="cardpanel-head"><strong>Bulk export rates</strong></div>
+      <div className="cardpanel-head"><strong>Export rates for bulk</strong></div>
       <div className="cardpanel-body">
         <p className="hint">
           Which cards are bulk, by price: today’s market price on a print, the Sell Price on an

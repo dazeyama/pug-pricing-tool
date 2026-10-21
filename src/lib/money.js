@@ -52,8 +52,25 @@ export function roundUpPrice(price) {
   return (Math.ceil(cents / step) * step) / 100;
 }
 
-/** The lowest Sell Price for one card (owner, 2026-10-01; spec 5.3). */
+/**
+ * The lowest Sell Price for one card (owner, 2026-10-01; spec 5.3): the Export sell floor's default,
+ * and the lowest it can be set to (decision 417), as the database refuses a lower one
+ * (internal.export_check).
+ */
 export const SELL_FLOOR = 0.4;
+/** The highest Export sell floor Settings takes (decision 417). */
+export const SELL_FLOOR_MAX = 10;
+
+/**
+ * The saved Export sell floor (decision 417), checked: whole cents from $0.40 to $10; else $0.40.
+ * @param {any} value  settings' `sell_floor`
+ * @returns {number}
+ */
+export function sellFloorFrom(value) {
+  const cents = Math.round(Number(value) * 100);
+  if (!Number.isFinite(cents) || cents < SELL_FLOOR * 100 || cents > SELL_FLOOR_MAX * 100) return SELL_FLOOR;
+  return cents / 100;
+}
 
 /**
  * What the store pays for one card in Cash or Credit: price × pct%, rounded

@@ -18,7 +18,7 @@ import { downloadMassCreate, restampTimes } from '../lib/ccExport.js';
 import { withoutRestamps } from '../lib/massCreate.js';
 import { todaysPrices } from '../lib/todaysPrices.js';
 import { sellPriceFor } from '../lib/sellPrice.js';
-import { useBulkCut, useSettings, useSettingsReady } from '../state/settings.jsx';
+import { useBulkCut, useSellFloor, useSettings, useSettingsReady } from '../state/settings.jsx';
 import { keptFileTag, keptWords } from '../lib/bulkCut.js';
 import RemoveModal from '../components/RemoveModal.jsx';
 import { walkInStatus } from './collections/status.js';
@@ -100,6 +100,7 @@ function DayScreen({ game, day }) {
   const { values: settingValues } = useSettings();
   const settingsReady = useSettingsReady();
   const cut = useBulkCut();
+  const sellFloor = useSellFloor();
   // Print? and Print buy (docs/TEAM_FEEDBACK.md 3): the audit printout, changing nothing.
   const { print, printing } = useAuditPrint();
   // Print PKM Stickers? on a Pokémon day (decision 282): price tags at today's sell prices, saving nothing.
@@ -421,7 +422,7 @@ function DayScreen({ game, day }) {
       const today = await todaysPrices(cards, { onStep: setCompleteStep });
       const pct = settingValues[game === 'pokemon' ? 'fallback_pct_pokemon' : 'fallback_pct_mtg'];
       prices = cards.map((line) => {
-        const sell = sellPriceFor(line, { ...today.get(line.id), pct });
+        const sell = sellPriceFor(line, { ...today.get(line.id), pct, floor: sellFloor });
         return { line_id: line.id, sell_price: sell.price, sell_basis: sell.basis };
       });
     } catch (e) {
@@ -530,7 +531,7 @@ function DayScreen({ game, day }) {
    * EXPORT ▾ → Print? (docs/TEAM_FEEDBACK.md 3.1): the cards EXPORT would
    * take, or once the day is exported, what it exported; blocked when EXPORT is.
    */
-  /** `over1`: Print MTG (>…) (decisions 405, 416), only the cards over the Bulk export rates' amber today. */
+  /** `over1`: Print MTG (>…) (decisions 405, 416), only the cards over the Export rates for bulk' amber today. */
   function printDay(over1 = false) {
     if (exportBlocked) {
       toast(`${exportBlocked}.`, 'err');

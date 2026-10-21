@@ -48,7 +48,7 @@ export function useKeptBuy(keptBuyId) {
 
 /** One pulled from an Export MTG csv (>…) as bulk (decisions 406, 416). */
 export const LINE_PULLED = "That card was pulled from an export as bulk: Undo export… first to change it.";
-/** The Pulled chip's tooltip (decision 406): bulk at the Bulk export rates of the day (decision 416). */
+/** The Pulled chip's tooltip (decision 406): bulk at the Export rates for bulk of the day (decision 416). */
 export const PULLED_TIP = "Bulk at the export: pulled from the upload. It's in Bulk pulled from exports.";
 
 /** Why a stamped card can't change, in its own words (decisions 345, 399, 406). */

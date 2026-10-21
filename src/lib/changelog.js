@@ -137,7 +137,7 @@ export function headlineOf(e) {
 
 // A setting the database has no name for (migration 0006 names the ones it knew), by its key: the
 // app names it when it's shown, so a new setting needs no migration (decision 416).
-const SETTING_NAMES = { bulk_export_rates: 'Bulk export rates' };
+const SETTING_NAMES = { bulk_export_rates: 'Export rates for bulk', sell_floor: 'Export sell floor' };
 
 /** What an entry is about, as shown: its target, or a setting's name for its key. */
 export function targetOf(e) {

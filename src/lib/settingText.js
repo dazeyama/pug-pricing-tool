@@ -38,8 +38,11 @@ export function settingSummary(key, before, after) {
     name = 'Bulk values';
     parts = Object.keys(after ?? {}).map((kind) => part(bulkItem(kind)?.name ?? kind, before?.[kind], after[kind], money));
   } else if (key === 'bulk_export_rates') {
-    name = 'Bulk export rates';
+    name = 'Export rates for bulk';
     parts = [part('red up to', before?.red, after?.red, cutMoney), part('amber up to', before?.amber, after?.amber, cutMoney)];
+  } else if (key === 'sell_floor') {
+    name = 'Export sell floor';
+    parts = [part('', before, after, money)?.trim()];
   } else {
     parts = [part('', before, after, (v) => JSON.stringify(v ?? null))];
   }

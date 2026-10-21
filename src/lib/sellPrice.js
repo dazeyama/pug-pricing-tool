@@ -1,7 +1,8 @@
 // The Sell Price (docs/EXPORT_FUNCTION.md 5): each exported card's full
 // market price for its condition right now, worked out the same way as when
 // it was bought (the same price ladder, with the same override), rounded UP
-// by the store's steps, never below $0.40. A manual price gets the higher of
+// by the store's steps, never below the Export sell floor ($0.40 unless Settings says more;
+// decision 417). A manual price gets the higher of
 // it and today's price. Pure: today's data comes in.
 
 import { ladderFor } from './ladder.js';
@@ -14,6 +15,7 @@ import { SELL_FLOOR, roundUpPrice } from './money.js';
  * @property {number|null} cardmarketUsd  today's Cardmarket price in dollars (euros × today's rate)
  * @property {Record<string, number>} pct  today's Master Fallback Percentages (Magic)
  * @property {string} [fetchedAt]
+ * @property {number} [floor]  the Export sell floor (decision 417); $0.40 if left out
  */
 
 /**
@@ -21,7 +23,7 @@ import { SELL_FLOOR, roundUpPrice } from './money.js';
  *   price_snapshot?: { override?: string|null, manual?: number|null } }} line
  * @param {Today} today
  * @returns {{ price: number, value: number, basis: object }}
- *   price: the Sell Price (rounded up by steps, at least $0.40); value: the same price before
+ *   price: the Sell Price (rounded up by steps, at least the floor); value: the same price before
  *   that rounding and floor, for the Pokémon stickers' whole dollars (decision 384)
  */
 export function sellPriceFor(line, today) {
@@ -48,7 +50,9 @@ export function sellPriceFor(line, today) {
     value = Number(line.market_price ?? line.unit_price);
     used = 'at_buy';
   }
-  const price = Math.max(SELL_FLOOR, roundUpPrice(value) ?? SELL_FLOOR);
+  // The Export sell floor (decision 417), from Settings; $0.40 without one.
+  const floor = today.floor ?? SELL_FLOOR;
+  const price = Math.max(floor, roundUpPrice(value) ?? floor);
   return {
     price,
     value,
@@ -60,7 +64,8 @@ export function sellPriceFor(line, today) {
       todayFrom: ladder[line.condition]?.source ?? null,
       manual,
       used,
-      floored: price === SELL_FLOOR && roundUpPrice(value) !== SELL_FLOOR,
+      floored: price === floor && roundUpPrice(value) !== floor,
+      floor,
       fetchedAt: today.fetchedAt ?? null,
     },
   };

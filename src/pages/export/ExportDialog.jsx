@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Modal from '../../components/Modal.jsx';
 import LinePreview, { previewFor } from '../../components/LinePreview.jsx';
 import { useStaff } from '../../state/staff.jsx';
-import { useBulkCut, useSettings, useSettingsReady } from '../../state/settings.jsx';
+import { useBulkCut, useSellFloor, useSettings, useSettingsReady } from '../../state/settings.jsx';
 import { useDevice } from '../../state/device.jsx';
 import { useToast } from '../../components/Toast.jsx';
 import { lineTextWithCondition } from '../../lib/lineFormat.js';
@@ -38,7 +38,7 @@ import { SECOND_LOOK_MS, pause } from '../../lib/timeout.js';
  * @param {boolean} [p.pullOut]  can't-upload cards must be pulled from the batch (false: Can't upload
  *   cards itself, whose cards are already out of it; spec 9.3)
  * @param {boolean} [p.over1]  Export MTG csv (>…) (decision 406): a card whose worked-out Sell Price is
- *   up to the Bulk export rates' amber (decision 416) stays out of the file, pulled from the batch and
+ *   up to the Export rates for bulk' amber (decision 416) stays out of the file, pulled from the batch and
  *   copied to Bulk pulled from exports
  * @param {() => void} p.onClose
  */
@@ -93,6 +93,10 @@ export default function ExportDialog({
   const pct = settings.fallback_pct_mtg;
   const pctRef = useRef(pct);
   pctRef.current = pct;
+  // The Export sell floor (decision 417), as the Sell Prices are worked out.
+  const sellFloor = useSellFloor();
+  const floorRef = useRef(sellFloor);
+  floorRef.current = sellFloor;
 
   useEffect(() => {
     let alive = true;
@@ -100,7 +104,7 @@ export default function ExportDialog({
     (async () => {
       const step = (t) => alive && setStepText(t);
       const { results: r, cards } = await matchLines(lines, step);
-      const s = exporting ? await sellPrices(lines, cards, pctRef.current, step) : new Map();
+      const s = exporting ? await sellPrices(lines, cards, pctRef.current, step, floorRef.current) : new Map();
       if (!alive) return;
       setResults(r);
       setSells(s);
@@ -350,7 +354,7 @@ export default function ExportDialog({
       staff: `typed here (worked out: ${formatMoney(sell.basis.worked)})`,
     }[sell.basis.used];
     return (
-      <span className="xd-price" title={`Sell Price from ${why}${sell.basis.floored && sell.basis.used !== 'staff' ? ', raised to the $0.40 floor' : ''}`}>
+      <span className="xd-price" title={`Sell Price from ${why}${sell.basis.floored && sell.basis.used !== 'staff' ? `, raised to the ${formatMoney(sell.basis.floor ?? sellFloor)} floor` : ''}`}>
         Bought {formatMoney(r.line.unit_price)} → Sell <strong>{formatMoney(sell.price)}</strong>
         {sell.basis.used === 'at_buy' && <span className="xd-note">no price today</span>}
         {sell.basis.used === 'staff' && <span className="xd-note">set by hand</span>}
@@ -430,7 +434,7 @@ export default function ExportDialog({
           type="button"
           className="btn primary"
           disabled={waiting}
-          title={badTyped ? 'Fix the Sell price you typed first (at least $0.40, or leave it empty)'
+          title={badTyped ? `Fix the Sell price you typed first (at least ${formatMoney(sellFloor)}, or leave it empty)`
             : waiting ? 'Pick a product (or None of these) for every card in Needs a choice first' : undefined}
           onClick={() => {
             setPulled(false);
@@ -674,6 +678,7 @@ function ChooseRow({
   const [text, setText] = useState('');
   const [typed, setTyped] = useState(manual != null ? manual.toFixed(2) : '');
   const [typedError, setTypedError] = useState(null);
+  const floor = useSellFloor();   // a typed Sell price can't go under it either (decision 417)
   const [found, setFound] = useState([]);
   const [chosen, setChosen] = useState(current?.product_id ?? null);
   useEffect(() => {
@@ -697,9 +702,9 @@ function ChooseRow({
     setTyped(value);
     const clean = value.replace(/[$,\s]/g, '');
     const n = Number(clean);
-    const ok = !clean || (Number.isFinite(n) && n >= 0.4 && n < 100000);
+    const ok = !clean || (Number.isFinite(n) && n >= floor && n < 100000);
     const price = clean && ok ? Math.round(n * 100) / 100 : null;
-    setTypedError(ok ? null : 'At least $0.40, or leave it empty');
+    setTypedError(ok ? null : `At least ${formatMoney(floor)}, or leave it empty`);
     if (draft) {
       if (ok) setDraftPrice({ value: price });
     } else {
