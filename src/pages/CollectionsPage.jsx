@@ -44,6 +44,11 @@ const columns = (by, menu) => [
       <td key="name" className="col-name">
         {/* Pointing at the name shows its cards by game (decision 276). */}
         <CardCountsName lines={c.buy_lines}>{c.customer_name}</CardCountsName>
+        {/* A note: a * after the name, the note on pointing at it (owner, 2026-10-21; decision 432). Not the
+            System collections' own fixed notes, which say what they're for. */}
+        {!c.system_key && c.notes?.trim() && (
+          <span className="note-mark" title={c.notes} aria-label={`Note: ${c.notes}`}>*</span>
+        )}
         {elsewhere && <span className="lock-line">✎ open on {elsewhere}</span>}
       </td>
     ),

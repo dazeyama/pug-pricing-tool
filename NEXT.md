@@ -6,8 +6,9 @@ and function.
 
 ## Open
 
-- **Unpushed** (2026-10-21): no Notes column on the Collections tab, its width to the name (decision 431). Help's
-  "The tables" (Collections) still lists **Notes**: out of date until the owner asks for Help.
+- **Unpushed** (2026-10-21): no Notes column on the Collections tab, its width to the name (decision 431); a note's
+  * after the name, the note on pointing at it (432). Help's "The tables" (Collections) still lists **Notes** and
+  doesn't mention the *: out of date until the owner asks for Help.
 - **F2 reopened: the backup can hit the 8 s statement limit** (decision 430): a Download backup failed with a 500
   once, and Restore's first press with "canceling statement due to statement timeout" (`backup_export`, one call for
   every table, 2 to 7.7 s on dev). The paged read that fixed it (decision 426) could leave cards out of the file
@@ -55,6 +56,10 @@ and function.
   - watch JustTCG usage and the plan (Appendix D 4);
 
 ## Done
+
+- 2026-10-21: **A note's * after the name on the Collections tab** (decision 432, the owner's ask): a bold * after a
+  name with a note, the note in its tooltip; none on the System rows (`CollectionsPage.jsx` name cell,
+  `collections.css` `.note-mark`). Lint, tests and the build pass; untested in the app.
 
 - 2026-10-21: **No Notes column on the Collections tab** (decision 431, the owner's ask): the column and its CSS
   gone (`CollectionsPage.jsx` `columns`, `collections.css`), Name 19% → 29% (`export.css`): 232 px → 353 px at

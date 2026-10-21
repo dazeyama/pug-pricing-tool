@@ -74,6 +74,8 @@
 .col-table .col-name { font-weight: 600; }
 .col-table .col-phone, .col-table .col-date { white-space: nowrap; font-variant-numeric: tabular-nums; }
 .col-table .col-date { color: var(--muted); }
+/* A note's * after the name (decision 432), like the mixed-rates *: pointing at it shows the note. */
+.col-table .note-mark { margin-left: 3px; font-weight: 800; font-size: 1.1em; cursor: help; }
 /* "✎ open on Front Counter (Dana)" under the name. */
 .lock-line { display: block; margin-top: 3px; font-size: 12px; font-weight: 500; color: var(--warn); }
 
