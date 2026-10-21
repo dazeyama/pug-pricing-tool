@@ -118,34 +118,37 @@ export default function BulkExportRatesPanel() {
           Print MTG (&gt;…) leaves them off.
         </p>
         <CutSlider value={shown} editing={Boolean(draft)} onChange={setDraft} />
-        <fieldset className="cut-key">
-          <legend>Key</legend>
-          <div><span className="cut-swatch cut-band-red" /> <strong>Red</strong>, true bulk: {bands.red}</div>
-          <div><span className="cut-swatch cut-band-amber" /> <strong>Amber</strong>, a $1 card: {bands.amber}</div>
-          <div><span className="cut-swatch cut-band-kept" /> Kept in (&gt;…) exports and prints: {keptWords(asCut)}</div>
-        </fieldset>
-      </div>
-      {/* The buttons bottom right (owner, 2026-10-20). */}
-      <div className="cut-foot">
-        {draft ? (
-          <>
-            <button type="button" className="btn small ghost" disabled={saving} onClick={() => setDraft(null)}>
-              CANCEL
-            </button>
-            <GuardButton className="btn small primary" disabled={saving} onClick={onSave}>
-              {saving ? 'Saving…' : 'SAVE'}
-            </GuardButton>
-          </>
-        ) : (
-          <GuardButton
-            className="btn small"
-            disabled={!loaded}
-            title={loaded ? undefined : "Settings haven't loaded yet"}
-            onClick={() => setDraft({ red: cents(cut.red), amber: cents(cut.amber) })}
-          >
-            EDIT
-          </GuardButton>
-        )}
+        {/* The Key half the panel's width, the buttons bottom right beside it (owner, 2026-10-20): the
+            panel fits without scrolling. */}
+        <div className="cut-bottom">
+          <fieldset className="cut-key">
+            <legend>Key</legend>
+            <div><span className="cut-swatch cut-band-red" /> <strong>Red</strong>, true bulk: {bands.red}</div>
+            <div><span className="cut-swatch cut-band-amber" /> <strong>Amber</strong>, a $1 card: {bands.amber}</div>
+            <div><span className="cut-swatch cut-band-kept" /> Kept in (&gt;…): {keptWords(asCut)}</div>
+          </fieldset>
+          <div className="cut-foot">
+            {draft ? (
+              <>
+                <button type="button" className="btn small ghost" disabled={saving} onClick={() => setDraft(null)}>
+                  CANCEL
+                </button>
+                <GuardButton className="btn small primary" disabled={saving} onClick={onSave}>
+                  {saving ? 'Saving…' : 'SAVE'}
+                </GuardButton>
+              </>
+            ) : (
+              <GuardButton
+                className="btn small"
+                disabled={!loaded}
+                title={loaded ? undefined : "Settings haven't loaded yet"}
+                onClick={() => setDraft({ red: cents(cut.red), amber: cents(cut.amber) })}
+              >
+                EDIT
+              </GuardButton>
+            )}
+          </div>
+        </div>
       </div>
     </section>
   );
