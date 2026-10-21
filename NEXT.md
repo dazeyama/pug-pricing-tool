@@ -6,33 +6,27 @@ and function.
 
 ## Open
 
-- **Findings from the 2026-10-21 smoke pass** (Claude, browser pane, dev; the full log is
-  `C:\ClaudeProjects\temp\smoke-2026-10-21\findings.md`), none fixed yet, each the owner's call:
-  - P2: Show all comes back on after a customer search once the list has closed, so the next card search shows
-    every status (`SearchBox.jsx`, the flip effect re-running on the same text; decision 424).
-  - P2: the backup sometimes hits the 8 s statement limit: a Download backup failed with a 500, and Restore's first
-    press failed "canceling statement due to statement timeout" (`backup_export`, one call for every table).
-  - P2: a set code before the number finds nothing (`RVR 26`, `CMR 472`); `parseQuery` in `src/lib/query.js` reads
-    a set code only as the last word, though decision 329 gives "RVR 26" as working.
-  - P2, cause not found: Base Set Blastoise 1st Edition Holo has no price in any condition (Unlimited and
-    Shadowless are priced).
-  - P3: the Cash Buys file's Type says "Collection" for an overnight buy (`src/lib/cashBuys.js` line 75, missed by
-    decision 421); Set value's popup "Back to $1.50" leaves an unsaved typed value; a number-only search's empty
-    message mentions a customer; TEST.md's "a second tab adds one to each" (Who's on counts computers).
-  - Notes N1–N10 in the log (wording and small edges), among them: a project's Completed question and Convert to buy
-    reason say "Paid/Ours"; the Convert dialog counts lines as cards; today's Magic EXPORT blocks its Print MTG too;
-    TEST.md cases to reword (Super Rod's stamp now via Other TCGplayer versions…, Rowlet and Exeggcute's "no
-    fallback", the 421 banner wording, Rejected's EXPORT).
+- **Unpushed** (2026-10-21): the smoke pass's fixes (decision 426): Show all after a customer search, backups a
+  table and a page at a time, the Convert count, the buy's undo naming Bulk pulled, the one-rate *, TEST.md's
+  reworded cases and decision 329's note. None needs a migration.
+- **Notes from the 2026-10-21 smoke pass the owner hasn't answered yet** (the full log is
+  `C:\ClaudeProjects\temp\smoke-2026-10-21\findings.md`; the rest are fixed or closed, decision 426):
+  - N2: switching a selected card's finish to one with no TCGplayer price keeps "🔒 Use TCGplayer" and prices it
+    from JustTCG with no toast; only a newly selected card drops the lock (decision 402).
+  - N3: after a stale confirm, the dialog stays open as "Confirm buy — 0 cards" with Confirm live.
+  - N5: a project's Completed question says "SMOKE Project is Paid/Ours", and its greyed Convert to buy's reason
+    says Paid/Ours too.
+  - N8 (question): today's Magic EXPORT is blocked as a whole, so EXPORT ▾'s Print MTG can't be reached on today's
+    day page.
+  - N9: the restore dialog says "The file's remembered import picks is empty" (is → are).
   - Not run by Claude, still the owner's: section 10 (the phone), the two-computer, network-off and store cases.
 - **The live site's first inventory upload on v1.0.1-day1** (decision 414): the live site most likely holds a
   second full copy of the Master Crystal Inventory (~152k products) from the owner's timed-out upload on the old
   build, and any uploads since. The first upload from the new build clears them ("Clearing the old file…").
-- **For migration 0008, when there's a reason to write one** (the v1.0.1-day1 pre-push review): the database's
-  words still say "under $1" and "(>$1)" where the cut is now a setting (decision 416): `pulled_ensure`'s fixed note
-  on Bulk pulled from exports ("Cards under $1 pulled out of an Export MTG csv (>$1) batch…", shown on its details
-  bar), `internal.pulled_copy`'s and `export_lines`' Changelog summaries ("N under $1 pulled"). Stored summaries
-  stay as written. And retire `master_inventory_abort`, unused by the new build (decision 414), with its test-run
-  checks and its place in the security-definer list. A stored `.gz` can be left in the `master-inventory` bucket if
+- **For migration 0008, when there's a reason to write one** (the v1.0.1-day1 pre-push review): retire
+  `master_inventory_abort`, unused by the new build (decision 414), with its test-run checks and its place in the
+  security-definer list. (The database's "under $1" and "Collection started from…" texts stay: the owner, 2026-10-21,
+  "don't bother, no one will ever see that".) A stored `.gz` can be left in the `master-inventory` bucket if
   the clearing's last answer is lost (`pruneProducts`, `src/lib/masterInventory.js`).
 - **Two small edges from the v1.0.1-day1 pre-push review** (plausible, not confirmed): a Pokémon buy's ⋯ → ◂ Print
   → Print buy isn't greyed offline though the printout fetches today's prices (decision 404; `BuyPanel.jsx`, the
@@ -57,6 +51,17 @@ and function.
   - watch JustTCG usage and the plan (Appendix D 4);
 
 ## Done
+
+- 2026-10-21: **The smoke pass's findings, as the owner answered them** (decision 426). Fixed: Show all stays off
+  once the header search's list closes (`SearchBox.jsx`); backups read a table and a page at a time
+  (`backup.js` `READ_ORDER`, `tidyTables`; `backupIO.js` `readBackup`; on dev the same file as `backup_export`, 2.3 s
+  against 7.7 s); the Convert dialog counts cards (`DayModals.jsx`); a buy's Mark Paid/Ours again? names Bulk pulled
+  from exports (`DayPage.jsx`); the mixed-rates * needs two rates (`rates.js` `mixedRateLines`); TEST.md's Super
+  Rod, Rowlet / Exeggcute, overnight-buy, Rejected and `26 rvr` cases reworded. Closed, no change: a set code
+  before the number (a note on decision 329), the four P3s, the database texts for 0008. Blastoise 1st Edition:
+  JustTCG lists no 1st Edition printing of Base Set Blastoise today (only Base Set Holofoil and Shadowless
+  Unlimited Holofoil, one search on dev), so "no price" is right; TEST.md's decision 338 case can't pass while
+  that lasts. Lint, 464 tests and the build pass; untested in the app.
 
 - 2026-10-21: **The smoke pass, run by Claude in the browser pane** on the owner's ask (dev only, v1.0.1-day1, at
   1366×768, 02:30–03:56): sections 1–9 and 11–18 apart from the phone, two-computer and network-off cases, the

@@ -89,8 +89,8 @@ what happens. The findings are reported when the pass ends.
 - [ ] A misspelt name still finds the card, with "Showing results for …" under the bar.
 - [ ] A name that ends in a number is searched as that name: `Spider-Man 2099` (Magic), `Energy Removal 2` (Pokémon).
 - [ ] **A number finds the promo pack printing too:** `Nashi 223` shows DSK 223 and PDSK 223p.
-- [ ] **The List in number searches** (decision 329): `rootborn def 26` shows RVR 26 first, then PLST RVR-26; `rvr 26`
-      shows both; `rootborn def 21` shows MM3 21 and PLST MM3-21, not RVR-26.
+- [ ] **The List in number searches** (decision 329): `rootborn def 26` shows RVR 26 first, then PLST RVR-26; `26 rvr`
+      shows both (the number first, as printed); `rootborn def 21` shows MM3 21 and PLST MM3-21, not RVR-26.
 - [ ] **Japanese Magic printings:** `Cyclonic Rift SOA 79` is marked **JP**; where the set has the card in English too,
       the **Japanese** checkbox in Details flips between the two.
 - [ ] Right-click on a suggestion searches its name; Newest / Oldest first sorts the printings; **… show all** opens
@@ -118,8 +118,8 @@ what happens. The findings are reported when the pass ends.
       JustTCG's reverse holo prices, with no extra search.
 - [ ] **Jumbo left out, stamp merged:** `Mimikyu ex 069` (Journey Together), HOLO: just Standard and Journey Together
       Stamped, the stamped one priced above; no second stamped version, no jumbo.
-- [ ] **Play! Pokémon stamp:** `Super Rod 188` (Paldea Evolved) has a **Play! Pokémon stamp** version that puts the
-      logo bottom right; its REVERSE shine covers everything except the art box, lined up with it.
+- [ ] **Play! Pokémon stamp:** `Super Rod 188` (Paldea Evolved) has a **Play! Pokémon stamp** version, under
+      **Other TCGplayer versions…** (decision 289), that puts the logo bottom right; its REVERSE shine covers everything except the art box, lined up with it.
 - [ ] **Pokémon Center stamp:** `Snorlax 051` (SV promos) reads **Pokémon Center stamp** and shows the round emblem
       bottom right.
 - [ ] **Patterns:** JP `121/165 SV2a` (Starmie), reverse: the Poké Ball and Master Ball versions show their ball badge,
@@ -135,7 +135,8 @@ what happens. The findings are reported when the pass ends.
 - [ ] **Wrong products put right** (decision 286): `Charmander 44/225 SVP` prices as Charmander (~$50, not ~$5) and
       View on TCGplayer opens Charmander 044; `Mimikyu V TG16/TG30` prices ~$80.
 - [ ] **Own products read as the version** (decision 287): `Exeggcute 1/131 PRE` Master Ball pattern and `Rowlet SM01`
-      show JustTCG's five conditions, with no fallback tag.
+      read JustTCG's five conditions as their own product. A condition can still show "fallback" when JustTCG prices
+      it above a better one, as the rules throw that price out.
 - [ ] **The name search by the set's home** (decision 288): `Purugly 36/130` (Diamond & Pearl) and a Sun & Moon base
       card get prices.
 - [ ] **A TCGplayer version still loading** (decision 359): pick a stamped version TCGplayer sells apart and press
@@ -317,7 +318,7 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
 - [ ] **Overnight buys** (decision 421): the first table is titled Overnight buys, its button + Overnight buy opens
       "New overnight buy", the ⋯ says Print overnight buy and Delete overnight buy…, Home's tile reads "Overnight buys
       and projects" and its quick action + Overnight buy; a buy's ⋯ → Convert ▸ Convert to overnight buy; the tab is
-      still Collections, and a Paid/Ours banner still says "This collection".
+      still Collections, and the Unlock and Reopen dialogs still say "this collection" ("Unlock this collection?").
 - [ ] A row open on another tab or computer greys its ⋯ items with who's editing it.
 - [ ] **+ Overnight buy** needs a name, a 10-digit phone and the Last 4 ID; Create shows what's missing; the name
       suggests past customers and fills the phone, never the Last 4 ID.
@@ -332,8 +333,8 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
 - [ ] **An exported card is frozen** (decision 345): EXPORT that collection again; × on an exported card says "That
       card is exported: Undo export… first". In a project, EXPORT, then: clicking an exported card or its × says
       the same; adding the same card again makes a new line beside it, which the next EXPORT sends; REPRICE? leaves the exported cards' prices (greyed when every card is exported).
-- [ ] **Rejected:** `SMOKE Rejected`, from Priced, rejected with a reason, locks (no adding, editing, REPRICE? or
-      EXPORT), shows $0 paid in red and is left out of the header search unless Show all; **Reopen** goes back to Priced
+- [ ] **Rejected:** `SMOKE Rejected`, from Priced, rejected with a reason, locks (no adding, editing or REPRICE?;
+      EXPORT downloads the file only), shows $0 paid in red and is left out of the header search unless Show all; **Reopen** goes back to Priced
       with its offer; the Paid/Ours dialog's **Mark as Rejected?** switches to the Reject dialog.
 - [ ] 📞 on a Priced collection counts calls, each in the Changelog.
 - [ ] REPRICE? on a Processing collection says "rounded down as always".
