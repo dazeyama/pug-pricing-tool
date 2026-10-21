@@ -29,7 +29,7 @@ and function.
 - **Unpushed** (2026-10-20): 16 commits since the last push: the stamp check removed (400), the team's six
   feedback items (401–407, migration 0005), Export single buy's and Print buy's splits (408, 409), the by-color
   sort's loading state (410), the $24 bulk defaults (411), settings in the Changelog (412, migration 0006), the
-  mixed-rates * (413) and the inventory cleared in batches (414, migration 0007).
+  mixed-rates * (413), the inventory cleared in batches (414, migration 0007) and the phone's Undo fix (415).
 - **The live site's bulk values** (decision 411, the owner's to do): Settings → Bulk values on the live site, type
   **24** in Rares & Mythics and in EXs. Prod isn't written from the CLI (decision 380). Until then, if prod has no
   saved `bulk_values`, the live site takes the code's defaults, $24 once pushed and $2.40 before. Push only on the owner's ask, once prod has 0005.
