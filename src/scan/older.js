@@ -37,7 +37,7 @@ async function printingsOf(name) {
  * drawing area's size first: Scryfall's carry only a viewBox, and Safari
  * then doesn't know how big to draw one.
  */
-export async function loadPicture(url) {
+async function loadPicture(url) {
   let src = url;
   if (/\.svg(\?|$)/i.test(url)) {
     const text = await (await fetch(url)).text();

@@ -1565,12 +1565,8 @@ frame and no set code at the bottom, so they're read as older cards.
 
 ### Promos
 
-- **Promo pack and prerelease cards** print the same collector line as the plain card. The promo pack
-  card has the planeswalker stamp at the lower right of its art; the prerelease card has the gold
-  year (*20★24*) at the lower left. When a set has such a printing of the card, the phone compares
-  those two spots with the plain card's picture. A stamp seen sends the stamped printing instead (a
-  prerelease always as foil). It's new: check stamped cards on the computer, and click a line to
-  change its printing if it's wrong.
+- **Promo pack and prerelease cards** print the same collector line as the plain card, and the phone
+  sends the plain card. A stamped one is fixed on the computer: click its line to change its printing.
 - **Promos printed with PRM** where the set code goes (2018 and 2019) are found by their number and
   set size. When there are several (promo pack, prerelease), the printing list opens: match the stamp.
 - **Friday Night Magic promos of 2014 to 2018** print FNM where the set code goes. They go in as

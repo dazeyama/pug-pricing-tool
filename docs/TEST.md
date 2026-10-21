@@ -8,7 +8,7 @@ what happens. The findings are reported when the pass ends.
   http://localhost:5180). **Never prod.**
 - **Who:** the owner, or Claude in the browser pane at the owner's request (FABLE.md, "a smoke pass the owner asks
   for"). The owner does the phone, two-computer and store cases.
-- **How long:** about two hours, 217 cases.
+- **How long:** about two hours, 215 cases.
 
 ## Ground rules
 
@@ -256,11 +256,6 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
 - [ ] **Which card is it?** (decision 311): Heaven's Gate (Legends), or any unreadable title: Title opens the box with a
       guess; × clears it; "heav" lists Heaven's Gate; tapping it opens its printings; auto scan opens the box by itself
       after a few looks; Skip this card sets the card aside for good.
-- [ ] **Stamped promos** (decision 328): Nashi, Searcher in the Dark with the 2024 stamp goes in as PDSK 223s, foil
-      (`+prerelease` in the run log); Aziza, Mage Tower Captain with the planeswalker stamp as PSOS 174p (`+promopack`);
-      the plain DSK 223 and SOS 174 go in plain.
-- [ ] **Stamp check timing:** in a run, unstamped rares' `stamp` log lines keep both spots under 0.53, and cards go in at
-      the usual pace but for the first card of each set.
 - [ ] **FNM promos** (decision 327): Renegade Rallier ("009/012 P / FNM") goes in as F17 9, foil (`fnm-artist`); a
       2015 or 2017 FNM promo numbered 1 goes in by its title (`fnm-title`), or the Which FNM promo? list opens.
 - [ ] **PRM promos** (decision 313): Etali, Primal Storm ("100/196 P / PRM ★ EN") opens "Which Etali, Primal Storm? A

@@ -16,7 +16,7 @@ and function.
   proven on prod. Left as the owner gets to them: name the computer, add the users, upload the CC CSV; every store
   computer signs in again. The Supabase plan: Free for now (decision 376). The clean-up (the spec's Phase 10 list, `C:\ClaudeProjects\temp\pug-squash\` included)
   waits until prod has run a while.
-- **The smoke test pass** (`docs/TEST.md`, 217 cases): planned before the squash and the switch, not done; neither
+- **The smoke test pass** (`docs/TEST.md`, 215 cases): planned before the squash and the switch, not done; neither
   changed behaviour, so it still covers this build. On dev only, never the live site (decision 380); TEST.md's
   "pair on the live site's address and scan a stack" case and SETUP.md's "price one card" check after restoring a
   paused project write to prod and need rewording to fit that rule (the pre-push review, 2026-10-20).
@@ -29,10 +29,15 @@ and function.
   Confirming… while a later press reads back.
 - **After launch:**
   - watch JustTCG usage and the plan (Appendix D 4);
-  - tune the stamp cutoff `STAMP_SEEN = 0.53` in `src/scan/stamps.js` from the run log's `stamp` lines
-    (`C:\ClaudeProjects\temp\scan-run\scan-log.jsonl`, LAN dev server only).
 
 ## Done
+
+- 2026-10-20: **The phone's stamp check removed** (decision 400; the owner tried it: "bad, but also, unnecessary"):
+  `src/scan/stamps.js` and `tests/scanStamps.test.js` deleted, the check, its 4 s limit and its run-log lines out
+  of `src/scan/Scanner.jsx`, `loadPicture` private again in `src/scan/older.js`: the scanner as before decision
+  328. Help's Promos says the plain card goes in and staff fix a stamped one on the computer; TEST.md's two stamp
+  cases gone (215 cases); the "tune STAMP_SEEN" item gone. Lint, 443 unit tests, the build. Untested in the app;
+  not pushed.
 
 - 2026-10-20: Pushed without a bump (still v1.0.0-launch): the 28 commits since it (`e1e8a7d` on), with this record.
   Out with it: the Pokémon stickers in whole dollars (384), the Help sections brought up to date (338–341, 343, 345,
