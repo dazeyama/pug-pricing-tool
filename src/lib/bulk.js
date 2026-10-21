@@ -49,10 +49,14 @@ export const BULK_ITEMS = Object.freeze([
 /** A placeholder's name until one is typed. */
 export const PLACEHOLDER_NAME = 'Placeholder';
 
-/** Settings → Bulk values as shipped (6.2): market value per item, in dollars. Placeholders have none. */
+/**
+ * Settings → Bulk values as shipped (6.2): market value per item, in dollars. Placeholders have none.
+ * 100 rares/mythics and 100 EXs are $24 (decision 411: $2.40 was a math error; $24 at the 33.34% cash
+ * rate pays $8.00, 8¢ a card).
+ */
 export const DEFAULT_BULK_VALUES = Object.freeze({
-  mtg_100_common: 1.5, mtg_100_rare: 2.4, mtg_10_dollar: 8, mtg_10_fifty: 3,
-  pkm_100: 0.75, pkm_100_ex: 2.4, pkm_10_dollar: 7, pkm_10_fifty: 2.5,
+  mtg_100_common: 1.5, mtg_100_rare: 24, mtg_10_dollar: 8, mtg_10_fifty: 3,
+  pkm_100: 0.75, pkm_100_ex: 24, pkm_10_dollar: 7, pkm_10_fifty: 2.5,
 });
 
 const BY_KIND = new Map(BULK_ITEMS.map((i) => [i.kind, i]));

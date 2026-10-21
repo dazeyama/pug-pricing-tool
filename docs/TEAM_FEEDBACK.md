@@ -226,11 +226,11 @@ Then the totals with them. Nothing to confirm separately: the alert informs, CON
 | Item | Game | Cards per item | Value per item (default) |
 |---|---|---|---|
 | MTG 100 Bulk commons/uncommons | Magic | 100 | **$1.50** |
-| MTG 100 Bulk rares/mythics | Magic | 100 | **$2.40** |
+| MTG 100 Bulk rares/mythics | Magic | 100 | **$24.00** (was $2.40, a math error: decision 411) |
 | MTG 10 Bulk $1 cards | Magic | 10 | **$8.00** |
 | MTG 10 Bulk 50¢ cards | Magic | 10 | **$3.00** |
 | PKM 100 Bulk | Pokémon | 100 | **$0.75** |
-| PKM 100 Bulk EXs | Pokémon | 100 | **$2.40** |
+| PKM 100 Bulk EXs | Pokémon | 100 | **$24.00** (was $2.40, a math error: decision 411) |
 | PKM 10 Bulk $1 cards | Pokémon | 10 | **$7.00** |
 | PKM 10 Bulk 50¢ cards | Pokémon | 10 | **$2.50** |
 
@@ -302,7 +302,7 @@ None.
 | Key | Value (default) | Phase |
 |---|---|---|
 | `rate_tiers` | `{ "low": { "under": 3, "credit": 50, "cash": 25 }, "high": { "over": 35, "credit": 70, "cash": 40 } }` | T2 |
-| `bulk_values` | `{ "mtg_100_common": 1.5, "mtg_100_rare": 2.4, "mtg_10_dollar": 8, "mtg_10_fifty": 3, "pkm_100": 0.75, "pkm_100_ex": 2.4, "pkm_10_dollar": 7, "pkm_10_fifty": 2.5 }` | T3 |
+| `bulk_values` | `{ "mtg_100_common": 1.5, "mtg_100_rare": 24, "mtg_10_dollar": 8, "mtg_10_fifty": 3, "pkm_100": 0.75, "pkm_100_ex": 24, "pkm_10_dollar": 7, "pkm_10_fifty": 2.5 }` | T3 |
 
 ### 6.3 Migration for T2 (next number after 0052)
 

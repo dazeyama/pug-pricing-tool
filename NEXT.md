@@ -11,9 +11,12 @@ and function.
   `C:\ClaudeProjects\temp\pug-0005\dev-run-0005.json` (550 checks, all passed); ask the owner first, after 9:30 PM
   recommended. 0005 keeps the live site working (`export_lines`' new `p_pulled` defaults to none); the app code that
   needs it (Export MTG csv (>$1), Bulk pulled from exports) can't be pushed before prod has it.
-- **Unpushed** (2026-10-20): 10 commits since the last push: the stamp check removed (400), the team's six
-  feedback items (401–407, migration 0005), Export single buy's and Print buy's splits (408, 409) and the by-color
-  sort's loading state (410). Push only on the owner's ask, once prod has 0005.
+- **Unpushed** (2026-10-20): 11 commits since the last push: the stamp check removed (400), the team's six
+  feedback items (401–407, migration 0005), Export single buy's and Print buy's splits (408, 409), the by-color
+  sort's loading state (410) and the $24 bulk defaults (411).
+- **The live site's bulk values** (decision 411, the owner's to do): Settings → Bulk values on the live site, type
+  **24** in Rares & Mythics and in EXs. Prod isn't written from the CLI (decision 380). Until then, if prod has no
+  saved `bulk_values`, the live site takes the code's defaults, $24 once pushed and $2.40 before. Push only on the owner's ask, once prod has 0005.
 - **Help out of date** (only when the owner asks), from the team's feedback (401–407): the condition and price-source
   locks (right-click, 🔒; "Condition prices"), the buy list's sort buttons ("The buy list"), today's prices and the key
   on Print MTG / Print PKM ("Print MTG?", "Print PKM?"), EXPORT ▾'s Print MTG (all) / (>$1) and Export MTG csv (all) /
@@ -48,6 +51,9 @@ and function.
 
 ## Done
 
+- 2026-10-20: **100 bulk rares/mythics and 100 EXs are $24** (decision 411), on the owner's word ("a math error from
+  the beginning"): `DEFAULT_BULK_VALUES` in `src/lib/bulk.js`, decision 266, `docs/TEAM_FEEDBACK.md`; dev's saved
+  `bulk_values` set to 24 for both (one update, the rest unchanged). The live site's is the owner's (Open).
 - 2026-10-20: **The by-color sort says it's loading** (decision 410), on the owner's ask: the list fades, locks and
   shows "Sorting by color…" until Scryfall's colors are in, then reorders once (`BuyList.jsx` `colorLoading`;
   `buylist.css`). Untested in the app.
