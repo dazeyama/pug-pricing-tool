@@ -14,6 +14,7 @@ import {
   sellPrices,
 } from '../../lib/ccExport.js';
 import { uuid } from '../../lib/uuid.js';
+import { OVER_1 } from '../../lib/auditPrint.js';
 import { SECOND_LOOK_MS, pause } from '../../lib/timeout.js';
 
 // The export dialog (docs/EXPORT_FUNCTION.md 8.3): Matching, then Review in
@@ -36,10 +37,13 @@ import { SECOND_LOOK_MS, pause } from '../../lib/timeout.js';
  *   its status, as the dialog says it ("Processing")
  * @param {boolean} [p.pullOut]  can't-upload cards must be pulled from the batch (false: Can't upload
  *   cards itself, whose cards are already out of it; spec 9.3)
+ * @param {boolean} [p.over1]  Export MTG csv (>$1) (decision 406): a card whose worked-out Sell Price is
+ *   under $1.00 stays out of the file, pulled from the batch and copied to Bulk pulled from exports
  * @param {() => void} p.onClose
  */
 export default function ExportDialog({
   items: itemsNow, mode = 'check', title, target: targetNow, fileName, onExported, onClose, pullOut = true, fileOnly = null,
+  over1 = false,
 }) {
   // The cards and the buys' versions as they were when it opened, kept for
   // as long as it's open (owner, 2026-10-14: an export kept starting over
@@ -114,8 +118,9 @@ export default function ExportDialog({
     };
   }, [lines, exporting, run]);
 
-  /** Where a line stands now: matched (with its product), choose, or cant. */
+  /** Where a line stands now: matched (with its product), choose, cant, or under1 (pulled, decision 406). */
   const stateOf = (r) => {
+    if (over1 && (sells.get(r.line.id)?.price ?? Infinity) < OVER_1) return { group: 'under1' };
     const pick = picks.get(r.line.id);
     if (pick?.product) return { group: 'matched', product: pick.product, by: 'staff' };
     if (pick?.none) return { group: 'cant', reason: 'none' };
@@ -131,7 +136,7 @@ export default function ExportDialog({
     if (!s || typed == null) return s ?? null;
     return { price: typed, basis: { ...s.basis, used: 'staff', staff: typed, worked: s.price } };
   };
-  const groups = { choose: [], matched: [], cant: [] };
+  const groups = { choose: [], matched: [], cant: [], under1: [] };
   for (const r of results) groups[stateOf(r).group].push(r);
   const cardsIn = (rs) => rs.reduce((n, r) => n + r.line.quantity, 0);
 
@@ -259,6 +264,7 @@ export default function ExportDialog({
         target,
         matches,
         cant: groups.cant.map((r) => r.line.id),
+        pulled: groups.under1.map((r) => r.line.id),
         setMaps,
         userId: staff.current.id,
         deviceId,
@@ -277,7 +283,7 @@ export default function ExportDialog({
       // the cards they were copied from are restamped with their stamps, this export's id
       // included: those are read instead (decision 387).
       if (!e.code) lostAnswer.current = true;
-      const ids = target?.kind === 'cant_upload'
+      const ids = target?.kind === 'cant_upload' || target?.kind === 'pulled'
         ? matches.map((m) => lines.find((l) => l.id === m.line_id)?.source_line_id ?? null)
         : matches.map((m) => m.line_id);
       const knowable = matches.length > 0 && ids.every(Boolean);
@@ -293,7 +299,9 @@ export default function ExportDialog({
           if (landed) {
             const cards = landed.reduce((n, l) => n + l.quantity, 0);
             const rows = cards > 0 ? downloadMassCreate(landed, fileName, pct) : 0;
-            onExported?.({ cards, cant: cardsIn(groups.cant), sku: landed[0].cc_custom_sku, lines: landed, rows });
+            onExported?.({
+              cards, cant: cardsIn(groups.cant), pulled: cardsIn(groups.under1), sku: landed[0].cc_custom_sku, lines: landed, rows,
+            });
             return;
           }
           checked = true;
@@ -397,6 +405,9 @@ export default function ExportDialog({
 
   const toExport = cardsIn(groups.matched);
   const cantCards = cardsIn(groups.cant);
+  const under1Cards = cardsIn(groups.under1);
+  // Every card to pull out of the batch before uploading: can't upload, and under $1 (decision 406).
+  const outCards = cantCards + under1Cards;
   const saving = phase === 'saving';
   let footer;
   if (!exporting || phase === 'matching' || phase === 'error') {
@@ -430,7 +441,8 @@ export default function ExportDialog({
       </>
     );
   } else {
-    const blocked = (pullOut && cantCards > 0 && !pulled) || ((!pullOut || fileOnly) && toExport === 0) || saving;
+    const mustPull = pullOut && outCards > 0;
+    const blocked = (mustPull && !pulled) || ((!pullOut || fileOnly) && toExport === 0) || saving;
     footer = (
       <>
         <button type="button" className="btn ghost" disabled={saving} onClick={() => setPhase('review')}>Back</button>
@@ -438,12 +450,13 @@ export default function ExportDialog({
           type="button"
           className={`btn primary${saving ? ' busy' : ''}`}
           disabled={blocked}
-          title={pullOut && cantCards > 0 && !pulled ? 'Tick “I’ve pulled these cards out of the batch” first'
+          title={mustPull && !pulled ? 'Tick “I’ve pulled these cards out of the batch” first'
             : (!pullOut || fileOnly) && toExport === 0 ? 'Nothing matched: there’s nothing to export' : undefined}
           onClick={save}
         >
           {fileOnly ? `Download the file (${toExport} card${toExport === 1 ? '' : 's'})`
-            : toExport > 0 ? `Export ${toExport} card${toExport === 1 ? '' : 's'}` : 'Mark them Can’t upload'}
+            : toExport > 0 ? `Export ${toExport} card${toExport === 1 ? '' : 's'}`
+              : under1Cards > 0 ? 'Mark them pulled' : 'Mark them Can’t upload'}
         </button>
       </>
     );
@@ -513,6 +526,19 @@ export default function ExportDialog({
                 {!groups.matched.length && <p className="hint">None yet.</p>}
               </details>
             </section>
+            {groups.under1.length > 0 && (
+              <section className="xd-group under1">
+                <h4>Under $1: pulled <span className="xd-count">{groups.under1.length}</span></h4>
+                {groups.under1.map((r) => (
+                  <div key={r.line.id} className="xd-row">
+                    {lineLabel(r)}
+                    <span className="xd-reason pulled-text">
+                      Sell {formatMoney(sells.get(r.line.id)?.price)}: left out of the file, copied to Bulk pulled from exports
+                    </span>
+                  </div>
+                ))}
+              </section>
+            )}
             {groups.cant.length > 0 && (
               <section className="xd-group cant">
                 <h4>Can't upload <span className="xd-count">{groups.cant.length}</span></h4>
@@ -559,23 +585,52 @@ export default function ExportDialog({
                 <strong>{cantCards}</strong> still can't upload and stay{cantCards === 1 ? 's' : ''} in Can't upload cards.
               </p>
             )}
-            {pullOut && cantCards > 0 && (
+            {pullOut && outCards > 0 && (
               <div className="xd-pull" role="alert">
-                <h3>Pull {cantCards === 1 ? 'this card' : `these ${cantCards} cards`} out of the batch before uploading.</h3>
-                <ul>
-                  {groups.cant.map((r) => (
-                    <li key={r.line.id}>
-                      {lineTextWithCondition(r.line)} <span className="xd-where">{whereOf.get(r.line.id)}</span>
-                    </li>
-                  ))}
-                </ul>
-                <p className="hint">
-                  They won't be in the file. They'll be marked <strong>Can't upload</strong> here and copied to the{' '}
-                  <strong>Can't upload cards</strong> collection.
-                </p>
+                <h3>Pull {outCards === 1 ? 'this card' : `these ${outCards} cards`} out of the batch before uploading.</h3>
+                {cantCards > 0 && (
+                  <>
+                    <ul>
+                      {groups.cant.map((r) => (
+                        <li key={r.line.id}>
+                          {lineTextWithCondition(r.line)} <span className="xd-where">{whereOf.get(r.line.id)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="hint">
+                      {fileOnly ? <>They won't be in the file. Nothing is saved: they stay as they are.</> : (
+                        <>
+                          They won't be in the file. They'll be marked <strong>Can't upload</strong> here and copied to the{' '}
+                          <strong>Can't upload cards</strong> collection.
+                        </>
+                      )}
+                    </p>
+                  </>
+                )}
+                {/* Under $1 (decision 406): in amber, to the pulled bulk. */}
+                {under1Cards > 0 && (
+                  <div className="xd-pull-under1">
+                    <ul>
+                      {groups.under1.map((r) => (
+                        <li key={r.line.id}>
+                          {lineTextWithCondition(r.line)} <span className="pulled-text">Sell {formatMoney(sells.get(r.line.id)?.price)}</span>
+                          {' '}<span className="xd-where">{whereOf.get(r.line.id)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="hint">
+                      {fileOnly ? <>Under $1: they won't be in the file. Nothing is saved: they stay as they are.</> : (
+                        <>
+                          Under $1: they won't be in the file. They'll be marked <strong>Pulled</strong> here and copied to the{' '}
+                          <strong>Bulk pulled from exports</strong> collection.
+                        </>
+                      )}
+                    </p>
+                  </div>
+                )}
                 <label className="xd-pulled">
                   <input type="checkbox" checked={pulled} disabled={saving} onChange={(e) => setPulled(e.target.checked)} />
-                  I've pulled {cantCards === 1 ? 'this card' : 'these cards'} out of the batch
+                  I've pulled {outCards === 1 ? 'this card' : 'these cards'} out of the batch
                 </label>
               </div>
             )}

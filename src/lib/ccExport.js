@@ -215,7 +215,7 @@ const EXPORT_ERRORS = {
  * Rejects with .code for the refusals above.
  * @returns {Promise<{ buys: number, cards: number, cant: number, sku: string, lines: object[] }>}
  */
-export async function saveExport({ target, matches, cant, setMaps, userId, deviceId }) {
+export async function saveExport({ target, matches, cant, pulled = [], setMaps, userId, deviceId }) {
   const { data, error } = await supabase.rpc('export_lines', {
     p_target: target,
     p_matches: matches,
@@ -223,6 +223,8 @@ export async function saveExport({ target, matches, cant, setMaps, userId, devic
     p_set_maps: setMaps,
     p_user: userId,
     p_device: deviceId,
+    // Export MTG csv (>$1)'s cards under $1, pulled to Bulk pulled from exports (decision 406).
+    ...(pulled.length ? { p_pulled: pulled } : {}),
   });
   if (error) {
     const code = knownCode(error, EXPORT_ERRORS);
@@ -263,8 +265,9 @@ export async function restampTimes(lines) {
   const times = [...new Set(lines.filter((l) => l.cc_status === 'exported' && l.cc_exported_at)
     .map((l) => l.cc_exported_at))];
   if (!times.length) return new Set();
+  // An export from Bulk pulled from exports restamps its originals the same way (decision 406).
   const { data, error } = await inChunks((part) => supabase.from('events').select('at')
-    .eq('action', 'cant_upload_exported').in('at', part), times, 50);
+    .in('action', ['cant_upload_exported', 'pulled_exported']).in('at', part), times, 50);
   if (error) throw new Error(`Couldn't check which cards were exported from Can't upload cards: ${error.message}`);
   return new Set(data.map((e) => e.at));
 }

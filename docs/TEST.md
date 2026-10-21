@@ -8,7 +8,7 @@ what happens. The findings are reported when the pass ends.
   http://localhost:5180). **Never prod.**
 - **Who:** the owner, or Claude in the browser pane at the owner's request (FABLE.md, "a smoke pass the owner asks
   for"). The owner does the phone, two-computer and store cases.
-- **How long:** about two hours, 215 cases.
+- **How long:** about two hours, 224 cases.
 
 ## Ground rules
 
@@ -153,6 +153,14 @@ what happens. The findings are reported when the pass ends.
 - [ ] **A failed price lookup isn't kept** (decisions 357, 368): with the `prices` request blocked (DevTools →
       Network), select a card: "Couldn't load prices" with Retry; unblock it and press Retry: the prices come in
       without a reload.
+- [ ] **A locked condition** (decision 401): right-click LP: a 🔒 on LP, and the next card selected starts on LP;
+      clicking MP changes this card only; CONFIRM BUY, then a new card: still LP; right-click LP: unlocked; leave the
+      tab and come back: NM again.
+- [ ] **A locked price source** (decision 402): right-click Use TCGplayer: "🔒 Use TCGplayer", and the next card is
+      priced from TCGplayer; select a card with no TCGplayer price: the lock goes, with a toast saying why.
+- [ ] **Sorting the list** (decision 403): a list of Magic and Pokémon cards: **$ ↓** orders each game's cards by
+      price, high first; **WUBRG** orders the Magic ones white, blue, black, red, green, multicolor, colorless,
+      lands (A–Z in each), the Pokémon ones as added; **Added** puts them back; bulk stays on top throughout.
 
 ## 8. Buy tab: the buy list and CONFIRM BUY
 
@@ -327,6 +335,14 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       cards, click that card: "That card is in Can't upload cards: Undo export… first to change it."
 - [ ] **Can't upload cards, lost answer** (decision 387): EXPORT from Can't upload cards with the wifi pulled as it
       saves; wifi back: the dialog says whether it went through, and if it did, the file downloads.
+- [ ] **Completed with the export, if asked** (decision 407): a Paid/Ours collection with Magic and Pokémon cards:
+      Export MTG csv (all): once the file downloads, "Mark this collection Completed?"; No: it stays Paid/Ours.
+      Print PKM Stickers?: the same question; Yes: Completed. A Processing collection's file-only export asks nothing.
+- [ ] **Export MTG csv (>$1) on a collection** (decision 406): a Paid/Ours collection with a $5 card and a $0.25
+      card: the $0.25 one is under "Under $1: pulled"; Confirm lists it in amber with the tick; after Export, the
+      card shows an amber **Pulled** chip and its copy is in **Bulk pulled from exports** (Collections tab, System).
+- [ ] **Bulk pulled from exports** (decision 406): open it: its cards say where they came from; EXPORT sends them
+      (no $1 cut) and they leave; Undo export… on the original collection takes a pulled card's copy back out.
 
 ## 12. Collections tab: projects
 
@@ -403,6 +419,14 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
 - [ ] **Convert leaves a Completed game whole** (decision 393): a buy with Magic cards, bulk and a placeholder and
       Pokémon cards; Mark as completed the Magic side; Convert to project: only the Pokémon cards move, the dialog
       saying the Magic bulk and placeholders stay; the buy keeps them.
+- [ ] **Prices on the printouts** (decision 404): a past Magic day, EXPORT ▾ → Print MTG (all): each row ends with
+      today's price, red under $0.50, amber from $0.50 to $0.99, plain from $1; the foot has the key. Print PKM? on a
+      Pokémon day the same.
+- [ ] **Print MTG (>$1)** (decision 405): the same day: only the rows at $1.00 or more; a day with none says so and
+      prints nothing.
+- [ ] **Export MTG csv (>$1) on a day** (decision 406): a past day with cards over and under $1: the file has only
+      the ones whose Sell Price is $1.00 or more; the rest are Completed with an amber **Pulled** chip, the day's
+      line says "N pulled under $1", and **Export MTG csv (all)** on another day exports everything as before.
 
 ## 15. The export file
 

@@ -38,6 +38,8 @@ begin
   where id = any(v_lines);
   update buys set version = version + 1, updated_at = now() where id = any(v_ids);
   v_returned := cant_upload_return(v_lines, v_from, p_user, p_device);
+  -- Pulled cards' copies come back out too (decision 406).
+  v_returned := v_returned + internal.pulled_return(v_lines, v_from, p_user, p_device);
 
   select * into v_user from staff_users where id = p_user;
   perform internal.insert_event(p_user, v_user.name, v_user.color, p_device, 'buy', 'day_unexported',
@@ -46,7 +48,7 @@ begin
     p_summary => format('%s %s buy%s marked Paid/Ours again%s.', v_count, v_game,
                         case when v_count = 1 then '' else 's' end,
                         case when v_returned > 0
-                             then format('; %s card%s taken back out of Can''t upload cards', v_returned,
+                             then format('; %s card%s taken back out of Can''t upload cards or Bulk pulled from exports', v_returned,
                                          case when v_returned = 1 then '' else 's' end)
                              else '' end));
   return v_count;

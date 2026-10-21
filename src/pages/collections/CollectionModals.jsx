@@ -358,14 +358,14 @@ export function RejectModal({ busy, onReject, onClose }) {
   );
 }
 
-export function ConfirmModal({ title, children, yes, danger = false, onYes, onClose }) {
+export function ConfirmModal({ title, children, yes, no = 'Cancel', danger = false, onYes, onClose }) {
   return (
     <Modal
       title={title}
       onClose={onClose}
       footer={(
         <>
-          <button type="button" className="btn ghost" onClick={onClose}>Cancel</button>
+          <button type="button" className="btn ghost" onClick={onClose}>{no}</button>
           <button type="button" className={`btn ${danger ? 'danger' : 'primary'}`} autoFocus onClick={onYes}>{yes}</button>
         </>
       )}

@@ -10,7 +10,7 @@ import { BULK_ITEMS, bulkItem, bulkShortText, cardCounts, countText, isValuedBul
 import CustomRateMark from '../../components/CustomRateMark.jsx';
 import RemoveModal from '../../components/RemoveModal.jsx';
 import { isStruck, struckNote } from '../../lib/struck.js';
-import { frozenNote } from '../collections/useCollection.js';
+import { PULLED_TIP, frozenNote } from '../collections/useCollection.js';
 import { useStaff } from '../../state/staff.jsx';
 import { GAMES } from '../../lib/games.js';
 import { useDismiss } from '../../lib/useDismiss.js';
@@ -438,7 +438,8 @@ export default function BuyList({
     let alive = true;
     scryfallCards(missingKey.split(','))
       .then((found) => {
-        for (const [id, c] of found) COLOR_CARDS.set(id, c);
+        // One Scryfall doesn't know is kept as unknown, so it isn't asked for again.
+        for (const id of missingKey.split(',')) COLOR_CARDS.set(id, found.get(id) ?? null);
         if (alive) setColors(Object.fromEntries(COLOR_CARDS));
       })
       .catch((e) => toast(`Couldn't get the cards' colors from Scryfall: ${e.message}`, 'err'));
@@ -671,6 +672,9 @@ export default function BuyList({
                       <span className="cant-chip" title="Not matched to Crystal Commerce: pulled from the upload. It's in Can't upload cards.">
                         Can't upload
                       </span>
+                    )}
+                    {l.cc_status === 'pulled' && (
+                      <span className="pulled-chip" title={PULLED_TIP}>Pulled</span>
                     )}
                     {/* A copy in Can't upload cards: where it came from (export spec 9.2). */}
                     {l.source_note && <span className="line-source">{l.source_note}</span>}

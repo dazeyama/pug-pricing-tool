@@ -53,7 +53,7 @@ const columns = (by, menu) => [
       <td key="phone" className="col-phone">
         {/* It has no phone: its System chip sits here, where there's room (owner, 2026-10-01). */}
         {c.system_key
-          ? <span className="system-chip" title="Made by the app: holds the cards exports couldn't upload">System</span>
+          ? <span className="system-chip" title="Made by the app: holds cards pulled out of exports">System</span>
           : c.project
             ? <span className="project-chip" title="The store's own cards, priced for an export">Project</span>
             : formatPhone(c.phone)}

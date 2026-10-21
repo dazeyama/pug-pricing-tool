@@ -61,7 +61,8 @@ const collator = new Intl.Collator('en', { sensitivity: 'base', numeric: true })
 export function printLines(lines) {
   const magic = (lines ?? []).filter((l) => l.game === 'mtg' && !l.bulk_kind && !l.struck_at);
   const pending = magic.filter((l) => !l.completed_at);
-  return pending.length ? pending : magic.filter((l) => l.cc_status === 'exported' || l.cc_status === 'cant_upload');
+  // A card pulled under $1 (decision 406) is printed as a Can't upload one is: under Unmatched.
+  return pending.length ? pending : magic.filter((l) => ['exported', 'cant_upload', 'pulled'].includes(l.cc_status));
 }
 
 /**
@@ -83,7 +84,7 @@ export function pokemonPrintLines(lines) {
  */
 export function savedCategory(line) {
   if (line.cc_status === 'exported') return line.cc_category || null;
-  if (line.cc_status === 'cant_upload') return null;
+  if (line.cc_status === 'cant_upload' || line.cc_status === 'pulled') return null;
   return undefined;
 }
 

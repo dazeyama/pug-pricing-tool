@@ -34,6 +34,7 @@ export default function ExportButton({
   onPrintPokemon = null, printPokemonBlocked = null, onPrintStickers = null, printStickersBlocked = null,
   exportLabel = 'Export csv', exportTitle = 'The Crystal Commerce Mass Create file: the export', exportBlocked = null,
   blocked = null, count = null, countTitle, label = 'EXPORT', copyLines = null, copyEmpty = 'No cards to copy.',
+  splitExport = false,
 }) {
   const [open, setOpen] = useState(false);
   const wrap = useRef(null);
@@ -134,19 +135,27 @@ export default function ExportButton({
               {printing ? 'Printing…' : 'Print PKM Stickers?'}
             </button>
           )}
-          <button
-            type="button"
-            role="menuitem"
-            className={`more-item${exportBlocked ? ' is-disabled' : ''}`}
-            aria-disabled={exportBlocked ? true : undefined}
-            title={exportBlocked ?? exportTitle}
-            onClick={() => {
-              setOpen(false);
-              onClick();   // blocked, it says why
-            }}
-          >
-            {exportLabel}
-          </button>
+          {/* `splitExport` (decision 406): Export MTG csv (all), as it was, and (>$1), whose cards
+              under $1 are pulled to Bulk pulled from exports. */}
+          {(splitExport ? [false, true] : [null]).map((over1) => (
+            <button
+              key={over1 ? 'over1' : 'all'}
+              type="button"
+              role="menuitem"
+              className={`more-item${exportBlocked ? ' is-disabled' : ''}`}
+              aria-disabled={exportBlocked ? true : undefined}
+              title={exportBlocked ?? (over1
+                ? "The Crystal Commerce Mass Create file of the cards whose Sell Price is $1.00 or more; the ones under $1 are pulled to Bulk pulled from exports"
+                : exportTitle)}
+              onClick={() => {
+                setOpen(false);
+                if (over1 == null) onClick();   // blocked, it says why
+                else onClick(over1);
+              }}
+            >
+              {over1 == null ? exportLabel : `${exportLabel} (${over1 ? '>$1' : 'all'})`}
+            </button>
+          ))}
         </div>
       )}
     </span>

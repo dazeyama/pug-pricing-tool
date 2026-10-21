@@ -46,8 +46,13 @@ export function useKeptBuy(keptBuyId) {
   return number;
 }
 
-/** Why a stamped card can't change, in its own words (decisions 345, 399). */
-export const frozenNote = (line) => (line.cc_status === 'cant_upload' ? LINE_CANT_UPLOAD : LINE_EXPORTED);
+/** One pulled from an Export MTG csv (>$1) as under $1 (decision 406). */
+export const LINE_PULLED = "That card was pulled from an export as under $1: Undo export… first to change it.";
+/** The Pulled chip's tooltip (decision 406). */
+export const PULLED_TIP = "Under $1 at the export: pulled from the upload. It's in Bulk pulled from exports.";
+
+/** Why a stamped card can't change, in its own words (decisions 345, 399, 406). */
+export const frozenNote = (line) => ({ cant_upload: LINE_CANT_UPLOAD, pulled: LINE_PULLED }[line.cc_status] ?? LINE_EXPORTED);
 
 export const PROJECT_EXPORTED = "Part of this project is exported: Undo export… first, only if its file wasn't uploaded to Crystal Commerce.";
 
@@ -77,9 +82,9 @@ const MESSAGES = {
   // Struck cards (owner, 2026-10-16).
   line_struck: 'That card is struck: right-click → Restore it first.',
   // The database doesn't say which (decision 399): both.
-  line_exported: "That card is exported or in Can't upload cards: Undo export… first to change it.",
+  line_exported: "That card is exported, in Can't upload cards or pulled: Undo export… first to change it.",
   strike_paid_only: 'Only a Paid/Ours collection strikes cards: here × removes them.',
-  system_collection: "Can't upload cards doesn't strike: its × removes the card.",
+  system_collection: "A system collection (Can't upload cards, Bulk pulled from exports) doesn't strike: its × removes the card.",
   project_no_strike: "A project doesn't strike: its × removes the card.",
   project_rates: "A project has no rates of its own: it's the store's own cards.",
   // Convert to buy… (owner, 2026-10-10): a project that can't go (the name and phone CONFIRM BUY

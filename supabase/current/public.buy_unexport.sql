@@ -35,6 +35,8 @@ begin
   update buys set version = version + 1, updated_at = now(), last_edited_by = p_user
    where id = b.id returning * into b;
   v_returned := cant_upload_return(v_lines, v_target, p_user, p_device);
+  -- Pulled cards' copies come back out too (decision 406).
+  v_returned := v_returned + internal.pulled_return(v_lines, v_target, p_user, p_device);
 
   select coalesce(sum(quantity), 0), coalesce(sum(unit_price * quantity), 0) into v_cards, v_market
     from buy_lines where id = any(v_lines);
@@ -42,7 +44,7 @@ begin
     internal.lines_totals(b, array(select l from buy_lines l where l.id = any(v_lines))), '[]'::jsonb,
     format('%s %s card%s marked Paid/Ours again%s.', v_cards, v_game, case when v_cards = 1 then '' else 's' end,
            case when v_returned > 0
-                then format('; %s card%s taken back out of Can''t upload cards', v_returned,
+                then format('; %s card%s taken back out of Can''t upload cards or Bulk pulled from exports', v_returned,
                             case when v_returned = 1 then '' else 's' end)
                 else '' end));
   return v_count;

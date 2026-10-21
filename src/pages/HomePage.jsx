@@ -163,7 +163,8 @@ function HomeScreen({ today }) {
 
   // ---- collections and projects
   const collections = open.data ?? [];
-  const cantUpload = collections.find((c) => c.system_key);
+  // Can't upload cards itself, not Bulk pulled from exports, the other system collection (decision 406).
+  const cantUpload = collections.find((c) => c.system_key === 'cant_upload');
   const cantCards = cardsIn(cantUpload?.buy_lines ?? []);
   const customer = collections.filter((c) => !c.system_key && !c.project);
   const projects = collections.filter((c) => c.project);

@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION public.export_lines(p_target jsonb, p_matches jsonb, p_cant uuid[], p_set_maps jsonb, p_user uuid, p_device uuid)
+CREATE OR REPLACE FUNCTION public.export_lines(p_target jsonb, p_matches jsonb, p_cant uuid[], p_set_maps jsonb, p_user uuid, p_device uuid, p_pulled uuid[] DEFAULT '{}'::uuid[])
  RETURNS jsonb
  LANGUAGE plpgsql
  SET search_path TO 'public', 'internal'
@@ -21,11 +21,15 @@ declare
   b           buys;
   v_target    text;
   v_market    numeric;
+  v_pulled    integer := 0;
 begin
   if p_user is null then raise exception 'no_user'; end if;
   p_matches := coalesce(p_matches, '[]'::jsonb);
   p_cant := coalesce(p_cant, '{}'::uuid[]);
-  if v_kind is null or v_kind not in ('day', 'buy', 'cant_upload', 'collection') then raise exception 'bad_target'; end if;
+  p_pulled := coalesce(p_pulled, '{}'::uuid[]);
+  if v_kind is null or v_kind not in ('day', 'buy', 'cant_upload', 'pulled', 'collection') then raise exception 'bad_target'; end if;
+  -- Only a buy, day or collection pulls cards (decision 406); the system collections' own exports don't.
+  if v_kind in ('cant_upload', 'pulled') and cardinality(p_pulled) > 0 then raise exception 'bad_target'; end if;
   -- An inventory with products, when anything is to be matched (a collection
   -- with only Pokémon cards needs none).
   if jsonb_array_length(p_matches) > 0
@@ -68,11 +72,12 @@ begin
     select array_agg(l.id) into v_lines
       from buy_lines l where l.buy_id = any(v_buys) and l.game = v_game and l.completed_at is null
        and l.bulk_kind is null and l.struck_at is null;
-    perform export_check(v_lines, p_matches, p_cant, v_file);
+    perform export_check(v_lines, p_matches, p_cant || p_pulled, v_file);
 
     perform export_stamp(p_matches, v_file, v_sku);
     update buy_lines set completed_at = now(), completed_by = p_user where id = any(v_lines);
     update buy_lines set cc_status = 'cant_upload', cc_exported_at = now() where id = any(p_cant);
+    update buy_lines set cc_status = 'pulled', cc_exported_at = now() where id = any(p_pulled);
     perform export_learn(p_matches, p_set_maps, v_file, p_user);
     update buys set version = version + 1, updated_at = now() where id = any(v_buys);
 
@@ -82,10 +87,14 @@ begin
       into v_notes
       from buy_lines l
       join buys x on x.id = l.buy_id
-     where l.id = any(p_cant);
+     where l.id = any(p_cant || p_pulled);
     perform cant_upload_copy(
       (select array_agg(l.id order by l.buy_id, l.position) from buy_lines l where l.id = any(p_cant)),
       v_notes, v_from, p_user, p_device);
+    perform internal.pulled_copy(
+      (select array_agg(l.id order by l.buy_id, l.position) from buy_lines l where l.id = any(p_pulled)),
+      v_notes, v_from, p_user, p_device);
+    select coalesce(sum(quantity), 0) into v_pulled from buy_lines where id = any(p_pulled);
 
     select coalesce(sum(quantity) filter (where cc_status = 'exported'), 0),
            coalesce(sum(quantity) filter (where cc_status = 'cant_upload'), 0)
@@ -104,10 +113,11 @@ begin
       p_fields => jsonb_build_array(jsonb_build_object('field', 'status', 'before', 'Paid/Ours', 'after', 'Completed')),
       p_summary => format('%s Magic card%s exported (Custom SKU %s)%s.', v_cards,
                           case when v_cards = 1 then '' else 's' end, v_sku,
-                          case when v_cant > 0 then format('; %s can''t upload, copied to Can''t upload cards', v_cant)
+                          case when v_pulled > 0 then format('; %s under $1 pulled, copied to Bulk pulled from exports', v_pulled) else '' end
+             || case when v_cant > 0 then format('; %s can''t upload, copied to Can''t upload cards', v_cant)
                                else '' end));
 
-    return jsonb_build_object('buys', array_length(v_buys, 1), 'cards', v_cards, 'cant', v_cant,
+    return jsonb_build_object('buys', array_length(v_buys, 1), 'cards', v_cards, 'cant', v_cant, 'pulled', coalesce(v_pulled, 0),
                               'sku', v_sku, 'lines', coalesce(v_rows, '[]'::jsonb));
   end if;
 
@@ -132,19 +142,24 @@ begin
     v_target := buy_target_name(b.id);
     -- Its day's Custom SKU with its number: "101626-42" (owner, 2026-10-17; 0071).
     v_sku := cc_custom_sku_day((b.confirmed_at at time zone 'America/Los_Angeles')::date) || '-' || buy_number(b);
-    perform export_check(v_lines, p_matches, p_cant, v_file);
+    perform export_check(v_lines, p_matches, p_cant || p_pulled, v_file);
 
     perform export_stamp(p_matches, v_file, v_sku);
     update buy_lines set completed_at = now(), completed_by = p_user where id = any(v_lines);
     update buy_lines set cc_status = 'cant_upload', cc_exported_at = now() where id = any(p_cant);
+    update buy_lines set cc_status = 'pulled', cc_exported_at = now() where id = any(p_pulled);
     perform export_learn(p_matches, p_set_maps, v_file, p_user);
     update buys set version = version + 1, updated_at = now(), last_edited_by = p_user
      where id = b.id returning * into b;
 
-    select jsonb_object_agg(l.id::text, 'from ' || v_target) into v_notes from buy_lines l where l.id = any(p_cant);
+    select jsonb_object_agg(l.id::text, 'from ' || v_target) into v_notes from buy_lines l where l.id = any(p_cant || p_pulled);
     perform cant_upload_copy(
       (select array_agg(l.id order by l.position) from buy_lines l where l.id = any(p_cant)),
       v_notes, v_target, p_user, p_device);
+    perform internal.pulled_copy(
+      (select array_agg(l.id order by l.position) from buy_lines l where l.id = any(p_pulled)),
+      v_notes, v_target, p_user, p_device);
+    select coalesce(sum(quantity), 0) into v_pulled from buy_lines where id = any(p_pulled);
 
     select coalesce(sum(quantity) filter (where cc_status = 'exported'), 0),
            coalesce(sum(quantity) filter (where cc_status = 'cant_upload'), 0),
@@ -162,10 +177,11 @@ begin
       internal.lines_totals(b, array(select l from buy_lines l where l.id = any(v_lines))), '[]'::jsonb,
       format('%s Magic card%s exported on its own (Custom SKU %s)%s; the buy is Completed.', v_cards,
              case when v_cards = 1 then '' else 's' end, v_sku,
-             case when v_cant > 0 then format('; %s can''t upload, copied to Can''t upload cards', v_cant)
+             case when v_pulled > 0 then format('; %s under $1 pulled, copied to Bulk pulled from exports', v_pulled) else '' end
+             || case when v_cant > 0 then format('; %s can''t upload, copied to Can''t upload cards', v_cant)
                   else '' end));
 
-    return jsonb_build_object('buys', 1, 'cards', v_cards, 'cant', v_cant,
+    return jsonb_build_object('buys', 1, 'cards', v_cards, 'cant', v_cant, 'pulled', coalesce(v_pulled, 0),
                               'sku', v_sku, 'lines', coalesce(v_rows, '[]'::jsonb));
   end if;
 
@@ -181,15 +197,20 @@ begin
     select array_agg(l.id) into v_lines from buy_lines l
      where l.buy_id = b.id and l.game = 'mtg' and l.bulk_kind is null and l.struck_at is null and l.cc_status is null;
     if v_lines is null then raise exception 'nothing_to_export'; end if;
-    perform export_check(v_lines, p_matches, p_cant, v_file);
+    perform export_check(v_lines, p_matches, p_cant || p_pulled, v_file);
 
     perform export_stamp(p_matches, v_file, v_sku);
     update buy_lines set cc_status = 'cant_upload', cc_exported_at = now() where id = any(p_cant);
+    update buy_lines set cc_status = 'pulled', cc_exported_at = now() where id = any(p_pulled);
     perform export_learn(p_matches, p_set_maps, v_file, p_user);
-    select jsonb_object_agg(l.id::text, 'from ' || v_from) into v_notes from buy_lines l where l.id = any(p_cant);
+    select jsonb_object_agg(l.id::text, 'from ' || v_from) into v_notes from buy_lines l where l.id = any(p_cant || p_pulled);
     perform cant_upload_copy(
       (select array_agg(l.id order by l.position) from buy_lines l where l.id = any(p_cant)),
       v_notes, v_from, p_user, p_device);
+    perform internal.pulled_copy(
+      (select array_agg(l.id order by l.position) from buy_lines l where l.id = any(p_pulled)),
+      v_notes, v_from, p_user, p_device);
+    select coalesce(sum(quantity), 0) into v_pulled from buy_lines where id = any(p_pulled);
 
     select coalesce(sum(quantity) filter (where cc_status = 'exported'), 0),
            coalesce(sum(quantity) filter (where cc_status = 'cant_upload'), 0)
@@ -207,10 +228,62 @@ begin
     perform collection_event(b, p_user, p_device, 'collection_exported', array['mtg'], 0, 0, null, '[]', '[]',
       format('Exported %s card%s (Custom SKU %s)%s.', v_cards,
              case when v_cards = 1 then '' else 's' end, v_sku,
-             case when v_cant > 0 then format('; %s can''t upload, copied to Can''t upload cards', v_cant)
+             case when v_pulled > 0 then format('; %s under $1 pulled, copied to Bulk pulled from exports', v_pulled) else '' end
+             || case when v_cant > 0 then format('; %s can''t upload, copied to Can''t upload cards', v_cant)
                   else '' end));
-    return jsonb_build_object('buys', 1, 'cards', v_cards, 'cant', v_cant,
+    return jsonb_build_object('buys', 1, 'cards', v_cards, 'cant', v_cant, 'pulled', coalesce(v_pulled, 0),
                               'sku', case when v_cards > 0 then v_sku end, 'lines', coalesce(v_rows, '[]'::jsonb));
+  end if;
+
+  -- ------------------------------------------ Bulk pulled from exports (decision 406)
+  -- As Can't upload cards: cards that now match are exported and leave the collection, their
+  -- originals restamped exported; the rest stay.
+  if v_kind = 'pulled' then
+    -- Cards that now match are exported and leave the collection, and their
+    -- original lines are restamped exported; the rest stay, unchanged.
+    b := collection_for_write(pulled_ensure(), p_device, (p_target ->> 'version')::integer, false);
+    select array_agg(l.id) into v_lines from buy_lines l where l.buy_id = b.id and l.game = 'mtg' and l.bulk_kind is null and l.struck_at is null;
+    if v_lines is null then raise exception 'nothing_to_export'; end if;
+    perform export_check(v_lines, p_matches, p_cant, v_file);
+    if jsonb_array_length(p_matches) = 0 then
+      return jsonb_build_object('buys', 0, 'cards', 0,
+        'cant', (select coalesce(sum(quantity), 0) from buy_lines where id = any(p_cant)),
+        'sku', v_sku, 'lines', '[]'::jsonb);
+    end if;
+
+    perform export_stamp(p_matches, v_file, v_sku);
+    perform export_learn(p_matches, p_set_maps, v_file, p_user);
+    -- The file's rows, and the changelog's lines, before the copies go.
+    select coalesce(sum(l.quantity), 0),
+           jsonb_agg(jsonb_build_object(
+             'id', l.id, 'quantity', l.quantity, 'cc_status', l.cc_status,
+             'cc_product_name', l.cc_product_name, 'cc_category', l.cc_category,
+             'cc_condition', l.cc_condition, 'cc_sell_price', l.cc_sell_price, 'cc_custom_sku', l.cc_custom_sku)),
+           jsonb_agg(jsonb_build_object('sign', '-', 'qty', l.quantity, 'game', l.game, 'unit_price', l.unit_price,
+                                        'text', export_line_text(l)) order by l.position)
+      into v_cards, v_rows, v_lines_log
+      from buy_lines l where l.buy_id = b.id and l.cc_status = 'exported';
+    -- The originals (still in their buys or collections) are exported now: the
+    -- Can't upload chip goes.
+    update buy_lines o set
+      cc_status = 'exported', cc_product_id = c.cc_product_id, cc_product_name = c.cc_product_name,
+      cc_category = c.cc_category, cc_condition = c.cc_condition, cc_sell_price = c.cc_sell_price,
+      cc_sell_basis = c.cc_sell_basis, cc_custom_sku = c.cc_custom_sku, cc_exported_at = c.cc_exported_at
+    from buy_lines c
+    where c.buy_id = b.id and c.cc_status = 'exported' and o.id = c.source_line_id;
+    -- Their buys or collections reload where they're open.
+    update buys set version = version + 1, updated_at = now()
+     where id in (select o.buy_id from buy_lines o join buy_lines c on o.id = c.source_line_id
+                   where c.buy_id = b.id and c.cc_status = 'exported');
+    delete from buy_lines where buy_id = b.id and cc_status = 'exported';
+    update buys set version = version + 1, updated_at = now(), last_edited_by = p_user
+     where id = b.id returning * into b;
+    select coalesce(sum(quantity), 0) into v_cant from buy_lines where id = any(p_cant);
+    perform collection_event(b, p_user, p_device, 'pulled_exported', array['mtg'], 0, v_cards, null, v_lines_log,
+      '[]', format('Exported %s card%s (Custom SKU %s)%s.', v_cards, case when v_cards = 1 then '' else 's' end, v_sku,
+                   case when v_cant > 0 then format('; %s didn''t match and stay', v_cant) else '' end));
+    return jsonb_build_object('buys', 0, 'cards', v_cards, 'cant', v_cant, 'sku', v_sku,
+                              'lines', coalesce(v_rows, '[]'::jsonb));
   end if;
 
   -- ------------------------------------------------- Can't upload cards (9.3)
@@ -219,7 +292,7 @@ begin
   b := collection_for_write(cant_upload_ensure(), p_device, (p_target ->> 'version')::integer, false);
   select array_agg(l.id) into v_lines from buy_lines l where l.buy_id = b.id and l.game = 'mtg' and l.bulk_kind is null and l.struck_at is null;
   if v_lines is null then raise exception 'nothing_to_export'; end if;
-  perform export_check(v_lines, p_matches, p_cant, v_file);
+  perform export_check(v_lines, p_matches, p_cant || p_pulled, v_file);
   if jsonb_array_length(p_matches) = 0 then
     return jsonb_build_object('buys', 0, 'cards', 0,
       'cant', (select coalesce(sum(quantity), 0) from buy_lines where id = any(p_cant)),
@@ -256,8 +329,9 @@ begin
   select coalesce(sum(quantity), 0) into v_cant from buy_lines where id = any(p_cant);
   perform collection_event(b, p_user, p_device, 'cant_upload_exported', array['mtg'], 0, v_cards, null, v_lines_log,
     '[]', format('Exported %s card%s (Custom SKU %s)%s.', v_cards, case when v_cards = 1 then '' else 's' end, v_sku,
-                 case when v_cant > 0 then format('; %s still can''t upload and stay', v_cant) else '' end));
-  return jsonb_build_object('buys', 0, 'cards', v_cards, 'cant', v_cant, 'sku', v_sku,
+                 case when v_pulled > 0 then format('; %s under $1 pulled, copied to Bulk pulled from exports', v_pulled) else '' end
+             || case when v_cant > 0 then format('; %s still can''t upload and stay', v_cant) else '' end));
+  return jsonb_build_object('buys', 0, 'cards', v_cards, 'cant', v_cant, 'pulled', coalesce(v_pulled, 0), 'sku', v_sku,
                             'lines', coalesce(v_rows, '[]'::jsonb));
 end;
 $function$;

@@ -195,6 +195,7 @@ function DayScreen({ game, day }) {
     .map((l) => l.cc_custom_sku))];
   const exportedCards = doneLines.filter((l) => l.cc_status === 'exported').reduce((n, l) => n + l.quantity, 0);
   const cantCards = doneLines.filter((l) => l.cc_status === 'cant_upload').reduce((n, l) => n + l.quantity, 0);
+  const pulledCards = doneLines.filter((l) => l.cc_status === 'pulled').reduce((n, l) => n + l.quantity, 0);   // decision 406
   const fileName = `cc-mass-create-${game === 'mtg' ? 'magic' : game}-${day}.csv`;
   // Export single buy's buy as the page has it now, so its dialog sees a newer version (decision 362).
   const exportBuyNow = exportingBuy && (mine.find((b) => b.id === exportingBuy.buy.id) ?? exportingBuy.buy);
@@ -456,7 +457,8 @@ function DayScreen({ game, day }) {
    * once they're all Completed, the same file again from the stamps, and
    * nothing changes.
    */
-  async function startExport() {
+  /** `over1`: Export MTG csv (>$1) (decision 406): the cards under $1 pulled, not in the file. */
+  async function startExport(over1 = false) {
     if (exportBlocked) {
       toast(`${exportBlocked}.`, 'err');
       return;
@@ -466,7 +468,7 @@ function DayScreen({ game, day }) {
       return;
     }
     if (pending.length) {
-      if (guard()) unlessFlagged(pending, () => setExporting(true));
+      if (guard()) unlessFlagged(pending, () => setExporting({ over1 }));
       return;
     }
     // Not the cards a Can't upload cards export stamped: they went in its file (decision 372).
@@ -484,12 +486,12 @@ function DayScreen({ game, day }) {
       return;
     }
     if (!stamped.lines.length && doneLines.some((l) => l.cc_status === 'exported')) {
-      toast("This day's exported cards went out from Can't upload cards, so the day has no file of its own to download again.", 'err');
+      toast("This day's exported cards went out from Can't upload cards or Bulk pulled from exports, so the day has no file of its own to download again.", 'err');
       return;
     }
     if (!stamped.lines.length) {
-      toast(cantCards
-        ? "Nothing here could be uploaded: there's no file. Every card is Can't upload."
+      toast(cantCards || pulledCards
+        ? "Nothing here was uploaded: there's no file. Every card is Can't upload or pulled under $1."
         : "These buys were marked Completed without being exported, so there's no file: mark them Paid/Ours again (⋯), then EXPORT.", 'err');
       return;
     }
@@ -514,7 +516,7 @@ function DayScreen({ game, day }) {
     }
     const mineOnly = withoutRestamps(lines, restamped);
     if (!mineOnly.length) {
-      toast(`Buy ${number}'s exported cards went out from Can't upload cards, so it has no file of its own to download again.`, 'err');
+      toast(`Buy ${number}'s exported cards went out from Can't upload cards or Bulk pulled from exports, so it has no file of its own to download again.`, 'err');
       return;
     }
     const rows = downloadMassCreate(mineOnly, `cc-mass-create-${game === 'mtg' ? 'magic' : game}-${day}-buy-${number}.csv`,
@@ -622,9 +624,8 @@ function DayScreen({ game, day }) {
     setExporting(false);
     setExportingBuy(null);
     const cards = `${result.cards} card${result.cards === 1 ? '' : 's'}`;
-    const cant = result.cant > 0
-      ? ` ${result.cant} can't upload: copied to Can't upload cards.`
-      : '';
+    const cant = (result.cant > 0 ? ` ${result.cant} can't upload: copied to Can't upload cards.` : '')
+      + (result.pulled > 0 ? ` ${result.pulled} under $1 pulled: copied to Bulk pulled from exports.` : '');
     toast(result.cards > 0
       ? `Exported ${cards} (${result.rows} row${result.rows === 1 ? '' : 's'}), Custom SKU ${result.sku}.${cant}`
       : `Nothing matched, so there's no file.${cant}`, 'ok');
@@ -668,7 +669,8 @@ function DayScreen({ game, day }) {
             printPokemonBlocked={printPokemonBlocked}
             onPrintStickers={completeOnly ? printStickersDay : null}
             printStickersBlocked={printStickersBlocked}
-            exportLabel={completeOnly ? 'Complete day…' : 'Export csv'}
+            exportLabel={completeOnly ? 'Complete day…' : 'Export MTG csv'}
+            splitExport={!completeOnly}
             exportTitle={completeOnly ? "Mark the day's Pokémon buys Completed, with today's sell prices" : undefined}
             exportBlocked={completeOnly ? exportBlocked : null}
             printing={printing || stickers.printing}
@@ -697,8 +699,9 @@ function DayScreen({ game, day }) {
         <p className="day-export-note">
           Exported {formatDateTime(lastExport.completed_at)}
           {lastExport.completed_by && <> by <UserTag user={staff.byId(lastExport.completed_by)} /></>}
-          {(exportedCards > 0 || cantCards > 0) && (
-            <>: {exportedCards} card{exportedCards === 1 ? '' : 's'}{cantCards > 0 && <>, <span className="cant-text">{cantCards} can't upload</span></>}</>
+          {(exportedCards > 0 || cantCards > 0 || pulledCards > 0) && (
+            <>: {exportedCards} card{exportedCards === 1 ? '' : 's'}{cantCards > 0 && <>, <span className="cant-text">{cantCards} can't upload</span></>}
+              {pulledCards > 0 && <>, <span className="pulled-text">{pulledCards} pulled under $1</span></>}</>
           )}
           .{' '}These buys are Completed: locked, and left out of the header search. Prices in green are the Sell
           {' '}Prices written to the file.
@@ -803,7 +806,8 @@ function DayScreen({ game, day }) {
       {exporting && (
         <ExportDialog
           mode="export"
-          title={`Export ${GAME_NAMES[game]} for ${dayDate(day)} to Crystal Commerce`}
+          over1={Boolean(exporting.over1)}
+          title={`Export ${GAME_NAMES[game]}${exporting.over1 ? ' ($1 and up)' : ''} for ${dayDate(day)} to Crystal Commerce`}
           items={mine.flatMap((b) => b.buy_lines
             .filter((l) => l.game === game && !l.completed_at && movesOn(l))
             .map((line) => ({ line, where: `Buy ${numberOf(b)}` })))}

@@ -122,6 +122,21 @@
   white-space: nowrap;
 }
 .cant-text { color: var(--bad); font-weight: 700; }
+/* Pulled (decision 406): a card under $1 pulled from an export to Bulk pulled from exports, in amber. */
+.pulled-chip {
+  margin-left: 8px;
+  padding: 0 8px;
+  border: 1.5px solid var(--warn);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--warn) 14%, transparent);
+  color: var(--warn);
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.buy-list .pulled-chip { margin-left: 6px; }
+.pulled-text { color: var(--warn); font-weight: 700; }
+.xd-pull-under1 { margin-top: 10px; }
 
 /* Can't upload cards (export spec 9.5): the System chip, its fixed note, and
    where each copy came from. */

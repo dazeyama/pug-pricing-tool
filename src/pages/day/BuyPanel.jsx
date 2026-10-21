@@ -16,6 +16,7 @@ import { statusLabel, statusTone, walkInStatus } from '../collections/status.js'
 import { GAME_NAMES } from '../../lib/games.js';
 import { useDismiss } from '../../lib/useDismiss.js';
 import { COMPLETED_LOCK, MARKED_LOCK, convertLines, markedByHand } from './dayRules.js';
+import { PULLED_TIP } from '../collections/useCollection.js';
 
 // A buy on a day page (spec 10.2): its panel, with its cards, totals, chips and ⋯ (FABLE_REPORT C2).
 
@@ -318,6 +319,7 @@ export default function BuyPanel({
                     {lineBody(l)}
                     {isValuedBulk(l) && <span className="bulk-per">{perText(bulkItem(l.bulk_kind), Number(l.unit_price))}</span>}
                     {l.cc_status === 'cant_upload' && <span className="cant-chip" title={CANT_UPLOAD_TIP}>Can't upload</span>}
+                    {l.cc_status === 'pulled' && <span className="pulled-chip" title={PULLED_TIP}>Pulled</span>}
                   </td>
                   <td className="cell-x">
                     <button

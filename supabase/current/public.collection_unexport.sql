@@ -27,13 +27,15 @@ begin
   update buys set version = version + 1, updated_at = now(), last_edited_by = p_user
    where id = b.id returning * into b;
   v_returned := cant_upload_return(v_lines, b.customer_name, p_user, p_device);
+  -- Pulled cards' copies come back out too (decision 406).
+  v_returned := v_returned + internal.pulled_return(v_lines, b.customer_name, p_user, p_device);
 
   perform collection_event(b, p_user, p_device, 'collection_unexported', array['mtg'], 0, 0, null, '[]', '[]',
     format('Export undone%s: %s card%s no longer marked exported%s.',
            case when v_skus is not null then ' (Custom SKU ' || v_skus || ')' else '' end,
            v_cards, case when v_cards = 1 then '' else 's' end,
            case when v_returned > 0
-                then format('; %s taken back out of Can''t upload cards', v_returned)
+                then format('; %s taken back out of Can''t upload cards or Bulk pulled from exports', v_returned)
                 else '' end));
   return jsonb_build_object('cards', v_cards, 'returned', v_returned);
 end;

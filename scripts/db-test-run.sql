@@ -2221,7 +2221,7 @@ begin
     not exists (select 1 from buy_lines where source_line_id = mys));
   perform pg_temp.ok(s, '… and says so in the Changelog',
     exists (select 1 from events where action = 'day_unexported' and day = d
-              and summary = '2 Magic buys marked Paid/Ours again; 1 card taken back out of Can''t upload cards.'));
+              and summary = '2 Magic buys marked Paid/Ours again; 1 card taken back out of Can''t upload cards or Bulk pulled from exports.'));
   perform pg_temp.ok(s, 'Undoing again changes nothing', export_undo_day(d, 'mtg', u, a) = 0);
   begin
     perform export_undo_day(d, 'chess', u, a);
@@ -2238,7 +2238,7 @@ begin
     v_n = 2 and (select cc_status is null and completed_at is null from buy_lines where id = cs)
     and not exists (select 1 from buy_lines where source_line_id = mys)
     and exists (select 1 from events where action = 'buy_unexported' and target_id = b2
-                  and summary = '2 Magic cards marked Paid/Ours again; 1 card taken back out of Can''t upload cards.'));
+                  and summary = '2 Magic cards marked Paid/Ours again; 1 card taken back out of Can''t upload cards or Bulk pulled from exports.'));
   perform pg_temp.ok(s, '… leaving the rest of the day exported', (select cc_status = 'exported' from buy_lines where id = bolt));
   perform pg_temp.ok(s, 'Nothing left to undo changes nothing', buy_unexport(b2, 'mtg', u, a) = 0);
   begin
@@ -2477,7 +2477,7 @@ begin
     and not exists (select 1 from buy_lines where source_line_id = v_c3)
     and (select cc_status is null from buy_lines where id = v_c3)
     and exists (select 1 from events where target_id = v_x and action = 'collection_unexported'
-                  and summary = 'Export undone: 2 cards no longer marked exported; 2 taken back out of Can''t upload cards.'), v::text);
+                  and summary = 'Export undone: 2 cards no longer marked exported; 2 taken back out of Can''t upload cards or Bulk pulled from exports.'), v::text);
 
   v_pp := project_create('DBTEST Pokémon Project', '', u, a);
   perform lock_acquire(v_pp, a, u);
@@ -3163,6 +3163,83 @@ begin
   -- 398: the restore dialog's columns.
   perform pg_temp.ok(s, 'The database lists its backup tables'' columns for the restore dialog (0004)',
     (backup_columns() -> 'buys') ? 'kept_buy_id' and (backup_columns() -> 'buy_lines') ? 'price_snapshot');
+  -- The cards added here to this computer's walk-in draft go, so the next block's buy starts empty.
+  perform draft_cancel(draft_for_device(a, u));
+exception when others then
+  declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;
+  perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
+end $$;
+
+-- ========================================== Bulk pulled from exports (0005)
+do $$
+declare
+  s text := 'Pulled bulk (0005)';
+  u uuid := pg_temp.id('u1');
+  a uuid := pg_temp.id('devA');
+  d date := date '2001-04-05';
+  b uuid;
+  v_big uuid;
+  v_small uuid;
+  v_sys uuid;
+  v jsonb;
+  v_target jsonb;
+begin
+  perform pg_temp.ok(s, 'The test day (Apr 5, 2001) has no buys',
+    not exists (select 1 from buys where kind = 'walk_in' and status = 'confirmed'
+                 and (confirmed_at at time zone 'America/Los_Angeles')::date = d));
+  b := pg_temp.buy(a, u, 'DBTEST Pulled', '5550100023', array[
+    pg_temp.line('Dbtest Bolt', 'DBT', '001', 1, 1.00), pg_temp.line('Dbtest Counterspell', 'DBT', '002', 2, 0.10)]);
+  update buys set confirmed_at = (d + time '12:00') at time zone 'America/Los_Angeles' where id = b;
+  v_big := pg_temp.line_id(b, 'Dbtest Bolt');
+  v_small := pg_temp.line_id(b, 'Dbtest Counterspell');
+  v_target := jsonb_build_object('kind', 'day', 'day', d, 'game', 'mtg', 'versions', jsonb_build_object(b::text, pg_temp.version(b)));
+  begin
+    perform export_lines(v_target, jsonb_build_array(pg_temp.match(v_big, 'DBTEST-P1', 1.25)), '{}', '[]', u, a);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'An export takes every card: matched, can''t upload or pulled', sqlerrm, 'stale_version');
+  end;
+  v := export_lines(v_target, jsonb_build_array(pg_temp.match(v_big, 'DBTEST-P1', 1.25)), '{}', '[]', u, a, array[v_small]);
+  v_sys := (select id from buys where system_key = 'pulled');
+  perform pg_temp.ok(s, 'Export (>$1) pulls a card: stamped Pulled and Completed, not in the file (0005)',
+    (v ->> 'cards')::integer = 1 and (v ->> 'pulled')::integer = 2
+    and (select cc_status = 'pulled' and completed_at is not null and cc_custom_sku is null from buy_lines where id = v_small)
+    and not exists (select 1 from jsonb_array_elements(v -> 'lines') x where x ->> 'id' = v_small::text and x ->> 'cc_status' = 'exported'),
+    v::text);
+  perform pg_temp.ok(s, '… copied to Bulk pulled from exports, made for it, saying which buy',
+    v_sys is not null and (select system_key from buys where id = v_sys) = 'pulled'
+    and exists (select 1 from buy_lines where buy_id = v_sys and source_line_id = v_small and quantity = 2 and source_note like 'from Buy %'));
+  perform pg_temp.ok(s, '… and the Changelog says so',
+    exists (select 1 from events where action = 'day_exported' and day = d
+              and summary like '%2 under $1 pulled, copied to Bulk pulled from exports%')
+    and exists (select 1 from events where action = 'pulled_added' and target_id = v_sys));
+
+  -- Undo export brings it back, its copy out of the collection.
+  perform export_undo_day(d, 'mtg', u, a);
+  perform pg_temp.ok(s, 'Undo export takes a pulled card back too, its copy out of Bulk pulled from exports (0005)',
+    (select cc_status is null and completed_at is null from buy_lines where id = v_small)
+    and not exists (select 1 from buy_lines where buy_id = v_sys and source_line_id = v_small)
+    and exists (select 1 from events where action = 'pulled_returned' and target_id = v_sys));
+
+  -- Pulled again, then exported from the collection: the original is exported now.
+  v_target := jsonb_set(v_target, '{versions}', jsonb_build_object(b::text, pg_temp.version(b)));
+  perform export_lines(v_target, jsonb_build_array(pg_temp.match(v_big, 'DBTEST-P1', 1.25)), '{}', '[]', u, a, array[v_small]);
+  begin
+    perform export_lines(jsonb_build_object('kind', 'pulled', 'version', pg_temp.version(v_sys)), '[]', '{}', '[]', u, a, array[v_small]);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'The pulled collection''s own export pulls nothing', sqlerrm, 'bad_target');
+  end;
+  -- Its own export, as Can't upload cards': this computer holds it, and any other cards already
+  -- there (dev's own) stay as not matched.
+  perform lock_acquire(v_sys, a, u, true);
+  v := export_lines(jsonb_build_object('kind', 'pulled', 'version', pg_temp.version(v_sys)),
+         jsonb_build_array(pg_temp.match((select id from buy_lines where buy_id = v_sys and source_line_id = v_small), 'DBTEST-P3', 0.40)),
+         array(select id from buy_lines where buy_id = v_sys and game = 'mtg' and bulk_kind is null and struck_at is null
+                 and source_line_id is distinct from v_small), '[]', u, a);
+  perform pg_temp.ok(s, 'Bulk pulled from exports exports its cards: they leave, the original is exported now (0005)',
+    (v ->> 'cards')::integer = 2
+    and (select cc_status = 'exported' and cc_product_id = 'DBTEST-P3' from buy_lines where id = v_small)
+    and not exists (select 1 from buy_lines where buy_id = v_sys and source_line_id = v_small)
+    and exists (select 1 from events where action = 'pulled_exported' and target_id = v_sys), v::text);
 exception when others then
   declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;
   perform pg_temp.crashed(s, sqlerrm, v_ctx); end;

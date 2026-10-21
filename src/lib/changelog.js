@@ -38,6 +38,8 @@ export const CATEGORIES = [
       'collection_imported',
       // Can't upload cards (export spec 9, 12): copied in, exported out, taken back.
       'cant_upload_added', 'cant_upload_exported', 'cant_upload_returned',
+      // Bulk pulled from exports (decision 406): the same three.
+      'pulled_added', 'pulled_exported', 'pulled_returned',
       // Cards struck in a Paid/Ours collection or project, and restored (owner, 2026-10-16).
       'collection_cards_struck', 'collection_cards_restored'],
   },
@@ -110,6 +112,9 @@ export const HEADLINES = {
   cant_upload_added: "Cards can't upload",
   cant_upload_exported: "Exported from Can't upload",
   cant_upload_returned: 'Cards returned',
+  pulled_added: 'Bulk pulled from an export',
+  pulled_exported: 'Exported from pulled bulk',
+  pulled_returned: 'Pulled bulk returned',
   backup_restored: 'Backup restored',
 };
 /**
