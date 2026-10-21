@@ -6,10 +6,6 @@ and function.
 
 ## Open
 
-- **Today's EXPORT and COMPLETE unblocked** (decision 427, the owner: "unblock all of them"): waiting on the
-  owner's go for migration 0008 and its prod moment. 0008 drops the `day_not_over` raise from `export_lines` and
-  `day_complete`; the app drops `notOver`, `NOT_OVER` and `NOT_OVER_COMPLETE` (`src/pages/DayPage.jsx`) and the
-  `day_not_over` message. Today's prints are already open (app only).
 - **Unpushed** (2026-10-21): the smoke pass's fixes and notes (decisions 426, 427): Show all after a customer
   search, backups a table and a page at a time, the Convert count, the buy's undo naming Bulk pulled, the one-rate
   *, TEST.md's reworded cases and decision 329's note; the lock on a finish switch, CONFIRM BUY closing when its
@@ -57,8 +53,9 @@ and function.
   again on each finish or version (`PricingScreen.jsx` `settledFor`); CONFIRM BUY closes when the draft has no
   cards left (`PricePage.jsx`); projects say "Ours" in the Completed question and Convert to buy's reason
   (`CollectionPage.jsx`); the restore dialog says "are empty" (`BackupsPanel.jsx`); EXPORT ▾ opens on today's
-  Magic day with its prints working, the Export items greyed (`DayPage.jsx`). Lint, 464 tests and the build pass;
-  untested in the app.
+  Magic day with its prints working, the Export items greyed (`DayPage.jsx`). Today's EXPORT and COMPLETE stay
+  blocked: they'd need a migration, and the owner closed that ("not important enough for 0008"). Lint, 464 tests
+  and the build pass; untested in the app.
 
 - 2026-10-21: **The smoke pass's findings, as the owner answered them** (decision 426). Fixed: Show all stays off
   once the header search's list closes (`SearchBox.jsx`); backups read a table and a page at a time
