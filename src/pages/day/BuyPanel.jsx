@@ -211,15 +211,18 @@ export default function BuyPanel({
               blocked: offline ? 'No connection' : null,
               title: "Download the same file Export single buy made for this buy, from its exported cards. Changes nothing.",
               onClick: () => onDownloadAgain(buy, number),
-            }] : []), {
-              // Print buy (owner, 2026-10-14; docs/TEAM_FEEDBACK.md 3.1): this buy's
-              // Magic cards by Crystal Commerce category, for a single-buy export.
-              label: 'Print buy',
+            }] : []),
+            // Print buy (owner, 2026-10-14; docs/TEAM_FEEDBACK.md 3.1): this buy's Magic cards by
+            // Crystal Commerce category, for a single-buy export; (all) and (>$1) (decision 409).
+            ...[false, true].map((over1) => ({
+              label: `Print buy (${over1 ? '>$1' : 'all'})`,
               needsUser: false,
               blocked: offline ? 'No connection' : printing ? 'Printing…' : lines.length ? null : 'No Magic cards in this buy',
-              title: "A PDF of this buy's Magic cards by Crystal Commerce category, to check them by hand. Changes nothing.",
-              onClick: () => onPrint(buy, number),
-            }]) : []),
+              title: over1
+                ? "A PDF of this buy's Magic cards at $1.00 or more today, by Crystal Commerce category, with today's prices. Changes nothing."
+                : "A PDF of this buy's Magic cards by Crystal Commerce category, with today's prices, to check them by hand. Changes nothing.",
+              onClick: () => onPrint(buy, number, over1),
+            }))]) : []),
             // A Pokémon buy (decision 283), mirroring a Magic buy's Print buy: its cards by set
             // (Print PKM?), and price-tag stickers for them (Print PKM Stickers?).
             ...(game === 'pokemon' ? [{

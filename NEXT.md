@@ -11,8 +11,8 @@ and function.
   `C:\ClaudeProjects\temp\pug-0005\dev-run-0005.json` (550 checks, all passed); ask the owner first, after 9:30 PM
   recommended. 0005 keeps the live site working (`export_lines`' new `p_pulled` defaults to none); the app code that
   needs it (Export MTG csv (>$1), Bulk pulled from exports) can't be pushed before prod has it.
-- **Unpushed** (2026-10-20): 8 commits since the last push: the stamp check removed (400), the team's six
-  feedback items (401–407, migration 0005) and Export single buy's split (408). Push only on the owner's ask, once prod has 0005.
+- **Unpushed** (2026-10-20): 9 commits since the last push: the stamp check removed (400), the team's six
+  feedback items (401–407, migration 0005), and Export single buy's and Print buy's splits (408, 409). Push only on the owner's ask, once prod has 0005.
 - **Help out of date** (only when the owner asks), from the team's feedback (401–407): the condition and price-source
   locks (right-click, 🔒; "Condition prices"), the buy list's sort buttons ("The buy list"), today's prices and the key
   on Print MTG / Print PKM ("Print MTG?", "Print PKM?"), EXPORT ▾'s Print MTG (all) / (>$1) and Export MTG csv (all) /
@@ -47,6 +47,8 @@ and function.
 
 ## Done
 
+- 2026-10-20: **Print buy (all) and (>$1)** (decision 409), on the owner's ask: a Magic buy's ⋯ splits Print buy as
+  Print MTG is (`BuyPanel.jsx`; `DayPage.jsx` `printBuy`). Untested in the app.
 - 2026-10-20: **Export single buy (all) and (>$1)** (decision 408, `2fd6111`), on the owner's ask: a Magic buy's ⋯
   splits like the day's EXPORT (`BuyPanel.jsx`; `DayPage.jsx` `exportingBuy.over1`). No database change (0005 takes
   a buy's pulled cards). Untested in the app.

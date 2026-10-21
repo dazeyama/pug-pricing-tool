@@ -587,7 +587,8 @@ function DayScreen({ game, day }) {
   }
 
   /** A buy's ⋯ → Print buy (docs/TEAM_FEEDBACK.md 3.1): that buy alone, any day. */
-  function printBuy(b, n) {
+  /** `over1`: a Magic buy's Print buy (>$1) (decision 409), only the cards at $1.00 or more today. */
+  function printBuy(b, n, over1 = false) {
     if (game === 'pokemon') {
       print({
         lines: b.buy_lines,
@@ -600,9 +601,10 @@ function DayScreen({ game, day }) {
     }
     print({
       lines: b.buy_lines,
-      title: `Audit — Buy ${n}, ${dayDate(day)}`,
-      fileName: `audit-magic-${day}-buy-${n}.pdf`,
+      title: `Audit — Buy ${n}${over1 ? ' ($1 and up)' : ''}, ${dayDate(day)}`,
+      fileName: `audit-magic-${day}-buy-${n}${over1 ? '-over-1' : ''}.pdf`,
       flagOf: b.condition_check ? () => `Buy ${n}` : null,
+      over1,
     });
   }
 
