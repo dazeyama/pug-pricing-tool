@@ -6,9 +6,8 @@ and function.
 
 ## Open
 
-- **Unpushed** (2026-10-21): no Notes column on the Collections tab, its width to the name (decision 431); a note's
-  * after the name, the note on pointing at it (432), in the cards-by-game chip's style (433), with a NOTE: badge (434). Help's "The tables" (Collections) still lists **Notes** and
-  doesn't mention the *: out of date until the owner asks for Help.
+- **Help out of date** (decisions 431–434): "The tables" (Collections) still lists **Notes** and doesn't mention the
+  note's * and its chip; until the owner asks for Help.
 - **F2 reopened: the backup can hit the 8 s statement limit** (decision 430): a Download backup failed with a 500
   once, and Restore's first press with "canceling statement due to statement timeout" (`backup_export`, one call for
   every table, 2 to 7.7 s on dev). The paged read that fixed it (decision 426) could leave cards out of the file
@@ -56,6 +55,12 @@ and function.
   - watch JustTCG usage and the plan (Appendix D 4);
 
 ## Done
+
+- 2026-10-21: Pushed, no bump (still v1.0.1-day1), on the owner's ask, without the pre-push review (the owner:
+  "skip the normally required review because we just did one a second ago"; that review covered decisions 426–430,
+  not these): the four Collections-tab commits, decisions 431–434: no Notes column and its width to the name, a
+  note's * with the note in the cards-by-game chip, and its NOTE: badge. No migrations (prod and dev on
+  0001–0007), no Edge Function changes. Nothing unpushed.
 
 - 2026-10-21: **A NOTE: badge in the note's chip** (decision 434, the owner's ask): before the note text, shaped as
   MTG / PKM, grey (`CollectionsPage.jsx`, `base.css` `.game-badge.note`). Lint, tests and the build pass; untested
