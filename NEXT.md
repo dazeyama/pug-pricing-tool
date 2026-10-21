@@ -6,6 +6,22 @@ and function.
 
 ## Open
 
+- **Prod doesn't have migration 0005 yet** (2026-10-20, 8:34 PM, the store open): dev has 0001–0005, prod
+  0001–0004 (decision 381). The step: CLAUDE.md, Database, step 6, comparing with
+  `C:\ClaudeProjects\temp\pug-0005\dev-run-0005.json` (550 checks, all passed); ask the owner first, after 9:30 PM
+  recommended. 0005 keeps the live site working (`export_lines`' new `p_pulled` defaults to none); the app code that
+  needs it (Export MTG csv (>$1), Bulk pulled from exports) can't be pushed before prod has it.
+- **Unpushed** (2026-10-20): 6 commits since the last push: the stamp check removed (400) and the team's six
+  feedback items (401–407, migration 0005). Push only on the owner's ask, once prod has 0005.
+- **Help out of date** (only when the owner asks), from the team's feedback (401–407): the condition and price-source
+  locks (right-click, 🔒; "Condition prices"), the buy list's sort buttons ("The buy list"), today's prices and the key
+  on Print MTG / Print PKM ("Print MTG?", "Print PKM?"), EXPORT ▾'s Print MTG (all) / (>$1) and Export MTG csv (all) /
+  (>$1) (a day page's "The top row", a collection's "EXPORT", "Exporting to Crystal Commerce"), Bulk pulled from
+  exports and the Pulled chip (beside "Can't upload cards"), and the "Mark this collection Completed?" question
+  ("Moving through the statuses"). Print PKM? now needs the connection.
+- **Not built, from the feedback batch:** Export single buy stays one "all" export; Home has no tile for Bulk pulled
+  from exports (it's on the Collections tab, System); the `settings_save` first-save race is tested only one save
+  after the other.
 - **Help out of date** (only when the owner asks), from the review leftovers: a buy's ⋯ has **Download its file
   again** (386) and, partly hand-completed, **Mark Paid/Ours again** (396); "a single buy's file can't be downloaded
   again" in The file is now wrong; 3. Confirm's "can't tell … a Can't upload cards export" (387); Convert to project
@@ -31,6 +47,20 @@ and function.
   - watch JustTCG usage and the plan (Appendix D 4);
 
 ## Done
+
+- 2026-10-20: **The team's six feedback items** (decisions 401–407), on the owner's ask, with their answers (today's
+  market price on printouts; the file's Sell Price for the >$1 export; pulled cards to a new system collection like
+  Can't upload cards; the Completed question after the export). Lint, 446 unit tests and the build before each
+  commit; one pug-reviewer review of the batch, its findings fixed (the pulled collection made only on a pull, the
+  test block's lock, the Completed question after the reload and only with a file, printouts and messages for pulled
+  cards); migration 0005 on dev, db-test-run 550 checks all passed. Untested in the app (TEST.md cases, 224).
+  - 401, 402 (`315f3dd`): right-click locks a condition / Use TCGplayer / Use Cardmarket (`usePricing.js`
+    `lockCondition`, `lockSource`, `unlockSource`; `PriceTable.jsx`; `PricingScreen.jsx`).
+  - 403 (`f6d4ebc`): Added / $ ↓ / WUBRG on every buy list (`src/lib/listSort.js`; `BuyList.jsx`).
+  - 404, 405 (`93d754d`): today's market price on Print MTG / PKM with the key; Print MTG (all) / (>$1)
+    (`auditPrint.js` `priceTone`, `OVER_1`; `auditPdf.js`; `useAuditPrint.js`; `ExportButton.jsx`).
+  - 406, 407 (`cfd919e`): Export MTG csv (all) / (>$1), Bulk pulled from exports (migration 0005;
+    `ExportDialog.jsx` `over1`; `CollectionPage.jsx`, `DayPage.jsx`); the Completed question (`askComplete`).
 
 - 2026-10-20: **The phone's stamp check removed** (decision 400; the owner tried it: "bad, but also, unnecessary"):
   `src/scan/stamps.js` and `tests/scanStamps.test.js` deleted, the check, its 4 s limit and its run-log lines out
