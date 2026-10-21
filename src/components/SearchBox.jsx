@@ -6,7 +6,11 @@ import { formatTime } from '../lib/time.js';
 import { relativeDay } from '../lib/changelog.js';
 import { lineTextWithCondition } from '../lib/lineFormat.js';
 import { struckNote } from '../lib/struck.js';
-import { LINE_LIMIT, MIN_CHARS, flatRows, groupResults, searchArgs } from '../lib/globalSearch.js';
+import {
+  CUSTOMER_LIMIT, LINE_LIMIT, MIN_CHARS, customerPanels, customerQuery, flatRows, groupResults, searchArgs,
+} from '../lib/globalSearch.js';
+import { likeEscape } from '../lib/customers.js';
+import { formatPhone } from '../lib/phone.js';
 import { statusText } from '../pages/collections/status.js';
 import { useStaff } from '../state/staff.jsx';
 import GameBadge from './GameBadge.jsx';
@@ -22,6 +26,10 @@ import { useDismiss } from '../lib/useDismiss.js';
 // per buy or collection listing its matching cards in full (owner,
 // 2026-09-30). ↓/↑ move, Enter opens, Esc closes.
 // Opening a result jumps to it and flashes it.
+// Customers too (owner, 2026-10-21; decision 424): a name finds the buys and
+// collections under it, a phone number (seven digits or more, however it's
+// punctuated) finds them by phone, in a Customers section above the cards;
+// a customer found flips Show all on, so their Completed buys show.
 // Much larger on every tab but the pricing screens (owner, 2026-09-29), where
 // the main search bar is the focus.
 
@@ -66,18 +74,45 @@ async function lookUp(args) {
   return data ?? [];
 }
 
+/**
+ * Buys and collections by their customer (decision 424): the name contains
+ * what's typed, or the phone the digits. Never drafts, projects or the system
+ * collections; the newest CUSTOMER_LIMIT.
+ */
+async function lookUpCustomers(who) {
+  let query = supabase
+    .from('buys')
+    .select('id, kind, status, customer_name, phone, paid_method, confirmed_at, confirmed_by, created_at, number, '
+      + 'buy_lines(game, quantity, completed_at, struck_at, bulk_kind)')
+    .neq('status', 'draft')
+    .is('system_key', null)
+    .eq('project', false)
+    .order('created_at', { ascending: false })
+    .limit(CUSTOMER_LIMIT);
+  query = who.digits ? query.like('phone', `%${who.digits}%`) : query.ilike('customer_name', `%${likeEscape(who.name)}%`);
+  const { data, error } = await query;
+  if (error) throw new Error(error.message);
+  return customerPanels(data);
+}
+
 export default function SearchBox({ wide }) {
   const navigate = useNavigate();
   const staff = useStaff();
   const [text, setText] = useState('');
   const [open, setOpen] = useState(false);
-  const [found, setFound] = useState({ status: 'idle', sections: [], capped: false, error: null });
+  const [found, setFound] = useState({ status: 'idle', sections: [], capped: false, phone: false, error: null });
   const [active, setActive] = useState(0);
   // Paid/Ours only, or every status (owner, 2026-09-30). Forgotten whenever the
   // results close (a click away, Esc, opening a result): back to Paid/Ours only.
   const [showAll, setShowAll] = useState(false);
+  // What was typed when a customer match last flipped Show all on (decision 424): once per thing
+  // typed, so turning it off by hand sticks.
+  const flippedFor = useRef(null);
   useEffect(() => {
-    if (!open) setShowAll(false);
+    if (!open) {
+      setShowAll(false);
+      flippedFor.current = null;
+    }
   }, [open]);
   const wrap = useRef(null);
   const input = useRef(null);
@@ -92,28 +127,44 @@ export default function SearchBox({ wide }) {
     const query = text.trim();
     const mine = ++run.current;
     if (query.length < MIN_CHARS) {
-      setFound({ status: 'idle', sections: [], capped: false, error: null });
+      setFound({ status: 'idle', sections: [], capped: false, phone: false, error: null });
       return undefined;
     }
     setFound((f) => ({ ...f, status: 'loading', error: null }));
     const timer = setTimeout(async () => {
       try {
-        const [codes, pulledId] = await Promise.all([knownCodes(), pulledCollectionId()]);
-        const plan = searchArgs(query, codes);
+        const who = customerQuery(query);
+        const [codes, pulledId, customers] = await Promise.all([
+          knownCodes(), pulledCollectionId(), who ? lookUpCustomers(who) : [],
+        ]);
+        // A phone number is never a card (decision 424).
+        const plan = who?.digits ? null : searchArgs(query, codes);
         // Show all also finds struck cards (decision 275, migration 0067).
         const scope = { p_all: showAll, p_struck: showAll };
         let lines = plan ? await lookUp({ ...plan.args, ...scope }) : [];
         if (plan && !lines.length && plan.retry) lines = await lookUp({ ...plan.retry, ...scope });
         if (mine !== run.current) return;
+        // A customer found flips Show all on, once per thing typed (decision 424), so their Completed
+        // buys show too; the search then runs again with it on.
+        if (customers.length && !showAll && flippedFor.current !== query) {
+          flippedFor.current = query;
+          setShowAll(true);
+          return;
+        }
         const capped = lines.length >= LINE_LIMIT;
         // Bulk pulled from exports' cards never show (decision 423).
         if (pulledId) lines = lines.filter((l) => l.buy_id !== pulledId);
-        setFound({ status: 'done', sections: groupResults(lines), capped, error: null });
+        const shown = showAll ? customers : customers.filter((c) => c.paidOurs);
+        const sections = [
+          ...(shown.length ? [{ key: 'customers', title: 'Customers', panels: shown }] : []),
+          ...groupResults(lines),
+        ];
+        setFound({ status: 'done', sections, capped, phone: Boolean(who?.digits), error: null });
         setActive(0);
       } catch (e) {
         if (mine !== run.current) return;
         console.error('Global search failed', e);
-        setFound({ status: 'error', sections: [], capped: false, error: e.message });
+        setFound({ status: 'error', sections: [], capped: false, phone: false, error: e.message });
       }
     }, WAIT_MS);
     return () => clearTimeout(timer);
@@ -193,7 +244,8 @@ export default function SearchBox({ wide }) {
         className={`result-btn${i === active ? ' active' : ''}${tint}${done ? ' done' : ''}`}
         onMouseEnter={(e) => {
           setActive(i);
-          setPreview(previewFor(row.entries[0].line.image_url, e.currentTarget, results.current, 'left'));
+          // A customer match has no card to show (decision 424).
+          setPreview(previewFor(row.entries[0]?.line.image_url ?? null, e.currentTarget, results.current, 'left'));
         }}
         onMouseLeave={hidePreview}
         onMouseDown={(e) => e.preventDefault()}   // keep the typing in the box
@@ -214,6 +266,16 @@ export default function SearchBox({ wide }) {
             </span></>
           )}
         </span>
+        {/* A customer match (decision 424): who (a collection's name is on the line above), their
+            phone and how many cards, in place of card lines. */}
+        {row.customer && (
+          <span className="result-entry result-customer">
+            <span className="entry-text">
+              {[buy ? row.customerName : null, row.phone ? formatPhone(row.phone) : null,
+                `${row.cards} card${row.cards === 1 ? '' : 's'}`].filter(Boolean).join(' · ')}
+            </span>
+          </span>
+        )}
         {row.entries.map((entry) => (
           <span
             key={entry.key}
@@ -244,8 +306,8 @@ export default function SearchBox({ wide }) {
           className="search-input"
           autoComplete="off"
           spellCheck={false}
-          placeholder="Search buys & collections…"
-          aria-label="Search buys and collections"
+          placeholder="Search cards, customers, phone numbers…"
+          aria-label="Search buys and collections by card, customer or phone number"
           aria-expanded={showing}
           value={text}
           onChange={(e) => {
@@ -276,9 +338,9 @@ export default function SearchBox({ wide }) {
             {found.status === 'loading' && !found.sections.length && <p className="search-none loading-note">Searching…</p>}
             {found.status === 'done' && !found.sections.length && (
               <p className="search-none">
-                {showAll
-                  ? 'No buys or collections contain that card.'
-                  : 'No Paid/Ours buys or collections contain that card. Show all includes the other statuses.'}
+                {found.phone ? 'No buy or collection has that phone number.'
+                  : showAll ? 'No buys or collections contain that card or have that customer.'
+                    : 'No Paid/Ours buys or collections contain that card or have that customer. Show all includes the other statuses.'}
               </p>
             )}
             {found.sections.map((sec) => (

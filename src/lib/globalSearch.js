@@ -4,12 +4,78 @@
 import { storeDay } from './calendar.js';
 import { nameKey } from './normalize.js';
 import { normNumber, numericSize, parseQuery, withoutGuessedSetCode } from './query.js';
-import { isStruck } from './struck.js';
+import { isStruck, movesOn } from './struck.js';
 
 /** Typing under this many characters doesn't search. */
 export const MIN_CHARS = 2;
 /** The database returns at most this many lines. */
 export const LINE_LIMIT = 200;
+/** A phone number is this many digits or more once the punctuation is dropped; fewer is a collector number. */
+export const PHONE_DIGITS = 7;
+/** Customer matches shown at most, newest first. */
+export const CUSTOMER_LIMIT = 20;
+
+/**
+ * What's typed as a customer lookup (owner, 2026-10-21; decision 424): a
+ * phone number when it has no letters and PHONE_DIGITS digits or more
+ * ("(555) 123-4567", "555-123-4567", "5551234567", "123-4567"; a leading 1
+ * dropped from eleven), else a name, trimmed and single-spaced. Null under
+ * MIN_CHARS, and for a short number ("117", "117/331": a collector number).
+ * @returns {{ digits: string }|{ name: string }|null}
+ */
+export function customerQuery(text) {
+  const input = String(text ?? '').trim();
+  if (input.length < MIN_CHARS) return null;
+  // No letter at all: a number of some kind, a phone's or a card's, never a name.
+  if (!/\p{L}/u.test(input)) {
+    let digits = input.replace(/\D/g, '');
+    if (digits.length === 11 && digits.startsWith('1')) digits = digits.slice(1);
+    return digits.length >= PHONE_DIGITS ? { digits } : null;
+  }
+  return { name: input.replace(/\s+/g, ' ') };
+}
+
+/**
+ * Buys and collections found by their customer (decision 424), as the
+ * Customers section's panels: no card entries, the customer's name and phone,
+ * and the cards counted. A walk-in buy is Completed once every card that
+ * moves on is exported or marked done, both games (as walkInStatus reads one
+ * game); `paidOurs` is what Paid/Ours only shows. A buy with cards in both
+ * games opens on its Magic day.
+ * @param {object[]} rows  buys rows with buy_lines(game, quantity, completed_at, struck_at, bulk_kind)
+ */
+export function customerPanels(rows) {
+  return (rows ?? []).map((b) => {
+    const lines = b.buy_lines ?? [];
+    const walkIn = b.kind === 'walk_in';
+    const game = !lines.length || lines.some((l) => l.game === 'mtg') ? 'mtg' : 'pokemon';
+    const at = walkIn ? b.confirmed_at : b.created_at;
+    const completed = walkIn
+      ? lines.length > 0 && lines.every((l) => l.completed_at || !movesOn(l))
+      : b.status === 'completed';
+    return {
+      key: `customer|${b.id}`,
+      customer: true,
+      buyId: b.id,
+      kind: b.kind,
+      game,
+      status: b.status,
+      paidMethod: b.paid_method,
+      collectionKind: walkIn ? null : 'overnight',
+      customerName: b.customer_name,
+      phone: b.phone,
+      confirmedBy: b.confirmed_by,
+      number: b.number,
+      at,
+      day: storeDay(at),
+      entries: [],
+      lineIds: [],
+      completed,
+      cards: lines.reduce((n, l) => n + (l.quantity ?? 0), 0),
+      paidOurs: walkIn ? !completed : b.status === 'paid',
+    };
+  });
+}
 /** Conditions in their usual order, best first. */
 const CONDITIONS = ['NM', 'LP', 'MP', 'HP', 'DMG'];
 

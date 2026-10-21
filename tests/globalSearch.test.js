@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { flatRows, groupResults, printingKey, searchArgs } from '../src/lib/globalSearch.js';
+import { customerPanels, customerQuery, flatRows, groupResults, printingKey, searchArgs } from '../src/lib/globalSearch.js';
 
 const codes = new Set(['2x2', 'soa', 'mew']);
 
@@ -79,6 +79,38 @@ test('each kind of collection pinned under its own name: Overnight buys, Project
     ['Projects', [['p1', 'project']]],
     ['System', [['sys', 'system']]],
   ]);
+});
+
+test('what is typed as a customer (decision 424): a phone number from seven digits however punctuated, else a name', () => {
+  for (const typed of ['(555) 123-4567', '555-123-4567', '5551234567', '555.123.4567', '+1 555 123 4567', '1-555-123-4567']) {
+    assert.deepEqual(customerQuery(typed), { digits: '5551234567' }, typed);
+  }
+  assert.deepEqual(customerQuery('123-4567'), { digits: '1234567' });   // no area code: a leading 1 stays
+  assert.equal(customerQuery('117'), null);                              // a collector number
+  assert.equal(customerQuery('117/331'), null);
+  assert.equal(customerQuery('J'), null);
+  assert.deepEqual(customerQuery('  Josh   Kolb '), { name: 'Josh Kolb' });
+  assert.deepEqual(customerQuery('Lightning Bolt 117'), { name: 'Lightning Bolt 117' });   // a name lookup that finds nobody
+});
+
+test('customer matches as panels: no cards listed, Completed over both games, the Magic day for a buy with both', () => {
+  const l = (game, over = {}) => ({ game, quantity: 1, completed_at: null, struck_at: null, bulk_kind: null, ...over });
+  const [buy, done, col] = customerPanels([
+    { id: 'b1', kind: 'walk_in', status: 'confirmed', customer_name: 'Josh Kolb', phone: '5551234567', paid_method: 'cash',
+      confirmed_at: '2026-10-20T20:00:00Z', confirmed_by: 'u1', created_at: '2026-10-20T19:00:00Z', number: 42,
+      buy_lines: [l('pokemon'), l('mtg', { quantity: 3 }), l('mtg', { completed_at: '2026-10-20T21:00:00Z' })] },
+    { id: 'b2', kind: 'walk_in', status: 'confirmed', customer_name: 'Josh Kolb', phone: '5551234567', paid_method: null,
+      confirmed_at: '2026-10-19T20:00:00Z', confirmed_by: 'u1', created_at: '2026-10-19T19:00:00Z', number: 7,
+      buy_lines: [l('mtg', { completed_at: '2026-10-19T21:00:00Z' }), l('mtg', { bulk_kind: 'mtg_100_common', quantity: 100 })] },
+    { id: 'c1', kind: 'collection', status: 'completed', customer_name: 'Josh Kolb', phone: '5551234567', paid_method: 'credit',
+      confirmed_at: null, confirmed_by: null, created_at: '2026-10-18T19:00:00Z', number: null, buy_lines: [l('mtg')] },
+  ]);
+  assert.equal(buy.key, 'customer|b1');
+  assert.ok(buy.customer);
+  assert.deepEqual([buy.game, buy.cards, buy.completed, buy.paidOurs, buy.entries, buy.collectionKind], ['mtg', 5, false, true, [], null]);
+  assert.equal(buy.day, '2026-10-20');
+  assert.deepEqual([done.completed, done.paidOurs], [true, false]);   // its bulk never moves on: the card exported completes it
+  assert.deepEqual([col.collectionKind, col.completed, col.paidOurs, col.at], ['overnight', true, false, '2026-10-18T19:00:00Z']);
 });
 
 test('a walk-in panel is Completed only when its cards are', () => {
