@@ -35,8 +35,17 @@ export const collectionKind = (buy) => (buy?.system_key ? 'system' : buy?.projec
  */
 const ownCards = (buy) => Boolean(buy?.system_key || buy?.project);
 
+/**
+ * Bulk pulled from exports (owner, 2026-10-21; decision 423): always Completed
+ * on the screens, in the Completed grey, and left out of the header search
+ * (SearchBox drops its cards). The database's status stays 'paid', as for
+ * Can't upload cards, so its × still removes a card at once and EXPORT still
+ * runs from it: no migration.
+ */
+export const isPulled = (buy) => buy?.system_key === 'pulled';
+
 /** The words on a collection's status chip: "Ours" for System and Projects, else its label. */
-export const statusText = (buy) => (buy.status === 'paid' && ownCards(buy) ? 'Ours' : statusLabel(buy.status));
+export const statusText = (buy) => (isPulled(buy) ? 'Completed' : buy.status === 'paid' && ownCards(buy) ? 'Ours' : statusLabel(buy.status));
 
 /** Paid/Ours or Completed: locked, with the rates snapshotted. */
 export const isClosed = (s) => s === 'paid' || s === 'completed';
@@ -71,6 +80,7 @@ export function collectionRates(buy, master) {
  * class: tone-processing, tone-paid-cash, tone-paid-walkin…
  */
 export function statusTone(buy) {
+  if (isPulled(buy)) return 'tone-completed';
   if (buy.status === 'paid') {
     if (ownCards(buy)) return 'tone-ours';
     // Nothing was paid: a walk-in confirmed before the price was asked for.

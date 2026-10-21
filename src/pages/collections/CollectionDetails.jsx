@@ -4,7 +4,7 @@ import GuardButton from '../../components/GuardButton.jsx';
 import MoreMenu from '../../components/MoreMenu.jsx';
 import InlineEdit from './InlineEdit.jsx';
 import CallChip from './CallChip.jsx';
-import { STATUSES, isClosed, statusText, statusTone } from './status.js';
+import { STATUSES, isClosed, isPulled, statusText, statusTone } from './status.js';
 import { formatMoney } from '../../lib/money.js';
 import { PHONE_ERROR, formatPhone, phoneDigits, validPhone } from '../../lib/phone.js';
 import { formatRecent, formatShortDate, formatTime } from '../../lib/time.js';
@@ -38,9 +38,11 @@ function FoldButton({ open, onToggle }) {
 /**
  * Can't upload cards (export spec 9.1): always Paid/Ours, its name and note
  * fixed, no phone, no status controls and no Delete. Cards only arrive from
- * exports; they can be removed as from any Paid/Ours collection.
+ * exports; they can be removed as from any Paid/Ours collection. Bulk pulled
+ * from exports reads Completed instead (decision 423), the same otherwise.
  */
 function SystemDetails({ buy, open, onToggle, viewOnly, holder, onTakeOver }) {
+  const pulled = isPulled(buy);
   return (
     <section className={`col-details system${open ? ' open' : ''} has-body`} aria-label="Collection details">
       <div className="cd-head">
@@ -66,8 +68,9 @@ function SystemDetails({ buy, open, onToggle, viewOnly, holder, onTakeOver }) {
           <>
             <p className="cd-system-note">{buy.notes}</p>
             <p className="hint">
-              Always Paid/Ours. Cards arrive here from exports, each saying where it came from; remove one with its ×
-              once it's dealt with. EXPORT tries them again.
+              {pulled
+                ? 'Always Completed, and left out of the header search. Cards arrive here from Export MTG csv (>…), pulled as bulk, each saying where it came from; remove one with its × once it\'s put away. EXPORT sends them from here.'
+                : 'Always Paid/Ours. Cards arrive here from exports, each saying where it came from; remove one with its × once it\'s dealt with. EXPORT tries them again.'}
             </p>
           </>
         )}

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { collectionRates, statusTone, walkInStatus } from '../src/pages/collections/status.js';
+import { collectionKind, collectionRates, isPulled, statusText, statusTone, walkInStatus } from '../src/pages/collections/status.js';
 
 // Owner, 2026-09-30: a walk-in buy is Paid/Ours until exported, then Completed, game by game.
 test('a walk-in buy is Completed for a game once all its cards in that game are exported', () => {
@@ -31,4 +31,28 @@ test("a project's rates are always the default ones", () => {
     { cash: 33, credit: 66, customCash: null, customCredit: null, tiers: master.tiers });
   const kept = { project: false, status: 'paid', cash_pct: 40, credit_pct: 60, custom_cash_pct: null, custom_credit_pct: null };
   assert.equal(collectionRates(kept, master).cash, 40);
+});
+
+test('the three kinds of collection (decision 421): system, project, overnight', () => {
+  assert.equal(collectionKind({ system_key: 'cant_upload', project: false }), 'system');
+  assert.equal(collectionKind({ system_key: null, project: true }), 'project');
+  assert.equal(collectionKind({ system_key: null, project: false }), 'overnight');
+  assert.equal(collectionKind(null), 'overnight');
+});
+
+test("a chip's words: Ours for the store's own cards, the label otherwise", () => {
+  assert.equal(statusText({ status: 'paid', system_key: 'cant_upload' }), 'Ours');
+  assert.equal(statusTone({ status: 'paid', system_key: 'cant_upload' }), 'tone-ours');
+  assert.equal(statusText({ status: 'paid', project: true }), 'Ours');
+  assert.equal(statusText({ status: 'paid', paid_method: 'cash' }), 'Paid/Ours');
+  assert.equal(statusText({ status: 'processing' }), 'Processing');
+  assert.equal(statusTone({ status: 'rejected' }), 'tone-rejected');
+});
+
+test('Bulk pulled from exports reads Completed, in grey, whatever the database says (decision 423)', () => {
+  const pulled = { status: 'paid', system_key: 'pulled' };
+  assert.ok(isPulled(pulled));
+  assert.equal(statusText(pulled), 'Completed');
+  assert.equal(statusTone(pulled), 'tone-completed');
+  assert.ok(!isPulled({ status: 'paid', system_key: 'cant_upload' }));
 });

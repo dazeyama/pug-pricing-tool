@@ -48,6 +48,17 @@ async function knownCodes() {
   return codes.set;
 }
 
+// Bulk pulled from exports is Completed on the screens (decision 423) while the database still
+// has it Paid/Ours, so global_search returns its cards: they're dropped here, Show all or not.
+// Its id, looked up at most every five minutes (the row appears with the first (>…) export).
+let pulled = { at: 0, id: null };
+async function pulledCollectionId() {
+  if (Date.now() - pulled.at < 5 * 60_000) return pulled.id;
+  const { data, error } = await supabase.from('buys').select('id').eq('system_key', 'pulled').maybeSingle();
+  if (!error) pulled = { at: Date.now(), id: data?.id ?? null };
+  return pulled.id;
+}
+
 async function lookUp(args) {
   const { data, error } = await supabase.rpc('global_search', args);
   if (error) throw new Error(error.message);
@@ -87,13 +98,17 @@ export default function SearchBox({ wide }) {
     setFound((f) => ({ ...f, status: 'loading', error: null }));
     const timer = setTimeout(async () => {
       try {
-        const plan = searchArgs(query, await knownCodes());
+        const [codes, pulledId] = await Promise.all([knownCodes(), pulledCollectionId()]);
+        const plan = searchArgs(query, codes);
         // Show all also finds struck cards (decision 275, migration 0067).
         const scope = { p_all: showAll, p_struck: showAll };
         let lines = plan ? await lookUp({ ...plan.args, ...scope }) : [];
         if (plan && !lines.length && plan.retry) lines = await lookUp({ ...plan.retry, ...scope });
         if (mine !== run.current) return;
-        setFound({ status: 'done', sections: groupResults(lines), capped: lines.length >= LINE_LIMIT, error: null });
+        const capped = lines.length >= LINE_LIMIT;
+        // Bulk pulled from exports' cards never show (decision 423).
+        if (pulledId) lines = lines.filter((l) => l.buy_id !== pulledId);
+        setFound({ status: 'done', sections: groupResults(lines), capped, error: null });
         setActive(0);
       } catch (e) {
         if (mine !== run.current) return;
