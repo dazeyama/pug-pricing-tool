@@ -35,8 +35,6 @@ and function.
   bulk** and **Export sell floor**; every "(>$1)" and "under $1" for Print MTG, Export MTG csv, Export single buy,
   Print buy and Bulk pulled from exports now follows the setting ($1.49 by default), and the printout key gives the
   amounts; The Sell Price's "never below $0.40" is now the floor's setting.
-- **The Export sell floor can't go below $0.40** (decision 417): the database's `internal.export_check` refuses a
-  lower Sell Price. Lowering it means a migration changing that check (to the setting, or a lower fixed number).
 - **The live site's bulk values** (decision 411, the owner's to do): Settings → Bulk values on the live site, type
   **24** in Rares & Mythics and in EXs. Prod isn't written from the CLI (decision 380). Until then, if prod has no
   saved `bulk_values`, the live site takes the code's defaults, $24 once pushed and $2.40 before. Push only on the owner's ask, once prod has 0005.
