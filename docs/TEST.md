@@ -311,7 +311,7 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
 
 ## 11. Collections tab: collections
 
-- [ ] The tab has System, Projects and Collections tables; the status chips filter Collections, Rejected included.
+- [ ] The tab has Overnight buys, Projects and System tables; the status chips filter Overnight buys, Rejected included.
 - [ ] **Every row's ⋯:** Delete overnight buy… (Delete project… on a project) everywhere, Convert to buy… on projects
       only, none on System; clicking ⋯ doesn't open the row; the menu isn't cut off on the last row.
 - [ ] **Overnight buys** (decision 421): the first table is titled Overnight buys, its button + Overnight buy opens
@@ -355,8 +355,8 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
 - [ ] **Completed with the export, if asked** (decision 407): a Paid/Ours collection with Magic and Pokémon cards:
       Export MTG csv (all): once the file downloads, "Mark this collection Completed?"; No: it stays Paid/Ours.
       Print PKM Stickers?: the same question; Yes: Completed. A Processing collection's file-only export asks nothing.
-- [ ] **Export MTG csv (>$1) on a collection** (decision 406): a Paid/Ours collection with a $5 card and a $0.25
-      card: the $0.25 one is under "Under $1: pulled"; Confirm lists it in amber with the tick; after Export, the
+- [ ] **Export MTG csv (>$1.49) on a collection** (decisions 406, 416): a Paid/Ours collection with a $5 card and a
+      $0.25 card: the $0.25 one is under "$1.49 or under: pulled"; Confirm lists it in amber with the tick; after Export, the
       card shows an amber **Pulled** chip and its copy is in **Bulk pulled from exports** (Collections tab, System).
 - [ ] **Bulk pulled from exports** (decision 406): open it: its cards say where they came from; EXPORT sends them
       (no $1 cut) and they leave; Undo export… on the original collection takes a pulled card's copy back out.
@@ -413,8 +413,8 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       the buy stays like that, the dialog says the payment stays with the buy, the new project is paid $0, and the
       Calendar's **Export Cash Buys** counts the cash once, on the buy (the project's row reads $0; decision 341).
 - [ ] **Convert to overnight buy** (decision 335; Convert ▸) asks once with nothing to type, showing the buy's name, phone and Last
-      4 ID 1312; the collection opens, Paid/Ours, with the buy's cards, rates and what was paid; the Changelog says "Buy
-      converted to collection"; with no customer name it's greyed. With Completed cards the buy stays with them and
+      4 ID 1312; the overnight buy opens, Paid/Ours, with the buy's cards, rates and what was paid; the Changelog says "Buy
+      converted to overnight buy"; with no customer name it's greyed. With Completed cards the buy stays with them and
       keeps the payment: the collection is paid $0, same colour and filter as the buy's method (decision 341).
 - [ ] **Delete buy…** asks first.
 - [ ] A buy with both games links "Also has N Pokémon cards →" to the other game's day.
@@ -441,12 +441,12 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       Pokémon cards; Mark as completed the Magic side; Convert to project: only the Pokémon cards move, the dialog
       saying the Magic bulk and placeholders stay; the buy keeps them.
 - [ ] **Prices on the printouts** (decision 404): a past Magic day, EXPORT ▾ → Print MTG (all): each row ends with
-      today's price, red under $0.50, amber from $0.50 to $0.99, plain from $1; the foot has the key. Print PKM? on a
-      Pokémon day the same.
-- [ ] **Print MTG (>$1)** (decision 405): the same day: only the rows at $1.00 or more; a day with none says so and
-      prints nothing.
-- [ ] **Print buy (>$1)** (decision 409): a Magic buy's ⋯ → Print ▸ Print buy (>$1): only its cards at $1.00 or more
-      today, with their prices; Print buy (all) prints them all.
+      today's price, red at 50¢ or under, amber from 51¢ to $1.49, plain from $1.50 (the Export rates for bulk,
+      decision 416); the foot has the key with those amounts. Print PKM? on a Pokémon day the same.
+- [ ] **Print MTG (>$1.49)** (decisions 405, 416): the same day: only the rows at $1.50 or more; a day with none says
+      so and prints nothing.
+- [ ] **Print buy (>$1.49)** (decisions 409, 416): a Magic buy's ⋯ → ◂ Print → Print buy (>$1.49): only its cards at
+      $1.50 or more today, with their prices; Print buy (all) prints them all.
 - [ ] **A buy's ⋯ in groups** (decisions 422, 425): a Magic buy's ⋯ reads Mark as completed, ◂ Print, ◂ Export,
       ◂ Convert, Edit in project view, Delete buy…; pointing at ◂ Print opens its two items to the left of the menu,
       pointing at ◂ Export swaps to its items, a click on a group toggles it, ← or → opens and → (pointing back at
@@ -459,11 +459,11 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       so a flyout can't fit to the left of the day page's ⋯, it opens to the right and the arrow reads "Print ▸".
 - [ ] **The printout's foot** (decision 419): on Print MTG (all), "Page 1 of N" sits at the right margin and the key
       ("Today's market price: amber = …, red = …") runs from the left without touching it.
-- [ ] **Export single buy (>$1)** (decision 408): a Magic buy's ⋯ → Export single buy (>$1): its cards under $1 are
-      pulled as on the day's export; Export single buy (all) exports them all.
-- [ ] **Export MTG csv (>$1) on a day** (decision 406): a past day with cards over and under $1: the file has only
-      the ones whose Sell Price is $1.00 or more; the rest are Completed with an amber **Pulled** chip, the day's
-      line says "N pulled under $1", and **Export MTG csv (all)** on another day exports everything as before.
+- [ ] **Export single buy (>$1.49)** (decisions 408, 416): a Magic buy's ⋯ → ◂ Export → Export single buy (>$1.49):
+      its cards at $1.49 or under are pulled as on the day's export; Export single buy (all) exports them all.
+- [ ] **Export MTG csv (>$1.49) on a day** (decisions 406, 416): a past day with cards over and under the cut: the
+      file has only the ones whose Sell Price is $1.50 or more; the rest are Completed with an amber **Pulled** chip,
+      the day's line says "N pulled as bulk", and **Export MTG csv (all)** on another day exports everything as before.
 
 ## 15. The export file
 
