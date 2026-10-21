@@ -17,6 +17,17 @@ export const STATUSES = [
 export const statusLabel = (s) => STATUSES.find((x) => x.value === s)?.label ?? s;
 
 /**
+ * The three kinds on the Collections tab (owner, 2026-10-21; decision 421): an
+ * **overnight buy** (a customer's cards left to price, the kind the screens
+ * called a "collection" until then), a project (the store's own cards) and
+ * the system collections (Can't upload cards, Bulk pulled from exports). The
+ * database's `kind` stays 'collection' for all three; this is the word the
+ * screens use, and the CSS class after `kind-`.
+ * @returns {'system'|'project'|'overnight'}
+ */
+export const collectionKind = (buy) => (buy?.system_key ? 'system' : buy?.project ? 'project' : 'overnight');
+
+/**
  * Can't upload cards and projects hold the store's own cards: their
  * Paid/Ours reads just "Ours", in white (owner, 2026-10-01). Only the words
  * and colour differ: the status is the same 'paid', and it searches and

@@ -385,7 +385,7 @@ function DayScreen({ game, day }) {
     }
     setConverting(null);
     toast(to === 'collection'
-      ? `Buy ${number} is now the collection ${buy.customer_name.trim()}.`
+      ? `Buy ${number} is now the overnight buy ${buy.customer_name.trim()}.`
       : `Buy ${number} is now the project ${name.trim()}.`, 'ok');
     navigate(`/collections/${data}`);
   }

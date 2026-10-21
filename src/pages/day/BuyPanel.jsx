@@ -259,13 +259,13 @@ export default function BuyPanel({
               onClick: () => onConvert(buy, number),
             },
             {
-              // The same, into a collection (owner, 2026-10-18; decision 335): the buy's name and
-              // phone, the Last 4 ID 1312, its rates and payment.
-              label: 'Convert to collection',
+              // The same, into an overnight buy (owner, 2026-10-18; decision 335; named so by decision
+              // 421): the buy's name and phone, the Last 4 ID 1312, its rates and payment.
+              label: 'Convert to overnight buy',
               blocked: offOrBusy ?? (!buy.customer_name?.trim() ? 'No customer name on this buy'
                 : convertLines(buy).some((l) => !l.struck_at && !l.bulk_kind)
                   ? null : 'Nothing left to move: every card is Completed, struck, or in a Completed game'),
-              title: 'Move this buy\'s live cards, both games, into a new Paid/Ours collection under its customer; Completed cards stay here',
+              title: 'Move this buy\'s live cards, both games, into a new Paid/Ours overnight buy under its customer; Completed cards stay here',
               onClick: () => onConvertCollection(buy, number),
             },
             {

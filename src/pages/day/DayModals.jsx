@@ -7,13 +7,14 @@ import { formatTime } from '../../lib/time.js';
 import Modal from '../../components/Modal.jsx';
 import { convertLines } from './dayRules.js';
 
-// A day page's dialogs for one buy: Convert to project or collection, Delete buy (FABLE_REPORT C2).
+// A day page's dialogs for one buy: Convert to project or overnight buy, Delete buy (FABLE_REPORT C2).
 
 /**
  * Convert to project (owner, 2026-10-02): a name (the customer's, else the
  * buy's number and day), then every card moves to a new Paid/Ours project and
- * the buy is deleted. Convert to collection (`to` 'collection', owner,
- * 2026-10-18; decision 335): nothing to type; the collection takes the buy's
+ * the buy is deleted. Convert to overnight buy (`to` 'collection', the
+ * database's word for it; owner, 2026-10-18; decision 335, named so by
+ * decision 421): nothing to type; the overnight buy takes the buy's
  * name and phone, the Last 4 ID 1312, its rates and what was paid (all of it
  * only when the whole buy moves: a buy that stays keeps the payment; decision 341).
  */
@@ -41,7 +42,7 @@ export function ConvertBuyModal({ buy, number, day, byId, busy, onClose, onConve
   const ready = name.trim().length > 0;
   return (
     <Modal
-      title={collection ? 'Convert to collection?' : 'Convert to project?'}
+      title={collection ? 'Convert to overnight buy?' : 'Convert to project?'}
       onClose={busy ? undefined : onClose}
       footer={(
         <>
@@ -52,14 +53,14 @@ export function ConvertBuyModal({ buy, number, day, byId, busy, onClose, onConve
             disabled={busy || !ready}
             onClick={() => onConvert(name)}
           >
-            {collection ? 'Convert to collection' : 'Convert to project'}
+            {collection ? 'Convert to overnight buy' : 'Convert to project'}
           </button>
         </>
       )}
     >
       <p>
         <strong>Buy {number}</strong> ({who}, {formatTime(buy.confirmed_at)}) becomes a new{' '}
-        <strong>{collection ? 'Paid/Ours collection' : 'project'}</strong>:{' '}
+        <strong>{collection ? 'Paid/Ours overnight buy' : 'project'}</strong>:{' '}
         <strong>{cards}</strong>{bothGames ? ', both games,' : ''} {single ? 'moves' : 'move'} there as{' '}
         {single ? 'it is' : 'they are'}, with the buy's notes{takes}
         {stays
@@ -73,7 +74,7 @@ export function ConvertBuyModal({ buy, number, day, byId, busy, onClose, onConve
       </p>
       {collection ? (
         <p className="muted">
-          Collection: <strong>{buy.customer_name}</strong>
+          Overnight buy: <strong>{buy.customer_name}</strong>
           {buy.phone ? <> · {formatPhone(buy.phone)}</> : null} · Last 4 ID <strong>1312</strong>
         </p>
       ) : (

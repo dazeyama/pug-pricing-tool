@@ -37,6 +37,12 @@ export function searchArgs(text, knownCodes) {
   return { args, retry: other ? toArgs(other) : null };
 }
 
+/** `global_search`'s collection_kind as the screens say it: 'collection' is an overnight buy (decision 421). */
+export const kindWord = (dbKind) => (dbKind === 'collection' ? 'overnight' : dbKind);
+
+/** The pinned sections, in order (decision 421): each kind of collection under its own name. */
+const PINNED = [['overnight', 'Overnight buys'], ['project', 'Projects'], ['system', 'System']];
+
 /** One printing: game, language, set, number, finish, 1st Edition and treatments; a placeholder's name. */
 export function printingKey(line) {
   return [
@@ -48,8 +54,9 @@ export function printingKey(line) {
 
 /**
  * Lines from `global_search` as results (owner, 2026-09-30): collections
- * pinned in a section of their own at the top (they sit in their own place
- * in the store), newest first; then buys filed under the day they were
+ * pinned at the top (they sit in their own place in the store), a section
+ * per kind (Overnight buys, Projects, System; decision 421), newest first;
+ * then buys filed under the day they were
  * confirmed, newest day first. Each section holds a panel per buy or
  * collection (per game, since a buy's day page is per game), newest first,
  * listing every matching card: one entry per printing and condition,
@@ -71,8 +78,9 @@ export function groupResults(lines) {
         game: l.game,
         status: l.status,
         paidMethod: l.paid_method,
-        // A collection's kind, for its colour: system, project or collection.
-        collectionKind: l.collection_kind ?? (l.kind === 'collection' ? 'collection' : null),
+        // A collection's kind, for its section and colour: system, project or overnight (an overnight
+        // buy, which the database still calls 'collection'; decision 421).
+        collectionKind: l.kind === 'collection' ? kindWord(l.collection_kind ?? 'collection') : null,
         customerName: l.customer_name,
         confirmedBy: l.confirmed_by,
         number: l.buy_number,
@@ -102,7 +110,7 @@ export function groupResults(lines) {
   }
 
   const rank = (c) => (CONDITIONS.indexOf(c) + 1) || CONDITIONS.length + 1;
-  const collections = [];
+  const pinned = new Map(PINNED.map(([kind]) => [kind, []]));
   const days = new Map();
   for (const p of panels.values()) {
     // A printing's place is where it first came; its live copies before struck ones, conditions best first.
@@ -112,7 +120,7 @@ export function groupResults(lines) {
       firstOf.get(a.printing) - firstOf.get(b.printing) || a.struck - b.struck || rank(a.condition) - rank(b.condition));
     const panel = { ...p, entries };
     if (p.kind === 'collection') {
-      collections.push(panel);
+      (pinned.get(p.collectionKind) ?? pinned.get('overnight')).push(panel);
       continue;
     }
     if (!days.has(p.day)) days.set(p.day, { key: p.day, day: p.day, at: p.at, panels: [] });
@@ -123,11 +131,13 @@ export function groupResults(lines) {
     .map((d) => ({ ...d, panels: d.panels.sort((a, b) => newest(a.at, b.at)) }))
     .sort((a, b) => newest(a.day, b.day))
     .map((d) => ({ ...d, at: d.panels[0].at }));
-  if (!collections.length) return dated;
-  return [{ key: 'collections', title: 'Collections', panels: collections.sort((a, b) => newest(a.at, b.at)) }, ...dated];
+  const top = PINNED
+    .filter(([kind]) => pinned.get(kind).length)
+    .map(([kind, title]) => ({ key: kind, title, panels: pinned.get(kind).sort((a, b) => newest(a.at, b.at)) }));
+  return [...top, ...dated];
 }
 
-/** Every panel in display order (collections, then day by day), for ↑/↓. */
+/** Every panel in display order (the pinned kinds, then day by day), for ↑/↓. */
 export function flatRows(sections) {
   return sections.flatMap((s) => s.panels);
 }

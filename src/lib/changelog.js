@@ -88,7 +88,7 @@ export const HEADLINES = {
   buy_completed: 'Buy marked Completed',
   buy_uncompleted: 'Buy marked Paid/Ours again',
   buy_converted: 'Buy converted to project',
-  buy_converted_collection: 'Buy converted to collection',
+  buy_converted_collection: 'Buy converted to overnight buy',
   project_converted: 'Project converted to buy',
   buy_exported: 'Buy exported',
   buy_unexported: 'Buy export undone',

@@ -165,10 +165,10 @@ export default function CollectionDetails({
             // The same as a buy's ⋯ (owner, 2026-10-14): Print, then Convert, then Delete.
             // Print (docs/TEAM_FEEDBACK.md 3): its Magic cards by Crystal Commerce category.
             ...(onPrint ? [{
-              label: project ? 'Print project' : 'Print collection',
+              label: project ? 'Print project' : 'Print overnight buy',
               needsUser: false,
               blocked: printBlocked,
-              title: `A PDF of this ${project ? 'project' : 'collection'}'s Magic cards by Crystal Commerce category, to check them by hand. Changes nothing.`,
+              title: `A PDF of this ${project ? 'project' : 'overnight buy'}'s Magic cards by Crystal Commerce category, to check them by hand. Changes nothing.`,
               onClick: onPrint,
             }] : []),
             // Undo export… (owner, 2026-10-18; decision 298): the export's stamps off its cards,
@@ -187,10 +187,10 @@ export default function CollectionDetails({
               onClick: onConvert,
             }] : []),
             {
-              label: project ? 'Delete project…' : 'Delete collection…',
+              label: project ? 'Delete project…' : 'Delete overnight buy…',
               danger: true,
               blocked: deleteBlocked,
-              title: `Delete this ${project ? 'project' : 'collection'} and every card in it`,
+              title: `Delete this ${project ? 'project' : 'overnight buy'} and every card in it`,
               onClick: onDelete,
             },
           ]}

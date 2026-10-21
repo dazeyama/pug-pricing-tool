@@ -13,7 +13,7 @@ import { downloadMassCreate, restampTimes } from '../lib/ccExport.js';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import PricingScreen from './price/PricingScreen.jsx';
 import CollectionDetails from './collections/CollectionDetails.jsx';
-import { collectionRates, isClosed, statusLabel } from './collections/status.js';
+import { collectionKind, collectionRates, isClosed, statusLabel } from './collections/status.js';
 import { tiersFrom } from '../lib/rates.js';
 import { isStruck, movesOn } from '../lib/struck.js';
 import { ConfirmModal, ConvertToBuyModal, DeleteCollectionModal, RejectModal } from './collections/CollectionModals.jsx';
@@ -479,7 +479,7 @@ function CollectionScreen({ id }) {
       locked={locked}
       removeLocked={removeLocked}
       // Highlighted in its kind's colour (owner, 2026-10-01): System, Projects or Collections.
-      className={`collection-screen kind-${system ? 'system' : buy?.project ? 'project' : 'collection'}`}
+      className={`collection-screen kind-${collectionKind(buy)}`}
       // A project's prices round up, like an export (owner, 2026-10-10).
       roundUp={Boolean(buy?.project)}
       hits={hits}

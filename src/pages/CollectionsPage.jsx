@@ -16,7 +16,7 @@ import ImportDialog from './collections/ImportDialog.jsx';
 import RowAction from './collections/RowAction.jsx';
 import MoreMenu from '../components/MoreMenu.jsx';
 import { useConnection } from '../state/connection.jsx';
-import { FILTERS, isClosed, statusText, statusTone } from './collections/status.js';
+import { FILTERS, collectionKind, isClosed, statusText, statusTone } from './collections/status.js';
 import { OfferText, PaidText } from './collections/CollectionDetails.jsx';
 import { errorMessage } from './collections/useCollection.js';
 import { useDevice } from '../state/device.jsx';
@@ -117,8 +117,8 @@ const columns = (by, menu) => [
 
 /**
  * The Collections tab (spec 9.1): every collection, live, in three tables
- * (owner, 2026-10-01): Collections (+ Price Collection, with the status
- * filter), Projects (the store's own cards, + Start Project) and System
+ * (owner, 2026-10-01): Overnight buys (+ Overnight buy, with the status
+ * filter; "Collections" until decision 421), Projects (the store's own cards, + Start Project) and System
  * (Can't upload cards), in that order since 2026-10-14 (owner). One
  * name/phone search and one sort for all three, and a line on the ones open
  * on another computer.
@@ -151,10 +151,10 @@ export default function CollectionsPage() {
   const [status, setStatus] = useState('all');
   const [query, setQuery] = useState('');
   const location = useLocation();
-  // Home's + Start Project / + Price Collection arrive with the window to open.
+  // Home's + Start Project / + Overnight buy arrive with the window to open.
   const [creating, setCreating] = useState(() => {
     const want = location.state?.create;
-    return want === 'project' || want === 'collection' ? want : null;
+    return want === 'project' || want === 'overnight' ? want : null;
   });
   const [busy, setBusy] = useState(false);
   const [requests] = useState(() => createRequests());   // Create, once per press (decision 388)
@@ -174,13 +174,13 @@ export default function CollectionsPage() {
   /** A row's ⋯ items, blocked as they are on its own screen (owner, 2026-10-11). */
   const menu = (c, elsewhere) => {
     const busy = offline ? 'No connection' : elsewhere ? `${elsewhere} is editing it: open it and take over first` : null;
-    const what = c.project ? 'project' : 'collection';
+    const what = c.project ? 'project' : 'overnight buy';
     return [
       // Print (owner, 2026-10-14; docs/TEAM_FEEDBACK.md 3), as on its screen: its cards
       // fetched once the printout's tab is open. Reading only, so another computer editing it doesn't matter.
       // In any status, as on its screen (team feedback, 2026-10-16: printing "should always" be allowed).
       {
-        label: c.project ? 'Print project' : 'Print collection',
+        label: c.project ? 'Print project' : 'Print overnight buy',
         needsUser: false,
         blocked: offline ? 'No connection' : printing ? 'Printing…' : null,
         title: `A PDF of this ${what}'s Magic cards by Crystal Commerce category, to check them by hand. Changes nothing.`,
@@ -202,16 +202,16 @@ export default function CollectionsPage() {
         onClick: () => setActing({ id: c.id, action: 'convert' }),
       }] : []),
       {
-        label: c.project ? 'Delete project…' : 'Delete collection…',
+        label: c.project ? 'Delete project…' : 'Delete overnight buy…',
         danger: true,
         blocked: busy,
-        title: `Delete this ${c.project ? 'project' : 'collection'} and every card in it`,
+        title: `Delete this ${what} and every card in it`,
         onClick: () => setActing({ id: c.id, action: 'delete' }),
       },
     ];
   };
   const COLUMNS = columns(staff.byId, menu);
-  const kindOf = (c) => (c.system_key ? 'system' : c.project ? 'project' : 'collection');
+  const kindOf = collectionKind;
   const tables = useMemo(() => {
     const words = nameKey(query);
     const digits = query.replace(/\D/g, '');
@@ -230,15 +230,15 @@ export default function CollectionsPage() {
     return {
       system: rows.filter((c) => kindOf(c) === 'system'),
       project: rows.filter((c) => kindOf(c) === 'project'),
-      // The status filter is the customer collections' own.
-      collection: rows.filter((c) => kindOf(c) === 'collection' && filter.match(c)),
+      // The status filter is the overnight buys' own.
+      overnight: rows.filter((c) => kindOf(c) === 'overnight' && filter.match(c)),
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps -- COLUMNS is rebuilt each render from staff.byId (listed) and menu, whose handlers the sort doesn't read
   }, [all, status, query, sort, staff.byId]);
   const totals = {
     system: all.filter((c) => kindOf(c) === 'system').length,
     project: all.filter((c) => kindOf(c) === 'project').length,
-    collection: all.filter((c) => kindOf(c) === 'collection').length,
+    overnight: all.filter((c) => kindOf(c) === 'overnight').length,
   };
 
   /** Open on another computer: where, "Front Counter (Dana)", or null. */
@@ -255,7 +255,7 @@ export default function CollectionsPage() {
   }
 
   /**
-   * + Price Collection, or + Start Project (just a name and notes). Create pressed again after its
+   * + Overnight buy, or + Start Project (just a name and notes). Create pressed again after its
    * answer was lost makes one, not two (decision 388): the same request id, done once.
    */
   async function create({ name, phone, idLast4, notes }) {
@@ -279,7 +279,7 @@ export default function CollectionsPage() {
     requests.settle(key, requestId, error);
     setBusy(false);
     if (error) {
-      toast(errorMessage(error, project ? "Couldn't start the project" : "Couldn't create the collection"), 'err');
+      toast(errorMessage(error, project ? "Couldn't start the project" : "Couldn't create the overnight buy"), 'err');
       return;
     }
     setCreating(null);
@@ -391,8 +391,8 @@ export default function CollectionsPage() {
         <GuardButton className="btn primary big new-col-btn" onClick={() => setCreating('project')}>
           + Start Project
         </GuardButton>
-        <GuardButton className="btn primary big new-col-btn" onClick={() => setCreating('collection')}>
-          + Price Collection
+        <GuardButton className="btn primary big new-col-btn" onClick={() => setCreating('overnight')}>
+          + Overnight buy
         </GuardButton>
         <input
           type="search"
@@ -404,11 +404,11 @@ export default function CollectionsPage() {
         />
       </div>
 
-      {/* Collections, then Projects, then System last (owner, 2026-10-14). */}
-      {section('collection', 'Collections', {
+      {/* Overnight buys (Collections until decision 421), then Projects, then System last (owner, 2026-10-14). */}
+      {section('overnight', 'Overnight buys', {
         filters: true,
-        empty: 'No collections yet. Press + Price Collection to start one.',
-        noMatch: 'No collections match.',
+        empty: 'No overnight buys yet. Press + Overnight buy to start one.',
+        noMatch: 'No overnight buys match.',
       })}
       {section('project', 'Projects', {
         empty: 'No projects yet. Press + Start Project to price a box of the store’s own cards.',
@@ -419,7 +419,7 @@ export default function CollectionsPage() {
         noMatch: 'Nothing here matches.',
       })}
 
-      {creating === 'collection' && (
+      {creating === 'overnight' && (
         <NewCollectionModal busy={busy} onCreate={create} onClose={() => setCreating(null)} />
       )}
       {creating === 'project' && (

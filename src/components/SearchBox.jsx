@@ -163,8 +163,8 @@ export default function SearchBox({ wide }) {
     const buy = row.kind === 'walk_in';
     const user = buy ? staff.byId(row.confirmedBy) : null;
     // Coloured by what it is (owner, 2026-10-01): a buy by its game, a
-    // collection by its kind (System, Projects, Collections).
-    const tint = buy ? ` game-${row.game}` : ` kind-${row.collectionKind ?? 'collection'}`;
+    // collection by its kind (System, Projects, Overnight buys).
+    const tint = buy ? ` game-${row.game}` : ` kind-${row.collectionKind ?? 'overnight'}`;
     // Completed (an exported buy, a Completed collection; Show all only): partly faded (owner, 2026-09-30).
     // Rejected too (owner, 2026-10-09).
     const done = buy ? row.completed : row.status === 'completed' || row.status === 'rejected';

@@ -128,7 +128,7 @@ export function NewProjectModal({ busy, onCreate, onClose }) {
 }
 
 /**
- * + Price Collection (spec 9.2): name, phone (formatted as typed), Last 4 ID
+ * + Overnight buy (spec 9.2; "+ Price Collection" until decision 421): name, phone (formatted as typed), Last 4 ID
  * (required since 2026-10-09), notes. Create looks disabled until the name,
  * a 10-digit phone number and the Last 4 ID are in. Ctrl+click on Create
  * creates it without the phone or the ID (owner, 2026-10-09: an admin
@@ -157,7 +157,7 @@ export function NewCollectionModal({ busy, onCreate, onClose }) {
 
   return (
     <Modal
-      title="Price a collection"
+      title="New overnight buy"
       onClose={onClose}
       footer={(
         <>
@@ -247,7 +247,7 @@ export function NewCollectionModal({ busy, onCreate, onClose }) {
 }
 
 /**
- * Delete collection… (spec 9.7): a warning with the card count, then the
+ * Delete overnight buy… (spec 9.7): a warning with the card count, then the
  * name typed to confirm. Delete forever only lights up on a match
  * (case-insensitive, trimmed); the server checks it again. A project says
  * "project" (smoke test 2026-10-11, F9).
@@ -258,8 +258,8 @@ export function DeleteCollectionModal({ name, lines, busy, onDelete, onClose, pr
   const [step, setStep] = useState(1);
   const [typed, setTyped] = useState('');
   const matches = typed.trim().toLowerCase() === name.trim().toLowerCase();
-  const kind = project ? 'project' : 'collection';
-  const title = project ? 'Delete project' : 'Delete collection';
+  const kind = project ? 'project' : 'overnight buy';
+  const title = project ? 'Delete project' : 'Delete overnight buy';
 
   if (step === 1) {
     return (

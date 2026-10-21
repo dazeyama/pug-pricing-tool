@@ -235,17 +235,17 @@
 /* The three kinds of collection have a colour each (owner, 2026-10-01),
    chosen to mean nothing else here (not cash green, Priced red,
    Pokémon/Processing amber or the indigo/credit blue): System violet,
-   Projects pink, Collections cyan. The deeper shade is for filled buttons
-   with white text. */
+   Projects pink, Overnight buys cyan (called Collections until decision 421). The deeper shade is for
+   filled buttons with white text. */
 :root {
   --kind-system: #a78bfa;
   --kind-system-deep: #6d4fd1;
   --kind-project: #f472b6;
   --kind-project-deep: #b8337a;
-  --kind-collection: #22d3ee;
-  --kind-collection-deep: #0e7f95;
+  --kind-overnight: #22d3ee;
+  --kind-overnight-deep: #0e7f95;
 }
-.col-section, .kind-collection { --kind: var(--kind-collection); --kind-deep: var(--kind-collection-deep); }
+.col-section, .kind-overnight { --kind: var(--kind-overnight); --kind-deep: var(--kind-overnight-deep); }
 .col-section.system, .kind-system { --kind: var(--kind-system); --kind-deep: var(--kind-system-deep); }
 .col-section.project, .kind-project { --kind: var(--kind-project); --kind-deep: var(--kind-project-deep); }
 
@@ -267,4 +267,4 @@
 /* Inside one, its colour is the screen's highlight instead of the amber. */
 .price-screen.collection-screen.kind-system,
 .price-screen.collection-screen.kind-project,
-.price-screen.collection-screen.kind-collection { --accent: var(--kind); --accent-2: var(--kind-deep); }
+.price-screen.collection-screen.kind-overnight { --accent: var(--kind); --accent-2: var(--kind-deep); }

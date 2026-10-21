@@ -175,7 +175,7 @@ function HomeScreen({ today }) {
       const age = oldest ? Math.floor((Date.now() - Date.parse(oldest)) / DAY_MS) : null;
       return { c, kind: 'project', note: age == null ? 'no cards yet' : age < 1 ? 'prices from today' : `oldest price ${plural(age, 'day')} old`, warn: age != null && age >= STALE_PRICES_DAYS };
     }),
-    ...customer.filter((c) => c.status === 'paid').map((c) => ({ c, kind: 'collection', note: 'ready to export', warn: false })),
+    ...customer.filter((c) => c.status === 'paid').map((c) => ({ c, kind: 'overnight', note: 'ready to export', warn: false })),
   ];
 
   // ---- today
@@ -229,14 +229,14 @@ function HomeScreen({ today }) {
             <button type="button" className="btn" onClick={() => go(`/calendar/mtg/${today}`)}>Today's day</button>
             {/* They make something, so they need a user like the Collections tab's (smoke test 2026-10-11, F1). */}
             <GuardButton className="btn" onClick={() => go('/collections', { create: 'project' })}>+ Start Project</GuardButton>
-            <GuardButton className="btn" onClick={() => go('/collections', { create: 'collection' })}>+ Price Collection</GuardButton>
+            <GuardButton className="btn" onClick={() => go('/collections', { create: 'overnight' })}>+ Overnight buy</GuardButton>
           </div>
         </section>
       </div>
 
       <section className="home-card">
         <div className="home-card-head">
-          <h3>Collections and projects</h3>
+          <h3>Overnight buys and projects</h3>
           <button type="button" className="home-link" onClick={() => go('/collections')}>Collections →</button>
         </div>
         <div className="home-stats">

@@ -55,13 +55,30 @@ test('collections pinned at the top; buys under their confirmation day, newest f
   ]);
   // 04:48 UTC Oct 1 is 9:48 PM Sep 30 in the store.
   assert.deepEqual(sections.map((s) => [s.title ?? s.day, s.panels.map((p) => p.key.split('|')[0])]),
-    [['Collections', ['c1']], ['2026-09-30', ['b6', 'b2']]]);
+    [['Overnight buys', ['c1']], ['2026-09-30', ['b6', 'b2']]]);
   const b6 = sections[1].panels[0];
   assert.deepEqual(b6.entries.map((e) => [e.line.set_code, e.condition, e.qty]),
     [['2X2', 'NM', 2], ['2X2', 'LP', 2], ['2X2', 'MP', 1], ['JGP', 'MP', 1]]);
   assert.deepEqual(b6.lineIds, ['l1', 'l2', 'l3', 'l4', 'l5']);
   assert.deepEqual(flatRows(sections).map((p) => p.key.split('|')[0]), ['c1', 'b6', 'b2']);
   assert.equal(groupResults([line({})])[0].title, undefined);   // no collections, no pinned section
+});
+
+test('each kind of collection pinned under its own name: Overnight buys, Projects, System (decision 421)', () => {
+  const col = (id, collection_kind, created_at) => line({
+    line_id: `l-${id}`, buy_id: id, kind: 'collection', status: 'paid', buy_number: null, confirmed_at: null, created_at, collection_kind,
+  });
+  const sections = groupResults([
+    col('sys', 'system', '2026-10-01T04:00:00Z'),
+    col('p1', 'project', '2026-10-02T04:00:00Z'),
+    col('o1', 'collection', '2026-10-03T04:00:00Z'),   // the database's word for an overnight buy
+    col('o2', null, '2026-10-04T04:00:00Z'),           // an older row with no kind: an overnight buy too
+  ]);
+  assert.deepEqual(sections.map((s) => [s.title, s.panels.map((p) => [p.buyId, p.collectionKind])]), [
+    ['Overnight buys', [['o2', 'overnight'], ['o1', 'overnight']]],
+    ['Projects', [['p1', 'project']]],
+    ['System', [['sys', 'system']]],
+  ]);
 });
 
 test('a walk-in panel is Completed only when its cards are', () => {

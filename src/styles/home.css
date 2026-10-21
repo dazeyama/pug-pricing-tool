@@ -105,7 +105,7 @@
 }
 .home-item:hover { border-color: var(--c); background: color-mix(in srgb, var(--c) 10%, var(--panel-2)); }
 .home-item.game-mtg { --c: var(--pal-indigo); }
-.home-item.kind-project, .home-item.kind-collection, .home-item.kind-system { --c: var(--kind); }
+.home-item.kind-project, .home-item.kind-overnight, .home-item.kind-system { --c: var(--kind); }
 .home-muted { color: var(--muted); font-size: 12.5px; }
 .home-age { margin-left: auto; color: var(--muted); font-size: 12px; white-space: nowrap; }
 .home-age.late { color: var(--bad); font-weight: 700; }
