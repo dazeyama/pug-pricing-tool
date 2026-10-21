@@ -12,6 +12,8 @@
 // "(cont.)".
 
 import { jsPDF } from 'jspdf';
+import { formatMoney } from './money.js';
+import { priceTone } from './auditPrint.js';
 
 /**
  * A row's number chip: the collector number alone when its set is its
@@ -43,6 +45,8 @@ const BOX = 7;
 const QTY_RIGHT = 33;                        // the count, first, right-aligned in its own column
 const NAME_X = 37;                           // the name, after the chip, the tick box and the count
 const COND_W = 20;
+const PRICE_W = 30;                          // today's market price, last on the row (decision 404)
+const PRICE_PT = 6.8;
 
 // Light on ink (owner, 2026-10-14: colour kept, but outlines over shading):
 // rows and chips are outlines, the colour only where it tells something:
@@ -73,6 +77,8 @@ const INK = [20, 20, 26];        // text, the bands
 const FLAG_RGB = [200, 30, 30];
 const FLAG_BANNER = 20;
 const LINE = [190, 192, 200];    // the rows' hairlines
+// A row's price (decision 404): red under 50¢ (true bulk), amber under $1 (a $1 card), else ink.
+const TONE_RGB = { bulk: [200, 30, 30], dollar: [196, 120, 0] };
 
 // PDF's built-in fonts draw Windows-1252 (Latin-1 and a few more: curly
 // quotes, dashes, …). One character outside it garbles the whole line
@@ -121,6 +127,9 @@ export function auditPdf({ title, sections, symbols = {}, printedAt = new Date()
   const doc = new jsPDF({ unit: 'pt', format: 'letter', orientation: 'portrait' });
   const top = flagText ? TOP + FLAG_BANNER + 4 : TOP;
   const cards = sections.reduce((n, s) => n + s.cards, 0);
+  // Rows with prices give room for them; an older caller without prices lays out as before.
+  const priced = sections.some((s) => s.rows.some((r) => r.price != null));
+  const priceW = priced ? PRICE_W : 0;
   const when = printedAt.toLocaleString('en-US', {
     month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit',
   });
@@ -220,7 +229,7 @@ export function auditPdf({ title, sections, symbols = {}, printedAt = new Date()
   const layout = (r, s) => {
     const set = pdfSafe(numberChip(r, s.set));
     const setW = chipWidth(set);
-    const right = COL_W - 4 - COND_W - 3 - setW - 4;   // the name's room ends at the set chip
+    const right = COL_W - 4 - priceW - COND_W - 3 - setW - 4;   // the name's room ends at the set chip
     const extras = r.extras.map((e) => pdfSafe(e));
     const extrasW = extras.reduce((w, e) => w + chipWidth(e) + 2, 0);
     doc.setFont('helvetica', 'normal');
@@ -249,9 +258,16 @@ export function auditPdf({ title, sections, symbols = {}, printedAt = new Date()
     if (r.qty > 1) doc.setTextColor(0, 0, 0);
     else doc.setTextColor(110, 112, 122);
     doc.text(`${r.qty}x`, left + QTY_RIGHT, y + 9.2, { align: 'right' });
-    // Right to left: the condition, then the set and number, each in its own column.
+    // Right to left: today's price, the condition, then the set and number, each in its own column.
     const top = y + (ROW - CHIP_H) / 2;
-    const condLeft = left + COL_W - 4 - COND_W;
+    if (r.price != null) {
+      const tone = priceTone(r.price);
+      doc.setFont('helvetica', tone ? 'bold' : 'normal');
+      doc.setFontSize(PRICE_PT);
+      doc.setTextColor(...(TONE_RGB[tone] ?? INK));
+      doc.text(formatMoney(r.price), left + COL_W - 4, y + 9, { align: 'right' });
+    }
+    const condLeft = left + COL_W - 4 - priceW - COND_W;
     chip(r.condition, condLeft, top, COND_W, CONDITION_RGB[r.condition] ?? CONDITION_RGB.NM, 1);
     chip(l.set, condLeft - 3 - l.setW, top, l.setW);
     // The name, then its finish and treatments (or under it, when they don't fit).
@@ -307,7 +323,7 @@ export function auditPdf({ title, sections, symbols = {}, printedAt = new Date()
     }
   }
 
-  // "Page 2 of 5", now that the count is known.
+  // "Page 2 of 5", now that the count is known; the prices' key on the left (decision 404).
   const pages = doc.getNumberOfPages();
   for (let p = 1; p <= pages; p++) {
     doc.setPage(p);
@@ -315,6 +331,20 @@ export function auditPdf({ title, sections, symbols = {}, printedAt = new Date()
     doc.setFontSize(7.5);
     doc.setTextColor(140, 144, 160);
     doc.text(`Page ${p} of ${pages}`, PAGE.w / 2, PAGE.h - 14, { align: 'center' });
+    if (priced) {
+      let kx = MARGIN;
+      const part = (text, rgb, bold = false) => {
+        doc.setFont('helvetica', bold ? 'bold' : 'normal');
+        doc.setTextColor(...rgb);
+        doc.text(text, kx, PAGE.h - 14);
+        kx += doc.getTextWidth(text);
+      };
+      part("Today's market price:  ", [110, 114, 128]);
+      part('amber', TONE_RGB.dollar, true);
+      part(' = $1 card   ', [110, 114, 128]);
+      part('red', TONE_RGB.bulk, true);
+      part(' = true bulk card', [110, 114, 128]);
+    }
   }
   return doc;
 }

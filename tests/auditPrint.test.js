@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  UNMATCHED, auditRow, auditSections, cardBucket, matchCategory, pokemonPrintLines, pokemonRow, pokemonSections,
-  printLines, savedCategory,
+  OVER_1, UNMATCHED, auditRow, auditSections, cardBucket, matchCategory, pokemonPrintLines, pokemonRow, pokemonSections,
+  priceTone, printLines, savedCategory,
 } from '../src/lib/auditPrint.js';
 import { magicTreatmentLabel } from '../src/lib/printings.js';
 
@@ -95,14 +95,25 @@ test("a card's colour group, as pull-pdf's", () => {
   assert.equal(cardBucket(null), 'unknown');
 });
 
+// Decision 404: a printout row's price, red under 50¢, amber under $1.
+test('price bands: true bulk, a $1 card, the rest', () => {
+  assert.equal(priceTone(0.1), 'bulk');
+  assert.equal(priceTone(0.49), 'bulk');
+  assert.equal(priceTone(0.5), 'dollar');
+  assert.equal(priceTone(0.99), 'dollar');
+  assert.equal(priceTone(1), null);
+  assert.equal(priceTone(null), null);
+  assert.equal(OVER_1, 1, 'Print MTG (>$1) takes $1.00 and up');
+});
+
 test("a row's words", () => {
   const r = auditRow(line({
     name: 'Lightning Bolt', set_code: '2x2', collector_number: '117', finish: 'foil', condition: 'MP',
     treatments: ['borderless', 'surgefoil'], quantity: 3,
-  }), 3, 'red');
+  }), 3, 'red', 2.5);
   assert.deepEqual(r, {
     name: 'Lightning Bolt', qty: 3, set: '2X2', number: '117', condition: 'MP', extras: ['Foil', 'Borderless', 'Surge foil'],
-    bucket: 'red',
+    bucket: 'red', price: 2.5,
   });
   assert.equal(magicTreatmentLabel('extendedart'), 'Extended art');
   assert.equal(magicTreatmentLabel('promopack'), 'Promo pack stamp');

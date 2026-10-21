@@ -526,7 +526,8 @@ function DayScreen({ game, day }) {
    * EXPORT ▾ → Print? (docs/TEAM_FEEDBACK.md 3.1): the cards EXPORT would
    * take, or once the day is exported, what it exported; blocked when EXPORT is.
    */
-  function printDay() {
+  /** `over1`: Print MTG (>$1) (decision 405), only the cards at $1.00 or more today. */
+  function printDay(over1 = false) {
     if (exportBlocked) {
       toast(`${exportBlocked}.`, 'err');
       return;
@@ -543,9 +544,10 @@ function DayScreen({ game, day }) {
     const flagged = new Map(mine.filter((b) => b.condition_check).map((b) => [b.id, `Buy ${numberOf(b)}`]));
     print({
       lines: dayLines,
-      title: `Audit — Magic, ${dayTitle(day)}`,
-      fileName: `audit-magic-${day}.pdf`,
+      title: `Audit — Magic${over1 ? ' ($1 and up)' : ''}, ${dayTitle(day)}`,
+      fileName: `audit-magic-${day}${over1 ? '-over-1' : ''}.pdf`,
       flagOf: (l) => flagged.get(l.buy_id) ?? null,
+      over1,
     });
   }
 
@@ -554,7 +556,8 @@ function DayScreen({ game, day }) {
    * 282): the day's Pokémon cards (Completed or not), any time: they change
    * nothing, so the day needn't be over, unlike Complete Day.
    */
-  const printPokemonBlocked = mine.length ? null : 'No Pokémon buys that day';
+  const printPokemonBlocked = !mine.length ? 'No Pokémon buys that day'
+    : offline ? "No connection: the printout needs today's prices" : null;   // its prices (decision 404)
   const printStickersBlocked = offline ? "No connection: the stickers need today's prices" : printPokemonBlocked;
   function printPokemonDay() {
     if (printPokemonBlocked) {

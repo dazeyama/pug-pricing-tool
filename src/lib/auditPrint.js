@@ -9,6 +9,22 @@ import { lineTags } from './lineFormat.js';
 /** The last section: cards with no Crystal Commerce product (team plan 3.3). */
 export const UNMATCHED = 'Unmatched';
 
+/** Print MTG (>$1) and Export MTG csv (>$1) take cards at this price or more (decisions 405, 406). */
+export const OVER_1 = 1;
+
+/**
+ * A printout row's price band (decision 404): 'bulk' under 50¢ (red, true bulk), 'dollar' from
+ * 50¢ to 99¢ (amber, a $1 card), else null (plain ink). No price: null.
+ * @param {number|null|undefined} price
+ * @returns {'bulk'|'dollar'|null}
+ */
+export function priceTone(price) {
+  if (price == null || Number.isNaN(Number(price))) return null;
+  if (price < 0.5) return 'bulk';
+  if (price < OVER_1) return 'dollar';
+  return null;
+}
+
 const FINISHES = ['nonfoil', 'foil', 'etched'];
 const FINISH_WORDS = { foil: 'Foil', etched: 'Etched' };
 const POKEMON_FINISH_WORDS = { holo: 'Holo', reverse: 'Reverse' };
@@ -89,9 +105,9 @@ export function matchCategory(result) {
  * One row's parts (team plan 3.5): the name and count; its set ("2X2") and
  * collector number ("117") and condition, which the PDF lines up in chips;
  * its finish and treatments ("Foil", "Borderless"), chips after the name;
- * its colour group.
+ * its colour group; its market price today, a card's (decision 404), or null.
  */
-export function auditRow(line, qty = line.quantity, bucket = 'unknown') {
+export function auditRow(line, qty = line.quantity, bucket = 'unknown', price = null) {
   return {
     name: line.name_en || line.name,
     qty,
@@ -100,6 +116,7 @@ export function auditRow(line, qty = line.quantity, bucket = 'unknown') {
     condition: line.condition || 'NM',
     extras: [FINISH_WORDS[line.finish], ...(line.treatments ?? []).map(magicTreatmentLabel)].filter(Boolean),
     bucket,
+    price,
   };
 }
 
@@ -107,9 +124,9 @@ export function auditRow(line, qty = line.quantity, bucket = 'unknown') {
  * A Pokémon row's parts, as auditRow gives a Magic card's: its finish
  * ("Holo", "Reverse") and the bracket's tags but the condition ("1st Ed",
  * "JP", a reverse pattern, a TCGplayer-only version) as its chips. No colour
- * group: the row's edge chip stays grey.
+ * group: the row's edge chip stays grey. Its market price today (decision 404), or null.
  */
-export function pokemonRow(line, qty = line.quantity) {
+export function pokemonRow(line, qty = line.quantity, price = null) {
   return {
     name: line.name_en || line.name,
     qty,
@@ -118,6 +135,7 @@ export function pokemonRow(line, qty = line.quantity) {
     condition: line.condition || 'NM',
     extras: [POKEMON_FINISH_WORDS[line.finish], ...lineTags({ ...line, condition: 'NM' })].filter(Boolean),
     bucket: 'unknown',
+    price,
   };
 }
 
@@ -169,14 +187,14 @@ function mainSet(list) {
  * The printout's sections, by category A to Z with Unmatched last; the same
  * card from different buys (printing, finish, condition, treatments) as one
  * row with the quantities added (team plan 3.2–3.5).
- * @param {{ line: object, category: string|null, bucket?: string }[]} placed
+ * @param {{ line: object, category: string|null, bucket?: string, price?: number|null }[]} placed
  * @returns {{ name: string, cards: number, set: string|null, rows: ReturnType<typeof auditRow>[] }[]}
  */
 export function auditSections(placed) {
   // One section per category whatever its case (an older export's saved name), named as first met.
   const names = new Map();
   const merged = new Map();
-  for (const { line, category, bucket } of placed) {
+  for (const { line, category, bucket, price } of placed) {
     const folded = (category || UNMATCHED).toLowerCase();
     if (!names.has(folded)) names.set(folded, category || UNMATCHED);
     const section = names.get(folded);
@@ -184,7 +202,7 @@ export function auditSections(placed) {
       line.condition, [...(line.treatments ?? [])].sort().join(',')].join('|');
     const had = merged.get(key);
     if (had) had.qty += line.quantity;
-    else merged.set(key, { section, line, qty: line.quantity, bucket: bucket ?? 'unknown' });
+    else merged.set(key, { section, line, qty: line.quantity, bucket: bucket ?? 'unknown', price: price ?? null });
   }
   const bySection = new Map();
   for (const m of merged.values()) {
@@ -196,7 +214,7 @@ export function auditSections(placed) {
       name,
       cards: list.reduce((n, m) => n + m.qty, 0),
       set: name === UNMATCHED ? null : mainSet(list),
-      rows: list.sort(byCard).map((m) => auditRow(m.line, m.qty, m.bucket)),
+      rows: list.sort(byCard).map((m) => auditRow(m.line, m.qty, m.bucket, m.price)),
     }))
     .sort((a, b) => (a.name === UNMATCHED) - (b.name === UNMATCHED) || collator.compare(a.name, b.name));
 }
@@ -208,9 +226,10 @@ export function auditSections(placed) {
  * different buys as one row. A set is its code (whatever its case); its
  * name as first met, the code when a line has none.
  * @param {object[]} lines  pokemonPrintLines' lines
+ * @param {(line: object) => number|null} [priceOf]  a card's market price today (decision 404)
  * @returns {{ name: string, cards: number, set: string|null, rows: ReturnType<typeof pokemonRow>[] }[]}
  */
-export function pokemonSections(lines) {
+export function pokemonSections(lines, priceOf = () => null) {
   const names = new Map();
   const merged = new Map();
   for (const line of lines) {
@@ -232,7 +251,7 @@ export function pokemonSections(lines) {
       name: names.get(code),
       cards: list.reduce((n, m) => n + m.qty, 0),
       set: code || null,
-      rows: list.sort(byCard).map((m) => pokemonRow(m.line, m.qty)),
+      rows: list.sort(byCard).map((m) => pokemonRow(m.line, m.qty, priceOf(m.line))),
     }))
     .sort((a, b) => collator.compare(a.name, b.name) || collator.compare(a.set ?? '', b.set ?? ''));
 }

@@ -81,22 +81,26 @@ export default function ExportButton({
       {button}
       {open && (
         <div className={`more-list export-list${up ? ' up' : ''}`} role="menu">
-          {onPrint && (
+          {/* Print MTG (all) and (>$1) (decision 405): every card, or the ones at $1.00 or more today. */}
+          {onPrint && [false, true].map((over1) => (
             <button
+              key={over1 ? 'over1' : 'all'}
               type="button"
               role="menuitem"
               className={`more-item${printing ? ' is-disabled' : ''}`}
               aria-disabled={printing || undefined}
-              title="A PDF of these Magic cards by Crystal Commerce category, to check them by hand. Changes nothing."
+              title={over1
+                ? "A PDF of these Magic cards at $1.00 or more today, by Crystal Commerce category, with today's prices. Changes nothing."
+                : "A PDF of these Magic cards by Crystal Commerce category, with today's prices, to check them by hand. Changes nothing."}
               onClick={() => {
                 if (printing) return;
                 setOpen(false);
-                onPrint();
+                onPrint(over1);
               }}
             >
-              {printing ? 'Printing…' : 'Print MTG?'}
+              {printing ? 'Printing…' : `Print MTG (${over1 ? '>$1' : 'all'})`}
             </button>
-          )}
+          ))}
           {onPrintPokemon && (
             <button
               type="button"

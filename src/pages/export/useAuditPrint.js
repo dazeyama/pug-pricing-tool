@@ -3,10 +3,13 @@ import { useToast } from '../../components/Toast.jsx';
 import { matchLines, scryfallCards } from '../../lib/ccExport.js';
 import { loadSets } from '../../lib/scryfall.js';
 import {
-  UNMATCHED, auditSections, cardBucket, flagBanner, flaggedBuys, matchCategory, pokemonPrintLines, pokemonSections,
-  printLines, savedCategory,
+  OVER_1, UNMATCHED, auditSections, cardBucket, flagBanner, flaggedBuys, matchCategory, pokemonPrintLines,
+  pokemonSections, printLines, savedCategory,
 } from '../../lib/auditPrint.js';
-import { deliver, openPrintTab } from './printTab.js';
+import { sellPriceFor } from '../../lib/sellPrice.js';
+import { todaysPrices } from '../../lib/todaysPrices.js';
+import { useSettings, useSettingsReady } from '../../state/settings.jsx';
+import { deliver, openPrintTab, setStep } from './printTab.js';
 
 const SYMBOL_PX = 64;   // drawn 17pt tall: sharp on paper
 // Scryfall's promo shooting star (Secret Lair's own symbol): the symbol for a
@@ -122,10 +125,13 @@ const flaggedNote = (flags) => (flags.length ? ` 🚩 ${flags.join(', ')} flagge
  */
 export function useAuditPrint() {
   const toast = useToast();
+  const { values } = useSettings();
+  const ready = useSettingsReady();   // prices at the store's percentages, not the built-in ones (decision 389)
   const [printing, setPrinting] = useState(false);
 
-  const print = useCallback(async ({ lines, load, title, fileName, game = 'mtg', flagOf = null }) => {
-    if (printing) return;
+  // `over1`: Print MTG (>$1) (decision 405): only the cards whose market price today is $1.00 or more.
+  const print = useCallback(async ({ lines, load, title, fileName, game = 'mtg', flagOf = null, over1 = false }) => {
+    if (printing || !ready()) return;
     const pokemon = game === 'pokemon';
     const choose = pokemon ? pokemonPrintLines : printLines;
     const nothing = (all) => {
@@ -159,8 +165,24 @@ export function useAuditPrint() {
           return;
         }
       }
+      // Today's market price on every row (decision 404), as the export and the stickers work it
+      // out: today's price for the card's condition, before the Sell Price's steps and floor.
+      setStep(tab, "Fetching today's prices…");
+      const today = await todaysPrices(chosen, { onStep: (text) => setStep(tab, text) });
+      const pct = values[pokemon ? 'fallback_pct_pokemon' : 'fallback_pct_mtg'];
+      const prices = new Map(chosen.map((l) => [l.id, sellPriceFor(l, { ...today.get(l.id), pct }).value]));
+      const priceOf = (line) => prices.get(line.id) ?? null;
+      if (over1) {
+        chosen = chosen.filter((l) => (priceOf(l) ?? 0) >= OVER_1);
+        if (!chosen.length) {
+          tab?.close();
+          toast('No Magic cards at $1.00 or more today: nothing to print.', 'err');
+          return;
+        }
+      }
+      setStep(tab, pokemon ? 'Sorting the cards by set…' : "Finding each card's Crystal Commerce category…");
       if (pokemon) {
-        const sections = pokemonSections(chosen);
+        const sections = pokemonSections(chosen, priceOf);
         const { flagText, flags } = flagging(chosen.map((l) => flagOf?.(l) ?? null));
         const { auditPdf } = await import('../../lib/auditPdf.js');
         deliver(auditPdf({ title, sections, flagText }), fileName, tab);
@@ -181,6 +203,7 @@ export function useAuditPrint() {
           line,
           category: saved !== undefined ? saved : matchCategory(byId.get(line.id)),
           bucket: cardBucket(cards.get(line.scryfall_id) ?? more.get(line.scryfall_id)),
+          price: priceOf(line),
         };
       });
       const sections = auditSections(placed);
@@ -198,7 +221,7 @@ export function useAuditPrint() {
     } finally {
       setPrinting(false);
     }
-  }, [printing, toast]);
+  }, [printing, ready, toast, values]);
 
   return { print, printing };
 }

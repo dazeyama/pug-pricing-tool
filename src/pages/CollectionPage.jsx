@@ -298,19 +298,27 @@ function CollectionScreen({ id }) {
    * Commerce category; once Completed, what it exported. In any status (team
    * feedback, 2026-10-16), and it needs no user or edit lock: it changes nothing.
    */
-  function printCollection() {
+  /** `over1`: Print MTG (>$1) (decision 405), only the cards at $1.00 or more today. */
+  function printCollection(over1 = false) {
     if (offline) {
       toast('No connection: printing needs it to find the Crystal Commerce categories.', 'err');
       return;
     }
     const name = system ? "Can't upload cards" : buy.customer_name;
-    print({ lines: col.lines, title: `Audit — ${name}`, fileName: `audit-${fileSafe(name)}.pdf` });
+    print({
+      lines: col.lines,
+      title: `Audit — ${name}${over1 ? ' ($1 and up)' : ''}`,
+      fileName: `audit-${fileSafe(name)}${over1 ? '-over-1' : ''}.pdf`,
+      over1,
+    });
   }
 
-  // EXPORT ▾ → Print PKM? (decision 280): its Pokémon cards by set. Nothing is fetched, so no connection needed.
+  // EXPORT ▾ → Print PKM? (decision 280): its Pokémon cards by set, with today's prices (decision 404),
+  // so it needs the connection.
   const hasPokemon = col.lines.some((l) => l.game === 'pokemon' && movesOn(l));
   const printPokemonBlockedWhy = firstReason([
     [!hasPokemon, 'No Pokémon cards here'],
+    [offline, "No connection: the printout needs today's prices"],
   ]);
   // EXPORT ▾ → Print PKM Stickers? (decision 281): today's prices first, so it needs the connection.
   const printStickersBlockedWhy = firstReason([
