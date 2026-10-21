@@ -50,8 +50,14 @@ const columns = (by, menu) => [
             2026-10-21; decisions 432, 433). Not the System collections' own fixed notes, which say what
             they're for. */}
         {!c.system_key && c.notes?.trim() && (
-          <HoverChip className="note-mark" chipClass="note-chip" height={NOTE_CHIP_HEIGHT} chip={() => c.notes.trim()}
-            aria-label={`Note: ${c.notes}`}>
+          <HoverChip
+            className="note-mark"
+            chipClass="note-chip"
+            height={NOTE_CHIP_HEIGHT}
+            // A NOTE: badge first, as the cards-by-game chip's MTG / PKM (owner, 2026-10-21; decision 434).
+            chip={() => <><span className="game-badge note">NOTE:</span>{c.notes.trim()}</>}
+            aria-label={`Note: ${c.notes}`}
+          >
             *
           </HoverChip>
         )}

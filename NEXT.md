@@ -7,7 +7,7 @@ and function.
 ## Open
 
 - **Unpushed** (2026-10-21): no Notes column on the Collections tab, its width to the name (decision 431); a note's
-  * after the name, the note on pointing at it (432), in the cards-by-game chip's style (433). Help's "The tables" (Collections) still lists **Notes** and
+  * after the name, the note on pointing at it (432), in the cards-by-game chip's style (433), with a NOTE: badge (434). Help's "The tables" (Collections) still lists **Notes** and
   doesn't mention the *: out of date until the owner asks for Help.
 - **F2 reopened: the backup can hit the 8 s statement limit** (decision 430): a Download backup failed with a 500
   once, and Restore's first press with "canceling statement due to statement timeout" (`backup_export`, one call for
@@ -56,6 +56,10 @@ and function.
   - watch JustTCG usage and the plan (Appendix D 4);
 
 ## Done
+
+- 2026-10-21: **A NOTE: badge in the note's chip** (decision 434, the owner's ask): before the note text, shaped as
+  MTG / PKM, grey (`CollectionsPage.jsx`, `base.css` `.game-badge.note`). Lint, tests and the build pass; untested
+  in the app.
 
 - 2026-10-21: **The note's chip like the cards-by-game chip** (decision 433, the owner's ask): pointing at a note's *
   shows the note in the same floating chip, wrapped at 320 px; the chip's placement shared as
