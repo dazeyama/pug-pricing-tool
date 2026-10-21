@@ -150,7 +150,7 @@ store's database.
 
 ## What it does
 
-The app is for buying cards from customers. She types what's printed on a card. The app finds that
+The app is for buying cards from customers. The worker types what's printed on a card. The app finds that
 exact printing and shows its price in every condition. One key adds it to the buy.
 
 There are three ways cards come in:
@@ -175,9 +175,9 @@ Six tabs do the work: **Home**, **Buy**, **Collections**, **Calendar**, **Settin
 
 1. Open the app in a web browser: <code>https://dazeyama.github.io/pug-pricing-tool/</code>
 2. Type the store password and press **Sign in**.
-3. The first time on a computer, she names the computer and presses **Save**.
-4. She picks her name from **Pick user**, at the top right.
-5. She opens **Buy** and types a card.
+3. The first time on a computer, the worker names the computer and presses **Save**.
+4. They pick their name from **Pick user**, at the top right.
+5. They open **Buy** and type a card.
 
 <details>
 <summary><strong>What the app needs</strong></summary>
@@ -187,8 +187,8 @@ Six tabs do the work: **Home**, **Buy**, **Collections**, **Calendar**, **Settin
   store computers. Please use a wider window."* instead of the app.
 - **An internet connection.** Without one, a yellow bar says *"No connection — changes are
   paused."* Nothing can change until it comes back. Everything reloads by itself when it does.
-- **A user picked.** Anything that changes data needs one. With no user picked, those buttons look
-  greyed out and the user button pulses when one is pressed.
+- **A worker picked.** Anything that changes data needs one. With no worker picked, those buttons look
+  greyed out and the worker button pulses when one is pressed.
 
 </details>
 
@@ -202,7 +202,7 @@ Six tabs do the work: **Home**, **Buy**, **Collections**, **Calendar**, **Settin
 
 Six things make the rest of the app make sense.
 
-**A buy** is one customer at the counter. She builds it on the **Buy** tab and finishes it with
+**A buy** is one customer at the counter. The worker builds it on the **Buy** tab and finishes it with
 **CONFIRM BUY**. It then sits on that day in the **Calendar**.
 
 **A collection** is anything on the **Collections** tab: an overnight buy, a project, or one of the
@@ -259,7 +259,7 @@ Prices are rounded **down** by these steps. Cash and Credit amounts are too.
 **Projects round up.** A project's prices use the same steps, rounded **up**: its cards are the
 store's own, priced to sell. Cash and Credit still round down.
 
-A price she types by hand is never rounded. Sell Prices on an export are rounded **up** too (see
+A price the worker types by hand is never rounded. Sell Prices on an export are rounded **up** too (see
 [Exporting](#-exporting-to-crystal-commerce)).
 
 <br>
@@ -275,40 +275,40 @@ The header is the same on every tab.
 | | |
 |---|---|
 | **Logo and name** | Go to **Home**. |
-| **User button** | Shows who's working at this computer, in her colour. Reads **Pick user** when no one is picked. |
-| **Sign-out icon** | Beside the user button. Un-picks the current user. The next person picks a user before doing anything. |
+| **Worker button** | Shows who's working at this computer, in their colour. Reads **Pick user** when no one is picked. |
+| **Sign-out icon** | Beside the worker button. Un-picks the current worker. The next worker picks their name before doing anything. |
 | **?** | Opens **Help**: this guide, inside the app, a section at a time, with pictures. <kbd>←</kbd> and <kbd>→</kbd> turn the pages. |
 | **Search buys & collections…** | Finds cards already bought. See below. |
-| **Tabs** | Home, Buy, Collections, Calendar, Settings. **Changelog** sits apart on the right. Clicking the tab she's already on takes it back to its start. |
-| **Who's on** | Left of Changelog: a green dot with **N Connected** (computers with the app open), then a dot in each picked user's colour with **N Users selected**. Hovering either names them. |
+| **Tabs** | Home, Buy, Collections, Calendar, Settings. **Changelog** sits apart on the right. Clicking the tab they're already on takes it back to its start. |
+| **Who's on** | Left of Changelog: a green dot with **N Connected** (computers with the app open), then a dot in each picked worker's colour with **N Users selected**. Hovering either names them. |
 
-### Users
+### Workers
 
-Clicking the user button opens the list of users.
+Clicking the worker button opens the list of workers.
 
 | | |
 |---|---|
-| **A name** | Picks that user. A ✓ marks the current one. |
-| **⋯** | Opens that user's colour swatches and **Delete…**. |
-| **Colour swatches** | Change the user's colour. It shows on everything she does. |
-| **Delete…** | Asks first. A deleted user disappears from the list. Past buys still show her name. |
+| **A name** | Picks that worker. A ✓ marks the current one. |
+| **⋯** | Opens that worker's colour swatches and **Delete…**. |
+| **Colour swatches** | Change the worker's colour. It shows on everything they do. |
+| **Delete…** | Asks first. A deleted worker disappears from the list. Past buys still show their name. |
 | **+ Add user…** | Type a name and press **Add**. A colour is given automatically. |
 
 Esc or a click outside closes the list.
 
 ### Header search
 
-She types two or more characters: a card name, a collector number, a set code, or any mix, or a
+The worker types two or more characters: a card name, a collector number, a set code, or any mix, or a
 customer's name or phone number. Results list every buy and collection holding a matching card, and
 every buy and collection under a matching customer.
 
-- **Customers** come first: every buy and collection whose customer name contains what she typed,
+- **Customers** come first: every buy and collection whose customer name contains what they typed,
   or whose phone number contains the digits. A phone number is seven digits or more, however it's
   written: *(555) 123-4567*, *555-123-4567*, *5551234567* and *123-4567* all find the same customer,
   and a phone number searches no cards. Each shows where it is, the customer's name and phone, and
   how many cards it holds.
 - When a customer is found, **Show all** switches itself on, so their Completed buys show too.
-  Unticking it keeps it off until she types something else.
+  Unticking it keeps it off until they type something else.
 - Then **Overnight buys**, **Projects** and **System** holding a matching card, each under its own
   heading, then **buys** filed under their day (*Today*, *Yesterday*, then the date).
 - Each card result shows where it is and every matching card, with its condition.
@@ -349,7 +349,7 @@ Bars under the header appear when something needs attention.
 The first tab, and where the app opens. It shows what needs doing today. Everything on it updates
 by itself. Nothing on Home changes data: every button goes somewhere else.
 
-The background band takes the current user's colour.
+The background band takes the current worker's colour.
 
 ### Today
 
@@ -426,7 +426,7 @@ nothing. Each computer has its own buy in progress.
 
 ### The search bar
 
-She types what's printed on the card: the name, then the collector number, then the set code. Any
+The worker types what's printed on the card: the name, then the collector number, then the set code. Any
 part can be left out. The sample text shows one: `Lightning Bolt 117/331 2X2`.
 
 - The number works with or without the set size (`117` or `117/331`).
@@ -463,7 +463,7 @@ details flips between the two.
 **JP** chip shows in the bar. Japanese names can't be typed, so Japanese cards are found by their
 numbers:
 
-| She types | It finds |
+| The worker types | It finds |
 |---|---|
 | `025/165 SV2a` | Card 25 in the set SV2a. |
 | `025/165` | Card 25 in each Japanese set of 165 cards. |
@@ -554,7 +554,7 @@ Three links open the card on other sites, each in its own pop-up window:
 | | |
 |---|---|
 | **NORMAL \| HOLO \| REVERSE** | The finish. A finish never printed is greyed out. |
-| **Version** | When a finish has several versions (1st Edition, Poké Ball pattern…), she picks one here. A **TCGplayer** tag marks a version only TCGplayer lists. If TCGplayer's versions can't load (JustTCG's daily limit, say), a version TCGplayer sells on its own goes in only at a manual price (<kbd>Alt</kbd>+<kbd>M</kbd>): ADD CARD says so. A card already saved on one keeps it when edited: the list shows it as **As saved**. |
+| **Version** | When a finish has several versions (1st Edition, Poké Ball pattern…), the worker picks one here. A **TCGplayer** tag marks a version only TCGplayer lists. If TCGplayer's versions can't load (JustTCG's daily limit, say), a version TCGplayer sells on its own goes in only at a manual price (<kbd>Alt</kbd>+<kbd>M</kbd>): ADD CARD says so. A card already saved on one keeps it when edited: the list shows it as **As saved**. |
 | **Other TCGplayer versions…** | Under the versions. Asks TCGplayer for versions the card database doesn't list (stamped reprints, Prize Pack cards…). They join the list with the **TCGplayer** tag, or it says *No other TCGplayer versions*. It costs a JustTCG lookup, so it waits to be clicked unless the card is missing a product of its own. |
 | **From TCGplayer** | The card itself is from TCGplayer's catalogue: TCGdex doesn't list it yet. |
 | **Chips** | Rarity and language. |
@@ -579,7 +579,7 @@ Cardmarket.
 | **Use TCGplayer** | Ignores JustTCG. NM comes from TCGplayer's Market Price, the rest from the fallback percentages. Click again to go back. |
 | **Use Cardmarket** | Ignores JustTCG. NM comes from Cardmarket's European price in dollars, the rest from the fallback percentages. Click again to go back. |
 | | Both are greyed out when there's no price to switch to. |
-| **✎ Manual price** | She types the price herself. It belongs to the picked condition: picking another condition clears it. |
+| **✎ Manual price** | The worker types the price themselves. It belongs to the picked condition: picking another condition clears it. |
 | **×** | Clears the manual price. |
 
 **Right-click a condition** to lock it, for a whole pile of LP cards, say: this card takes it, and
@@ -587,7 +587,7 @@ every card picked after starts on it instead of NM, with a **🔒** where NM's �
 again to unlock; clicking another condition changes this card only. **Right-click Use TCGplayer** or
 **Use Cardmarket** locks that source the same way, the button reading **🔒 Use TCGplayer**; a card
 that has no such price unlocks it and says so. Both locks hold while the screen is open, through
-CONFIRM BUY and CLEAR, and are forgotten when she leaves it, like EN | JP. A line being edited and a
+CONFIRM BUY and CLEAR, and are forgotten when they leave it, like EN | JP. A line being edited and a
 phone's scans keep their own condition.
 
 The line underneath says when the prices were updated. It also says when there's no JustTCG key,
@@ -615,7 +615,7 @@ lists the reasons. Clicking keeps the list open. The reasons:
 | **CLEAR** | Empties the card area. The buy list stays. |
 | **ADD CARD** | Adds the card to the buy list. The new line flashes. The card area clears for the next card, unless mimp mode (🦇) is on: then the card stays selected, Qty goes back to 1 and the search box takes the focus. |
 
-ADD CARD needs a user, a selected card, a price and a connection. Hovering it says what's missing.
+ADD CARD needs a picked worker, a selected card, a price and a connection. Hovering it says what's missing.
 Adding the same printing, finish, condition and price again raises that line's quantity instead of
 adding a new line.
 
@@ -638,7 +638,7 @@ screen starts on Added.
 | **Hover a line** | Shows the card's picture beside the list. |
 | **Click a line** | Loads the card back to edit it. The suggestions show every printing of its name, with the card being edited first (and selected), even after another search, till the edit ends. The button reads **SAVE EDIT** and saves over the line. **CANCEL** or **Esc** leaves it as it was. Edited cards take today's price. |
 | **Right-click a card** | **Set Rate**: the card's own Cash % and Credit %, beside the card. **Maintain ratio** keeps Credit at twice Cash; a red box warns when Cash is above Credit. **Clear Rate** takes it off. A card with its own rate is tinted, with a ✎ tag. |
-| **Right-click bulk** | **Set value**: the line's own price per item, showing what it pays as she types. **Back to $1.50** (or **Clear value**) goes back to Settings. |
+| **Right-click bulk** | **Set value**: the line's own price per item, showing what it pays as they type. **Back to $1.50** (or **Clear value**) goes back to Settings. |
 | **×** | Removes the card, after asking. With several copies, it asks how many. **Remove all N** takes every copy. |
 
 ### Totals and rates
@@ -661,7 +661,7 @@ strongest first:
 The labels show the buy's own rate. A **CUSTOM** chip beside them means a card has its own rate.
 The price panel's Credit and Cash use the selected card's rate; hover them to see why.
 
-Clicking a percentage opens **Rates for this buy**. She can set a different Cash % or Credit % for
+Clicking a percentage opens **Rates for this buy**. The worker can set a different Cash % or Credit % for
 this buy only. A ✎ marks a custom rate. **Use master rates** goes back to the ones in Settings.
 **Done** closes it.
 
@@ -676,9 +676,9 @@ day page shows the same Cash and Credit as the confirm window, with a ✎ on a c
 
 | | |
 |---|---|
-| **Customer name** | Required. Past customers are suggested as she types. |
-| **Phone number** | Required. Ten digits. Formatted as she types. |
-| **Purchase price** | Required. **Cash** or **Credit**, then the amount actually paid. Nothing is filled in for her. |
+| **Customer name** | Required. Past customers are suggested as they type. |
+| **Phone number** | Required. Ten digits. Formatted as they type. |
+| **Purchase price** | Required. **Cash** or **Credit**, then the amount actually paid. Nothing is filled in for them. |
 | **Notes** | Optional. |
 | **🚩 Flag check for condition** | Optional. Flags the buy on its day page to have its cards' condition checked before export. |
 
@@ -836,7 +836,7 @@ A row open on another computer says so: *"✎ open on Front Counter (Clio)"*.
 | | |
 |---|---|
 | **Name** | Required. Up to 80 characters. |
-| **Phone number** | Required. Ten digits. Formatted as she types. |
+| **Phone number** | Required. Ten digits. Formatted as they type. |
 | **Last 4 ID** | Required. The last 4 letters or digits of the customer's ID. Never suggested or filled in. |
 | **Notes** | Optional. |
 
@@ -898,17 +898,17 @@ Completed →**, and **Reopen** after it.
 
 ### Moving through the statuses
 
-**Mark as Priced →** opens **Mark as Priced**. It shows Market, Cash and Credit. She types the
+**Mark as Priced →** opens **Mark as Priced**. It shows Market, Cash and Credit. The worker types the
 cash offer. The credit offer is worked out from it, at this collection's rates, rounded down.
 **Save offer** records both.
 
-**Mark as Paid/Ours →** opens **Mark as Paid/Ours**. It shows the totals and the offer. She picks
+**Mark as Paid/Ours →** opens **Mark as Paid/Ours**. It shows the totals and the offer. The worker picks
 **Cash** or **Credit** and types the price actually paid. **Mark Paid/Ours** locks the collection.
 **Mark as Rejected?** switches to the Reject window instead. On a project or overnight buy made by
 **Convert** from a buy that stayed on its day, the price starts at **$0**, saying *The payment is on
 Buy N, which kept it: $0 here counts it once*; another amount can still be typed.
 
-**Rejected** comes from Processing or Priced. She can type a reason (optional). **Reject** locks
+**Rejected** comes from Processing or Priced. The worker can type a reason (optional). **Reject** locks
 the collection. It's kept with its prices and offer until it's deleted.
 
 **Mark as Completed →** (or the dropdown) marks a Paid/Ours collection or project **Completed**: done
@@ -949,7 +949,7 @@ line of its own. **Set Rate** still works on it: rates don't reach the export.
 
 ### 📞 Calls
 
-On a Priced collection, **📞 (N)** sits beside the phone number. She clicks it after each call to
+On a Priced collection, **📞 (N)** sits beside the phone number. The worker clicks it after each call to
 the customer about the offer. N counts the calls. Hovering lists each call, with when and who. Each
 call is a Changelog entry.
 
@@ -974,7 +974,7 @@ Sends the collection's Magic cards to Crystal Commerce. See
 
 | Status | What EXPORT does |
 |---|---|
-| Processing, Priced, Rejected | Opens the export, but only downloads the file. **Nothing is saved:** the status stays, and the cards can be exported again. No user needed. |
+| Processing, Priced, Rejected | Opens the export, but only downloads the file. **Nothing is saved:** the status stays, and the cards can be exported again. No worker needs to be picked. |
 | Paid/Ours, Ours | Opens the export for the Magic cards not exported yet. Afterwards those cards are marked exported, with the **Custom SKU** and their Sell Prices in green. Once the file has downloaded (and after downloading it again, or making stickers) it asks **Mark this collection Completed?**: **Yes, Completed** marks it so, **No, keep it Paid/Ours** leaves the status as it is. Once every Magic card is exported, EXPORT downloads the same file again (see [The file](#the-file)). |
 | Paid/Ours, no Magic cards | Says so: there's nothing to export. Completed is set from the status menu. |
 | Completed | Downloads the same file again. Nothing changes. |
@@ -1018,7 +1018,7 @@ notes, and its name is the customer's. It kept the price paid too when the whole
 Completed cards kept the buy on its day, the payment stayed with that buy and the project starts at
 **$0**.
 
-**Convert to buy** moves every card, both games, to a new buy confirmed by her now, at the prices
+**Convert to buy** moves every card, both games, to a new buy confirmed by them now, at the prices
 they have. The buy gets the next number in line, not the one it had before it was a project. The
 project is deleted and today's day page opens. The Changelog shows it under **Buys** as *Project
 converted to buy*.
@@ -1031,7 +1031,7 @@ wasn't uploaded to Crystal Commerce*.
 ### Delete overnight buy…
 
 From the ⋯ menu; on a project it reads **Delete project…**. Two steps. First a warning with the card count and
-**Continue**. Then she types the name. **Delete forever** removes it and every card in it. This can't be undone.
+**Continue**. Then they type the name. **Delete forever** removes it and every card in it. This can't be undone.
 
 ### Can't upload cards
 
@@ -1073,7 +1073,7 @@ Two month grids side by side: **Magic** and **Pokémon**. Weeks start on Sunday.
 | **Today** | Back to this month. |
 | **Export Cash Buys (N)** | Downloads the month's cash buys as a CSV. See below. |
 
-Each day shows how many buys were confirmed that day. One dot per buy, in the colour of the user who
+Each day shows how many buys were confirmed that day. One dot per buy, in the colour of the worker who
 confirmed it. More than 12 buys shows 11 dots and a plus. Today is highlighted. A buy with both
 games counts in both grids.
 
@@ -1118,7 +1118,7 @@ A line under it says when the day was exported, by whom, and how many cards coul
 
 | | |
 |---|---|
-| **Check Crystal Commerce matches** | Magic days. A practice run of the export. Nothing is exported. Products she picks are remembered. |
+| **Check Crystal Commerce matches** | Magic days. A practice run of the export. Nothing is exported. Products the worker picks are remembered. |
 | **Mark Paid/Ours again…** | Once buys are Completed. Puts the day's Completed buys back to Paid/Ours: unlocked, back in the search, showing buy prices again. For a day exported or completed too early. Magic buys marked Completed by hand stay Completed, their cards crossed out: each one's own ⋯ → **Mark Paid/Ours again** brings it back. The dialog says how many buys go back and how many stay. With only hand-completed buys, it's greyed out. |
 
 Marking a day Paid/Ours again doesn't undo the downloaded file. If it was uploaded to Crystal
@@ -1126,8 +1126,8 @@ Commerce, the stock there is fixed by hand.
 
 ### A buy
 
-Each buy is a panel in the colour of the user who confirmed it. Its header shows **Buy N** (its
-number for good: see [Buy numbers](#cancel-and-confirm-buy)), the user, the time and its status,
+Each buy is a panel in the colour of the worker who confirmed it. Its header shows **Buy N** (its
+number for good: see [Buy numbers](#cancel-and-confirm-buy)), the worker, the time and its status,
 and, after Export single buy, its own **Custom SKU** (*101626-42*).
 
 - The customer's name, phone number and notes.
@@ -1296,7 +1296,7 @@ inventory actually has wins:
 3. **The same name** as the set. This covers about 71% of products.
 4. **Known renames and patterns,** such as `Commander: <set>` and `Universes Beyond: <set>`.
 5. **None.** Every category is searched, and the card goes to **Needs a choice**. The category of
-   the product she picks can be remembered for the whole set.
+   the product the worker picks can be remembered for the whole set.
 
 ### Picking the product
 
@@ -1330,7 +1330,7 @@ The cards fall into three groups, four on an **Export MTG csv (>$1.49)**.
 **Settings → Export rates for bulk**: bulk, left out of the file. Each shows its Sell Price. Nothing
 to decide.
 
-**Needs a choice.** More than one product could fit. For each card she picks one:
+**Needs a choice.** More than one product could fit. For each card the worker picks one:
 
 | | |
 |---|---|
@@ -1342,8 +1342,8 @@ to decide.
 | **Always use the picked product's category for…** | Shows when the app didn't know the set's category. Ticked, the choice is remembered for the whole set. |
 
 **Matched.** Folded away when there are more than 8. Each card shows its product, its category, and
-*"Bought $X → Sell $Y"*. A **remembered** tag means a pick from before. **picked** means she just
-picked it. **Change** opens the card: she can pick another product or type a Sell price, then
+*"Bought $X → Sell $Y"*. A **remembered** tag means a pick from before. **picked** means they just
+picked it. **Change** opens the card: they can pick another product or type a Sell price, then
 **Done** or **Cancel**.
 
 **Can't upload.** No product fits. Each says why. **Find a product…** moves it back to Needs a
@@ -1356,7 +1356,7 @@ choice.
 A summary: how many cards, how many rows, and the **Custom SKU**.
 
 If any cards can't upload, a red list names them, and on a (>…) export the pulled cards are listed
-in amber under them. She pulls those cards out of the physical batch and ticks **I've pulled these
+in amber under them. The worker pulls those cards out of the physical batch and ticks **I've pulled these
 cards out of the batch**. They're left out of the file. The can't-upload ones are marked **Can't
 upload** and copied to **Can't upload cards**; the pulled ones are marked **Pulled**, in amber, and
 copied to **Bulk pulled from exports**. Both are frozen like exported cards: **Undo export…** brings
@@ -1370,7 +1370,7 @@ is made.
 **When Export N cards fails:**
 
 - **A buy changed on another computer, but not its cards** (a note, a payment): nothing was exported
-  yet. The picks stay. She presses **Export** again.
+  yet. The picks stay. The worker presses **Export** again.
 - **The cards changed on another computer:** nothing was exported. **Cancel**, then **EXPORT** again.
 - **The answer was lost** (flaky wifi): the dialog looks at the cards to see whether the export went
   through (for Can't upload cards and Bulk pulled from exports, at the cards the copies came from).
@@ -1378,7 +1378,7 @@ is made.
   connection, or those original cards are gone), it says it may have exported anyway: **Cancel** and
   look at the page before trying again.
 
-The app never uploads the file. She uploads it in Crystal Commerce's Mass Create page.
+The app never uploads the file. The worker uploads it in Crystal Commerce's Mass Create page.
 
 ### The Sell Price
 
@@ -1448,12 +1448,12 @@ Reads a CardBot CSV back into cards. Magic only.
 
 The app matches each row to its exact printing. The rows fall into three groups.
 
-**Needs a choice.** She picks the printing. Printings with a different number or finish are listed
+**Needs a choice.** The worker picks the printing. Printings with a different number or finish are listed
 after the rest. **Find another printing by name, then Enter…** searches. **Skip this row** leaves it
 out.
 
 **Matched.** Each row shows its printing. Tags say how it matched: **by SKU**, **remembered**,
-**export match**, **picked**, or **another set**. **Change** lets her pick a different one.
+**export match**, **picked**, or **another set**. **Change** lets them pick a different one.
 
 **Can't import.** Rows that can't be used, each with its line number and why.
 
@@ -1464,7 +1464,7 @@ The footer shows the cards, their value at the file's prices, and the rows skipp
 - Into an empty collection: **Import N cards**.
 
 Prices are the file's. A TCGplayer file with no price uses TCGplayer's market price for that SKU.
-**REPRICE?** brings them up to today. Printings she picks are remembered for the next file.
+**REPRICE?** brings them up to today. Printings the worker picks are remembered for the next file.
 
 <br>
 
@@ -1502,7 +1502,7 @@ recognise printed letters and shipped as one fixed 3 MB file.
 the store password once, then name the phone ("Chase's phone").
 
 The phone lists every computer with a price screen open: the Buy tab, a project or a collection.
-Each shows the computer's name, what it's on, and its user (**Pick user** when no one is picked).
+Each shows the computer's name, what it's on, and its worker (**Pick user** when no one is picked).
 Tap one to scan into it.
 
 - **Greyed out:** the computer is on Pokémon only, or its list can't take cards (Paid/Ours,
@@ -1524,7 +1524,7 @@ Tap one to scan into it.
 
 ### The scanning screen
 
-Top to bottom: the computer it's paired with (its list, its user, how many cards scanned, 🔔 / 🔇 for
+Top to bottom: the computer it's paired with (its list, its worker, how many cards scanned, 🔔 / 🔇 for
 the sounds, **Unpair**); the **condition**; the **finish**; the camera; the **info box**; the
 **last card**; **Scan card** and **+1**; and **Auto?**, **Reset view**, **💡** and **■ Stop**.
 
@@ -1628,7 +1628,7 @@ Cards printed before 2014 have no set code at the bottom.
   artist, set symbol and copyright year. One clearly ahead goes in by itself, once two looks agree;
   otherwise the printing list opens, best matches first. Tap the one whose set symbol matches.
   **View all** shows every printing, oldest to newest. **Skip this card** adds nothing. **Let me type
-  it**, when the list is for the wrong card: the name box opens empty, she types the right name, and
+  it**, when the list is for the wrong card: the name box opens empty, they type the right name, and
   that card's printing list opens instead.
 - **Couldn't read the name. Which card is it?** opens when no reading names the title: after a few
   looks on its own, at once from Scan card. The best guess is typed in. Correct it or pick from the
@@ -1680,7 +1680,7 @@ with a **Required** badge until one is uploaded.
 
 | | |
 |---|---|
-| **Computer name** | Shown on buys in progress and on collections open here. Saved when she leaves the box. |
+| **Computer name** | Shown on buys in progress and on collections open here. Saved when they leave the box. |
 | **Sign out** | Signs this computer out of the app. The store's other computers and phones stay signed in. The store password is needed again here. |
 
 ### API keys
@@ -1700,7 +1700,7 @@ lookups allowed per minute, and when the daily count resets (midnight UTC).
 
 ### Master Buy Percentages
 
-**Cash %** and **Credit %**: what the store pays, as a share of Market. Saved when she leaves the
+**Cash %** and **Credit %**: what the store pays, as a share of Market. Saved when they leave the
 box. A value it can't use shows a red message, and the box goes back to what was saved. Changes
 apply at once to buys in progress and to unpaid collections. Confirmed buys and
 Paid/Ours collections keep the rates they had.
@@ -1726,7 +1726,7 @@ $1.50*, every amount shown as money with two decimals. Bulk already in a list ke
 
 Where a Magic card counts as bulk at an export or on a printout. A slider from 1¢ to $3 with two
 dots: **red** up to the first (true bulk, **50¢** by default), **amber** up to the second (a $1
-card, **$1.49** by default), plain above; the **Key** box says the same. **EDIT** (a user needed)
+card, **$1.49** by default), plain above; the **Key** box says the same. **EDIT** (a worker picked)
 frees the dots: drag one, or move it 1¢ with the arrow keys (10¢ with Shift). **SAVE** keeps it and
 the Changelog records it; **CANCEL** puts it back.
 
@@ -1739,7 +1739,7 @@ same two dots. A card already pulled stays pulled when the dots move.
 ### Export sell floor
 
 The lowest Sell Price an export writes, **$0.40** by default: a card whose rounded-up price comes to
-less is raised to it. The **Floor** box saves when she leaves it (a user needed; $0.40 at the lowest,
+less is raised to it. The **Floor** box saves when they leave it (a worker picked; $0.40 at the lowest,
 $10 at most) and the Changelog records it. Beside it, a small table shows the store's rounding steps
 with a worked example, switched between **Buy** (rounded down) and **Sell** (rounded up, then the
 floor). Cards already exported keep their prices. Printouts and stickers use the price before the
@@ -1759,17 +1759,17 @@ A forgotten match is worked out again on the next export.
 
 | | |
 |---|---|
-| **Download backup** | Saves a file of every buy, collection, card, Changelog entry, staff user and setting, and the remembered Crystal Commerce matches. It doesn't hold the Crystal Commerce CSVs or the API key. |
+| **Download backup** | Saves a file of every buy, collection, card, Changelog entry, worker and setting, and the remembered Crystal Commerce matches. It doesn't hold the Crystal Commerce CSVs or the API key. |
 | **Last backup** | When the last one was downloaded. |
 | **Restore from backup…** | Replaces everything with a backup file. See below. |
 
 The free plan has no automatic daily backups. A backup should be downloaded at least once a week.
 The banner under the header reminds everyone after 7 days.
 
-**Restoring** shows what's in the file beside what's here now. She types **RESTORE** and presses
+**Restoring** shows what's in the file beside what's here now. The worker types **RESTORE** and presses
 **Restore** twice:
 
-1. The first press downloads a backup of what's here now. She checks it's in the Downloads folder.
+1. The first press downloads a backup of what's here now. They check it's in the Downloads folder.
 2. The second press, within two minutes, restores. Later than that, a fresh backup downloads first.
 
 Then everything is replaced, on every computer. Computer names, the Crystal Commerce CSVs and the
@@ -1812,12 +1812,12 @@ buy's or a collection's), completions, and Cash Buys downloads.
 | **Time and headline** | When, and what happened. New things are green. Deleted things are red, with a cross on the line. |
 | **Name** | The buy, collection, day or month. Click to open it. A deleted one isn't a link. |
 | **+N / −N** | Cards added and removed, placeholders included. Bulk is counted apart in the words: *7 cards + 100 bulk bought*. |
-| **User** | Who did it, in her colour. |
+| **User** | The worker who did it, in their colour. |
 | **Market / Cash / Credit** | Totals, where they apply. |
 | **Card rows** | Each card added (+) or removed (−), with its price. A card a phone scanned into a collection ends *· 📱 scanned on Chase's phone*. |
 | **Field rows** | Each detail changed, before → after. |
 
-Cards added to one collection by one user, each within 15 minutes of the last, show as one panel.
+Cards added to one collection by one worker, each within 15 minutes of the last, show as one panel.
 A restored backup shows as a marker across the timeline.
 
 20 panels to a page. **‹ Newer** and **Older ›** turn the pages. **↑ Back to top** sits at the

@@ -13,7 +13,8 @@ and function.
 - **Unpushed** (2026-10-21): the smoke pass's fixes and notes (decisions 426, 427): Show all after a customer
   search, backups a table and a page at a time, the Convert count, the buy's undo naming Bulk pulled, the one-rate
   *, TEST.md's reworded cases and decision 329's note; the lock on a finish switch, CONFIRM BUY closing when its
-  buy is gone, "Ours" for projects, "are empty", today's prints. None needs a migration.
+  buy is gone, "Ours" for projects, "are empty", today's prints; Help's "worker" and they/them (428). None needs a
+  migration.
 - **Not run by Claude in the 2026-10-21 smoke pass, still the owner's:** section 10 (the phone), the two-computer,
   network-off and store cases.
 - **The live site's first inventory upload on v1.0.1-day1** (decision 414): the live site most likely holds a
@@ -47,6 +48,10 @@ and function.
   - watch JustTCG usage and the plan (Appendix D 4);
 
 ## Done
+
+- 2026-10-21: **Help says "worker", and they/them** (decision 428, the owner's ask): 69 lines of `README.md`;
+  she/her became they/them, the person using the app "the worker"; on-screen words (**Pick user**, **N Users
+  selected**, the Changelog's **User**) kept as the app shows them.
 
 - 2026-10-21: **The smoke pass's notes N2, N3, N5, N8 and N9** (decision 427). The 🔒 price-source lock is checked
   again on each finish or version (`PricingScreen.jsx` `settledFor`); CONFIRM BUY closes when the draft has no
