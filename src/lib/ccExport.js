@@ -223,7 +223,7 @@ export async function saveExport({ target, matches, cant, pulled = [], setMaps, 
     p_set_maps: setMaps,
     p_user: userId,
     p_device: deviceId,
-    // Export MTG csv (>$1)'s cards under $1, pulled to Bulk pulled from exports (decision 406).
+    // Export MTG csv (>…)'s bulk cards, pulled to Bulk pulled from exports (decisions 406, 416).
     ...(pulled.length ? { p_pulled: pulled } : {}),
   });
   if (error) {

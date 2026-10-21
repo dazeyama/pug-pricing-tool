@@ -110,6 +110,45 @@
 .bulk-table tbody th { white-space: nowrap; font-weight: 500; }
 .bulk-box { display: inline-flex; align-items: center; gap: 6px; }
 .bulk-box input { width: 80px; }
+/* Bulk export rates (decision 416): 1¢ to $3, red to the first dot, amber to the second, the
+   rest kept; the dots move only after EDIT. */
+.cut-head-buttons { margin-left: auto; display: flex; gap: 6px; }
+.cut-slider { margin: 30px 12px 4px; }
+.cut-track { position: relative; height: 6px; }
+.cut-band { position: absolute; top: 0; bottom: 0; }
+.cut-band-red { background: var(--bad); }
+.cut-band-amber { background: var(--warn); }
+.cut-band-kept { background: var(--text); }
+.cut-dot {
+  position: absolute;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  border: 3px solid var(--text);
+  border-radius: 50%;
+  background: var(--bg);
+  transform: translate(-50%, -50%);
+  touch-action: none;
+}
+.cut-slider.is-editing .cut-dot-red, .cut-slider.is-editing .cut-dot-amber { cursor: grab; }
+.cut-slider.is-editing .cut-dot-red:active, .cut-slider.is-editing .cut-dot-amber:active { cursor: grabbing; }
+.cut-slider.is-editing .cut-dot-red { border-color: var(--bad); }
+.cut-slider.is-editing .cut-dot-amber { border-color: var(--warn); }
+.cut-dot:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.cut-dot-value {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.cut-dot-red .cut-dot-value { color: var(--bad); }
+.cut-dot-amber .cut-dot-value { color: var(--warn); }
+.cut-ends { display: flex; justify-content: space-between; margin: 12px -6px 0; font-size: 12px; color: var(--muted); }
+.cut-legend { list-style: none; margin: 14px 0 0; padding: 0; font-size: 13px; display: grid; gap: 6px; }
+.cut-swatch { display: inline-block; width: 18px; height: 6px; margin-right: 4px; vertical-align: middle; position: static; }
 /* Credit blue and Cash green (owner, 2026-10-15): the headings, the boxes and their % signs. */
 .tier-table th.is-credit { color: var(--credit); }
 .tier-table th.is-cash { color: var(--cash); }

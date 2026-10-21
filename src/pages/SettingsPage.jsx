@@ -2,6 +2,7 @@ import MasterInventoryPanel from './settings/MasterInventoryPanel.jsx';
 import PercentagesPanel from './settings/PercentagesPanel.jsx';
 import RatesTiersPanel from './settings/RatesTiersPanel.jsx';
 import BulkValuesPanel from './settings/BulkValuesPanel.jsx';
+import BulkExportRatesPanel from './settings/BulkExportRatesPanel.jsx';
 import ApiKeysPanel from './settings/ApiKeysPanel.jsx';
 import UsagePanel from './settings/UsagePanel.jsx';
 import FallbackPanel from './settings/FallbackPanel.jsx';
@@ -50,6 +51,7 @@ export default function SettingsPage() {
         <RatesTiersPanel />
         <FallbackPanel />
         <BulkValuesPanel />
+        <BulkExportRatesPanel />
         <CcMatchingPanel />
         <BackupsPanel />
         <footer className="settings-footer">

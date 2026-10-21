@@ -2,6 +2,8 @@ import { useRef, useState } from 'react';
 import { useDismiss } from '../lib/useDismiss.js';
 import { decklistText } from '../lib/decklist.js';
 import { useToast } from './Toast.jsx';
+import { useBulkCut } from '../state/settings.jsx';
+import { bulkWords, keptTag, keptWords } from '../lib/bulkCut.js';
 
 /**
  * The blue EXPORT button (docs/EXPORT_FUNCTION.md 8): on the day pages and a
@@ -39,6 +41,7 @@ export default function ExportButton({
   const [open, setOpen] = useState(false);
   const wrap = useRef(null);
   const toast = useToast();
+  const cut = useBulkCut();
   const menu = Boolean(onPrint || onPrintPokemon || onPrintStickers);
 
   useDismiss(() => setOpen(false), { ref: wrap, when: open });
@@ -82,7 +85,8 @@ export default function ExportButton({
       {button}
       {open && (
         <div className={`more-list export-list${up ? ' up' : ''}`} role="menu">
-          {/* Print MTG (all) and (>$1) (decision 405): every card, or the ones at $1.00 or more today. */}
+          {/* Print MTG (all) and (>…) (decision 405): every card, or the ones over the Bulk export rates'
+              amber today (decision 416). */}
           {onPrint && [false, true].map((over1) => (
             <button
               key={over1 ? 'over1' : 'all'}
@@ -91,7 +95,7 @@ export default function ExportButton({
               className={`more-item${printing ? ' is-disabled' : ''}`}
               aria-disabled={printing || undefined}
               title={over1
-                ? "A PDF of these Magic cards at $1.00 or more today, by Crystal Commerce category, with today's prices. Changes nothing."
+                ? `A PDF of these Magic cards at ${keptWords(cut)} today, by Crystal Commerce category, with today's prices. Changes nothing.`
                 : "A PDF of these Magic cards by Crystal Commerce category, with today's prices, to check them by hand. Changes nothing."}
               onClick={() => {
                 if (printing) return;
@@ -99,7 +103,7 @@ export default function ExportButton({
                 onPrint(over1);
               }}
             >
-              {printing ? 'Printing…' : `Print MTG (${over1 ? '>$1' : 'all'})`}
+              {printing ? 'Printing…' : `Print MTG (${over1 ? keptTag(cut) : 'all'})`}
             </button>
           ))}
           {onPrintPokemon && (
@@ -135,8 +139,8 @@ export default function ExportButton({
               {printing ? 'Printing…' : 'Print PKM Stickers?'}
             </button>
           )}
-          {/* `splitExport` (decision 406): Export MTG csv (all), as it was, and (>$1), whose cards
-              under $1 are pulled to Bulk pulled from exports. */}
+          {/* `splitExport` (decision 406): Export MTG csv (all), as it was, and (>…), whose bulk cards
+              (the Bulk export rates, decision 416) are pulled to Bulk pulled from exports. */}
           {(splitExport ? [false, true] : [null]).map((over1) => (
             <button
               key={over1 ? 'over1' : 'all'}
@@ -145,7 +149,7 @@ export default function ExportButton({
               className={`more-item${exportBlocked ? ' is-disabled' : ''}`}
               aria-disabled={exportBlocked ? true : undefined}
               title={exportBlocked ?? (over1
-                ? "The Crystal Commerce Mass Create file of the cards whose Sell Price is $1.00 or more; the ones under $1 are pulled to Bulk pulled from exports"
+                ? `The Crystal Commerce Mass Create file of the cards whose Sell Price is ${keptWords(cut)}; the ones at ${bulkWords(cut)} are pulled to Bulk pulled from exports`
                 : exportTitle)}
               onClick={() => {
                 setOpen(false);
@@ -153,7 +157,7 @@ export default function ExportButton({
                 else onClick(over1);
               }}
             >
-              {over1 == null ? exportLabel : `${exportLabel} (${over1 ? '>$1' : 'all'})`}
+              {over1 == null ? exportLabel : `${exportLabel} (${over1 ? keptTag(cut) : 'all'})`}
             </button>
           ))}
         </div>

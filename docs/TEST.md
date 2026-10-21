@@ -456,6 +456,12 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
 - [ ] **Master Buy Percentages** read 33.34 / 66.68 (decision 333); a value the app can't use shows red and goes back to
       what was saved.
 - [ ] Low-end and high-end rates, Master Fallback Percentages and Bulk values show and save.
+- [ ] **Bulk export rates** (decision 416): red to 50¢, amber to $1.49; the dots don't move. With no user, EDIT
+      pulses the user button. EDIT, drag the amber dot (or arrow keys, 1¢; Shift, 10¢): the values follow, the dots
+      stay a cent apart. CANCEL puts it back. EDIT again, move it, SAVE: "Bulk export rates saved", and on another
+      computer the slider moves too. The Changelog has "Setting changed: Bulk export rates" under Actions. A day's
+      EXPORT ▾ then reads Print MTG (>$…) and Export MTG csv (>$…) at the new amber, and Print MTG's key gives the
+      amounts. Put it back to 50¢ / $1.49 after.
 - [ ] **Settings saves don't overwrite** (decision 354): Settings open on two computers; a change on one shows on the
       other within a second or two. Clicking into a box and out again shows no "saved" toast. (A save from a screen
       that missed a change is refused, "Settings changed on another computer: check and save again"; the database

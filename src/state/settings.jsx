@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase.js';
 import { useLiveTable } from '../lib/useLiveTable.js';
 import { DEFAULT_TIERS } from '../lib/rates.js';
 import { DEFAULT_BULK_VALUES } from '../lib/bulk.js';
+import { DEFAULT_BULK_CUT, bulkCutFrom } from '../lib/bulkCut.js';
 import { dbErrorCode } from '../lib/dbErrors.js';
 import { useToast } from '../components/Toast.jsx';
 import { PICK_USER_FIRST, useStaff } from './staff.jsx';
@@ -32,6 +33,8 @@ export const DEFAULTS = {
   rate_tiers: DEFAULT_TIERS,
   // Bulk values (docs/TEAM_FEEDBACK.md 5.2): read with bulk.js bulkValuesFrom.
   bulk_values: DEFAULT_BULK_VALUES,
+  // Bulk export rates (decision 416): read with bulkCut.js bulkCutFrom, or useBulkCut.
+  bulk_export_rates: DEFAULT_BULK_CUT,
 };
 
 const SettingsContext = createContext(null);
@@ -120,6 +123,13 @@ export function SettingsProvider({ children }) {
 
 export function useSettings() {
   return useContext(SettingsContext);
+}
+
+/** The Bulk export rates (decision 416), checked: { red, amber }. */
+export function useBulkCut() {
+  const { values } = useSettings();
+  const saved = values.bulk_export_rates;
+  return useMemo(() => bulkCutFrom(saved), [saved]);
 }
 
 /** A pricing action's check (decision 389): false, with a toast, while Settings haven't loaded. */

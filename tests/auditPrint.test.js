@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  OVER_1, UNMATCHED, auditRow, auditSections, cardBucket, matchCategory, pokemonPrintLines, pokemonRow, pokemonSections,
+  UNMATCHED, auditRow, auditSections, cardBucket, matchCategory, pokemonPrintLines, pokemonRow, pokemonSections,
   priceTone, printLines, savedCategory,
 } from '../src/lib/auditPrint.js';
 import { magicTreatmentLabel } from '../src/lib/printings.js';
@@ -95,15 +95,14 @@ test("a card's colour group, as pull-pdf's", () => {
   assert.equal(cardBucket(null), 'unknown');
 });
 
-// Decision 404: a printout row's price, red under 50¢, amber under $1.
+// Decision 404's bands, at the Bulk export rates' defaults (decision 416): red to 50¢, amber to $1.49.
 test('price bands: true bulk, a $1 card, the rest', () => {
   assert.equal(priceTone(0.1), 'bulk');
-  assert.equal(priceTone(0.49), 'bulk');
-  assert.equal(priceTone(0.5), 'dollar');
-  assert.equal(priceTone(0.99), 'dollar');
-  assert.equal(priceTone(1), null);
+  assert.equal(priceTone(0.5), 'bulk');
+  assert.equal(priceTone(0.51), 'dollar');
+  assert.equal(priceTone(1.49), 'dollar');
+  assert.equal(priceTone(1.5), null);
   assert.equal(priceTone(null), null);
-  assert.equal(OVER_1, 1, 'Print MTG (>$1) takes $1.00 and up');
 });
 
 test("a row's words", () => {

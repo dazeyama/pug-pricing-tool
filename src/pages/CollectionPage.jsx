@@ -21,7 +21,8 @@ import { OfferModal, PaidModal } from './collections/DealModals.jsx';
 import { PROJECT_EXPORTED, useCollection, useKeptBuy } from './collections/useCollection.js';
 import { useCollectionLock } from './collections/useCollectionLock.js';
 import ExportButton from '../components/ExportButton.jsx';
-import { useSettings } from '../state/settings.jsx';
+import { useBulkCut, useSettings } from '../state/settings.jsx';
+import { keptFileTag, keptWords } from '../lib/bulkCut.js';
 import { useDevice } from '../state/device.jsx';
 import { useStaff } from '../state/staff.jsx';
 import { useConnection } from '../state/connection.jsx';
@@ -57,6 +58,7 @@ function CollectionScreen({ id }) {
   // Print PKM Stickers? (decision 281): price tags at today's sell prices, saving nothing.
   const stickers = useStickerPrint();
   const { values } = useSettings();
+  const cut = useBulkCut();
   const lock = useCollectionLock(id, { deviceId, userId: user?.id });
   const col = useCollection(id, { deviceId, onLockLost: lock.recheck });
   // 'offer' | 'paid' | 'reopen' | 'unlock' | 'reject' | 'unreject' | 'takeover' | 'delete' | 'convert' | 'unexport'
@@ -68,8 +70,8 @@ function CollectionScreen({ id }) {
   const buy = col.buy;
   const system = Boolean(buy?.system_key);   // Can't upload cards (export spec 9)
   const [exportStep, setExportStep] = useState(null);   // 'warn' | 'dialog' | 'pokemon'
-  const [exportOver1, setExportOver1] = useState(false);   // Export MTG csv (>$1) (decision 406)
-  // The second system collection (decision 406): cards under $1 pulled from exports.
+  const [exportOver1, setExportOver1] = useState(false);   // Export MTG csv (>…) (decisions 406, 416)
+  // The second system collection (decision 406): bulk cards pulled from exports.
   const pulledSystem = buy?.system_key === 'pulled';
   const systemName = pulledSystem ? 'Bulk pulled from exports' : "Can't upload cards";
   const [repricing, setRepricing] = useState(false);    // REPRICE? (owner, 2026-10-01)
@@ -219,7 +221,7 @@ function CollectionScreen({ id }) {
     if (buy && !system && buy.status === 'paid') setAsking('completeAfter');
   };
 
-  /** `over1`: Export MTG csv (>$1) (decision 406): its cards under $1 pulled, not in the file. */
+  /** `over1`: Export MTG csv (>…) (decisions 406, 416): its bulk cards pulled, not in the file. */
   function startExport(over1 = false) {
     setExportOver1(Boolean(over1) && !system);
     const stamped = col.lines.filter((l) => l.cc_status === 'exported');
@@ -249,7 +251,7 @@ function CollectionScreen({ id }) {
     if (buy && !system && buy.status === 'completed') {
       if (!stamped.length) {
         toast(col.lines.some((l) => l.cc_status === 'cant_upload' || l.cc_status === 'pulled')
-          ? "Nothing here was uploaded (can't upload, or pulled under $1): there's no file."
+          ? "Nothing here was uploaded (can't upload, or pulled as bulk): there's no file."
           : 'Completed with nothing exported: reopen it (back to Paid/Ours) to export.', 'err');
         return;
       }
@@ -313,7 +315,7 @@ function CollectionScreen({ id }) {
    * Commerce category; once Completed, what it exported. In any status (team
    * feedback, 2026-10-16), and it needs no user or edit lock: it changes nothing.
    */
-  /** `over1`: Print MTG (>$1) (decision 405), only the cards at $1.00 or more today. */
+  /** `over1`: Print MTG (>…) (decisions 405, 416), only the cards over the Bulk export rates' amber today. */
   function printCollection(over1 = false) {
     if (offline) {
       toast('No connection: printing needs it to find the Crystal Commerce categories.', 'err');
@@ -322,8 +324,8 @@ function CollectionScreen({ id }) {
     const name = system ? systemName : buy.customer_name;
     print({
       lines: col.lines,
-      title: `Audit — ${name}${over1 ? ' ($1 and up)' : ''}`,
-      fileName: `audit-${fileSafe(name)}${over1 ? '-over-1' : ''}.pdf`,
+      title: `Audit — ${name}${over1 ? ` (${keptWords(cut)})` : ''}`,
+      fileName: `audit-${fileSafe(name)}${over1 ? `-${keptFileTag(cut)}` : ''}.pdf`,
       over1,
     });
   }
@@ -376,7 +378,7 @@ function CollectionScreen({ id }) {
         : 'Nothing matched: every card stays here.', 'ok');
     } else {
       const cant = (result.cant > 0 ? ` ${result.cant} can't upload: copied to Can't upload cards.` : '')
-        + (result.pulled > 0 ? ` ${result.pulled} under $1 pulled: copied to Bulk pulled from exports.` : '');
+        + (result.pulled > 0 ? ` ${result.pulled} bulk pulled: copied to Bulk pulled from exports.` : '');
       toast(result.cards > 0
         ? `Exported ${cards} (${rows}), Custom SKU ${result.sku}.${cant}`
         : `Nothing matched, so there's no file.${cant}`, 'ok');
@@ -844,7 +846,7 @@ function CollectionScreen({ id }) {
             <ExportDialog
               mode="export"
               over1={exportOver1}
-              title={`Export ${buy.customer_name}${exportOver1 ? ' ($1 and up)' : ''} to Crystal Commerce`}
+              title={`Export ${buy.customer_name}${exportOver1 ? ` (${keptWords(cut)})` : ''} to Crystal Commerce`}
               items={col.lines.filter((l) => l.game === 'mtg' && movesOn(l) && !l.cc_status).map((line) => ({ line, where: '' }))}
               target={{ kind: 'collection', buy_id: buy.id, version: buy.version }}
               fileName={`cc-mass-create-${fileSafe(buy.customer_name)}-${fileStamp(new Date())}.csv`}
@@ -871,7 +873,7 @@ function CollectionScreen({ id }) {
             >
               {pulledSystem ? (
                 <p>
-                  These cards were pulled from exports as under $1. Exporting them sends them all to Crystal Commerce, at
+                  These cards were pulled from exports as bulk. Exporting them sends them all to Crystal Commerce, at
                   today's Sell Prices; the ones that match leave this collection.
                 </p>
               ) : (
@@ -887,7 +889,7 @@ function CollectionScreen({ id }) {
               mode="export"
               over1={exportOver1}
               fileOnly={statusLabel(buy.status)}
-              title={`Export ${buy.customer_name}${exportOver1 ? ' ($1 and up)' : ''} to Crystal Commerce (file only)`}
+              title={`Export ${buy.customer_name}${exportOver1 ? ` (${keptWords(cut)})` : ''} to Crystal Commerce (file only)`}
               // Not the cards already exported: they went in their own file (decision 345).
               items={col.lines.filter((l) => l.game === 'mtg' && movesOn(l) && !l.cc_status).map((line) => ({ line, where: '' }))}
               target={{ kind: 'collection', buy_id: buy.id, version: buy.version }}

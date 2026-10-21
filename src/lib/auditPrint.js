@@ -9,21 +9,9 @@ import { lineTags } from './lineFormat.js';
 /** The last section: cards with no Crystal Commerce product (team plan 3.3). */
 export const UNMATCHED = 'Unmatched';
 
-/** Print MTG (>$1) and Export MTG csv (>$1) take cards at this price or more (decisions 405, 406). */
-export const OVER_1 = 1;
-
-/**
- * A printout row's price band (decision 404): 'bulk' under 50¢ (red, true bulk), 'dollar' from
- * 50¢ to 99¢ (amber, a $1 card), else null (plain ink). No price: null.
- * @param {number|null|undefined} price
- * @returns {'bulk'|'dollar'|null}
- */
-export function priceTone(price) {
-  if (price == null || Number.isNaN(Number(price))) return null;
-  if (price < 0.5) return 'bulk';
-  if (price < OVER_1) return 'dollar';
-  return null;
-}
+// A printout row's price band, red or amber (decision 404), at the Settings' Bulk export rates
+// (decision 416).
+export { priceTone } from './bulkCut.js';
 
 const FINISHES = ['nonfoil', 'foil', 'etched'];
 const FINISH_WORDS = { foil: 'Foil', etched: 'Etched' };
@@ -61,7 +49,7 @@ const collator = new Intl.Collator('en', { sensitivity: 'base', numeric: true })
 export function printLines(lines) {
   const magic = (lines ?? []).filter((l) => l.game === 'mtg' && !l.bulk_kind && !l.struck_at);
   const pending = magic.filter((l) => !l.completed_at);
-  // A card pulled under $1 (decision 406) is printed as a Can't upload one is: under Unmatched.
+  // A card pulled as bulk (decision 406) is printed as a Can't upload one is: under Unmatched.
   return pending.length ? pending : magic.filter((l) => ['exported', 'cant_upload', 'pulled'].includes(l.cc_status));
 }
 

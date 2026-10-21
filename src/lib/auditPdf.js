@@ -14,6 +14,7 @@
 import { jsPDF } from 'jspdf';
 import { formatMoney } from './money.js';
 import { priceTone } from './auditPrint.js';
+import { DEFAULT_BULK_CUT, bandWords } from './bulkCut.js';
 
 /**
  * A row's number chip: the collector number alone when its set is its
@@ -77,7 +78,7 @@ const INK = [20, 20, 26];        // text, the bands
 const FLAG_RGB = [200, 30, 30];
 const FLAG_BANNER = 20;
 const LINE = [190, 192, 200];    // the rows' hairlines
-// A row's price (decision 404): red under 50¢ (true bulk), amber under $1 (a $1 card), else ink.
+// A row's price (decision 404): red (true bulk), amber (a $1 card), else ink, at the Bulk export rates (416).
 const TONE_RGB = { bulk: [200, 30, 30], dollar: [196, 120, 0] };
 
 // PDF's built-in fonts draw Windows-1252 (Latin-1 and a few more: curly
@@ -121,9 +122,10 @@ function fit(doc, text, width) {
  * @param {Record<string, { data: string, ratio: number }>} [p.symbols]  set code → its symbol (a white PNG; width / height)
  * @param {Date} [p.printedAt]
  * @param {string|null} [p.flagText]  a flagged buy's banner (decision 301), red across every page under its header
+ * @param {{ red: number, amber: number }} [p.cut]  the Bulk export rates (decision 416)
  * @returns {jsPDF}
  */
-export function auditPdf({ title, sections, symbols = {}, printedAt = new Date(), flagText = null }) {
+export function auditPdf({ title, sections, symbols = {}, printedAt = new Date(), flagText = null, cut = DEFAULT_BULK_CUT }) {
   const doc = new jsPDF({ unit: 'pt', format: 'letter', orientation: 'portrait' });
   const top = flagText ? TOP + FLAG_BANNER + 4 : TOP;
   const cards = sections.reduce((n, s) => n + s.cards, 0);
@@ -261,7 +263,7 @@ export function auditPdf({ title, sections, symbols = {}, printedAt = new Date()
     // Right to left: today's price, the condition, then the set and number, each in its own column.
     const top = y + (ROW - CHIP_H) / 2;
     if (r.price != null) {
-      const tone = priceTone(r.price);
+      const tone = priceTone(r.price, cut);
       doc.setFont('helvetica', tone ? 'bold' : 'normal');
       doc.setFontSize(PRICE_PT);
       doc.setTextColor(...(TONE_RGB[tone] ?? INK));
@@ -340,10 +342,11 @@ export function auditPdf({ title, sections, symbols = {}, printedAt = new Date()
         kx += doc.getTextWidth(text);
       };
       part("Today's market price:  ", [110, 114, 128]);
+      const bands = bandWords(cut);
       part('amber', TONE_RGB.dollar, true);
-      part(' = $1 card   ', [110, 114, 128]);
+      part(` = $1 card, ${pdfSafe(bands.amber)}   `, [110, 114, 128]);
       part('red', TONE_RGB.bulk, true);
-      part(' = true bulk card', [110, 114, 128]);
+      part(` = true bulk card, ${pdfSafe(bands.red)}`, [110, 114, 128]);
     }
   }
   return doc;

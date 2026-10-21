@@ -18,7 +18,8 @@ import { downloadMassCreate, restampTimes } from '../lib/ccExport.js';
 import { withoutRestamps } from '../lib/massCreate.js';
 import { todaysPrices } from '../lib/todaysPrices.js';
 import { sellPriceFor } from '../lib/sellPrice.js';
-import { useSettings, useSettingsReady } from '../state/settings.jsx';
+import { useBulkCut, useSettings, useSettingsReady } from '../state/settings.jsx';
+import { keptFileTag, keptWords } from '../lib/bulkCut.js';
 import RemoveModal from '../components/RemoveModal.jsx';
 import { walkInStatus } from './collections/status.js';
 import { useConnection } from '../state/connection.jsx';
@@ -98,6 +99,7 @@ function DayScreen({ game, day }) {
   const [completeStep, setCompleteStep] = useState('');   // what COMPLETE is doing (today's prices…)
   const { values: settingValues } = useSettings();
   const settingsReady = useSettingsReady();
+  const cut = useBulkCut();
   // Print? and Print buy (docs/TEAM_FEEDBACK.md 3): the audit printout, changing nothing.
   const { print, printing } = useAuditPrint();
   // Print PKM Stickers? on a Pokémon day (decision 282): price tags at today's sell prices, saving nothing.
@@ -457,7 +459,7 @@ function DayScreen({ game, day }) {
    * once they're all Completed, the same file again from the stamps, and
    * nothing changes.
    */
-  /** `over1`: Export MTG csv (>$1) (decision 406): the cards under $1 pulled, not in the file. */
+  /** `over1`: Export MTG csv (>…) (decisions 406, 416): the bulk cards pulled, not in the file. */
   async function startExport(over1 = false) {
     if (exportBlocked) {
       toast(`${exportBlocked}.`, 'err');
@@ -491,7 +493,7 @@ function DayScreen({ game, day }) {
     }
     if (!stamped.lines.length) {
       toast(cantCards || pulledCards
-        ? "Nothing here was uploaded: there's no file. Every card is Can't upload or pulled under $1."
+        ? "Nothing here was uploaded: there's no file. Every card is Can't upload or pulled as bulk."
         : "These buys were marked Completed without being exported, so there's no file: mark them Paid/Ours again (⋯), then EXPORT.", 'err');
       return;
     }
@@ -528,7 +530,7 @@ function DayScreen({ game, day }) {
    * EXPORT ▾ → Print? (docs/TEAM_FEEDBACK.md 3.1): the cards EXPORT would
    * take, or once the day is exported, what it exported; blocked when EXPORT is.
    */
-  /** `over1`: Print MTG (>$1) (decision 405), only the cards at $1.00 or more today. */
+  /** `over1`: Print MTG (>…) (decisions 405, 416), only the cards over the Bulk export rates' amber today. */
   function printDay(over1 = false) {
     if (exportBlocked) {
       toast(`${exportBlocked}.`, 'err');
@@ -546,8 +548,8 @@ function DayScreen({ game, day }) {
     const flagged = new Map(mine.filter((b) => b.condition_check).map((b) => [b.id, `Buy ${numberOf(b)}`]));
     print({
       lines: dayLines,
-      title: `Audit — Magic${over1 ? ' ($1 and up)' : ''}, ${dayTitle(day)}`,
-      fileName: `audit-magic-${day}${over1 ? '-over-1' : ''}.pdf`,
+      title: `Audit — Magic${over1 ? ` (${keptWords(cut)})` : ''}, ${dayTitle(day)}`,
+      fileName: `audit-magic-${day}${over1 ? `-${keptFileTag(cut)}` : ''}.pdf`,
       flagOf: (l) => flagged.get(l.buy_id) ?? null,
       over1,
     });
@@ -587,7 +589,7 @@ function DayScreen({ game, day }) {
   }
 
   /** A buy's ⋯ → Print buy (docs/TEAM_FEEDBACK.md 3.1): that buy alone, any day. */
-  /** `over1`: a Magic buy's Print buy (>$1) (decision 409), only the cards at $1.00 or more today. */
+  /** `over1`: a Magic buy's Print buy (>…) (decisions 409, 416), only the cards over the amber today. */
   function printBuy(b, n, over1 = false) {
     if (game === 'pokemon') {
       print({
@@ -601,8 +603,8 @@ function DayScreen({ game, day }) {
     }
     print({
       lines: b.buy_lines,
-      title: `Audit — Buy ${n}${over1 ? ' ($1 and up)' : ''}, ${dayDate(day)}`,
-      fileName: `audit-magic-${day}-buy-${n}${over1 ? '-over-1' : ''}.pdf`,
+      title: `Audit — Buy ${n}${over1 ? ` (${keptWords(cut)})` : ''}, ${dayDate(day)}`,
+      fileName: `audit-magic-${day}-buy-${n}${over1 ? `-${keptFileTag(cut)}` : ''}.pdf`,
       flagOf: b.condition_check ? () => `Buy ${n}` : null,
       over1,
     });
@@ -627,7 +629,7 @@ function DayScreen({ game, day }) {
     setExportingBuy(null);
     const cards = `${result.cards} card${result.cards === 1 ? '' : 's'}`;
     const cant = (result.cant > 0 ? ` ${result.cant} can't upload: copied to Can't upload cards.` : '')
-      + (result.pulled > 0 ? ` ${result.pulled} under $1 pulled: copied to Bulk pulled from exports.` : '');
+      + (result.pulled > 0 ? ` ${result.pulled} bulk pulled: copied to Bulk pulled from exports.` : '');
     toast(result.cards > 0
       ? `Exported ${cards} (${result.rows} row${result.rows === 1 ? '' : 's'}), Custom SKU ${result.sku}.${cant}`
       : `Nothing matched, so there's no file.${cant}`, 'ok');
@@ -703,7 +705,7 @@ function DayScreen({ game, day }) {
           {lastExport.completed_by && <> by <UserTag user={staff.byId(lastExport.completed_by)} /></>}
           {(exportedCards > 0 || cantCards > 0 || pulledCards > 0) && (
             <>: {exportedCards} card{exportedCards === 1 ? '' : 's'}{cantCards > 0 && <>, <span className="cant-text">{cantCards} can't upload</span></>}
-              {pulledCards > 0 && <>, <span className="pulled-text">{pulledCards} pulled under $1</span></>}</>
+              {pulledCards > 0 && <>, <span className="pulled-text">{pulledCards} pulled as bulk</span></>}</>
           )}
           .{' '}These buys are Completed: locked, and left out of the header search. Prices in green are the Sell
           {' '}Prices written to the file.
@@ -809,7 +811,7 @@ function DayScreen({ game, day }) {
         <ExportDialog
           mode="export"
           over1={Boolean(exporting.over1)}
-          title={`Export ${GAME_NAMES[game]}${exporting.over1 ? ' ($1 and up)' : ''} for ${dayDate(day)} to Crystal Commerce`}
+          title={`Export ${GAME_NAMES[game]}${exporting.over1 ? ` (${keptWords(cut)})` : ''} for ${dayDate(day)} to Crystal Commerce`}
           items={mine.flatMap((b) => b.buy_lines
             .filter((l) => l.game === game && !l.completed_at && movesOn(l))
             .map((line) => ({ line, where: `Buy ${numberOf(b)}` })))}
@@ -920,7 +922,7 @@ function DayScreen({ game, day }) {
         <ExportDialog
           mode="export"
           over1={Boolean(exportingBuy.over1)}
-          title={`Export Buy ${exportingBuy.number}${exportingBuy.over1 ? ' ($1 and up)' : ''} (${GAME_NAMES[game]}, ${dayDate(day)}) to Crystal Commerce`}
+          title={`Export Buy ${exportingBuy.number}${exportingBuy.over1 ? ` (${keptWords(cut)})` : ''} (${GAME_NAMES[game]}, ${dayDate(day)}) to Crystal Commerce`}
           items={exportBuyNow.buy_lines
             .filter((l) => l.game === game && !l.completed_at && movesOn(l))
             .map((line) => ({ line, where: `Buy ${exportingBuy.number}` }))}

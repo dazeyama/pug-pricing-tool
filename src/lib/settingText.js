@@ -2,6 +2,7 @@
 // of it that changed, before → after. Pure: the database stores it with the entry.
 import { formatMoney } from './money.js';
 import { bulkItem } from './bulk.js';
+import { cutMoney } from './bulkCut.js';
 
 const pct = (v) => (v == null ? '—' : `${Number(v)}%`);
 const money = (v) => (v == null ? '—' : formatMoney(Number(v)));
@@ -36,6 +37,9 @@ export function settingSummary(key, before, after) {
   } else if (key === 'bulk_values') {
     name = 'Bulk values';
     parts = Object.keys(after ?? {}).map((kind) => part(bulkItem(kind)?.name ?? kind, before?.[kind], after[kind], money));
+  } else if (key === 'bulk_export_rates') {
+    name = 'Bulk export rates';
+    parts = [part('red up to', before?.red, after?.red, cutMoney), part('amber up to', before?.amber, after?.amber, cutMoney)];
   } else {
     parts = [part('', before, after, (v) => JSON.stringify(v ?? null))];
   }

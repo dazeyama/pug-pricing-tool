@@ -122,7 +122,7 @@
   white-space: nowrap;
 }
 .cant-text { color: var(--bad); font-weight: 700; }
-/* Pulled (decision 406): a card under $1 pulled from an export to Bulk pulled from exports, in amber. */
+/* Pulled (decision 406): a bulk card (decision 416) pulled from an export to Bulk pulled from exports, in amber. */
 .pulled-chip {
   margin-left: 8px;
   padding: 0 8px;

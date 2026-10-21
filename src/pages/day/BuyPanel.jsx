@@ -17,6 +17,8 @@ import { GAME_NAMES } from '../../lib/games.js';
 import { useDismiss } from '../../lib/useDismiss.js';
 import { COMPLETED_LOCK, MARKED_LOCK, convertLines, markedByHand } from './dayRules.js';
 import { PULLED_TIP } from '../collections/useCollection.js';
+import { useBulkCut } from '../../state/settings.jsx';
+import { bulkWords, keptTag, keptWords } from '../../lib/bulkCut.js';
 
 // A buy on a day page (spec 10.2): its panel, with its cards, totals, chips and ⋯ (FABLE_REPORT C2).
 
@@ -104,6 +106,7 @@ export default function BuyPanel({
   onExport, onUnexport, onDownloadAgain, onEditView, onPrint, onPrintStickers, printing, onFlag, tiers,
 }) {
   const [preview, setPreview] = useState(null);   // { src, top, left } while a line is hovered
+  const cut = useBulkCut();
   const hidePreview = useCallback(() => setPreview(null), []);
   const panel = useRef(null);
   const table = useRef(null);
@@ -194,13 +197,13 @@ export default function BuyPanel({
               onClick: () => onComplete(buy, number, false),
             }] : []),
             // Export single buy (owner, 2026-10-09): Magic only, like EXPORT, but any day, today's too.
-            // (all) and (>$1) as the day's EXPORT (decision 408): (>$1) pulls the cards under $1.
+            // (all) and (>…) as the day's EXPORT (decision 408): (>…) pulls the bulk cards (decision 416).
             ...(game === 'mtg' ? [false, true].map((over1) => ({
-              label: `Export single buy (${over1 ? '>$1' : 'all'})`,
+              label: `Export single buy (${over1 ? keptTag(cut) : 'all'})`,
               blocked: offOrBusy ?? (completed ? (skus.length ? "Already Completed: ⋯ → Download its file again" : 'Already Completed')
                 : lines.length ? null : 'No Magic cards in this buy'),
               title: over1
-                ? "Export this buy's Magic cards whose Sell Price is $1.00 or more; the ones under $1 are pulled to Bulk pulled from exports. The buy is Completed, the rest of the day isn't"
+                ? `Export this buy's Magic cards whose Sell Price is ${keptWords(cut)}; the ones at ${bulkWords(cut)} are pulled to Bulk pulled from exports. The buy is Completed, the rest of the day isn't`
                 : "Export just this buy's Magic cards to Crystal Commerce now; the buy is Completed, the rest of the day isn't",
               onClick: () => onExport(buy, number, over1),
             })).concat([
@@ -213,13 +216,13 @@ export default function BuyPanel({
               onClick: () => onDownloadAgain(buy, number),
             }] : []),
             // Print buy (owner, 2026-10-14; docs/TEAM_FEEDBACK.md 3.1): this buy's Magic cards by
-            // Crystal Commerce category, for a single-buy export; (all) and (>$1) (decision 409).
+            // Crystal Commerce category, for a single-buy export; (all) and (>…) (decisions 409, 416).
             ...[false, true].map((over1) => ({
-              label: `Print buy (${over1 ? '>$1' : 'all'})`,
+              label: `Print buy (${over1 ? keptTag(cut) : 'all'})`,
               needsUser: false,
               blocked: offline ? 'No connection' : printing ? 'Printing…' : lines.length ? null : 'No Magic cards in this buy',
               title: over1
-                ? "A PDF of this buy's Magic cards at $1.00 or more today, by Crystal Commerce category, with today's prices. Changes nothing."
+                ? `A PDF of this buy's Magic cards at ${keptWords(cut)} today, by Crystal Commerce category, with today's prices. Changes nothing.`
                 : "A PDF of this buy's Magic cards by Crystal Commerce category, with today's prices, to check them by hand. Changes nothing.",
               onClick: () => onPrint(buy, number, over1),
             }))]) : []),

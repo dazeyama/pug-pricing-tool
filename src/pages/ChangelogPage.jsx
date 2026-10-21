@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
 import {
   CATEGORIES, DAY_ACTIONS, MONTH_ACTIONS, DEFAULT_CATEGORIES, GONE, MADE, MILESTONES, actionsFor, categoryOf, dayHeading, entryDay, headlineOf,
-  entryWhen, foldEvents, foldedSummary, panelView,
+  entryWhen, foldEvents, foldedSummary, panelView, targetOf,
 } from '../lib/changelog.js';
 import { storeDay } from '../lib/calendar.js';
 import { formatMoney } from '../lib/money.js';
@@ -422,8 +422,8 @@ function Entry({ view, side, targets, game, onFunnel }) {
                 : first.kind === 'buy' ? 'Buy' : first.kind === 'app' ? 'Settings' : 'Collection'}
             </span>
             <strong>
-              {to ? <Link to={to}>{first.target_name}</Link>
-                : <span title={known ? 'Deleted' : undefined}>{first.target_name}</span>}
+              {to ? <Link to={to}>{targetOf(first)}</Link>
+                : <span title={known ? 'Deleted' : undefined}>{targetOf(first)}</span>}
             </strong>
             {view.games.map((g) => <GameBadge key={g} game={g} />)}
             {view.added > 0 && <span className="count-chip add">+{view.added}</span>}

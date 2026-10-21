@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Modal from '../../components/Modal.jsx';
 import LinePreview, { previewFor } from '../../components/LinePreview.jsx';
 import { useStaff } from '../../state/staff.jsx';
-import { useSettings, useSettingsReady } from '../../state/settings.jsx';
+import { useBulkCut, useSettings, useSettingsReady } from '../../state/settings.jsx';
 import { useDevice } from '../../state/device.jsx';
 import { useToast } from '../../components/Toast.jsx';
 import { lineTextWithCondition } from '../../lib/lineFormat.js';
@@ -14,7 +14,7 @@ import {
   sellPrices,
 } from '../../lib/ccExport.js';
 import { uuid } from '../../lib/uuid.js';
-import { OVER_1 } from '../../lib/auditPrint.js';
+import { bulkWords, isBulkPrice } from '../../lib/bulkCut.js';
 import { SECOND_LOOK_MS, pause } from '../../lib/timeout.js';
 
 // The export dialog (docs/EXPORT_FUNCTION.md 8.3): Matching, then Review in
@@ -37,8 +37,9 @@ import { SECOND_LOOK_MS, pause } from '../../lib/timeout.js';
  *   its status, as the dialog says it ("Processing")
  * @param {boolean} [p.pullOut]  can't-upload cards must be pulled from the batch (false: Can't upload
  *   cards itself, whose cards are already out of it; spec 9.3)
- * @param {boolean} [p.over1]  Export MTG csv (>$1) (decision 406): a card whose worked-out Sell Price is
- *   under $1.00 stays out of the file, pulled from the batch and copied to Bulk pulled from exports
+ * @param {boolean} [p.over1]  Export MTG csv (>…) (decision 406): a card whose worked-out Sell Price is
+ *   up to the Bulk export rates' amber (decision 416) stays out of the file, pulled from the batch and
+ *   copied to Bulk pulled from exports
  * @param {() => void} p.onClose
  */
 export default function ExportDialog({
@@ -65,6 +66,7 @@ export default function ExportDialog({
   const { deviceId } = useDevice();
   const { values: settings } = useSettings();
   const ready = useSettingsReady();
+  const cut = useBulkCut();
   const exporting = mode === 'export';
   const [phase, setPhase] = useState('matching');   // matching | review | confirm | saving | error
   const [run, setRun] = useState(0);                // bumped to match again (the inventory changed)
@@ -120,7 +122,7 @@ export default function ExportDialog({
 
   /** Where a line stands now: matched (with its product), choose, cant, or under1 (pulled, decision 406). */
   const stateOf = (r) => {
-    if (over1 && (sells.get(r.line.id)?.price ?? Infinity) < OVER_1) return { group: 'under1' };
+    if (over1 && isBulkPrice(sells.get(r.line.id)?.price ?? Infinity, cut)) return { group: 'under1' };
     const pick = picks.get(r.line.id);
     if (pick?.product) return { group: 'matched', product: pick.product, by: 'staff' };
     if (pick?.none) return { group: 'cant', reason: 'none' };
@@ -406,7 +408,7 @@ export default function ExportDialog({
   const toExport = cardsIn(groups.matched);
   const cantCards = cardsIn(groups.cant);
   const under1Cards = cardsIn(groups.under1);
-  // Every card to pull out of the batch before uploading: can't upload, and under $1 (decision 406).
+  // Every card to pull out of the batch before uploading: can't upload, and bulk (decisions 406, 416).
   const outCards = cantCards + under1Cards;
   const saving = phase === 'saving';
   let footer;
@@ -528,7 +530,7 @@ export default function ExportDialog({
             </section>
             {groups.under1.length > 0 && (
               <section className="xd-group under1">
-                <h4>Under $1: pulled <span className="xd-count">{groups.under1.length}</span></h4>
+                <h4>{bulkWords(cut)}: pulled <span className="xd-count">{groups.under1.length}</span></h4>
                 {groups.under1.map((r) => (
                   <div key={r.line.id} className="xd-row">
                     {lineLabel(r)}
@@ -607,7 +609,7 @@ export default function ExportDialog({
                     </p>
                   </>
                 )}
-                {/* Under $1 (decision 406): in amber, to the pulled bulk. */}
+                {/* Bulk (decision 406, its cut decision 416): in amber, to the pulled bulk. */}
                 {under1Cards > 0 && (
                   <div className="xd-pull-under1">
                     <ul>
@@ -619,9 +621,9 @@ export default function ExportDialog({
                       ))}
                     </ul>
                     <p className="hint">
-                      {fileOnly ? <>Under $1: they won't be in the file. Nothing is saved: they stay as they are.</> : (
+                      {fileOnly ? <>{bulkWords(cut)}: they won't be in the file. Nothing is saved: they stay as they are.</> : (
                         <>
-                          Under $1: they won't be in the file. They'll be marked <strong>Pulled</strong> here and copied to the{' '}
+                          {bulkWords(cut)}: they won't be in the file. They'll be marked <strong>Pulled</strong> here and copied to the{' '}
                           <strong>Bulk pulled from exports</strong> collection.
                         </>
                       )}

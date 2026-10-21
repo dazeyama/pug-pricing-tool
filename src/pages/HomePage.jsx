@@ -6,7 +6,7 @@ import { useLiveTable } from '../lib/useLiveTable.js';
 import { dayDate, dayRange, storeDay } from '../lib/calendar.js';
 import { formatMoney } from '../lib/money.js';
 import { STORE_TZ, formatTime } from '../lib/time.js';
-import { headlineOf } from '../lib/changelog.js';
+import { headlineOf, targetOf } from '../lib/changelog.js';
 import { isValuedBulk } from '../lib/bulk.js';
 import GuardButton from '../components/GuardButton.jsx';
 import CardCountsName from '../components/CardCountsName.jsx';
@@ -331,7 +331,7 @@ function HomeScreen({ today }) {
                 <div key={e.seq} className="home-event">
                   <span className="home-time">{formatTime(e.at)}</span>
                   <span>
-                    {headlineOf(e)}{e.target_name ? `: ${e.target_name}` : ''}
+                    {headlineOf(e)}{e.target_name ? `: ${targetOf(e)}` : ''}
                     {e.staff_user_name && (
                       <span className="home-who" style={{ '--c': colorVar(e.staff_user_color ?? 'pal-slate') }}> · {e.staff_user_name}</span>
                     )}

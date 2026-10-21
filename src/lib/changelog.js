@@ -135,6 +135,16 @@ export function headlineOf(e) {
   return HEADLINES[e?.action] ?? e?.action;
 }
 
+// A setting the database has no name for (migration 0006 names the ones it knew), by its key: the
+// app names it when it's shown, so a new setting needs no migration (decision 416).
+const SETTING_NAMES = { bulk_export_rates: 'Bulk export rates' };
+
+/** What an entry is about, as shown: its target, or a setting's name for its key. */
+export function targetOf(e) {
+  const name = e?.target_name ?? null;
+  return e?.action === 'setting_changed' ? SETTING_NAMES[name] ?? name : name;
+}
+
 /** Entries about a whole day (EXPORT on a day page), not one buy. */
 export const DAY_ACTIONS = new Set(['day_exported', 'day_unexported', 'day_completed']);
 /** Entries about a whole month (the Cash buys file; smoke test 2026-10-02 #10), not one buy. */

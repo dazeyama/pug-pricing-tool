@@ -3,12 +3,13 @@ import { useToast } from '../../components/Toast.jsx';
 import { matchLines, scryfallCards } from '../../lib/ccExport.js';
 import { loadSets } from '../../lib/scryfall.js';
 import {
-  OVER_1, UNMATCHED, auditSections, cardBucket, flagBanner, flaggedBuys, matchCategory, pokemonPrintLines,
+  UNMATCHED, auditSections, cardBucket, flagBanner, flaggedBuys, matchCategory, pokemonPrintLines,
   pokemonSections, printLines, savedCategory,
 } from '../../lib/auditPrint.js';
 import { sellPriceFor } from '../../lib/sellPrice.js';
 import { todaysPrices } from '../../lib/todaysPrices.js';
-import { useSettings, useSettingsReady } from '../../state/settings.jsx';
+import { useBulkCut, useSettings, useSettingsReady } from '../../state/settings.jsx';
+import { isBulkPrice, keptWords } from '../../lib/bulkCut.js';
 import { deliver, openPrintTab, setStep } from './printTab.js';
 
 const SYMBOL_PX = 64;   // drawn 17pt tall: sharp on paper
@@ -127,9 +128,11 @@ export function useAuditPrint() {
   const toast = useToast();
   const { values } = useSettings();
   const ready = useSettingsReady();   // prices at the store's percentages, not the built-in ones (decision 389)
+  const cut = useBulkCut();
   const [printing, setPrinting] = useState(false);
 
-  // `over1`: Print MTG (>$1) (decision 405): only the cards whose market price today is $1.00 or more.
+  // `over1`: Print MTG (>…) (decision 405): only the cards whose market price today is over the Bulk
+  // export rates' amber (decision 416).
   const print = useCallback(async ({ lines, load, title, fileName, game = 'mtg', flagOf = null, over1 = false }) => {
     if (printing || !ready()) return;
     const pokemon = game === 'pokemon';
@@ -173,10 +176,10 @@ export function useAuditPrint() {
       const prices = new Map(chosen.map((l) => [l.id, sellPriceFor(l, { ...today.get(l.id), pct }).value]));
       const priceOf = (line) => prices.get(line.id) ?? null;
       if (over1) {
-        chosen = chosen.filter((l) => (priceOf(l) ?? 0) >= OVER_1);
+        chosen = chosen.filter((l) => !isBulkPrice(priceOf(l) ?? 0, cut));
         if (!chosen.length) {
           tab?.close();
-          toast('No Magic cards at $1.00 or more today: nothing to print.', 'err');
+          toast(`No Magic cards at ${keptWords(cut)} today: nothing to print.`, 'err');
           return;
         }
       }
@@ -185,7 +188,7 @@ export function useAuditPrint() {
         const sections = pokemonSections(chosen, priceOf);
         const { flagText, flags } = flagging(chosen.map((l) => flagOf?.(l) ?? null));
         const { auditPdf } = await import('../../lib/auditPdf.js');
-        deliver(auditPdf({ title, sections, flagText }), fileName, tab);
+        deliver(auditPdf({ title, sections, flagText, cut }), fileName, tab);
         const count = sections.reduce((n, s) => n + s.cards, 0);
         toast(`Printout ready: ${count} card${count === 1 ? '' : 's'} in ${sections.length} set${sections.length === 1 ? '' : 's'}.`
           + flaggedNote(flags), 'ok');
@@ -210,7 +213,7 @@ export function useAuditPrint() {
       const { flagText, flags } = flagging(chosen.map((l) => flagOf?.(l) ?? null));
       // The PDF library loads only when something is printed: the app starts as light as before.
       const [{ auditPdf }, symbols] = await Promise.all([import('../../lib/auditPdf.js'), symbolsFor(sections)]);
-      deliver(auditPdf({ title, sections, symbols, flagText }), fileName, tab);
+      deliver(auditPdf({ title, sections, symbols, flagText, cut }), fileName, tab);
       const count = sections.reduce((n, s) => n + s.cards, 0);
       const unmatched = sections.find((s) => s.name === UNMATCHED)?.cards ?? 0;
       toast(`Printout ready: ${count} card${count === 1 ? '' : 's'}`
@@ -221,7 +224,7 @@ export function useAuditPrint() {
     } finally {
       setPrinting(false);
     }
-  }, [printing, ready, toast, values]);
+  }, [printing, ready, toast, values, cut]);
 
   return { print, printing };
 }
