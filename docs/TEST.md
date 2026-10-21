@@ -8,7 +8,7 @@ what happens. The findings are reported when the pass ends.
   http://localhost:5180). **Never prod.**
 - **Who:** the owner, or Claude in the browser pane at the owner's request (FABLE.md, "a smoke pass the owner asks
   for"). The owner does the phone, two-computer and store cases.
-- **How long:** about two hours, 224 cases.
+- **How long:** about two hours, 225 cases.
 
 ## Ground rules
 
@@ -424,6 +424,8 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       Pokémon day the same.
 - [ ] **Print MTG (>$1)** (decision 405): the same day: only the rows at $1.00 or more; a day with none says so and
       prints nothing.
+- [ ] **Export single buy (>$1)** (decision 408): a Magic buy's ⋯ → Export single buy (>$1): its cards under $1 are
+      pulled as on the day's export; Export single buy (all) exports them all.
 - [ ] **Export MTG csv (>$1) on a day** (decision 406): a past day with cards over and under $1: the file has only
       the ones whose Sell Price is $1.00 or more; the rest are Completed with an amber **Pulled** chip, the day's
       line says "N pulled under $1", and **Export MTG csv (all)** on another day exports everything as before.

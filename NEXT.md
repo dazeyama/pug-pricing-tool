@@ -11,16 +11,15 @@ and function.
   `C:\ClaudeProjects\temp\pug-0005\dev-run-0005.json` (550 checks, all passed); ask the owner first, after 9:30 PM
   recommended. 0005 keeps the live site working (`export_lines`' new `p_pulled` defaults to none); the app code that
   needs it (Export MTG csv (>$1), Bulk pulled from exports) can't be pushed before prod has it.
-- **Unpushed** (2026-10-20): 6 commits since the last push: the stamp check removed (400) and the team's six
-  feedback items (401–407, migration 0005). Push only on the owner's ask, once prod has 0005.
+- **Unpushed** (2026-10-20): 8 commits since the last push: the stamp check removed (400), the team's six
+  feedback items (401–407, migration 0005) and Export single buy's split (408). Push only on the owner's ask, once prod has 0005.
 - **Help out of date** (only when the owner asks), from the team's feedback (401–407): the condition and price-source
   locks (right-click, 🔒; "Condition prices"), the buy list's sort buttons ("The buy list"), today's prices and the key
   on Print MTG / Print PKM ("Print MTG?", "Print PKM?"), EXPORT ▾'s Print MTG (all) / (>$1) and Export MTG csv (all) /
   (>$1) (a day page's "The top row", a collection's "EXPORT", "Exporting to Crystal Commerce"), Bulk pulled from
   exports and the Pulled chip (beside "Can't upload cards"), and the "Mark this collection Completed?" question
   ("Moving through the statuses"). Print PKM? now needs the connection.
-- **Not built, from the feedback batch:** Export single buy stays one "all" export; Home has no tile for Bulk pulled
-  from exports (it's on the Collections tab, System); the `settings_save` first-save race is tested only one save
+- **Not built, from the feedback batch:** Home has no tile for Bulk pulled from exports (it's on the Collections tab, System); the `settings_save` first-save race is tested only one save
   after the other.
 - **Help out of date** (only when the owner asks), from the review leftovers: a buy's ⋯ has **Download its file
   again** (386) and, partly hand-completed, **Mark Paid/Ours again** (396); "a single buy's file can't be downloaded
@@ -47,6 +46,10 @@ and function.
   - watch JustTCG usage and the plan (Appendix D 4);
 
 ## Done
+
+- 2026-10-20: **Export single buy (all) and (>$1)** (decision 408, `2fd6111`), on the owner's ask: a Magic buy's ⋯
+  splits like the day's EXPORT (`BuyPanel.jsx`; `DayPage.jsx` `exportingBuy.over1`). No database change (0005 takes
+  a buy's pulled cards). Untested in the app.
 
 - 2026-10-20: **The team's six feedback items** (decisions 401–407), on the owner's ask, with their answers (today's
   market price on printouts; the file's Sell Price for the >$1 export; pulled cards to a new system collection like
