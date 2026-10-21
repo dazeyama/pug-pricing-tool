@@ -6,6 +6,8 @@ and function.
 
 ## Open
 
+- **Unpushed** (2026-10-21): no Notes column on the Collections tab, its width to the name (decision 431). Help's
+  "The tables" (Collections) still lists **Notes**: out of date until the owner asks for Help.
 - **F2 reopened: the backup can hit the 8 s statement limit** (decision 430): a Download backup failed with a 500
   once, and Restore's first press with "canceling statement due to statement timeout" (`backup_export`, one call for
   every table, 2 to 7.7 s on dev). The paged read that fixed it (decision 426) could leave cards out of the file
@@ -53,6 +55,10 @@ and function.
   - watch JustTCG usage and the plan (Appendix D 4);
 
 ## Done
+
+- 2026-10-21: **No Notes column on the Collections tab** (decision 431, the owner's ask): the column and its CSS
+  gone (`CollectionsPage.jsx` `columns`, `collections.css`), Name 19% → 29% (`export.css`): 232 px → 353 px at
+  1366 wide, measured on dev. Lint, tests and the build pass; not looked at with long names (dev's are short).
 
 - 2026-10-21: Pushed, no bump (still v1.0.1-day1), on the owner's ask: the commits since v1.0.1-day1, decisions
   426–430: the smoke pass's fixes and notes (Show all after a customer search, the Convert count, the buy's undo

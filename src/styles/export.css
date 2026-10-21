@@ -203,13 +203,13 @@
 /* + Start project and + Overnight buy, side by side in the header row, the same width. */
 .col-table-head .new-col-btn { width: 200px; text-align: center; }
 .col-section .col-table { table-layout: fixed; }
-.col-w-name { width: 19%; }
+/* The name has the old Notes column's 10% too (decision 431). */
+.col-w-name { width: 29%; }
 .col-w-phone { width: 11%; }
 .col-w-status { width: 10%; }
 .col-w-created { width: 9%; }
 .col-w-edited { width: 10%; }
 .col-w-editor { width: 10%; }
-.col-w-notes { width: 10%; }
 .col-w-offer { width: 9%; }
 .col-w-paid { width: 9%; }
 /* The ⋯ menu (owner, 2026-10-11). */

@@ -29,8 +29,9 @@ const STALE_MS = 60_000;   // a lock without a heartbeat for 60s is stale (spec 
 const STATUS_ORDER = { processing: 0, priced: 1, paid: 2, completed: 3, rejected: 4 };
 
 // The table's columns (spec 9.1), in order: the value each sorts by and its
-// cell. Offer and Paid come last, after Notes, Paid the very last (owner,
-// 2026-09-29), then the ⋯ menu (owner, 2026-10-11). `by` looks up a staff
+// cell. Offer and Paid come last, Paid the very last (owner, 2026-09-29), then
+// the ⋯ menu (owner, 2026-10-11). No Notes column: its width went to the name
+// (owner, 2026-10-21; decision 431). `by` looks up a staff
 // user (Last edited by); `elsewhere` is where a row is open on another
 // computer ("Front Counter (Dana)"); `menu` is a row's ⋯ items. An offer or
 // price not set yet (TBD) sorts as -1.
@@ -77,10 +78,6 @@ const columns = (by, menu) => [
     label: 'Last edited by',
     value: (c) => nameKey(by(c.last_edited_by)?.name ?? ''),
     cell: (c) => <td key="editor" className="col-editor"><UserTag user={by(c.last_edited_by)} /></td>,
-  },
-  {
-    key: 'notes', label: 'Notes', value: (c) => nameKey(c.notes),
-    cell: (c) => <td key="notes" className="col-notes" title={c.notes || undefined}>{c.notes}</td>,
   },
   {
     key: 'offer',
