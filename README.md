@@ -298,17 +298,26 @@ Esc or a click outside closes the list.
 
 ### Header search
 
-She types two or more characters: a card name, a collector number, a set code, or any mix. Results
-list every buy and collection holding a matching card.
+She types two or more characters: a card name, a collector number, a set code, or any mix, or a
+customer's name or phone number. Results list every buy and collection holding a matching card, and
+every buy and collection under a matching customer.
 
-- **Overnight buys**, **Projects** and **System** come first, each under its own heading, then
-  **buys** filed under their day (*Today*, *Yesterday*, then the date).
-- Each result shows where it is and every matching card, with its condition.
-- Hovering a result shows the card's picture.
+- **Customers** come first: every buy and collection whose customer name contains what she typed,
+  or whose phone number contains the digits. A phone number is seven digits or more, however it's
+  written: *(555) 123-4567*, *555-123-4567*, *5551234567* and *123-4567* all find the same customer,
+  and a phone number searches no cards. Each shows where it is, the customer's name and phone, and
+  how many cards it holds.
+- When a customer is found, **Show all** switches itself on, so their Completed buys show too.
+  Unticking it keeps it off until she types something else.
+- Then **Overnight buys**, **Projects** and **System** holding a matching card, each under its own
+  heading, then **buys** filed under their day (*Today*, *Yesterday*, then the date).
+- Each card result shows where it is and every matching card, with its condition.
+- Hovering a card result shows the card's picture.
 - **↓ ↑** move through results. **Enter** opens one. **Esc** closes the list.
 - Opening a buy goes to its day page. Opening a collection goes to its screen. The matching cards
   flash.
-- Placeholders are found by the name typed for them. Bulk never shows.
+- Placeholders are found by the name typed for them. Bulk never shows, and nor do the cards in
+  **Bulk pulled from exports**.
 
 By default it searches **Paid/Ours** only. **Show all** adds Processing, Priced, Completed and
 Rejected, and struck cards. Completed and Rejected results are faded. A struck card is crossed out
@@ -955,11 +964,13 @@ Sends the collection's Magic cards to Crystal Commerce. See
 An exported collection shows its **Custom SKU** in the list heading, whatever its status. Its
 exported cards' prices show in green: those are its Sell Prices.
 
-**EXPORT ▾** opens **Print MTG?**, **Print PKM?**, **Print PKM Stickers?** and **Export csv**.
-**Print MTG?** makes the audit printout (see [Print MTG?](#print-mtg-the-audit-printout));
-**Print PKM?** the same for the Pokémon cards, by set; **Print PKM Stickers?** price-tag stickers
-for them (see [Print PKM Stickers?](#print-pkm-stickers)). The ⋯ menu has **Print overnight buy** (or
-**Print project**) too.
+**EXPORT ▾** opens two groups. Pointing at one opens its items beside it; so does clicking it.
+**Print ▸** holds **Print MTG (all)** and **Print MTG (>$1.49)** (the audit printout, see
+[Print MTG?](#print-mtg-the-audit-printout)), **Print PKM?** (the Pokémon cards, by set) and
+**Print PKM Stickers?** (price-tag stickers, see [Print PKM Stickers?](#print-pkm-stickers)).
+**Export ▸** holds **Export MTG csv (all)** and **(>$1.49)**. The amount follows **Settings → Export
+rates for bulk**. On Can't upload cards and Bulk pulled from exports, **Export csv** sits on its own.
+The ⋯ menu has **Print overnight buy** (or **Print project**) too.
 
 **Projects have no rates.** They're the store's own cards: no custom rates, no Set Rate.
 
@@ -1015,6 +1026,17 @@ product.
   collection. The rest stay.
 - **REPRICE?** works here too.
 
+### Bulk pulled from exports
+
+The other **System** collection. **Export MTG csv (>$1.49)** leaves the cards at or under the amount
+out of the file and copies them here, each marked **Pulled** on its own list and saying where it came
+from. They're the bulk that goes elsewhere.
+
+- It's always **Completed**, and the header search never shows its cards.
+- Otherwise it works as Can't upload cards does: no phone, status controls or Delete; the search bar
+  switched off; **×** removes a card once it's put away; **EXPORT** sends them from here, with no cut.
+- **Undo export…** on the collection a card came from takes its copy back out.
+
 <br>
 
 ---
@@ -1063,8 +1085,8 @@ One game's part of every walk-in buy confirmed that day.
 |---|---|
 | **< BACK** | Back to the Calendar, on the same month. |
 | **⋯** | The day's menu. See below. |
-| **EXPORT (N) ▾** | Magic days: **Print MTG?** makes the audit printout; **Export csv** exports the day. N is the cards to export: count the pile first. |
-| **EXPORT (N) ▾** | Pokémon days: **Print PKM?** (the cards by set), **Print PKM Stickers?** (price-tag stickers) and **Complete day…** (see below). N is the cards to mark Completed. |
+| **EXPORT (N) ▾** | Magic days: two groups that open beside the menu when pointed at or clicked. **Print ▸** holds **Print MTG (all)** and **Print MTG (>$1.49)**, the audit printout; **Export ▸** holds **Export MTG csv (all)** and **(>$1.49)**, the day's export (the cut follows Settings → Export rates for bulk). N is the cards to export: count the pile first. |
+| **EXPORT (N) ▾** | Pokémon days: **Print ▸** holds **Print PKM?** (the cards by set) and **Print PKM Stickers?** (price-tag stickers); **Complete day…** sits on its own (see below). N is the cards to mark Completed. |
 
 The title shows the date and game. Once the day is exported it also shows **Exported** and the day's
 **Custom SKU**. A buy exported on its own shows its own SKU on its panel instead.
@@ -1127,14 +1149,20 @@ the list, crossed out, as a record that it went elsewhere: straight into the cas
 | **✅ Condition checked** | Flagged buys only, first in the menu. Takes the 🚩 flag off. |
 | **Mark as completed** | Completes this game's cards in this buy without exporting them: locked, and left out of the search and the day's export. On a Magic buy they're **struck** as well: a Magic buy Completed instead of exported means its cards went somewhere else. On a Pokémon buy it's Complete day… for one buy, without the Sell Prices. |
 | **Mark Paid/Ours again** | Undoes Mark as completed, and restores the cards it struck. On an exported buy it reads **Mark Paid/Ours again…** and undoes this buy's export only: Magic cards struck by Mark as completed stay Completed. |
-| **Export single buy** | Magic only. Exports just this buy, on any day, today included. The rest of the day stays as it is. Its Custom SKU is the day's with the buy's number after a dash, *101626-42*, shown on the buy. |
-| **Print buy** | The audit printout of this buy's cards: Magic by Crystal Commerce category, Pokémon by set. |
-| **Print stickers** | Pokémon only. Price-tag stickers for this buy's cards. See [Print PKM Stickers?](#print-pkm-stickers). |
+| **Print ▸** | A group: pointing at it, or clicking it, opens its items beside the menu. **Print buy (all)** and **Print buy (>$1.49)**: the audit printout of this buy's Magic cards by Crystal Commerce category, every card or only the ones over the amount (Settings → Export rates for bulk). On a Pokémon buy: **Print buy** (its cards by set) and **Print stickers** (price-tag stickers, see [Print PKM Stickers?](#print-pkm-stickers)). |
+| **Export ▸** | Magic only. **Export single buy (all)** and **Export single buy (>$1.49)** export just this buy, on any day, today included; (>$1.49) pulls the bulk to Bulk pulled from exports. The rest of the day stays as it is. Its Custom SKU is the day's with the buy's number after a dash, *101626-42*, shown on the buy. Once the buy has its own file, **Download its file again** is here too: the same file, nothing changes. |
+| **Convert ▸** | **Convert to project** and **Convert to overnight buy**, below. |
 | **Edit in project view** | Opens the buy's cards on the pricing screen, in the game's colour, to fix a card before an export (its condition or treatment, mostly). Click a card, change it, then **SAVE EDIT**; **×** takes cards out. Nothing is saved until **SAVE BUY**, which goes back to the day page. The buy stays on its day; cards can't be added and the rates don't change. |
-| **Convert to project** | Moves every live card, both games, into a new project with the buy's notes (a project has no rates). Completed cards stay behind: the buy stays on its day with them, or is deleted when none are left. Struck cards don't move either: they stay on the buy if it stays, and if it's deleted the Changelog keeps them, crossed out. The name starts as the customer's. The cards keep their prices until a **REPRICE?** rounds them up. The payment goes with them only when the whole buy moves. When the buy stays, the project is paid **$0** with the buy's method, and the payment stays on the buy, so **Export Cash Buys** counts it once. The dialog says so. |
-| **Convert to overnight buy** | The same, into a new **Paid/Ours overnight buy** instead of a project. Nothing to type: the overnight buy takes the buy's customer name, phone and notes, Last 4 ID **1312**, what was paid and when, and the buy's rates, custom ones too. The cards keep the rates CONFIRM BUY saved on them. Completed and struck cards, and the payment, work as above. If such a $0 overnight buy is unlocked and marked Paid/Ours again, it asks for a price: typing the buy's payment there would count it twice. The new overnight buy opens. Needs a customer name on the buy. |
 | **Delete buy…** | Deletes the buy and every card in it, both games. Asks first. |
 
+The two converts, under **Convert ▸**:
+
+| | |
+|---|---|
+| **Convert to project** | Moves every live card, both games, into a new project with the buy's notes (a project has no rates). Completed cards stay behind: the buy stays on its day with them, or is deleted when none are left. Struck cards don't move either: they stay on the buy if it stays, and if it's deleted the Changelog keeps them, crossed out. The name starts as the customer's. The cards keep their prices until a **REPRICE?** rounds them up. The payment goes with them only when the whole buy moves. When the buy stays, the project is paid **$0** with the buy's method, and the payment stays on the buy, so **Export Cash Buys** counts it once. The dialog says so. |
+| **Convert to overnight buy** | The same, into a new **Paid/Ours overnight buy** instead of a project. Nothing to type: the overnight buy takes the buy's customer name, phone and notes, Last 4 ID **1312**, what was paid and when, and the buy's rates, custom ones too. The cards keep the rates CONFIRM BUY saved on them. Completed and struck cards, and the payment, work as above. If such a $0 overnight buy is unlocked and marked Paid/Ours again, it asks for a price: typing the buy's payment there would count it twice. The new overnight buy opens. Needs a customer name on the buy. |
+
+In a group, an item that can't run now is greyed and its tooltip says why.
 **Edit in project view** and **Delete buy…** are locked once any of the buy's cards are Completed.
 **Convert to project** and **Convert to overnight buy** are locked only when no live card is left (Convert to
 overnight buy also when the buy has no customer name).
@@ -1151,6 +1179,8 @@ A PDF to check a batch by hand before it goes up to Crystal Commerce. It changes
 - **A buy flagged 🚩 for a condition check** (and not yet ✅ checked) puts a red banner across the top
   of every page, naming it: *"CHECK CONDITION: Buy 42 is flagged. Check its cards before export."* A
   day's printout names every flagged buy that day.
+- The foot of every page has the key to the prices' colours on the left and **Page 1 of N** at the
+  right margin.
 - It opens in a new tab and downloads. Bulk is never on it.
 
 ### Print PKM? (the Pokémon printout)
@@ -1555,7 +1585,9 @@ Cards printed before 2014 have no set code at the bottom.
 - Otherwise the printings are ranked by how the card looks: its art, black or white border, frame,
   artist, set symbol and copyright year. One clearly ahead goes in by itself, once two looks agree;
   otherwise the printing list opens, best matches first. Tap the one whose set symbol matches.
-  **View all** shows every printing, oldest to newest. **Skip this card** adds nothing.
+  **View all** shows every printing, oldest to newest. **Skip this card** adds nothing. **Let me type
+  it**, when the list is for the wrong card: the name box opens empty, she types the right name, and
+  that card's printing list opens instead.
 - **Couldn't read the name. Which card is it?** opens when no reading names the title: after a few
   looks on its own, at once from Scan card. The best guess is typed in. Correct it or pick from the
   names under it, and the printing list opens. **Skip this card** adds nothing.

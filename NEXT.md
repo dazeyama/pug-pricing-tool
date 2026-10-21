@@ -32,12 +32,6 @@ and function.
   mixed-rates * (413), the inventory cleared in batches (414, migration 0007), the phone's Undo fix (415), the
   Export rates for bulk (416), the Export sell floor (417), AUTO / OFF on the pill (418) and the owner's batch of
   2026-10-21 (419–424, no migration). The app code that needs 0005–0007 can't be pushed before prod has them.
-- **Help out of date** (only when the owner asks), from the 2026-10-21 batch: a buy's ⋯ menu and the collection's
-  EXPORT ▾ are in groups, Print ▸ / Export ▸ / Convert ▸ (422; "A buy's ⋯ menu", "The top row", "EXPORT"); the
-  header search finds customers and phone numbers, with a Customers section and Show all flipped on (424; "Header
-  search"); Bulk pulled from exports reads Completed and is out of the search (423; beside "Can't upload cards");
-  the phone's printing list has Let me type it (420; "Scanning from a phone"); the printout's page number moved to
-  the right (419). The rename (421) is already in Help.
 - **Help out of date** (only when the owner asks), from decisions 416 and 417: new Settings sections, **Export rates for
   bulk** and **Export sell floor**; every "(>$1)" and "under $1" for Print MTG, Export MTG csv, Export single buy,
   Print buy and Bulk pulled from exports now follows the setting ($1.49 by default), and the printout key gives the
@@ -46,11 +40,11 @@ and function.
   **24** in Rares & Mythics and in EXs. Prod isn't written from the CLI (decision 380). Until then, if prod has no
   saved `bulk_values`, the live site takes the code's defaults, $24 once pushed and $2.40 before. Push only on the owner's ask, once prod has 0005.
 - **Help out of date** (only when the owner asks), from the team's feedback (401–407): the condition and price-source
-  locks (right-click, 🔒; "Condition prices"), the buy list's sort buttons ("The buy list"), today's prices and the key
-  on Print MTG / Print PKM ("Print MTG?", "Print PKM?"), EXPORT ▾'s Print MTG (all) / (>$1) and Export MTG csv (all) /
-  (>$1) (a day page's "The top row", a collection's "EXPORT", "Exporting to Crystal Commerce"), Bulk pulled from
-  exports and the Pulled chip (beside "Can't upload cards"), and the "Mark this collection Completed?" question
-  ("Moving through the statuses"). Print PKM? now needs the connection.
+  locks (right-click, 🔒; "Condition prices"), the buy list's sort buttons ("The buy list"), today's prices and the
+  amounts in the key on Print MTG / Print PKM ("Print MTG?", "Print PKM?"), the (>…) export's pulled cards in
+  "Exporting to Crystal Commerce", and the "Mark this collection Completed?" question ("Moving through the
+  statuses"). Print PKM? now needs the connection. (The 2026-10-21 Help pass covered EXPORT ▾'s groups on "The top
+  row" and "EXPORT", and Bulk pulled from exports with its Pulled chip.)
 - **Not built, from the feedback batch:** Home has no tile for Bulk pulled from exports (it's on the Collections tab, System); the `settings_save` first-save race is tested only one save
   after the other.
 - **Help out of date** (only when the owner asks), from the review leftovers: a buy's ⋯ has **Download its file
@@ -73,6 +67,12 @@ and function.
   - watch JustTCG usage and the plan (Appendix D 4);
 
 ## Done
+
+- 2026-10-21: **Help brought up to date for the batch** (419–424), on the owner's ask (`README.md`): Header search
+  (customers and phone numbers, Show all switching itself on, Bulk pulled's cards never shown), a day page's The top
+  row and a collection's EXPORT (Print ▸ / Export ▸), A buy's ⋯ menu (the three groups, Download its file again
+  under Export ▸), a new Bulk pulled from exports section after Can't upload cards (always Completed, out of the
+  search), Older cards (Let me type it) and Print MTG?'s foot line. The older Help items stay open as listed.
 
 - 2026-10-21: **The owner's batch of seven** (decisions 419–424; the owner's answers to 13 questions first, then one
   commit a step; lint, 462 unit tests and the build before each; no migration; untested in the app):
