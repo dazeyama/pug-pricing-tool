@@ -164,6 +164,7 @@ export default function PricingScreen({
   const {
     setPricing, condition, manual, override, setCondition, setManual, setOverride, manualOpen, setManualOpen,
     setPlaceholder, placeholderName, setPlaceholderName,
+    lockedCondition, lockedSource, lockCondition, lockSource, unlockSource,
   } = usePricing(selected);
 
   // The card's prices: JustTCG's, the fallbacks, Cardmarket, the five shown, warnings, trends (usePriceQuote.js).
@@ -274,6 +275,19 @@ export default function PricingScreen({
 
   // ADD CARD's requirements (spec 8.8), besides a user (GuardButton).
   const pricesLoading = prices.status === 'loading' || prices.status === 'waiting';
+
+  // A locked price source this card doesn't have (decision 402): the lock goes, and a toast says
+  // why. Looked at once the card and its prices are in (a Pokémon card's after its details load).
+  const settledFor = card && !pricesLoading && (magic || pokemon.resolved) ? card.key : null;
+  useEffect(() => {
+    if (!settledFor || !lockedSource) return;
+    const missing = lockedSource === 'fallback' ? fallback == null : cardmarketEur == null;
+    if (!missing) return;
+    const what = lockedSource === 'fallback' ? 'TCGplayer' : 'Cardmarket';
+    unlockSource();
+    toast(`${card.name} has no ${what} price: the 🔒 on Use ${what} is off.`, 'warn');
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- once per card settled; the rest is read as it is then
+  }, [settledFor, lockedSource]);
   // A search typed and not answered yet (decision 358): the card still selected is the last search's,
   // so Enter would add it again; nothing is added till the new results are in.
   const typed = text.trim();
@@ -799,6 +813,10 @@ export default function PricingScreen({
                 override={activeOverride}
                 autoCardmarket={autoCardmarket}
                 onOverride={setOverride}
+                lockedSource={lockedSource}
+                onLockSource={lockSource}
+                lockedCondition={lockedCondition}
+                onLockCondition={lockCondition}
                 fetchedAt={result?.card ? result.fetchedAt : null /* a "no match" has a date too */}
                 condition={condition}
                 onCondition={setCondition}

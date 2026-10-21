@@ -6,8 +6,13 @@ import { useEffect, useState } from 'react';
  * the manual price box is open, and a placeholder's name. Each belongs to
  * the card it was chosen for: another card starts on NM, no manual price, no
  * override and no name, and so does the first card when it's picked again.
+ * A locked condition or price source (right-click; decisions 401, 402) is what
+ * every new card starts on instead, until it's unlocked or the screen is left.
  */
 export function usePricing(selected) {
+  // The locks (decisions 401, 402): a pile of LP cards, or one priced from TCGplayer, entered
+  // at once. Kept while this screen is open, like EN | JP; never saved.
+  const [locks, setLocks] = useState({ condition: null, source: null });
   // Condition, manual price and override (spec 8.7): NM, none and none for
   // every new card. A manual price belongs to its condition: picking another
   // condition clears it (owner, 2026-09-29). The override is Use Fallback
@@ -15,9 +20,9 @@ export function usePricing(selected) {
   const [pricing, setPricing] = useState({ key: null, condition: 'NM', manual: null, override: null });
   const [manualOpen, setManualOpen] = useState(false);
   const pricingOwn = pricing.key === selected?.key;
-  const condition = pricingOwn ? pricing.condition : 'NM';
+  const condition = pricingOwn ? pricing.condition : locks.condition ?? 'NM';
   const manual = pricingOwn ? pricing.manual : null;
-  const override = pricingOwn ? pricing.override : null;
+  const override = pricingOwn ? pricing.override : locks.source;
   const setCondition = (code) => setPricing({
     key: selected?.key, condition: code, manual: code === condition ? manual : null, override,
   });
@@ -41,8 +46,33 @@ export function usePricing(selected) {
   // eslint-disable-next-line react-hooks/exhaustive-deps -- only when another card is selected; the keys are what it compares with
   }, [selected?.key]);
 
+  /** Right-click on a condition (decision 401): lock it, and this card takes it; again, unlock. */
+  const lockCondition = (code) => {
+    if (locks.condition === code) {
+      setLocks({ ...locks, condition: null });
+      return;
+    }
+    setLocks({ ...locks, condition: code });
+    if (code !== condition) setCondition(code);
+  };
+  /** Right-click on Use TCGplayer / Use Cardmarket (decision 402): lock it, and this card takes it; again, unlock. */
+  const lockSource = (kind) => {
+    if (locks.source === kind) {
+      setLocks({ ...locks, source: null });
+      return;
+    }
+    setLocks({ ...locks, source: kind });
+    if (override !== kind) setOverride(kind);
+  };
+  /** A card without the locked source (decision 402): the lock goes, and this card goes back to JustTCG. */
+  const unlockSource = () => {
+    setLocks((l) => ({ ...l, source: null }));
+    setPricing({ key: selected?.key, condition, manual, override: null });
+  };
+
   return {
     setPricing, condition, manual, override, setCondition, setManual, setOverride, manualOpen, setManualOpen,
     setPlaceholder, placeholderName, setPlaceholderName,
+    lockedCondition: locks.condition, lockedSource: locks.source, lockCondition, lockSource, unlockSource,
   };
 }

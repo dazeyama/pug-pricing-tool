@@ -24,6 +24,7 @@ function priceStyle(text) {
 export default function PriceTable({
   candidate, prices, ladder, pct, market, fallback, cardmarket, warnings, override, onOverride, autoCardmarket,
   fetchedAt, condition, onCondition, manual, onManual, manualOpen, setManualOpen, onDone, roundUp = false,
+  lockedCondition = null, onLockCondition = null, lockedSource = null, onLockSource = null,
 }) {
   const round = roundUp ? roundUpPrice : roundDownPrice;
   const [text, setText] = useState('');
@@ -118,18 +119,29 @@ export default function PriceTable({
         : `Use ${was} for NM, and the fallback percentages for the other conditions, instead of JustTCG's prices`;
     }
   }
+  // Right-click locks the source for the next cards too (decision 402); a 🔒 before the label says so.
   const overrideButton = (kind, label, usable, title) => (
     <button
       type="button"
-      className={`btn small override-btn${override === kind ? ' on' : ''}`}
-      disabled={!usable}
-      title={title}
+      className={`btn small override-btn${override === kind ? ' on' : ''}${lockedSource === kind ? ' locked' : ''}`}
+      disabled={!usable && lockedSource !== kind}
+      title={`${title}${lockedSource === kind
+        ? `\n🔒 Locked: every card takes it. Right-click to unlock.`
+        : '\nRight-click: lock it for the next cards too.'}`}
       aria-pressed={override === kind}
       onClick={() => {
+        if (!usable) return;
         onOverride(override === kind ? null : kind);
         onDone();
       }}
+      onContextMenu={(e) => {
+        if (!onLockSource) return;
+        e.preventDefault();
+        onLockSource(kind);
+        onDone();
+      }}
     >
+      {lockedSource === kind && <span aria-label="Locked">🔒 </span>}
       {label}
     </button>
   );
@@ -189,13 +201,23 @@ export default function PriceTable({
             aria-checked={code === condition}
             className={`price-btn cond-${code.toLowerCase()}${code === condition ? ' on' : ''}`}
             disabled={!candidate}
-            title={tooltip(code, i)}
+            title={`${tooltip(code, i)}\n${lockedCondition === code
+              ? '🔒 Locked: every card starts on it. Right-click to unlock.'
+              : 'Right-click: lock it for the next cards too.'}`}
             onClick={() => {
               onCondition(code);
               onDone();
             }}
+            // A pile of one condition entered at once (decision 401): right-click locks it.
+            onContextMenu={(e) => {
+              if (!onLockCondition) return;
+              e.preventDefault();
+              onLockCondition(code);
+              onDone();
+            }}
           >
             <span className="pc-cond">
+              {lockedCondition === code && <span className="pc-warn pc-lock" aria-label="Locked condition">🔒</span>}
               {code === 'NM' && warnings.length > 0 && <span className="pc-warn" aria-label="Price warning">⚠️</span>}
               {/* ✎ beside the label, not the price, so long manual prices fit (owner, 2026-09-29). */}
               {code === condition && manual != null && <span className="pc-manual" aria-label="Manual price">✎</span>}
