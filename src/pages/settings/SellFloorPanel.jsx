@@ -42,54 +42,61 @@ export default function SellFloorPanel() {
           An exported card sells at today’s market price, rounded up, never below this floor (a typed
           price neither). Cards already exported keep theirs. {formatMoney(SELL_FLOOR)} at the lowest.
         </p>
-        <label className="pct-input floor-box">
-          <span className="floor-label">Floor</span>
-          <span className="pct-sign">$</span>
-          <input type="number" min={SELL_FLOOR} max={SELL_FLOOR_MAX} step="0.01" aria-label="Export sell floor: dollars" {...box} />
-        </label>
-        <table className="fb-table floor-table">
-          <thead>
-            <tr>
-              <th>Price</th>
-              <th>Rounded {sell ? 'up' : 'down'} to the</th>
-              <th className="floor-toggle-cell">
-                <span className="floor-toggle" role="group" aria-label="Rounding for">
-                  {['buy', 'sell'].map((s) => (
-                    <button
-                      key={s}
-                      type="button"
-                      className={side === s ? 'on' : undefined}
-                      aria-pressed={side === s}
-                      onClick={() => setSide(s)}
-                    >
-                      {s === 'buy' ? 'Buy' : 'Sell'}
-                    </button>
-                  ))}
-                </span>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {STEPS.map((s) => {
-              const up = roundUpPrice(s.example);
-              const shown = sell ? Math.max(floor, up) : roundDownPrice(s.example);
-              return (
-                <tr key={s.band}>
-                  <th scope="row">{s.band}</th>
-                  <td>{s.to}</td>
-                  <td className="floor-example">
-                    {exact(s.example)} → {formatMoney(shown)}
-                    {sell && shown > up && <span className="floor-note"> (floor)</span>}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-        <p className="hint floor-foot">
-          {sell ? 'Sell: the export’s Sell Price, and Complete day…’s.'
-            : 'Buy: market prices, and the Cash and Credit paid. A project’s prices round up.'}
-        </p>
+        {/* The box on the left, the rounding beside it (owner, 2026-10-20): a table like Collection
+            Manager's Activity panel, grey for Buy and green for Sell, switched by a pill. */}
+        <div className="floor-layout">
+          <label className="pct-input floor-box">
+            <span className="floor-label">Floor</span>
+            <span className="pct-sign">$</span>
+            <input type="number" min={SELL_FLOOR} max={SELL_FLOOR_MAX} step="0.01" aria-label="Export sell floor: dollars" {...box} />
+          </label>
+          <div className="floor-rounding">
+            <div className="floor-rounding-head">
+              <span>{sell ? 'Sell: the export’s Sell Price, and Complete day…’s' : 'Buy: market prices, Cash and Credit'}</span>
+              <span className="floor-pill" role="group" aria-label="Rounding for">
+                {['buy', 'sell'].map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    className={`${s}${side === s ? ' on' : ''}`}
+                    aria-pressed={side === s}
+                    onClick={() => setSide(s)}
+                  >
+                    {s === 'buy' ? 'Buy' : 'Sell'}
+                  </button>
+                ))}
+              </span>
+            </div>
+            <div className={`floor-window is-${side}`}>
+              <table className="floor-table">
+                <thead>
+                  <tr>
+                    <th>Price</th>
+                    <th>Rounded {sell ? 'up' : 'down'} to the</th>
+                    <th className="num">Example</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {STEPS.map((s) => {
+                    const up = roundUpPrice(s.example);
+                    const shown = sell ? Math.max(floor, up) : roundDownPrice(s.example);
+                    return (
+                      <tr key={s.band}>
+                        <td>{s.band}</td>
+                        <td>{s.to}</td>
+                        <td className="num">
+                          {exact(s.example)} → <strong>{formatMoney(shown)}</strong>
+                          {sell && shown > up && <span className="floor-note"> (floor)</span>}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            {!sell && <p className="hint floor-foot">A project’s prices round up.</p>}
+          </div>
+        </div>
       </div>
     </section>
   );

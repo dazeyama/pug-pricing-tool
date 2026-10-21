@@ -153,29 +153,32 @@
 .cut-key { min-width: 0; margin: 0; padding: 6px 12px 8px; border: 1px solid var(--border); border-radius: 7px; font-size: 13px; display: grid; gap: 5px; }
 .cut-key legend { padding: 0 4px; font-size: 12px; font-weight: 600; color: var(--muted); }
 .cut-swatch { display: inline-block; width: 18px; height: 6px; margin-right: 4px; vertical-align: middle; position: static; }
-/* Export sell floor (decision 417): the box, then the store's rounding, Buy or Sell, compact so the
-   panel fits its height. */
-.floor-box { margin: 0 0 10px; }
+/* Export sell floor (decision 417): the box on the left, the store's rounding beside it, as
+   Collection Manager's Activity panel draws its tables (owner, 2026-10-20): an outlined box, a
+   tinted header and rows, grey for Buy and green for Sell, switched by a pill. */
+.floor-layout { display: flex; align-items: flex-start; gap: 18px; }
+.floor-box { flex: none; }
 .floor-label { font-size: 13px; font-weight: 600; margin-right: 4px; }
 .floor-box input { width: 80px; }
-.floor-table { font-size: 12.5px; }
-.floor-table th, .floor-table td { padding-top: 2px; padding-bottom: 2px; }
-.floor-table tbody th { font-weight: 500; white-space: nowrap; }
-.floor-toggle-cell { text-align: right; }
-.floor-toggle { display: inline-flex; gap: 2px; }
-.floor-toggle button {
-  padding: 2px 10px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: transparent;
-  color: var(--muted);
-  font-size: 12px;
-  cursor: pointer;
-}
-.floor-toggle button.on { background: var(--accent-2); border-color: var(--accent-2); color: #fff; }
-.floor-example { text-align: right; white-space: nowrap; }
+.floor-rounding { flex: 1; min-width: 0; --tone: var(--muted); }
+.floor-rounding:has(.floor-window.is-sell) { --tone: var(--good); }
+.floor-rounding-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px;
+  font-size: 12px; color: var(--muted); }
+.floor-pill { flex: none; display: inline-flex; border: 1px solid var(--border); border-radius: 999px; overflow: hidden; }
+.floor-pill button { background: none; border: none; color: var(--muted); font: inherit; font-size: 12px; padding: 3px 12px; cursor: pointer; }
+.floor-pill button.buy.on { background: color-mix(in srgb, var(--muted) 22%, transparent); color: var(--text); }
+.floor-pill button.sell.on { background: color-mix(in srgb, var(--good) 22%, transparent); color: var(--good); }
+.floor-window { border: 1px solid color-mix(in srgb, var(--tone) 45%, transparent); border-radius: 8px; overflow: hidden; }
+.floor-table { width: 100%; border-collapse: collapse; font-size: 12.5px; background: var(--panel); }
+.floor-table th { text-align: left; color: var(--muted); font-weight: 500; font-size: 11.5px; padding: 5px 8px; white-space: nowrap;
+  background: color-mix(in srgb, var(--tone) 14%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--tone) 45%, transparent); }
+.floor-table td { padding: 4px 8px; white-space: nowrap; background: color-mix(in srgb, var(--tone) 6%, transparent);
+  border-bottom: 1px solid var(--border); }
+.floor-table tr:last-child td { border-bottom: none; }
+.floor-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.floor-window.is-sell .floor-table td.num strong { color: var(--good); }
 .floor-note { color: var(--warn); }
-.settings-panel .floor-foot { margin: 6px 0 0; }
+.settings-panel .floor-foot { margin: 4px 0 0; font-size: 12px; }
 /* Credit blue and Cash green (owner, 2026-10-15): the headings, the boxes and their % signs. */
 .tier-table th.is-credit { color: var(--credit); }
 .tier-table th.is-cash { color: var(--cash); }
