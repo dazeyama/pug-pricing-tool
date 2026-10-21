@@ -26,11 +26,18 @@ and function.
   From the review, left as is: the live build shows the new action names raw on Home until a
   push; `settings_log` takes the app's sentence as written; the key and match entries are guarded for a user only by
   the app and `settings_log`.
-- **Unpushed** (2026-10-20): the commits since the last push: the stamp check removed (400), the team's six
+- **Unpushed** (2026-10-21): the commits since the last push: the stamp check removed (400), the team's six
   feedback items (401–407, migration 0005), Export single buy's and Print buy's splits (408, 409), the by-color
   sort's loading state (410), the $24 bulk defaults (411), settings in the Changelog (412, migration 0006), the
   mixed-rates * (413), the inventory cleared in batches (414, migration 0007), the phone's Undo fix (415), the
-  Export rates for bulk (416) and the Export sell floor (417).
+  Export rates for bulk (416), the Export sell floor (417), AUTO / OFF on the pill (418) and the owner's batch of
+  2026-10-21 (419–424, no migration). The app code that needs 0005–0007 can't be pushed before prod has them.
+- **Help out of date** (only when the owner asks), from the 2026-10-21 batch: a buy's ⋯ menu and the collection's
+  EXPORT ▾ are in groups, Print ▸ / Export ▸ / Convert ▸ (422; "A buy's ⋯ menu", "The top row", "EXPORT"); the
+  header search finds customers and phone numbers, with a Customers section and Show all flipped on (424; "Header
+  search"); Bulk pulled from exports reads Completed and is out of the search (423; beside "Can't upload cards");
+  the phone's printing list has Let me type it (420; "Scanning from a phone"); the printout's page number moved to
+  the right (419). The rename (421) is already in Help.
 - **Help out of date** (only when the owner asks), from decisions 416 and 417: new Settings sections, **Export rates for
   bulk** and **Export sell floor**; every "(>$1)" and "under $1" for Print MTG, Export MTG csv, Export single buy,
   Print buy and Bulk pulled from exports now follows the setting ($1.49 by default), and the printout key gives the
@@ -66,6 +73,24 @@ and function.
   - watch JustTCG usage and the plan (Appendix D 4);
 
 ## Done
+
+- 2026-10-21: **The owner's batch of seven** (decisions 419–424; the owner's answers to 13 questions first, then one
+  commit a step; lint, 462 unit tests and the build before each; no migration; untested in the app):
+  - 419 (`a4a7812`): the printout's page number at the right margin, clear of the key (`footerKey`, `auditPdf.js`).
+  - Item 2, FOIL? after +1: looked at, **closed by the owner, no fix** ("I think I was wrong").
+  - 420 (`3234b78`): **Let me type it** on the phone's printing list, the box empty (`PickPrintingSheet.jsx`,
+    `NameSheet.jsx`, `Scanner.jsx` `onType`; `older.js` `printingsFor` with no frame).
+  - 421 (`c524284`, `8581cd9`): **Overnight buys** for the customer kind of collection, on the screens and in Help;
+    `collectionKind()` in `status.js`, `kind-overnight`; the header search pins one section per kind. The database's
+    words unchanged.
+  - 422 (`cd0ebac`): a buy's ⋯ and EXPORT ▾ in groups, **Print ▸ / Export ▸ / Convert ▸**, hover flyouts, groups of
+    one flat (`MenuItems.jsx`, `lib/menuGroups.js`, `MoreMenu.jsx`, `ExportButton.jsx`, `BuyPanel.jsx`,
+    `GuardButton.jsx` `looksDisabled`, `collections.css`). The flyout's placement near the window's edge is measured
+    live and wasn't tried in a browser.
+  - 423 (`81c4d40`): **Bulk pulled from exports** reads Completed and is dropped from the header search; the
+    database's status stays Paid/Ours (`isPulled`, `status.js`; `pulledCollectionId`, `SearchBox.jsx`).
+  - 424 (`c5587ef`): the header search finds **customers and phone numbers**, a Customers section, Show all flipped
+    on once per thing typed (`customerQuery`, `customerPanels`, `globalSearch.js`; `lookUpCustomers`, `SearchBox.jsx`).
 
 - 2026-10-20: **AUTO and OFF on the 🌼 | 🦇 pill** (decision 418), on the owner's ask: `SearchBar.jsx` (`mode-mark`,
   `mode-word`), `src/styles/price/search.css`. The pill's live height wasn't measured (the built-in browser refused

@@ -8,7 +8,7 @@ what happens. The findings are reported when the pass ends.
   http://localhost:5180). **Never prod.**
 - **Who:** the owner, or Claude in the browser pane at the owner's request (FABLE.md, "a smoke pass the owner asks
   for"). The owner does the phone, two-computer and store cases.
-- **How long:** about two hours, 226 cases.
+- **How long:** about two hours, 237 cases.
 
 ## Ground rules
 
@@ -36,7 +36,7 @@ what happens. The findings are reported when the pass ends.
 ## 2. The header
 
 - [ ] **A new tab starts on Pick user**; a reload of a tab keeps its user.
-- [ ] **With no user picked**, ADD CARD, + Price Collection and Home's quick actions look disabled and pulse the
+- [ ] **With no user picked**, ADD CARD, + Overnight buy and Home's quick actions look disabled and pulse the
       user button; nothing is created.
 - [ ] **An unused tab forgets its user after 30 minutes.** To skip the wait, the page's console runs
       `const real = Date.now; Date.now = () => real() + 31 * 60000;`; within 30 seconds the user is un-picked and a
@@ -44,8 +44,16 @@ what happens. The findings are reported when the pass ends.
 - [ ] The sign-out icon un-picks the user; the user button and the coloured band show the picked user's colour.
 - [ ] **Who's on** (decision 284), left of Changelog: a green dot with **N Connected** and a dot per picked user with
       **N Users selected**; hovering names them. A second tab adds one to each.
-- [ ] **Header search** `bolt`: Paid/Ours collections at the top, then buys under their dates; **Show all** adds the
-      rest, faded.
+- [ ] **Header search** `bolt`: Paid/Ours overnight buys at the top (Projects and System under their own headings,
+      decision 421), then buys under their dates; **Show all** adds the rest, faded.
+- [ ] **A customer by name** (decision 424): type the first name of a customer with a Completed buy: a **Customers**
+      section at the top lists their buys and collections (Buy N · who · when, the name, phone and card count), **Show
+      all** has flipped on by itself and the Completed ones show faded; untick Show all: it stays off and the
+      Completed ones go; type another letter: it flips on again. Clicking a buy opens its day page with the buy
+      flashing; a collection opens its screen. The placeholder reads "Search cards, customers, phone numbers…".
+- [ ] **A customer by phone** (decision 424): `(555) 123-4567`, `555-123-4567`, `5551234567` and the last seven digits
+      all find the same customer, with no card results and no "contain that card" message; `117` and `117/331` still
+      search cards. A number nobody has says "No buy or collection has that phone number."
 - [ ] **Show all finds struck cards** (decision 275): a struck card shows crossed out with a grey **Struck** chip whose
       tooltip says who and when; without Show all it isn't there.
 - [ ] **From the address bar:** `…/#/price/Wild Growth-342-5ED` opens the Buy tab with that search, on a fresh stage.
@@ -297,14 +305,21 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       it's still waiting; the first's foil copy goes in when its normal one is off.
 - [ ] **A scan's buy cancelled** (decision 395): with nothing on the computer's list, scan a card the computer can't
       price (it asks the phone for a price); CANCEL on the computer: the phone lists it "The buy was cancelled…".
+- [ ] **Let me type it** (decision 420): on a "Which …?" printing list, Let me type it (left of Skip this card) opens
+      the name box empty, "Which card is it? Type its name."; type a name and Find printings: that name's printings
+      list; pick one: it goes in. Skip from the box sets the card aside as before.
 
 ## 11. Collections tab: collections
 
 - [ ] The tab has System, Projects and Collections tables; the status chips filter Collections, Rejected included.
-- [ ] **Every row's ⋯:** Delete collection… everywhere, Convert to buy… on projects only, none on System; clicking ⋯
-      doesn't open the row; the menu isn't cut off on the last row.
+- [ ] **Every row's ⋯:** Delete overnight buy… (Delete project… on a project) everywhere, Convert to buy… on projects
+      only, none on System; clicking ⋯ doesn't open the row; the menu isn't cut off on the last row.
+- [ ] **Overnight buys** (decision 421): the first table is titled Overnight buys, its button + Overnight buy opens
+      "New overnight buy", the ⋯ says Print overnight buy and Delete overnight buy…, Home's tile reads "Overnight buys
+      and projects" and its quick action + Overnight buy; a buy's ⋯ → Convert ▸ Convert to overnight buy; the tab is
+      still Collections, and a Paid/Ours banner still says "This collection".
 - [ ] A row open on another tab or computer greys its ⋯ items with who's editing it.
-- [ ] **+ Price Collection** needs a name, a 10-digit phone and the Last 4 ID; Create shows what's missing; the name
+- [ ] **+ Overnight buy** needs a name, a 10-digit phone and the Last 4 ID; Create shows what's missing; the name
       suggests past customers and fills the phone, never the Last 4 ID.
 - [ ] `SMOKE Collection`: cards added, **Mark as Priced** (an offer), **Mark as Paid/Ours** (the price paid).
 - [ ] **EXPORT stamps, doesn't complete** (decision 294): EXPORT on the Paid/Ours collection stamps its Magic cards (the
@@ -322,15 +337,15 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       with its offer; the Paid/Ours dialog's **Mark as Rejected?** switches to the Reject dialog.
 - [ ] 📞 on a Priced collection counts calls, each in the Changelog.
 - [ ] REPRICE? on a Processing collection says "rounded down as always".
-- [ ] ⋯ → **Print collection** opens its Magic cards' printout.
+- [ ] ⋯ → **Print overnight buy** opens its Magic cards' printout.
 - [ ] A second tab of the same computer shares the collection's lock.
-- [ ] **Delete collection…** (from the details ⋯ and the table's ⋯) takes two steps and the typed name.
+- [ ] **Delete overnight buy…** (from the details ⋯ and the table's ⋯) takes two steps and the typed name.
 - [ ] **The lock after a failed check** (decision 364): open a collection with the connection off: "Couldn't check who
       is editing this collection: trying again."; connection on: it can be edited within 20 seconds.
 - [ ] **A Paid/Ours collection's file again** (decisions 362, 372): once every Magic card in a Paid/Ours collection is
       exported, EXPORT downloads the same file again: every round it was exported in, without cards later exported
       from Can't upload cards.
-- [ ] **$0 again on a kept buy's collection** (decision 397): Convert to collection a buy with a Completed Magic side;
+- [ ] **$0 again on a kept buy's collection** (decision 397): Convert to overnight buy a buy with a Completed Magic side;
       on the new collection, 🔒 Unlock, then Mark as Paid/Ours: the price starts at $0 and says "The payment is on
       Buy N…".
 - [ ] **A card in Can't upload cards** (decision 399): in a collection whose export sent a card to Can't upload
@@ -345,6 +360,10 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       card shows an amber **Pulled** chip and its copy is in **Bulk pulled from exports** (Collections tab, System).
 - [ ] **Bulk pulled from exports** (decision 406): open it: its cards say where they came from; EXPORT sends them
       (no $1 cut) and they leave; Undo export… on the original collection takes a pulled card's copy back out.
+- [ ] **Bulk pulled from exports reads Completed** (decision 423): its chip is grey **Completed** in the System table
+      and on its own details bar, whose hint says "Always Completed, and left out of the header search"; × still
+      removes a card at once and EXPORT still works; the header search for a card in it finds nothing there, with
+      Show all on or off, while the same card in Can't upload cards is still found.
 
 ## 12. Collections tab: projects
 
@@ -393,7 +412,7 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       Completed moves only its live cards, the dialog says so (decision 296); a buy with nothing live is blocked. When
       the buy stays like that, the dialog says the payment stays with the buy, the new project is paid $0, and the
       Calendar's **Export Cash Buys** counts the cash once, on the buy (the project's row reads $0; decision 341).
-- [ ] **Convert to collection…** (decision 335) asks once with nothing to type, showing the buy's name, phone and Last
+- [ ] **Convert to overnight buy** (decision 335; Convert ▸) asks once with nothing to type, showing the buy's name, phone and Last
       4 ID 1312; the collection opens, Paid/Ours, with the buy's cards, rates and what was paid; the Changelog says "Buy
       converted to collection"; with no customer name it's greyed. With Completed cards the buy stays with them and
       keeps the payment: the collection is paid $0, same colour and filter as the buy's method (decision 341).
@@ -426,8 +445,19 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       Pokémon day the same.
 - [ ] **Print MTG (>$1)** (decision 405): the same day: only the rows at $1.00 or more; a day with none says so and
       prints nothing.
-- [ ] **Print buy (>$1)** (decision 409): a Magic buy's ⋯ → Print buy (>$1): only its cards at $1.00 or more today,
-      with their prices; Print buy (all) prints them all.
+- [ ] **Print buy (>$1)** (decision 409): a Magic buy's ⋯ → Print ▸ Print buy (>$1): only its cards at $1.00 or more
+      today, with their prices; Print buy (all) prints them all.
+- [ ] **A buy's ⋯ in groups** (decision 422): a Magic buy's ⋯ reads Mark as completed, Print ▸, Export ▸, Convert ▸,
+      Edit in project view, Delete buy…; pointing at Print ▸ opens its two items beside the menu (to the left, the
+      menu being at the panel's right edge), pointing at Export ▸ swaps to its items, a click on a group toggles it,
+      → opens and ← closes from the keyboard; a greyed item in a group shows its reason. A Pokémon buy's Print ▸ has
+      Print buy and Print stickers.
+- [ ] **EXPORT ▾ in groups** (decision 422): a Magic day's EXPORT ▾ shows Print ▸ (Print MTG (all), (>$1.49)) and
+      Export ▸ (Export MTG csv (all), (>$1.49)); a Pokémon day's shows Print ▸ (Print PKM?, Print PKM Stickers?) and
+      Complete day… on its own; a collection's Print ▸ has all four prints; Can't upload cards' Export csv is on its
+      own. A blocked Export item still says why when clicked.
+- [ ] **The printout's foot** (decision 419): on Print MTG (all), "Page 1 of N" sits at the right margin and the key
+      ("Today's market price: amber = …, red = …") runs from the left without touching it.
 - [ ] **Export single buy (>$1)** (decision 408): a Magic buy's ⋯ → Export single buy (>$1): its cards under $1 are
       pulled as on the day's export; Export single buy (all) exports them all.
 - [ ] **Export MTG csv (>$1) on a day** (decision 406): a past day with cards over and under $1: the file has only
@@ -524,7 +554,7 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
 
 ## 20. Clean up
 
-- [ ] Every `SMOKE` collection and project is deleted (the table's ⋯ → Delete collection…).
+- [ ] Every `SMOKE` collection and project is deleted (the table's ⋯ → Delete overnight buy… / Delete project…).
 - [ ] Today's SMOKE buys are deleted (day page ⋯ → Delete buy…), any exported one marked Paid/Ours again first.
 - [ ] The `SMOKE` users are deleted.
 - [ ] JustTCG usage is noted again: ________ (the pass used ______).
