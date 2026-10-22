@@ -11,7 +11,21 @@ import Modal from '../../components/Modal.jsx';
 // Settings → API keys (spec 4.5, 11.2). Everything goes through the
 // `secrets` Edge Function: the browser sends a new key once and only ever
 // sees it masked afterwards.
-const PROVIDERS = [{ id: 'justtcg', name: 'JustTCG', note: 'Condition prices for Magic and Pokémon.' }];
+const PROVIDERS = [
+  {
+    id: 'justtcg',
+    name: 'JustTCG',
+    note: 'Condition prices for Magic and Pokémon.',
+    deleteNote: 'Prices stop loading until a new key is saved. Fallback and manual prices still work.',
+  },
+  // A second key, used only once the main one is out for the day or month (decision 437).
+  {
+    id: 'justtcg_backup',
+    name: 'JustTCG backup',
+    note: 'Backup only: exports, printouts and REPRICE? use it once the main key’s limit is used up. Never the Price screen.',
+    deleteNote: 'Exports, printouts and REPRICE? stop once the main key’s limit is used up.',
+  },
+];
 
 function KeyRow({ provider, status, reload }) {
   const toast = useToast();
@@ -137,7 +151,7 @@ function KeyRow({ provider, status, reload }) {
             </>
           }
         >
-          <p>Prices stop loading until a new key is saved. Fallback and manual prices still work.</p>
+          <p>{provider.deleteNote}</p>
         </Modal>
       )}
     </div>
