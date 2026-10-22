@@ -8,7 +8,7 @@ and function.
 
 - **Unpushed:** decision 435, Magic's promos after its normal printings (`cardSearch.js` `rank`, `scryfall.js`
   `isPromo`), decisions 436–439, the backup JustTCG key, 440–441, the Export dialog's held pick and Undo, 442, a click keeping a menu group's flyout open, 443–445, the Magic printouts' new order and Print MTG / PKM in
-  buy order, and 446, accents in searches.
+  buy order, 446, accents in searches, and 447, Alt+A for mimp mode.
   Untested in the app. **Edge Functions changed:**
   `secrets` and `prices` (and `_shared/justtcg.ts`) are deployed to dev only; the push deploys both to prod
   (release step 9), and the app's backup flag does nothing there until it does. No migrations.
@@ -67,6 +67,9 @@ and function.
 
 ## Done
 
+- 2026-10-22: **Alt+A switches mimp mode on the Price screen** (decision 447, the owner's ask), in the hint line
+  and the 🌼 | 🦇 tooltips (`PricingScreen.jsx` `onKeyDown`, `SearchBar.jsx`). Lint, tests and the build pass;
+  untested in the app.
 - 2026-10-22: **Names typed without accents find the cards that have them** (decision 446, the owner's ask):
   "nazgul" finds Nazgûl, "flabebe" Flabébé, from the name lists already loaded (`normalize.js` `accentedWords`,
   `spellingsOf`, `withAccents`; `scryfall.js` `printsQuery`; `tcgdex.js` `searchCards`). Lint, tests and the build

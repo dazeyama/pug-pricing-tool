@@ -631,6 +631,10 @@ export default function PricingScreen({
     } else if (e.altKey && e.key.toLowerCase() === 'm' && selected) {
       e.preventDefault();
       setManualOpen(true);
+    } else if (e.altKey && e.key.toLowerCase() === 'a') {
+      // Alt+A: mimp mode on or off, as the 🌼 | 🦇 pill (decision 447).
+      e.preventDefault();
+      setAuto((on) => !on);
     }
   }
 
@@ -845,7 +849,7 @@ export default function PricingScreen({
             </div>
           </div>
           <p className="hint-strip">
-            ↓↑ pick · Enter add · Esc clear · Alt+1–5 condition · Alt+F foil · Alt+Q qty · Alt+M manual price
+            ↓↑ pick · Enter add · Esc clear · Alt+1–5 condition · Alt+F foil · Alt+Q qty · Alt+M manual price · Alt+A mimp mode
           </p>
         </div>
 

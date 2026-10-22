@@ -98,7 +98,7 @@ export default function SearchBar({
                 role="radio"
                 aria-checked={auto === on}
                 className={auto === on ? 'on' : ''}
-                title={on ? 'mimp mode: keep the search after each card' : 'Clear the search after each card'}
+                title={on ? 'mimp mode: keep the search after each card (Alt+A)' : 'Clear the search after each card (Alt+A)'}
                 onClick={() => auto !== on && onAuto(on)}
               >
                 <span className="mode-mark">{mark}</span>
