@@ -356,13 +356,20 @@ function CollectionScreen({ id }) {
       askComplete();
     }
   }
-  function printPokemon() {
+  /** `buyOrder`: Print PKM in buy order (decision 445), its cards as added. */
+  function printPokemon(buyOrder = false) {
     if (printPokemonBlockedWhy) {
       toast(printPokemonBlockedWhy, 'err');
       return;
     }
     const name = buy.customer_name;
-    print({ lines: col.lines, game: 'pokemon', title: `Audit — ${name} (Pokémon)`, fileName: `audit-pkm-${fileSafe(name)}.pdf` });
+    print({
+      lines: col.lines,
+      game: 'pokemon',
+      title: `Audit — ${name} (Pokémon${buyOrder ? ', in buy order' : ''})`,
+      fileName: `audit-pkm-${fileSafe(name)}${buyOrder ? '-buy-order' : ''}.pdf`,
+      buyOrder,
+    });
   }
 
   async function exported(result) {

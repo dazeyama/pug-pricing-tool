@@ -565,7 +565,8 @@ function DayScreen({ game, day }) {
   const printPokemonBlocked = !mine.length ? 'No Pokémon buys that day'
     : offline ? "No connection: the printout needs today's prices" : null;   // its prices (decision 404)
   const printStickersBlocked = offline ? "No connection: the stickers need today's prices" : printPokemonBlocked;
-  function printPokemonDay() {
+  /** `buyOrder`: Print PKM in buy order (decision 445), the buys in order, each one's cards as added. */
+  function printPokemonDay(buyOrder = false) {
     if (printPokemonBlocked) {
       toast(`${printPokemonBlocked}.`, 'err');
       return;
@@ -574,9 +575,10 @@ function DayScreen({ game, day }) {
     print({
       lines: dayLines,
       game: 'pokemon',
-      title: `Audit — Pokémon, ${dayTitle(day)}`,
-      fileName: `audit-pokemon-${day}.pdf`,
+      title: `Audit — Pokémon${buyOrder ? ' in buy order' : ''}, ${dayTitle(day)}`,
+      fileName: `audit-pokemon-${day}${buyOrder ? '-buy-order' : ''}.pdf`,
       flagOf: (l) => flagged.get(l.buy_id) ?? null,   // decision 301, as on Magic's
+      buyOrder,
     });
   }
   function printStickersDay() {

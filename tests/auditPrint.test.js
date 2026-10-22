@@ -104,6 +104,10 @@ test('in buy order (decision 444): one bare section, a row per line as it came, 
   assert.equal(s[0].cards, 4);
   assert.deepEqual(s[0].rows.map((r) => [r.name, r.qty, r.price]), [['Zap', 2, 3], ['Bolt', 1, null], ['Zap', 1, 3]]);
   assert.deepEqual(buyOrderSections([]), []);
+  // Print PKM in buy order (decision 445): Pokémon rows, grey edge.
+  const pkm = buyOrderSections([{ line: line({ game: 'pokemon', name: 'Pikachu', finish: 'holo' }), price: 2 }],
+    (l, qty, _bucket, price) => pokemonRow(l, qty, price));
+  assert.deepEqual(pkm[0].rows.map((r) => [r.name, r.bucket, r.price, r.extras[0]]), [['Pikachu', 'unknown', 2, 'Holo']]);
 });
 
 test("a card's colour group, as pull-pdf's", () => {

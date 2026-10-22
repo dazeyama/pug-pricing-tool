@@ -19,7 +19,8 @@ import { bulkWords, keptTag, keptWords } from '../lib/bulkCut.js';
  * 2026-10-16 request, decision 280; the cut decisions 405, 416), **Print MTG in
  * buy order** (`onPrint(false, true)`, decision 444), **Print
  * PKM?** (`onPrintPokemon`, decision 280: the Pokémon cards by set;
- * `printPokemonBlocked` says why not) and **Print PKM Stickers?**
+ * `printPokemonBlocked` says why not), **Print PKM in buy order**
+ * (`onPrintPokemon(true)`, decision 445) and **Print PKM Stickers?**
  * (`onPrintStickers`, decision 281: price-tag stickers at today's sell
  * prices; `printStickersBlocked`); **Export ▸** holds **Export csv (all)**
  * and **(>…)** with `splitExport`, else the one export item sits on the root
@@ -115,6 +116,10 @@ export default function ExportButton({
           null, () => onPrint(false, true)),
         onPrintPokemon && printItem('Print PKM?', 'A PDF of these Pokémon cards by set, to check them by hand. Changes nothing.',
           printPokemonBlocked, () => onPrintPokemon()),
+        // Print PKM in buy order (decision 445), as Print MTG in buy order is to Print MTG.
+        onPrintPokemon && printItem('Print PKM in buy order',
+          "A PDF of these Pokémon cards in the order they were added, a row for each, with today's prices. Changes nothing.",
+          printPokemonBlocked, () => onPrintPokemon(true)),
         onPrintStickers && printItem('Print PKM Stickers?',
           "Price-tag stickers for these Pokémon cards at today's sell prices, a sticker a copy, for the store's 160-sticker sheets. Changes nothing.",
           printStickersBlocked, () => onPrintStickers()),

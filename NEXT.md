@@ -7,7 +7,8 @@ and function.
 ## Open
 
 - **Unpushed:** decision 435, Magic's promos after its normal printings (`cardSearch.js` `rank`, `scryfall.js`
-  `isPromo`), decisions 436–439, the backup JustTCG key, 440–441, the Export dialog's held pick and Undo, and 442, a click keeping a menu group's flyout open.
+  `isPromo`), decisions 436–439, the backup JustTCG key, 440–441, the Export dialog's held pick and Undo, 442, a click keeping a menu group's flyout open, and 443–445, the Magic printouts' new order and Print MTG / PKM in
+  buy order.
   Untested in the app. **Edge Functions changed:**
   `secrets` and `prices` (and `_shared/justtcg.ts`) are deployed to dev only; the push deploys both to prod
   (release step 9), and the app's backup flag does nothing there until it does. No migrations.
@@ -66,6 +67,15 @@ and function.
 
 ## Done
 
+- 2026-10-22: **Printouts** (the owner's ask), three commits, lint, 465 unit tests and the build before each;
+  untested in the app:
+  - 443: Magic printouts' rows go colour pile > name > collector number inside each category (`byPile`,
+    `auditPrint.js`).
+  - 444: EXPORT ▾ → ◂ Print → **Print MTG in buy order** on a day and a collection: a row per card as added, no
+    bands (`buyOrderSections`, a section's `bare` in `auditPdf.js`, `useAuditPrint.js` `buyOrder`).
+  - 445: **Print PKM in buy order**, the same for Pokémon.
+  - Left as they were: a buy's ⋯ → Print buy, the print after CONFIRM BUY and the Collections tab's Print
+    collection have no buy-order version; TEST.md has no case for any of the three.
 - 2026-10-22: **A click on a menu group (◂ Print, ◂ Export, ◂ Convert) keeps its flyout open** (decision 442, the
   owner's ask): `GroupRow`'s click only opens it (`MenuItems.jsx`). Lint, tests and the build pass; untested in the
   app.
