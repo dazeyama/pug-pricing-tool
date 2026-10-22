@@ -1,6 +1,15 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { keepListed, listedNumber, numberTerm, printsQuery } from '../src/lib/scryfall.js';
+import { isPromo, keepListed, listedNumber, numberTerm, printsQuery } from '../src/lib/scryfall.js';
+
+// Owner, 2026-10-22: Delney's promos after its MKM printings (decision 435).
+test('a promo is Scryfall\'s promo flag or a promo set, not a showcase card', () => {
+  assert.equal(isPromo({ set: 'pmkm', promo: true, set_type: 'promo' }), true);
+  assert.equal(isPromo({ set: 'pwcs', promo: false, set_type: 'promo' }), true);
+  assert.equal(isPromo({ set: 'mkm', promo: false, set_type: 'expansion' }), false);
+  assert.equal(isPromo({ set: 'mkm' }), false);
+  assert.equal(isPromo(null), false);
+});
 
 // Owner, 2026-10-13: "High Perfect 229" finds the promo pack 229p too.
 test('a plain collector number also asks for its promo pack "p" printing', () => {

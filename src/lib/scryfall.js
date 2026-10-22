@@ -221,6 +221,13 @@ export function keepListed(card, number) {
 export const keptLanguage = (card) => card.lang === 'en' || card.lang === 'ja';
 
 /**
+ * A promo printing: prerelease, promo pack, event and store promos (Scryfall's
+ * own flag, or a promo set). A main set's showcase or borderless card isn't
+ * one. Pure.
+ */
+export const isPromo = (card) => card?.promo === true || card?.set_type === 'promo';
+
+/**
  * Candidate printings for a query: `cards/search` with unique=prints, newest
  * first. First page only (up to 175).
  * @param {{ name: string, number: string|null, setCode: string|null }} q

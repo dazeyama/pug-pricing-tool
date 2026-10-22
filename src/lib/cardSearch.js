@@ -35,6 +35,7 @@ export const PAGE = 175;
  *   image: string|null,       // large image
  *   score: number,            // number 4 + size 2 + set 1
  *   rarity?: string,          // Magic: common | uncommon | rare | mythic | special | bonus
+ *   promo?: boolean,          // Magic: a promo printing (scry.isPromo)
  *   setIcon?: string|null,    // Magic: the set symbol SVG, for the hover overlay
  *   scryfall?: any,           // the Scryfall card (Magic)
  *   tcgdexId?: string,        // the TCGdex card id (Pokémon)
@@ -90,6 +91,7 @@ export function magicCandidate(card) {
     image: scry.cardImage(card, 'large'),
     score: 0,
     rarity: card.rarity,
+    promo: scry.isPromo(card),
     setIcon: set?.icon_svg_uri ?? null,
     scryfall: card,
   };
@@ -305,9 +307,14 @@ export function rank(lists, q, oldest = false) {
   // first in the query always"; decision 329), unless one of those sets is the one asked for.
   const byCode = (q.number || q.setCode) && !scry.LIST_SETS.includes(String(q.setCode ?? '').toLowerCase());
   const late = (c) => (byCode && scry.listedNumber(c.setCode, c.number) ? 1 : 0);
+  // Newest first and under 10 Magic printings: the normal printings before the promos, within
+  // a rank (owner, 2026-10-22; decision 435).
+  const promosLast = !oldest && all.filter((c) => c.game === 'mtg').length < 10;
+  const promo = (c) => (promosLast && c.promo ? 1 : 0);
   return all.sort((a, b) =>
     late(a) - late(b)
     || b.score - a.score
+    || promo(a) - promo(b)
     || dir * ((b.releasedAt ?? '').localeCompare(a.releasedAt ?? '') || (b.order ?? 0) - (a.order ?? 0)));
 }
 

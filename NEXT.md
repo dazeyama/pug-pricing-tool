@@ -6,6 +6,8 @@ and function.
 
 ## Open
 
+- **Unpushed:** decision 435, Magic's promos after its normal printings (`cardSearch.js` `rank`, `scryfall.js`
+  `isPromo`). Untested in the app.
 - **Help out of date** (decisions 431–434): "The tables" (Collections) still lists **Notes** and doesn't mention the
   note's * and its chip; until the owner asks for Help.
 - **F2 reopened: the backup can hit the 8 s statement limit** (decision 430): a Download backup failed with a 500
@@ -56,6 +58,8 @@ and function.
 
 ## Done
 
+- 2026-10-22: Magic searches, newest first with under 10 printings found, list the normal printings before the
+  promos within a rank (decision 435; `cardSearch.js` `rank`, `scryfall.js` `isPromo`).
 - 2026-10-21: Pushed, no bump (still v1.0.1-day1), on the owner's ask, without the pre-push review (the owner:
   "skip the normally required review because we just did one a second ago"; that review covered decisions 426–430,
   not these): the four Collections-tab commits, decisions 431–434: no Notes column and its width to the name, a
