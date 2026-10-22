@@ -86,7 +86,7 @@ const SNAPSHOT = `select jsonb_build_object(
 
 if (!structureOnly) before = query(SNAPSHOT)[0].snapshot;
 const started = Date.now();
-const rows = structureOnly ? query(structureScript()) : query(null, SQL);
+const rows = structureOnly ? query(structureScript()) : passes().flatMap((sql) => query(sql));
 const seconds = ((Date.now() - started) / 1000).toFixed(1);
 const nextBuy = structureOnly ? null : putBuysBack();
 const after = structureOnly ? null : query(SNAPSHOT)[0].snapshot;
@@ -164,6 +164,33 @@ function structureScript() {
   const end = text.indexOf('-- ======================================================== Security (as the owner)');
   if (start < 0 || end < 0) fail("db-test-run.sql's layout changed: the structure-only cut needs `begin;` and the Security marker.");
   return `${text.slice(start, end)}\nreset role;\nselect n, section, name, ok, detail from pg_temp.dbt order by n;\nrollback;\n`;
+}
+
+/**
+ * The full run as two passes, each its own rolled-back transaction (decision 448): the API answers a query
+ * within 100 s, and the Backup checks' full restores take about a minute on their own. The first pass is the
+ * file up to the "Backup pass" marker; the second is the kit, the signed-in role, Staff and computers and the
+ * Buy tab (the users, computers and buy1 the Backup checks use), then the file from that marker on.
+ */
+function passes() {
+  const text = fs.readFileSync(SQL, 'utf8');
+  const at = (marker) => {
+    const i = text.indexOf(marker);
+    if (i < 0) fail(`db-test-run.sql's layout changed: the two passes need "${marker}".`);
+    return i;
+  };
+  const begin = at('\nbegin;');
+  const structure = at('-- ======================================================= Structure (as the owner)');
+  const roleStart = at('-- From here on, as the app: the signed-in role.');
+  const roleEnd = text.indexOf('\n\n', roleStart);
+  const staff = at('-- ===================================================== Staff and computers');
+  const dayPage = at('-- =============================================================== Day page');
+  const backup = at('-- ============================================= Backup pass (its own run)');
+  const results = 'reset role;\nselect n, section, name, ok, detail from pg_temp.dbt order by n;\nrollback;\n';
+  return [
+    `${text.slice(0, backup)}\n${results}`,
+    `${text.slice(begin, structure)}\n${text.slice(roleStart, roleEnd)}\n\n${text.slice(staff, dayPage)}\n${text.slice(backup)}`,
+  ];
 }
 
 function query(sql, file) {

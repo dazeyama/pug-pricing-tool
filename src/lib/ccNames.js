@@ -67,6 +67,17 @@ export function catalogPath(url) {
 }
 
 /**
+ * A "Total Qty" cell as a whole number: "3" → 3, "1,204" → 1204, "-1" → -1;
+ * null when blank, not a number, or past a million either way (the
+ * database's whole numbers stop at about two billion, and one bad cell
+ * mustn't fail its batch; decision 448). Pure.
+ */
+export function totalQty(cell) {
+  const s = String(cell ?? '').replace(/,/g, '').trim();
+  return /^-?\d{1,7}$/.test(s) && Math.abs(Number(s)) <= 1_000_000 ? Number(s) : null;
+}
+
+/**
  * One inventory CSV row (PapaParse, header: true) as a `cc_products` row, or
  * null when it has no Product ID or name.
  */
@@ -85,5 +96,7 @@ export function productRow(row) {
     foil_kind: p.foilKind,
     variants: p.variants,
     catalog_path: catalogPath(row.URL),
+    // Copies on hand, for the Price screen's counter (decision 448).
+    total_qty: totalQty(row['Total Qty']),
   };
 }

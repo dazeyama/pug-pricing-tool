@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { catalogPath, isEtchedKind, isFoilKind, parseProductName, productRow } from '../src/lib/ccNames.js';
+import { catalogPath, isEtchedKind, isFoilKind, parseProductName, productRow, totalQty } from '../src/lib/ccNames.js';
 
 // Hand-made names following the patterns measured on the store's inventory
 // (export spec Appendix A); never the real file.
@@ -64,4 +64,19 @@ test('an inventory row becomes a cc_products row, the name kept exactly', () => 
   assert.equal(r.bracket, '332');
   assert.equal(productRow({ 'Product Name': 'x' }), null);
   assert.equal(catalogPath('https://h/catalog/a-b/c/12/'), 'a-b/c');
+});
+
+// Owner, 2026-10-22: the Price screen counts the copies on hand (decision 448).
+test('a product keeps its Total Qty as a whole number', () => {
+  assert.equal(productRow({ 'Product ID': '1', 'Product Name': 'Snuff Out', 'Total Qty': '3' }).total_qty, 3);
+  assert.equal(productRow({ 'Product ID': '1', 'Product Name': 'Snuff Out' }).total_qty, null);
+  assert.equal(totalQty(' 1,204 '), 1204);
+  assert.equal(totalQty('-1'), -1);
+  assert.equal(totalQty('0'), 0);
+  assert.equal(totalQty(''), null);
+  assert.equal(totalQty('2.5'), null);
+  assert.equal(totalQty('n/a'), null);
+  assert.equal(totalQty('1000000'), 1000000);
+  assert.equal(totalQty('1000001'), null);
+  assert.equal(totalQty('99999999999'), null);
 });

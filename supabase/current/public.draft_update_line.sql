@@ -40,9 +40,16 @@ begin
   where id = p_line_id;
 
   select l.id, l.position into v_other, v_opos from buy_lines l
+    join buy_lines o on o.id = p_line_id
    where l.buy_id = v_buy and l.id <> p_line_id
      and internal.same_card(l, r)   -- the same printing at the same price (0065)
-   order by l.position
+     -- A card on its own rate folds only into a line at that rate (decision 448), so its rate never spreads to
+     -- other copies; one with none still folds into one with its own, taking it (0056; owner, 2026-10-15).
+     and ((l.custom_cash_pct is not distinct from o.custom_cash_pct
+           and l.custom_credit_pct is not distinct from o.custom_credit_pct)
+          or (o.custom_cash_pct is null and o.custom_credit_pct is null))
+   order by (l.custom_cash_pct is not distinct from o.custom_cash_pct
+             and l.custom_credit_pct is not distinct from o.custom_credit_pct) desc, l.position
    limit 1;
 
   if v_other is not null then

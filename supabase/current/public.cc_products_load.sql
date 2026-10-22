@@ -18,17 +18,17 @@ begin
     raise exception 'bad_batch';
   end if;
   insert into cc_products (file_id, product_id, cc_id, product_name, category, base_key, bracket,
-                           foil_kind, variants, catalog_path)
+                           foil_kind, variants, catalog_path, total_qty)
   select p_file_id, r.product_id, r.cc_id, r.product_name, coalesce(r.category, ''), coalesce(r.base_key, ''),
-         r.bracket, r.foil_kind, coalesce(r.variants, '{}'), coalesce(r.catalog_path, '')
+         r.bracket, r.foil_kind, coalesce(r.variants, '{}'), coalesce(r.catalog_path, ''), r.total_qty
     from jsonb_to_recordset(p_rows) as r(product_id text, cc_id text, product_name text, category text,
                                          base_key text, bracket text, foil_kind text, variants text[],
-                                         catalog_path text)
+                                         catalog_path text, total_qty integer)
    where r.product_id is not null and r.product_name is not null
   on conflict (file_id, product_id) do update
      set cc_id = excluded.cc_id, product_name = excluded.product_name, category = excluded.category,
          base_key = excluded.base_key, bracket = excluded.bracket, foil_kind = excluded.foil_kind,
-         variants = excluded.variants, catalog_path = excluded.catalog_path;
+         variants = excluded.variants, catalog_path = excluded.catalog_path, total_qty = excluded.total_qty;
   get diagnostics v_count = row_count;
   return v_count;
 end;

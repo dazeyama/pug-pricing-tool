@@ -1,8 +1,9 @@
 -- PUG Pricing Tool: the database test run (docs/TEST.md, section 21).
 --
 -- Calls every server function the app uses, as the app's own signed-in role
--- (authenticated), and checks what each one does and what it refuses. It all
--- runs in ONE transaction that is rolled back at the end, so nothing it makes
+-- (authenticated), and checks what each one does and what it refuses. It runs
+-- in transactions that are rolled back at the end (two: db-test-run.mjs runs
+-- the Backup checks as a pass of their own, decision 448), so nothing it makes
 -- is kept: no buys, collections, users, computers, inventory or settings.
 -- (The only trace: the Changelog's numbering skips the numbers its entries
 -- used. Buy numbers are used up too, as a sequence isn't rolled back, so
@@ -3353,6 +3354,192 @@ exception when others then
   declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;
   perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
 end $$;
+
+-- ======================================================== Owned copies (0008)
+do $$
+declare
+  s text := 'Owned copies (0008)';
+  u uuid := pg_temp.id('u1');
+  a uuid := pg_temp.id('devA');
+  bd uuid := pg_temp.id('devB');
+  d date := date '2001-05-06';
+  v_q uuid;
+  b1 uuid;
+  b2 uuid;
+  dr uuid;
+  c uuid;
+  p uuid;
+  l_r uuid;
+  lp uuid;
+  l4 uuid;
+  v_id uuid;
+  v_l uuid;
+  v jsonb;
+  v_target jsonb;
+  owned text[] := array['dbtest owned'];
+  v_rows jsonb := '[
+    {"product_id": "DBTEST-Q1", "product_name": "Dbtest Owned", "category": "DBTEST Set", "base_key": "dbtest owned",
+     "variants": [], "catalog_path": "x", "total_qty": 3},
+    {"product_id": "DBTEST-Q2", "product_name": "Dbtest Owned - Foil", "category": "DBTEST Set", "base_key": "dbtest owned",
+     "foil_kind": "Foil", "variants": [], "catalog_path": "x", "total_qty": 1},
+    {"product_id": "DBTEST-Q3", "product_name": "Dbtest Owned", "category": "DBTEST Promos", "base_key": "dbtest owned",
+     "variants": [], "catalog_path": "x", "total_qty": 2},
+    {"product_id": "DBTEST-Q4", "product_name": "Dbtest Owned", "category": "Art Series: DBTEST", "base_key": "dbtest owned",
+     "variants": [], "catalog_path": "x", "total_qty": 5},
+    {"product_id": "DBTEST-Q5", "product_name": "Dbtest Owned - Showcase", "category": "DBTEST Set", "base_key": "dbtest owned",
+     "variants": ["Showcase"], "catalog_path": "x", "total_qty": -2},
+    {"product_id": "DBTEST-Q6", "product_name": "Dbtest Unsure", "category": "DBTEST Set", "base_key": "dbtest unsure",
+     "variants": [], "catalog_path": "x"}]';
+  rate jsonb := '{"custom_cash_pct": 38, "custom_credit_pct": 57}';
+  own  jsonb := pg_temp.line('Dbtest Owned', 'DBO', '001', 1, 1.00);
+begin
+  perform pg_temp.ok(s, 'The app can ask for owned copies, signed in only',
+    has_function_privilege('authenticated', 'public.owned_copies(text, text[], text, text, text)', 'EXECUTE')
+    and not has_function_privilege('anon', 'public.owned_copies(text, text[], text, text, text)', 'EXECUTE'));
+
+  -- An inventory with quantities, current.
+  v_q := master_inventory_start('dbtest/inventory-owned.csv', 'inventory-owned.csv', 1, 6, array['Total Qty'], u);
+  perform cc_products_load(v_q, v_rows);
+  perform master_inventory_finish(v_q);
+  perform pg_temp.ok(s, 'A product keeps its Total Qty; one without stays blank (an older build''s upload)',
+    (select total_qty from cc_products where file_id = v_q and product_id = 'DBTEST-Q1') = 3
+    and (select total_qty is null from cc_products where file_id = v_q and product_id = 'DBTEST-Q6'));
+
+  v := owned_copies('DBTEST-Q1', owned, 'dbtest owned', 'dbtest-dbo-001', 'nonfoil');
+  perform pg_temp.ok(s, 'The printing''s product counts its Total Qty; the card every product of its name, '
+    || 'not Art Series, below zero as none',
+    (v ->> 'cc_printing')::int = 3 and (v ->> 'cc_card')::int = 6 and (v ->> 'ours_printing')::int = 0
+    and (v ->> 'ours_card')::int = 0 and (v ->> 'inventory_at') is not null, v::text);
+  perform pg_temp.ok(s, '… no product, or a count below zero: none or nothing; no quantities: unknown',
+    owned_copies(null, owned, 'dbtest owned', null, null) -> 'cc_printing' = 'null'::jsonb
+    and (owned_copies('DBTEST-Q5', owned, 'dbtest owned', null, null) ->> 'cc_printing')::int = 0
+    and owned_copies('DBTEST-Q6', array['dbtest unsure'], 'dbtest unsure', null, null) -> 'cc_printing' = 'null'::jsonb
+    and owned_copies('DBTEST-Q6', array['dbtest unsure'], 'dbtest unsure', null, null) -> 'cc_card' = 'null'::jsonb
+    and (owned_copies(null, array['dbtest none'], 'dbtest none', null, null) ->> 'cc_card')::int = 0);
+
+  -- Ours: a confirmed walk-in's cards.
+  b1 := pg_temp.buy(a, u, 'DBTEST Owned', '5550100031', array[
+    pg_temp.line('Dbtest Owned', 'DBO', '001', 2, 1.00), pg_temp.line('Dbtest Owned', 'DBO', '001', 1, 1.00, p_finish => 'foil'),
+    pg_temp.line('Dbtest Owned', 'DBO', '002', 1, 1.00)]);
+  v := owned_copies('DBTEST-Q1', owned, 'dbtest owned', 'dbtest-dbo-001', 'nonfoil');
+  perform pg_temp.ok(s, 'A confirmed walk-in''s cards are ours: that printing in that finish, and every printing',
+    (v ->> 'ours_printing')::int = 2 and (v ->> 'ours_card')::int = 4, v::text);
+
+  -- Its own rate on ADD CARD.
+  dr := draft_for_device(bd, u);
+  l_r := draft_add_line(bd, own || rate, u, true);
+  perform pg_temp.ok(s, 'A card added with its own rate keeps it (0008)',
+    (select custom_cash_pct = 38 and custom_credit_pct = 57 from buy_lines where id = l_r));
+  v_id := draft_add_line(bd, own || rate, u, true);
+  v_l := draft_add_line(bd, own, u, true);
+  perform pg_temp.ok(s, '… joins a line at that rate; a copy with no rate of its own joins it too, as before',
+    v_id = l_r and v_l = l_r and (select quantity from buy_lines where id = l_r) = 3);
+  v_id := draft_add_line(bd, own || '{"custom_cash_pct": 36, "custom_credit_pct": 54}', u, true);
+  perform pg_temp.ok(s, '… and another rate is a line of its own',
+    v_id <> l_r and (select custom_cash_pct = 36 and custom_credit_pct = 54 from buy_lines where id = v_id));
+  begin
+    perform draft_add_line(bd, own || '{"custom_cash_pct": 12.345}', u, true);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, '… checked as Set Rate checks it', sqlerrm, 'bad_pct');
+  end;
+  perform pg_temp.ok(s, 'A buy not confirmed yet isn''t ours',
+    (owned_copies('DBTEST-Q1', owned, 'dbtest owned', 'dbtest-dbo-001', 'nonfoil') ->> 'ours_card')::int = 4);
+  v_l := draft_set_auto_rates(bd, true, u);
+  perform pg_temp.ok(s, 'Auto apply rates is kept with the walk-in buy (0008)',
+    v_l = dr and (select auto_rates from buys where id = dr)
+    and not (select auto_rates from buys where id = b1));
+  perform draft_set_auto_rates(bd, false, u);
+  perform pg_temp.ok(s, '… and unchecked', not (select auto_rates from buys where id = dr));
+  lp := draft_add_line(bd, own, u, false);
+  v_l := draft_add_line(bd, own, u, true);
+  perform pg_temp.ok(s, 'A copy with no rate of its own joins a line with none before one at its own rate (0008)',
+    v_l = lp and (select quantity from buy_lines where id = lp) = 2 and (select quantity from buy_lines where id = l_r) = 3);
+  v_l := draft_update_line(v_id, own, u);
+  perform pg_temp.ok(s, 'SAVE EDIT keeps cards at different own rates on their own lines (0008)',
+    v_l = v_id and (select count(*) from buy_lines where buy_id = dr) = 3
+    and (select custom_cash_pct = 36 from buy_lines where id = v_id)
+    and (select custom_cash_pct = 38 and quantity = 3 from buy_lines where id = l_r));
+  perform draft_add_line(bd, own || '{"custom_cash_pct": 36, "custom_credit_pct": 54}', u, false);
+  v_l := draft_update_line(v_id, own, u);
+  perform pg_temp.ok(s, '… and still folds two at the same one',
+    (select count(*) from buy_lines where buy_id = dr and custom_cash_pct = 36) = 1
+    and (select quantity from buy_lines where buy_id = dr and custom_cash_pct = 36) = 2);
+  perform draft_cancel(dr);
+
+  -- A collection: ours once it's Paid.
+  c := collection_create('DBTEST Owned Collection', null, '', u, a);
+  perform lock_acquire(c, a, u);
+  v_l := collection_add_line(c, own || rate, true, u, a, null, null);
+  perform pg_temp.ok(s, 'A collection''s card can come with its own rate, logged at it (0008)',
+    (select custom_cash_pct = 38 and custom_credit_pct = 57 from buy_lines where id = v_l)
+    and exists (select 1 from events e where e.action = 'collection_cards_added' and e.target_id = c
+                  and (e.lines -> 0 ->> 'cash_pct')::numeric = 38 and (e.lines -> 0 ->> 'credit_pct')::numeric = 57));
+  l4 := collection_add_line(c, pg_temp.line('Dbtest Owned', 'DBO', '004', 1, 1.00), true, u, a, null, null);
+  perform collection_update_info(c, '{"auto_rates": true}', u, a, pg_temp.version(c));
+  perform pg_temp.ok(s, 'An overnight buy keeps Auto apply rates too, in the Changelog (0008)',
+    (select auto_rates from buys where id = c)
+    and exists (select 1 from events where action = 'collection_info_edited' and target_id = c
+                  and fields = '[{"field": "auto apply rates", "before": "off", "after": "on"}]'::jsonb));
+  begin
+    perform collection_update_info(c, '{"auto_rates": "yes"}', u, a, pg_temp.version(c));
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, '… true or false only', sqlerrm, 'bad_auto_rates');
+  end;
+  perform pg_temp.ok(s, 'A collection being priced isn''t ours',
+    (owned_copies('DBTEST-Q1', owned, 'dbtest owned', 'dbtest-dbo-001', 'nonfoil') ->> 'ours_card')::int = 4);
+  perform collection_set_status(c, 'paid', u, a, 50, 65, null, p_paid_price => 1, p_paid_method => 'cash');
+  v := owned_copies('DBTEST-Q1', owned, 'dbtest owned', 'dbtest-dbo-001', 'nonfoil');
+  perform pg_temp.ok(s, '… a Paid one is', (v ->> 'ours_printing')::int = 3 and (v ->> 'ours_card')::int = 6, v::text);
+  perform export_lines(jsonb_build_object('kind', 'collection', 'buy_id', c, 'version', pg_temp.version(c)),
+                       jsonb_build_array(pg_temp.match(v_l, 'DBTEST-Q1', 1.25)), array[l4], '[]', u, a);
+  v := owned_copies('DBTEST-Q1', owned, 'dbtest owned', 'dbtest-dbo-001', 'nonfoil');
+  perform pg_temp.ok(s, 'A Paid collection''s exported card leaves ours; a can''t-upload one counts once, as its copy',
+    (v ->> 'ours_printing')::int = 2 and (v ->> 'ours_card')::int = 5
+    and exists (select 1 from buy_lines where source_line_id = l4), v::text);
+  p := project_create('DBTEST Owned Project', '', u, a);
+  perform lock_acquire(p, a, u);
+  begin
+    perform collection_add_line(p, own || rate, true, u, a, null, null);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'A project''s card can''t come with a rate', sqlerrm, 'project_rates');
+  end;
+  begin
+    perform collection_update_info(p, '{"auto_rates": true}', u, a, pg_temp.version(p));
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, '… nor auto apply rates', sqlerrm, 'project_rates');
+  end;
+
+  -- Exported: in the inventory once it's uploaded after the export, ours until then.
+  perform pg_temp.ok(s, 'The test day (May 6, 2001) has no buys',
+    not exists (select 1 from buys where kind = 'walk_in' and status = 'confirmed'
+                 and (confirmed_at at time zone 'America/Los_Angeles')::date = d));
+  b2 := pg_temp.buy(a, u, 'DBTEST Owned Export', '5550100032', array[pg_temp.line('Dbtest Owned', 'DBO', '003', 1, 1.00)]);
+  update buys set confirmed_at = (d + time '12:00') at time zone 'America/Los_Angeles' where id = b2;
+  v_target := jsonb_build_object('kind', 'day', 'day', d, 'game', 'mtg', 'versions', jsonb_build_object(b2::text, pg_temp.version(b2)));
+  perform export_lines(v_target, jsonb_build_array(pg_temp.match(pg_temp.line_id(b2, 'Dbtest Owned'), 'DBTEST-Q1', 1.25)),
+                       '{}', '[]', u, a);
+  perform pg_temp.ok(s, 'A card exported before the inventory was uploaded is counted there, not again',
+    (owned_copies('DBTEST-Q1', owned, 'dbtest owned', 'dbtest-dbo-001', 'nonfoil') ->> 'ours_card')::int = 5);
+  update master_inventory_files set uploaded_at = uploaded_at - interval '1 hour' where id = v_q;
+  v := owned_copies('DBTEST-Q1', owned, 'dbtest owned', 'dbtest-dbo-001', 'nonfoil');
+  perform pg_temp.ok(s, '… ones exported after it are still ours, a walk-in''s and a collection''s',
+    (v ->> 'ours_printing')::int = 3 and (v ->> 'ours_card')::int = 7, v::text);
+  update master_inventory_files set uploaded_at = uploaded_at + interval '1 hour' where id = v_q;
+exception when others then
+  declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;
+  perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
+end $$;
+
+-- ============================================= Backup pass (its own run)
+-- db-test-run.mjs runs everything above in one transaction and the Backup checks below in a second (decision 448):
+-- their three full restores take about a minute on dev, and one pass over it all outgrew the 100 s the API waits
+-- for an answer. The second pass has the kit, Staff and computers and the Buy tab (buy1) too; this is the one
+-- thing it needs from the Export checks, which have made it already in the first.
+reset role;
+insert into cc_set_map (scryfall_set, promo_kind, category, source, updated_at, updated_by)
+values ('dbt', '', 'DBTEST Set', 'staff', now(), null)
+on conflict (scryfall_set, promo_kind) do nothing;
+set local role authenticated;
 
 -- ======================================================= Backup and restore
 -- The restore resets the Changelog's numbering; it's set back after.

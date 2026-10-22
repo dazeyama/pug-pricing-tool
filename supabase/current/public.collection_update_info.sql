@@ -14,13 +14,19 @@ declare
   v_rows   jsonb := '[]'::jsonb;
   v_names  text[] := '{}';
   v_master numeric;
+  v_auto   boolean;
 begin
   if p_user is null then
     raise exception 'no_user';
   end if;
   b := collection_for_write(p_buy_id, p_device, p_expected_version, true);
   -- A project has no rates (owner, 2026-10-15): it's the store's own cards.
-  if b.project and (p_fields ? 'custom_cash_pct' or p_fields ? 'custom_credit_pct') then
+  -- Auto apply rates is true or false (decision 448).
+  if p_fields ? 'auto_rates' and jsonb_typeof(p_fields -> 'auto_rates') is distinct from 'boolean' then
+    raise exception 'bad_auto_rates';
+  end if;
+  if b.project and (p_fields ? 'custom_cash_pct' or p_fields ? 'custom_credit_pct'
+                    or coalesce((p_fields ->> 'auto_rates')::boolean, false)) then
     raise exception 'project_rates';
   end if;
   v_name := b.customer_name;
@@ -29,6 +35,7 @@ begin
   v_last4 := b.id_last4;
   v_cash := b.custom_cash_pct;
   v_credit := b.custom_credit_pct;
+  v_auto := b.auto_rates;
 
   if p_fields ? 'name' then
     v_name := btrim(regexp_replace(coalesce(p_fields ->> 'name', ''), '\s+', ' ', 'g'));
@@ -101,13 +108,23 @@ begin
     end if;
   end if;
 
+  -- Auto apply rates (decision 448): the lower rate for the copies we own, on every card added from now on.
+  if p_fields ? 'auto_rates' then
+    v_auto := coalesce((p_fields ->> 'auto_rates')::boolean, false);
+    if v_auto is distinct from b.auto_rates then
+      v_rows := v_rows || jsonb_build_object('field', 'auto apply rates',
+        'before', case when b.auto_rates then 'on' else 'off' end, 'after', case when v_auto then 'on' else 'off' end);
+      v_names := v_names || 'auto apply rates'::text;
+    end if;
+  end if;
+
   if jsonb_array_length(v_rows) = 0 then
     return;
   end if;
 
   update buys
      set customer_name = v_name, phone = v_phone, id_last4 = v_last4, notes = v_notes,
-         custom_cash_pct = v_cash, custom_credit_pct = v_credit,
+         custom_cash_pct = v_cash, custom_credit_pct = v_credit, auto_rates = v_auto,
          version = version + 1, updated_at = now(), last_edited_by = p_user
    where id = p_buy_id
   returning * into b;

@@ -566,8 +566,9 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
 ## 21. The database test run
 
 - [ ] `node scripts/db-test-run.mjs` on dev calls every server function (buys, collections and their statuses, the
-      conversions, REPRICE?, export and undo, Can't upload cards, import, delete, the locks, restore) inside one
-      transaction that's rolled back, and prints "All passed: N checks" (542 at migration 0004). It runs after every
+      conversions, REPRICE?, export and undo, Can't upload cards, import, delete, the locks, restore, owned copies)
+      in two passes, each a transaction that's rolled back (the restore checks are the second: one pass outgrew the
+      API's 100 s, decision 448), and prints "All passed: N checks" (622 at migration 0008, about 90 s). It runs after every
       migration: on dev with `--save`, then, once the migration is on prod, there with `--structure-only
       --project-ref zvxquzcfffmxwizonxuo --confirm zvxquzcfffmxwizonxuo --compare <that dev run>`: the fingerprints
       only, every one the same. The checks themselves never run on prod (decision 380; SQUASH.md section 11).

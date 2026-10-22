@@ -6,6 +6,20 @@ and function.
 
 ## Open
 
+- **Dev is ahead of prod: migration 0008 (owned copies, decision 448) is on dev only.** Prod gets it at the owner's
+  go when the store isn't using the app (CLAUDE.md Database step 6: `db push --linked --project-ref
+  zvxquzcfffmxwizonxuo`, then the structure-only compare with `C:\ClaudeProjects\temp\dev-run-0008.json`). The
+  app code that uses it isn't pushed before. The live build works with 0008 on prod (same signatures).
+- **Owned copies (decision 448), items 2–5 to do:** (2) the counter between the card's details and its price
+  (`PricingScreen.jsx`; the printing's CC product found as `ccExport.js` `matchLines` finds it, then
+  `owned_copies`); (3) the popup in `PriceWarnings.jsx`'s style with the 5%-per-copy-over-2 suggestion, capped at
+  50%; (4) applying it: the next ADD CARD sends `custom_cash_pct` / `custom_credit_pct` in the line
+  (`PricingScreen.jsx` `buildLine` call). Item 2 must read a null `inventory_at` (no inventory) or null CC count
+  (a file uploaded before 0008) as unknown, not 0. Known limit: the app can't tell when CC's CSV was taken, so
+  cards exported between taking it and uploading it count as in it. (5) the Auto apply rates? box under the counter (`buys.auto_rates`,
+  `draft_set_auto_rates`, `collection_update_info`), applying the suggestion on every add, the phone's scans too
+  (`useScanReceiver.js`), never to cards already on the list. Item 1, migration 0008, is in progress: dev first, then prod after store
+  hours (the owner's go each time), then one fresh inventory upload on each for the CC counts.
 - **Unpushed:** decision 435, Magic's promos after its normal printings (`cardSearch.js` `rank`, `scryfall.js`
   `isPromo`), decisions 436–439, the backup JustTCG key, 440–441, the Export dialog's held pick and Undo, 442, a click keeping a menu group's flyout open, 443–445, the Magic printouts' new order and Print MTG / PKM in
   buy order, 446, accents in searches, and 447, Alt+A for mimp mode.
@@ -23,7 +37,7 @@ and function.
   once, and Restore's first press with "canceling statement due to statement timeout" (`backup_export`, one call for
   every table, 2 to 7.7 s on dev). The paged read that fixed it (decision 426) could leave cards out of the file
   when anything changed while it read, so it was undone. A fix must keep one read at one instant, so it needs the
-  database (a migration): take it with the next one.
+  database (a migration): take it with the one after 0008 (0008 is owned copies only, decision 448).
 - **From the 2026-10-21 pre-push review, small, not fixed:** reopening a closed customer search shows Show all off
   until a letter is typed (`SearchBox.jsx`, the search effect keyed on `[text, showAll]`); a list whose every card
   is low-end (one rate, not the list's) shows no "*" (`rates.js` `mixedRateLines`, as decision 426 words it);
@@ -38,7 +52,8 @@ and function.
 - **The live site's first inventory upload on v1.0.1-day1** (decision 414): the live site most likely holds a
   second full copy of the Master Crystal Inventory (~152k products) from the owner's timed-out upload on the old
   build, and any uploads since. The first upload from the new build clears them ("Clearing the old file…").
-- **For migration 0008, when there's a reason to write one** (the v1.0.1-day1 pre-push review): retire
+- **For the migration after 0008, when there's a reason to write one** (the v1.0.1-day1 pre-push review; 0008
+  is owned copies only, decision 448): retire
   `master_inventory_abort`, unused by the new build (decision 414), with its test-run checks and its place in the
   security-definer list. (The database's "under $1" and "Collection started from…" texts stay: the owner, 2026-10-21,
   "don't bother, no one will ever see that".) A stored `.gz` can be left in the `master-inventory` bucket if

@@ -23,6 +23,13 @@ begin
   if r.quantity is null or r.quantity < 1 then
     raise exception 'quantity must be at least 1';
   end if;
+  -- Its own rate, if it comes with one (decision 448), checked as Set Rate checks it; a project has no rates.
+  -- As sent: the line's columns would round 12.345 to 12.35 before it's looked at.
+  perform internal.check_rate((p_line ->> 'custom_cash_pct')::numeric);
+  perform internal.check_rate((p_line ->> 'custom_credit_pct')::numeric);
+  if b.project and (r.custom_cash_pct is not null or r.custom_credit_pct is not null) then
+    raise exception 'project_rates';
+  end if;
 
   if p_merge then
     select id into v_line from buy_lines l
@@ -30,6 +37,13 @@ begin
        and internal.same_card(l, r)   -- the same printing at the same price (0065)
        and l.struck_at is null   -- never into a struck line
        and l.cc_status is null   -- nor an exported one (decision 345)
+       -- A card with its own rate only joins a line with that rate (decision 448).
+       and ((r.custom_cash_pct is null and r.custom_credit_pct is null)
+            or (l.custom_cash_pct is not distinct from r.custom_cash_pct
+                and l.custom_credit_pct is not distinct from r.custom_credit_pct))
+     -- A copy with no rate of its own joins a line with none first, else one at its own rate (decision 448).
+     order by (l.custom_cash_pct is not distinct from r.custom_cash_pct
+               and l.custom_credit_pct is not distinct from r.custom_credit_pct) desc, l.position
      limit 1;   -- the same card, own rate or not: the copies take the line's rate (owner, 2026-10-15)
   end if;
 
@@ -45,7 +59,8 @@ begin
       buy_id, position, game, lang, name, name_en, name_key, set_code, set_name, source_set_id,
       collector_number, printed_size, rarity, finish, first_edition, treatments, condition,
       quantity, unit_price, market_price, price_source, price_snapshot, priced_at,
-      scryfall_id, oracle_id, tcgdex_id, tcgplayer_id, justtcg_card_id, justtcg_variant_id, image_url, bulk_kind)
+      scryfall_id, oracle_id, tcgdex_id, tcgplayer_id, justtcg_card_id, justtcg_variant_id, image_url, bulk_kind,
+      custom_cash_pct, custom_credit_pct)
     values (
       p_buy_id,
       (select coalesce(max(position), 0) + 1 from buy_lines where buy_id = p_buy_id),
@@ -53,7 +68,8 @@ begin
       r.collector_number, r.printed_size, r.rarity, r.finish, coalesce(r.first_edition, false),
       coalesce(r.treatments, '[]'::jsonb), r.condition, r.quantity, r.unit_price, r.market_price,
       r.price_source, r.price_snapshot, r.priced_at, r.scryfall_id, r.oracle_id, r.tcgdex_id,
-      r.tcgplayer_id, r.justtcg_card_id, r.justtcg_variant_id, r.image_url, r.bulk_kind)
+      r.tcgplayer_id, r.justtcg_card_id, r.justtcg_variant_id, r.image_url, r.bulk_kind,
+      r.custom_cash_pct, r.custom_credit_pct)
     returning id into v_line;
   end if;
 
