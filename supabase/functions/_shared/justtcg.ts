@@ -28,8 +28,12 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
  * One JustTCG call. Retries 429 (per-minute limit) and 5xx with exponential
  * backoff and jitter, 1s doubling to 30s, honouring Retry-After (their
  * recommended strategy). Daily/monthly exhaustion throws QuotaError.
+ * `record: false` for the backup key (decision 436): its usage would overwrite the main key's on the
+ * Settings meter, which has one row.
  */
-export async function call(key: string, path: string, init: RequestInit = {}): Promise<any> {
+export async function call(
+  key: string, path: string, init: RequestInit = {}, { record = true }: { record?: boolean } = {},
+): Promise<any> {
   let wait = 1000;
   let unreadable = 0;
   for (let attempt = 0; attempt < 6; attempt++) {
@@ -43,7 +47,7 @@ export async function call(key: string, path: string, init: RequestInit = {}): P
     } catch {
       body = null;
     }
-    if (body?._metadata) await recordUsage(body._metadata);
+    if (record && body?._metadata) await recordUsage(body._metadata);
 
     const code = body?.code ?? '';
     if (code === 'DAILY_LIMIT_EXCEEDED' || code === 'REQUEST_LIMIT_EXCEEDED') {

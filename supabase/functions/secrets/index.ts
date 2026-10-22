@@ -10,7 +10,10 @@
 import { adminClient, corsHeaders, json, readSecret, requireStoreSession } from '../_shared/supabase.ts';
 import { call, QuotaError } from '../_shared/justtcg.ts';
 
-const PROVIDERS = ['justtcg'];
+// justtcg_backup: a second JustTCG key, the Free plan's, that `prices` uses only when the main key
+// is out for the day or month (decision 436).
+const PROVIDERS = ['justtcg', 'justtcg_backup'];
+const METERED = 'justtcg';   // the one key the Settings usage meter follows
 
 /** "tcg_4f…a325" → "tcg_••••••••a325": enough to recognise, not enough to use. */
 function mask(value: string): string {
@@ -65,7 +68,7 @@ Deno.serve(async (req) => {
       if (!key) return json({ ok: false, error: 'No key saved.' });
       try {
         // /games is the cheapest call: one request, and _metadata comes with it.
-        const res = await call(key, '/games');
+        const res = await call(key, '/games', {}, { record: provider === METERED });
         const m = res?._metadata ?? {};
         return json({
           ok: true,
