@@ -41,6 +41,25 @@
 .xd-reason { color: var(--bad); font-size: 12px; }
 .xd-choose { padding: 8px 0; }
 .xd-choose + .xd-choose { border-top: 1px solid color-mix(in srgb, var(--border) 60%, transparent); }
+/* A card picked in Needs a choice: held in place a second, greyed, then folded away (decision 440). */
+.xd-fold { display: grid; grid-template-rows: 1fr; transition: grid-template-rows .3s ease, opacity .3s ease; }
+.xd-fold.folding { grid-template-rows: 0fr; opacity: 0; }
+.xd-fold-in { min-height: 0; }
+.xd-fold.folding > .xd-fold-in { overflow: hidden; }
+.xd-fold + .xd-fold > .xd-fold-in > .xd-choose { border-top: 1px solid color-mix(in srgb, var(--border) 60%, transparent); }
+.xd-choose.held { position: relative; }
+.xd-choose.held > :not(.xd-held-note) { opacity: .45; }
+.xd-held-note {
+  position: absolute;
+  top: 8px;
+  right: 0;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--good) 15%, var(--panel));
+  color: var(--good);
+  font-weight: 600;
+}
+@media (prefers-reduced-motion: reduce) { .xd-fold { transition: none; } }
 .xd-options { display: flex; flex-direction: column; gap: 2px; margin: 4px 0 6px 6px; }
 .xd-option { display: flex; align-items: baseline; gap: 8px; margin: 0; font-size: 13px; color: var(--text); cursor: pointer; }
 .xd-option input { width: auto; margin: 0; }

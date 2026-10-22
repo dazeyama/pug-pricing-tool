@@ -23,6 +23,9 @@ import { SECOND_LOOK_MS, pause } from '../../lib/timeout.js';
 // exported. In 'export' mode (Phase E3) Matching also fetches today's prices
 // for the Sell Prices, and Review leads to Confirm (the red pull-out list)
 // and the export itself; picks are saved with the export.
+// A card picked in Needs a choice: held in place this long, then folded away this long (decision 440).
+const HOLD_MS = 1000;
+const FOLD_MS = 300;   // export.css .xd-fold's transition
 
 /**
  * @param {object} p
@@ -83,6 +86,12 @@ export default function ExportDialog({
   const [badManual, setBadManual] = useState(new Set()); // lines whose typed Sell Price isn't valid
   const [pulled, setPulled] = useState(false);
   const [preview, setPreview] = useState(null);
+  const [held, setHeld] = useState(new Map());        // line id → 'hold' | 'fold', just picked (decision 440)
+  const timers = useRef(new Set());
+  useEffect(() => {
+    const live = timers.current;
+    return () => live.forEach(clearTimeout);
+  }, []);
   const hidePreview = useCallback(() => setPreview(null), []);
   const box = useRef(null);
   // Off only where staff unticked it: "always pick this for the set" starts ticked.
@@ -143,7 +152,9 @@ export default function ExportDialog({
     return { price: typed, basis: { ...s.basis, used: 'staff', staff: typed, worked: s.price } };
   };
   const groups = { choose: [], matched: [], cant: [], under1: [] };
-  for (const r of results) groups[stateOf(r).group].push(r);
+  // A card being held after its pick stays in Needs a choice till it has folded away (decision 440).
+  for (const r of results) groups[held.has(r.line.id) ? 'choose' : stateOf(r).group].push(r);
+  const choosing = groups.choose.filter((r) => !held.has(r.line.id)).length;
   const cardsIn = (rs) => rs.reduce((n, r) => n + r.line.quantity, 0);
 
   /**
@@ -155,6 +166,7 @@ export default function ExportDialog({
   async function pick(r, product) {
     const key = linkKey(r.line);
     const same = results.filter((x) => linkKey(x.line) === key);
+    hold(same.filter((x) => stateOf(x).group === 'choose').map((x) => x.line.id));
     const detected = r.status === 'auto' && r.product?.product_id === product.product_id;
     const hadPick = Boolean(picks.get(r.line.id)?.product);
     setPicks((m) => {
@@ -187,7 +199,31 @@ export default function ExportDialog({
     }
   }
 
+  /**
+   * Cards just picked in Needs a choice stay where they are, greyed and not clickable, for a
+   * second, then fold away, so the next card doesn't jump under the pointer (decision 440).
+   */
+  function hold(ids) {
+    if (!ids.length) return;
+    const each = (fn) => setHeld((m) => {
+      const next = new Map(m);
+      for (const id of ids) fn(next, id);
+      return next;
+    });
+    each((m, id) => m.set(id, 'hold'));
+    later(() => each((m, id) => m.has(id) && m.set(id, 'fold')), HOLD_MS);
+    later(() => each((m, id) => m.delete(id)), HOLD_MS + FOLD_MS);
+  }
+  function later(fn, ms) {
+    const t = setTimeout(() => {
+      timers.current.delete(t);
+      fn();
+    }, ms);
+    timers.current.add(t);
+  }
+
   function chooseNone(r) {
+    if (stateOf(r).group === 'choose') hold([r.line.id]);
     setPicks((m) => new Map(m).set(r.line.id, { none: true }));
     setEditing((s) => {
       const next = new Set(s);
@@ -482,10 +518,20 @@ export default function ExportDialog({
             )}
             {groups.choose.length > 0 && (
               <section className="xd-group choose">
-                <h4>Needs a choice <span className="xd-count">{groups.choose.length}</span></h4>
-                {groups.choose.map((r) => (
-                  <ChooseRow key={r.line.id} {...rowProps(r)} />
-                ))}
+                <h4>Needs a choice <span className="xd-count">{choosing}</span></h4>
+                {groups.choose.map((r) => {
+                  const s = held.has(r.line.id) ? stateOf(r) : null;
+                  return (
+                    <div key={r.line.id} className={`xd-fold${held.get(r.line.id) === 'fold' ? ' folding' : ''}`}>
+                      <div className="xd-fold-in">
+                        <ChooseRow
+                          {...rowProps(r)}
+                          heldNote={s && (s.product ? `✓ Picked: ${s.product.product_name}` : '✓ None of these')}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
               </section>
             )}
             <section className="xd-group matched">
@@ -670,7 +716,7 @@ const scryfallCardUrl = (line) => (line.set_code && line.collector_number
  */
 function ChooseRow({
   r, label, price, current = null, detected = null, sell, manual, onManual, always, onAlways, onPick, onNone,
-  onDone, onCancel,
+  onDone, onCancel, heldNote = null,
 }) {
   const draft = Boolean(onDone);
   const [draftPick, setDraftPick] = useState(null);     // a product, or 'none' (Change, until Done)
@@ -752,7 +798,9 @@ function ChooseRow({
 
   const scryfall = scryfallCardUrl(r.line);
   return (
-    <div className={`xd-choose${onDone ? ' editing' : ''}`}>
+    // Held after its pick (decision 440): greyed, and inert so a click meant for the next card does nothing.
+    <div className={`xd-choose${onDone ? ' editing' : ''}${heldNote ? ' held' : ''}`} inert={heldNote ? true : undefined}>
+      {heldNote && <span className="xd-held-note">{heldNote}</span>}
       <div className="xd-row">
         {label}
         {/* In the Price screen's reused Scryfall pop-up (lib/popup.js), owner 2026-10-15. */}
