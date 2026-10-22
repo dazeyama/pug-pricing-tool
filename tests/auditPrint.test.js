@@ -36,7 +36,7 @@ test('where a matched card goes, asking nothing', () => {
   assert.equal(matchCategory(undefined), null);
 });
 
-test('sections A to Z with Unmatched last; inside, by collector number; the same card merged', () => {
+test('sections A to Z with Unmatched last; inside, by name then collector number; the same card merged', () => {
   const placed = [
     { line: line({ name: 'Sol Ring', set_code: 'c21', collector_number: '263', quantity: 1 }), category: 'Commander 2021' },
     { line: line({ name: 'Arcane Signet', set_code: 'c21', collector_number: '236', quantity: 2 }), category: 'Commander 2021' },
@@ -52,8 +52,8 @@ test('sections A to Z with Unmatched last; inside, by collector number; the same
   const c21 = s[2];
   assert.equal(c21.cards, 6);
   assert.deepEqual(c21.rows.map((r) => [r.name, r.qty]), [['Arcane Signet', 2], ['Sol Ring', 4]]);
-  // "alpha" joins "Alpha"; 12 before 120a; a prefixed number (The List's) after the plain ones.
-  assert.deepEqual(s[0].rows.map((r) => `${r.set} ${r.number}`), ['LEA 12', 'LEA 120a', 'PLST 2XM-120']);
+  // "alpha" joins "Alpha"; by name (decision 443), then 12 before 120a.
+  assert.deepEqual(s[0].rows.map((r) => `${r.name} ${r.set} ${r.number}`), ['Abrade PLST 2XM-120', 'Bolt LEA 12', 'Bolt LEA 120a']);
   assert.equal(s[3].rows[0].name, 'Mystery Card');
   // The band's symbol: the set most of its cards are from; none for Unmatched.
   assert.equal(s[0].set, 'lea');
@@ -71,18 +71,25 @@ test('different condition, finish or treatments stay separate rows, NM before LP
   assert.deepEqual(s[0].rows.map((r) => [r.condition, ...r.extras].join(' ')), ['NM', 'NM Borderless', 'NM Foil', 'LP']);
 });
 
-test("inside a category: NM by number, then the rest by number, a card's conditions in order down", () => {
+test("inside a category (decision 443): by colour pile, A to Z, then number; a card's conditions in order down", () => {
   const s = auditSections([
-    { line: line({ name: 'Zap', collector_number: '5', condition: 'MP' }), category: 'Alpha' },
-    { line: line({ name: 'Bolt', collector_number: '200' }), category: 'Alpha' },
-    { line: line({ name: 'Zap', collector_number: '5', condition: 'DMG' }), category: 'Alpha' },
-    { line: line({ name: 'Ruby', collector_number: '3', condition: 'HP' }), category: 'Alpha' },
-    { line: line({ name: 'Mox', collector_number: '12' }), category: 'Alpha' },
-    { line: line({ name: 'Zap', collector_number: '5', condition: 'LP' }), category: 'Alpha' },
-    { line: line({ name: 'Orb', collector_number: '1', condition: 'LP' }), category: 'Alpha' },
+    { line: line({ name: 'Zap', collector_number: '5', condition: 'MP' }), category: 'Alpha', bucket: 'red' },
+    { line: line({ name: 'Bolt', collector_number: '200' }), category: 'Alpha', bucket: 'red' },
+    { line: line({ name: 'Zap', collector_number: '5', condition: 'DMG' }), category: 'Alpha', bucket: 'red' },
+    { line: line({ name: 'Ruby', collector_number: '3', condition: 'HP' }), category: 'Alpha', bucket: 'artifact' },
+    { line: line({ name: 'Mox', collector_number: '12' }), category: 'Alpha', bucket: 'artifact' },
+    { line: line({ name: 'Zap', collector_number: '5', condition: 'LP' }), category: 'Alpha', bucket: 'red' },
+    { line: line({ name: 'Orb', collector_number: '1', condition: 'LP' }), category: 'Alpha', bucket: 'blue' },
+    { line: line({ name: 'Bolt', collector_number: '161' }), category: 'Alpha', bucket: 'red' },
+    { line: line({ name: 'Island', collector_number: '290' }), category: 'Alpha', bucket: 'land' },
+    { line: line({ name: 'Plea', collector_number: '7' }), category: 'Alpha', bucket: 'white' },
+    { line: line({ name: 'Unknown', collector_number: '1' }), category: 'Alpha' },
+    { line: line({ name: 'Golos', collector_number: '9' }), category: 'Alpha', bucket: 'multicolor' },
   ]);
-  assert.deepEqual(s[0].rows.map((r) => `${r.condition} ${r.name}`),
-    ['NM Mox', 'NM Bolt', 'LP Orb', 'HP Ruby', 'LP Zap', 'MP Zap', 'DMG Zap']);
+  assert.deepEqual(s[0].rows.map((r) => `${r.condition} ${r.name} ${r.number}`), [
+    'NM Plea 7', 'LP Orb 1', 'NM Bolt 161', 'NM Bolt 200', 'LP Zap 5', 'MP Zap 5', 'DMG Zap 5',
+    'NM Golos 9', 'NM Mox 12', 'HP Ruby 3', 'NM Island 290', 'NM Unknown 1',
+  ]);
 });
 
 test("a card's colour group, as pull-pdf's", () => {

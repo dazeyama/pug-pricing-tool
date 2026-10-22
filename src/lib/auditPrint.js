@@ -148,7 +148,7 @@ const rank = (list, v) => {
   return i === -1 ? list.length : i;
 };
 /**
- * Inside a section (owner, 2026-10-14): the NM cards by collector number,
+ * Inside a Print PKM? set (owner, 2026-10-14; Magic's were too until decision 443): the NM cards by collector number,
  * then every other condition together by collector number, the same card's
  * conditions in order down (LP, MP, HP, DMG); then name, non-foil → foil →
  * etched (team plan 3.4).
@@ -159,6 +159,22 @@ function byCard(a, b) {
     || byNumber(a.line.collector_number, b.line.collector_number)
     || rank(CONDITIONS, a.line.condition) - rank(CONDITIONS, b.line.condition)
     || collator.compare(a.line.name, b.line.name)
+    || rank(FINISHES, a.line.finish) - rank(FINISHES, b.line.finish);
+}
+
+// The buy list's WUBRG piles (decision 403), by the row's colour chip: W, U, B, R, G, multicolor,
+// colourless, lands; a card with no Scryfall card last.
+const PILES = ['white', 'blue', 'black', 'red', 'green', 'multicolor', 'artifact', 'land', 'unknown'];
+/**
+ * Inside a Magic section (decision 443): by colour pile, then name A to Z, so a card's printings sit
+ * together, then collector number; the same printing's conditions in order down (NM, LP, MP, HP,
+ * DMG), then non-foil → foil → etched. Print PKM? keeps byCard.
+ */
+function byPile(a, b) {
+  return rank(PILES, a.bucket) - rank(PILES, b.bucket)
+    || collator.compare(a.line.name_en || a.line.name, b.line.name_en || b.line.name)
+    || byNumber(a.line.collector_number, b.line.collector_number)
+    || rank(CONDITIONS, a.line.condition || 'NM') - rank(CONDITIONS, b.line.condition || 'NM')
     || rank(FINISHES, a.line.finish) - rank(FINISHES, b.line.finish);
 }
 
@@ -175,7 +191,7 @@ function mainSet(list) {
 /**
  * The printout's sections, by category A to Z with Unmatched last; the same
  * card from different buys (printing, finish, condition, treatments) as one
- * row with the quantities added (team plan 3.2–3.5).
+ * row with the quantities added (team plan 3.2–3.5); inside, by colour (byPile).
  * @param {{ line: object, category: string|null, bucket?: string, price?: number|null }[]} placed
  * @returns {{ name: string, cards: number, set: string|null, rows: ReturnType<typeof auditRow>[] }[]}
  */
@@ -203,7 +219,7 @@ export function auditSections(placed) {
       name,
       cards: list.reduce((n, m) => n + m.qty, 0),
       set: name === UNMATCHED ? null : mainSet(list),
-      rows: list.sort(byCard).map((m) => auditRow(m.line, m.qty, m.bucket, m.price)),
+      rows: list.sort(byPile).map((m) => auditRow(m.line, m.qty, m.bucket, m.price)),
     }))
     .sort((a, b) => (a.name === UNMATCHED) - (b.name === UNMATCHED) || collator.compare(a.name, b.name));
 }
