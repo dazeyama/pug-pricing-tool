@@ -172,6 +172,20 @@ what happens. The findings are reported when the pass ends.
       lands (A–Z in each), the Pokémon ones as added; **Added** puts them back; bulk stays on top throughout. On a
       long list (decision 410), WUBRG fades the list and shows "Sorting by color…" until the colors come back, clicks
       on the list do nothing meanwhile, and it reorders once at the end.
+- [ ] **Copies we own** (decision 448; dev, after an inventory upload from this build): pick Force of Will. Right of
+      its details, **This printing** and **All printings** show counts ("…" first). A card we own 3+ of: All
+      printings turns amber with "−5%?" (one copy over 2), "−10%?" (two)… Point at the boxes: the box below says
+      "We own X copies of this printing and Y copies of this card.", the Crystal Commerce and ours counts, and the
+      suggestion with its Credit / Cash. Pick a Pokémon card: "Copies we own: Magic only for now".
+- [ ] **Apply**: click the boxes to keep the box open, then **Apply N% lower**: the boxes go green ("−N% on"), the
+      price panel's Credit and Cash drop, with ↓ and a green ring. ADD CARD: the line shows ✎ Credit / Cash at those
+      rates. Apply, then pick another card: it isn't applied there. Editing a line: the box says to use Set Rate.
+      On a project: "A project has no rates."
+- [ ] **Auto apply rates?** under the boxes: check it, add a card we own 3+ of: it goes on at the lower rate
+      without clicking Apply; one we own 2 or fewer of: its usual rate. The cards already on the list keep theirs.
+      Reload: still checked. CONFIRM BUY: the next buy starts unchecked. On an overnight buy, checking it puts
+      "auto apply rates: off → on" in the Changelog. With the phone paired and the box checked, a scanned card we
+      own 3+ of goes on at the lower rate.
 
 ## 8. Buy tab: the buy list and CONFIRM BUY
 

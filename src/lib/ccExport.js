@@ -33,17 +33,12 @@ export const readSetMap = () => allPages((from, to) => supabase.from('cc_set_map
   .range(from, to));
 
 /**
- * Match Magic lines to CC products (export spec 7). Each result says where
- * the line stands:
- *  - 'auto'   matched (by a remembered link, or one clear candidate);
- *  - 'choose' staff must pick (candidates, but no clear one; or no category);
- *  - 'none'   no candidates at all (can't upload, unless staff find one).
- * @param {object[]} lines  buy_lines rows (Magic)
- * @param {(text: string) => void} [onStep]
- * @returns {Promise<{ results: object[], cards: Map<string, object> }>}
+ * The inventory's categories and staff's set choices, which every match reads first. The
+ * owned-copies counter keeps them a while rather than reading them for every card (owned.js).
+ * Throws with code 'no_inventory' when no inventory is loaded.
+ * @returns {Promise<{ categories: Map<string, string>, setMap: Map<string, string> }>}
  */
-export async function matchLines(lines, onStep) {
-  onStep?.(`Matching ${lines.length} card${lines.length === 1 ? '' : 's'}…`);
+export async function matchContext() {
   const [{ data: catList, error: catError }, { data: mapRows, error: mapError }] = await Promise.all([
     supabase.rpc('cc_categories'),
     readSetMap(),
@@ -55,13 +50,36 @@ export async function matchLines(lines, onStep) {
     e.code = 'no_inventory';
     throw e;
   }
-  const categories = new Map(catList.map((c) => [fold(c), c]));
-  const setMap = new Map((mapRows ?? []).map((m) => [`${m.scryfall_set}|${m.promo_kind}`, m.category]));
+  return {
+    categories: new Map(catList.map((c) => [fold(c), c])),
+    setMap: new Map((mapRows ?? []).map((m) => [`${m.scryfall_set}|${m.promo_kind}`, m.category])),
+  };
+}
+
+/** The names CC may file a line's card under: its own, its flavor name, its front face. */
+export const baseKeysFor = (line, flavor = null) => [nameKey(line.name), ...(flavor ? [nameKey(flavor)] : []),
+  ...(line.name.includes(' // ') ? [nameKey(frontFace(line.name))] : [])];
+
+/**
+ * Match Magic lines to CC products (export spec 7). Each result says where
+ * the line stands:
+ *  - 'auto'   matched (by a remembered link, or one clear candidate);
+ *  - 'choose' staff must pick (candidates, but no clear one; or no category);
+ *  - 'none'   no candidates at all (can't upload, unless staff find one).
+ * @param {object[]} lines  buy_lines rows (Magic)
+ * @param {(text: string) => void} [onStep]
+ * @param {{ context?: object, cards?: Map<string, object> }} [given]  matchContext() already read, and the
+ *   lines' full Scryfall cards already in hand (the owned-copies counter's one card), so neither is fetched
+ * @returns {Promise<{ results: object[], cards: Map<string, object> }>}
+ */
+export async function matchLines(lines, onStep, given = {}) {
+  onStep?.(`Matching ${lines.length} card${lines.length === 1 ? '' : 's'}…`);
+  const { categories, setMap } = given.context ?? await matchContext();
 
   const ids = [...new Set(lines.map((l) => l.scryfall_id).filter(Boolean))];
   const [sets, cards, { data: linkRows, error: linkError }] = await Promise.all([
     loadSets(),
-    scryfallCards(ids),
+    given.cards ?? scryfallCards(ids),
     // In chunks: a big project's printings make too long a URL in one (inChunks.js).
     inChunks((part) => supabase.from('cc_product_links').select('*').in('scryfall_id', part), ids),
   ]);
@@ -85,8 +103,7 @@ export async function matchLines(lines, onStep) {
     const where = categoryFor({ set, parent, promo, categories, setMap });
     // The List and Mystery Booster are one at the store: both are searched (ccMatch.js).
     const also = searchCategories(where?.category ?? null, categories).slice(1);
-    const baseKeys = [nameKey(line.name), ...(flavor ? [nameKey(flavor)] : []),
-      ...(line.name.includes(' // ') ? [nameKey(frontFace(line.name))] : [])];
+    const baseKeys = baseKeysFor(line, flavor);
     return { line, set, promo, card, flavor, where, also, baseKeys };
   });
   // One want per category searched; their rows come back under the line's key together.

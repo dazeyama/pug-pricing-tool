@@ -10,22 +10,22 @@ and function.
   go when the store isn't using the app (CLAUDE.md Database step 6: `db push --linked --project-ref
   zvxquzcfffmxwizonxuo`, then the structure-only compare with `C:\ClaudeProjects\temp\dev-run-0008.json`). The
   app code that uses it isn't pushed before. The live build works with 0008 on prod (same signatures).
-- **Owned copies (decision 448), items 2–5 to do:** (2) the counter between the card's details and its price
-  (`PricingScreen.jsx`; the printing's CC product found as `ccExport.js` `matchLines` finds it, then
-  `owned_copies`); (3) the popup in `PriceWarnings.jsx`'s style with the 5%-per-copy-over-2 suggestion, capped at
-  50%; (4) applying it: the next ADD CARD sends `custom_cash_pct` / `custom_credit_pct` in the line
-  (`PricingScreen.jsx` `buildLine` call). Item 2 must read a null `inventory_at` (no inventory) or null CC count
-  (a file uploaded before 0008) as unknown, not 0. Known limit: the app can't tell when CC's CSV was taken, so
-  cards exported between taking it and uploading it count as in it. (5) the Auto apply rates? box under the counter (`buys.auto_rates`,
-  `draft_set_auto_rates`, `collection_update_info`), applying the suggestion on every add, the phone's scans too
-  (`useScanReceiver.js`), never to cards already on the list. Item 1, migration 0008, is in progress: dev first, then prod after store
-  hours (the owner's go each time), then one fresh inventory upload on each for the CC counts.
-- **Unpushed:** decision 435, Magic's promos after its normal printings (`cardSearch.js` `rank`, `scryfall.js`
+- **Owned copies (decision 448): built on dev, untested in the app** (TEST.md section 7, the three new cases).
+  The counter (`OwnedCounter.jsx`, `useOwnedCopies.js`, `owned.js`), the suggestion (`ownedRates.js`), Apply and
+  Auto apply rates? (`PricingScreen.jsx`, `useScanReceiver.js`, `useDraft.js` `setAutoRates`, `CollectionPage.jsx`
+  `list.autoRates`). Not checked: the info row at 1366×768 (the card's details box gives up width to the counter,
+  so its links line may cut "View on Cardmarket" short; `owned.css`); how long a count takes on the live site.
+  Known limit: the app can't tell when CC's CSV was taken, so cards exported between taking it and uploading it
+  count as in it. Placeholders aren't counted (nothing ever exports or completes one). On the live site, the CC
+  counts start with the first inventory upload after 0008 is on prod. **Help out of date:** the Buy tab's price
+  panel section has no counter, Apply or Auto apply rates?.
+- **Unpushed:** decision 448, owned copies (needs migration 0008 on prod first), decision 435, Magic's promos after its normal printings (`cardSearch.js` `rank`, `scryfall.js`
   `isPromo`), decisions 436–439, the backup JustTCG key, 440–441, the Export dialog's held pick and Undo, 442, a click keeping a menu group's flyout open, 443–445, the Magic printouts' new order and Print MTG / PKM in
   buy order, 446, accents in searches, and 447, Alt+A for mimp mode.
   Untested in the app. **Edge Functions changed:**
   `secrets` and `prices` (and `_shared/justtcg.ts`) are deployed to dev only; the push deploys both to prod
-  (release step 9), and the app's backup flag does nothing there until it does. No migrations.
+  (release step 9), and the app's backup flag does nothing there until it does. Migration 0008 (448) must be on
+  prod before the push.
 - **The backup key, left open** (decisions 436–439): there's no usage meter for it (would need a migration; the
   owner: not worth it), and the app isn't told when a call used it (only the `prices` function's log says so). A
   big export on the backup's Free plan can wait on its per-minute limit (`call`'s backoff, `_shared/justtcg.ts`);

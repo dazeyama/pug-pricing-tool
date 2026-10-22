@@ -87,10 +87,11 @@ function cardmarketLink(c, magic, searchName) {
  * selected card (owner, 2026-10-16): labelled so, a 📱 badge where a Poké
  * Ball's goes and before its name, a right-click on it searching its name
  * and number (`onSearch`).
+ * `aside`: beside the info panel, in its row (the copies we own, decision 448).
  */
 export default function SelectedCard({
   candidate: c, typedName, englishName, pokemon, finish, pokemonVersion, hasFirstEdition = false,
-  fromPhone = false, onSearch = null,
+  fromPhone = false, onSearch = null, aside = null,
 }) {
   const pokemonFinish = pokemonVersion?.finish;
   const [face, setFace] = useState(0);
@@ -124,6 +125,7 @@ export default function SelectedCard({
         {/* Drawn empty, so nothing below it moves when a card is picked. */}
         <aside className="area-info">
           <div className="card-info empty">Card details appear here</div>
+          {aside}
         </aside>
       </>
     );
@@ -382,6 +384,7 @@ export default function SelectedCard({
             )}
           </p>
         </div>
+        {aside}
       </aside>
     </>
   );

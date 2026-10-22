@@ -60,6 +60,8 @@ export default function PricePage() {
     remove: (line, n, userId, requestId) => draft.remove(line.id, n, userId, requestId),
     setRates: (cash, credit, userId) => draft.setRates(cash, credit, userId),
     setLineRate: (line, cash, credit, userId) => draft.setLineRate(line.id, cash, credit, userId),
+    // Auto apply rates? (decision 448): the walk-in's, till CONFIRM BUY.
+    autoRates: { on: Boolean(draft.buy?.auto_rates), set: (on, userId) => draft.setAutoRates(on, userId) },
   };
   const count = draft.lines.reduce((n, l) => n + l.quantity, 0);
   // A buy confirmed on another computer leaves nothing here to confirm (smoke pass; decision 427):

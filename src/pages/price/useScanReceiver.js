@@ -17,6 +17,9 @@ import { useSettings } from '../../state/settings.jsx';
 import { useStaff } from '../../state/staff.jsx';
 import { isTimeout, withTimeout } from '../../lib/timeout.js';
 import { createStayAwake } from '../../lib/stayAwake.js';
+import { lineRate } from '../../lib/rates.js';
+import { ownedCopies } from '../../lib/owned.js';
+import { ownedCounts, ownedCut, ownedRates } from '../../lib/ownedRates.js';
 
 // Cards from the paired phone (docs/SCAN_FUNCTION.md 8.3). Each scan the
 // phone sends is claimed here, one at a time in the order they came, priced
@@ -43,6 +46,7 @@ const DB_MS = 5_000;
 const WRITE_MS = 10_000;
 const RATE_MS = 5_000;
 const PRICE_MS = 15_000;
+const OWNED_MS = 8_000;   // counting the copies we own, with Auto apply rates on (decision 448)
 const SCAN_MS = 30_000;
 /** A call given `ms`, or `fallback` (a value, or a function of the error) when it takes longer. */
 const within = (promise, ms, fallback) => withTimeout(Promise.resolve(promise), ms).catch((e) => {
@@ -63,10 +67,12 @@ const RESOLVE_REFUSALS = new Set(['scan_gone', 'not_session', 'bad_status']);
  *   add: (line: object, userId: string, draftId?: string|null) => Promise<string|null>,
  *   remove: (line: object, qty: number, userId: string, requestId?: string) => Promise<unknown> }} p.list
  * @param {boolean} p.roundUp  a project: prices round up
+ * @param {object|null} [p.autoRates]  the list's rates (lib/rates.js) while its Auto apply rates? is on, else
+ *   null (decision 448)
  * @param {(lineId: string, added: { card: object, finish: string }) => void} p.onAdded  flash the line,
  *   and show the card (its Scryfall card and finish) in the Selected card frame
  */
-export function useScanReceiver({ deviceId, label, session, target, list, roundUp, onAdded }) {
+export function useScanReceiver({ deviceId, label, session, target, list, roundUp, autoRates = null, onAdded }) {
   const { epoch } = useConnection();
   const { reachedLimit } = usePriceLimit();
   const { values, loaded: settingsLoaded } = useSettings();
@@ -76,7 +82,7 @@ export function useScanReceiver({ deviceId, label, session, target, list, roundU
   // The latest of everything, for the queue's async work.
   const latest = useRef({});
   latest.current = {
-    list, user: staff.current, touch: staff.touch, roundUp, onAdded, label, pct: values.fallback_pct_mtg, reachedLimit,
+    list, user: staff.current, touch: staff.touch, roundUp, autoRates, onAdded, label, pct: values.fallback_pct_mtg, reachedLimit,
     phone: session?.phone_label ?? 'the phone', settingsLoaded,
   };
   const running = useRef(false);
@@ -191,6 +197,21 @@ export function useScanReceiver({ deviceId, label, session, target, list, roundU
           scan: stamp,
         },
       });
+    }
+
+    // Auto apply rates? on (decision 448): the lower rate for the copies we own, as ADD CARD gives it. Not
+    // counted in time, or not at all: its usual rate, as a card added by hand whose count failed.
+    if (now.autoRates) {
+      try {
+        const counts = ownedCounts(await withTimeout(ownedCopies(candidate, finish), OWNED_MS));
+        const lower = ownedRates(lineRate(line, now.autoRates), ownedCut(counts.card));
+        if (lower) {
+          line.custom_cash_pct = lower.cash;
+          line.custom_credit_pct = lower.credit;
+        }
+      } catch (e) {
+        console.warn('Counting the copies we own for a scan failed; added at its usual rate', e);
+      }
     }
 
     // Someone adding by hand at this moment: wait for the list (up to 5 seconds).

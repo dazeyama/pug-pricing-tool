@@ -1,0 +1,141 @@
+/* The copies we own (decision 448), at the right of the info row, beside the card's details: two boxes,
+   this printing and all printings, with Auto apply rates? under them. Its box of details hangs below it,
+   over the suggestions, as the price warnings' does over Finish & Details. */
+.area-info { display: flex; justify-content: space-between; gap: 16px; }
+.area-info .card-info { flex: 1 1 auto; min-width: 0; }
+.owned {
+  flex: none;
+  width: 176px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+}
+.owned-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  background: rgba(15, 18, 32, .35);
+}
+.owned-boxes {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.owned-box {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  padding: 8px 4px;
+  border: 1px solid var(--owned, var(--border));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--owned, var(--border)) 12%, rgba(24, 28, 46, .92));
+  transition: border-color .15s, background .15s;
+}
+.owned-box.printing { --owned: var(--accent); }
+.owned-box.card { --owned: var(--pal-slate); }
+/* More than 2 of the card: a lower rate to suggest, in amber; green once it's applied. */
+.owned-boxes.hot .owned-box.card { --owned: var(--warn); }
+.owned-boxes.applied .owned-box.card { --owned: var(--good); }
+.owned-boxes:hover .owned-box, .owned-boxes.on .owned-box {
+  background: color-mix(in srgb, var(--owned, var(--border)) 22%, rgba(24, 28, 46, .92));
+}
+.owned-label {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: .07em;
+  line-height: 1.15;
+  text-align: center;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.owned-num {
+  font-size: 40px;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--owned, var(--text));
+}
+.owned-box.card .owned-num { color: var(--text); }
+.owned-boxes.hot .owned-box.card .owned-num { color: var(--warn); }
+.owned-boxes.applied .owned-box.card .owned-num { color: var(--good); }
+.owned-tag {
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  background: rgba(255, 204, 102, .16);
+  color: var(--warn);
+}
+.owned-tag.on { background: rgba(62, 207, 142, .18); color: var(--good); }
+.owned-auto {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.owned-auto input { margin: 0; accent-color: var(--good); }
+.owned-auto:has(input:disabled) { opacity: .55; cursor: not-allowed; }
+/* The details box: below the counter, right-aligned to it, wider than it; its top padding bridges the gap
+   so moving the mouse down onto it doesn't close it. */
+.owned-pop { position: absolute; top: 100%; right: 0; width: 340px; z-index: 30; padding-top: 6px; }
+.owned-pop-box {
+  padding: 10px 14px 12px 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 14%, rgb(14, 17, 28));
+  box-shadow: 0 12px 28px rgba(0, 0, 0, .55);
+  font-size: 13px;
+  line-height: 1.4;
+}
+.owned-pop-head {
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.owned-pop-lead { margin: 0 0 6px; font-size: 14px; font-weight: 700; }
+.owned-pop-detail { margin: 0 0 8px; padding-left: 18px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.owned-pop-detail li + li { margin-top: 2px; }
+.owned-pop-suggest { margin: 0 0 8px; font-variant-numeric: tabular-nums; }
+.owned-pop-suggest .is-credit { color: var(--credit); font-weight: 700; }
+.owned-pop-suggest .is-cash { color: var(--cash); font-weight: 700; }
+.owned-pop-note { margin: 0; color: var(--muted); }
+.owned-undo { border-color: var(--good); color: var(--good); }
+
+/* The price panel's Credit and Cash at the lower rate, applied: ↓ and a green ring (QuotePanel). */
+.quote-chip.lowered { box-shadow: 0 0 0 2px color-mix(in srgb, var(--good) 70%, transparent); }
+
+/* Short windows: the info row is 150px (buylist.css). */
+@media (max-height: 820px) {
+  .owned { width: 164px; gap: 4px; }
+  .owned-num { font-size: 32px; }
+  .owned-label { font-size: 9.5px; }
+}

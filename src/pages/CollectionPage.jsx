@@ -471,6 +471,11 @@ function CollectionScreen({ id }) {
     // A project has no rate controls (owner, 2026-10-15): it's the store's own cards.
     setRates: buy?.project ? null : col.setRates,
     setLineRate: buy?.project ? null : col.setLineRate,
+    // Auto apply rates? (decision 448): one of the overnight buy's details, in the Changelog; not a project's.
+    autoRates: buy?.project || system ? null : {
+      on: Boolean(buy?.auto_rates),
+      set: (on, userId) => col.updateInfo({ auto_rates: Boolean(on) }, userId),
+    },
   };
 
   if (col.loaded && col.missing && !seen.current && !deleting.current) {

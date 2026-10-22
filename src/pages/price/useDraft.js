@@ -32,6 +32,7 @@ const CODES = {
  *   remove: (lineId: string, qty: number, userId: string) => Promise<boolean>,
  *   setRates: (cash: number|null, credit: number|null, userId: string) => Promise<boolean>,
  *   setLineRate: (lineId: string, cash: number|null, credit: number|null, userId: string) => Promise<boolean>,
+ *   setAutoRates: (on: boolean, userId: string) => Promise<boolean>,
  *   cancel: () => Promise<boolean>,
  *   confirm: (args: object) => Promise<object|null> }}
  */
@@ -155,6 +156,12 @@ export function useDraft(deviceId) {
     (await run('draft_set_line_rate', { p_line_id: lineId, p_cash: cash, p_credit: credit, p_user: userId },
       "Couldn't save the card's rate")).ok,
   [run]);
+
+  /** Auto apply rates? (decision 448): kept on the buy until CONFIRM BUY; a new buy starts unchecked. */
+  const setAutoRates = useCallback(async (on, userId) =>
+    (await run('draft_set_auto_rates', { p_device: deviceId, p_on: Boolean(on), p_user: userId },
+      "Couldn't save Auto apply rates")).ok,
+  [deviceId, run]);
 
   const cancel = useCallback(async () => {
     // A phone's scan can open this computer's buy before the computer has loaded it, and when
@@ -282,7 +289,7 @@ export function useDraft(deviceId) {
   // A lost answer waiting for the next press to check it (decision 367): CONFIRM BUY stays open for that press.
   const answerLost = useCallback(() => Boolean(unsure.current), []);
 
-  return { ...state, busy, add, update, remove, setRates, setLineRate, cancel, confirm, answerLost };
+  return { ...state, busy, add, update, remove, setRates, setLineRate, setAutoRates, cancel, confirm, answerLost };
 }
 
 /** The buy, read back for CONFIRM BUY's lost answer (readBack); throws when it can't be read. */

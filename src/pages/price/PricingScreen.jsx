@@ -35,6 +35,9 @@ import { useDevice } from '../../state/device.jsx';
 import { useScanSession } from './useScanSession.js';
 import { useScanReceiver } from './useScanReceiver.js';
 import ScanChip from './ScanChip.jsx';
+import OwnedCounter from './OwnedCounter.jsx';
+import { useOwnedCopies } from './useOwnedCopies.js';
+import { ownedCut, ownedRates } from '../../lib/ownedRates.js';
 import { candidateKeyOf, editQuery, nameQuery, pinFirst } from '../../lib/candidateKey.js';
 
 const BACKGROUND = { '--stage-bg': `url(${import.meta.env.BASE_URL}background.webp)` };
@@ -194,6 +197,10 @@ export default function PricingScreen({
     userId: user?.id ?? null,
     locked: locked ?? addLocked ?? null,
   } : null);
+  // Where cards can have their own rates (not a project, nor a locked list), and the buy's Auto apply
+  // rates? (decision 448): read here, before the phone's scans need it.
+  const rateControls = Boolean(list.setLineRate) && !locked && !ratesLocked;
+  const autoOn = Boolean(list.autoRates?.on) && rateControls;
   const [qty, setQty] = useState('1');
   const qtyRef = useRef(null);
   const [flashId, setFlashId] = useState(null);
@@ -221,6 +228,7 @@ export default function PricingScreen({
     target: scanTarget ? { kind: scanTarget.kind, buyId: scanTarget.buyId ?? null } : null,
     list,
     roundUp,
+    autoRates: autoOn ? rates : null,
     onAdded: (id, added) => {
       flash(id);
       if (!added?.card || editingRef.current || document.querySelector('[role="dialog"]')) return;
@@ -272,6 +280,11 @@ export default function PricingScreen({
   // A new search puts it away too (a card picked does, in pick()).
   useEffect(() => setPhoneCard(null), [text]);
   const images = useCardImages(card);   // a Pokémon thumbnail for the line (backups too)
+  // The copies we own of a Magic printing and its card (decision 448), and the printing whose lower rate
+  // the worker clicked Apply on (`${card key}|${finish}`): it goes on with ADD CARD as the card's own rate.
+  const owned = useOwnedCopies(card, magic ? finish : null);
+  const [appliedKey, setAppliedKey] = useState(null);
+  const [autoBusy, setAutoBusy] = useState(false);
 
   // ADD CARD's requirements (spec 8.8), besides a user (GuardButton).
   const pricesLoading = prices.status === 'loading' || prices.status === 'waiting';
@@ -488,6 +501,7 @@ export default function PricingScreen({
     setManualOpen(false);
     setQty('1');
     setEditing(null);
+    setAppliedKey(null);
     focusSearch();
   }
 
@@ -597,6 +611,13 @@ export default function PricingScreen({
           : null,
       },
     });
+    // The lower rate for the copies we own, applied (decision 448): the card's own rate, in the same write.
+    if (applied && !editing) {
+      line.custom_cash_pct = applied.cash;
+      line.custom_credit_pct = applied.credit;
+    } else if (autoOn && !editing && magic && owned.status === 'failed') {
+      toast("Couldn't count the copies we own: this card went on at its usual rate.", 'warn');
+    }
     await save(line);
   }
 
@@ -653,6 +674,19 @@ export default function PricingScreen({
   const quoteRate = lineRate({
     ...editLine, unit_price: unitPrice ?? 0, bulk_kind: bulk ? bulk.bulk : null,
   }, rates);
+
+  // The lower rate for the copies we own (decision 448): 5% off this rate per copy of the card over 2, up to
+  // 50%, only where cards can have their own rates (not a project, nor a locked list), and never by itself:
+  // the worker's Apply, or the buy's Auto apply rates. An edited card keeps its rate (Set Rate changes it).
+  let applyBlocked = null;
+  if (!rateControls) applyBlocked = list.setLineRate ? `${locked ?? ratesLocked}.` : 'A project has no rates.';
+  else if (editing) applyBlocked = 'Editing a card: right-click its line → Set Rate to change its rate.';
+  const suggested = owned.status === 'ok' && !bulk ? ownedRates(quoteRate, ownedCut(owned.counts.card)) : null;
+  const applied = suggested && !applyBlocked && (autoOn || appliedKey === owned.key) ? suggested : null;
+  const shownRate = applied ?? quoteRate;
+  const appliedWhy = applied ? `${applied.cut}% lower for the copies we own` : null;
+  // With Auto apply rates on, a Magic card waits for its count (a moment) so it goes on at the right rate.
+  if (!addBlocked && autoOn && !editing && magic && owned.status === 'loading') addBlocked = 'Counting the copies we own';
 
   // Set value on a bulk line (docs/TEAM_FEEDBACK.md 5.6): its own value per
   // item, or null back to Settings → Bulk values; saved like an edit of it.
@@ -736,6 +770,31 @@ export default function PricingScreen({
               finish={finish}
               pokemonVersion={version}
               hasFirstEdition={versions.some((v) => v.firstEdition)}
+              aside={(
+                <OwnedCounter
+                  candidate={selected}
+                  owned={owned}
+                  suggested={suggested}
+                  applied={Boolean(applied)}
+                  applyBlocked={applyBlocked}
+                  price={unitPrice}
+                  onApply={() => setAppliedKey((k) => (k === owned.key ? null : owned.key))}
+                  auto={list.autoRates && rateControls ? {
+                    on: autoOn,
+                    disabled: autoBusy || offline,
+                    onChange: async (on) => {
+                      if (!user) {
+                        pulse();
+                        return;
+                      }
+                      setAutoBusy(true);
+                      await list.autoRates.set(on, user.id);
+                      setAutoBusy(false);
+                    },
+                  } : null}
+                  onDone={focusSearch}
+                />
+              )}
             />
             )}
             <Suggestions
@@ -763,10 +822,11 @@ export default function PricingScreen({
               bulkPer={bulk && !bulk.item.placeholder ? bulk.item.per : null}
               placeholder={Boolean(bulk?.item.placeholder)}
               source={quoteSource()}
-              cashPct={quoteRate.cash}
-              creditPct={quoteRate.credit}
-              cashWhy={whyText(quoteRate.why.cash, rates)}
-              creditWhy={whyText(quoteRate.why.credit, rates)}
+              cashPct={shownRate.cash}
+              creditPct={shownRate.credit}
+              cashWhy={appliedWhy ?? whyText(quoteRate.why.cash, rates)}
+              creditWhy={appliedWhy ?? whyText(quoteRate.why.credit, rates)}
+              lowered={Boolean(applied)}
               warnings={warnings}
               trend={manual == null && !bulk ? trends[condition] : null}
               onDone={focusSearch}

@@ -25,6 +25,38 @@ export function priceSource(entry, manual) {
 const cents = (n) => (n == null ? null : Math.round(n * 100) / 100);
 
 /**
+ * A Magic printing in a finish as a line names it, without its price or
+ * quantity: what buildLine saves, and what the owned-copies counter matches
+ * to a Crystal Commerce product as the export would (decision 448).
+ * @param {object} c  the selected card (cardSearch candidate, Magic)
+ * @param {string} finish
+ */
+export function magicPrinting(c, finish) {
+  const card = c.scryfall;
+  return {
+    game: 'mtg',
+    // A Japanese-only printing is a Japanese card: "[JP]" on the line (owner, 2026-10-16).
+    lang: card.lang === 'ja' ? 'ja' : 'en',
+    name: card.name,
+    name_en: null,
+    name_key: nameKey(card.name),
+    set_code: card.set.toUpperCase(),
+    set_name: card.set_name ?? null,
+    source_set_id: card.set,
+    collector_number: card.collector_number,
+    printed_size: c.printedSize ?? null,
+    rarity: card.rarity ?? null,
+    finish,
+    first_edition: false,
+    treatments: magicTreatments(card, finish),
+    scryfall_id: card.id,
+    oracle_id: card.oracle_id ?? card.card_faces?.[0]?.oracle_id ?? null,
+    tcgdex_id: null,
+    tcgplayer_id: String((finish === 'etched' && card.tcgplayer_etched_id) || card.tcgplayer_id || '') || null,
+  };
+}
+
+/**
  * The line to save (a buy_lines row without ids or position).
  * @param {object} p
  * @param {object} p.candidate  the selected card (cardSearch candidate)
@@ -71,29 +103,10 @@ export function buildLine({
   };
 
   if (c.game === 'mtg') {
-    const card = c.scryfall;
     return {
       ...common,
-      game: 'mtg',
-      // A Japanese-only printing is a Japanese card: "[JP]" on the line (owner, 2026-10-16).
-      lang: card.lang === 'ja' ? 'ja' : 'en',
-      name: card.name,
-      name_en: null,
-      name_key: nameKey(card.name),
-      set_code: card.set.toUpperCase(),
-      set_name: card.set_name ?? null,
-      source_set_id: card.set,
-      collector_number: card.collector_number,
-      printed_size: c.printedSize ?? null,
-      rarity: card.rarity ?? null,
-      finish,
-      first_edition: false,
-      treatments: magicTreatments(card, finish),
-      scryfall_id: card.id,
-      oracle_id: card.oracle_id ?? card.card_faces?.[0]?.oracle_id ?? null,
-      tcgdex_id: null,
-      tcgplayer_id: String((finish === 'etched' && card.tcgplayer_etched_id) || card.tcgplayer_id || '') || null,
-      image_url: imageUrl ?? scry.cardImage(card, 'small') ?? null,
+      ...magicPrinting(c, finish),
+      image_url: imageUrl ?? scry.cardImage(c.scryfall, 'small') ?? null,
     };
   }
   return {

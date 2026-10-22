@@ -11,6 +11,7 @@
 @import './price/card.css';   /* the selected card: its size, image, foil sheens, stamps */
 @import './price/zoom.css';   /* the selected card, large (click to zoom) */
 @import './price/quote.css';   /* the card info and the price panel beside it */
+@import './price/owned.css';   /* the copies we own, beside the card info (decision 448) */
 @import './price/finish.css';   /* Finish and Details, the right column */
 @import './price/conditions.css';   /* the condition / price table under the card */
 @import './price/suggestions.css';   /* the suggestions */
