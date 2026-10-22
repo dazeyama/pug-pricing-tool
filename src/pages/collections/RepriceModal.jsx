@@ -35,7 +35,7 @@ export default function RepriceModal({ lines: all, roundUp = false, onReprice, o
     setError(null);
     try {
       // Bulk (docs/TEAM_FEEDBACK.md 5.2): no price to fetch, its Settings value instead.
-      const today = await todaysPrices(lines.filter((l) => !isBulk(l)), { onStep: setStep });
+      const today = await todaysPrices(lines.filter((l) => !isBulk(l)), { onStep: setStep, backup: true });
       const pct = { mtg: values.fallback_pct_mtg, pokemon: values.fallback_pct_pokemon };
       const bulkValues = bulkValuesFrom(values.bulk_values);
       const repriced = lines.map((l) => ({

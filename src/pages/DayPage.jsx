@@ -419,7 +419,7 @@ function DayScreen({ game, day }) {
     let prices;
     try {
       setCompleteStep("Fetching today's prices…");
-      const today = await todaysPrices(cards, { onStep: setCompleteStep });
+      const today = await todaysPrices(cards, { onStep: setCompleteStep, backup: true });
       const pct = settingValues[game === 'pokemon' ? 'fallback_pct_pokemon' : 'fallback_pct_mtg'];
       prices = cards.map((line) => {
         const sell = sellPriceFor(line, { ...today.get(line.id), pct, floor: sellFloor });

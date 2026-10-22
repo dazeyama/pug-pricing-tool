@@ -93,11 +93,13 @@ function versionOf(line, versions) {
  * stale data. A line whose card can't be found gets an empty entry (no
  * prices), so callers keep what it had.
  * @param {object[]} lines  buy_lines rows
- * @param {{ cards?: Map<string, object>|null, onStep?: (text: string) => void }} [options]
+ * @param {{ cards?: Map<string, object>|null, onStep?: (text: string) => void, backup?: boolean }} [options]
  *   cards: Scryfall cards already fetched (the export's matching)
+ *   backup: may fall back on the backup JustTCG key once the main one is out (decision 439): only
+ *   exports, printouts and REPRICE? say so, never the Price screen
  * @returns {Promise<Map<string, Today>>}
  */
-export async function todaysPrices(lines, { cards = null, onStep } = {}) {
+export async function todaysPrices(lines, { cards = null, onStep, backup = false } = {}) {
   const magic = lines.filter((l) => l.game === 'mtg' && l.scryfall_id);
   const pokemon = lines.filter((l) => l.game === 'pokemon' && l.tcgdex_id);
 
@@ -181,7 +183,9 @@ export async function todaysPrices(lines, { cards = null, onStep } = {}) {
   const results = {};
   try {
     for (let i = 0; i < all.length; i += PRICE_BATCH) {
-      const data = await callFunction('prices', { lookups: all.slice(i, i + PRICE_BATCH), fresh: true });
+      const body = { lookups: all.slice(i, i + PRICE_BATCH), fresh: true };
+      if (backup) body.backup = true;
+      const data = await callFunction('prices', body);
       Object.assign(results, data?.results ?? {});
     }
   } catch (e) {

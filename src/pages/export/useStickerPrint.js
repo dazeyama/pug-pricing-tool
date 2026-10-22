@@ -34,7 +34,7 @@ export function useStickerPrint() {
     const tab = openPrintTab(title, "Fetching today's prices, then the stickers. It opens here when it's ready.");
     setPrinting(true);
     try {
-      const today = await todaysPrices(chosen, { onStep: (text) => setStep(tab, text) });
+      const today = await todaysPrices(chosen, { onStep: (text) => setStep(tab, text), backup: true });
       const pct = values.fallback_pct_pokemon;
       const priceOf = (line) => sellPriceFor(line, { ...today.get(line.id), pct }).value;
       setStep(tab, 'Laying out the stickers…');

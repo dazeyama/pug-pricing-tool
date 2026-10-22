@@ -171,7 +171,7 @@ export function useAuditPrint() {
       // Today's market price on every row (decision 404), as the export and the stickers work it
       // out: today's price for the card's condition, before the Sell Price's steps and floor.
       setStep(tab, "Fetching today's prices…");
-      const today = await todaysPrices(chosen, { onStep: (text) => setStep(tab, text) });
+      const today = await todaysPrices(chosen, { onStep: (text) => setStep(tab, text), backup: true });
       const pct = values[pokemon ? 'fallback_pct_pokemon' : 'fallback_pct_mtg'];
       const prices = new Map(chosen.map((l) => [l.id, sellPriceFor(l, { ...today.get(l.id), pct }).value]));
       const priceOf = (line) => prices.get(line.id) ?? null;

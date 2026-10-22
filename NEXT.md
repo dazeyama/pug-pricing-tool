@@ -7,7 +7,14 @@ and function.
 ## Open
 
 - **Unpushed:** decision 435, Magic's promos after its normal printings (`cardSearch.js` `rank`, `scryfall.js`
-  `isPromo`). Untested in the app.
+  `isPromo`), and decisions 436–439, the backup JustTCG key. Untested in the app. **Edge Functions changed:**
+  `secrets` and `prices` (and `_shared/justtcg.ts`) are deployed to dev only; the push deploys both to prod
+  (release step 9), and the app's backup flag does nothing there until it does. No migrations.
+- **The backup key, left open** (decisions 436–439): there's no usage meter for it (would need a migration; the
+  owner: not worth it), and the app isn't told when a call used it (only the `prices` function's log says so). A
+  big export on the backup's Free plan can wait on its per-minute limit (`call`'s backoff, `_shared/justtcg.ts`);
+  untested how long. TEST.md has no case for it: on dev, it needs the main key capped (or a capped key saved as
+  the main one).
 - **Help out of date** (decisions 431–434): "The tables" (Collections) still lists **Notes** and doesn't mention the
   note's * and its chip; until the owner asks for Help.
 - **F2 reopened: the backup can hit the 8 s statement limit** (decision 430): a Download backup failed with a 500
@@ -58,6 +65,16 @@ and function.
 
 ## Done
 
+- 2026-10-22: **A backup JustTCG key for exports, printouts and REPRICE?** (decisions 436–439, the owner's ask),
+  four commits, lint, 463 unit tests and the build before each; untested in the app:
+  - 436: the `secrets` function keeps `justtcg_backup`; its Test doesn't write the usage meter (`call`'s
+    `record: false`, `_shared/justtcg.ts`). Deployed to dev.
+  - 437: Settings → API keys has a **JustTCG backup** row (`ApiKeysPanel.jsx` `PROVIDERS`).
+  - 438: `prices` with `backup: true` moves to the backup key on the main key's daily or monthly cap, 20 cards a
+    batch (`ask`, `OnBackup`, `supabase/functions/prices/index.ts`). Deployed to dev.
+  - 439: `todaysPrices`'s `backup` option, on for EXPORT (`ccExport.js` `sellPrices`), COMPLETE (`DayPage.jsx`
+    `complete`), the printouts (`useAuditPrint.js`, `useStickerPrint.js`) and REPRICE? (`RepriceModal.jsx`); never
+    the Price screen.
 - 2026-10-22: Magic searches, newest first with under 10 printings found, list the normal printings before the
   promos within a rank (decision 435; `cardSearch.js` `rank`, `scryfall.js` `isPromo`).
 - 2026-10-21: Pushed, no bump (still v1.0.1-day1), on the owner's ask, without the pre-push review (the owner:

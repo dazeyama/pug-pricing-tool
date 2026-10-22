@@ -190,7 +190,7 @@ export async function searchProducts(text) {
 export async function sellPrices(lines, cards, pct, onStep, floor) {
   let today;
   try {
-    today = await todaysPrices(lines, { cards, onStep });
+    today = await todaysPrices(lines, { cards, onStep, backup: true });
   } catch (e) {
     throw new Error(`${e.message} Nothing was exported.`);
   }
