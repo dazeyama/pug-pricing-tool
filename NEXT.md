@@ -75,7 +75,8 @@ and function.
     bands (`buyOrderSections`, a section's `bare` in `auditPdf.js`, `useAuditPrint.js` `buyOrder`).
   - 445: **Print PKM in buy order**, the same for Pokémon.
   - Left as they were: a buy's ⋯ → Print buy, the print after CONFIRM BUY and the Collections tab's Print
-    collection have no buy-order version; TEST.md has no case for any of the three.
+    collection have no buy-order version (the owner: leave Print buy and CONFIRM BUY's as they are); TEST.md has
+    no case for any of the three.
 - 2026-10-22: **A click on a menu group (◂ Print, ◂ Export, ◂ Convert) keeps its flyout open** (decision 442, the
   owner's ask): `GroupRow`'s click only opens it (`MenuItems.jsx`). Lint, tests and the build pass; untested in the
   app.
