@@ -7,8 +7,8 @@ and function.
 ## Open
 
 - **Unpushed:** decision 435, Magic's promos after its normal printings (`cardSearch.js` `rank`, `scryfall.js`
-  `isPromo`), decisions 436–439, the backup JustTCG key, 440–441, the Export dialog's held pick and Undo, 442, a click keeping a menu group's flyout open, and 443–445, the Magic printouts' new order and Print MTG / PKM in
-  buy order.
+  `isPromo`), decisions 436–439, the backup JustTCG key, 440–441, the Export dialog's held pick and Undo, 442, a click keeping a menu group's flyout open, 443–445, the Magic printouts' new order and Print MTG / PKM in
+  buy order, and 446, accents in searches.
   Untested in the app. **Edge Functions changed:**
   `secrets` and `prices` (and `_shared/justtcg.ts`) are deployed to dev only; the push deploys both to prod
   (release step 9), and the app's backup flag does nothing there until it does. No migrations.
@@ -67,6 +67,10 @@ and function.
 
 ## Done
 
+- 2026-10-22: **Names typed without accents find the cards that have them** (decision 446, the owner's ask):
+  "nazgul" finds Nazgûl, "flabebe" Flabébé, from the name lists already loaded (`normalize.js` `accentedWords`,
+  `spellingsOf`, `withAccents`; `scryfall.js` `printsQuery`; `tcgdex.js` `searchCards`). Lint, tests and the build
+  pass; untested in the app. Left: before the name lists have loaded (the first start), a search goes as typed.
 - 2026-10-22: **Printouts** (the owner's ask), three commits, lint, 465 unit tests and the build before each;
   untested in the app:
   - 443: Magic printouts' rows go colour pile > name > collector number inside each category (`byPile`,

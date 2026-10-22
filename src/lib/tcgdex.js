@@ -16,6 +16,7 @@
 import { createTransport } from './transport.js';
 import { DAY, memoryCache, readStored, storedOrDownload, writeStored } from './cache.js';
 import { normNumber } from './query.js';
+import { accentedWords, withAccents } from './normalize.js';
 
 const API = 'https://api.tcgdex.net/v2';
 // Four at a time (owner, 2026-10-16: a sticker sheet's 91 card records one by one took the
@@ -223,9 +224,12 @@ function enSetIdsForCode(code) {
 // ---------------------------------------------------------------- names
 
 let namesPromise = null;
+// The names' accented words by plain spelling (decision 446), once the names are in: never waited for,
+// so a search before they load goes as typed.
+let accented = null;
 /**
- * Every English Pokémon card name, for typo correction: derived from the
- * card list (2.4 MB) and kept as unique names in localStorage for 7 days.
+ * Every English Pokémon card name, for typo correction and the accents (decision 446): derived from
+ * the card list (2.4 MB) and kept as unique names in localStorage for 7 days.
  * @returns {Promise<string[]>}
  */
 export function loadNames() {
@@ -234,6 +238,9 @@ export function loadNames() {
     const names = new Set();
     for (const b of briefs) if (!isPocketBrief(b)) names.add(b.name);
     return [...names];
+  }).then((names) => {
+    accented = accentedWords(names);
+    return names;
   }).catch((e) => {
     namesPromise = null;
     throw e;
@@ -306,7 +313,8 @@ export async function searchCards(lang, q, signal) {
     }
   } else {
     const params = new URLSearchParams();
-    if (q.name) params.set('name', q.name);
+    // TCGdex matches accents only as written: "flabebe" is asked as "Flabébé" (decision 446).
+    if (q.name) params.set('name', accented ? withAccents(q.name, accented) : q.name);
     if (q.number) params.set('localId', localIdParam(q.number));
     if (q.setCode && !q.name && !q.number) {
       // A code and nothing else: the whole set.

@@ -57,3 +57,13 @@ test('a List or Mystery Booster number as printed on the card', () => {
   assert.equal(listedNumber('rvr', '26'), null);
   assert.equal(listedNumber('sld', '1-2'), null);
 });
+
+// Owner, 2026-10-22: "nazgul" finds Nazgûl (decision 446).
+test('a word typed without accents is searched with its accented spelling beside it', () => {
+  const spell = (w) => ({ nazgul: ['Nazgûl'], dul: ['Dûl', "Dûl's"] }[w] ?? []);
+  assert.equal(printsQuery({ name: 'nazgul', number: null, setCode: null }, spell).q, `("nazgul" or "Nazgûl")${TAIL}`);
+  assert.equal(printsQuery({ name: 'lim dul', number: null, setCode: null }, spell).q,
+    `"lim" ("dul" or "Dûl" or "Dûl's")${TAIL}`);
+  // No spellings (the names not loaded yet): as typed.
+  assert.equal(printsQuery({ name: 'nazgul', number: null, setCode: null }).q, `"nazgul"${TAIL}`);
+});

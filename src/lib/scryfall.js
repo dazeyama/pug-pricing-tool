@@ -2,6 +2,7 @@
 // through one serialized queue. English printings only.
 import { createTransport } from './transport.js';
 import { DAY, memoryCache, storedOrDownload } from './cache.js';
+import { accentedWords, spellingsOf } from './normalize.js';
 
 const API = 'https://api.scryfall.com';
 // A lookup's first byte came in 0.32 s at worst (2026-10-18): given up after 5 s and tried again.
@@ -105,15 +106,21 @@ export function isMagicSetCode(token) {
 }
 
 let namesPromise = null;
+// The names' accented words by plain spelling (decision 446), once the names are in: never waited for,
+// so a search before they load goes as typed.
+let accented = null;
 /**
- * Every card name, for typo correction. localStorage for 7 days (Audit Tool's
- * CARD_NAMES_MAX_AGE_DAYS), downloaded at low priority.
+ * Every card name, for typo correction and the accents (decision 446). localStorage for 7 days (Audit
+ * Tool's CARD_NAMES_MAX_AGE_DAYS), downloaded at low priority.
  * @returns {Promise<string[]>}
  */
 export function loadNames() {
   namesPromise ??= storedOrDownload('pug.scryfall.names', 7 * DAY, async () => {
     const data = await transport.getJson(`${API}/catalog/card-names`, { priority: 'low' });
     return data.data;
+  }).then((names) => {
+    accented = accentedWords(names);
+    return names;
   }).catch((e) => {
     namesPromise = null;
     throw e;
@@ -121,13 +128,20 @@ export function loadNames() {
   return namesPromise;
 }
 
-/** Each word of a name as a quoted Scryfall term, so "or", "-" etc. are never syntax. */
-function nameTerms(name) {
+/**
+ * Each word of a name as a quoted Scryfall term, so "or", "-" etc. are never syntax. `spell`: the
+ * accented words a word may stand for, each searched beside it ("nazgul" → ("nazgul" or "Nazgûl"),
+ * decision 446); Scryfall matches accents only as written.
+ */
+function nameTerms(name, spell = null) {
   return String(name ?? '')
     .split(/\s+/)
     .map((w) => w.replace(/"/g, ''))
     .filter((w) => /[\p{L}\p{N}]/u.test(w))    // drops "//" and other bare punctuation
-    .map((w) => `"${w}"`);
+    .map((w) => {
+      const also = spell?.(w) ?? [];
+      return also.length ? `(${[w, ...also].map((x) => `"${x}"`).join(' or ')})` : `"${w}"`;
+    });
 }
 
 /**
@@ -177,8 +191,8 @@ const plainNumber = (n) => String(n ?? '').trim().toLowerCase().replace(/^([a-z]
  * @returns {{ q: string|null, listedOnly: string|null }}  q null: nothing to search;
  *   listedOnly: the number a List-style card must have to be kept
  */
-export function printsQuery({ name, number, setCode }) {
-  const parts = nameTerms(name);
+export function printsQuery({ name, number, setCode }, spell = null) {
+  const parts = nameTerms(name, spell);
   const term = numberTerm(number);
   const set = setCode ? setCode.toLowerCase() : null;
   const n = String(number ?? '').replace(/"/g, '').trim();
@@ -236,7 +250,8 @@ export const isPromo = (card) => card?.promo === true || card?.set_type === 'pro
  * @returns {Promise<{ cards: any[], total: number, hasMore: boolean }>}
  */
 export async function searchPrints(q, signal) {
-  const { q: query, listedOnly } = printsQuery(q);
+  const words = accented;
+  const { q: query, listedOnly } = printsQuery(q, words ? (w) => spellingsOf(w, words) : null);
   if (!query) return { cards: [], total: 0, hasMore: false };
 
   // Newest first, or oldest first with the suggestions' sort toggle
