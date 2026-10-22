@@ -6,6 +6,10 @@
 //   fresh  = the export's Sell Prices (docs/EXPORT_FUNCTION.md 5.4): prices
 //            fetched in the last 12 hours count (owner, 2026-10-01); older
 //            ones are fetched again (and the cache refreshed).
+//   backup = exports, printouts and REPRICE? (decision 438): once the main key
+//            is out for the day or month, the rest of the call runs on the
+//            backup key (`justtcg_backup`), if one is saved. The Price screen
+//            never sends it.
 //   Lookup = { key, game: 'mtg'|'pokemon', lang: 'en'|'ja',
 //              scryfallId? | tcgplayerId? | tcgplayerSkuId? | justtcgId? | (name + number [+ setName]) }
 //            tcgplayerSkuId: one condition and printing of a product, as
@@ -130,6 +134,10 @@ const SEARCH_MISS_MS = 86400_000;   // a search that found nothing is asked agai
 // price up on its own when the search is older than a price's freshness.
 const SIBLINGS_MS = 7 * 86400_000;
 const SEARCHES_MAX = 3;
+const BACKUP_BATCH = 20;   // POST /cards on the Free plan, the backup key's (decision 438)
+
+/** The main key ran out mid-call and a batch too big for the backup has to be asked again in smaller ones. */
+class OnBackup extends Error {}
 
 /**
  * Only what the app reads: price history and most statistics are dropped,
@@ -237,8 +245,10 @@ Deno.serve(async (req) => {
   let lookups: Lookup[];
   let cardSearches: Search[];
   let maxAge = FRESH_MS;
+  let backupAllowed = false;
   try {
     const body = await req.json();
+    backupAllowed = body?.backup === true;
     lookups = (body?.lookups ?? []).filter((l: Lookup) => l?.key && GAMES[l.game]);
     cardSearches = (body?.searches ?? []).filter((s: Search) => s?.key && s.game === 'pokemon'
       && (s.kind === 'find' || s.kind === 'siblings' || s.kind === 'dex') && String(s.name ?? '').trim().length >= 2);
@@ -253,6 +263,26 @@ Deno.serve(async (req) => {
   const db = adminClient();
   const key = await readSecret('justtcg');
   if (!key) return json({ error: 'No JustTCG key saved. Add it in Settings → API keys.', code: 'NO_KEY' }, 400);
+
+  // Every JustTCG request of this call. The main key until JustTCG says it's out for the day or
+  // month; then, for a caller that allows it, the backup key for the rest of the call, its usage
+  // kept off the Settings meter (decision 438). `resend: false`: don't send this same request on
+  // the backup (a batch over its size), throw OnBackup so the caller splits it.
+  let backupKey: string | null = null;
+  const ask = async (path: string, init: RequestInit = {}, { resend = true } = {}) => {
+    if (!backupKey) {
+      try {
+        return await call(key, path, init);
+      } catch (e) {
+        if (!(e instanceof QuotaError) || !backupAllowed) throw e;
+        backupKey = await readSecret('justtcg_backup');
+        if (!backupKey) throw e;
+        console.log(`prices: the main key is out (${e.code}); the rest of this call uses the backup key`);
+        if (!resend) throw new OnBackup();
+      }
+    }
+    return call(backupKey, path, init, { record: false });
+  };
 
   const now = Date.now();
   const results: Record<string, { card: any; fetchedAt: string | null }> = {};
@@ -316,7 +346,7 @@ Deno.serve(async (req) => {
         log.push(`set ${code}: remembered ${row.justtcg_card_id ?? 'none'}`);
         return row.justtcg_card_id;
       }
-      const res = await call(key, `/sets?${new URLSearchParams({ game, q: l.setCode! })}`);
+      const res = await ask(`/sets?${new URLSearchParams({ game, q: l.setCode! })}`);
       const sets: any[] = res?.data ?? [];
       const hits = sets.filter((s: any) => words(s.name).includes(code) || words(s.id).includes(code));
       const id = hits.length === 1 ? hits[0].id : null;
@@ -346,10 +376,18 @@ Deno.serve(async (req) => {
       results[l.key] = { card: null, fetchedAt: null, failed: true } as any;
     };
 
-    // 2. One batch request (≤100 items on Starter/Pro) for everything missing.
-    for (let i = 0; i < batch.length; i += BATCH_MAX) {
-      const chunk = batch.slice(i, i + BATCH_MAX);
-      const res = await call(key, '/cards', { method: 'POST', body: JSON.stringify(chunk.map((b) => b.item)) });
+    // 2. One batch request (≤100 items on Starter/Pro, 20 on the backup's Free plan) for everything missing.
+    for (let i = 0; i < batch.length;) {
+      const chunk = batch.slice(i, i + (backupKey ? BACKUP_BATCH : BATCH_MAX));
+      let res: any;
+      try {
+        res = await ask('/cards', { method: 'POST', body: JSON.stringify(chunk.map((b) => b.item)) },
+          { resend: chunk.length <= BACKUP_BATCH });
+      } catch (e) {
+        if (e instanceof OnBackup) continue;   // the same lookups again, in the backup's batches
+        throw e;
+      }
+      i += chunk.length;
       // A reply with no card list isn't "none of these exist": nothing in the chunk is remembered
       // from it, and each lookup is answered as not answered (decision 360).
       if (!Array.isArray(res?.data)) {
@@ -402,7 +440,7 @@ Deno.serve(async (req) => {
     //    What each step got back is logged when nothing (or several) match.
     const search = async (l: Lookup, extra: Record<string, string>, log: string[], label: string) => {
       const params = new URLSearchParams({ game: gameFor(l), q: l.name!, limit: '20', ...extra });
-      const res = await call(key, `/cards?${params}`);
+      const res = await ask(`/cards?${params}`);
       const all: any[] = res?.data ?? [];
       const numbered = all.filter((c: any) => normNumber(c.number) === normNumber(l.number)
         && (!l.size || !sizeOf(c.number) || sizeOf(c.number) === Number(l.size)));
@@ -461,7 +499,7 @@ Deno.serve(async (req) => {
         // An unnumbered old set: the card with exactly this name in its set.
         await attempt(`set ${oldSet}`, async () => {
           const params = new URLSearchParams({ game: 'pokemon-japan', q: l.name!, set: oldSet, limit: '20' });
-          const all: any[] = (await call(key, `/cards?${params}`))?.data ?? [];
+          const all: any[] = (await ask(`/cards?${params}`))?.data ?? [];
           log.push(`set ${oldSet}: ${all.length} back [${all.slice(0, 8).map((c: any) => c.name).join('; ')}]`);
           const want = fold(l.name);
           return all.filter((c: any) => fold(baseName(c.name)) === want && (c.variants ?? []).length);
@@ -543,7 +581,7 @@ Deno.serve(async (req) => {
             const params = new URLSearchParams({
               game: 'pokemon-japan', q: s.name, number: 'N/A', limit: '20', offset: String(page * 20),
             });
-            const res = await call(key, `/cards?${params}`);
+            const res = await ask(`/cards?${params}`);
             const all: any[] = res?.data ?? [];
             const kept = all.filter((c: any) => NO_NUMBER_SETS.has(c.set) && fold(plainName(c.name)).endsWith(want)
               && (c.variants ?? []).some((v: any) => String(v.language ?? '').toLowerCase() === 'japanese'));
@@ -583,7 +621,7 @@ Deno.serve(async (req) => {
         let cards: any[] = [];
         for (const extra of steps) {
           const params = new URLSearchParams({ game: GAMES[s.game], q: s.name, limit: '20', ...extra });
-          const res = await call(key, `/cards?${params}`);
+          const res = await ask(`/cards?${params}`);
           const all: any[] = res?.data ?? [];
           cards = all.filter((c: any) => named(c) && sameNumber(c) && english(c));
           log.push(`${extra.number ? `number ${extra.number}` : 'name only'}: ${all.length} back, ${cards.length} fit`);
