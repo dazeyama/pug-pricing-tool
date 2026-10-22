@@ -12,7 +12,7 @@ import { flattenGroups } from '../lib/menuGroups.js';
  *   unless `saysWhy`, when it still runs (EXPORT's items toast the reason).
  * - a group: `{ label, items }`. It starts with ◂ and opens its items in a
  *   flyout to its left (owner, 2026-10-21; decision 425), on hover (the way a
- *   Windows menu does) or a click; ← or → opens it from the keyboard, and the
+ *   Windows menu does) or a click, which never closes it (decision 442); ← or → opens it from the keyboard, and the
  *   arrow key pointing back at the group closes it. Only with no room on the
  *   left does it open to the right, the arrow moving to that side; it opens
  *   upward when the window's foot is near.
@@ -102,7 +102,7 @@ function GroupRow({ item, open, onHover, onToggle, onPick, needsUser }) {
         className={`more-item group${side}${open ? ' open' : ''}`}
         title={item.title}
         onMouseEnter={onHover}
-        onClick={() => onToggle(!open)}
+        onClick={() => onToggle(true)}   // never closes it: hover has opened it already (decision 442)
         onKeyDown={(e) => {
           if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
             e.preventDefault();

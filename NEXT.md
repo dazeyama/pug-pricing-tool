@@ -7,7 +7,7 @@ and function.
 ## Open
 
 - **Unpushed:** decision 435, Magic's promos after its normal printings (`cardSearch.js` `rank`, `scryfall.js`
-  `isPromo`), decisions 436–439, the backup JustTCG key, and 440–441, the Export dialog's held pick and Undo.
+  `isPromo`), decisions 436–439, the backup JustTCG key, 440–441, the Export dialog's held pick and Undo, and 442, a click keeping a menu group's flyout open.
   Untested in the app. **Edge Functions changed:**
   `secrets` and `prices` (and `_shared/justtcg.ts`) are deployed to dev only; the push deploys both to prod
   (release step 9), and the app's backup flag does nothing there until it does. No migrations.
@@ -66,6 +66,9 @@ and function.
 
 ## Done
 
+- 2026-10-22: **A click on a menu group (◂ Print, ◂ Export, ◂ Convert) keeps its flyout open** (decision 442, the
+  owner's ask): `GroupRow`'s click only opens it (`MenuItems.jsx`). Lint, tests and the build pass; untested in the
+  app.
 - 2026-10-22: **The Export dialog's Needs a choice: a pick holds, then folds away, and Undo last pick** (decisions
   440–441, the owner's ask), two commits, lint, 463 unit tests and the build before each; untested in the app.
   `ExportDialog.jsx` (`hold`, `remember`, `undo`, `inOrder`, `dbLinks`), `export.css` (`.xd-fold`,
