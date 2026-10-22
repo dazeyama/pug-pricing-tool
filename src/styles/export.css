@@ -60,6 +60,9 @@
   font-weight: 600;
 }
 @media (prefers-reduced-motion: reduce) { .xd-fold { transition: none; } }
+/* Undo last pick, at the footer's left (decision 441). */
+.xd-undo { display: inline-flex; align-items: center; gap: 8px; min-width: 0; margin-right: auto; }
+.xd-undo-what { max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; color: var(--muted); }
 .xd-options { display: flex; flex-direction: column; gap: 2px; margin: 4px 0 6px 6px; }
 .xd-option { display: flex; align-items: baseline; gap: 8px; margin: 0; font-size: 13px; color: var(--text); cursor: pointer; }
 .xd-option input { width: auto; margin: 0; }

@@ -23,6 +23,7 @@ import { SECOND_LOOK_MS, pause } from '../../lib/timeout.js';
 // exported. In 'export' mode (Phase E3) Matching also fetches today's prices
 // for the Sell Prices, and Review leads to Confirm (the red pull-out list)
 // and the export itself; picks are saved with the export.
+
 // A card picked in Needs a choice: held in place this long, then folded away this long (decision 440).
 const HOLD_MS = 1000;
 const FOLD_MS = 300;   // export.css .xd-fold's transition
@@ -86,8 +87,16 @@ export default function ExportDialog({
   const [badManual, setBadManual] = useState(new Set()); // lines whose typed Sell Price isn't valid
   const [pulled, setPulled] = useState(false);
   const [preview, setPreview] = useState(null);
-  const [held, setHeld] = useState(new Map());        // line id → 'hold' | 'fold', just picked (decision 440)
+  const [held, setHeld] = useState(new Map());        // line id → { phase: 'hold' | 'fold', token }, just picked (decision 440)
   const timers = useRef(new Set());
+  const [undos, setUndos] = useState([]);             // the picks made in Needs a choice, newest last (decision 441)
+  const [remount, setRemount] = useState(new Map());  // line id → n: a card put back by Undo starts with nothing ticked
+  // A check run: what cc_product_links holds for a link key now, as far as this dialog knows (Undo puts it back).
+  const dbLinks = useRef(new Map());
+  const dbQueue = useRef(Promise.resolve());          // its writes, one after another
+  const inOrder = (fn) => {
+    dbQueue.current = dbQueue.current.then(fn);
+  };
   useEffect(() => {
     const live = timers.current;
     return () => live.forEach(clearTimeout);
@@ -122,6 +131,8 @@ export default function ExportDialog({
       setEditing(new Set());
       setManual(new Map());
       setBadManual(new Set());
+      setUndos([]);
+      dbLinks.current = new Map();
       setPhase('review');
     })().catch((e) => {
       if (!alive) return;
@@ -166,9 +177,14 @@ export default function ExportDialog({
   async function pick(r, product) {
     const key = linkKey(r.line);
     const same = results.filter((x) => linkKey(x.line) === key);
-    hold(same.filter((x) => stateOf(x).group === 'choose').map((x) => x.line.id));
     const detected = r.status === 'auto' && r.product?.product_id === product.product_id;
     const hadPick = Boolean(picks.get(r.line.id)?.product);
+    const inChoose = same.filter((x) => stateOf(x).group === 'choose').map((x) => x.line.id);
+    if (inChoose.length) {
+      const setMap = mode === 'check' && !detected && !r.category && alwaysOf(r.line.id);
+      remember(r, same, inChoose, product.product_name, mode === 'check' && !detected, setMap);
+    }
+    hold(inChoose);
     setPicks((m) => {
       const next = new Map(m);
       for (const x of same) {
@@ -178,25 +194,86 @@ export default function ExportDialog({
       return next;
     });
     if (mode !== 'check') return;
-    if (detected) {
-      // The dry run saved the other pick: put the remembered product back as it was.
-      if (!hadPick) return;
+    const userId = staff.current?.id;
+    const setToo = !r.category && alwaysOf(r.line.id);
+    // One after another with Undo's writes, so an Undo pressed at once lands after the pick it undoes.
+    inOrder(async () => {
+      if (detected) {
+        // The dry run saved the other pick: put the remembered product back as it was.
+        if (!hadPick) return;
+        try {
+          if (r.via === 'link') await saveLink(r.line, product, r.link?.linked_by ?? userId, r.link?.source ?? 'staff');
+          else await forgetLink(r.line);
+          dbLinks.current.set(key, r.via === 'link' ? r.link : null);
+        } catch (e) {
+          toast(e.message, 'err');
+        }
+        return;
+      }
       try {
-        if (r.via === 'link') await saveLink(r.line, product, r.link?.linked_by ?? staff.current?.id, r.link?.source ?? 'staff');
-        else await forgetLink(r.line);
+        await saveLink(r.line, product, userId);
+        dbLinks.current.set(key, { ...product, linked_by: userId ?? null, source: 'staff' });
+        if (setToo) await saveSetMap(r.set.code, r.promo, product.category, userId);
       } catch (e) {
         toast(e.message, 'err');
       }
-      return;
-    }
-    try {
-      await saveLink(r.line, product, staff.current?.id);
-      if (!r.category && alwaysOf(r.line.id)) {
-        await saveSetMap(r.set.code, r.promo, product.category, staff.current?.id);
+    });
+  }
+
+  /**
+   * A pick made in Needs a choice, for Undo (decision 441): the picks it replaced on every line
+   * it covered and, in a check run, the remembered product it replaced.
+   */
+  function remember(r, same, ids, what, saved, setMap) {
+    const key = linkKey(r.line);
+    const link = dbLinks.current.has(key) ? dbLinks.current.get(key) : (r.link ?? r.wasLinked ?? null);
+    setUndos((u) => [...u, {
+      ids,
+      before: new Map(same.map((x) => [x.line.id, picks.get(x.line.id)])),
+      card: lineTextWithCondition(r.line),
+      what,
+      db: saved ? { line: r.line, link } : null,
+      set: setMap ? `${r.set.name} (${String(r.set.code).toUpperCase()})` : null,
+    }]);
+  }
+
+  /** Undo: the last pick in Needs a choice taken back, its cards there again with nothing ticked. */
+  function undo() {
+    const last = undos.at(-1);
+    if (!last) return;
+    setUndos((u) => u.slice(0, -1));
+    setPicks((m) => {
+      const next = new Map(m);
+      for (const [id, was] of last.before) {
+        if (was) next.set(id, was);
+        else next.delete(id);
       }
-    } catch (e) {
-      toast(e.message, 'err');
+      return next;
+    });
+    setHeld((m) => {
+      const next = new Map(m);
+      for (const id of last.ids) next.delete(id);
+      return next;
+    });
+    setRemount((m) => {
+      const next = new Map(m);
+      for (const id of last.ids) next.set(id, (next.get(id) ?? 0) + 1);
+      return next;
+    });
+    if (last.db) {
+      const { line, link } = last.db;
+      inOrder(async () => {
+        try {
+          if (link) await saveLink(line, link, link.linked_by ?? null, link.source ?? 'staff');
+          else await forgetLink(line);
+          dbLinks.current.set(linkKey(line), link);
+        } catch (e) {
+          toast(e.message, 'err');
+        }
+      });
     }
+    // Nothing can take a set's remembered category off (saveSetMap has no undo).
+    if (last.set) toast(`Undone. ${last.set} keeps the category it was given.`, 'ok');
   }
 
   /**
@@ -210,9 +287,12 @@ export default function ExportDialog({
       for (const id of ids) fn(next, id);
       return next;
     });
-    each((m, id) => m.set(id, 'hold'));
-    later(() => each((m, id) => m.has(id) && m.set(id, 'fold')), HOLD_MS);
-    later(() => each((m, id) => m.delete(id)), HOLD_MS + FOLD_MS);
+    // Each hold's own token: an Undo, and a new pick of the same card, aren't cut short by an old timer.
+    const token = {};
+    const mine = (m, id) => m.get(id)?.token === token;
+    each((m, id) => m.set(id, { phase: 'hold', token }));
+    later(() => each((m, id) => mine(m, id) && m.set(id, { phase: 'fold', token })), HOLD_MS);
+    later(() => each((m, id) => mine(m, id) && m.delete(id)), HOLD_MS + FOLD_MS);
   }
   function later(fn, ms) {
     const t = setTimeout(() => {
@@ -223,7 +303,10 @@ export default function ExportDialog({
   }
 
   function chooseNone(r) {
-    if (stateOf(r).group === 'choose') hold([r.line.id]);
+    if (stateOf(r).group === 'choose') {
+      remember(r, [r], [r.line.id], 'None of these', false, false);
+      hold([r.line.id]);
+    }
     setPicks((m) => new Map(m).set(r.line.id, { none: true }));
     setEditing((s) => {
       const next = new Set(s);
@@ -451,12 +534,25 @@ export default function ExportDialog({
   // Every card to pull out of the batch before uploading: can't upload, and bulk (decisions 406, 416).
   const outCards = cantCards + under1Cards;
   const saving = phase === 'saving';
+  // Undo (decision 441), in the footer: its showing up never moves the cards under the pointer.
+  const lastPick = undos.at(-1);
+  const undoBar = phase === 'review' && lastPick ? (
+    <span className="xd-undo">
+      <button type="button" className="btn ghost" title={`Undo: ${lastPick.card} → ${lastPick.what}`} onClick={undo}>
+        Undo last pick
+      </button>
+      <span className="xd-undo-what">{lastPick.card} → {lastPick.what}</span>
+    </span>
+  ) : null;
   let footer;
   if (!exporting || phase === 'matching' || phase === 'error') {
     footer = (
-      <button type="button" className="btn primary" onClick={onClose} autoFocus>
-        {exporting ? 'Cancel' : 'Close'}
-      </button>
+      <>
+        {undoBar}
+        <button type="button" className="btn primary" onClick={onClose} autoFocus>
+          {exporting ? 'Cancel' : 'Close'}
+        </button>
+      </>
     );
   } else if (phase === 'review') {
     // A bad typed price only matters while its box is showing (Needs a choice, or Change).
@@ -465,6 +561,7 @@ export default function ExportDialog({
     const waiting = groups.choose.length > 0 || badTyped;
     footer = (
       <>
+        {undoBar}
         <button type="button" className="btn ghost" onClick={onClose}>Cancel</button>
         <button
           type="button"
@@ -522,9 +619,10 @@ export default function ExportDialog({
                 {groups.choose.map((r) => {
                   const s = held.has(r.line.id) ? stateOf(r) : null;
                   return (
-                    <div key={r.line.id} className={`xd-fold${held.get(r.line.id) === 'fold' ? ' folding' : ''}`}>
+                    <div key={r.line.id} className={`xd-fold${held.get(r.line.id)?.phase === 'fold' ? ' folding' : ''}`}>
                       <div className="xd-fold-in">
                         <ChooseRow
+                          key={remount.get(r.line.id) ?? 0}
                           {...rowProps(r)}
                           heldNote={s && (s.product ? `✓ Picked: ${s.product.product_name}` : '✓ None of these')}
                         />

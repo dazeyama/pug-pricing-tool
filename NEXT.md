@@ -7,7 +7,8 @@ and function.
 ## Open
 
 - **Unpushed:** decision 435, Magic's promos after its normal printings (`cardSearch.js` `rank`, `scryfall.js`
-  `isPromo`), and decisions 436–439, the backup JustTCG key. Untested in the app. **Edge Functions changed:**
+  `isPromo`), decisions 436–439, the backup JustTCG key, and 440–441, the Export dialog's held pick and Undo.
+  Untested in the app. **Edge Functions changed:**
   `secrets` and `prices` (and `_shared/justtcg.ts`) are deployed to dev only; the push deploys both to prod
   (release step 9), and the app's backup flag does nothing there until it does. No migrations.
 - **The backup key, left open** (decisions 436–439): there's no usage meter for it (would need a migration; the
@@ -65,6 +66,11 @@ and function.
 
 ## Done
 
+- 2026-10-22: **The Export dialog's Needs a choice: a pick holds, then folds away, and Undo last pick** (decisions
+  440–441, the owner's ask), two commits, lint, 463 unit tests and the build before each; untested in the app.
+  `ExportDialog.jsx` (`hold`, `remember`, `undo`, `inOrder`, `dbLinks`), `export.css` (`.xd-fold`,
+  `.xd-choose.held`, `.xd-undo`). Not covered: Undo leaves a set's remembered category saved (it says so); no
+  unit test (React only, no logic in `lib/`); TEST.md has no case for either.
 - 2026-10-22: **A backup JustTCG key for exports, printouts and REPRICE?** (decisions 436–439, the owner's ask),
   four commits, lint, 463 unit tests and the build before each; untested in the app:
   - 436: the `secrets` function keeps `justtcg_backup`; its Test doesn't write the usage meter (`call`'s
