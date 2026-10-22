@@ -25,7 +25,7 @@ import { SECOND_LOOK_MS, pause } from '../../lib/timeout.js';
 // and the export itself; picks are saved with the export.
 
 // A card picked in Needs a choice: held in place this long, then folded away this long (decision 440).
-const HOLD_MS = 1000;
+const HOLD_MS = 500;
 const FOLD_MS = 300;   // export.css .xd-fold's transition
 
 /**
@@ -277,8 +277,8 @@ export default function ExportDialog({
   }
 
   /**
-   * Cards just picked in Needs a choice stay where they are, greyed and not clickable, for a
-   * second, then fold away, so the next card doesn't jump under the pointer (decision 440).
+   * Cards just picked in Needs a choice stay where they are, greyed and not clickable, for half
+   * a second, then fold away, so the next card doesn't jump under the pointer (decision 440).
    */
   function hold(ids) {
     if (!ids.length) return;

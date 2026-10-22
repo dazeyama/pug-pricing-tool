@@ -41,7 +41,7 @@
 .xd-reason { color: var(--bad); font-size: 12px; }
 .xd-choose { padding: 8px 0; }
 .xd-choose + .xd-choose { border-top: 1px solid color-mix(in srgb, var(--border) 60%, transparent); }
-/* A card picked in Needs a choice: held in place a second, greyed, then folded away (decision 440). */
+/* A card picked in Needs a choice: held in place half a second, greyed, then folded away (decision 440). */
 .xd-fold { display: grid; grid-template-rows: 1fr; transition: grid-template-rows .3s ease, opacity .3s ease; }
 .xd-fold.folding { grid-template-rows: 0fr; opacity: 0; }
 .xd-fold-in { min-height: 0; }
