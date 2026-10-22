@@ -3,7 +3,7 @@ import { useToast } from '../../components/Toast.jsx';
 import { matchLines, scryfallCards } from '../../lib/ccExport.js';
 import { loadSets } from '../../lib/scryfall.js';
 import {
-  UNMATCHED, auditSections, cardBucket, flagBanner, flaggedBuys, matchCategory, pokemonPrintLines,
+  UNMATCHED, auditSections, buyOrderSections, cardBucket, flagBanner, flaggedBuys, matchCategory, pokemonPrintLines,
   pokemonSections, printLines, savedCategory,
 } from '../../lib/auditPrint.js';
 import { sellPriceFor } from '../../lib/sellPrice.js';
@@ -122,7 +122,8 @@ const flaggedNote = (flags) => (flags.length ? ` 🚩 ${flags.join(', ')} flagge
  * `flagOf`: a card's flagged buy ("Buy 42", decision 301: its buy flagged
  * for a condition check), or null; the printout says so in red, Magic or Pokémon.
  * @returns {{ print: (p: { lines?: object[], load?: () => Promise<object[]>, title: string, fileName: string,
- *   game?: 'mtg'|'pokemon', flagOf?: (line: object) => string|null }) => Promise<void>, printing: boolean }}
+ *   game?: 'mtg'|'pokemon', flagOf?: (line: object) => string|null, over1?: boolean, buyOrder?: boolean })
+ *   => Promise<void>, printing: boolean }}
  */
 export function useAuditPrint() {
   const toast = useToast();
@@ -132,8 +133,11 @@ export function useAuditPrint() {
   const [printing, setPrinting] = useState(false);
 
   // `over1`: Print MTG (>…) (decision 405): only the cards whose market price today is over the Bulk
-  // export rates' amber (decision 416).
-  const print = useCallback(async ({ lines, load, title, fileName, game = 'mtg', flagOf = null, over1 = false }) => {
+  // export rates' amber (decision 416). `buyOrder`: Print MTG in buy order (decision 444): a row for
+  // every card as it was added, no sections, so no categories to find.
+  const print = useCallback(async ({
+    lines, load, title, fileName, game = 'mtg', flagOf = null, over1 = false, buyOrder = false,
+  }) => {
     if (printing || !ready()) return;
     const pokemon = game === 'pokemon';
     const choose = pokemon ? pokemonPrintLines : printLines;
@@ -154,9 +158,8 @@ export function useAuditPrint() {
     }
     // A tab opened now, while this is still the click: one opened after the
     // matching would be blocked as a pop-up (printTab.js).
-    const tab = openPrintTab(title, pokemon
-      ? "Sorting the cards by set. It opens here when it's ready."
-      : "Finding each card's Crystal Commerce category. It opens here when it's ready.");
+    const tab = openPrintTab(title, `${buyOrder ? "Fetching today's prices" : pokemon ? 'Sorting the cards by set'
+      : "Finding each card's Crystal Commerce category"}. It opens here when it's ready.`);
     setPrinting(true);
     try {
       if (load) {
@@ -182,6 +185,20 @@ export function useAuditPrint() {
           toast(`No Magic cards at ${keptWords(cut)} today: nothing to print.`, 'err');
           return;
         }
+      }
+      if (buyOrder && !pokemon) {
+        // In buy order: only each card's colour, for its row's chip.
+        setStep(tab, 'Loading the cards from Scryfall…');
+        const cards = await scryfallCards(chosen.map((l) => l.scryfall_id));
+        const sections = buyOrderSections(chosen.map((line) => ({
+          line, bucket: cardBucket(cards.get(line.scryfall_id)), price: priceOf(line),
+        })));
+        const { flagText, flags } = flagging(chosen.map((l) => flagOf?.(l) ?? null));
+        const { auditPdf } = await import('../../lib/auditPdf.js');
+        deliver(auditPdf({ title, sections, flagText, cut }), fileName, tab);
+        const count = sections[0].cards;
+        toast(`Printout ready: ${count} card${count === 1 ? '' : 's'} in buy order.` + flaggedNote(flags), 'ok');
+        return;
       }
       setStep(tab, pokemon ? 'Sorting the cards by set…' : "Finding each card's Crystal Commerce category…");
       if (pokemon) {

@@ -225,6 +225,24 @@ export function auditSections(placed) {
 }
 
 /**
+ * Print MTG in buy order (decision 444): one bare section, no band, a row for every line as it
+ * comes (the buys in order, each buy's cards as added), nothing merged or sorted.
+ * @param {{ line: object, bucket?: string, price?: number|null }[]} placed
+ * @param {(line: object, qty: number, bucket: string, price: number|null) => object} [toRow]  auditRow, or pokemonRow's
+ * @returns {{ name: string, cards: number, set: null, bare: true, rows: object[] }[]}
+ */
+export function buyOrderSections(placed, toRow = auditRow) {
+  if (!placed.length) return [];
+  return [{
+    name: '',
+    cards: placed.reduce((n, p) => n + p.line.quantity, 0),
+    set: null,
+    bare: true,
+    rows: placed.map((p) => toRow(p.line, p.line.quantity, p.bucket ?? 'unknown', p.price ?? null)),
+  }];
+}
+
+/**
  * Print PKM?'s sections (decision 280): one per set, A to Z by the set's
  * name, its code on the band ("Scarlet & Violet [SV1]"); inside, as a Magic
  * category's rows (NM by number, then the rest), the same card from

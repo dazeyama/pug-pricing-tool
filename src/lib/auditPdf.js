@@ -319,19 +319,21 @@ export function auditPdf({ title, sections, symbols = {}, printedAt = new Date()
   for (const s of sections) {
     if (y > top) y += SECTION_GAP;
     const first = s.rows[0] ? layout(s.rows[0], s) : { h: ROW };
+    // A bare section (buy order, decision 444): no band, and no NM line, its rows not being sorted.
+    const bandH = s.bare ? 0 : BAND + 2;
     // A band never sits alone at a column's foot: it needs its first row under it.
-    if (y + BAND + 2 + first.h > BOTTOM) nextColumn();
-    band(s, false);
+    if (y + bandH + first.h > BOTTOM) nextColumn();
+    if (!s.bare) band(s, false);
     // A line between the NM cards and the lower conditions, when a category
     // has both (owner, 2026-10-14).
     let sawNM = false;
     let divided = false;
     for (const r of s.rows) {
       const l = layout(r, s);
-      const divide = sawNM && !divided && r.condition !== 'NM';
+      const divide = !s.bare && sawNM && !divided && r.condition !== 'NM';
       if (y + l.h + (divide ? DIVIDER : 0) > BOTTOM) {
         nextColumn();
-        band(s, true);
+        if (!s.bare) band(s, true);
       }
       if (divide) {
         doc.setDrawColor(...INK);

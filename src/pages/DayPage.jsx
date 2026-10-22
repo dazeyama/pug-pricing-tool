@@ -532,8 +532,11 @@ function DayScreen({ game, day }) {
    * take, or once the day is exported, what it exported. Today's too: it changes nothing (smoke pass;
    * decision 427).
    */
-  /** `over1`: Print MTG (>…) (decisions 405, 416), only the cards over the Export rates for bulk' amber today. */
-  function printDay(over1 = false) {
+  /**
+   * `over1`: Print MTG (>…) (decisions 405, 416), only the cards over the Export rates for bulk' amber today.
+   * `buyOrder`: Print MTG in buy order (decision 444), the buys in order, each one's cards as added.
+   */
+  function printDay(over1 = false, buyOrder = false) {
     if (!mine.length) {
       toast(`No ${GAME_NAMES[game]} buys that day.`, 'err');
       return;
@@ -546,10 +549,11 @@ function DayScreen({ game, day }) {
     const flagged = new Map(mine.filter((b) => b.condition_check).map((b) => [b.id, `Buy ${numberOf(b)}`]));
     print({
       lines: dayLines,
-      title: `Audit — Magic${over1 ? ` (${keptWords(cut)})` : ''}, ${dayTitle(day)}`,
-      fileName: `audit-magic-${day}${over1 ? `-${keptFileTag(cut)}` : ''}.pdf`,
+      title: `Audit — Magic${over1 ? ` (${keptWords(cut)})` : ''}${buyOrder ? ' in buy order' : ''}, ${dayTitle(day)}`,
+      fileName: `audit-magic-${day}${over1 ? `-${keptFileTag(cut)}` : ''}${buyOrder ? '-buy-order' : ''}.pdf`,
       flagOf: (l) => flagged.get(l.buy_id) ?? null,
       over1,
+      buyOrder,
     });
   }
 

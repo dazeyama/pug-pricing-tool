@@ -16,7 +16,8 @@ import { bulkWords, keptTag, keptWords } from '../lib/bulkCut.js';
  * With `onPrint` (docs/TEAM_FEEDBACK.md 3.1), it opens a small menu instead,
  * in two groups (decision 422; MenuItems): **Print ▸** holds **Print MTG
  * (all)** and **(>…)** (the audit printout; "Print?" until the owner's
- * 2026-10-16 request, decision 280; the cut decisions 405, 416), **Print
+ * 2026-10-16 request, decision 280; the cut decisions 405, 416), **Print MTG in
+ * buy order** (`onPrint(false, true)`, decision 444), **Print
  * PKM?** (`onPrintPokemon`, decision 280: the Pokémon cards by set;
  * `printPokemonBlocked` says why not) and **Print PKM Stickers?**
  * (`onPrintStickers`, decision 281: price-tag stickers at today's sell
@@ -108,6 +109,10 @@ export default function ExportButton({
           null,
           () => onPrint(over1),
         )) : []),
+        // Print MTG in buy order (decision 444): every card as added, a row each, no sections.
+        onPrint && printItem('Print MTG in buy order',
+          "A PDF of these Magic cards in the order they were added, a row for each, with today's prices. Changes nothing.",
+          null, () => onPrint(false, true)),
         onPrintPokemon && printItem('Print PKM?', 'A PDF of these Pokémon cards by set, to check them by hand. Changes nothing.',
           printPokemonBlocked, () => onPrintPokemon()),
         onPrintStickers && printItem('Print PKM Stickers?',

@@ -315,8 +315,11 @@ function CollectionScreen({ id }) {
    * Commerce category; once Completed, what it exported. In any status (team
    * feedback, 2026-10-16), and it needs no user or edit lock: it changes nothing.
    */
-  /** `over1`: Print MTG (>…) (decisions 405, 416), only the cards over the Export rates for bulk' amber today. */
-  function printCollection(over1 = false) {
+  /**
+   * `over1`: Print MTG (>…) (decisions 405, 416), only the cards over the Export rates for bulk' amber today.
+   * `buyOrder`: Print MTG in buy order (decision 444), its cards as added.
+   */
+  function printCollection(over1 = false, buyOrder = false) {
     if (offline) {
       toast('No connection: printing needs it to find the Crystal Commerce categories.', 'err');
       return;
@@ -324,9 +327,10 @@ function CollectionScreen({ id }) {
     const name = system ? systemName : buy.customer_name;
     print({
       lines: col.lines,
-      title: `Audit — ${name}${over1 ? ` (${keptWords(cut)})` : ''}`,
-      fileName: `audit-${fileSafe(name)}${over1 ? `-${keptFileTag(cut)}` : ''}.pdf`,
+      title: `Audit — ${name}${over1 ? ` (${keptWords(cut)})` : ''}${buyOrder ? ' in buy order' : ''}`,
+      fileName: `audit-${fileSafe(name)}${over1 ? `-${keptFileTag(cut)}` : ''}${buyOrder ? '-buy-order' : ''}.pdf`,
       over1,
+      buyOrder,
     });
   }
 

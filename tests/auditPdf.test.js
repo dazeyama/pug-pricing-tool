@@ -23,6 +23,17 @@ test('the pages: one for nothing, more as the rows run on, every section kept', 
   assert.ok(many.getNumberOfPages() >= 3);
 });
 
+test('a bare section (buy order, decision 444) draws its rows with no band, on every page', () => {
+  const rows = (n) => Array.from({ length: n }, (_, i) => ({
+    name: `Card ${i}`, qty: 1, set: 'LEA', number: String(i), condition: i % 2 ? 'LP' : 'NM', extras: [], bucket: 'red',
+  }));
+  const banded = auditPdf({ title: 'Audit', sections: [{ name: 'ZZBAND', cards: 250, set: null, rows: rows(250) }] });
+  const bare = auditPdf({ title: 'Audit', sections: [{ name: 'ZZBAND', cards: 250, set: null, bare: true, rows: rows(250) }] });
+  assert.match(banded.output(), /ZZBAND/);
+  assert.doesNotMatch(bare.output(), /ZZBAND/);
+  assert.match(bare.output(), /Card 249/);
+});
+
 test('the foot: the key ends before the page number at the right margin, at any cut (decision 419)', () => {
   // The printout's foot in points: Letter is 612 wide, the margins 28, the number and key at 7.5pt.
   const doc = new jsPDF({ unit: 'pt', format: 'letter' });

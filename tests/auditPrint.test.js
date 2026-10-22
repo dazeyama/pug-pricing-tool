@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  UNMATCHED, auditRow, auditSections, cardBucket, matchCategory, pokemonPrintLines, pokemonRow, pokemonSections,
+  UNMATCHED, auditRow, auditSections, buyOrderSections, cardBucket, matchCategory, pokemonPrintLines, pokemonRow, pokemonSections,
   priceTone, printLines, savedCategory,
 } from '../src/lib/auditPrint.js';
 import { magicTreatmentLabel } from '../src/lib/printings.js';
@@ -90,6 +90,20 @@ test("inside a category (decision 443): by colour pile, A to Z, then number; a c
     'NM Plea 7', 'LP Orb 1', 'NM Bolt 161', 'NM Bolt 200', 'LP Zap 5', 'MP Zap 5', 'DMG Zap 5',
     'NM Golos 9', 'NM Mox 12', 'HP Ruby 3', 'NM Island 290', 'NM Unknown 1',
   ]);
+});
+
+test('in buy order (decision 444): one bare section, a row per line as it came, nothing merged', () => {
+  const s = buyOrderSections([
+    { line: line({ name: 'Zap', quantity: 2 }), bucket: 'red', price: 3 },
+    { line: line({ name: 'Bolt' }), bucket: 'red' },
+    { line: line({ name: 'Zap' }), bucket: 'red', price: 3 },
+  ]);
+  assert.equal(s.length, 1);
+  assert.equal(s[0].bare, true);
+  assert.equal(s[0].set, null);
+  assert.equal(s[0].cards, 4);
+  assert.deepEqual(s[0].rows.map((r) => [r.name, r.qty, r.price]), [['Zap', 2, 3], ['Bolt', 1, null], ['Zap', 1, 3]]);
+  assert.deepEqual(buyOrderSections([]), []);
 });
 
 test("a card's colour group, as pull-pdf's", () => {
