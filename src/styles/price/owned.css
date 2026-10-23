@@ -91,8 +91,12 @@
 .owned-tag.on { background: rgba(62, 207, 142, .18); color: var(--good); }
 /* The bonus and the cut, side by side under the boxes (decision 457): green and red, solid once applied. */
 /* On one line, both chips, so the stamp under them stays in the row (decision 464: wrapped, they pushed it out). */
-.owned-chips { display: flex; justify-content: center; flex-wrap: nowrap; gap: 3px; }
-.owned-chips .owned-tag { padding: 2px 5px; font-size: 10.5px; white-space: nowrap; }
+/* Each under its box, in the boxes' own two columns (owner, 2026-10-23; decision 465): the first-copy bonus
+   centred under This printing, the cut under All printings, whether one shows or both. */
+.owned-chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.owned-chips .owned-tag { padding: 2px 5px; font-size: 10.5px; white-space: nowrap; justify-self: center; }
+.owned-chips .owned-tag.bonus { grid-column: 1; }
+.owned-chips .owned-tag.cut { grid-column: 2; }
 /* Muted (decision 463): pale tints, a little stronger once applied. */
 .owned-tag.bonus { background: rgba(62, 207, 142, .08); color: color-mix(in srgb, var(--good) 55%, var(--muted)); }
 .owned-tag.cut { background: rgba(255, 107, 107, .08); color: color-mix(in srgb, var(--bad) 55%, var(--muted)); }
