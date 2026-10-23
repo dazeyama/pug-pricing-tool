@@ -25,8 +25,8 @@ and function.
   so its links line may cut "View on Cardmarket" short; `owned.css`); how long a count takes on the live site.
   Known limit: the app can't tell when CC's CSV was taken, so cards exported between taking it and uploading it
   count as in it. Placeholders aren't counted (nothing ever exports or completes one). On the live site, the CC
-  counts start with the first inventory upload after 0008 is on prod. **Help out of date:** the Buy tab's price
-  panel section has no counter, Apply or Auto apply rates?.
+  counts start with the first inventory upload after 0008 is on prod. Help has it (Buy tab → Copies we own,
+  Settings tab → Copies we own; 2026-10-23).
 - **Unpushed:** decision 481, the chips' glow softer (`owned.css`; untested in the app), decision 480, the price
   panel's chips 16px under the price (`quote.css`; measured, not tried in the app), decision 478, the rounding steps from $10 halved (`money.js` `priceStep`, migration 0009 on dev,
   `SellFloorPanel.jsx`'s table, Help's Rounding; untested in the app; needs 0009 on prod first). After the push, a
@@ -40,7 +40,7 @@ and function.
   one-card match dialog (`MatchCardDialog.jsx`, `ChooseRow.jsx`), the price panel's glowing chips (`QuotePanel.jsx`),
   a forgotten match showing without a refresh (`matchCache.js`), and Settings → Copies we own in three columns, the cut red and the bonuses green
   (`OwnedCopiesPanel.jsx`; 475 and 476 measured to fit with no scroll bar from 1000 to 1400 px wide, the switches and boxes
-  not tried in the app). **Help out of date:** Settings has no Copies we own section. Then decision 454, a buy's customer on its header search result (`SearchBox.jsx` `renderRow`; untested
+  not tried in the app). Then decision 454, a buy's customer on its header search result (`SearchBox.jsx` `renderRow`; untested
   in the app; TEST.md section 2), decision 453, copies we own load sooner (`owned.js` `lookUp`, `ccExport.js` `matchLines`; untested
   in the app, export matching included), decision 452, Unlock undoes a collection's export and REPRICE?'s reason (`CollectionPage.jsx`;
   untested in the app; dev's Casey Kusz is the case), decision 451, the inventory reminder banner (`Banners.jsx` `InventoryReminder`; untested in the

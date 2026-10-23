@@ -598,7 +598,8 @@ when the daily limit is reached, or when prices failed to load, with **Retry**.
 
 The price panel shows the picked condition's price, large, in green. A tag says where it came from:
 **manual**, **fallback**, **TCGplayer** or **cardmarket**. Under it, **Credit** and **Cash** show what
-the store pays for one copy.
+the store pays for one copy. With a rate for the copies we own applied, they read **↑ Credit** or **↓
+Credit** and glow, green for a bonus and red for a cut. See [Copies we own](#copies-we-own).
 
 **⚠️ Price may be wrong (N)** appears when something about JustTCG's price looks off. Hovering it
 lists the reasons. Clicking keeps the list open. The reasons:
@@ -619,6 +620,85 @@ lists the reasons. Clicking keeps the list open. The reasons:
 ADD CARD needs a picked worker, a selected card, a price and a connection. Hovering it says what's missing.
 Adding the same printing, finish, condition and price again raises that line's quantity instead of
 adding a new line.
+
+### Copies we own
+
+Beside Card details, a Magic card shows how many copies the store already owns, and suggests a rate to
+match: lower when the store has plenty, higher for a first copy. **Nothing changes a rate until the
+worker applies it**, or ticks Auto apply rates? for the buy.
+
+It shows only where a card can take its own rate: a walk-in buy, and an overnight buy that isn't
+locked. A project, a confirmed buy's Edit, a locked collection and the System collections don't have
+it, and neither does a Pokémon card. **Settings → Copies we own** can switch it off everywhere.
+
+| | |
+|---|---|
+| **This printing** | Copies of this printing, in this finish. |
+| **All printings** | Copies of the card, in every printing and finish. |
+
+Each number is Crystal Commerce's quantity, from the last Master Crystal Inventory upload, plus the
+store's own copies that aren't in it yet: cards in Paid/Ours buys and collections not exported, and
+cards exported since that upload. Placeholders don't count.
+
+**Pointing at the boxes** opens **📦 Copies we own**. Clicking them keeps it open.
+
+- *We own 3 copies of this printing and 8 copies of this card.*
+- **In Crystal Commerce** lists each of its products for the card, with its quantity. **Ours, not in it
+  yet** lists the store's own copies by printing. **this printing** marks the selected one.
+- **The rate** says what changes it and why, then the rates it comes to, with what they pay for this
+  card. A $10 card at Credit 60% / Cash 40% reads *So −10%: Credit 54% / Cash 36% ($5.25 / $3.50)*.
+- **Apply −10%** puts that rate on the card. Clicked again (**✓ −10% on ADD CARD: undo**), it comes off.
+
+**The rate.** With the numbers Settings starts with:
+
+| | |
+|---|---|
+| **+5% first** | The first of this printing: the store owns none of it in this finish. |
+| **+5% more** | The first of this card: none in any printing. A card the store has never had gets +10% in all. |
+| **−5% owned** | For each copy of the card over 2, up to −50%. 4 copies is −10%, 12 or more is −50%. |
+
+- They add up. A new printing of a card the store has 4 of is +5% − 10% = **−5%**. When a bonus and the
+  cut cancel out, the card keeps its usual rate.
+- **A low-end card gets no first-copy bonus.** The cut still applies.
+- A percent is of the card's rate, not of its price: Credit 60% at −10% is 54%.
+
+Under the boxes, a **green chip** shows a bonus (*+10% first*) and a **red chip** the cut (*−10%
+owned*). A ✓ marks them once the rate is applied.
+
+**APPLIED / NOT APPLIED.** Whenever there's a rate to suggest, an ink stamp under the chips says whether
+the card goes on at it: red **NOT APPLIED** or green **APPLIED**. Clicking the stamp switches it, as
+Apply does. Once applied, the price panel's **Credit** and **Cash** show the new amounts with **↑** or
+**↓** and a soft glow, and hovering them says *for the copies we own*.
+
+**ADD CARD** adds the card at the applied rate as **its own rate**, tinted with a ✎ in the list, as Set
+Rate does. Right-click → **Set Rate** or **Clear Rate** changes it afterwards. Editing a line never
+changes its rate: the stamp says to use Set Rate instead.
+
+**Auto apply rates?** sits above the boxes. Ticked, every card added to the buy goes on at its
+suggested rate without a click, cards from a paired phone included. The stamp then can't be clicked.
+Cards already on the list keep their rates.
+
+- It belongs to the buy. An overnight buy keeps it with its details. A walk-in buy keeps it until it's
+  confirmed or cancelled.
+- A new walk-in buy starts ticked or not as **Settings → Copies we own** says. An overnight buy starts
+  unticked.
+- While it's on, ADD CARD waits a moment for the count (*Counting the copies we own*). If the count
+  fails, the card goes on at its usual rate and a message says so.
+- With no card selected, the checkbox shows on its own.
+
+**n/a.** When the count can't be made, both boxes read **n/a**, faded, with no chips and no stamp. The
+rate isn't changed. Pointing at them says why:
+
+- No Master Crystal Inventory is uploaded.
+- The inventory was uploaded before the app kept quantities. Uploading it again fixes it.
+- Crystal Commerce has the card, but none of its products is clearly this printing. **(click to
+  match)** shows under the boxes.
+
+**(click to match)**, or a click on the boxes, opens **Which Crystal Commerce product is this?**, the
+same choice EXPORT asks. The worker picks the product and presses **SAVE**. **CANCEL** leaves
+everything as it was. Once saved, the counts show at once, EXPORT uses that product for this printing,
+and it joins Settings → Crystal Commerce matching's remembered products. Forgetting it there brings the
+n/a back, with no refresh needed.
 
 ### The buy list
 
@@ -653,7 +733,7 @@ once they're in. Each screen starts on Added.
 **Each card is paid at its own rate**, and the app rounds the total down once. Which rate a card gets,
 strongest first:
 
-1. **Its own rate**, from right-click → Set Rate.
+1. **Its own rate**, from right-click → Set Rate, or the rate for the copies we own, applied at ADD CARD.
 2. **The buy's custom rates**, if set. Every card gets them, low and high end included.
 3. **Low end / high end**, set in Settings. Cards strictly under $3 get 50% credit / 25% cash. Cards
    over $35 get 70% / 40%.
@@ -1757,6 +1837,28 @@ picked, and the Changelog records it. It takes $0.40 at the lowest and $10 at mo
 table shows the store's rounding steps with a worked example, switched between **Buy** (rounded
 down) and **Sell** (rounded up, then the floor). Cards already exported keep their prices. Printouts
 and stickers use the price before the floor, so they don't change.
+
+### Copies we own
+
+The numbers behind the Buy tab's [Copies we own](#copies-we-own), in three columns: what it is and its
+two switches, **The cut** in red, and **First-copy bonuses** in green. A box saves when the worker
+leaves it, a switch as it's clicked, and the Changelog records each change. Every computer uses them
+at once.
+
+| | |
+|---|---|
+| **Show copies we own on the Price screen** | On to start. Off, there's no counter, no suggested rate and no Auto apply rates? anywhere, and the two columns beside it grey out. |
+| **New walk-in buys start with Auto apply rates? checked** | Off to start. Overnight buys keep their own box, unticked until someone ticks it. |
+| **Copies before a cut starts** | 2 to start. Copies of the card up to this many cost nothing off. |
+| **Lower for each copy over that** | −5% to start, for each copy over. |
+| **At most** | −50% to start. The cut never goes past it. |
+| **First of this printing** | +5% to start. |
+| **First of this card, on top** | +5% to start. Added to the first, for a card the store has never had. |
+| **Bonuses on low-end cards too** | Off to start: a card in the low end gets no bonus. |
+
+A line under the switches works the numbers through: *With these: 4 copies of a card, 10% lower; 12 or
+more, 50% lower; a card we've never had, 10% higher; a new printing of one we have, 5% higher.* A
+bonus set to 0 is no bonus.
 
 ### Crystal Commerce matching
 

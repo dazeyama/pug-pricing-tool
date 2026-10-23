@@ -79,6 +79,8 @@ export const PAGES = [
     id: 'price-panel', chapter: 'Buy tab', start: 'Buy tab > The price panel', title: 'The price panel and ADD CARD',
     images: [{ src: 'buy-magic', caption: 'A card ready to add' }],
   },
+  // Decision 448 and after: the counter, its rate and Auto apply rates?.
+  { id: 'owned-copies', chapter: 'Buy tab', start: 'Buy tab > Copies we own' },
   {
     id: 'buy-list', chapter: 'Buy tab', start: 'Buy tab > The buy list', title: 'The buy list and rates',
     images: [{ src: 'buy-list', caption: 'The buy list' }],
@@ -226,6 +228,8 @@ export const PAGES = [
     id: 'export-rates', chapter: 'Settings', start: 'Settings tab > Export rates for bulk',
     title: 'Export rates for bulk and Export sell floor',
   },
+  // Decision 474.
+  { id: 'owned-settings', chapter: 'Settings', start: 'Settings tab > Copies we own' },
   {
     id: 'cc-matching', chapter: 'Settings', start: 'Settings tab > Crystal Commerce matching',
     images: [{ src: 'settings-bottom', caption: 'Crystal Commerce matching and Backups' }],
