@@ -132,7 +132,9 @@ function CollectionScreen({ id }) {
     [locked && !system, locked],
     [!col.lines.some((l) => !isStruck(l)), 'No cards to reprice'],
     // Exported cards keep their price (decision 345).
-    [!col.lines.some((l) => !isStruck(l) && !l.cc_status), 'Every card here is exported: their prices stay'],
+    // The way out named (owner, 2026-10-22; decision 452).
+    [!col.lines.some((l) => !isStruck(l) && !l.cc_status),
+      'Every card here is exported, so their prices stay: ⋯ → Undo export… first to reprice them'],
   ]);
 
   // A CSV dropped on an empty collection or project imports into it (owner,
@@ -201,6 +203,7 @@ function CollectionScreen({ id }) {
   const skus = [...new Set(col.lines.map((l) => l.cc_custom_sku).filter(Boolean))];
   // The cards an export stamped, exported or copied to Can't upload cards (Undo export…, decision 298).
   const exportedLines = col.lines.filter((l) => l.cc_status);
+  const exportedCards = exportedLines.reduce((n, l) => n + l.quantity, 0);
   const exportedAt = col.lines.find((l) => l.cc_exported_at)?.cc_exported_at ?? null;
 
   /**
@@ -671,10 +674,19 @@ function CollectionScreen({ id }) {
           {asking === 'unlock' && (
             <ConfirmModal
               title="Unlock this collection?"
-              yes="Unlock"
+              // Exported cards would stay frozen in a collection that's editable again (owner, 2026-10-22;
+              // decision 452): unlocking undoes their export in the same step, as Undo export… does.
+              yes={exportedLines.length ? 'Unlock and undo export' : 'Unlock'}
               onClose={() => setAsking(null)}
               onYes={async () => {
                 setAsking(null);
+                if (exportedLines.length) {
+                  const r = await col.unexport(user?.id);
+                  if (!r) {
+                    api.focusSearch();
+                    return;   // the export wasn't undone (its toast says why): nothing unlocked either
+                  }
+                }
                 await col.setStatus(unlockTo, user?.id, master);
                 api.focusSearch();
               }}
@@ -683,6 +695,18 @@ function CollectionScreen({ id }) {
                 It will go back to {statusLabel(unlockTo)} and can be edited. The price paid is cleared
                 {unlockTo === 'priced' ? '; the offer stays' : ''}.
               </p>
+              {exportedLines.length > 0 && (
+                <p>
+                  Its export is undone too: {exportedCards} exported card{exportedCards === 1 ? '' : 's'} no longer
+                  marked exported
+                  {skus.length > 0 ? ` (Custom SKU ${skus.join(', ')})` : ''}, so they can be edited and repriced
+                  again; their Sell Prices go
+                  {exportedLines.some((l) => l.cc_status === 'cant_upload') && ", their copies come back out of Can't upload cards"}
+                  {exportedLines.some((l) => l.cc_status === 'pulled') && ', pulled cards come back out of Bulk pulled from exports'}.
+                  The file already downloaded isn&apos;t undone: if it was uploaded to Crystal Commerce, take those
+                  rows out there.
+                </p>
+              )}
             </ConfirmModal>
           )}
           {asking === 'reject' && (

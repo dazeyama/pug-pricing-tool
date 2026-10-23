@@ -352,6 +352,12 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
 - [ ] **An exported card is frozen** (decision 345): EXPORT that collection again; × on an exported card says "That
       card is exported: Undo export… first". In a project, EXPORT, then: clicking an exported card or its × says
       the same; adding the same card again makes a new line beside it, which the next EXPORT sends; REPRICE? leaves the exported cards' prices (greyed when every card is exported).
+- [ ] **Unlock undoes the export** (decision 452; dev: Casey Kusz): a Paid/Ours or Completed collection whose cards
+      are exported, unlocked to Priced or Processing: the dialog says its export is undone too (how many cards, the
+      Custom SKU, Can't upload copies) and its button reads **Unlock and undo export**. After it: the Changelog has
+      "Export undone…" then "Unlocked…", the cards are white and editable, and REPRICE? works. With every card still
+      exported, REPRICE?'s grey reason says "⋯ → Undo export… first to reprice them". A collection with nothing
+      exported unlocks as before.
 - [ ] **Rejected:** `SMOKE Rejected`, from Priced, rejected with a reason, locks (no adding, editing or REPRICE?;
       EXPORT downloads the file only), shows $0 paid in red and is left out of the header search unless Show all; **Reopen** goes back to Priced
       with its offer; the Paid/Ours dialog's **Mark as Rejected?** switches to the Reject dialog.

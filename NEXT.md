@@ -23,7 +23,8 @@ and function.
   count as in it. Placeholders aren't counted (nothing ever exports or completes one). On the live site, the CC
   counts start with the first inventory upload after 0008 is on prod. **Help out of date:** the Buy tab's price
   panel section has no counter, Apply or Auto apply rates?.
-- **Unpushed:** decision 451, the inventory reminder banner (`Banners.jsx` `InventoryReminder`; untested in the
+- **Unpushed:** decision 452, Unlock undoes a collection's export and REPRICE?'s reason (`CollectionPage.jsx`;
+  untested in the app; dev's Casey Kusz is the case), decision 451, the inventory reminder banner (`Banners.jsx` `InventoryReminder`; untested in the
   app: dev's inventory is from today, so it shows only once that's over 7 days old), decision 450 (spec only),
   decision 449, Bulk pulled from exports there empty (with 0008; `backupIO.js` `restoreBackup`),
   decision 448, owned copies (needs migration 0008 on prod first), decision 435, Magic's promos after its normal printings (`cardSearch.js` `rank`, `scryfall.js`
