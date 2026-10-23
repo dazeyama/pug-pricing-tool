@@ -81,12 +81,14 @@ export default function OwnedCounter({
     </label>
   );
 
-  if (!candidate || owned.status === 'off') {
-    const why = !candidate ? 'Copies we own appear here' : 'Copies we own: Magic only for now';
+  // Nothing selected: no box, only the buy's Auto apply rates?, which can be set before the first card
+  // (owner, 2026-10-23; decision 479).
+  if (!candidate) return autoBox ? <div className="owned">{autoBox}</div> : null;
+  if (owned.status === 'off') {
     return (
       <div className="owned">
         {autoBox}
-        <div className="owned-empty">{why}</div>
+        <div className="owned-empty">Copies we own: Magic only for now</div>
       </div>
     );
   }
