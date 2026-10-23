@@ -7,6 +7,7 @@ import { SETTINGS_WAIT, useSettings } from '../state/settings.jsx';
 import { formatTime } from '../lib/time.js';
 import { backupDue, daysSince } from '../lib/backup.js';
 import { useBackupDownload } from '../lib/useBackupDownload.js';
+import { inventoryDue } from '../lib/inventoryAge.js';
 
 // Banners below the header, above the tab content (spec 7.5).
 
@@ -68,6 +69,52 @@ function BackupReminder() {
   );
 }
 
+const INVENTORY_DISMISS_KEY = 'pug.inventoryReminderDismissed';
+
+/**
+ * The inventory reminder (owner, 2026-10-22; decision 451), as the backup reminder: when the current
+ * Master Crystal Inventory was uploaded more than 7 days ago. Uploading a new one clears it on every
+ * computer; × hides it until the browser is closed.
+ */
+function InventoryReminder() {
+  const inventory = useInventory();
+  const [dismissed, setDismissed] = useState(() => {
+    try {
+      return sessionStorage.getItem(INVENTORY_DISMISS_KEY) === 'yes';
+    } catch {
+      return false;
+    }
+  });
+  const uploadedAt = inventory.current?.uploaded_at ?? null;
+  if (!inventory.loaded || dismissed || !inventoryDue(uploadedAt)) return null;
+  const days = daysSince(uploadedAt);
+
+  return (
+    <div className="banner warn banner-row">
+      <span>Master Crystal Inventory uploaded {days} day{days === 1 ? '' : 's'} ago.</span>
+      <Link to="/settings" className="btn small banner-btn" title="Upload a fresh Crystal Commerce inventory CSV in Settings">
+        Upload inventory
+      </Link>
+      <button
+        type="button"
+        className="banner-x"
+        title="Hide until the browser is closed"
+        aria-label="Hide the inventory reminder"
+        onClick={() => {
+          try {
+            sessionStorage.setItem(INVENTORY_DISMISS_KEY, 'yes');
+          } catch {
+            // Storage blocked: hidden for this page load only.
+          }
+          setDismissed(true);
+        }}
+      >
+        ×
+      </button>
+    </div>
+  );
+}
+
 export default function Banners() {
   const inventory = useInventory();
   const { offline } = useConnection();
@@ -99,6 +146,7 @@ export default function Banners() {
         </div>
       )}
       <BackupReminder />
+      <InventoryReminder />
     </>
   );
 }

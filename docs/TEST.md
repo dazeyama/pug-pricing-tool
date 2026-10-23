@@ -31,6 +31,10 @@ what happens. The findings are reported when the pass ends.
 - [ ] The computer has a name (Settings → This computer).
 - [ ] Settings → JustTCG usage and the time are noted: ________
 - [ ] **Download backup** (Settings → Backups) saves a JSON file, kept until the pass is over.
+- [ ] **Inventory reminder** (decision 451; dev): with the current inventory uploaded more than 7 days ago, every tab
+      shows "Master Crystal Inventory uploaded N days ago." with **Upload inventory** (opens Settings) and **×**
+      (hidden until the browser is closed). Upload a fresh inventory: it goes, on the other computer too. Within 7
+      days it doesn't show.
 - [ ] Two users exist to switch between (`SMOKE Ash` and `SMOKE Misty`, added if needed).
 
 ## 2. The header

@@ -118,6 +118,8 @@ main { width: 100%; padding: 24px; max-width: 1400px; margin: 0 auto; }
 /* A banner with buttons (the backup reminder): text, then its actions, × at the end. */
 .banner-row { display: flex; align-items: center; gap: 12px; padding-top: 8px; padding-bottom: 8px; }
 .banner-row .banner-btn { color: var(--text); }
+/* A banner button that's a link (the inventory reminder's, decision 451): drawn as the button beside it would be. */
+.banner-row a.banner-btn { margin-left: 0; font-weight: normal; text-decoration: none; }
 .banner-x {
   margin-left: auto;
   padding: 0 6px;
