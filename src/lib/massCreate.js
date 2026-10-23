@@ -27,7 +27,7 @@ export const productKey = (name, category) => `${name}\u0000${category}`;
  * The Near Mint price a worse condition's Sell Price stands for (owner,
  * 2026-10-11): CC prices every condition from Near Mint, so a card added in
  * MP sets NM to its Sell Price ÷ MP's Master Fallback Percentage, rounded up
- * by the store's steps, at least $0.40. $87 at 80% → $108.75 → $110.
+ * by the store's steps, at least $0.40. $87 at 80% → $108.75 → $109.
  * @returns {number|null}  null without a percentage to divide by
  */
 export function nearMintPrice(sell, conditionPct) {

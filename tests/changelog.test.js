@@ -59,9 +59,9 @@ test('a folded run totals each card at its own rate, rounded down once', () => {
     ev({ at: min(4) }),   // an older entry, without rates on its row: the entry's 33 / 66
   ])[0]);
   assert.equal(v.totals.market, 43);
-  // Cash 0.25 + 16 + 0.66 = 16.91 → $16; Credit 0.50 + 28 + 1.32 = 29.82 → $29.
-  assert.equal(v.totals.cash, 16);
-  assert.equal(v.totals.credit, 29);
+  // Cash 0.25 + 16 + 0.66 = 16.91 → $16.50; Credit 0.50 + 28 + 1.32 = 29.82 → $29.50 (50-cent steps).
+  assert.equal(v.totals.cash, 16.5);
+  assert.equal(v.totals.credit, 29.5);
   assert.equal(categoryOf('collection_line_rate'), 'actions');
   assert.equal(HEADLINES.collection_line_rate, 'Card rate set');
 });

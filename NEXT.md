@@ -6,8 +6,12 @@ and function.
 
 ## Open
 
-- **Dev is ahead of prod: migration 0008 (owned copies, decision 448; and Bulk pulled from exports made empty from
-  the start, decision 449) is on dev only.** 449's line is a no-op on dev (the collection's been there since dev's
+- **Dev is ahead of prod: migrations 0008 (owned copies, decision 448; and Bulk pulled from exports made empty from
+  the start, decision 449) and 0009 (the rounding steps, decision 478) are on dev only.** Both go to prod in one
+  push, then the structure-only compare with `C:\ClaudeProjects\temp\dev-run-0009.json` (it replaces
+  dev-run-0008.json below). 0009 changes what `round_down_price` returns, so push the app in the same sitting:
+  with prod on 0009 and the live build still on the old steps, a new Changelog entry's Cash/Credit (worked out by
+  the database) and the screen's disagree ($55 at 45%: $24.50 in the Changelog, $24 on screen). 449's line is a no-op on dev (the collection's been there since dev's
   first pull) and was added to 0008 after it was applied there, as 448's last changes were. After the prod push,
   look on prod (read-only): `select count(*) from buys where system_key = 'pulled'` is 1; the structure-only
   compare can't see rows. Prod gets it at the owner's
@@ -23,7 +27,12 @@ and function.
   count as in it. Placeholders aren't counted (nothing ever exports or completes one). On the live site, the CC
   counts start with the first inventory upload after 0008 is on prod. **Help out of date:** the Buy tab's price
   panel section has no counter, Apply or Auto apply rates?.
-- **Unpushed:** decision 477, Copies we own hidden for Pokémon and where no card can take a rate (`PricingScreen.jsx`
+- **Unpushed:** decision 478, the rounding steps from $10 halved (`money.js` `priceStep`, migration 0009 on dev,
+  `SellFloorPanel.jsx`'s table, Help's Rounding; untested in the app; needs 0009 on prod first). After the push, a
+  past buy's Cash/Credit on its day page, a Quote and a folded Changelog run are worked out again with the new
+  steps, so they can read 50 cents more than when it was confirmed ($27.90 showed $27, now $27.50); its paid
+  price and its own Changelog entry don't change. Decision 479, no empty Copies we own box with nothing selected
+  (`OwnedCounter.jsx`; untested in the app). Decision 477, Copies we own hidden for Pokémon and where no card can take a rate (`PricingScreen.jsx`
   `ownedHere`, `ownedShown`; untested in the app), decisions 455–476, the owned-copies counter's refinements (needs migration 0008 on prod first):
   the first-copy bonuses and low-end rule (`ownedRates.js` `ownedAdjust`), the APPLIED / NOT APPLIED stamp as the
   switch (`InkStamp.jsx`, `OwnedCounter.jsx`), muted colours and the chips' layout (`owned.css`), n/a with the
@@ -54,7 +63,9 @@ and function.
   once, and Restore's first press with "canceling statement due to statement timeout" (`backup_export`, one call for
   every table, 2 to 7.7 s on dev). The paged read that fixed it (decision 426) could leave cards out of the file
   when anything changed while it read, so it was undone. A fix must keep one read at one instant, so it needs the
-  database (a migration): take it with the one after 0008 (0008 is owned copies only, decision 448).
+  database (a migration): take it with the next one, 0010 (0008 is owned copies only, decision 448; 0009 the
+  rounding only, 478). The test run's Backup pass hit the same limit once on 2026-10-23 (`restore_backup`,
+  `staff_users`) and passed on the retry.
 - **From the 2026-10-21 pre-push review, small, not fixed:** reopening a closed customer search shows Show all off
   until a letter is typed (`SearchBox.jsx`, the search effect keyed on `[text, showAll]`); a list whose every card
   is low-end (one rate, not the list's) shows no "*" (`rates.js` `mixedRateLines`, as decision 426 words it);
@@ -69,8 +80,8 @@ and function.
 - **The live site's first inventory upload on v1.0.1-day1** (decision 414): the live site most likely holds a
   second full copy of the Master Crystal Inventory (~152k products) from the owner's timed-out upload on the old
   build, and any uploads since. The first upload from the new build clears them ("Clearing the old file…").
-- **For the migration after 0008, when there's a reason to write one** (the v1.0.1-day1 pre-push review; 0008
-  is owned copies only, decision 448): retire
+- **For the next migration, 0010, when there's a reason to write one** (the v1.0.1-day1 pre-push review; 0008
+  is owned copies only, decision 448, and 0009 the rounding only, 478): retire
   `master_inventory_abort`, unused by the new build (decision 414), with its test-run checks and its place in the
   security-definer list. (The database's "under $1" and "Collection started from…" texts stay: the owner, 2026-10-21,
   "don't bother, no one will ever see that".) A stored `.gz` can be left in the `master-inventory` bucket if

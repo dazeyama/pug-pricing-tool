@@ -357,11 +357,12 @@ do $$
 declare
   s text := 'Helpers';
 begin
-  perform pg_temp.ok(s, 'round_down_price steps: 0.99 · 1.37 · 12.34 · 123.45 · 1,234.56',
+  -- From $10, 50 cents then the dollar (decision 478, migration 0009).
+  perform pg_temp.ok(s, 'round_down_price steps: 0.99 · 1.37 · 12.34 · 12.74 · 123.45 · 1,234.56',
     round_down_price(0.99) = 0.99 and round_down_price(1.37) = 1.25 and round_down_price(12.34) = 12
-    and round_down_price(123.45) = 120 and round_down_price(1234.56) = 1230,
+    and round_down_price(12.74) = 12.5 and round_down_price(123.45) = 123 and round_down_price(1234.56) = 1230,
     concat_ws(' · ', round_down_price(0.99), round_down_price(1.37), round_down_price(12.34),
-              round_down_price(123.45), round_down_price(1234.56)));
+              round_down_price(12.74), round_down_price(123.45), round_down_price(1234.56)));
   perform pg_temp.ok(s, 'money_text', money_text(5) = '$5' and money_text(5.5) = '$5.50'
     and money_text(1234.5) = '$1,234.50' and money_text(null) is null);
   perform pg_temp.ok(s, 'pct_text', pct_text(33.0) = '33' and pct_text(33.50) = '33.5');
@@ -947,16 +948,17 @@ begin
                              when l_high then cash_pct = 45 and credit_pct = 65
                              when l_own then cash_pct = 45 and credit_pct = 80 end)
        from buy_lines where buy_id = b));
-  -- $2 + $3 + $40 + $10 = $55; Cash 45% = 24.75 → $24; Credit 65% of 45 + 80% of 10 = 37.25 → $37.
+  -- $2 + $3 + $40 + $10 = $55; Cash 45% = 24.75 → $24.50 (50-cent steps, decision 478); Credit 65% of 45 + 80%
+  -- of 10 = 37.25 → $37.
   select totals into t from events where action = 'buy_confirmed' and target_id = b;
   perform pg_temp.ok(s, 'The Changelog''s totals: each card at its rate, rounded down once',
-    (t ->> 'market')::numeric = 55 and (t ->> 'cash')::numeric = 24 and (t ->> 'credit')::numeric = 37
+    (t ->> 'market')::numeric = 55 and (t ->> 'cash')::numeric = 24.5 and (t ->> 'credit')::numeric = 37
     and (t ->> 'cash_pct')::numeric = 45 and (t ->> 'credit_pct')::numeric = 65, t::text);
   update settings set value = '{"low": {"under": 50, "credit": 10, "cash": 5}, "high": {"over": 35, "credit": 70, "cash": 40}}'
    where key = 'rate_tiers';
   update settings set value = '20' where key = 'cash_pct';
   perform pg_temp.ok(s, 'Changing the settings later changes nothing on a confirmed buy',
-    (select (internal.lines_totals(x, array(select l from buy_lines l where l.buy_id = x.id)) ->> 'cash')::numeric = 24
+    (select (internal.lines_totals(x, array(select l from buy_lines l where l.buy_id = x.id)) ->> 'cash')::numeric = 24.5
        from buys x where x.id = b));
   update settings set value = '50' where key = 'cash_pct';
   update settings set value = '{"low": {"under": 3, "credit": 50, "cash": 25}, "high": {"over": 35, "credit": 70, "cash": 40}}'

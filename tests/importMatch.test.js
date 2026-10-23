@@ -202,9 +202,9 @@ test('our own export read back: 0-quantity rows left out, worse conditions price
     [3, 'Sol Ring', 'LP', 1, 3.15, 'Near Mint', null],          // $3.50 × 90%
     [5, 'Lightning Bolt', 'LP', 1, 1.8, 'Near Mint', null],     // $2 × 90%
     [6, 'Lightning Bolt', 'HP', 1, 1.4, 'Near Mint', null],     // $2 × 70%
-    [8, 'Tundra', 'MP', 1, 88, 'Near Mint', null],              // $110 × 80%
+    [8, 'Tundra', 'MP', 1, 87.2, 'Near Mint', null],            // $109 × 80%
   ]);
-  assert.deepEqual(rows.at(-1).nearMint, { price: 110, pct: 80 });
+  assert.deepEqual(rows.at(-1).nearMint, { price: 109, pct: 80 });
 });
 
 test('a row with no Sell Price and no Near Mint price waits for its printing; a bad one is a problem', () => {

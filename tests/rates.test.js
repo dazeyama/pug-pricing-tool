@@ -91,10 +91,10 @@ test('mixed rates: each card at its rate, added up, rounded down once', () => {
   const lines = [line(1, { quantity: 8 }), line(10), line(40), line(20, { custom_credit_pct: 80 })];
   const t = rateTotals(lines, master);
   assert.equal(t.market, 78);
-  // Cash: 8 × 25% + 10 × 33% + 40 × 40% + 20 × 33% = 2 + 3.30 + 16 + 6.60 = 27.90 → $27
-  assert.equal(t.cash, 27);
-  // Credit: 8 × 50% + 10 × 66% + 40 × 70% + 20 × 80% = 4 + 6.60 + 28 + 16 = 54.60 → $54
-  assert.equal(t.credit, 54);
+  // Cash: 8 × 25% + 10 × 33% + 40 × 40% + 20 × 33% = 2 + 3.30 + 16 + 6.60 = 27.90 → $27.50
+  assert.equal(t.cash, 27.5);
+  // Credit: 8 × 50% + 10 × 66% + 40 × 70% + 20 × 80% = 4 + 6.60 + 28 + 16 = 54.60 → $54.50
+  assert.equal(t.credit, 54.5);
   assert.equal(t.mixed, true);
   assert.deepEqual(t.off, { own: 1, low: 8, high: 1, fixed: 0 });
   // The CUSTOM chip counts only cards with their own rate (owner, 2026-10-15).
@@ -113,6 +113,6 @@ test('credit offers: as before on one rate, the same deal on mixed rates', () =>
   assert.equal(creditOfferForLines(120, [line(1), line(50)], custom), creditOfferFor(120, 33, 66));
   assert.equal(creditOfferForLines(100, [], master), creditOfferFor(100, 33, 66));
   // $10 at 33/66 and $40 at 40/70: Cash 3.30 + 16 = 19.30, Credit 6.60 + 28 = 34.60.
-  assert.equal(creditOfferForLines(100, [line(10), line(40)], master), 175);   // 179.27 → $5 steps
+  assert.equal(creditOfferForLines(100, [line(10), line(40)], master), 179);   // 179.27 → dollar steps
   assert.equal(creditOfferForLines(null, [line(10)], master), null);
 });

@@ -425,7 +425,7 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
 
 - [ ] **+ Start project** `SMOKE Project` opens it as Ours, with no phone, ID, offer or paid rows.
 - [ ] **Prices round up:** the same card and condition costs as much or more in the project as in a collection ($12.40
-      → $13 here, $12 there); the tooltips, Use TCGplayer and Use Cardmarket say "rounded up from"; Cash and Credit
+      → $12.50 here, $12 there); the tooltips, Use TCGplayer and Use Cardmarket say "rounded up from"; Cash and Credit
       still round down.
 - [ ] REPRICE? on the project says "rounded up, as in every project".
 - [ ] **Convert to buy…** (from the details ⋯ and the table's ⋯) asks CONFIRM BUY's questions; with `SMOKE Misty`,
@@ -530,7 +530,7 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
       `Damaged`.
 - [ ] Only Near Mint rows carry a price; every LP/MP/HP/DMG row's Sell Price is blank.
 - [ ] A card with only worse-condition copies gets a 0-quantity Near Mint row first, priced at the best condition's Sell
-      Price ÷ its percentage, rounded up (MP $87 at 80% → $110); a card with Near Mint copies gets no extra row.
+      Price ÷ its percentage, rounded up (MP $87 at 80% → $109); a card with Near Mint copies gets no extra row.
 - [ ] The review screen shows **sets NM $X** on such a card, with the working on hover.
 - [ ] EXPORT on a day or collection already exported downloads the same file again; nothing changes.
 - [ ] A card that can't match goes to **Can't upload cards** and isn't in the file.
@@ -544,7 +544,8 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
       what was saved.
 - [ ] Low-end and high-end rates, Master Fallback Percentages and Bulk values show and save.
 - [ ] **Export sell floor** (decision 417), beside Export rates for bulk: Floor 0.40; the table shows Sell, $0.23 →
-      $0.40 (floor), every amount with two decimals ($12.40 → $13.00). Buy shows "Rounded down", $0.23 → $0.23.
+      $0.40 (floor), every amount with two decimals ($12.80 → $13.00). Buy shows "Rounded down", $0.23 → $0.23 and
+      $12.80 → $12.50 (decision 478's 50-cent step).
       Bulk values' boxes show two decimals too (24.00). With no user, changing the floor is refused. Set
       0.75: "Export sell floor saved", and the Changelog has "Setting changed: Export sell floor". 0.30 or 11 are
       refused. An export's Review then shows a cheap card's Sell at $0.75 ("raised to the $0.75 floor"), and typing

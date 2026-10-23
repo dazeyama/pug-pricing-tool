@@ -11,7 +11,9 @@ import {
 // docs/EXPORT_FUNCTION.md 5.3: the buy steps, upward.
 test('rounding up: each band, prices on a step, float error', () => {
   const cases = [[0.333, 0.34], [0.30, 0.30], [0.29, 0.29], [1.01, 1.25], [2.10, 2.25], [1.00, 1.00], [9.80, 10.00],
-    [10.01, 11.00], [99.50, 100.00], [100.01, 105.00], [1000.01, 1010.00], [1000, 1000], [12, 12]];
+    // From $10, half the old steps (decision 478): 50 cents to $100, then the dollar to $1,000.
+    [10.01, 10.50], [10.51, 11.00], [99.50, 99.50], [99.51, 100.00], [100.01, 101.00], [1000.01, 1010.00], [1000, 1000],
+    [12, 12]];
   for (const [raw, up] of cases) assert.equal(roundUpPrice(raw), up, `${raw}`);
   assert.equal(roundUpPrice(null), null);
   assert.equal(SELL_FLOOR, 0.4);
@@ -56,8 +58,8 @@ test('a fallback card that JustTCG prices today takes JustTCG\'s price', () => {
 
 test('Use Fallback and Use Cardmarket stay on', () => {
   const today = { market: { NM: 50, LP: 45, MP: null, HP: null, DMG: null }, fallback: { price: 20.2, source: 'scryfall_fallback' }, cardmarketUsd: 30.5, pct };
-  assert.equal(sellPriceFor(line({ price_source: 'scryfall_fallback', price_snapshot: { override: 'fallback' } }), today).price, 21.00);
-  assert.equal(sellPriceFor(line({ price_source: 'cardmarket', price_snapshot: { override: 'cardmarket' } }), today).price, 31.00);
+  assert.equal(sellPriceFor(line({ price_source: 'scryfall_fallback', price_snapshot: { override: 'fallback' } }), today).price, 20.50);
+  assert.equal(sellPriceFor(line({ price_source: 'cardmarket', price_snapshot: { override: 'cardmarket' } }), today).price, 30.50);
   // No Cardmarket price today: the ladder runs as the Price screen would, without it.
   const noEur = sellPriceFor(line({ price_source: 'cardmarket', price_snapshot: { override: 'cardmarket' } }), { ...today, cardmarketUsd: null });
   assert.equal(noEur.price, 50.00);
@@ -160,7 +162,7 @@ test("the same file again: every own export, not a Can't upload cards export's c
 const MTG_PCT = { NM: 100, LP: 90, MP: 80, HP: 70, DMG: 60 };
 
 test('a worse condition\'s Sell Price ÷ its percentage, rounded up, at least $0.40', () => {
-  assert.equal(nearMintPrice(87, 80), 110);        // $108.75
+  assert.equal(nearMintPrice(87, 80), 109);        // $108.75
   assert.equal(nearMintPrice(1.75, 90), 2);        // $1.94
   assert.equal(nearMintPrice(1.5, 70), 2.25);      // $2.14
   assert.equal(nearMintPrice(0.1, 60), 0.4);       // $0.17, floored
@@ -187,7 +189,7 @@ test('only Near Mint carries a price: worse conditions add cards, a 0-quantity N
     '1,Lightning Bolt,Fourth Edition,Lightly Played,English,,101126',
     '1,Lightning Bolt,Fourth Edition,Heavily Played,English,,101126',
     // $87 ÷ 80% = $108.75, rounded up.
-    '0,Tundra,Revised Edition,Near Mint,English,110.00,101126',
+    '0,Tundra,Revised Edition,Near Mint,English,109.00,101126',
     '1,Tundra,Revised Edition,Moderately Played,English,,101126',
   ].join('\n'));
 });

@@ -10,7 +10,8 @@ const prices = (ladder) => CONDITIONS.map((c) => ladder[c].price);
 test('prices round down by the store\'s steps, or up in a project', () => {
   const market = { NM: 12.4, LP: 10.2, MP: 6.1, HP: 3.3, DMG: 0.996 };
   assert.deepEqual(prices(priceLadder(market, null, PCT, 'mtg')), [12, 10, 6, 3.25, 0.99]);
-  assert.deepEqual(prices(priceLadder(market, null, PCT, 'mtg', { up: true })), [13, 11, 6.25, 3.5, 1]);
+  // $10–$100 up to the 50 cents (decision 478): $12.40 → $12.50, $10.20 → $10.50.
+  assert.deepEqual(prices(priceLadder(market, null, PCT, 'mtg', { up: true })), [12.5, 10.5, 6.25, 3.5, 1]);
   // On a step already: the same either way.
   assert.equal(priceLadder({ NM: 15 }, null, PCT, 'mtg', { up: true }).NM.price, 15);
 });
@@ -52,7 +53,8 @@ test('better conditions take JustTCG\'s best price, never more; worse ones the p
 test('the fill keeps the never-rise rule below it', () => {
   // HP's $60 is above MP's fallback ($50 × 55%): thrown out, as before.
   const ladder = priceLadder({ LP: 50, HP: 60 }, null, PCT, 'mtg');
-  assert.deepEqual(prices(ladder), [50, 50, 27, 20, 12]);
+  // MP $27.50 and DMG $12.50 stay: on a 50-cent step (decision 478).
+  assert.deepEqual(prices(ladder), [50, 50, 27.5, 20, 12.5]);
   assert.equal(ladder.HP.thrownOut, 60);
 });
 
@@ -68,5 +70,5 @@ test('a saved line\'s ladder (REPRICE?) rounds up in a project', () => {
   const line = { id: 'l1', game: 'mtg', condition: 'LP', price_source: 'justtcg', unit_price: 9, market_price: 9.4 };
   const today = { market: { NM: 12.4, LP: 10.2 } };
   assert.equal(ladderFor(line, today, PCT).ladder.LP.price, 10);
-  assert.equal(ladderFor(line, today, PCT, { up: true }).ladder.LP.price, 11);
+  assert.equal(ladderFor(line, today, PCT, { up: true }).ladder.LP.price, 10.5);
 });

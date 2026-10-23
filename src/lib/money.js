@@ -29,32 +29,42 @@ export function formatEur(amount) {
 /**
  * Store rounding for market and fallback prices, and the Cash / Credit they
  * pay (owner, 2026-09-29), always down: under $1 to the cent; $1–$10 to the
- * quarter; $10–$100 to the dollar; $100–$1,000 to the $5; $1,000 and up to
- * the $10. Done in whole cents, trimmed to 6 places first so float error
- * (0.29 × 100 = 28.999…) can't knock a price down a cent. Manual prices
- * aren't rounded.
+ * quarter; $10–$100 to the 50 cents; $100–$1,000 to the dollar; $1,000 and up
+ * to the $10 (the steps from $10 halved, decision 478; the database's
+ * round_down_price, migration 0009, the same). Done in whole cents, trimmed to
+ * 6 places first so float error (0.29 × 100 = 28.999…) can't knock a price
+ * down a cent. Manual prices aren't rounded.
  * @returns {number|null}
  */
 export function roundDownPrice(price) {
   if (price == null || Number.isNaN(Number(price))) return null;
   const cents = Math.floor(Number((Number(price) * 100).toFixed(6)));
-  const step = cents >= 100_000 ? 1000 : cents >= 10_000 ? 500 : cents >= 1000 ? 100 : cents >= 100 ? 25 : 1;
+  const step = priceStep(cents);
   return (Math.floor(cents / step) * step) / 100;
+}
+
+/** The rounding step, in cents, for a price in cents (decision 478). */
+function priceStep(cents) {
+  if (cents >= 100_000) return 1000;
+  if (cents >= 10_000) return 100;
+  if (cents >= 1000) return 50;
+  if (cents >= 100) return 25;
+  return 1;
 }
 
 /**
  * The Sell Price's rounding (docs/EXPORT_FUNCTION.md 5.3): the same steps as
  * roundDownPrice, upward: under $1 to the cent; $1–$10 to the quarter; $10–
- * $100 to the dollar; $100–$1,000 to the $5; $1,000 and up to the $10. The
- * step comes from the unrounded price's band; a price on a step stays. Whole
- * cents, trimmed to 6 places first, so float error can't add a cent.
+ * $100 to the 50 cents; $100–$1,000 to the dollar; $1,000 and up to the $10.
+ * The step comes from the unrounded price's band; a price on a step stays.
+ * Whole cents, trimmed to 6 places first, so float error can't add a cent.
  * @returns {number|null}
  */
 export function roundUpPrice(price) {
   if (price == null || Number.isNaN(Number(price))) return null;
   const exact = Number((Number(price) * 100).toFixed(6));
   const cents = Math.ceil(exact);
-  const step = exact >= 100_000 ? 1000 : exact >= 10_000 ? 500 : exact >= 1000 ? 100 : exact >= 100 ? 25 : 1;
+  const step = priceStep(exact);
   return (Math.ceil(cents / step) * step) / 100;
 }
 

@@ -251,8 +251,8 @@ The app rounds prices **down** by these steps, and Cash and Credit amounts too.
 <tr><th align="left">Price</th><th align="left">Rounded to the nearest</th></tr>
 <tr><td>Under $1</td><td>cent</td></tr>
 <tr><td>$1 to $10</td><td>quarter</td></tr>
-<tr><td>$10 to $100</td><td>dollar</td></tr>
-<tr><td>$100 to $1,000</td><td>$5</td></tr>
+<tr><td>$10 to $100</td><td>50 cents</td></tr>
+<tr><td>$100 to $1,000</td><td>$1</td></tr>
 <tr><td>$1,000 and up</td><td>$10</td></tr>
 </table>
 

@@ -8,8 +8,8 @@ test('rounding down: each band and its edges', () => {
   const cases = [
     [0.999, 0.99], [0.07, 0.07], [0, 0],                       // under $1: to the cent
     [1.00, 1.00], [1.24, 1.00], [1.25, 1.25], [9.99, 9.75],   // $1–$10: to the quarter
-    [10.00, 10.00], [10.99, 10.00], [99.99, 99.00],           // $10–$100: to the dollar
-    [100.00, 100.00], [104.99, 100.00], [999.99, 995.00],     // $100–$1,000: to the $5
+    [10.00, 10.00], [10.49, 10.00], [10.99, 10.50], [99.99, 99.50], // $10–$100: to the 50 cents (decision 478)
+    [100.00, 100.00], [104.99, 104.00], [999.99, 999.00],     // $100–$1,000: to the dollar (decision 478)
     [1000.00, 1000.00], [1009.99, 1000.00], [2345.67, 2340.00], // $1,000 and up: to the $10
   ];
   for (const [raw, down] of cases) assert.equal(roundDownPrice(raw), down, `${raw}`);
@@ -42,8 +42,8 @@ test('credit offer scales the cash offer by credit % / cash %', () => {
 });
 
 test('credit offer is rounded down by the price steps', () => {
-  // 100 × 60 / 35 = 171.43 → $5 steps between $100 and $1,000.
-  assert.equal(creditOfferFor(100, 35, 60), 170);
+  // 100 × 60 / 35 = 171.43 → dollar steps between $100 and $1,000 (decision 478).
+  assert.equal(creditOfferFor(100, 35, 60), 171);
   // 7 × 66 / 33 = 14 exactly; 3.10 × 66 / 33 = 6.20 → quarters under $10.
   assert.equal(creditOfferFor(7, 33, 66), 14);
   assert.equal(creditOfferFor(3.1, 33, 66), 6);

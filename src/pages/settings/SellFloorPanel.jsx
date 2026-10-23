@@ -10,8 +10,8 @@ const VALID_MONEY = /^\d{1,2}(\.\d{1,2})?$/;
 const STEPS = [
   { band: 'Under $1', to: 'cent', example: 0.23 },
   { band: '$1 to $10', to: 'quarter', example: 3.1 },
-  { band: '$10 to $100', to: 'dollar', example: 12.4 },
-  { band: '$100 to $1,000', to: '$5', example: 123 },
+  { band: '$10 to $100', to: '50 cents', example: 12.8 },
+  { band: '$100 to $1,000', to: '$1', example: 123.45 },
   { band: '$1,000 and up', to: '$10', example: 1234 },
 ];
 
