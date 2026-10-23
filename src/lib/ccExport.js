@@ -11,6 +11,7 @@ import { sellPriceFor } from './sellPrice.js';
 import { massCreateCsv, massCreateRows } from './massCreate.js';
 import { allPages, inChunks } from './inChunks.js';
 import { DB_MESSAGES, knownCode } from './dbErrors.js';
+import { matchesChanged } from './matchCache.js';
 
 // Full Scryfall cards by id now live with today's prices (todaysPrices.js).
 export { scryfallCards };
@@ -168,6 +169,7 @@ export async function saveLink(line, product, userId, source = 'staff') {
     linked_by: userId ?? null,
   });
   fail(error, "Couldn't remember that product");
+  matchesChanged();
 }
 
 /** Forget a printing and finish's remembered product (the dry run, put back to what the app found). */
@@ -175,6 +177,7 @@ export async function forgetLink(line) {
   const { error } = await supabase.from('cc_product_links').delete()
     .eq('scryfall_id', line.scryfall_id).eq('finish', line.finish);
   fail(error, "Couldn't forget that product");
+  matchesChanged();
 }
 
 /** Remember a set's category (the review's "Always use … for …"). */
@@ -188,6 +191,7 @@ export async function saveSetMap(setCode, promo, category, userId) {
     updated_by: userId ?? null,
   });
   fail(error, "Couldn't remember that set");
+  matchesChanged();
 }
 
 /** "Find another CC product…": products whose names contain the text. */
@@ -256,6 +260,7 @@ export async function saveExport({ target, matches, cant, pulled = [], setMaps, 
     e.code = code;
     throw e;
   }
+  matchesChanged();   // it learns the picks and set choices, and exports cards (decision 473)
   return data;
 }
 

@@ -4,6 +4,7 @@
 import { supabase } from './supabase.js';
 import { magicPrinting } from './buyLine.js';
 import { baseKeysFor, matchContext, matchLines } from './ccExport.js';
+import { matchGeneration } from './matchCache.js';
 
 // The inventory's categories and the set choices change only with an upload or a choice at export: read
 // once a few minutes, not for every card picked.
@@ -12,17 +13,20 @@ const CONTEXT_MS = 5 * 60 * 1000;
 // collections paid or exported, or the inventory uploaded.
 const COUNTS_MS = 60 * 1000;
 
-let context = null;   // { at, promise }
-const counts = new Map();   // `${scryfall id}|${finish}` → { at, promise }
+let context = null;   // { at, gen, promise }
+const counts = new Map();   // `${scryfall id}|${finish}` → { at, gen, promise }
+
+/** Kept, and still good: younger than `ms`, and read since the last change to matches here (decision 473). */
+const fresh = (kept, ms) => kept && Date.now() - kept.at <= ms && kept.gen === matchGeneration();
 
 function readContext() {
-  if (!context || Date.now() - context.at > CONTEXT_MS) {
+  if (!fresh(context, CONTEXT_MS)) {
     const promise = matchContext().catch((e) => {
       context = null;   // asked again next time
       if (e?.code === 'no_inventory') return null;
       throw e;
     });
-    context = { at: Date.now(), promise };
+    context = { at: Date.now(), gen: matchGeneration(), promise };
   }
   return context.promise;
 }
@@ -110,11 +114,11 @@ async function lookUp(candidate, finish) {
 export function ownedCopies(candidate, finish) {
   const key = `${candidate.scryfall?.id}|${finish}`;
   const hit = counts.get(key);
-  if (hit && Date.now() - hit.at < COUNTS_MS) return hit.promise;
+  if (fresh(hit, COUNTS_MS)) return hit.promise;
   const promise = lookUp(candidate, finish).catch((e) => {
     counts.delete(key);
     throw e;
   });
-  counts.set(key, { at: Date.now(), promise });
+  counts.set(key, { at: Date.now(), gen: matchGeneration(), promise });
   return promise;
 }

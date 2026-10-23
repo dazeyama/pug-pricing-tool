@@ -7,6 +7,7 @@ import UserTag from '../../components/UserTag.jsx';
 import { useStaff } from '../../state/staff.jsx';
 import { useDevice } from '../../state/device.jsx';
 import { logSetting } from '../../lib/settingsLog.js';
+import { matchesChanged } from '../../lib/matchCache.js';
 import { useConnection } from '../../state/connection.jsx';
 import { useToast } from '../../components/Toast.jsx';
 
@@ -62,6 +63,7 @@ export default function CcMatchingPanel() {
       .eq('scryfall_set', row.scryfall_set).eq('promo_kind', row.promo_kind);
     if (error) toast(`Couldn't forget it: ${error.message}`, 'err');
     else {
+      matchesChanged();   // the Price screen's copies we own count again (decision 473)
       toast(`Forgot ${row.scryfall_set.toUpperCase()} → ${row.category}.`, 'ok');
       logSetting('cc_match_forgotten', `Set choice forgotten: ${row.scryfall_set.toUpperCase()} → ${row.category}.`,
         staff.current.id, deviceId);
@@ -197,6 +199,7 @@ function ProductsModal({ offline, onChanged, onClose }) {
       .eq('scryfall_id', row.scryfall_id).eq('finish', row.finish);
     if (error) toast(`Couldn't forget it: ${error.message}`, 'err');
     else {
+      matchesChanged();   // the Price screen's copies we own count again (decision 473)
       toast(`Forgot ${row.product_name}.`, 'ok');
       logSetting('cc_match_forgotten', `Remembered match forgotten: ${row.product_name}.`, staff.current.id, deviceId);
     }

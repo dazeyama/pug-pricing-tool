@@ -5,6 +5,7 @@ import { supabase } from './supabase.js';
 import { withLoading } from './loading.js';
 import { backupFileName } from './backup.js';
 import { dbMessage } from './dbErrors.js';
+import { matchesChanged } from './matchCache.js';
 
 /* global __APP_VERSION__ */
 
@@ -82,5 +83,6 @@ export async function restoreBackup(data, fileName, userId, deviceId) {
   if (ensureError) console.error("Couldn't make Can't upload cards again", ensureError);
   const { error: pulledError } = await supabase.rpc('pulled_ensure');
   if (pulledError) console.error("Couldn't make Bulk pulled from exports again", pulledError);
+  matchesChanged();   // its matches and set choices are the file's now (decision 473)
   return counts;
 }
