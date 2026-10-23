@@ -6,6 +6,18 @@ and function.
 
 ## Open
 
+- **P0 — Crystal Commerce matching guessed wrong twice on the live site (2026-10-23): follow `MATCHING.md`.** Two
+  automatic matches reached the store's inventory wrong ("Polluted Bonds (WOT) 34 *F*" → "Polluted Bonds - Foil -
+  Anime Borderless"; "Tom Bombadil (LTR) 685" → "Tom Bombadil - Showcase"). The overnight read-only sweep of dev's
+  1,880 printings and the plan are in `MATCHING.md`: item 1 the never-guess rule (`src/lib/ccMatch.js`
+  `chooseProduct`, `scoreCandidate`, `FAMILIES`, with the tests to add in `tests/ccMatch.test.js`), item 2
+  automatic matches no longer trusted or remembered (`src/lib/ccExport.js` `matchLines`, `ExportDialog.jsx` `save`,
+  `scripts/db-test-run.sql` 2257–2262), item 3 forget the two wrong links on prod (Settings → Crystal Commerce
+  matching → Browse remembered products…, or the prepared statement on the owner's word), item 4 a remembered pick
+  whose product is gone goes to Needs a choice, item 5 migration 0010 (`internal.export_learn` staff only; delete
+  the auto links; dev and prod the same sitting, store closed). Prod's remembered links were not read (the
+  permission check refused the command): `MATCHING.md` Appendix B is the one-step read for the owner. Nothing
+  coded yet; Help's "Picking the product" goes out of date with item 1.
 - **Copies we own (decisions 448–483), live in v1.0.2-quantity, tested by the owner on dev as it was built.** The counter
   (`OwnedCounter.jsx`, `useOwnedCopies.js`, `owned.js`), the suggestion (`ownedRates.js`), Apply and Auto apply
   rates? (`PricingScreen.jsx`, `useScanReceiver.js`, `useDraft.js` `setAutoRates`, `CollectionPage.jsx`
@@ -70,6 +82,14 @@ and function.
 
 ## Done
 
+- 2026-10-23: **Overnight read-only audit of the export's matching** (the owner's ask after two wrong automatic
+  matches on the live site): `MATCHING.md` written, the only change besides this file. The matcher ran under Node
+  over dev's 1,979 Magic lines against inventory file 33 (SELECT only; the SQL and outputs in
+  `C:\ClaudeProjects\temp\pug-matching\`, `sweep.mjs` and `rules.mjs` reusable to re-measure a rule), both cases
+  reproduced with the real product names, three never-guess rules measured (rule 3b recommended: 261 of today's
+  1,814 automatic matches would ask a person once, then be remembered), the inventory's 82 "family word plus an
+  extra word" strings listed, a read-only review of the whole pipeline folded in (15 findings). No code, tests,
+  migrations or docs changed; nothing written on dev or prod; prod not read.
 - 2026-10-23: **Pushed as v1.0.2-quantity** (the owner's ask), decisions 435–483: Copies we own (448, 455–483) with
   its Settings panel, the rounding steps from $10 halved (478), the backup JustTCG key (436–439), the Export
   dialog's held pick and Undo (440–441), the menus' group click (442), the Magic printouts' order and Print MTG /
