@@ -23,7 +23,8 @@ and function.
   count as in it. Placeholders aren't counted (nothing ever exports or completes one). On the live site, the CC
   counts start with the first inventory upload after 0008 is on prod. **Help out of date:** the Buy tab's price
   panel section has no counter, Apply or Auto apply rates?.
-- **Unpushed:** decision 453, copies we own load sooner (`owned.js` `lookUp`, `ccExport.js` `matchLines`; untested
+- **Unpushed:** decision 454, a buy's customer on its header search result (`SearchBox.jsx` `renderRow`; untested
+  in the app; TEST.md section 2), decision 453, copies we own load sooner (`owned.js` `lookUp`, `ccExport.js` `matchLines`; untested
   in the app, export matching included), decision 452, Unlock undoes a collection's export and REPRICE?'s reason (`CollectionPage.jsx`;
   untested in the app; dev's Casey Kusz is the case), decision 451, the inventory reminder banner (`Banners.jsx` `InventoryReminder`; untested in the
   app: dev's inventory is from today, so it shows only once that's over 7 days old), decision 450 (spec only),

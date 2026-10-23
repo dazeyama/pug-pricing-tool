@@ -50,6 +50,9 @@ what happens. The findings are reported when the pass ends.
       **N Users selected**; hovering names them. A second tab adds one to each.
 - [ ] **Header search** `bolt`: Paid/Ours overnight buys at the top (Projects and System under their own headings,
       decision 421), then buys under their dates; **Show all** adds the rest, faded.
+- [ ] **A buy's customer** (decision 454): search a card from a buy with a customer name: its first line ends
+      "· Customer: <name>", the name in bold (before a Completed chip with Show all); a buy with no customer name ends
+      at its time. In the Customers section the name shows once, on the line below.
 - [ ] **A customer by name** (decision 424): type the first name of a customer with a Completed buy: a **Customers**
       section at the top lists their buys and collections (Buy N · who · when, the name, phone and card count), **Show
       all** has flipped on by itself and the Completed ones show faded; untick Show all: it stays off and the

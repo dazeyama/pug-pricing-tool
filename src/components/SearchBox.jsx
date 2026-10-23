@@ -262,6 +262,8 @@ export default function SearchBox({ wide }) {
           {buy ? (
             <>
               Buy {row.number} · <UserTag user={user} /> · {formatTime(row.at)}
+              {/* Its customer, worded as on the day page (decision 454); a customer match has them below. */}
+              {!row.customer && row.customerName?.trim() && <> · Customer: <strong>{row.customerName.trim()}</strong></>}
               {row.completed && <span className="status-chip tone-completed result-chip">Completed</span>}
             </>
           ) : (
