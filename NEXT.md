@@ -23,7 +23,13 @@ and function.
   count as in it. Placeholders aren't counted (nothing ever exports or completes one). On the live site, the CC
   counts start with the first inventory upload after 0008 is on prod. **Help out of date:** the Buy tab's price
   panel section has no counter, Apply or Auto apply rates?.
-- **Unpushed:** decision 454, a buy's customer on its header search result (`SearchBox.jsx` `renderRow`; untested
+- **Unpushed:** decisions 455–475, the owned-copies counter's refinements (needs migration 0008 on prod first):
+  the first-copy bonuses and low-end rule (`ownedRates.js` `ownedAdjust`), the APPLIED / NOT APPLIED stamp as the
+  switch (`InkStamp.jsx`, `OwnedCounter.jsx`), muted colours and the chips' layout (`owned.css`), n/a with the
+  one-card match dialog (`MatchCardDialog.jsx`, `ChooseRow.jsx`), the price panel's glowing chips (`QuotePanel.jsx`),
+  a forgotten match showing without a refresh (`matchCache.js`), and Settings → Copies we own in three columns
+  (`OwnedCopiesPanel.jsx`; 475 measured to fit with no scroll bar from 1000 to 1400 px wide, the switches and boxes
+  not tried in the app). **Help out of date:** Settings has no Copies we own section. Then decision 454, a buy's customer on its header search result (`SearchBox.jsx` `renderRow`; untested
   in the app; TEST.md section 2), decision 453, copies we own load sooner (`owned.js` `lookUp`, `ccExport.js` `matchLines`; untested
   in the app, export matching included), decision 452, Unlock undoes a collection's export and REPRICE?'s reason (`CollectionPage.jsx`;
   untested in the app; dev's Casey Kusz is the case), decision 451, the inventory reminder banner (`Banners.jsx` `InventoryReminder`; untested in the
