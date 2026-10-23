@@ -203,7 +203,10 @@ export default function PricingScreen({
   // Where cards can have their own rates (not a project, nor a locked list), and the buy's Auto apply
   // rates? (decision 448): read here, before the phone's scans need it.
   const rateControls = Boolean(list.setLineRate) && !locked && !ratesLocked;
-  const autoOn = Boolean(list.autoRates?.on) && rateControls && ownedCfg.on;
+  // Copies we own only where a new card can take its rate (owner, 2026-10-23; decision 477): not a project, a
+  // confirmed buy, a locked or system collection; elsewhere as if Settings had it off.
+  const ownedHere = ownedCfg.on && rateControls && !searchBlocked && !addLocked;
+  const autoOn = Boolean(list.autoRates?.on) && ownedHere;
   const [qty, setQty] = useState('1');
   const qtyRef = useRef(null);
   const [flashId, setFlashId] = useState(null);
@@ -285,7 +288,9 @@ export default function PricingScreen({
   const images = useCardImages(card);   // a Pokémon thumbnail for the line (backups too)
   // The copies we own of a Magic printing and its card (decision 448), and the printing whose lower rate
   // the worker clicked Apply on (`${card key}|${finish}`): it goes on with ADD CARD as the card's own rate.
-  const owned = useOwnedCopies(ownedCfg.on ? card : null, magic ? finish : null);   // switched off: nothing counted
+  const owned = useOwnedCopies(ownedHere ? card : null, magic ? finish : null);   // switched off: nothing counted
+  // Nor for Pokémon: not for a Pokémon card, nor with nothing picked while only Pokémon is searched (decision 477).
+  const ownedShown = ownedHere && (card ? Boolean(magic) : Boolean(searchGames.mtg));
   const [appliedKey, setAppliedKey] = useState(null);
   const [autoBusy, setAutoBusy] = useState(false);
   // The matching dialog for the selected printing, from the counter's n/a (decision 468).
@@ -779,8 +784,9 @@ export default function PricingScreen({
               finish={finish}
               pokemonVersion={version}
               hasFirstEdition={versions.some((v) => v.firstEdition)}
-              // Switched off in Settings → Copies we own (decision 474): no counter at all.
-              aside={ownedCfg.on && (
+              // Switched off in Settings → Copies we own (decision 474), or not for this screen or card (477):
+              // no counter at all.
+              aside={ownedShown && (
                 <OwnedCounter
                   candidate={selected}
                   owned={owned}

@@ -23,7 +23,8 @@ and function.
   count as in it. Placeholders aren't counted (nothing ever exports or completes one). On the live site, the CC
   counts start with the first inventory upload after 0008 is on prod. **Help out of date:** the Buy tab's price
   panel section has no counter, Apply or Auto apply rates?.
-- **Unpushed:** decisions 455–476, the owned-copies counter's refinements (needs migration 0008 on prod first):
+- **Unpushed:** decision 477, Copies we own hidden for Pokémon and where no card can take a rate (`PricingScreen.jsx`
+  `ownedHere`, `ownedShown`; untested in the app), decisions 455–476, the owned-copies counter's refinements (needs migration 0008 on prod first):
   the first-copy bonuses and low-end rule (`ownedRates.js` `ownedAdjust`), the APPLIED / NOT APPLIED stamp as the
   switch (`InkStamp.jsx`, `OwnedCounter.jsx`), muted colours and the chips' layout (`owned.css`), n/a with the
   one-card match dialog (`MatchCardDialog.jsx`, `ChooseRow.jsx`), the price panel's glowing chips (`QuotePanel.jsx`),
