@@ -6,14 +6,14 @@ import { useId } from 'react';
  * (SVG noise filters), tilted. The lettering is solid ink with only a slightly rough edge, so it reads
  * easily ("The text on the stamps still isn't readable enough"). Drawn here, not an image, so it's sharp at
  * any size; its colour is `currentColor` (a true red or green, owned.css).
- * @param {{ applied: boolean }} props
+ * @param {{ applied: boolean, className?: string }} props  className: 'landing' or 'leaving' while it switches
  */
-export default function InkStamp({ applied }) {
+export default function InkStamp({ applied, className = '' }) {
   const id = useId().replace(/:/g, '');
   const text = applied ? 'APPLIED' : 'NOT APPLIED';
   return (
     <svg
-      className={`ink-stamp ${applied ? 'applied' : 'not-applied'}`}
+      className={`ink-stamp ${applied ? 'applied' : 'not-applied'}${className ? ` ${className}` : ''}`}
       viewBox="0 0 170 40"
       role="img"
       aria-label={applied ? 'The rate is applied' : 'The rate is not applied'}

@@ -47,6 +47,20 @@ export default function OwnedCounter({
 
   useDismiss(() => setPinned(false), { ref: box, when: pinned, escape: false });
 
+  // The stamp switching (decision 461): which stamp it was, while the old one fades and the new one lands
+  // (0.3 s); only when the same card's state changes, never as a new card comes up.
+  const [flip, setFlip] = useState(null);   // { from: boolean, n: number } or null
+  const last = useRef({ key: null, applied });
+  useEffect(() => {
+    const key = `${candidate?.key ?? ''}|${owned.key ?? ''}`;
+    const was = last.current;
+    last.current = { key, applied };
+    if (was.key !== key || was.applied === applied) return undefined;
+    setFlip((f) => ({ from: was.applied, n: (f?.n ?? 0) + 1 }));
+    const done = setTimeout(() => setFlip(null), 320);
+    return () => clearTimeout(done);
+  }, [applied, candidate?.key, owned.key]);
+
   const autoBox = auto && (
     <label className="owned-auto" title="Every card added to this buy goes on at the rate the copies we own suggest: a first copy's bonus, the cut for copies over 2">
       <input
@@ -149,8 +163,25 @@ export default function OwnedCounter({
         </span>
       </button>
       {chips}
-      {/* Applied or not, stamped (owner, 2026-10-23; decision 459): whenever there's a rate to apply. */}
-      {suggested && <InkStamp applied={applied} />}
+      {/* Applied or not, stamped (owner, 2026-10-23; decision 459): whenever there's a rate to apply. A click
+          switches it, as Apply does (decision 461): the old stamp fades, the new one drops in and lands. */}
+      {suggested && (
+        <button
+          type="button"
+          className="stamp-btn"
+          disabled={Boolean(applyBlocked) || Boolean(auto?.on)}
+          title={applyBlocked || (auto?.on
+            ? 'Auto apply rates is on: every card goes on at this rate. Uncheck it to choose card by card.'
+            : applied ? 'Click to take the rate off' : 'Click to apply the rate')}
+          onClick={() => {
+            onApply();
+            onDone();
+          }}
+        >
+          {flip && <InkStamp key={`out-${flip.n}`} applied={flip.from} className="leaving" />}
+          <InkStamp key={`in-${flip?.n ?? 0}`} applied={applied} className={flip ? 'landing' : ''} />
+        </button>
+      )}
       {open && (
         <div className="owned-pop">
           <section className="owned-pop-box" aria-label="Copies we own">

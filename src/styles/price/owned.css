@@ -170,15 +170,48 @@
 /* APPLIED / NOT APPLIED, stamped under the chips (decision 459; InkStamp.jsx), tilted like a hand stamp; a
    true red and a true green for these two only (owner, 2026-10-23; decision 460), not the app's softer ones. */
 .ink-stamp {
+  --tilt: -4deg;
   display: block;
-  align-self: center;
   width: 140px;
   height: auto;
-  margin-top: 2px;
-  transform: rotate(-4deg);
+  transform: rotate(var(--tilt));
 }
-.ink-stamp.applied { color: #12c42a; transform: rotate(-3deg); }
+.ink-stamp.applied { --tilt: -3deg; color: #12c42a; }
 .ink-stamp.not-applied { color: #ff1a1a; }
+/* The stamp is the switch (decision 461): a click applies the rate or takes it off. While it switches, the old
+   one fades and the new one drops in from larger, lands with a shake and settles, in 0.3 s. */
+.stamp-btn {
+  display: grid;
+  justify-items: center;
+  align-self: center;
+  margin-top: 2px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.stamp-btn > .ink-stamp { grid-area: 1 / 1; }
+.stamp-btn:disabled { cursor: default; }
+.stamp-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+.stamp-btn:not(:disabled):hover .ink-stamp:not(.leaving) { filter: brightness(1.15); }
+.ink-stamp.leaving { animation: stamp-out 120ms ease-out forwards; }
+.ink-stamp.landing { position: relative; z-index: 1; animation: stamp-in 300ms cubic-bezier(.2, .9, .3, 1) both; }
+@keyframes stamp-out {
+  to { opacity: 0; transform: rotate(var(--tilt)) scale(.94); }
+}
+@keyframes stamp-in {
+  0% { opacity: 0; transform: rotate(var(--tilt)) translateY(-8px) scale(1.8); }
+  45% { opacity: 1; transform: rotate(var(--tilt)) scale(1); }
+  58% { transform: rotate(calc(var(--tilt) - 2deg)) translateX(-2px); }
+  72% { transform: rotate(calc(var(--tilt) + 1.5deg)) translateX(2px); }
+  86% { transform: rotate(calc(var(--tilt) - .5deg)) translateX(-1px); }
+  100% { transform: rotate(var(--tilt)); }
+}
+/* No motion wanted: it just switches. */
+@media (prefers-reduced-motion: reduce) {
+  .ink-stamp.landing { animation: none; }
+  .ink-stamp.leaving { display: none; }
+}
 
 /* The price panel's Credit and Cash at the rate applied (QuotePanel): ↑ and a green ring for a bonus, ↓ and
    a red one for a cut (decision 457). */

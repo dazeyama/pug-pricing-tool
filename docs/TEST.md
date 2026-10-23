@@ -194,6 +194,9 @@ what happens. The findings are reported when the pass ends.
       458); one we own 4 of still gets the red chip.
 - [ ] **Stamps** (decision 459): with a rate to apply, a red **NOT APPLIED** ink stamp under the chips; Apply (or
       Auto apply rates? checked) turns it into a green **APPLIED** one; no stamp when nothing changes the rate.
+      Click the stamp (decision 461): it switches, the old one fading as the new one drops in larger, shakes and
+      settles, quickly (0.3 s), and the price panel's Credit / Cash change with it; click again to switch back.
+      With Auto apply rates? checked the stamp doesn't switch, and pointing at it says why.
 - [ ] **Apply**: click the boxes to keep the box open, then **Apply ±N%**: the chips go solid with ✓, the price
       panel's Credit and Cash change, ↑ and a green ring for a bonus, ↓ and a red ring for a cut. ADD CARD: the line
       shows ✎ Credit / Cash at those rates. Apply, then pick another card: it isn't applied there. Editing a line:
