@@ -238,20 +238,20 @@
 /* The price panel's Credit and Cash at the rate applied (QuotePanel): ↑ and a green ring for a bonus, ↓ and
    a red one for a cut (decision 457). */
 /* Glowing, the glow slowly pulsing stronger and softer (owner, 2026-10-23: "more dramatic and obvious";
-   decision 472). */
+   decision 472), then toned down a little (decision 481): a smaller, fainter glow, the same pulse. */
 .quote-chip.raised { --glow: var(--good); }
 .quote-chip.lowered { --glow: var(--bad); }
 .quote-chip.raised, .quote-chip.lowered {
-  background: color-mix(in srgb, var(--glow) 14%, var(--panel-2));
+  background: color-mix(in srgb, var(--glow) 11%, var(--panel-2));
   border-color: transparent;
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--glow) 85%, transparent),
-    0 0 10px 2px color-mix(in srgb, var(--glow) 40%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--glow) 75%, transparent),
+    0 0 8px 1px color-mix(in srgb, var(--glow) 28%, transparent);
   animation: chip-glow 2.4s ease-in-out infinite alternate;
 }
 @keyframes chip-glow {
   to {
-    box-shadow: 0 0 0 2px var(--glow),
-      0 0 18px 5px color-mix(in srgb, var(--glow) 65%, transparent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--glow) 90%, transparent),
+      0 0 13px 3px color-mix(in srgb, var(--glow) 45%, transparent);
   }
 }
 @media (prefers-reduced-motion: reduce) {
