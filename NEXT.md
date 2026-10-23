@@ -58,8 +58,6 @@ and function.
   big export on the backup's Free plan can wait on its per-minute limit (`call`'s backoff, `_shared/justtcg.ts`);
   untested how long. TEST.md has no case for it: on dev, it needs the main key capped (or a capped key saved as
   the main one).
-- **Help out of date** (decisions 431–434): "The tables" (Collections) still lists **Notes** and doesn't mention the
-  note's * and its chip; until the owner asks for Help.
 - **F2 reopened: the backup can hit the 8 s statement limit** (decision 430): a Download backup failed with a 500
   once, and Restore's first press with "canceling statement due to statement timeout" (`backup_export`, one call for
   every table, 2 to 7.7 s on dev). The paged read that fixed it (decision 426) could leave cards out of the file
@@ -111,6 +109,13 @@ and function.
 
 ## Done
 
+- 2026-10-23: **Help brought up to date** on the owner's ask (`README.md`, `src/pages/help/pages.js`): Copies we own
+  on the Buy tab and in Settings, each its own page (448–481), the rounding steps (478), and the 2026-10-22
+  changes (435, 437–441, 443–447, 449, 451, 452, 454); then, from an audit since the 2026-10-20 sweep, the
+  Collections tables' note &#42; and no Notes column (431–434), the mixed-rates &#42; (413), AUTO / OFF on the
+  pill (418) and the Can't upload cards message (399). A literal asterisk is written `&#42;`: Help's converter
+  shows `\*` with its backslash (CONFIRM BUY's *F* example had that, fixed). Not in Help, on purpose: 442
+  (Help already says a click opens a group). Unpushed.
 - 2026-10-22: **Alt+A switches mimp mode on the Price screen** (decision 447, the owner's ask), in the hint line
   and the 🌼 | 🦇 tooltips (`PricingScreen.jsx` `onKeyDown`, `SearchBar.jsx`). Lint, tests and the build pass;
   untested in the app.

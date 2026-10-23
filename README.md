@@ -446,7 +446,7 @@ part can be left out. The sample text shows one: `Lightning Bolt 117/331 2X2`.
 |---|---|
 | **MTG \| PKM** | Which games to search. Both are on to start. One always stays on. |
 | **EN \| JP** | English or Japanese Pokémon. EN to start, every time the screen opens. |
-| **🌼 \| 🦇** | With 🌼, the mode to start, the card area clears after each **ADD CARD**, ready for the next card. With 🦇 **mimp mode**, the card and the search stay as they are after ADD CARD, with Qty back to 1. Another copy, or the same card in another finish or condition, is then a keystroke away. Like EN \| JP, it's back to 🌼 every time the screen opens. **SAVE EDIT** always clears. <kbd>Alt</kbd>+<kbd>A</kbd> switches between them. |
+| **🌼 \| 🦇** | With 🌼, the mode to start, the card area clears after each **ADD CARD**, ready for the next card. With 🦇 **mimp mode**, the card and the search stay as they are after ADD CARD, with Qty back to 1. Another copy, or the same card in another finish or condition, is then a keystroke away. Like EN \| JP, it's back to 🌼 every time the screen opens. **SAVE EDIT** always clears. <kbd>Alt</kbd>+<kbd>A</kbd> switches between them. A small, faint **AUTO** under 🌼 and **OFF** under 🦇 say which is which. |
 
 Japanese cards are searched differently. See [Japanese searches](#japanese-searches).
 
@@ -745,7 +745,12 @@ strongest first:
 4. **The Master Buy Percentages.**
 
 The Cash and Credit labels show the buy's own rate. A **CUSTOM** chip beside them means a card has its
-own rate. The price panel's Credit and Cash use the selected card's rate. Hovering them says why.
+own rate.
+
+**A &#42; after Cash and Credit** means not every card is on that rate. Pointing at either lists each
+group: *12 low-end (under $3) cards at Cash 25% / Credit 50%*, *3 high-end (over $35) cards at …*, *2
+cards with their own rate (Set Rate) at …*, *20 cards at the master rate at …*. Struck cards count, as
+they do in the totals. Bulk is always on the buy's own rate. The price panel's Credit and Cash use the selected card's rate. Hovering them says why.
 
 Clicking a percentage opens **Rates for this buy**. There the worker can set a different Cash % or
 Credit % for this buy only. A ✎ marks a custom rate. **Use master rates** goes back to the rates in
@@ -769,7 +774,7 @@ The buy's day page shows the same Cash and Credit as the confirm window, with a 
 | **🚩 Flag check for condition** | Optional. Flags the buy on its day page to have its cards' condition checked before export. |
 
 The window lists cards with their own rate, and bulk with its own value, at the top:
-*1 Mental Misstep (NPH) 38 \*F\* [MP] — Credit 80% · Cash 50%*. It's a reminder. **Confirm buy**
+*1 Mental Misstep (NPH) 38 &#42;F&#42; [MP] — Credit 80% · Cash 50%*. It's a reminder. **Confirm buy**
 still confirms.
 
 **Past customers.** After two letters, a list under the name shows past customers whose names
@@ -904,18 +909,17 @@ The Collections tab lists every overnight buy, project and system collection, in
 
 | Column | Shows |
 |---|---|
-| **Name** | The customer's or project's name. Pointing at it shows its cards by game: *MTG 42 cards + 1,000 bulk*. |
+| **Name** | The customer's or project's name. Pointing at it shows its cards by game: *MTG 42 cards + 1,000 bulk*. A &#42; after the name means it has a note. Pointing at the &#42; shows the note in the same kind of chip, starting with a grey **NOTE:** badge. The System collections' own notes get no &#42;. |
 | **Phone** | The phone number. Projects show a **Project** chip, Can't upload cards a **System** chip. |
 | **Status** | The status chip. |
 | **Created** | The date it was made. |
 | **Last edited** | When it last changed. |
 | **Last edited by** | Who changed it. |
-| **Notes** | The notes. |
 | **Offer** | The offer in cash / credit. **TBD** in amber until there is one. |
 | **Paid** | The price paid, green for cash or blue for credit. **TBD** until paid. Rejected shows **$0** in red. |
 
 Clicking a column heading sorts by it. Clicking again reverses it. The tables start newest first.
-Clicking a row opens it.
+Clicking a row opens it. Notes aren't a column: they're on the collection's own page, and edited there.
 
 A row open on another computer says so: *"✎ open on Front Counter (Clio)"*.
 
@@ -1039,7 +1043,8 @@ upload cards' **×** removes at once.
 
 **An exported card can't change**, whatever the status. That's a card that's exported, or one with a
 copy in Can't upload cards. Clicking it, **×**, **Restore** and **SAVE EDIT** say *That card is
-exported: Undo export… first to change it*. **REPRICE?** leaves it, and a new copy of the same card
+exported: Undo export… first to change it*, or *That card is in Can't upload cards: Undo export… first
+to change it*. **REPRICE?** leaves it, and a new copy of the same card
 goes on a line of its own. **Set Rate** still works on it, because rates don't reach the export.
 
 ### 📞 Calls
