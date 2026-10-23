@@ -27,27 +27,53 @@ function readContext() {
   return context.promise;
 }
 
+/** Start reading what matching needs, so the first card picked doesn't wait for it (decision 453). */
+export function warmOwnedCopies() {
+  readContext().catch(() => {});
+}
+
 async function lookUp(candidate, finish) {
   const line = { id: `owned:${candidate.key}`, ...magicPrinting(candidate, finish) };
-  const ctx = await readContext();
-  // The printing's product when the export would take one without asking; else none (its copies in the
-  // inventory then can't be told apart, and the counter says so).
-  let productId = null;
-  if (ctx) {
-    const { results } = await matchLines([line], null, {
-      context: ctx, cards: new Map([[line.scryfall_id, candidate.scryfall]]),
-    });
-    productId = results[0]?.status === 'auto' ? results[0].product?.product_id ?? null : null;
-  }
-  const { data, error } = await supabase.rpc('owned_copies', {
+  const baseKeys = baseKeysFor(line, candidate.scryfall?.flavor_name ?? null);
+  const count = (productId) => supabase.rpc('owned_copies', {
     p_product_id: productId,
-    p_base_keys: baseKeysFor(line, candidate.scryfall?.flavor_name ?? null),
+    p_base_keys: baseKeys,
     p_name_key: line.name_key,
     p_scryfall_id: line.scryfall_id,
     p_finish: finish,
   });
+  // The count and the printing's product at once (decision 453: they were one after the other). The product,
+  // when the export would take one without asking; a match that fails just leaves the printing's inventory
+  // count unknown, as no clear product does.
+  const matching = readContext().then(async (ctx) => {
+    if (!ctx) return null;
+    const { results } = await matchLines([line], null, {
+      context: ctx, cards: new Map([[line.scryfall_id, candidate.scryfall]]),
+    });
+    return results[0]?.status === 'auto' ? results[0].product ?? null : null;
+  }).catch((e) => {
+    console.warn("Matching this printing to its Crystal Commerce product failed; its count there isn't known", e);
+    return null;
+  });
+  const [{ data, error }, product] = await Promise.all([count(null), matching]);
   if (error) throw new Error(`Couldn't count the copies we own: ${error.message}`);
-  return data;
+  if (!product) return data;
+
+  // A product staff linked at export that's filed under another name isn't among the card's: ask again with
+  // it, so it's counted for the card too (rare).
+  if (!baseKeys.includes(product.base_key) || String(product.category).startsWith('Art Series')) {
+    const again = await count(product.product_id);
+    if (again.error) throw new Error(`Couldn't count the copies we own: ${again.error.message}`);
+    return again.data;
+  }
+  // Else it's in the card's list when it has copies: the printing's count is its, 0 when it has none
+  // (unknown, as the card's, when the inventory has no quantities).
+  const listed = (data.cc_list ?? []).find((p) => p.product_id === product.product_id);
+  return {
+    ...data,
+    cc_printing: data.cc_card == null ? null : Number(listed?.qty ?? 0),
+    cc_list: (data.cc_list ?? []).map((p) => ({ ...p, this: p.product_id === product.product_id })),
+  };
 }
 
 /**

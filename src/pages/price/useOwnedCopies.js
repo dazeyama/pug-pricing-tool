@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ownedCopies } from '../../lib/owned.js';
+import { ownedCopies, warmOwnedCopies } from '../../lib/owned.js';
 import { ownedCounts } from '../../lib/ownedRates.js';
 
 /**
@@ -13,6 +13,8 @@ import { ownedCounts } from '../../lib/ownedRates.js';
 export function useOwnedCopies(card, finish) {
   const key = card?.game === 'mtg' && card.scryfall && finish ? `${card.key}|${finish}` : null;
   const [state, setState] = useState({ key: null, status: 'off', counts: null, error: null });
+  // What matching reads, read as the Price screen opens rather than with its first card (decision 453).
+  useEffect(() => warmOwnedCopies(), []);
 
   useEffect(() => {
     if (!key) return undefined;

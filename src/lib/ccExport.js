@@ -77,20 +77,23 @@ export async function matchLines(lines, onStep, given = {}) {
   const { categories, setMap } = given.context ?? await matchContext();
 
   const ids = [...new Set(lines.map((l) => l.scryfall_id).filter(Boolean))];
-  const [sets, cards, { data: linkRows, error: linkError }] = await Promise.all([
-    loadSets(),
-    given.cards ?? scryfallCards(ids),
+  // The remembered matches and their products, read while the candidates below are (neither needs the
+  // other: one round trip fewer, for the owned-copies counter above all; decision 453).
+  const remembered = (async () => {
     // In chunks: a big project's printings make too long a URL in one (inChunks.js).
-    inChunks((part) => supabase.from('cc_product_links').select('*').in('scryfall_id', part), ids),
-  ]);
-  fail(linkError, "Couldn't read the remembered matches");
-  const links = new Map((linkRows ?? []).map((k) => [`${k.scryfall_id}|${k.finish}`, k]));
-  const linked = [...new Set([...links.values()].map((k) => k.product_id))];
-  const { data: linkedProducts, error: byIdError } = linked.length
-    ? await supabase.rpc('cc_products_by_id', { p_ids: linked })
-    : { data: [], error: null };
-  fail(byIdError, "Couldn't read the remembered products");
-  const productById = new Map((linkedProducts ?? []).map((p) => [p.product_id, p]));
+    const { data: linkRows, error: linkError } = await inChunks(
+      (part) => supabase.from('cc_product_links').select('*').in('scryfall_id', part), ids);
+    fail(linkError, "Couldn't read the remembered matches");
+    const links = new Map((linkRows ?? []).map((k) => [`${k.scryfall_id}|${k.finish}`, k]));
+    const linked = [...new Set([...links.values()].map((k) => k.product_id))];
+    const { data: linkedProducts, error: byIdError } = linked.length
+      ? await supabase.rpc('cc_products_by_id', { p_ids: linked })
+      : { data: [], error: null };
+    fail(byIdError, "Couldn't read the remembered products");
+    return { links, productById: new Map((linkedProducts ?? []).map((p) => [p.product_id, p])) };
+  })();
+  remembered.catch(() => {});   // awaited below; this only keeps an early failure from going unhandled
+  const [sets, cards] = await Promise.all([loadSets(), given.cards ?? scryfallCards(ids)]);
 
   // Where each line's set lives, and what to ask the database for.
   const prepared = lines.map((line) => {
@@ -111,10 +114,13 @@ export async function matchLines(lines, onStep, given = {}) {
     .map((category) => ({ key: p.line.id, category, base_keys: p.baseKeys })));
   onStep?.('Finding their Crystal Commerce products…');
   // Page by page: a big export's candidates run past the API's row limit (decision 346).
-  const { data: candRows, error: candError } = await allPages((from, to) => supabase
-    .rpc('cc_candidates', { p_wants: wants })
-    .order('key').order('category').order('product_id')
-    .range(from, to));
+  const [{ data: candRows, error: candError }, { links, productById }] = await Promise.all([
+    allPages((from, to) => supabase
+      .rpc('cc_candidates', { p_wants: wants })
+      .order('key').order('category').order('product_id')
+      .range(from, to)),
+    remembered,
+  ]);
   fail(candError, "Couldn't read the inventory's products");
   const byKey = new Map();
   for (const row of candRows ?? []) {
