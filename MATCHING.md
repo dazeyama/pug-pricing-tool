@@ -12,7 +12,7 @@ Borderless, "Showcase Scrolls" is just Showcase), and a product is picked automa
 left or leads the next by two points, including when its name is exactly the name the app expected. Both reported
 cards sit in categories where CC sells the regular printing under the plain name and a special one under a longer
 one, and the card's own traits (from Scryfall) can't tell them apart. The sweep of dev's 1,880 printings shows the
-same shape in about 260 more automatic matches. The fix is a rule that never picks between products the card can't
+same shape in about 250 more automatic matches. The fix is a rule that never picks between products the card can't
 tell apart, extra words that count against a product, no more trusting matches the app made by itself, and a
 one-time clean-up of the links already remembered. Prod's remembered links were read after the scan, one SELECT, nothing
 written: 303 links, 283 of them made by auto matches, every one of those listed in Appendix B with the evidence
@@ -192,9 +192,9 @@ category (32 sets, Appendix D.2; those always go to Needs a choice, which is rig
   non-foil product; Silvar C20 15 non-foil → the Foil product). **No confirmed wrong guess on dev**, but dev holds
   almost no staff picks to test against; the two confirmed wrong guesses are prod's.
 - **Auto links (376 with lines):** every one equals what the matcher picks today, so the inventory hasn't drifted
-  under them. The recommended rule would have sent **54** of them to a person instead.
+  under them. The recommended rule would have sent **53** of them to a person instead.
 - **Already exported on dev (144 printings):** every stamp equals today's pick; the recommended rule would have
-  asked about **17**.
+  asked about **16**.
 - **Treatments drift:** for 10 printings Scryfall no longer reports a treatment saved at the buy (seven special
   foils, Appendix D.3). The matcher uses the saved treatments, so a card's match can depend on when it was bought.
 
@@ -274,6 +274,21 @@ was the scroll. Section 1.1's reproduction stands for LTR 685 on dev. The lesson
 the review dialog: a tie between two names that differ by one word is not a one-click pick, and the review must
 show the difference.
 
+**Prod's 283 auto links under the recommended rule.** Each linked printing was fetched from Scryfall, rebuilt as a
+line and run through the matcher and rule 3b against dev's copy of file 33 (`prod-rules.mjs` in the temp folder;
+dev's set choices stood in for prod's, which weren't read). Today's matcher still picks the linked product for 282
+of the 283 (the one exception, Ancient Stirrings (SLP) 50 foil, has no category on dev's set choices). Rule 3b
+would have refused **65** and let 218 through. Read against Scryfall's facts, the 65 come out as:
+
+| Verdict | Links | The cases |
+|---|---|---|
+| Confirmed wrong | 1 | Polluted Bonds (WOT) 34 foil (Appendix B row 230) |
+| Likely wrong, check in CC | 1 | Serra Ascendant (PLST) M11-28 → `Serra Ascendant (PAGL) - The List`: CC's bracket names another List printing (ours is M11); The List's only product of that name, so the matcher took it. If CC doesn't carry the M11 List printing, the card should have been Can't upload |
+| Uncertain by the rule, right by the evidence | 63 | 43 variant products ("- Extended Art", "- Borderless", "- Showcase", "- Retro Frame") in regular sets where a plain sibling also exists (the Enchanting Tales shape, but none of these sets is a bonus sheet, and CC names those variants); 4 Mystical Archive plain picks (the English card); 8 foil-kind picks (Foil vs Surge / Galaxy Foil) where Scryfall's special-foil flag agrees; 3 Mystery Booster 2 lone picks ("Future Frame" ×2, "White Border") where Scryfall's frame and border agree; Elven Chorus (LTR) 611 → "Showcase Scrolls" and Mount Doom (LTR) 343 → "Borderless", where Scryfall's `scroll` and `poster` promo types agree; 3 plain picks for two-faced or accented names that only missed the exact match |
+
+So the inventory most likely received one more wrong card than reported, Serra Ascendant, and the rest of the 283
+stand. The 65 rows are Appendix B.2.
+
 ---
 
 ## 3. The "never guess" rule: three definitions, one recommendation
@@ -286,7 +301,7 @@ to Needs a choice.
 |---|---|---|---|---|---|
 | **1. One candidate only.** Auto only when exactly one product of the name passes the finish and number checks (in the card's own category; the same-shelf one only when its own has none). Scores only order the radio buttons. | 1,175 | 690 | 15 | **639 (35%)** | Nothing by choice; a lone product that isn't ours (CC doesn't carry our printing) is still taken, as it is today |
 | **2. Exact name, no rival sharing a family.** Rule 1, or the exact expected name when no other passing product shares one of our families or differs from our words only by an extra word. | 1,716 | 149 | 15 | 98 (5%) | The Enchanting Tales shape with an exact hit: a plain product and an exact "X - Showcase" both pass and the plain one is ours. 146 of its autos carry that sign |
-| **3b. Exact name, every rival clearly another printing** *(recommended)*. Rule 1, or the exact expected name when every other passing product is clearly another printing: it shows a family we don't have, or a foil kind other than the one we expect, and carries no word we can't read. A plain product is never "clearly other". And a lone candidate is no answer when its name carries a word we can't read (an extra word or a no-family word). | 1,553 | 312 | 15 | **261 (14%)** | 18 of its autos still carry a sign: 9 where the rival is the same card in another foil kind (Surge / Raised Foil vs Foil, decided by Scryfall's special-foil flag), 9 where CC lists our collector number in brackets and the unnumbered products are other printings (the matcher's own rule, lines 288–295) |
+| **3b. Exact name, every rival clearly another printing** *(recommended)*. Rule 1, or the exact expected name when every other passing product is clearly another printing: it shows a trait the card doesn't have (whatever else its name says: "Borderless Poster" for a plain card is another printing), or it is the same words in a foil kind other than the one we expect. A plain product is never "clearly other"; nor is one that differs from our words only by an extra word ("Showcase Scrolls" for a showcase card), nor one with a word that has no family at all. And a lone candidate is no answer when its name carries a word we can't read (an extra word or a no-family word). | 1,567 | 298 | 15 | **247 (14%)** | 21 of its autos still carry a sign: in each the rival is the same card in another foil kind (Surge / Raised Foil vs Foil, decided by Scryfall's special-foil flag) or CC lists our collector number in brackets and the unnumbered products are other printings (the matcher's own rule, lines 288–295) |
 
 Two tightenings the owner can add to 3b, with their cost on dev:
 
@@ -305,12 +320,14 @@ when an exact name exists. Rule 3b relies on one direction only: when Scryfall r
 is ours and a product with a trait word is another printing. The unreliable direction (Scryfall reports a trait,
 CC may still name the card plainly) is never used to decide.
 
-Where 3b's extra choices fall on dev's history (261 printings, from 1,979 lines over 3½ weeks of buys, so a few a
-day, and each printing is asked once and then remembered): Reality Fracture 29, Tales of Middle-earth 19, Zendikar
-Rising 17, Final Fantasy 14, The Hobbit 11, Fallout 11, Doctor Who 10, Core Set 2021 9, then 2–7 each across
-thirty sets. By treatments: borderless 77, extended art 52, none 43, borderless + showcase 24, showcase 21, extended
-art + surge foil 15, bundle 11, retro 8. By how they are automatic today: exact name 185, lead 62, lone candidate
-with an unreadable word 14. The full list is Appendix A.
+Where 3b's extra choices fall on dev's history (247 printings, from 1,979 lines over 3½ weeks of buys, so a few a
+day, and each printing is asked once and then remembered): Reality Fracture 29, Zendikar Rising 17, Final Fantasy
+14, The Hobbit 11, Fallout 11, Doctor Who 10, Tales of Middle-earth 10, Core Set 2021 9, then 2–7 each across
+thirty sets. By treatments: borderless 77, extended art 52, none 32, borderless + showcase 24, showcase 21, extended
+art + surge foil 12, bundle 11, retro 8. By how they are automatic today: exact name 171, lead 62, lone candidate
+with an unreadable word 14. The full list is Appendix A. Prod's own 283 auto links went through the same rule
+(section 2.5): 65 refused, and of those one is the confirmed mistake, one more is likely wrong, and the other 63
+read right against Scryfall's facts.
 
 ---
 
@@ -344,6 +361,23 @@ ranking stays, so Needs a choice lists the likeliest first.
     `expectedFoilKind`, and no extra/other words). Else `choose`. The 2-point lead goes.
   - The same-shelf rule (The List ↔ Mystery Booster) keeps the owner's 2026-10-14 decision: the home category's
     pool decides; the other shelf only when home has nothing.
+  - **New families with real evidence, from Scryfall** (confirmed on the cards behind prod's links): promo type
+    `scroll` → "Showcase Scrolls" (Tom Bombadil 685, Elven Chorus 611 and Rosie Cotton 478 all carry it; the
+    ring-frame 331 doesn't), `poster` → "Borderless Poster", `japanshowcase` → "Japan Showcase"; frame `future`
+    → "Future Frame" and border `white` → "White Border" (Mystery Booster 2's reprints). `magicTraits`
+    (`src/lib/printings.js` 51–69) saves them on new lines; for lines already bought, `matchLines` reads them off
+    the Scryfall card it fetches anyway (`ccExport.js` 97, `cards`). With these, Tom Bombadil 685 matches
+    "Showcase Scrolls" on evidence and "Showcase" becomes clearly another printing, and the LTR, Hobbit and
+    Mystery Booster 2 cards in Appendix A stop asking. The Enchanting Tales anime cards stay a choice: Scryfall
+    marks the regular ones borderless + showcase and the anime ones borderless only, which is set knowledge, not a
+    word on the product.
+  - **Three exact-name misses to fix with it** (confirmed on prod's links): the comparison (`collapse`, line 189)
+    doesn't fold accents, so "Glóin, Dwarf Emissary" never equals CC's "Gloin"; a two-faced card found by its
+    front (270–273) still expects its full name, so "Emeritus of Ideation // Ancestral Recall" never matches
+    CC's "Emeritus of Ideation"; and `numbered` (275) puts the collector number into the expected name whenever
+    any sibling has a bracket ("Mines of Moria (0342) - Borderless"), so the unnumbered plain product can never be
+    exact. Each sends a certain card to staff for nothing. Fix: `fold` for the comparison, the front face as the
+    expected name when matched by it, and the number only when a candidate carries ours.
 - `README.md` "Picking the product" (1423–1445) and the four steps (1395–1402) describe "exact wins outright" and
   "leads by 2 points": **Help is out of date after this item** (flag only; edit when asked).
 - `docs/DESIGN_SPEC.md`: decision 484 (the rule), 485 (extra words and canonical spellings), amending 174.
@@ -363,9 +397,13 @@ ranking stays, so Needs a choice lists the likeliest first.
   `tests/ccMatch.test.js` 87–88 only if 3c is chosen).
 - "Swiftfoot Boots - The List" and "Swiftfoot Boots (M12) - The List" for PLST A25-234 → `auto` (set-code bracket
   thins the pool).
+- Tom Bombadil 685 with promo type `scroll` → `auto` "Tom Bombadil - Showcase Scrolls"; LTR 331 without it →
+  `choose`. "Gloin, Dwarf Emissary" matched exactly by "Glóin, Dwarf Emissary"; "Emeritus of Ideation //
+  Ancestral Recall" matched exactly by CC's "Emeritus of Ideation"; "Mines of Moria - Foil" for LTR 257 foil
+  `auto` beside "Mines of Moria (0342) - Foil - Borderless".
 
 **Migration:** none. **Cost to staff:** about 14% of the cards the app matches by itself today go to Needs a
-choice once each (261 of dev's 1,814), then are remembered as staff picks; a new set's first week asks more, then
+choice once each (247 of dev's 1,814), then are remembered as staff picks; a new set's first week asks more, then
 settles. **Verify before shipping:** run the sweep script against the new build (`node sweep.mjs` in the temp
 folder reads the repo's `src/lib`) and confirm 0 disagreements and the counts above.
 
@@ -511,6 +549,15 @@ inventory, if CC drops a product. **Migration:** none.
 14. **Plausible.** Undo in the dry run re-installs a previous `auto` link (`ExportDialog.jsx` 262–273); harmless
     after item 2.
 15. **Plausible.** The import's and the export's scorers weigh a foil mismatch differently (−3 vs −1). Later.
+16. **Confirmed, medium.** Scryfall carries the evidence the matcher lacks and the app throws it away: promo types
+    `scroll`, `poster` and `japanshowcase`, the `future` frame and the white border are on the cards (prod's 298
+    linked printings: `scroll` 4, `poster` 10, `japanshowcase` 2, `future` 9, white 42) and `magicTraits`
+    (`printings.js` 51–69) keeps none of them, so "Showcase Scrolls", "Borderless Poster", "Japan Showcase",
+    "Future Frame" and "White Border" can only ever be extra words. Item 1.
+17. **Confirmed, low.** Three ways a right product misses the exact name and goes to staff for nothing: accents
+    (`collapse`, `ccMatch.js` 189: "Glóin" vs CC's "Gloin"), a two-faced card found by its front but expected under
+    its full name (270–276), and the collector number forced into the expected name by any numbered sibling
+    (275: "Mines of Moria (0342) - Borderless" makes "Mines of Moria - Foil" inexact). Item 1.
 
 Checked and sound: `parseProductName` on "(A)", "(No PW Symbol)", "(Gold-Stamped Signature)", "Foil Prerelease
 Promo", double spaces, "// " names, flavor names, variant-first foils (15/15 unit tests pass today); `normNumber`
@@ -520,7 +567,7 @@ present; `export_check` refusing a product not in the current file; `export_stam
 
 ---
 
-## Appendix A — Today's automatic matches that the recommended rule sends to a person (261 printings, dev)
+## Appendix A — Today's automatic matches that the recommended rule sends to a person (247 printings, dev)
 
 The two reported cards first, then by set. "Today's pick" is what the app matches by itself today, with its score;
 the runner-up is the next passing product. None of these is known to be wrong except the two reported; each is a
@@ -623,27 +670,15 @@ card the matcher cannot tell from a sibling product with what it knows.
 | Valki, God of Lies // Tibalt, Cosmic Impostor (KHM) 286 (borderless) | Valki, God of Lies // Tibalt, Cosmic Impostor - Borderless (103) | Valki, God of Lies // Tibalt, Cosmic Impostor (-1) | a plain product also fits (CC may name our printing plainly) |
 | Get Lost (LCI) 333 (borderless) | Get Lost - Borderless (103) | Get Lost (-1) | a plain product also fits (CC may name our printing plainly) |
 | Tishana's Tidebinder (LCI) 335 (borderless) | Tishana's Tidebinder - Borderless (103) | Tishana's Tidebinder (-1) | a plain product also fits (CC may name our printing plainly) |
-| Archivist of Gondor (LTC) 18 | Archivist of Gondor (100) | Archivist of Gondor - Extended Art (-2) | several products pass |
-| Corsairs of Umbar (LTC) 19 | Corsairs of Umbar (100) | Corsairs of Umbar - Extended Art (-2) | several products pass |
-| Fealty to the Realm (LTC) 21 | Fealty to the Realm (100) | Fealty to the Realm - Extended Art (-2) | several products pass |
 | Subjugate the Hobbits (LTC) 107 (extendedart) | Subjugate the Hobbits - Extended Art (103) | Subjugate the Hobbits (-1) | a plain product also fits (CC may name our printing plainly) |
 | Eagle of Deliverance (LTR) 829 (extendedart) | Eagle of Deliverance - Extended Art (103) | Eagle of Deliverance (-1) | a plain product also fits (CC may name our printing plainly) |
-| Fiery Inscription (LTR) 126 | Fiery Inscription (100) | Fiery Inscription - Showcase Scrolls (-2) | several products pass |
 | Gimli, Mournful Avenger (LTR) 436 *F* (borderless) | Gimli, Mournful Avenger - Foil - Borderless (105) | Gimli, Mournful Avenger - Foil (1) | a plain product also fits (CC may name our printing plainly) |
 | Gollum, Patient Plotter (LTR) 450 (borderless, bundle) | Gollum, Patient Plotter (-2) | Gollum, Patient Plotter - Showcase (-4) | our borderless not on the pick; our bundle not on the pick |
 | Gollum, Patient Plotter (LTR) 801 *F* (borderless, showcase, surgefoil) | Gollum, Patient Plotter - Surge Foil - Showcase (4) | Gollum, Patient Plotter - Foil - Showcase (1) | our borderless not on the pick; a rival shares a family of ours; a rival differs only by an extra word; a plain product also fits (CC may name our printing plainly) |
-| King of the Oathbreakers (LTR) 780 *F* (extendedart, surgefoil) | King of the Oathbreakers - Surge Foil - Extended Art (105) | King of the Oathbreakers - Foil - Extended Art (2) | a rival shares a family of ours; a plain product also fits (CC may name our printing plainly) |
 | Minas Tirith Garrison (LTR) 830 (extendedart) | Minas Tirith Garrison - Extended Art (103) | Minas Tirith Garrison (-1) | a plain product also fits (CC may name our printing plainly) |
-| Orcish Bowmasters (LTR) 103 | Orcish Bowmasters (100) | Orcish Bowmasters - Borderless (-2) | several products pass |
-| Press the Enemy (LTR) 763 *F* (extendedart, surgefoil) | Press the Enemy - Surge Foil - Extended Art (105) | Press the Enemy - Foil (-2) | a plain product also fits (CC may name our printing plainly) |
 | Rangers of Ithilien (LTR) 353 (extendedart) | Rangers of Ithilien - Extended Art (103) | Rangers of Ithilien (-1) | a plain product also fits (CC may name our printing plainly) |
 | Rivendell (LTR) 344 *F* (borderless) | Rivendell - Foil - Borderless (105) | Rivendell - Surge Foil - Borderless (2) | a rival shares a family of ours; a plain product also fits (CC may name our printing plainly) |
-| Rosie Cotton of South Lane (LTR) 27 *F* | Rosie Cotton of South Lane - Foil (102) | Rosie Cotton of South Lane - Foil - Borderless (0) | several products pass |
 | Rosie Cotton of South Lane (LTR) 478 (showcase, silverfoil) | Rosie Cotton of South Lane - Showcase Scrolls (3) | Rosie Cotton of South Lane (-1) | partial word on the pick; a plain product also fits (CC may name our printing plainly) |
-| Saruman of Many Colors (LTR) 223 *F* | Saruman of Many Colors - Foil (102) | Saruman of Many Colors - Foil - Borderless (0) | several products pass |
-| The Balrog, Durin's Bane (LTR) 195 *F* | The Balrog, Durin's Bane - Foil (102) | The Balrog, Durin's Bane - Foil - Borderless (0) | several products pass |
-| The Battle of Bywater (LTR) 757 *F* (extendedart, surgefoil) | The Battle of Bywater - Surge Foil - Extended Art (105) | The Battle of Bywater - Foil (-2) | a plain product also fits (CC may name our printing plainly) |
-| There and Back Again (LTR) 151 | There and Back Again (100) | There and Back Again - Showcase Scrolls (-2) | several products pass |
 | You Cannot Pass! (LTR) 489 (showcase, silverfoil) | You Cannot Pass! - Showcase Scrolls (3) | You Cannot Pass! (-1) | partial word on the pick; a plain product also fits (CC may name our printing plainly) |
 | Basri Ket (M21) 280 (borderless) | Basri Ket - Borderless (103) | Basri Ket (-1) | a plain product also fits (CC may name our printing plainly) |
 | Chandra, Heart of Fire (M21) 283 (borderless) | Chandra, Heart of Fire - Borderless (103) | Chandra, Heart of Fire (-1) | a plain product also fits (CC may name our printing plainly) |
@@ -678,9 +713,7 @@ card the matcher cannot tell from a sibling product with what it knows.
 | Jin-Gitaxias // The Great Synthesis (MOM) 294 (borderless, showcase) | Jin-Gitaxias // The Great Synthesis - Showcase (2) | Jin-Gitaxias // The Great Synthesis (-2) | our borderless not on the pick; a plain product also fits (CC may name our printing plainly) |
 | Orthion, Hero of Lavabrink (MOM) 379 (extendedart) | Orthion, Hero of Lavabrink - Extended Art (103) | Orthion, Hero of Lavabrink (-1) | a plain product also fits (CC may name our printing plainly) |
 | Polukranos Reborn // Polukranos, Engine of Ruin (MOM) 300 *F* (showcase) | Polukranos Reborn // Polukranos, Engine of Ruin - Foil - Showcase (105) | Polukranos Reborn // Polukranos, Engine of Ruin - Foil (1) | a plain product also fits (CC may name our printing plainly) |
-| Black Widow, Super Spy (MSH) 89 | Black Widow, Super Spy (100) | Black Widow, Super Spy - Borderless (0347) (-2) | several products pass |
 | Secret Invasion (MSH) 301 *F* (borderless, showcase) | Secret Invasion - Foil - Borderless (4) | Secret Invasion - Foil (0) | our showcase not on the pick; a plain product also fits (CC may name our printing plainly) |
-| Shang-Chi, Master of Kung Fu (MSH) 187 *F* | Shang-Chi, Master of Kung Fu - Foil (102) | Shang-Chi, Master of Kung Fu - Borderless (0370) - Foil (0) | several products pass |
 | Storm, Windrider (MSH) 375 (borderless) | Storm, Windrider - Borderless (103) | Storm, Windrider (-1) | a plain product also fits (CC may name our printing plainly) |
 | The Scarlet Witch (MSH) 431 *F* (bundle) | The Scarlet Witch - Foil (1) | The Scarlet Witch - Foil - Borderless (-1) | our bundle not on the pick |
 | The Sentry, Golden Guardian (MSH) 358 *F* (borderless) | The Sentry, Golden Guardian - Foil - Borderless (105) | The Sentry, Golden Guardian - Foil (1) | a plain product also fits (CC may name our printing plainly) |
@@ -789,6 +822,7 @@ card the matcher cannot tell from a sibling product with what it knows.
 | Scourge of the Skyclaves (ZNR) 343 (extendedart) | Scourge of the Skyclaves - Extended Art (103) | Scourge of the Skyclaves (-1) | a plain product also fits (CC may name our printing plainly) |
 | Valakut Exploration (ZNR) 303 (showcase) | Valakut Exploration - Showcase (103) | Valakut Exploration (-1) | a plain product also fits (CC may name our printing plainly) |
 | Valakut Exploration (ZNR) 303 *F* (showcase) | Valakut Exploration - Foil - Showcase (105) | Valakut Exploration - Foil (1) | a plain product also fits (CC may name our printing plainly) |
+
 ---
 
 ## Appendix B — Prod's remembered links (read 2026-10-23, read-only)
@@ -1117,6 +1151,79 @@ wrongly before today.
 | 281 | Wizard's Staff | The Hobbit | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
 | 282 | Wizard's Staff - Foil | The Hobbit | foil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
 | 283 | Zaffai and the Tempests | Secrets of Strixhaven | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+
+
+### B.2 The 65 auto links the recommended rule would have refused
+
+Each linked printing rebuilt from Scryfall and run through the matcher and rule 3b against dev's copy of file 33 (section 2.5). Tier A: an extra word decided it; B: a sibling shares the card's words, or the pick carries a word the matcher can't read; C: a plain product also fits (the Enchanting Tales shape); D: the pick lacks one of the card's traits or shows one it hasn't; E: picked by points among several. The verdicts: row 230's Polluted Bonds is the confirmed mistake; Serra Ascendant (PLST) M11-28 is likely wrong; every other row reads right against Scryfall's promo types, frame and border, or is a variant word in a regular set where CC names it.
+
+| Tier | Card (treatments) | Linked to (prod) | Next best (score) | Why it was a guess |
+|---|---|---|---|---|
+| A | Elven Chorus (LTR) 611 *F* (showcase, silverfoil) | Elven Chorus - Foil - Showcase Scrolls | Elven Chorus - Foil (1) | partial word on the pick; a plain product also fits (CC may name our printing plainly) |
+| A | Faramir, Prince of Ithilien (LTR) 811 *F* (borderless, showcase, surgefoil) | Faramir, Prince of Ithilien - Surge Foil - Showcase | Faramir, Prince of Ithilien - Foil - Showcase (1) | our borderless not on the pick; a rival shares a family of ours; a rival differs only by an extra word; a plain product also fits (CC may name our printing plainly) |
+| A | Mount Doom (LTR) 343 *F* (borderless) | Mount Doom - Foil - Borderless | Mount Doom - Foil - Borderless Poster (5) | a rival shares a family of ours; a rival differs only by an extra word; a plain product also fits (CC may name our printing plainly) |
+| A | Polluted Bonds (WOT) 34 *F* (borderless, showcase) | Polluted Bonds - Foil - Anime Borderless | Polluted Bonds - Confetti Foil - Anime Borderless (1) | partial word on the pick; our showcase not on the pick; a rival shares a family of ours; a rival differs only by an extra word; a plain product also fits (CC may name our printing plainly) |
+| B | Final Fortune (MB2) 190 | Final Fortune - Future Frame | — | unexplained word on the pick |
+| B | Gandalf, Goblins' Bane // Flameshape (HOB) 242 *F* (borderless) | Gandalf, Goblins' Bane // Flameshape - Foil - Borderless | Gandalf, Goblins' Bane // Flameshape - Surge Foil - Borderless (2) | a rival shares a family of ours; a plain product also fits (CC may name our printing plainly) |
+| B | Godless Shrine (EOE) 280 *F* (borderless, showcase) | Godless Shrine - Foil - Borderless | Godless Shrine - Galaxy Foil - Borderless (1) | our showcase not on the pick; a rival shares a family of ours; a plain product also fits (CC may name our printing plainly) |
+| B | Greater Good (MB2) 207 | Greater Good - Future Frame | — | unexplained word on the pick |
+| B | Last Light of Durin's Day (HOB) 264 *F* (borderless, showcase, surgefoil) | Last Light of Durin's Day - Surge Foil - Showcase | Last Light of Durin's Day - Foil - Showcase (1) | our borderless not on the pick; a rival shares a family of ours; a plain product also fits (CC may name our printing plainly) |
+| B | Seedtime (MB2) 73 | Seedtime - White Border | — | unexplained word on the pick |
+| B | Watery Grave (EOE) 286 *F* (borderless, showcase) | Watery Grave - Foil - Borderless | Watery Grave - Galaxy Foil - Borderless (1) | our showcase not on the pick; a rival shares a family of ours; a plain product also fits (CC may name our printing plainly) |
+| C | Arwen, Mortal Queen (LTR) 367 (extendedart) | Arwen, Mortal Queen - Extended Art | Arwen, Mortal Queen (-1) | a plain product also fits (CC may name our printing plainly) |
+| C | Bard, King of Dale (HOB) 244 (borderless) | Bard, King of Dale - Borderless | Bard, King of Dale (-1) | a plain product also fits (CC may name our printing plainly) |
+| C | Beorn the Fierce (HOB) 230 (borderless, showcase) | Beorn the Fierce - Showcase | Beorn the Fierce (-2) | our borderless not on the pick; a plain product also fits (CC may name our printing plainly) |
+| C | Blot Out the Sky (STX) 335 (extendedart) | Blot Out the Sky - Extended Art | Blot Out the Sky (-1) | a plain product also fits (CC may name our printing plainly) |
+| C | Call of the Ring (LTR) 355 (extendedart) | Call of the Ring - Extended Art | Call of the Ring (-1) | a plain product also fits (CC may name our printing plainly) |
+| C | Call the Spirit Dragons (TDM) 309 (showcase) | Call the Spirit Dragons - Showcase | Call the Spirit Dragons (-1) | a plain product also fits (CC may name our printing plainly) |
+| C | Cauldron of Essence (SOS) 347 (extendedart) | Cauldron of Essence - Extended Art | Cauldron of Essence (-1) | a plain product also fits (CC may name our printing plainly) |
+| C | Decadent Dragon // Expensive Taste (WOE) 287 (showcase) | Decadent Dragon // Expensive Taste - Showcase | Decadent Dragon // Expensive Taste (-1) | a plain product also fits (CC may name our printing plainly) |
+| C | Dracogenesis (TDM) 300 (showcase) | Dracogenesis - Showcase | Dracogenesis (-1) | a plain product also fits (CC may name our printing plainly) |
+| C | Elven Chorus (LTR) 364 (extendedart) | Elven Chorus - Extended Art | Elven Chorus (-1) | a plain product also fits (CC may name our printing plainly) |
+| C | Flare of Duplication (MH3) 333 *F* (borderless, fullart) | Flare of Duplication - Foil - Borderless | Flare of Duplication - Foil (0) | our fullart not on the pick; a plain product also fits (CC may name our printing plainly) |
+| C | Formidable Speaker (ECL) 366 (extendedart) | Formidable Speaker - Extended Art | Formidable Speaker (-1) | a plain product also fits (CC may name our printing plainly) |
+| C | Fractured Sanity (MH2) 336 (showcase) | Fractured Sanity - Showcase | Fractured Sanity (-1) | a plain product also fits (CC may name our printing plainly) |
+| C | Gandalf, Goblins' Bane // Flameshape (HOB) 242 (borderless) | Gandalf, Goblins' Bane // Flameshape - Borderless | Gandalf, Goblins' Bane // Flameshape (-1) | a plain product also fits (CC may name our printing plainly) |
+| C | Ghostway (RVR) 308 (retro) | Ghostway - Retro Frame | Ghostway (-1) | a plain product also fits (CC may name our printing plainly) |
+| C | Growing Rites of Itlimoc // Itlimoc, Cradle of the Sun (LCI) 380 (extendedart) | Growing Rites of Itlimoc // Itlimoc, Cradle of the Sun - Extended Art | Growing Rites of Itlimoc // Itlimoc, Cradle of the Sun (-1) | a plain product also fits (CC may name our printing plainly) |
+| C | Mathemagics (SOS) 320 (extendedart) | Mathemagics - Extended Art | Mathemagics (-1) | a plain product also fits (CC may name our printing plainly) |
+| C | Michelangelo, Weirdness to 11 (TMT) 214 (borderless) | Michelangelo, Weirdness to 11 - Borderless | Michelangelo, Weirdness to 11 (-1) | a plain product also fits (CC may name our printing plainly) |
+| C | Nature's Rhythm (TDM) 349 (borderless, showcase) | Nature's Rhythm - Borderless | Nature's Rhythm (-2) | our showcase not on the pick; a plain product also fits (CC may name our printing plainly) |
+| C | Ojer Kaslem, Deepest Growth // Temple of Cultivation (LCI) 318 (showcase) | Ojer Kaslem, Deepest Growth // Temple of Cultivation - Showcase | Ojer Kaslem, Deepest Growth // Temple of Cultivation (-1) | a plain product also fits (CC may name our printing plainly) |
+| C | Ojer Kaslem, Deepest Growth // Temple of Cultivation (LCI) 318 *F* (showcase) | Ojer Kaslem, Deepest Growth // Temple of Cultivation - Foil - Showcase | Ojer Kaslem, Deepest Growth // Temple of Cultivation - Foil (1) | a plain product also fits (CC may name our printing plainly) |
+| C | Ojer Pakpatiq, Deepest Epoch // Temple of Cyclical Time (LCI) 315 (showcase) | Ojer Pakpatiq, Deepest Epoch // Temple of Cyclical Time - Showcase | Ojer Pakpatiq, Deepest Epoch // Temple of Cyclical Time (-1) | a plain product also fits (CC may name our printing plainly) |
+| C | Oko, the Ringleader (OTJ) 305 (borderless) | Oko, the Ringleader - Borderless | Oko, the Ringleader (-1) | a plain product also fits (CC may name our printing plainly) |
+| C | Orcrist, Goblin-cleaver (HOB) 236 (borderless, showcase) | Orcrist, Goblin-cleaver - Showcase | Orcrist, Goblin-cleaver (-2) | our borderless not on the pick; a plain product also fits (CC may name our printing plainly) |
+| C | Psychic Frog (MH3) 433 (retro) | Psychic Frog - Retro Frame | Psychic Frog (-1) | a plain product also fits (CC may name our printing plainly) |
+| C | Rakdos, the Muscle (OTJ) 297 (borderless, showcase) | Rakdos, the Muscle - Showcase | Rakdos, the Muscle (-2) | our borderless not on the pick; a plain product also fits (CC may name our printing plainly) |
+| C | Raph & Mikey, Troublemakers (TMT) 250 (borderless, showcase) | Raph & Mikey, Troublemakers - Showcase | Raph & Mikey, Troublemakers (-2) | our borderless not on the pick; a plain product also fits (CC may name our printing plainly) |
+| C | Raphael, Ninja Destroyer (TMT) 218 (borderless) | Raphael, Ninja Destroyer - Borderless | Raphael, Ninja Destroyer (-1) | a plain product also fits (CC may name our printing plainly) |
+| C | Roaming Throne (LCI) 344 (borderless) | Roaming Throne - Borderless | Roaming Throne (-1) | a plain product also fits (CC may name our printing plainly) |
+| C | Shelob, Child of Ungoliant (LTR) 374 (extendedart) | Shelob, Child of Ungoliant - Extended Art | Shelob, Child of Ungoliant (-1) | a plain product also fits (CC may name our printing plainly) |
+| C | Shiko, Paragon of the Way (TDM) 317 (showcase) | Shiko, Paragon of the Way - Showcase | Shiko, Paragon of the Way (-1) | a plain product also fits (CC may name our printing plainly) |
+| C | Slickshot Show-Off (OTJ) 335 *F* (extendedart) | Slickshot Show-Off - Foil - Extended Art | Slickshot Show-Off - Foil (1) | a plain product also fits (CC may name our printing plainly) |
+| C | The Battle of Bywater (LTR) 346 (extendedart) | The Battle of Bywater - Extended Art | The Battle of Bywater (-1) | a plain product also fits (CC may name our printing plainly) |
+| C | The Shire (LTR) 345 (borderless) | The Shire - Borderless | The Shire (-1) | a plain product also fits (CC may name our printing plainly) |
+| C | The Watcher in the Water (LTR) 354 (extendedart) | The Watcher in the Water - Extended Art | The Watcher in the Water (-1) | a plain product also fits (CC may name our printing plainly) |
+| C | Thranduil, the Elvenking (HOB) 246 (borderless) | Thranduil, the Elvenking - Borderless | Thranduil, the Elvenking (-1) | a plain product also fits (CC may name our printing plainly) |
+| C | Titania, Protector of Argoth (MH2) 319 (borderless) | Titania, Protector of Argoth - Borderless | Titania, Protector of Argoth (-1) | a plain product also fits (CC may name our printing plainly) |
+| C | Triceraton Commander (TMT) 226 (borderless, showcase) | Triceraton Commander - Showcase | Triceraton Commander (-2) | our borderless not on the pick; a plain product also fits (CC may name our printing plainly) |
+| C | Ugin's Labyrinth (MH3) 359 (borderless) | Ugin's Labyrinth - Borderless | Ugin's Labyrinth (-1) | a plain product also fits (CC may name our printing plainly) |
+| C | Vraska, the Silencer (OTJ) 299 (borderless, showcase) | Vraska, the Silencer - Showcase | Vraska, the Silencer (-2) | our borderless not on the pick; a plain product also fits (CC may name our printing plainly) |
+| C | Wrath of the Skies (MH3) 397 (retro) | Wrath of the Skies - Retro Frame | Wrath of the Skies (-1) | a plain product also fits (CC may name our printing plainly) |
+| C | Yavimaya, Cradle of Growth (MH2) 441 *F* (retro) | Yavimaya, Cradle of Growth - Foil - Retro Frame | Yavimaya, Cradle of Growth - Foil (1) | a plain product also fits (CC may name our printing plainly) |
+| C | Yavimaya, Cradle of Growth (MH2) 480 (extendedart) | Yavimaya, Cradle of Growth - Extended Art | Yavimaya, Cradle of Growth (-1) | a plain product also fits (CC may name our printing plainly) |
+| D | Crackle with Power (SOA) 42 (borderless, showcase) | Crackle with Power | Crackle with Power - Japanese Alternate Art (-4) | our borderless not on the pick; our showcase not on the pick |
+| D | Deflecting Palm (SOA) 63 (borderless, showcase) | Deflecting Palm | Deflecting Palm - Japanese Alternate Art (-4) | our borderless not on the pick; our showcase not on the pick |
+| D | Pyretic Ritual (SOA) 46 (borderless, showcase) | Pyretic Ritual | Pyretic Ritual - Japanese Alternate Art (-4) | our borderless not on the pick; our showcase not on the pick |
+| D | Shamanic Revelation (SOA) 57 *F* (borderless, showcase) | Shamanic Revelation - Foil | Shamanic Revelation - Silver Scroll Foil - Japanese Alternate Art (-5) | our borderless not on the pick; our showcase not on the pick |
+| E | Ancient Stirrings (SLP) 50 *F* (borderless) | Ancient Stirrings - Foil (today: choose) | Ancient Stirrings - Foil - Future Frame (0) | several products pass; picked by points |
+| E | Emeritus of Ideation // Ancestral Recall (SOS) 45 | Emeritus of Ideation | Emeritus of Ideation - Extended Art (-2) | several products pass; picked by points |
+| E | Glóin, Dwarf Emissary (LTR) 132 | Gloin, Dwarf Emissary | Gloin, Dwarf Emissary - Extended Art (-2) | several products pass; picked by points |
+| E | Mines of Moria (LTR) 257 *F* | Mines of Moria - Foil | Mines of Moria - Foil - Showcase Scrolls (0) | several products pass; picked by points |
+| E | My Precious // Allure of Power (HOB) 176 | My Precious | My Precious - Showcase (-2) | several products pass; picked by points |
+| E | Serra Ascendant (PLST) M11-28 | Serra Ascendant (PAGL) - The List | — | several products pass; picked by points |
+| E | The Arkenstone // Seek the Heart (HOB) 170 | The Arkenstone | The Arkenstone - Borderless (-2) | several products pass; picked by points |
 
 ---
 
