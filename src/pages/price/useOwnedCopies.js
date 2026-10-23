@@ -41,6 +41,9 @@ export function useOwnedCopies(card, finish) {
     setRound((n) => n + 1);
   };
 
+  // A Magic card whose finish is still loading is counted as soon as it's in: "…" meanwhile, never "Magic
+  // only for now" (owner, 2026-10-23; decision 482).
+  if (!key && card?.game === 'mtg' && card.scryfall) return { status: 'loading', key: null, counts: null, error: null, refresh };
   if (!key) return { status: 'off', key: null, counts: null, error: null, refresh };
   // Another card's answer still in: this one's loading.
   return { ...(state.key === key ? state : { status: 'loading', key, counts: null, error: null }), refresh };

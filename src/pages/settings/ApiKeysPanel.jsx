@@ -50,28 +50,35 @@ function KeyRow({ provider, status, reload }) {
     }
   }
 
-  // A key saved or deleted needs a user and goes in the Changelog, never the key (decision 412).
+  // A key saved or deleted needs a user and goes in the Changelog, never the key (decision 412). The user is
+  // the one picked when the button was pressed, so un-picking them while it saves can't lose the entry.
   const needUser = () => {
-    if (staff.current) return true;
+    if (staff.current) return staff.current;
     staff.pulse();
     toast('Pick a user first.', 'err');
-    return false;
+    return null;
   };
-  const save = () => needUser() && run('save', { action: 'set', provider: provider.id, value }, () => {
-    setEditing(false);
-    setValue('');
-    setTest(null);
-    toast(`${provider.name} key saved.`, 'ok');
-    logSetting('justtcg_key_saved', `${provider.name} key saved.`, staff.current.id, deviceId);
-    reload();
-  });
-  const remove = () => needUser() && run('delete', { action: 'delete', provider: provider.id }, () => {
-    setConfirmDelete(false);
-    setTest(null);
-    toast(`${provider.name} key deleted.`, 'ok');
-    logSetting('justtcg_key_removed', `${provider.name} key deleted.`, staff.current.id, deviceId);
-    reload();
-  });
+  const save = () => {
+    const user = needUser();
+    return user && run('save', { action: 'set', provider: provider.id, value }, () => {
+      setEditing(false);
+      setValue('');
+      setTest(null);
+      toast(`${provider.name} key saved.`, 'ok');
+      logSetting('justtcg_key_saved', `${provider.name} key saved.`, user.id, deviceId);
+      reload();
+    });
+  };
+  const remove = () => {
+    const user = needUser();
+    return user && run('delete', { action: 'delete', provider: provider.id }, () => {
+      setConfirmDelete(false);
+      setTest(null);
+      toast(`${provider.name} key deleted.`, 'ok');
+      logSetting('justtcg_key_removed', `${provider.name} key deleted.`, user.id, deviceId);
+      reload();
+    });
+  };
   const runTest = () => run('test', { action: 'test', provider: provider.id }, (data) => setTest(data));
 
   const n = (x) => (x == null ? '?' : Number(x).toLocaleString());

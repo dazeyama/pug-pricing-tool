@@ -7,52 +7,38 @@ and function.
 ## Open
 
 - **Dev is ahead of prod: migrations 0008 (owned copies, decision 448; and Bulk pulled from exports made empty from
-  the start, decision 449) and 0009 (the rounding steps, decision 478) are on dev only.** Both go to prod in one
-  push, then the structure-only compare with `C:\ClaudeProjects\temp\dev-run-0009.json` (it replaces
-  dev-run-0008.json below). 0009 changes what `round_down_price` returns, so push the app in the same sitting:
-  with prod on 0009 and the live build still on the old steps, a new Changelog entry's Cash/Credit (worked out by
-  the database) and the screen's disagree ($55 at 45%: $24.50 in the Changelog, $24 on screen). 449's line is a no-op on dev (the collection's been there since dev's
-  first pull) and was added to 0008 after it was applied there, as 448's last changes were. After the prod push,
-  look on prod (read-only): `select count(*) from buys where system_key = 'pulled'` is 1; the structure-only
-  compare can't see rows. Prod gets it at the owner's
-  go when the store isn't using the app (CLAUDE.md Database step 6: `db push --linked --project-ref
-  zvxquzcfffmxwizonxuo`, then the structure-only compare with `C:\ClaudeProjects\temp\dev-run-0008.json`). The
-  app code that uses it isn't pushed before. The live build works with 0008 on prod (same signatures).
-- **Owned copies (decision 448): built on dev, untested in the app** (TEST.md section 7, the three new cases).
-  The counter (`OwnedCounter.jsx`, `useOwnedCopies.js`, `owned.js`), the suggestion (`ownedRates.js`), Apply and
-  Auto apply rates? (`PricingScreen.jsx`, `useScanReceiver.js`, `useDraft.js` `setAutoRates`, `CollectionPage.jsx`
-  `list.autoRates`). Not checked: the info row at 1366×768 (the card's details box gives up width to the counter,
-  so its links line may cut "View on Cardmarket" short; `owned.css`); how long a count takes on the live site.
-  Known limit: the app can't tell when CC's CSV was taken, so cards exported between taking it and uploading it
-  count as in it. Placeholders aren't counted (nothing ever exports or completes one). On the live site, the CC
-  counts start with the first inventory upload after 0008 is on prod. Help has it (Buy tab → Copies we own,
-  Settings tab → Copies we own; 2026-10-23).
-- **Unpushed:** decision 481, the chips' glow softer (`owned.css`; untested in the app), decision 480, the price
-  panel's chips 16px under the price (`quote.css`; measured, not tried in the app), decision 478, the rounding steps from $10 halved (`money.js` `priceStep`, migration 0009 on dev,
-  `SellFloorPanel.jsx`'s table, Help's Rounding; untested in the app; needs 0009 on prod first). After the push, a
-  past buy's Cash/Credit on its day page, a Quote and a folded Changelog run are worked out again with the new
-  steps, so they can read 50 cents more than when it was confirmed ($27.90 showed $27, now $27.50); its paid
-  price and its own Changelog entry don't change. Decision 479, no empty Copies we own box with nothing selected
-  (`OwnedCounter.jsx`; untested in the app). Decision 477, Copies we own hidden for Pokémon and where no card can take a rate (`PricingScreen.jsx`
-  `ownedHere`, `ownedShown`; untested in the app), decisions 455–476, the owned-copies counter's refinements (needs migration 0008 on prod first):
-  the first-copy bonuses and low-end rule (`ownedRates.js` `ownedAdjust`), the APPLIED / NOT APPLIED stamp as the
-  switch (`InkStamp.jsx`, `OwnedCounter.jsx`), muted colours and the chips' layout (`owned.css`), n/a with the
-  one-card match dialog (`MatchCardDialog.jsx`, `ChooseRow.jsx`), the price panel's glowing chips (`QuotePanel.jsx`),
-  a forgotten match showing without a refresh (`matchCache.js`), and Settings → Copies we own in three columns, the cut red and the bonuses green
-  (`OwnedCopiesPanel.jsx`; 475 and 476 measured to fit with no scroll bar from 1000 to 1400 px wide, the switches and boxes
-  not tried in the app). Then decision 454, a buy's customer on its header search result (`SearchBox.jsx` `renderRow`; untested
-  in the app; TEST.md section 2), decision 453, copies we own load sooner (`owned.js` `lookUp`, `ccExport.js` `matchLines`; untested
-  in the app, export matching included), decision 452, Unlock undoes a collection's export and REPRICE?'s reason (`CollectionPage.jsx`;
-  untested in the app; dev's Casey Kusz is the case), decision 451, the inventory reminder banner (`Banners.jsx` `InventoryReminder`; untested in the
-  app: dev's inventory is from today, so it shows only once that's over 7 days old), decision 450 (spec only),
-  decision 449, Bulk pulled from exports there empty (with 0008; `backupIO.js` `restoreBackup`),
-  decision 448, owned copies (needs migration 0008 on prod first), decision 435, Magic's promos after its normal printings (`cardSearch.js` `rank`, `scryfall.js`
-  `isPromo`), decisions 436–439, the backup JustTCG key, 440–441, the Export dialog's held pick and Undo, 442, a click keeping a menu group's flyout open, 443–445, the Magic printouts' new order and Print MTG / PKM in
-  buy order, 446, accents in searches, and 447, Alt+A for mimp mode.
-  Untested in the app. **Edge Functions changed:**
-  `secrets` and `prices` (and `_shared/justtcg.ts`) are deployed to dev only; the push deploys both to prod
-  (release step 9), and the app's backup flag does nothing there until it does. Migration 0008 (448) must be on
-  prod before the push.
+  the start, decision 449) and 0009 (the rounding steps, decision 478) are on dev only.** Both go to prod at the
+  owner's go, while the store isn't using the app, in the same sitting as the app push (CLAUDE.md Database step 6:
+  `npx supabase db push --linked --project-ref zvxquzcfffmxwizonxuo`, then the structure-only compare with
+  `C:\ClaudeProjects\temp\dev-run-0009.json`, all 625 checks passed on dev 2026-10-23). After it, look on prod
+  (read-only): `select count(*) from buys where system_key = 'pulled'` is 1, which the compare can't see. The live
+  build works with 0008 (same signatures), but 0009 changes what `round_down_price` returns: with prod on 0009 and
+  the old build still live, a new Changelog entry's Cash/Credit (worked out by the database) and the screen's
+  disagree ($55 at 45%: $24.50 in the Changelog, $24 on screen), so the app goes out the same night.
+- **Copies we own (decisions 448–483), tested by the owner on dev as it was built.** The counter
+  (`OwnedCounter.jsx`, `useOwnedCopies.js`, `owned.js`), the suggestion (`ownedRates.js`), Apply and Auto apply
+  rates? (`PricingScreen.jsx`, `useScanReceiver.js`, `useDraft.js` `setAutoRates`, `CollectionPage.jsx`
+  `list.autoRates`), Settings → Copies we own (`OwnedCopiesPanel.jsx`). TEST.md section 7 and 16 have its cases.
+  Not checked: how long a count takes on the live site. Known limit: the app can't tell when CC's CSV was taken, so
+  cards exported between taking it and uploading it count as in it. On the live site, the CC counts start with the
+  first inventory upload after 0008 is on prod. Help has it (Buy tab and Settings tab → Copies we own).
+- **Unpushed, decisions 435–483** (the owner tested on dev as each was built; Help is up to date with all of them):
+  - Copies we own, 448 and 455–483 (above), with migration 0008.
+  - 478, the rounding steps from $10 halved (`money.js` `priceStep`, `SellFloorPanel.jsx`'s table, migration 0009).
+    After the push, what's worked out again from saved lines (a past buy's Cash/Credit on its day page, a Quote, a
+    folded Changelog run) takes the new steps, so it can read up to 50 cents more (or $4 from $100) than when it
+    was confirmed; a paid price and a buy's own Changelog entry don't change.
+  - 454 a buy's customer in the header search (`SearchBox.jsx` `renderRow`); 452 Unlock undoes a collection's
+    export, and REPRICE?'s reason (`CollectionPage.jsx`); 451 the weekly inventory banner (`Banners.jsx`
+    `InventoryReminder`); 449 Bulk pulled from exports there empty (0008; `backupIO.js` `restoreBackup`); 450 spec
+    only; 453 copies we own load sooner.
+  - 435 Magic's promos after its normal printings; 436–439 the backup JustTCG key; 440–441 the Export dialog's held
+    pick and Undo; 442 a menu group's flyout staying open on a click; 443–445 the Magic printouts' order and Print
+    MTG / PKM in buy order; 446 accents in searches; 447 Alt+A for mimp mode.
+  - **Edge Functions changed:** `secrets` and `prices` (and `_shared/justtcg.ts`) are on dev only; the push deploys
+    both to prod (release step 9), and the backup key does nothing there until it does.
+  - **Order for the push night:** 0008 and 0009 to prod, the structure-only compare, the app push, the two
+    functions, the live check.
 - **The backup key, left open** (decisions 436–439): there's no usage meter for it (would need a migration; the
   owner: not worth it), and the app isn't told when a call used it (only the `prices` function's log says so). A
   big export on the backup's Free plan can wait on its per-minute limit (`call`'s backoff, `_shared/justtcg.ts`);
@@ -85,10 +71,6 @@ and function.
   security-definer list. (The database's "under $1" and "Collection started from…" texts stay: the owner, 2026-10-21,
   "don't bother, no one will ever see that".) A stored `.gz` can be left in the `master-inventory` bucket if
   the clearing's last answer is lost (`pruneProducts`, `src/lib/masterInventory.js`).
-- **Two small edges from the v1.0.1-day1 pre-push review** (plausible, not confirmed): a Pokémon buy's ⋯ → ◂ Print
-  → Print buy isn't greyed offline though the printout fetches today's prices (decision 404; `BuyPanel.jsx`, the
-  Magic one is), so offline it fails with a toast instead; `ApiKeysPanel.jsx` reads `staff.current.id` for the
-  Changelog entry after the key's save returns, so a user un-picked meanwhile loses the entry (the key is saved).
 - **Settings in the Changelog** (decision 412, migration 0006): from the review, left as is: `settings_log` takes
   the app's sentence as written; the key and match entries are guarded for a user only by the app and
   `settings_log`.
@@ -109,6 +91,11 @@ and function.
 
 ## Done
 
+- 2026-10-23: **Small fixes before the push** (the owner's go): a key's Changelog entry names the user picked when
+  Save or Delete was pressed (decision 483, `ApiKeysPanel.jsx`); the counter reads "…" while a Magic card's finish
+  loads, not "Magic only for now" (482, `useOwnedCopies.js`); TEST.md cases for 466–483 and the rounding, and its
+  Pokémon and project lines fixed for 477. NEXT.md tidied: the review's other small edge (a Pokémon buy's Print
+  buy offline) was already greyed (`BuyPanel.jsx`, "No connection"), so the item is gone. Unpushed.
 - 2026-10-23: **Help brought up to date** on the owner's ask (`README.md`, `src/pages/help/pages.js`): Copies we own
   on the Buy tab and in Settings, each its own page (448–481), the rounding steps (478), and the 2026-10-22
   changes (435, 437–441, 443–447, 449, 451, 452, 454); then, from an audit since the 2026-10-20 sweep, the

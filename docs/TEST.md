@@ -163,6 +163,9 @@ what happens. The findings are reported when the pass ends.
       its non-foil ~$0.20.
 - [ ] **Totals** show Cash and Credit at the master 33.34% / 66.68%; cards under $3 or over $35 use the low-end and
       high-end rates.
+- [ ] **Rounding** (decision 478): a card at $12.80 market shows $12.50 (was $12), one at $123.45 shows $123 (was
+      $120); under $10 it still goes by the quarter. Cash and Credit round the same way: a $55 list at 45% cash is
+      $24.50. Help → Rounding and Settings → Export sell floor's table show the new steps.
 - [ ] **Right-click a card → Set Rate:** its own Cash % and Credit %, Maintain ratio, a red box when Cash is over
       Credit; the line is tinted with ✎; **Clear Rate** takes it off.
 - [ ] A custom rate for the whole buy shows its percentage with ✎ in the totals.
@@ -184,7 +187,16 @@ what happens. The findings are reported when the pass ends.
       printings turns amber with "−5%?" (one copy over 2), "−10%?" (two)… Point at the boxes: the box below says
       "We own X copies of this printing and Y copies of this card.", then each printing: In Crystal Commerce (set ·
       foil / variant ×N) and Ours, not in it yet (set #number ×N), the one picked marked "this printing", and the
-      suggestion with its Credit / Cash. Pick a Pokémon card: "Copies we own: Magic only for now".
+      suggestion with its Credit / Cash. While a card's finish is still loading the boxes read "…", never "Magic
+      only for now" (decision 482).
+- [ ] **Where it shows** (decisions 477, 479): with no card selected, only **Auto apply rates?** shows there (no empty
+      box). Pick a Pokémon card, or search PKM only: no counter at all, the details box takes the width. On a
+      project, a confirmed buy's Edit, a Paid/Ours (locked) overnight buy and Can't upload cards: no counter and no
+      Auto apply rates?. An open overnight buy has both.
+- [ ] **Looks** (decisions 463–466, 471): the boxes and chips in muted colours, the stamp the one bright thing; each
+      chip centred under its box, both on one line with the stamp still in the row. A new card coming up with Auto
+      apply rates? checked shows APPLIED straight away, no stamp animation. Pointing at faded n/a boxes doesn't
+      brighten them.
 - [ ] **Bonus and cut** (decision 457): a card we've never had (0 and 0): a green "+10% first" chip under the boxes;
       its box's The rate section lists "+5% first of this printing" and "+5% more, first of this card", So +10%.
       Another printing of a card we own 1–2 of: "+5% first". A card we own 4 of, this printing none: a green "+5%
@@ -194,13 +206,16 @@ what happens. The findings are reported when the pass ends.
       458); one we own 4 of still gets the red chip.
 - [ ] **n/a** (decision 467): a printing the export would ask to choose a product for (several CC products could
       be it): both boxes read n/a, faded, no chips or stamp, and the price panel's rate is unchanged; pointing says
-      why. A card CC has never had: 0 and 0, with the +10% chip.
+      why. A grey **(click to match)** chip sits centred under the boxes (decision 470) and opens the same dialog
+      as clicking the boxes. A card CC has never had: 0 and 0, with the +10% chip.
 - [ ] **Match one card** (decision 468): click that n/a: **Which Crystal Commerce product is this?** lists the
       export's candidates, a search and View on Scryfall (no Sell price, no "None of these"). Pick one: nothing is
       saved yet, SAVE lights up (decision 469); CANCEL: still n/a. Pick one and SAVE: a toast says it's matched, the
       dialog closes and the boxes count again (numbers, not n/a). EXPORT that card later: it's
       Matched, "remembered". Esc or a click outside closes the dialog without a pick. The export dialog's Needs a
       choice and Change still work as before (the same component).
+- [ ] **A forgotten match** (decision 473): after matching that card, forget it in Settings → Crystal Commerce
+      matching → Browse remembered products…, go back to the Buy tab and pick the card again: n/a, with no refresh.
 - [ ] **Stamps** (decision 459): with a rate to apply, a red **NOT APPLIED** ink stamp under the chips; Apply (or
       Auto apply rates? checked) turns it into a green **APPLIED** one; no stamp when nothing changes the rate.
       Click the stamp (decision 461): it switches, the new one dropping in larger over the old, shaking and
@@ -208,9 +223,10 @@ what happens. The findings are reported when the pass ends.
       right, NOT APPLIED down, and the price panel's Credit / Cash change with it; click again to switch back.
       With Auto apply rates? checked the stamp doesn't switch, and pointing at it says why.
 - [ ] **Apply**: click the boxes to keep the box open, then **Apply ±N%**: the chips go solid with ✓, the price
-      panel's Credit and Cash change, ↑ and a green ring for a bonus, ↓ and a red ring for a cut. ADD CARD: the line
+      panel's Credit and Cash change, ↑ and a soft green glow for a bonus, ↓ and a red one for a cut, pulsing slowly
+      (decisions 472, 481), 16px under the big price, the glow clear of it (decision 480). ADD CARD: the line
       shows ✎ Credit / Cash at those rates. Apply, then pick another card: it isn't applied there. Editing a line:
-      the box says to use Set Rate. On a project: "A project has no rates."
+      the box says to use Set Rate.
 - [ ] **Auto apply rates?** above the boxes (decision 456): check it, add a card we own 3+ of: it goes on at the lower rate
       without clicking Apply; a card we've never had: the +10% rate; one we own 1–2 of, this printing included: its
       usual rate. The cards already on the list keep theirs.
@@ -556,6 +572,12 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
       shows "−20% owned". Switch "Show copies we own" off: the Buy tab has no counter and no Auto apply rates?; on
       again: back. Switch "New walk-in buys start … checked" on: an empty Buy tab shows the box checked, and the
       first card added goes on at its rate. 150 or "x" in a box is refused. Put everything back after.
+      The panel (decisions 475, 476): three columns, no scroll bar; The cut in a faint red box, First-copy bonuses
+      in a faint green one, both the same size, every line the same height (the low-end switch included), the
+      inputs lined up; the cut's two percentages read −5% and −50%. With "Show copies we own" off, both boxes grey
+      out.
+- [ ] **API keys** (decision 483): with a user picked, Edit on the JustTCG backup row, paste the same key and Save:
+      the Changelog has "JustTCG backup key saved." under that user. (Deleting a key means typing it back in after.)
 - [ ] **Export rates for bulk** (decision 416): red to 50¢, amber to $1.49; the dots don't move. With no user, EDIT
       pulses the user button. EDIT, drag the amber dot (or arrow keys, 1¢; Shift, 10¢): the values follow, the dots
       stay a cent apart. CANCEL puts it back. EDIT again, move it, SAVE: "Export rates for bulk saved", and on another
