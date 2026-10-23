@@ -311,7 +311,8 @@ and every buy and collection under a matching customer.
   Unticking it keeps it off until the worker types something else.
 - Next come **Overnight buys**, **Projects** and **System** holding a matching card, each under its
   own heading. Then come **buys**, filed under their day: *Today*, *Yesterday*, then the date.
-- Each card result shows where it is and every matching card, with its condition.
+- Each card result shows where it is and every matching card, with its condition. A buy's line ends
+  with its customer, as on its day page: *Buy 35 · ● Daisy · 4:10 PM · Customer: **Jordan Reyes***.
 - Hovering a card result shows the card's picture.
 - **↓ ↑** move through results. **Enter** opens one. **Esc** closes the list.
 - Opening a buy goes to its day page. Opening a collection goes to its screen. The matching cards
@@ -334,7 +335,8 @@ Bars under the header appear when something needs attention.
 |---|---|
 | **Master Crystal Inventory required** (red) | No one has uploaded an inventory file. **Open Settings** goes there. Exports can't run without it. |
 | **No connection — changes are paused** (yellow) | The connection dropped. |
-| **JustTCG daily limit reached** (yellow) | The day's price lookups are used up. It says when they come back. Until then, the worker types prices by hand. |
+| **JustTCG daily limit reached** (yellow) | The day's price lookups are used up. It says when they come back. Until then, the worker types prices by hand. Exports, printouts, stickers and REPRICE? carry on with the backup key, if one is saved. See [API keys](#api-keys). |
+| **Master Crystal Inventory uploaded N days ago** (yellow) | The inventory is more than 7 days old. Copies we own and the export's matching both read it, so an old one counts cards sold since and misses cards added. **Upload inventory** goes to Settings. **×** hides the bar until the browser is closed. A new upload clears it on every computer. |
 | **Last backup downloaded N days ago** (yellow) | The last backup is more than 7 days old. **Download backup** saves one. **×** hides the bar until the browser is closed. |
 | **Settings haven't loaded yet: nothing is priced until they do** (red) | The app couldn't read the store's settings. ADD CARD, CONFIRM BUY, REPRICE?, EXPORT, Complete day…, the stickers, the phone's scans and imports all wait, each saying the same. **Retry** tries again, and the app also tries again by itself. |
 
@@ -435,13 +437,16 @@ part can be left out. The sample text shows one: `Lightning Bolt 117/331 2X2`.
   the card they reprint. *Rootborn Defenses 26* and *RVR 26* both show RVR 26, then The List's
   RVR-26. Those always come after the main printings.
 - A misspelt name still finds the card. The line under the bar says *"Showing results for …"*.
+- A name typed without its accents still finds the card: *nazgul* finds Nazgûl, *flabebe* finds
+  Flabébé. The app learns the accented names from card-name lists it loads as it starts, so a search
+  in the first moments after it's opened goes as typed.
 - With no match it says *"No cards match. Check the number and set code."*
 
 | | |
 |---|---|
 | **MTG \| PKM** | Which games to search. Both are on to start. One always stays on. |
 | **EN \| JP** | English or Japanese Pokémon. EN to start, every time the screen opens. |
-| **🌼 \| 🦇** | With 🌼, the mode to start, the card area clears after each **ADD CARD**, ready for the next card. With 🦇 **mimp mode**, the card and the search stay as they are after ADD CARD, with Qty back to 1. Another copy, or the same card in another finish or condition, is then a keystroke away. Like EN \| JP, it's back to 🌼 every time the screen opens. **SAVE EDIT** always clears. |
+| **🌼 \| 🦇** | With 🌼, the mode to start, the card area clears after each **ADD CARD**, ready for the next card. With 🦇 **mimp mode**, the card and the search stay as they are after ADD CARD, with Qty back to 1. Another copy, or the same card in another finish or condition, is then a keystroke away. Like EN \| JP, it's back to 🌼 every time the screen opens. **SAVE EDIT** always clears. <kbd>Alt</kbd>+<kbd>A</kbd> switches between them. |
 
 Japanese cards are searched differently. See [Japanese searches](#japanese-searches).
 
@@ -499,7 +504,7 @@ of 5.
 |---|---|
 | **Click** | Selects the card. Clicking the selected card again un-selects it. |
 | **Right-click** | Searches the card's name, to show every printing of it. |
-| **Newest first / Oldest first** | Sorts the printings by release date. |
+| **Newest first / Oldest first** | Sorts the printings by release date. On Newest first, a Magic search with fewer than 10 printings shows the normal printings before the promos, each newest first. A typed number or set code still comes first. |
 | **… show all (N)** | Opens every match in a window. Arrow keys move, **Enter** picks, **Esc** closes. |
 | **Hover** | Shows the set symbol in its rarity colour. |
 
@@ -835,6 +840,7 @@ The cursor stays in the search bar, so these work while typing.
 <tr><td><kbd>Alt</kbd>+<kbd>F</kbd></td><td>Foil on or off (Magic). The next finish (Pokémon).</td></tr>
 <tr><td><kbd>Alt</kbd>+<kbd>Q</kbd></td><td>Jump to Qty.</td></tr>
 <tr><td><kbd>Alt</kbd>+<kbd>M</kbd></td><td>Type a manual price.</td></tr>
+<tr><td><kbd>Alt</kbd>+<kbd>A</kbd></td><td>Mimp mode on or off: 🦇 or 🌼.</td></tr>
 </table>
 
 The same list sits at the bottom of the screen.
@@ -1005,12 +1011,19 @@ being exported.
 | From | Button | What happens |
 |---|---|---|
 | **Priced** | Dropdown → Processing | Goes straight back. |
-| **Paid/Ours** | **🔒 Unlock** | Back to Priced, and editable. The price paid is cleared. The offer stays. The dropdown can send it to Processing instead. |
+| **Paid/Ours** | **🔒 Unlock** | Back to Priced, and editable. The price paid is cleared. The offer stays. The dropdown can send it to Processing instead. With exported cards, it undoes the export too. See below. |
 | **Completed** | **Reopen** | Back to Paid/Ours, still locked, the price paid kept. An export stays as it is, and [Undo export…](#undo-export) takes it back. |
 | **Rejected** | **Reopen** | Back to Priced with its offer, or to Processing if it had none. The reason stays in the Changelog. |
 
-Neither Reopen nor Undo export… undoes the file already downloaded. If it was uploaded to Crystal
-Commerce, someone fixes the stock there by hand.
+**Unlocking undoes the export.** A collection unlocked back to Priced or Processing isn't paid for
+after all, so its cards can't stay marked as sent to Crystal Commerce. When it has exported cards, the
+Unlock window says the export is undone in the same step: how many cards, the Custom SKU, and that
+their copies come back out of the System collections. Its button reads **Unlock and undo export**. If
+the export can't be undone, nothing is unlocked. **Reopen** (Completed back to Paid/Ours) keeps the
+export.
+
+Neither Reopen, Unlock nor Undo export… undoes the file already downloaded. If it was uploaded to
+Crystal Commerce, someone takes those rows out there by hand.
 
 ### What can change in each status
 
@@ -1049,6 +1062,9 @@ Processing and Priced collections, projects, and Can't upload cards. It asks fir
 
 A message afterwards says how many prices changed and the Market total before and after.
 
+With every card exported there's nothing to reprice, and REPRICE? says so: *Every card here is
+exported, so their prices stay: ⋯ → Undo export… first to reprice them*.
+
 ### EXPORT
 
 EXPORT sends the collection's Magic cards to Crystal Commerce. See
@@ -1067,9 +1083,10 @@ An exported collection shows its **Custom SKU** in the list heading, whatever it
 exported cards' prices show in green. Those are its Sell Prices.
 
 **EXPORT ▾** opens two groups. Pointing at a group, or clicking it, opens its items to its left.
-**◂ Print** holds **Print MTG (all)** and **Print MTG (>$1.49)**, the audit printout (see
-[Print MTG?](#print-mtg-the-audit-printout)). It also holds **Print PKM?**, the Pokémon cards by set,
-and **Print PKM Stickers?**, price-tag stickers (see [Print PKM Stickers?](#print-pkm-stickers)).
+**◂ Print** holds **Print MTG (all)**, **Print MTG (>$1.49)** and **Print MTG in buy order**, the audit
+printout (see [Print MTG?](#print-mtg-the-audit-printout)). It also holds **Print PKM?**, the Pokémon
+cards by set, **Print PKM in buy order**, and **Print PKM Stickers?**, price-tag stickers (see
+[Print PKM Stickers?](#print-pkm-stickers)).
 **◂ Export** holds **Export MTG csv (all)** and **(>$1.49)**. The amount follows **Settings → Export
 rates for bulk**. On Can't upload cards and Bulk pulled from exports, **Export csv** sits on its own.
 The ⋯ menu has **Print overnight buy** (or **Print project**) too.
@@ -1132,8 +1149,9 @@ Crystal Commerce product.
 
 ### Bulk pulled from exports
 
-Bulk pulled from exports is the other **System** collection. **Export MTG csv (>$1.49)** leaves the
-cards at or under the amount out of the file and copies them here. Each is marked **Pulled** on its
+Bulk pulled from exports is the other **System** collection. It's always there, empty until a card is
+pulled. **Export MTG csv (>$1.49)** leaves the cards at or under the amount out of the file and copies
+them here. Each is marked **Pulled** on its
 own list and says where it came from. They're the bulk that goes elsewhere.
 
 - It's always **Completed**, and the header search never shows its cards.
@@ -1190,8 +1208,8 @@ A day page shows one game's part of every walk-in buy confirmed that day.
 |---|---|
 | **< BACK** | Back to the Calendar, on the same month. |
 | **⋯** | The day's menu. See below. |
-| **EXPORT (N) ▾** | Magic days: two groups, which open to the left of the menu when pointed at or clicked. **◂ Print** holds **Print MTG (all)** and **Print MTG (>$1.49)**, the audit printout. **◂ Export** holds **Export MTG csv (all)** and **(>$1.49)**, the day's export. The cut follows Settings → Export rates for bulk. N counts the cards to export. Count the pile first. |
-| **EXPORT (N) ▾** | Pokémon days: **◂ Print** holds **Print PKM?**, the cards by set, and **Print PKM Stickers?**, price-tag stickers. **Complete day…** sits on its own. See below. N counts the cards to mark Completed. |
+| **EXPORT (N) ▾** | Magic days: two groups, which open to the left of the menu when pointed at or clicked. **◂ Print** holds **Print MTG (all)**, **Print MTG (>$1.49)** and **Print MTG in buy order**, the audit printout. **◂ Export** holds **Export MTG csv (all)** and **(>$1.49)**, the day's export. The cut follows Settings → Export rates for bulk. N counts the cards to export. Count the pile first. |
+| **EXPORT (N) ▾** | Pokémon days: **◂ Print** holds **Print PKM?**, the cards by set, **Print PKM in buy order**, and **Print PKM Stickers?**, price-tag stickers. **Complete day…** sits on its own. See below. N counts the cards to mark Completed. |
 
 The title shows the date and game. Once the day is exported it also shows **Exported** and the day's
 **Custom SKU**. A buy exported on its own shows its own SKU on its panel instead.
@@ -1281,7 +1299,10 @@ nothing.
 - It lists the Magic cards still to export, or once exported, the ones the export took. They're
   sorted by **Crystal Commerce category**, each with its set symbol. Anything with no product goes
   under **Unmatched**.
-- In each category: Near Mint first, by collector number, then the other conditions.
+- In each category the cards go by colour, as the buy list's WUBRG does: white, blue, black, red,
+  green, multicolour, colourless, then lands. Within a colour they go by name A to Z, then collector
+  number, so the printings of a card sit together. Then the same printing's conditions, NM to DMG,
+  then non-foil, foil and etched. Each row's colour chip shows the colour, so the chips run in blocks.
 - Each row has the quantity, a tick box, the name, its colour, the collector number, condition and
   finish, and last **today's market price** for its condition. The printout fetches those prices
   first, at about one JustTCG lookup per 100 different cards. A price is **red** and bold at the red
@@ -1291,6 +1312,10 @@ nothing.
 - **Print MTG (all)** prints every card. **Print MTG (>$1.49)** prints only the cards over the amber
   dot by today's price, and says so in its title and file name. With none over it, it says so and
   prints nothing. A buy's **Print buy (all)** and **(>$1.49)** are the same for one buy.
+- **Print MTG in buy order** prints the same cards as Print MTG (all), with the same rows, but in the
+  order they went on the buy list: nothing merged or sorted, and no category bands. On a day the buys
+  come in the order they were confirmed. The title and file name say *in buy order*. A buy's Print buy
+  and the printout after CONFIRM BUY stay sorted.
 - **A buy flagged 🚩 for a condition check**, and not yet ✅ checked, puts a red banner across the top
   of every page, naming it: *"CHECK CONDITION: Buy 42 is flagged. Check its cards before export."* A
   day's printout names every flagged buy that day.
@@ -1306,6 +1331,9 @@ set's code on the band. Near Mint comes first, by collector number. The finish a
 and today's market price ends each row, in the same colours and with the same key. It fetches the
 prices first, so it needs the connection. Pokémon cards are never exported, so a Completed batch
 prints the same cards. A flagged buy's red banner shows here too.
+
+**Print PKM in buy order** prints the same cards and rows in the order they went on the buy list, with
+no set bands, as Print MTG in buy order does. The stickers keep Print PKM?'s order.
 
 ### Print PKM Stickers?
 
@@ -1429,6 +1457,16 @@ Price. There's nothing to decide.
 | **Find another CC product…** | Searches the inventory by name. |
 | **Sell price** | Optional. Empty uses the worked-out price. At least the Export sell floor ($0.40 by default). |
 | **Always use the picked product's category for…** | Shows when the app didn't know the set's category. Ticked, it makes the app remember the choice for the whole set. |
+
+**A pick holds for half a second.** The card stays where it is, greyed, with a green *✓ Picked:
+<product>* (or *✓ None of these*), and can't be clicked. Then it folds away and the next card slides
+up, so a quick second click doesn't land on the wrong card.
+
+**Undo last pick**, at the left of the window's foot, names the last pick: *1 Lightning Bolt (M10) 146
+[NM] → Lightning Bolt*. Pressed, it takes that pick back, for every card the pick covered, and the card
+goes back to Needs a choice. Pressed again, it takes back the pick before, as far back as the first
+since the window opened. A ticked **Always use the picked product's category for…** stays saved, and
+Undo says so. A pick changed with **Change** in Matched isn't in it: Change has its own Cancel.
 
 **Matched.** This group is folded away when there are more than 8. Each card shows its product, its
 category, and *"Bought $X → Sell $Y"*. A **remembered** tag means a pick from before. **picked** means
@@ -1785,6 +1823,14 @@ This holds the **JustTCG** key, for condition prices. Once saved, it only ever s
 | **Add key / Edit** | Paste the key and press **Save**. |
 | **Test** | Checks the key. Shows the plan and how many lookups are used today and this month. |
 | **Delete** | Asks first. Prices stop loading until a new key is saved. Fallback and manual prices still work. |
+
+**JustTCG backup**, under it, holds a second key for emergencies, such as a Free plan key, with the
+same Add key / Edit, Test and Delete. Its Test shows its own plan and usage. It's used only once the
+main key's daily or monthly limit is used up, and only by **EXPORT**, a Pokémon day's **COMPLETE**,
+the printouts, the stickers and **REPRICE?**. The Buy tab and the phone never use it: they show the
+limit as before. The main key is tried first every time, so the backup stops being used once the
+main key works again. Its lookups don't show in JustTCG usage below. Saving or deleting either key
+needs a worker picked and goes in the Changelog.
 
 ### JustTCG usage
 
