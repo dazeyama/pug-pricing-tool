@@ -7,12 +7,55 @@
 // card 5% more again (+10% for a card we've never had). Bonus and cut add up. Nothing is applied by itself:
 // the worker clicks Apply, or checks Auto apply rates? for the buy.
 
-/** Copies of a card the store owns before a lower rate is suggested. */
+/** Copies of a card the store owns before a lower rate is suggested (as shipped; Settings, decision 474). */
 export const OWNED_FREE = 2;
 /** Off the card's rate per copy over OWNED_FREE, in percent of the rate. */
 export const OWNED_STEP = 5;
 /** The most off the suggestion goes. */
 export const OWNED_CAP = 50;
+
+/**
+ * Settings → Copies we own, as shipped (owner, 2026-10-23; decision 474): the counter on or off, the cut (copies
+ * before it starts, per copy over that, the most), the first-copy bonuses, whether a low-end card gets them,
+ * and whether a new walk-in buy starts with Auto apply rates? checked.
+ */
+export const DEFAULT_OWNED = Object.freeze({
+  on: true,
+  free: OWNED_FREE,
+  step: OWNED_STEP,
+  cap: OWNED_CAP,
+  // The first of this printing we'd own (none of it, in its finish; decision 457), and more for the first of the
+  // card in any printing ("on top of being first printing for a total bonus of +10%").
+  first_printing: 5,
+  first_card: 5,
+  // A card on the low-end rate gets no bonus (decision 458).
+  low_end_bonus: false,
+  auto_default: false,
+});
+
+/**
+ * The setting as saved (possibly partial, or from an older build), checked over the defaults: each number
+ * a number in its range, each switch true or false. Pure.
+ * @returns {typeof DEFAULT_OWNED}
+ */
+export function ownedFrom(value) {
+  const v = value && typeof value === 'object' ? value : {};
+  const num = (key, lo, hi) => {
+    const n = Number(v[key]);
+    return v[key] != null && v[key] !== '' && Number.isFinite(n) && n >= lo && n <= hi ? n : DEFAULT_OWNED[key];
+  };
+  const bool = (key) => (typeof v[key] === 'boolean' ? v[key] : DEFAULT_OWNED[key]);
+  return {
+    on: bool('on'),
+    free: Math.floor(num('free', 0, 99)),
+    step: num('step', 0, 100),
+    cap: num('cap', 0, 100),
+    first_printing: num('first_printing', 0, 100),
+    first_card: num('first_card', 0, 100),
+    low_end_bonus: bool('low_end_bonus'),
+    auto_default: bool('auto_default'),
+  };
+}
 
 /**
  * `owned_copies`' answer as the counter shows it: each count is the inventory's plus ours not in it yet.
@@ -67,18 +110,15 @@ export function ccRowText(p) {
 export const finishWord = (finish) => (finish && finish !== 'nonfoil' ? finish : '');
 
 /**
- * Percent off the card's rate for this many copies of the card owned: 0 up to 2, then 5 a copy, 50 at most.
+ * Percent off the card's rate for this many copies of the card owned: as shipped, 0 up to 2, then 5 a copy,
+ * 50 at most (Settings → Copies we own, decision 474).
  * @param {number} cardCount
+ * @param {typeof DEFAULT_OWNED} [cfg]  ownedFrom's
  */
-export function ownedCut(cardCount) {
-  const over = Math.max(0, Math.floor(Number(cardCount) || 0) - OWNED_FREE);
-  return Math.min(OWNED_CAP, over * OWNED_STEP);
+export function ownedCut(cardCount, cfg = DEFAULT_OWNED) {
+  const over = Math.max(0, Math.floor(Number(cardCount) || 0) - cfg.free);
+  return Math.min(cfg.cap, over * cfg.step);
 }
-
-/** A bonus for the first of this printing we'd own (none of it, in its finish; owner, 2026-10-23; decision 457). */
-export const FIRST_PRINTING_BONUS = 5;
-/** And more for the first of the card in any printing ("on top of being first printing for a total bonus of +10%"). */
-export const FIRST_CARD_BONUS = 5;
 
 /**
  * What changes the card's rate, and by how much in all (decision 457): the bonuses for a first copy and the
@@ -87,25 +127,33 @@ export const FIRST_CARD_BONUS = 5;
  * printing) might be a card we have.
  * A card on the low-end rate gets no bonus (owner, 2026-10-23: "First bonuses do not apply to cards of low end
  * rates"; decision 458); the cut still applies. `lowEndNoBonus` says a bonus was left out for that.
+ * The numbers, and whether a low-end card gets the bonuses, are Settings → Copies we own's (decision 474): `cfg`
+ * (ownedFrom's), which comes back with the answer so its explanation says the same numbers.
  * @param {ReturnType<typeof ownedCounts>|null} counts
- * @param {{ lowEnd?: boolean }} [o]  the card's rate is the low-end one (lineRate's why 'low')
+ * @param {{ lowEnd?: boolean, cfg?: typeof DEFAULT_OWNED }} [o]  lowEnd: the card's rate is the low-end one
+ *   (lineRate's why 'low')
  * @returns {{ bonus: number, cut: number, net: number, firstPrinting: boolean, firstCard: boolean, over: number,
- *   lowEndNoBonus: boolean }}
+ *   lowEndNoBonus: boolean, cfg: typeof DEFAULT_OWNED }}
  */
-export function ownedAdjust(counts, { lowEnd = false } = {}) {
-  const none = { bonus: 0, cut: 0, net: 0, firstPrinting: false, firstCard: false, over: 0, lowEndNoBonus: false };
+export function ownedAdjust(counts, { lowEnd = false, cfg = DEFAULT_OWNED } = {}) {
+  const none = {
+    bonus: 0, cut: 0, net: 0, firstPrinting: false, firstCard: false, over: 0, lowEndNoBonus: false, cfg,
+  };
   // Counts the inventory couldn't make change nothing: no bonus, no cut (decision 467).
   if (!counts || counts.known === false) return none;
   const firstCardCount = counts.cardSure && counts.card === 0;
   // None of the card is none of the printing, whatever the printing's own count could tell.
   const firstPrintingCount = firstCardCount || (counts.printingSure && counts.printing === 0);
-  const firstCard = firstCardCount && !lowEnd;
-  const firstPrinting = firstPrintingCount && !lowEnd;
-  const bonus = (firstPrinting ? FIRST_PRINTING_BONUS : 0) + (firstCard ? FIRST_CARD_BONUS : 0);
-  const cut = ownedCut(counts.card);
+  const noBonus = lowEnd && !cfg.low_end_bonus;
+  // A bonus set to 0 is no bonus at all, so the box doesn't explain a "+0%".
+  const firstCard = firstCardCount && !noBonus && cfg.first_card > 0;
+  const firstPrinting = firstPrintingCount && !noBonus && cfg.first_printing > 0;
+  const bonus = (firstPrinting ? cfg.first_printing : 0) + (firstCard ? cfg.first_card : 0);
+  const cut = ownedCut(counts.card, cfg);
   return {
-    bonus, cut, net: bonus - cut, firstPrinting, firstCard, over: Math.max(0, counts.card - OWNED_FREE),
-    lowEndNoBonus: lowEnd && firstPrintingCount,
+    bonus, cut, net: bonus - cut, firstPrinting, firstCard, over: Math.max(0, counts.card - cfg.free),
+    lowEndNoBonus: noBonus && firstPrintingCount && (cfg.first_printing > 0 || cfg.first_card > 0),
+    cfg,
   };
 }
 

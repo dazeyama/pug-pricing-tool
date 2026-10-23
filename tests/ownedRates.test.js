@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  adjustRate, ccRowText, finishWord, isLowEnd, ownedAdjust, ownedCounts, ownedCut, ownedRates, signedPct,
+  DEFAULT_OWNED, adjustRate, ccRowText, finishWord, isLowEnd, ownedAdjust, ownedCounts, ownedCut, ownedFrom, ownedRates,
+  signedPct,
 } from '../src/lib/ownedRates.js';
 
 // Owner, 2026-10-22 (decision 448): 5% per copy of the card over 2, as a percent of the rate, up to 50%.
@@ -35,7 +36,7 @@ test('a rate changed as a percent of itself, kept to the cent of a percent, neve
 test('bonuses for a first copy, stacked with the cut', () => {
   const counts = (printing, card, sure = true) => ({ printing, card, printingSure: sure, cardSure: sure });
   assert.deepEqual(ownedAdjust(counts(0, 0)),
-    { bonus: 10, cut: 0, net: 10, firstPrinting: true, firstCard: true, over: 0, lowEndNoBonus: false });
+    { bonus: 10, cut: 0, net: 10, firstPrinting: true, firstCard: true, over: 0, lowEndNoBonus: false, cfg: DEFAULT_OWNED });
   assert.equal(ownedAdjust(counts(0, 1)).net, 5);   // the first of this printing only
   assert.equal(ownedAdjust(counts(1, 2)).net, 0);   // neither
   const both = ownedAdjust(counts(0, 4));            // first printing, 2 copies of the card over 2
@@ -104,4 +105,31 @@ test('the lists of printings come through, counts as numbers, this printing mark
     'Secret Lair Drop Series · #2090 · Rainbow Foil');
   assert.equal(finishWord('nonfoil'), '');
   assert.equal(finishWord('foil'), 'foil');
+});
+
+// Owner, 2026-10-23 (decision 474): Settings → Copies we own.
+test('the setting: read over the defaults, anything out of range or missing falls back', () => {
+  assert.deepEqual(ownedFrom(null), DEFAULT_OWNED);
+  assert.deepEqual(ownedFrom({ step: 10, on: false }), { ...DEFAULT_OWNED, step: 10, on: false });
+  assert.equal(ownedFrom({ cap: 150 }).cap, 50);        // over 100: the default
+  assert.equal(ownedFrom({ free: -1 }).free, 2);
+  assert.equal(ownedFrom({ free: 3.7 }).free, 3);       // a whole number of copies
+  assert.equal(ownedFrom({ step: 'x' }).step, 5);
+  assert.equal(ownedFrom({ low_end_bonus: 'yes' }).low_end_bonus, false);   // a switch is true or false
+});
+
+test("the setting's numbers are the ones the rate uses", () => {
+  const cfg = ownedFrom({ free: 3, step: 10, cap: 30, first_printing: 2, first_card: 8, low_end_bonus: true });
+  assert.equal(ownedCut(3, cfg), 0);
+  assert.equal(ownedCut(5, cfg), 20);
+  assert.equal(ownedCut(20, cfg), 30);
+  const counts = (printing, card) => ({ printing, card, printingSure: true, cardSure: true });
+  assert.equal(ownedAdjust(counts(0, 0), { cfg }).net, 10);
+  assert.equal(ownedAdjust(counts(0, 1), { cfg }).net, 2);
+  // Bonuses on low-end cards switched on.
+  assert.equal(ownedAdjust(counts(0, 0), { cfg, lowEnd: true }).net, 10);
+  // A bonus set to 0 isn't one: nothing to explain.
+  const noFirst = ownedFrom({ first_printing: 0, first_card: 0 });
+  const none = ownedAdjust(counts(0, 0), { cfg: noFirst, lowEnd: true });
+  assert.equal(none.firstPrinting || none.firstCard || none.lowEndNoBonus, false);
 });

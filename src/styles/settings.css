@@ -238,3 +238,34 @@
 .credit-what { color: var(--text); }
 .credit-what::after { content: " —"; color: var(--muted); }
 .credit-from { color: var(--muted); }
+
+/* Settings → Copies we own (decision 474): the cut and the bonuses side by side, a switch above and below. */
+.owned-set { display: flex; flex-direction: column; gap: 12px; }
+.owned-set > .hint { margin: 0; }
+.owned-set-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.owned-set-group {
+  margin: 0;
+  padding: 10px 14px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.owned-set-group:disabled { opacity: .5; }
+.owned-set-group legend {
+  padding: 0 6px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.owned-set-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0; }
+.owned-set-label { font-size: 13.5px; color: var(--text); }
+.owned-set-box input { width: 74px; }
+.owned-set-switch { display: flex; align-items: flex-start; gap: 8px; margin: 0; cursor: pointer; }
+.owned-set-switch input { margin: 3px 0 0; }
+.owned-set-switch > span { display: flex; flex-direction: column; gap: 1px; }
+.owned-set-hint { margin: 0; }
+.owned-set-example { margin: 0; color: var(--muted); }

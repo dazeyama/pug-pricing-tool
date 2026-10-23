@@ -38,7 +38,7 @@ import ScanChip from './ScanChip.jsx';
 import OwnedCounter from './OwnedCounter.jsx';
 import MatchCardDialog from './MatchCardDialog.jsx';
 import { useOwnedCopies } from './useOwnedCopies.js';
-import { isLowEnd, ownedAdjust, ownedRates, signedPct } from '../../lib/ownedRates.js';
+import { isLowEnd, ownedAdjust, ownedFrom, ownedRates, signedPct } from '../../lib/ownedRates.js';
 import { candidateKeyOf, editQuery, nameQuery, pinFirst } from '../../lib/candidateKey.js';
 
 const BACKGROUND = { '--stage-bg': `url(${import.meta.env.BASE_URL}background.webp)` };
@@ -178,6 +178,8 @@ export default function PricingScreen({
   } = usePriceQuote({
     card, selected, bulk, pokemon, versions, version, finish, magic, search, override, roundUp,
   });
+  // Settings → Copies we own (decision 474): the counter on or off, and the numbers it works with.
+  const ownedCfg = ownedFrom(settingValues.owned_copies);
 
   // ---- The list (spec 8.8–8.9): the walk-in draft or a collection ----
   const { current: user, pulse } = useStaff();
@@ -201,7 +203,7 @@ export default function PricingScreen({
   // Where cards can have their own rates (not a project, nor a locked list), and the buy's Auto apply
   // rates? (decision 448): read here, before the phone's scans need it.
   const rateControls = Boolean(list.setLineRate) && !locked && !ratesLocked;
-  const autoOn = Boolean(list.autoRates?.on) && rateControls;
+  const autoOn = Boolean(list.autoRates?.on) && rateControls && ownedCfg.on;
   const [qty, setQty] = useState('1');
   const qtyRef = useRef(null);
   const [flashId, setFlashId] = useState(null);
@@ -283,7 +285,7 @@ export default function PricingScreen({
   const images = useCardImages(card);   // a Pokémon thumbnail for the line (backups too)
   // The copies we own of a Magic printing and its card (decision 448), and the printing whose lower rate
   // the worker clicked Apply on (`${card key}|${finish}`): it goes on with ADD CARD as the card's own rate.
-  const owned = useOwnedCopies(card, magic ? finish : null);
+  const owned = useOwnedCopies(ownedCfg.on ? card : null, magic ? finish : null);   // switched off: nothing counted
   const [appliedKey, setAppliedKey] = useState(null);
   const [autoBusy, setAutoBusy] = useState(false);
   // The matching dialog for the selected printing, from the counter's n/a (decision 468).
@@ -678,15 +680,16 @@ export default function PricingScreen({
     ...editLine, unit_price: unitPrice ?? 0, bulk_kind: bulk ? bulk.bulk : null,
   }, rates);
 
-  // The lower rate for the copies we own (decision 448): 5% off this rate per copy of the card over 2, up to
-  // 50%, only where cards can have their own rates (not a project, nor a locked list), and never by itself:
-  // the worker's Apply, or the buy's Auto apply rates. An edited card keeps its rate (Set Rate changes it).
+  // The rate for the copies we own (decision 448): only where cards can have their own rates (not a project,
+  // nor a locked list), and never by itself: the worker's Apply, or the buy's Auto apply rates. An edited card
+  // keeps its rate (Set Rate changes it).
   let applyBlocked = null;
   if (!rateControls) applyBlocked = list.setLineRate ? `${locked ?? ratesLocked}.` : 'A project has no rates.';
   else if (editing) applyBlocked = 'Editing a card: right-click its line → Set Rate to change its rate.';
-  // The bonuses for a first copy and the cut for copies over 2, stacked (decision 457).
-  // None for a low-end card (decision 458).
-  const adjust = owned.status === 'ok' && !bulk ? ownedAdjust(owned.counts, { lowEnd: isLowEnd(quoteRate) }) : null;
+  // The bonuses for a first copy and the cut for copies over the free ones, stacked (decision 457); none for a
+  // low-end card unless Settings says so (decision 458); the numbers Settings → Copies we own's (decision 474).
+  const adjust = owned.status === 'ok' && !bulk
+    ? ownedAdjust(owned.counts, { lowEnd: isLowEnd(quoteRate), cfg: ownedCfg }) : null;
   const suggested = adjust ? ownedRates(quoteRate, adjust) : null;
   const applied = suggested && !applyBlocked && (autoOn || appliedKey === owned.key) ? suggested : null;
   const shownRate = applied ?? quoteRate;
@@ -776,7 +779,8 @@ export default function PricingScreen({
               finish={finish}
               pokemonVersion={version}
               hasFirstEdition={versions.some((v) => v.firstEdition)}
-              aside={(
+              // Switched off in Settings → Copies we own (decision 474): no counter at all.
+              aside={ownedCfg.on && (
                 <OwnedCounter
                   candidate={selected}
                   owned={owned}

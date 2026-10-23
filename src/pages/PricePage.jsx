@@ -8,6 +8,7 @@ import BuyDoneModal from './price/BuyDoneModal.jsx';
 import { useDraft } from './price/useDraft.js';
 import { lineText } from '../lib/lineFormat.js';
 import { tiersFrom } from '../lib/rates.js';
+import { ownedFrom } from '../lib/ownedRates.js';
 import { cardCounts, countText } from '../lib/bulk.js';
 import { SETTINGS_WAIT, useSettings } from '../state/settings.jsx';
 import { useDevice } from '../state/device.jsx';
@@ -49,19 +50,30 @@ export default function PricePage() {
     cash: customCash ?? master.cash, credit: customCredit ?? master.credit, customCash, customCredit, tiers: master.tiers,
   };
 
+  // A buy not started yet (no row till its first card) shows Settings' default for Auto apply rates? (decision
+  // 474), and its first card keeps that default on it; a box changed before then is saved on the new buy itself.
+  const autoDefault = ownedFrom(values.owned_copies).auto_default;
   const list = {
     lines: draft.lines,
     loaded: draft.loaded,
     busy: draft.busy,
     // The buy a phone's scan was for (decision 350): its id, so a scan for a finished buy isn't added to this one.
     draftId: draft.buy?.id ?? null,
-    add: (line, userId, draftId) => draft.add(line, userId, draftId),
+    add: async (line, userId, draftId) => {
+      const starting = draft.loaded && !draft.buy;
+      const id = await draft.add(line, userId, draftId);
+      if (id && starting && autoDefault) await draft.setAutoRates(true, userId);
+      return id;
+    },
     update: (old, line, userId) => draft.update(old.id, line, userId),
     remove: (line, n, userId, requestId) => draft.remove(line.id, n, userId, requestId),
     setRates: (cash, credit, userId) => draft.setRates(cash, credit, userId),
     setLineRate: (line, cash, credit, userId) => draft.setLineRate(line.id, cash, credit, userId),
     // Auto apply rates? (decision 448): the walk-in's, till CONFIRM BUY.
-    autoRates: { on: Boolean(draft.buy?.auto_rates), set: (on, userId) => draft.setAutoRates(on, userId) },
+    autoRates: {
+      on: draft.buy ? Boolean(draft.buy.auto_rates) : autoDefault,
+      set: (on, userId) => draft.setAutoRates(on, userId),
+    },
   };
   const count = draft.lines.reduce((n, l) => n + l.quantity, 0);
   // A buy confirmed on another computer leaves nothing here to confirm (smoke pass; decision 427):

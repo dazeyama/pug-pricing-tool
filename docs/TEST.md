@@ -549,6 +549,12 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
       0.75: "Export sell floor saved", and the Changelog has "Setting changed: Export sell floor". 0.30 or 11 are
       refused. An export's Review then shows a cheap card's Sell at $0.75 ("raised to the $0.75 floor"), and typing
       0.50 as its Sell price says "At least $0.75". Put it back to 0.40 after.
+- [ ] **Copies we own** (decision 474), after Export sell floor: 2 copies, 5%, 50%, +5%, +5%, low-end bonuses off,
+      new walk-in buys unchecked, shown on. Set "Lower for each copy" to 10: a toast, the example line under it
+      changes, the Changelog has "Copies we own: lower per copy 5% → 10%.", and on the Buy tab a card we own 4 of
+      shows "−20% owned". Switch "Show copies we own" off: the Buy tab has no counter and no Auto apply rates?; on
+      again: back. Switch "New walk-in buys start … checked" on: an empty Buy tab shows the box checked, and the
+      first card added goes on at its rate. 150 or "x" in a box is refused. Put everything back after.
 - [ ] **Export rates for bulk** (decision 416): red to 50¢, amber to $1.49; the dots don't move. With no user, EDIT
       pulses the user button. EDIT, drag the amber dot (or arrow keys, 1¢; Shift, 10¢): the values follow, the dots
       stay a cent apart. CANCEL puts it back. EDIT again, move it, SAVE: "Export rates for bulk saved", and on another

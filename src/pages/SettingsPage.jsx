@@ -10,6 +10,7 @@ import FallbackPanel from './settings/FallbackPanel.jsx';
 import ThisComputerPanel from './settings/ThisComputerPanel.jsx';
 import BackupsPanel from './settings/BackupsPanel.jsx';
 import CcMatchingPanel from './settings/CcMatchingPanel.jsx';
+import OwnedCopiesPanel from './settings/OwnedCopiesPanel.jsx';
 import { formatDate } from '../lib/time.js';
 
 /* global __APP_VERSION__, __BUILD_DATE__ */
@@ -54,6 +55,7 @@ export default function SettingsPage() {
         <BulkValuesPanel />
         <BulkExportRatesPanel />
         <SellFloorPanel />
+        <OwnedCopiesPanel />
         <CcMatchingPanel />
         <BackupsPanel />
         <footer className="settings-footer">

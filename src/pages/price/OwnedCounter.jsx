@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { formatMoney, payout } from '../../lib/money.js';
 import {
-  FIRST_CARD_BONUS, FIRST_PRINTING_BONUS, OWNED_CAP, OWNED_FREE, OWNED_STEP, ccRowText, finishWord, signedPct,
+  DEFAULT_OWNED, ccRowText, finishWord, signedPct,
 } from '../../lib/ownedRates.js';
 import { useDismiss } from '../../lib/useDismiss.js';
 import InkStamp from './InkStamp.jsx';
@@ -12,8 +12,9 @@ const copies = (n) => `${n} ${n === 1 ? 'copy' : 'copies'}`;
  * The copies we own (owner, 2026-10-22; decision 448), beside the card's details: this printing in its
  * finish, and the card in every printing, each the inventory's Total Qty plus ours not in it yet.
  * Pointing at it shows a box in the price warnings' style: "We own X copies of this printing and Y copies
- * of this card", each printing we own, and what changes the card's rate: 5% off for each copy of the card
- * over 2; 5% on for the first of this printing, 5% more for the first of the card (decision 457); stacked,
+ * of this card", each printing we own, and what changes the card's rate: as shipped, 5% off for each copy of
+ * the card over 2; 5% on for the first of this printing, 5% more for the first of the card (decision 457; the
+ * numbers are Settings → Copies we own's, decision 474); stacked,
  * to apply with a click (it goes on ADD CARD as the card's own rate). Above it, Auto apply rates? for the buy. Nothing changes a rate unless
  * the worker clicks Apply or checks the box.
  * @param {object} p
@@ -66,7 +67,7 @@ export default function OwnedCounter({
   }, [applied, shown, candidate?.key, owned.key]);
 
   const autoBox = auto && (
-    <label className="owned-auto" title="Every card added to this buy goes on at the rate the copies we own suggest: a first copy's bonus, the cut for copies over 2">
+    <label className="owned-auto" title="Every card added to this buy goes on at the rate the copies we own suggest: a first copy's bonus, the cut for copies we have plenty of">
       <input
         type="checkbox"
         checked={auto.on}
@@ -109,6 +110,8 @@ export default function OwnedCounter({
   }
   // That last case can be settled here: the boxes open the export's choice for this one card (decision 468).
   const matchable = unknown && c.inventoryAt != null && c.cardSure && Boolean(onMatch);
+  // The numbers the answer was worked out with (Settings → Copies we own, decision 474).
+  const cfg = adjust?.cfg ?? DEFAULT_OWNED;
   // Under the boxes: a green chip for the bonus, a red one for the cut, side by side when both apply
   // (owner, 2026-10-23; decision 457); ✓ on each once the rate is on.
   const mark = applied ? '✓ ' : '';
@@ -120,7 +123,7 @@ export default function OwnedCounter({
         </span>
       )}
       {adjust.cut > 0 && (
-        <span className={`owned-tag cut${applied ? ' on' : ''}`} title={`${copies(adjust.over)} of the card over ${OWNED_FREE}`}>
+        <span className={`owned-tag cut${applied ? ' on' : ''}`} title={`${copies(adjust.over)} of the card over ${cfg.free}`}>
           {mark}−{adjust.cut}% owned
         </span>
       )}
@@ -248,23 +251,23 @@ export default function OwnedCounter({
                 )}
                 {adjust.firstPrinting && (
                   <li className="is-bonus">
-                    <b>+{FIRST_PRINTING_BONUS}%</b> first of this printing: we own none of it{finishWord(finish) ? ` in ${finishWord(finish)}` : ''}.
+                    <b>+{cfg.first_printing}%</b> first of this printing: we own none of it{finishWord(finish) ? ` in ${finishWord(finish)}` : ''}.
                   </li>
                 )}
                 {adjust.firstCard && (
                   <li className="is-bonus">
-                    <b>+{FIRST_CARD_BONUS}% more</b>, first of this card: we own none of it in any printing.
+                    <b>+{cfg.first_card}% more</b>, first of this card: we own none of it in any printing.
                   </li>
                 )}
                 {adjust.cut > 0 && (
                   <li className="is-cut">
-                    <b>−{adjust.cut}%</b> for {copies(adjust.over)} of the card over {OWNED_FREE}
-                    {' '}({OWNED_STEP}% each, up to {OWNED_CAP}%).
+                    <b>−{adjust.cut}%</b> for {copies(adjust.over)} of the card over {cfg.free}
+                    {' '}({cfg.step}% each, up to {cfg.cap}%).
                   </li>
                 )}
               </ul>
             ) : (
-              <p className="owned-pop-note">No change: we have this printing, and {OWNED_FREE} or fewer of the card.</p>
+              <p className="owned-pop-note">No change: we have this printing, and {cfg.free} or fewer of the card.</p>
             )}
             {adjust && adjust.bonus > 0 && adjust.cut > 0 && !suggested && (
               <p className="owned-pop-note">They cancel out: the card keeps its usual rate.</p>

@@ -16,6 +16,14 @@ const TIER_PARTS = [
   ['high', 'over', 'high-end over', money], ['high', 'cash', 'high-end Cash', pct], ['high', 'credit', 'high-end Credit', pct],
 ];
 
+const onOff = (v) => (v ? 'on' : 'off');
+const OWNED_PARTS = [
+  ['on', 'shown', onOff], ['free', 'copies before a cut', (v) => (v == null ? '—' : String(v))],
+  ['step', 'lower per copy', pct], ['cap', 'at most', pct],
+  ['first_printing', 'first of this printing', pct], ['first_card', 'first of this card', pct],
+  ['low_end_bonus', 'bonuses on low-end cards', onOff], ['auto_default', 'new buys auto apply', onOff],
+];
+
 /**
  * @param {string} key  the setting's key
  * @param {any} before  its value before (null: never saved, the built-in default stood)
@@ -43,6 +51,10 @@ export function settingSummary(key, before, after) {
   } else if (key === 'sell_floor') {
     name = 'Export sell floor';
     parts = [part('', before, after, money)?.trim()];
+  } else if (key === 'owned_copies') {
+    // Copies we own (decision 474).
+    name = 'Copies we own';
+    parts = OWNED_PARTS.map(([field, label, show]) => part(label, before?.[field], after?.[field], show));
   } else {
     parts = [part('', before, after, (v) => JSON.stringify(v ?? null))];
   }

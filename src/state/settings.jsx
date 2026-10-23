@@ -5,6 +5,7 @@ import { DEFAULT_TIERS } from '../lib/rates.js';
 import { DEFAULT_BULK_VALUES } from '../lib/bulk.js';
 import { DEFAULT_BULK_CUT, bulkCutFrom } from '../lib/bulkCut.js';
 import { SELL_FLOOR, sellFloorFrom } from '../lib/money.js';
+import { DEFAULT_OWNED } from '../lib/ownedRates.js';
 import { dbErrorCode } from '../lib/dbErrors.js';
 import { useToast } from '../components/Toast.jsx';
 import { PICK_USER_FIRST, useStaff } from './staff.jsx';
@@ -38,6 +39,8 @@ export const DEFAULTS = {
   bulk_export_rates: DEFAULT_BULK_CUT,
   // Export sell floor (decision 417): read with money.js sellFloorFrom, or useSellFloor.
   sell_floor: SELL_FLOOR,
+  // Copies we own (decision 474): read with ownedRates.js ownedFrom.
+  owned_copies: DEFAULT_OWNED,
 };
 
 const SettingsContext = createContext(null);
