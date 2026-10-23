@@ -184,6 +184,19 @@ export default function OwnedCounter({
         </span>
       </button>
       {chips}
+      {/* n/a that can be matched: a hint under the boxes, which opens the dialog too (owner, 2026-10-23; 470). */}
+      {matchable && (
+        <button
+          type="button"
+          className="owned-tag owned-match"
+          onClick={() => {
+            setHover(false);
+            onMatch();
+          }}
+        >
+          (click to match)
+        </button>
+      )}
       {/* Applied or not, stamped (owner, 2026-10-23; decision 459): whenever there's a rate to apply. A click
           switches it, as Apply does (decision 461): the new one drops in over the old and lands, the old one
           fading only at the end (decision 462). */}
