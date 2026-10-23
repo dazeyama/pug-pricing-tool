@@ -18,14 +18,19 @@ export const OWNED_CAP = 50;
  * A count is unsure when the inventory couldn't count its share (no inventory, an inventory uploaded before
  * 0008, or, for the printing, no clear CC product): what's shown is then only what could be counted.
  * @param {object|null} raw  { cc_printing, cc_card, ours_printing, ours_card, inventory_at }
+ * The lists say which printings those are (the owner: "it has to show specifically, which printings we own"):
+ * the inventory's products by category and name, ours by set, number and finish, most first.
  * @returns {{ printing: number, card: number, printingSure: boolean, cardSure: boolean,
- *   cc: { printing: number|null, card: number|null }, ours: { printing: number, card: number },
+ *   cc: { printing: number|null, card: number|null, list: { category: string, name: string, qty: number, this: boolean }[] },
+ *   ours: { printing: number, card: number,
+ *     list: { set_code: string, set_name: string|null, number: string, finish: string, qty: number, this: boolean }[] },
  *   inventoryAt: string|null }}
  */
 export function ownedCounts(raw) {
   const n = (v) => (v == null ? null : Number(v));
-  const cc = { printing: n(raw?.cc_printing), card: n(raw?.cc_card) };
-  const ours = { printing: n(raw?.ours_printing) ?? 0, card: n(raw?.ours_card) ?? 0 };
+  const list = (rows) => (Array.isArray(rows) ? rows.map((r) => ({ ...r, qty: Number(r.qty), this: Boolean(r.this) })) : []);
+  const cc = { printing: n(raw?.cc_printing), card: n(raw?.cc_card), list: list(raw?.cc_list) };
+  const ours = { printing: n(raw?.ours_printing) ?? 0, card: n(raw?.ours_card) ?? 0, list: list(raw?.ours_list) };
   return {
     printing: (cc.printing ?? 0) + ours.printing,
     card: (cc.card ?? 0) + ours.card,
@@ -36,6 +41,21 @@ export function ownedCounts(raw) {
     inventoryAt: raw?.inventory_at ?? null,
   };
 }
+
+/**
+ * An inventory product as the list of printings says it: its category, then what sets it apart from the
+ * card's other products, without the card's own name ("Force of Will - Foil - Borderless" in Double Masters
+ * → "Double Masters · Foil - Borderless"; "Fabricate (2090) - Rainbow Foil" → "… · #2090 · Rainbow Foil").
+ * @param {{ category: string, name: string }} p
+ */
+export function ccRowText(p) {
+  const [base, ...rest] = String(p.name ?? '').split(' - ');
+  const bracket = /\(([^)]+)\)\s*$/.exec(base)?.[1];
+  return [p.category, bracket && `#${bracket}`, rest.join(' - ').trim()].filter(Boolean).join(' · ');
+}
+
+/** A finish as the list says it: nonfoil → "", foil → "foil", etched → "etched". */
+export const finishWord = (finish) => (finish && finish !== 'nonfoil' ? finish : '');
 
 /**
  * Percent off the card's rate for this many copies of the card owned: 0 up to 2, then 5 a copy, 50 at most.

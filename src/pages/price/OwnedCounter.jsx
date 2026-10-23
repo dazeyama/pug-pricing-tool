@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { formatMoney, payout } from '../../lib/money.js';
-import { OWNED_FREE } from '../../lib/ownedRates.js';
+import { OWNED_FREE, ccRowText, finishWord } from '../../lib/ownedRates.js';
 import { useDismiss } from '../../lib/useDismiss.js';
 
 const copies = (n) => `${n} ${n === 1 ? 'copy' : 'copies'}`;
@@ -69,9 +69,30 @@ export default function OwnedCounter({ candidate, owned, suggested, applied, app
     if (!ready) return '?';
     return `${n}${sure ? '' : '+'}`;
   };
-  const tag = suggested
-    ? <span className={`owned-tag${applied ? ' on' : ''}`}>{applied ? `−${suggested.cut}% on` : `−${suggested.cut}%?`}</span>
-    : null;
+  // Under the boxes (owner, 2026-10-22: the boxes half as tall): the lower rate there is, or that it's on.
+  const tag = suggested ? (
+    <span className={`owned-tag${applied ? ' on' : ''}`}>
+      {applied ? `✓ ${suggested.cut}% lower on` : `${suggested.cut}% lower?`}
+    </span>
+  ) : null;
+  // Which printings (owner, 2026-10-22: "it has to show specifically, which printings we own").
+  const thisMark = <span className="owned-this">this printing</span>;
+  const ccRows = c?.cc.list.map((p) => (
+    <li key={p.product_id ?? `${p.category}|${p.name}`} className={p.this ? 'is-this' : undefined}>
+      <span className="owned-row-name" title={`${p.category} · ${p.name}`}>{ccRowText(p)}</span>
+      {p.this && thisMark}
+      <b>×{p.qty}</b>
+    </li>
+  ));
+  const oursRows = c?.ours.list.map((p) => (
+    <li key={`${p.scryfall_id}|${p.set_code}|${p.number}|${p.finish}`} className={p.this ? 'is-this' : undefined}>
+      <span className="owned-row-name">
+        {p.set_code} #{p.number}{p.set_name ? ` ${p.set_name}` : ''}{finishWord(p.finish) && ` · ${finishWord(p.finish)}`}
+      </span>
+      {p.this && thisMark}
+      <b>×{p.qty}</b>
+    </li>
+  ));
 
   return (
     <div className="owned" ref={box} onMouseLeave={() => setHover(false)}>
@@ -94,9 +115,9 @@ export default function OwnedCounter({ candidate, owned, suggested, applied, app
         <span className="owned-box card">
           <span className="owned-label">All printings</span>
           <b className="owned-num">{num(c?.card, c?.cardSure)}</b>
-          {tag}
         </span>
       </button>
+      {tag}
       {autoBox}
       {open && (
         <div className="owned-pop">
@@ -105,19 +126,17 @@ export default function OwnedCounter({ candidate, owned, suggested, applied, app
             <p className="owned-pop-lead">
               We own {copies(c.printing)} of this printing and {copies(c.card)} of this card.
             </p>
-            <ul className="owned-pop-detail">
-              <li>
-                In Crystal Commerce: {c.cc.printing ?? '?'} of this printing, {c.cc.card ?? '?'} of the card
-                {c.inventoryAt == null && ' (no inventory uploaded)'}
-              </li>
-              <li>Ours, not in it yet: {c.ours.printing} and {c.ours.card}</li>
-              {c.inventoryAt != null && !c.cardSure && (
-                <li>The inventory was uploaded before it kept quantities: upload it again to count it.</li>
-              )}
+            <div className="owned-pop-lists">
+              <div className="owned-pop-sub">In Crystal Commerce ({c.cc.card ?? '?'})</div>
+              {c.inventoryAt == null ? <p className="owned-pop-note">No inventory uploaded.</p>
+                : !c.cardSure ? <p className="owned-pop-note">The inventory was uploaded before it kept quantities: upload it again to count it.</p>
+                  : ccRows.length ? <ul className="owned-rows">{ccRows}</ul> : <p className="owned-pop-note">None.</p>}
               {c.inventoryAt != null && c.cardSure && !c.printingSure && (
-                <li>No clear Crystal Commerce product for this printing: its copies there aren&apos;t counted.</li>
+                <p className="owned-pop-note">No clear Crystal Commerce product for this printing: its copies there aren&apos;t counted in it.</p>
               )}
-            </ul>
+              <div className="owned-pop-sub">Ours, not in it yet ({c.ours.card})</div>
+              {oursRows.length ? <ul className="owned-rows">{oursRows}</ul> : <p className="owned-pop-note">None.</p>}
+            </div>
             {suggested ? (
               <>
                 <p className="owned-pop-suggest">

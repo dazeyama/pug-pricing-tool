@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { cutRate, ownedCounts, ownedCut, ownedRates } from '../src/lib/ownedRates.js';
+import { ccRowText, cutRate, finishWord, ownedCounts, ownedCut, ownedRates } from '../src/lib/ownedRates.js';
 
 // Owner, 2026-10-22 (decision 448): 5% per copy of the card over 2, as a percent of the rate, up to 50%.
 test('the cut: nothing up to 2 copies, then 5% a copy, 50% at most', () => {
@@ -36,4 +36,22 @@ test("the counts: the inventory's plus ours, unsure where the inventory couldn't
   assert.equal(none.card, 2);
   assert.equal(none.printingSure || none.cardSure, false);
   assert.equal(ownedCounts(null).card, 0);
+  assert.deepEqual(ownedCounts(null).cc.list, []);
+});
+
+// Owner, 2026-10-22: "it has to show specifically, which printings we own".
+test('the lists of printings come through, counts as numbers, this printing marked', () => {
+  const c = ownedCounts({
+    cc_list: [{ category: 'Alliances', name: 'Force of Will', qty: '2', this: true }],
+    ours_list: [{ set_code: '2XM', set_name: 'Double Masters', number: '51', finish: 'foil', qty: 1, this: null }],
+  });
+  assert.deepEqual(c.cc.list, [{ category: 'Alliances', name: 'Force of Will', qty: 2, this: true }]);
+  assert.equal(c.ours.list[0].this, false);
+  assert.equal(ccRowText({ category: 'Double Masters', name: 'Force of Will - Foil - Borderless' }),
+    'Double Masters · Foil - Borderless');
+  assert.equal(ccRowText({ category: 'Alliances', name: 'Force of Will' }), 'Alliances');
+  assert.equal(ccRowText({ category: 'Secret Lair Drop Series', name: 'Fabricate (2090) - Rainbow Foil' }),
+    'Secret Lair Drop Series · #2090 · Rainbow Foil');
+  assert.equal(finishWord('nonfoil'), '');
+  assert.equal(finishWord('foil'), 'foil');
 });

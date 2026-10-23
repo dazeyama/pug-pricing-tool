@@ -175,7 +175,8 @@ what happens. The findings are reported when the pass ends.
 - [ ] **Copies we own** (decision 448; dev, after an inventory upload from this build): pick Force of Will. Right of
       its details, **This printing** and **All printings** show counts ("…" first). A card we own 3+ of: All
       printings turns amber with "−5%?" (one copy over 2), "−10%?" (two)… Point at the boxes: the box below says
-      "We own X copies of this printing and Y copies of this card.", the Crystal Commerce and ours counts, and the
+      "We own X copies of this printing and Y copies of this card.", then each printing: In Crystal Commerce (set ·
+      foil / variant ×N) and Ours, not in it yet (set #number ×N), the one picked marked "this printing", and the
       suggestion with its Credit / Cash. Pick a Pokémon card: "Copies we own: Magic only for now".
 - [ ] **Apply**: click the boxes to keep the box open, then **Apply N% lower**: the boxes go green ("−N% on"), the
       price panel's Credit and Cash drop, with ↓ and a green ring. ADD CARD: the line shows ✎ Credit / Cash at those

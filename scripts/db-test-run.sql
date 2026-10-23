@@ -3424,6 +3424,27 @@ begin
   v := owned_copies('DBTEST-Q1', owned, 'dbtest owned', 'dbtest-dbo-001', 'nonfoil');
   perform pg_temp.ok(s, 'A confirmed walk-in''s cards are ours: that printing in that finish, and every printing',
     (v ->> 'ours_printing')::int = 2 and (v ->> 'ours_card')::int = 4, v::text);
+  perform pg_temp.ok(s, '… and which printings: the inventory''s products with copies, ours by set, number and finish, '
+    || 'most first, this printing marked',
+    jsonb_array_length(v -> 'cc_list') = 3
+    and v -> 'cc_list' -> 0 ->> 'category' = 'DBTEST Set' and (v -> 'cc_list' -> 0 ->> 'qty')::int = 3
+    and (v -> 'cc_list' -> 0 ->> 'this')::boolean and not (v -> 'cc_list' -> 1 ->> 'this')::boolean
+    and jsonb_array_length(v -> 'ours_list') = 3
+    and v -> 'ours_list' -> 0 ->> 'number' = '001' and v -> 'ours_list' -> 0 ->> 'finish' = 'nonfoil'
+    and (v -> 'ours_list' -> 0 ->> 'qty')::int = 2 and (v -> 'ours_list' -> 0 ->> 'this')::boolean
+    and v -> 'ours_list' -> 1 ->> 'finish' = 'foil' and not (v -> 'ours_list' -> 1 ->> 'this')::boolean
+    and v -> 'cc_list' -> 2 ->> 'product_id' = 'DBTEST-Q2' and v -> 'ours_list' -> 2 ->> 'number' = '002', v::text);
+  perform pg_temp.ok(s, '… none marked with no printing asked about; none listed where the inventory has no quantities',
+    not exists (select 1 from jsonb_array_elements(owned_copies(null, owned, 'dbtest owned', null, null) -> 'cc_list') e
+                 where (e ->> 'this')::boolean)
+    and not exists (select 1 from jsonb_array_elements(owned_copies(null, owned, 'dbtest owned', null, null) -> 'ours_list') e
+                     where (e ->> 'this')::boolean)
+    and owned_copies(null, array['dbtest unsure'], 'dbtest unsure', null, null) -> 'cc_list' = '[]'::jsonb);
+  v := owned_copies('DBTEST-Q4', owned, 'dbtest owned', null, null);
+  perform pg_temp.ok(s, '… a printing linked to a product of another kind (Art Series here) counts for the card too, listed',
+    (v ->> 'cc_printing')::int = 5 and (v ->> 'cc_card')::int = 11
+    and exists (select 1 from jsonb_array_elements(v -> 'cc_list') e
+                 where e ->> 'product_id' = 'DBTEST-Q4' and (e ->> 'this')::boolean), v::text);
 
   -- Its own rate on ADD CARD.
   dr := draft_for_device(bd, u);

@@ -24,9 +24,10 @@
   border-radius: 10px;
   background: rgba(15, 18, 32, .35);
 }
+/* Half as tall as the row they had (owner, 2026-10-22: "50% of the height"; 148px measured → 74px). */
 .owned-boxes {
-  flex: 1;
-  min-height: 0;
+  flex: none;
+  height: 74px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
@@ -43,9 +44,9 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 1px;
   min-width: 0;
-  padding: 8px 4px;
+  padding: 4px;
   border: 1px solid var(--owned, var(--border));
   border-radius: 10px;
   background: color-mix(in srgb, var(--owned, var(--border)) 12%, rgba(24, 28, 46, .92));
@@ -69,7 +70,7 @@
   color: var(--muted);
 }
 .owned-num {
-  font-size: 40px;
+  font-size: 30px;
   font-weight: 800;
   line-height: 1;
   font-variant-numeric: tabular-nums;
@@ -79,9 +80,10 @@
 .owned-boxes.hot .owned-box.card .owned-num { color: var(--warn); }
 .owned-boxes.applied .owned-box.card .owned-num { color: var(--good); }
 .owned-tag {
-  padding: 1px 7px;
+  align-self: center;
+  padding: 2px 10px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   background: rgba(255, 204, 102, .16);
   color: var(--warn);
@@ -103,7 +105,7 @@
 .owned-auto:has(input:disabled) { opacity: .55; cursor: not-allowed; }
 /* The details box: below the counter, right-aligned to it, wider than it; its top padding bridges the gap
    so moving the mouse down onto it doesn't close it. */
-.owned-pop { position: absolute; top: 100%; right: 0; width: 340px; z-index: 30; padding-top: 6px; }
+.owned-pop { position: absolute; top: 100%; right: 0; width: 380px; z-index: 30; padding-top: 6px; }
 .owned-pop-box {
   padding: 10px 14px 12px 12px;
   border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
@@ -122,8 +124,29 @@
   color: var(--accent);
 }
 .owned-pop-lead { margin: 0 0 6px; font-size: 14px; font-weight: 700; }
-.owned-pop-detail { margin: 0 0 8px; padding-left: 18px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.owned-pop-detail li + li { margin-top: 2px; }
+/* Which printings: the inventory's, then ours, one line each; a long list scrolls inside the box. */
+.owned-pop-lists { max-height: 260px; overflow-y: auto; margin: 0 -6px 8px 0; padding-right: 6px; }
+.owned-pop-sub {
+  margin: 6px 0 2px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.owned-rows { margin: 0; padding: 0; list-style: none; font-variant-numeric: tabular-nums; }
+.owned-rows li { display: flex; align-items: baseline; gap: 6px; padding: 1px 0; }
+.owned-rows .owned-row-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.owned-rows li b { flex: none; }
+.owned-rows li.is-this { color: var(--accent); font-weight: 700; }
+.owned-this {
+  flex: none;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 800;
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
 .owned-pop-suggest { margin: 0 0 8px; font-variant-numeric: tabular-nums; }
 .owned-pop-suggest .is-credit { color: var(--credit); font-weight: 700; }
 .owned-pop-suggest .is-cash { color: var(--cash); font-weight: 700; }
@@ -136,6 +159,7 @@
 /* Short windows: the info row is 150px (buylist.css). */
 @media (max-height: 820px) {
   .owned { width: 164px; gap: 4px; }
-  .owned-num { font-size: 32px; }
+  .owned-boxes { height: 64px; }
+  .owned-num { font-size: 26px; }
   .owned-label { font-size: 9.5px; }
 }
