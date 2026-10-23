@@ -28,11 +28,11 @@ function OwnedBox({ field, label, count = false, max = 100, sign = '%', prefix =
   return (
     <label className="owned-set-row">
       <span className="owned-set-label">{label}</span>
+      {/* The sign and the unit always take their room, so every box lines up (decision 476). */}
       <span className="pct-input fb-box owned-set-box">
-        {prefix && <span className="pct-sign">{prefix}</span>}
+        <span className="pct-sign owned-set-pre">{prefix}</span>
         <input type="number" min="0" max={count ? 99 : max} step={count ? 1 : 0.01} aria-label={label} {...box} />
-        {!count && <span className="pct-sign">{sign}</span>}
-        {count && <span className="pct-sign">copies</span>}
+        <span className="pct-sign owned-set-unit">{count ? 'copies' : sign}</span>
       </span>
     </label>
   );
@@ -106,13 +106,14 @@ export default function OwnedCopiesPanel() {
             {cfg.first_printing > 0 ? `; a new printing of one we have, ${cfg.first_printing}% higher` : ''}.
           </p>
         </div>
-        <fieldset className="owned-set-group" disabled={!cfg.on}>
+        {/* Faint red for the cut, faint green for the bonuses, as the counter's chips (decision 476). */}
+        <fieldset className="owned-set-group cut" disabled={!cfg.on}>
           <legend>The cut</legend>
           <OwnedBox field="free" label="Copies before a cut starts" count />
-          <OwnedBox field="step" label="Lower for each copy over that" />
-          <OwnedBox field="cap" label="At most" />
+          <OwnedBox field="step" label="Lower for each copy over that" prefix="−" />
+          <OwnedBox field="cap" label="At most" prefix="−" />
         </fieldset>
-        <fieldset className="owned-set-group" disabled={!cfg.on}>
+        <fieldset className="owned-set-group bonus" disabled={!cfg.on}>
           <legend>First-copy bonuses</legend>
           <OwnedBox field="first_printing" label="First of this printing" prefix="+" />
           <OwnedBox field="first_card" label="First of this card, on top" prefix="+" />
