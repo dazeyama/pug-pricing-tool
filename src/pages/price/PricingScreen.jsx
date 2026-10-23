@@ -37,7 +37,7 @@ import { useScanReceiver } from './useScanReceiver.js';
 import ScanChip from './ScanChip.jsx';
 import OwnedCounter from './OwnedCounter.jsx';
 import { useOwnedCopies } from './useOwnedCopies.js';
-import { ownedAdjust, ownedRates, signedPct } from '../../lib/ownedRates.js';
+import { isLowEnd, ownedAdjust, ownedRates, signedPct } from '../../lib/ownedRates.js';
 import { candidateKeyOf, editQuery, nameQuery, pinFirst } from '../../lib/candidateKey.js';
 
 const BACKGROUND = { '--stage-bg': `url(${import.meta.env.BASE_URL}background.webp)` };
@@ -682,7 +682,8 @@ export default function PricingScreen({
   if (!rateControls) applyBlocked = list.setLineRate ? `${locked ?? ratesLocked}.` : 'A project has no rates.';
   else if (editing) applyBlocked = 'Editing a card: right-click its line → Set Rate to change its rate.';
   // The bonuses for a first copy and the cut for copies over 2, stacked (decision 457).
-  const adjust = owned.status === 'ok' && !bulk ? ownedAdjust(owned.counts) : null;
+  // None for a low-end card (decision 458).
+  const adjust = owned.status === 'ok' && !bulk ? ownedAdjust(owned.counts, { lowEnd: isLowEnd(quoteRate) }) : null;
   const suggested = adjust ? ownedRates(quoteRate, adjust) : null;
   const applied = suggested && !applyBlocked && (autoOn || appliedKey === owned.key) ? suggested : null;
   const shownRate = applied ?? quoteRate;
@@ -778,6 +779,7 @@ export default function PricingScreen({
                   owned={owned}
                   finish={finish}
                   adjust={adjust}
+                  lowEndWhy={whyText('low', rates)}
                   suggested={suggested}
                   applied={Boolean(applied)}
                   applyBlocked={applyBlocked}

@@ -189,7 +189,9 @@ what happens. The findings are reported when the pass ends.
       its box's The rate section lists "+5% first of this printing" and "+5% more, first of this card", So +10%.
       Another printing of a card we own 1–2 of: "+5% first". A card we own 4 of, this printing none: a green "+5%
       first" and a red "−10% owned" chip side by side, the box says "Together −5%". 3 of the card, this printing
-      none: both chips, "They cancel out". With the inventory unknown (none uploaded): no bonus.
+      none: both chips, "They cancel out". With the inventory unknown (none uploaded): no bonus. A low-end card
+      (under $3) we've never had: no green chip, and the box says "No first-copy bonus on a low-end card" (decision
+      458); one we own 4 of still gets the red chip.
 - [ ] **Apply**: click the boxes to keep the box open, then **Apply ±N%**: the chips go solid with ✓, the price
       panel's Credit and Cash change, ↑ and a green ring for a bonus, ↓ and a red ring for a cut. ADD CARD: the line
       shows ✎ Credit / Cash at those rates. Apply, then pick another card: it isn't applied there. Editing a line:

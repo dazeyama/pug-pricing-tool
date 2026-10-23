@@ -19,7 +19,7 @@ import { isTimeout, withTimeout } from '../../lib/timeout.js';
 import { createStayAwake } from '../../lib/stayAwake.js';
 import { lineRate } from '../../lib/rates.js';
 import { ownedCopies } from '../../lib/owned.js';
-import { ownedAdjust, ownedCounts, ownedRates } from '../../lib/ownedRates.js';
+import { isLowEnd, ownedAdjust, ownedCounts, ownedRates } from '../../lib/ownedRates.js';
 
 // Cards from the paired phone (docs/SCAN_FUNCTION.md 8.3). Each scan the
 // phone sends is claimed here, one at a time in the order they came, priced
@@ -204,8 +204,9 @@ export function useScanReceiver({ deviceId, label, session, target, list, roundU
     if (now.autoRates) {
       try {
         const counts = ownedCounts(await withTimeout(ownedCopies(candidate, finish), OWNED_MS));
-        // The first-copy bonuses and the cut, stacked (decision 457).
-        const own = ownedRates(lineRate(line, now.autoRates), ownedAdjust(counts));
+        // The first-copy bonuses (none for a low-end card, decision 458) and the cut, stacked (decision 457).
+        const rate = lineRate(line, now.autoRates);
+        const own = ownedRates(rate, ownedAdjust(counts, { lowEnd: isLowEnd(rate) }));
         if (own) {
           line.custom_cash_pct = own.cash;
           line.custom_credit_pct = own.credit;

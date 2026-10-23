@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  adjustRate, ccRowText, finishWord, ownedAdjust, ownedCounts, ownedCut, ownedRates, signedPct,
+  adjustRate, ccRowText, finishWord, isLowEnd, ownedAdjust, ownedCounts, ownedCut, ownedRates, signedPct,
 } from '../src/lib/ownedRates.js';
 
 // Owner, 2026-10-22 (decision 448): 5% per copy of the card over 2, as a percent of the rate, up to 50%.
@@ -35,7 +35,7 @@ test('a rate changed as a percent of itself, kept to the cent of a percent, neve
 test('bonuses for a first copy, stacked with the cut', () => {
   const counts = (printing, card, sure = true) => ({ printing, card, printingSure: sure, cardSure: sure });
   assert.deepEqual(ownedAdjust(counts(0, 0)),
-    { bonus: 10, cut: 0, net: 10, firstPrinting: true, firstCard: true, over: 0 });
+    { bonus: 10, cut: 0, net: 10, firstPrinting: true, firstCard: true, over: 0, lowEndNoBonus: false });
   assert.equal(ownedAdjust(counts(0, 1)).net, 5);   // the first of this printing only
   assert.equal(ownedAdjust(counts(1, 2)).net, 0);   // neither
   const both = ownedAdjust(counts(0, 4));            // first printing, 2 copies of the card over 2
@@ -48,6 +48,15 @@ test('bonuses for a first copy, stacked with the cut', () => {
   assert.equal(ownedAdjust({ printing: 0, card: 2, printingSure: false, cardSure: true }).bonus, 0);
   assert.equal(ownedAdjust({ printing: 0, card: 0, printingSure: false, cardSure: true }).bonus, 10);
   assert.equal(ownedAdjust(null).net, 0);
+  // Owner, 2026-10-23 (decision 458): no first-copy bonus on a low-end card; the cut still applies.
+  const low = ownedAdjust(counts(0, 0), { lowEnd: true });
+  assert.equal(low.bonus, 0);
+  assert.equal(low.net, 0);
+  assert.equal(low.lowEndNoBonus, true);
+  assert.equal(ownedAdjust(counts(0, 5), { lowEnd: true }).net, -15);
+  assert.equal(ownedAdjust(counts(1, 2), { lowEnd: true }).lowEndNoBonus, false);
+  assert.equal(isLowEnd({ why: { cash: 'low', credit: 'low' } }), true);
+  assert.equal(isLowEnd({ why: { cash: 'base', credit: 'custom' } }), false);
   assert.equal(signedPct(10), '+10%');
   assert.equal(signedPct(-5), '−5%');
 });

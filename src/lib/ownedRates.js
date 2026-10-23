@@ -77,19 +77,31 @@ export const FIRST_CARD_BONUS = 5;
  * cut for copies over 2, added together ("Make bonus and negatives stack"). A bonus is given only on a count
  * the inventory could make: one it couldn't (no inventory, none with quantities, no clear product for the
  * printing) might be a card we have.
+ * A card on the low-end rate gets no bonus (owner, 2026-10-23: "First bonuses do not apply to cards of low end
+ * rates"; decision 458); the cut still applies. `lowEndNoBonus` says a bonus was left out for that.
  * @param {ReturnType<typeof ownedCounts>|null} counts
- * @returns {{ bonus: number, cut: number, net: number, firstPrinting: boolean, firstCard: boolean, over: number }}
+ * @param {{ lowEnd?: boolean }} [o]  the card's rate is the low-end one (lineRate's why 'low')
+ * @returns {{ bonus: number, cut: number, net: number, firstPrinting: boolean, firstCard: boolean, over: number,
+ *   lowEndNoBonus: boolean }}
  */
-export function ownedAdjust(counts) {
-  const none = { bonus: 0, cut: 0, net: 0, firstPrinting: false, firstCard: false, over: 0 };
+export function ownedAdjust(counts, { lowEnd = false } = {}) {
+  const none = { bonus: 0, cut: 0, net: 0, firstPrinting: false, firstCard: false, over: 0, lowEndNoBonus: false };
   if (!counts) return none;
-  const firstCard = counts.cardSure && counts.card === 0;
+  const firstCardCount = counts.cardSure && counts.card === 0;
   // None of the card is none of the printing, whatever the printing's own count could tell.
-  const firstPrinting = firstCard || (counts.printingSure && counts.printing === 0);
+  const firstPrintingCount = firstCardCount || (counts.printingSure && counts.printing === 0);
+  const firstCard = firstCardCount && !lowEnd;
+  const firstPrinting = firstPrintingCount && !lowEnd;
   const bonus = (firstPrinting ? FIRST_PRINTING_BONUS : 0) + (firstCard ? FIRST_CARD_BONUS : 0);
   const cut = ownedCut(counts.card);
-  return { bonus, cut, net: bonus - cut, firstPrinting, firstCard, over: Math.max(0, counts.card - OWNED_FREE) };
+  return {
+    bonus, cut, net: bonus - cut, firstPrinting, firstCard, over: Math.max(0, counts.card - OWNED_FREE),
+    lowEndNoBonus: lowEnd && firstPrintingCount,
+  };
 }
+
+/** A card's rate is the low-end one (lineRate's why), either side: no first-copy bonus for it (decision 458). */
+export const isLowEnd = (rate) => rate?.why?.cash === 'low' || rate?.why?.credit === 'low';
 
 /**
  * A rate changed by `net` percent of itself, to the cent of a percent, never past 100: 60 at −10 → 54;

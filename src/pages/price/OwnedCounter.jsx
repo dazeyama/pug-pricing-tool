@@ -20,6 +20,7 @@ const copies = (n) => `${n} ${n === 1 ? 'copy' : 'copies'}`;
  * @param {{ status: string, counts: object|null, error: string|null }} p.owned  useOwnedCopies
  * @param {string|null} p.finish  the printing's finish (Magic)
  * @param {object|null} p.adjust  ownedAdjust: the first-copy bonuses and the cut, stacked (decision 457)
+ * @param {string} [p.lowEndWhy]  "low end: cards under $3", said when a low-end card gets no bonus (decision 458)
  * @param {{ cash: number, credit: number, net: number }|null} p.suggested  the rates they come to, or null
  *   (nothing changes, or a bonus and a cut cancel out)
  * @param {boolean} p.applied  the suggestion goes on with ADD CARD (clicked, or Auto apply rates)
@@ -30,7 +31,8 @@ const copies = (n) => `${n} ${n === 1 ? 'copy' : 'copies'}`;
  * @param {() => void} p.onDone  back to the search field
  */
 export default function OwnedCounter({
-  candidate, owned, finish = null, adjust = null, suggested, applied, applyBlocked, price, onApply, auto, onDone,
+  candidate, owned, finish = null, adjust = null, lowEndWhy = '', suggested, applied, applyBlocked, price, onApply, auto,
+  onDone,
 }) {
   const [hover, setHover] = useState(false);
   const [pinned, setPinned] = useState(false);
@@ -166,8 +168,11 @@ export default function OwnedCounter({
             </div>
             {/* What changes the rate, and why (decision 457). */}
             <div className="owned-pop-sub">The rate</div>
-            {adjust && (adjust.bonus > 0 || adjust.cut > 0) ? (
+            {adjust && (adjust.bonus > 0 || adjust.cut > 0 || adjust.lowEndNoBonus) ? (
               <ul className="owned-adjust">
+                {adjust.lowEndNoBonus && (
+                  <li>No first-copy bonus on a low-end card{lowEndWhy ? ` (${lowEndWhy})` : ''}.</li>
+                )}
                 {adjust.firstPrinting && (
                   <li className="is-bonus">
                     <b>+{FIRST_PRINTING_BONUS}%</b> first of this printing: we own none of it{finishWord(finish) ? ` in ${finishWord(finish)}` : ''}.
@@ -192,7 +197,7 @@ export default function OwnedCounter({
                   : 'No change. A bonus for a first copy needs a count the inventory could make, which this isn’t.'}
               </p>
             )}
-            {adjust && (adjust.bonus > 0 || adjust.cut > 0) && !suggested && (
+            {adjust && adjust.bonus > 0 && adjust.cut > 0 && !suggested && (
               <p className="owned-pop-note">They cancel out: the card keeps its usual rate.</p>
             )}
             {suggested && (
