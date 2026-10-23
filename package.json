@@ -2,7 +2,7 @@
   "name": "pug-pricing-tool",
   "private": true,
   "license": "GPL-3.0-only",
-  "version": "1.0.1-day1",
+  "version": "1.0.2-quantity",
   "type": "module",
   "scripts": {
     "dev": "vite",

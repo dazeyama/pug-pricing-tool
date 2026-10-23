@@ -6,39 +6,18 @@ and function.
 
 ## Open
 
-- **Dev is ahead of prod: migrations 0008 (owned copies, decision 448; and Bulk pulled from exports made empty from
-  the start, decision 449) and 0009 (the rounding steps, decision 478) are on dev only.** Both go to prod at the
-  owner's go, while the store isn't using the app, in the same sitting as the app push (CLAUDE.md Database step 6:
-  `npx supabase db push --linked --project-ref zvxquzcfffmxwizonxuo`, then the structure-only compare with
-  `C:\ClaudeProjects\temp\dev-run-0009.json`, all 625 checks passed on dev 2026-10-23). After it, look on prod
-  (read-only): `select count(*) from buys where system_key = 'pulled'` is 1, which the compare can't see. The live
-  build works with 0008 (same signatures), but 0009 changes what `round_down_price` returns: with prod on 0009 and
-  the old build still live, a new Changelog entry's Cash/Credit (worked out by the database) and the screen's
-  disagree ($55 at 45%: $24.50 in the Changelog, $24 on screen), so the app goes out the same night.
-- **Copies we own (decisions 448–483), tested by the owner on dev as it was built.** The counter
+- **Copies we own (decisions 448–483), live in v1.0.2-quantity, tested by the owner on dev as it was built.** The counter
   (`OwnedCounter.jsx`, `useOwnedCopies.js`, `owned.js`), the suggestion (`ownedRates.js`), Apply and Auto apply
   rates? (`PricingScreen.jsx`, `useScanReceiver.js`, `useDraft.js` `setAutoRates`, `CollectionPage.jsx`
   `list.autoRates`), Settings → Copies we own (`OwnedCopiesPanel.jsx`). TEST.md section 7 and 16 have its cases.
   Not checked: how long a count takes on the live site. Known limit: the app can't tell when CC's CSV was taken, so
-  cards exported between taking it and uploading it count as in it. On the live site, the CC counts start with the
-  first inventory upload after 0008 is on prod. Help has it (Buy tab and Settings tab → Copies we own).
-- **Unpushed, decisions 435–483** (the owner tested on dev as each was built; Help is up to date with all of them):
-  - Copies we own, 448 and 455–483 (above), with migration 0008.
-  - 478, the rounding steps from $10 halved (`money.js` `priceStep`, `SellFloorPanel.jsx`'s table, migration 0009).
-    After the push, what's worked out again from saved lines (a past buy's Cash/Credit on its day page, a Quote, a
-    folded Changelog run) takes the new steps, so it can read up to 50 cents more (or $4 from $100) than when it
-    was confirmed; a paid price and a buy's own Changelog entry don't change.
-  - 454 a buy's customer in the header search (`SearchBox.jsx` `renderRow`); 452 Unlock undoes a collection's
-    export, and REPRICE?'s reason (`CollectionPage.jsx`); 451 the weekly inventory banner (`Banners.jsx`
-    `InventoryReminder`); 449 Bulk pulled from exports there empty (0008; `backupIO.js` `restoreBackup`); 450 spec
-    only; 453 copies we own load sooner.
-  - 435 Magic's promos after its normal printings; 436–439 the backup JustTCG key; 440–441 the Export dialog's held
-    pick and Undo; 442 a menu group's flyout staying open on a click; 443–445 the Magic printouts' order and Print
-    MTG / PKM in buy order; 446 accents in searches; 447 Alt+A for mimp mode.
-  - **Edge Functions changed:** `secrets` and `prices` (and `_shared/justtcg.ts`) are on dev only; the push deploys
-    both to prod (release step 9), and the backup key does nothing there until it does.
-  - **Order for the push night:** 0008 and 0009 to prod, the structure-only compare, the app push, the two
-    functions, the live check.
+  cards exported between taking it and uploading it count as in it. **On the live site the CC counts start with the
+  next Master Crystal Inventory upload** (the owner's to do: one uploaded before 0008 has no quantities, so the
+  boxes read n/a until then). Help has it (Buy tab and Settings tab → Copies we own).
+- **Past totals after v1.0.2-quantity** (decision 478): what's worked out again from saved lines (a past buy's
+  Cash/Credit on its day page, a Quote, a folded Changelog run) now takes the new rounding steps, so it can read up
+  to 50 cents more (or $4 from $100) than when it was confirmed; a paid price and a buy's own Changelog entry don't
+  change. Nothing to do unless the team asks about it.
 - **The backup key, left open** (decisions 436–439): there's no usage meter for it (would need a migration; the
   owner: not worth it), and the app isn't told when a call used it (only the `prices` function's log says so). A
   big export on the backup's Free plan can wait on its per-minute limit (`call`'s backoff, `_shared/justtcg.ts`);
@@ -91,6 +70,16 @@ and function.
 
 ## Done
 
+- 2026-10-23: **Pushed as v1.0.2-quantity** (the owner's ask), decisions 435–483: Copies we own (448, 455–483) with
+  its Settings panel, the rounding steps from $10 halved (478), the backup JustTCG key (436–439), the Export
+  dialog's held pick and Undo (440–441), the menus' group click (442), the Magic printouts' order and Print MTG /
+  PKM in buy order (443–445), accents in searches (446), Alt+A (447), Bulk pulled from exports there from the
+  start (449), the weekly inventory banner (451), Unlock undoing an export (452), copies we own loading sooner
+  (453), a buy's customer in the header search (454), Magic's promos last (435). First, at 2:00 AM, migrations 0008
+  and 0009 went to prod (`db push --linked --project-ref zvxquzcfffmxwizonxuo`); the structure-only compare with
+  `C:\ClaudeProjects\temp\dev-run-0009.json` was the same on all nine fingerprints, nothing run or written, and
+  prod's `buys` has its one `pulled` System collection. Dev and prod are equal again; the CLI stays linked to dev.
+  The `prices` and `secrets` functions deployed to prod with it.
 - 2026-10-23: **Small fixes before the push** (the owner's go): a key's Changelog entry names the user picked when
   Save or Delete was pressed (decision 483, `ApiKeysPanel.jsx`); the counter reads "…" while a Magic card's finish
   loads, not "Magic only for now" (482, `useOwnedCopies.js`); TEST.md cases for 466–483 and the rounding, and its
