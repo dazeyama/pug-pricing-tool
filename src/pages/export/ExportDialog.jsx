@@ -14,6 +14,7 @@ import {
 import { uuid } from '../../lib/uuid.js';
 import { bulkWords, isBulkPrice } from '../../lib/bulkCut.js';
 import { SECOND_LOOK_MS, pause } from '../../lib/timeout.js';
+import { linkToSave } from '../../lib/ccMatch.js';
 import ChooseRow from './ChooseRow.jsx';
 
 // The export dialog (docs/EXPORT_FUNCTION.md 8.3): Matching, then Review in
@@ -377,7 +378,7 @@ export default function ExportDialog({
         sell_price: sell.price,
         // The condition's percentage, so the same file comes out again later (massCreate.js).
         sell_basis: { ...sell.basis, conditionPct: pct?.[r.line.condition] != null ? Number(pct[r.line.condition]) : null, exportId },
-        link: s.by === 'staff' ? 'staff' : s.by === 'match' ? 'auto' : null,
+        link: linkToSave(s.by),
       };
     });
     const setMaps = groups.matched
@@ -644,7 +645,7 @@ export default function ExportDialog({
                         key={r.line.id}
                         {...rowProps(r)}
                         current={s.product}
-                        detected={r.status === 'auto' ? r.product : null}
+                        detected={r.status === 'auto' && r.via === 'match' ? r.product : null}
                         onDone={() => edit(r, false)}
                         onCancel={() => edit(r, false)}
                       />

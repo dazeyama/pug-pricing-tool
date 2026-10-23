@@ -5,7 +5,9 @@
 import { supabase } from './supabase.js';
 import { loadSets } from './scryfall.js';
 import { nameKey } from './normalize.js';
-import { categoryFor, chooseProduct, fold, frontFace, promoKind, searchCategories } from './ccMatch.js';
+import {
+  categoryFor, chooseProduct, evidenceTreatments, fold, frontFace, promoKind, searchCategories, usableLink,
+} from './ccMatch.js';
 import { scryfallCards, todaysPrices } from './todaysPrices.js';
 import { sellPriceFor } from './sellPrice.js';
 import { massCreateCsv, massCreateRows } from './massCreate.js';
@@ -85,7 +87,8 @@ export async function matchLines(lines, onStep, given = {}) {
     const { data: linkRows, error: linkError } = await inChunks(
       (part) => supabase.from('cc_product_links').select('*').in('scryfall_id', part), ids);
     fail(linkError, "Couldn't read the remembered matches");
-    const links = new Map((linkRows ?? []).map((k) => [`${k.scryfall_id}|${k.finish}`, k]));
+    // Only a person's picks (decision 486): a match the app made by itself is made again, never trusted.
+    const links = new Map((linkRows ?? []).filter(usableLink).map((k) => [`${k.scryfall_id}|${k.finish}`, k]));
     const linked = [...new Set([...links.values()].map((k) => k.product_id))];
     const { data: linkedProducts, error: byIdError } = linked.length
       ? await supabase.rpc('cc_products_by_id', { p_ids: linked })
@@ -136,13 +139,19 @@ export async function matchLines(lines, onStep, given = {}) {
     const base = {
       line, set, promo, card, flavor, category: where?.category ?? null, also, how: where?.how ?? null, candidates,
     };
-    const pick = chooseProduct(line, candidates, { flavor, home: also.length ? where.category : null });
+    // The card's Scryfall facts the line keeps no treatment for ("Showcase Scrolls"), read for every line, old
+    // or new (decision 485); without the card, those words stay words the matcher can't read.
+    const matched = card
+      ? { ...line, treatments: [...new Set([...(line.treatments ?? []), ...evidenceTreatments(card)])] }
+      : line;
+    const pick = chooseProduct(matched, candidates, { flavor, home: also.length ? where.category : null, evidence: Boolean(card) });
     if (linkedProduct) {
       // Its candidates still ranked, so Change can offer them.
       return { ...base, status: 'auto', product: linkedProduct, ranked: pick.ranked, expected: pick.expected, via: 'link', link };
     }
-    // With no category, the candidates come from every category: staff decide (spec 7.3 step 5).
-    const status = !where && pick.status === 'auto' ? 'choose' : pick.status;
+    // With no category, the candidates come from every category: staff decide (spec 7.3 step 5). A person's pick
+    // whose product left the inventory is theirs to make again, never the app's guess (decision 487).
+    const status = pick.status === 'auto' && (!where || link) ? 'choose' : pick.status;
     return {
       ...base,
       status,

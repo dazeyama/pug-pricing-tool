@@ -470,6 +470,12 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
 - [ ] **Export Cash Buys (N)** downloads the month's cash buys as a CSV; hovering it says when it was last downloaded.
 - [ ] **A past Magic day's EXPORT** opens matching, review and confirm, with that day's Custom SKU (`101626`, decision
       291) in the Confirm step and the file.
+- [ ] **Never guessed** (decisions 484–486): buy on dev, then EXPORT a past day with Polluted Bonds (WOT) 34 foil and
+      Tom Bombadil (LTR) 685 non-foil. Polluted Bonds is in **Needs a choice**, "Polluted Bonds - Foil" listed above
+      the Anime one; Tom Bombadil (LTR) 685 is **Matched** to "Tom Bombadil - Showcase Scrolls" with no tag, and
+      Change on it marks that product "detected". Pick "Polluted Bonds - Foil": it's "picked", and the next EXPORT of
+      that printing shows it Matched, "remembered". Settings → Crystal Commerce matching counts the pick under Picked
+      by staff; Tom Bombadil's match isn't remembered. A remembered card's Change marks no product "detected".
 - [ ] Today's EXPORT is blocked ("until it's over").
 - [ ] **Export single buy…** works on any day, today included, with the SKU `101626-42`; only that buy becomes Completed,
       and the day's EXPORT skips it.

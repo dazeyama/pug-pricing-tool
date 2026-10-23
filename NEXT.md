@@ -6,25 +6,26 @@ and function.
 
 ## Open
 
-- **P0 — Crystal Commerce matching guessed wrong twice on the live site (2026-10-23): follow `MATCHING.md`.** Two
-  automatic matches reached the store's inventory wrong ("Polluted Bonds (WOT) 34 *F*" → "Polluted Bonds - Foil -
-  Anime Borderless"; "Tom Bombadil (LTR) 685" → "Tom Bombadil - Showcase"). The overnight read-only sweep of dev's
-  1,880 printings and the plan are in `MATCHING.md`: item 1 the never-guess rule (`src/lib/ccMatch.js`
-  `chooseProduct`, `scoreCandidate`, `FAMILIES`, with the tests to add in `tests/ccMatch.test.js`), item 2
-  automatic matches no longer trusted or remembered (`src/lib/ccExport.js` `matchLines`, `ExportDialog.jsx` `save`,
-  `scripts/db-test-run.sql` 2257–2262), item 3 forget the two wrong links on prod (Settings → Crystal Commerce
-  matching → Browse remembered products…, or the prepared statement on the owner's word), item 4 a remembered pick
-  whose product is gone goes to Needs a choice, item 5 migration 0010 (`internal.export_learn` staff only; delete
-  the auto links; dev and prod the same sitting, store closed). Prod's remembered links were read after the scan
-  (303: 283 auto, 20 staff; every auto one in `MATCHING.md` Appendix B with a right/wrong box). Polluted Bonds is
-  there as reported; Tom Bombadil (LTR) 685 is not: prod's `Tom Bombadil - Showcase` link is a staff pick for LTR
-  331, so item 3's statement misses it and the owner looks in Browse remembered products… first (section 2.5).
-  The owner judged the first rule's cost too high (63 right matches sent to staff on prod's history), so the
-  recommendation is rule 5 (section 3): on prod's 283 auto links it refuses 9, 2 once the new Scryfall-backed
-  families are in, and those 2 are the mistakes: 1 confirmed (Polluted Bonds), 1 likely (`Serra Ascendant (PAGL) -
-  The List` for the M11 List printing). On dev's history it asks 26 of 1,814 (16 with the families). Scryfall carries `scroll`, `poster`, `japanshowcase`, the `future` frame and the
-  white border, which the app drops (`printings.js` `magicTraits`): item 1 adds them as families, so the LTR
-  Showcase Scrolls case matches on evidence. Nothing coded yet; Help's "Picking the product" goes out of date with item 1.
+- **P0 — Crystal Commerce matching: built, not pushed, untested in the app (2026-10-23; decisions 484–487).**
+  `MATCHING.md` items 1, 2, 4 and 6 are coded (`src/lib/ccMatch.js` `chooseProduct`/`certainProduct`,
+  `readVariant`, `evidenceTreatments`, `usableLink`, `linkToSave`; `src/lib/ccExport.js` `matchLines`;
+  `ExportDialog.jsx` `save` and the Matched rows' Change; `CcMatchingPanel.jsx`; Import Collection's printing lookup
+  in `importCollection.js`), with tests in `tests/ccMatch.test.js`. Left:
+  - **The owner's QA on dev**: TEST.md section 14, "Never guessed".
+  - **Item 3, the owner's, on the live site now** (the code ignores automatic links already, so this only tidies):
+    Settings → Crystal Commerce matching → Browse remembered products…: Forget "Polluted Bonds - Foil - Anime
+    Borderless" (automatic, foil); look at "Tom Bombadil - Showcase" (a staff pick for LTR 331, right for 331, wrong
+    if the card sold was the 685 scroll); check "Serra Ascendant (PAGL) - The List" for the M11-28 List card in CC.
+    The two exported lines' stamps stay wrong unless that day's file must be downloaded again (`MATCHING.md` item 3).
+  - **Item 5, migration 0010**: see the next item.
+  - **Not built, on purpose**: Scryfall's other promo types as families (`planeswalkerdeck`, `gameday`,
+    `storechampionship`, `wizardsplaynetwork`, `openhouse`, `themepack`, `release`, `judgegift`): CC spells them
+    too many ways ("Planeswalker Deck Exclulsive", "Game Day & Store Championship Promos"), so each needs its
+    spellings read off the inventory first. They would only turn about 8 of dev's asks back into automatic matches.
+    The other item 7 switches stay switches (only the Japanese one-direction loosening is in).
+  - **Help is out of date** (edit when asked): Export → "Picking the product" (README.md, "leads the next by 2
+    points"; step 1 "A remembered match" now means a staff pick only) and Settings → Crystal Commerce matching's
+    Products row ("matched by the app").
 - **Copies we own (decisions 448–483), live in v1.0.2-quantity, tested by the owner on dev as it was built.** The counter
   (`OwnedCounter.jsx`, `useOwnedCopies.js`, `owned.js`), the suggestion (`ownedRates.js`), Apply and Auto apply
   rates? (`PricingScreen.jsx`, `useScanReceiver.js`, `useDraft.js` `setAutoRates`, `CollectionPage.jsx`
@@ -89,6 +90,12 @@ and function.
 
 ## Done
 
+- 2026-10-23: **The never-guess matcher built** (`MATCHING.md` items 1, 2, 4, 6; decisions 484–487; the owner: "Build
+  everything from MATCHING.md in one go"). Measured against HEAD's matcher on the sweep's data
+  (`C:\ClaudeProjects\temp\pug-matching\measure-new.mjs`): of dev's 1,814 automatic matches, 17 now ask once (27
+  without the Scryfall facts); one changes, to the right product (Tom Bombadil LTR 685 → "Showcase Scrolls"); three
+  that asked now match by themselves (Tom Bombadil LTR 331 → "Showcase", a textured-foil Ratadrabik, a List
+  Pandemonium). On prod's 283 automatic links the 2 asked are the two known mistakes. Untested in the app.
 - 2026-10-23: **Overnight read-only audit of the export's matching** (the owner's ask after two wrong automatic
   matches on the live site): `MATCHING.md` written, the only change besides this file. The matcher ran under Node
   over dev's 1,979 Magic lines against inventory file 33 (SELECT only; the SQL and outputs in

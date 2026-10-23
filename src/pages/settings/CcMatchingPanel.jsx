@@ -108,13 +108,16 @@ export default function CcMatchingPanel() {
         <div className="backups-col restore-col">
           <h4 className="settings-sub">Products</h4>
           <p className="hint">
-            Each card printing, in each finish, that has exported is remembered with its Crystal Commerce product
-            (by Product ID), so the next export matches it straight away.
+            Each card printing, in each finish, whose Crystal Commerce product staff picked is remembered with it (by
+            Product ID), so the next export takes it straight away. A product the app finds by itself is found
+            again at each export, never remembered.
           </p>
           <table className="restore-table ccm-counts">
             <tbody>
               <tr><th scope="row">Picked by staff</th><td>{counts ? counts.staff.toLocaleString() : '…'}</td></tr>
-              <tr><th scope="row">Matched by the app</th><td>{counts ? counts.auto.toLocaleString() : '…'}</td></tr>
+              {counts?.auto > 0 && (
+                <tr><th scope="row">Old matches by the app, not used</th><td>{counts.auto.toLocaleString()}</td></tr>
+              )}
               <tr><th scope="row">In all</th><td>{total != null ? total.toLocaleString() : '…'}</td></tr>
             </tbody>
           </table>
@@ -239,7 +242,7 @@ function ProductsModal({ offline, onChanged, onClose }) {
                 <span className="ccm-what">
                   {k.product_name}
                   <span className="ccm-note"> · {k.category} · {FINISHES[k.finish] ?? k.finish}</span>
-                  <span className={`xd-tag ccm-source ${k.source}`}>{k.source === 'staff' ? 'picked' : 'automatic'}</span>
+                  <span className={`xd-tag ccm-source ${k.source}`}>{k.source === 'staff' ? 'picked' : 'automatic, not used'}</span>
                 </span>
                 <span className="ccm-who">
                   {formatShortDate(k.linked_at)}

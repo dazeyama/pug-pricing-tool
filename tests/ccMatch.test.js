@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  categoryFor, chooseProduct, expectedFoilKind, expectedName, fold, promoKind, ruleGuesses, searchCategories,
+  categoryFor, chooseProduct, evidenceTreatments, expectedFoilKind, expectedName, extraWords, fold, promoKind, readVariant,
+  linkToSave, ruleGuesses, searchCategories, usableLink, wordFamilies,
 } from '../src/lib/ccMatch.js';
 import { parseProductName } from '../src/lib/ccNames.js';
 
@@ -138,4 +139,131 @@ test("a List card filed under Mystery Booster matches it; one in both stays in i
   assert.equal(pick.product.category, 'Mystery Booster');
   // Foil still has to be foil.
   assert.equal(chooseProduct({ ...monument, finish: 'foil' }, [mb], { home: 'The List' }).status, 'choose');
+});
+
+// ---------------------------------------------------------------- never guess (decisions 484–485)
+// The two reported mistakes (MATCHING.md 1.1), with the products' names as the inventory has them.
+
+const WOT = 'Wilds of Eldraine: Enchanting Tales';
+const BONDS = ['Polluted Bonds', 'Polluted Bonds - Anime Borderless', 'Polluted Bonds - Confetti Foil - Anime Borderless',
+  'Polluted Bonds - Foil', 'Polluted Bonds - Foil - Anime Borderless'].map((n) => product(n, WOT));
+const LTR = 'The Lord of the Rings: Tales of Middle-earth';
+const TOM = ['Tom Bombadil', 'Tom Bombadil - Borderless Poster', 'Tom Bombadil - Borderless Poster (Serialized)', 'Tom Bombadil - Foil',
+  'Tom Bombadil - Foil - Borderless Poster', 'Tom Bombadil - Foil - Showcase', 'Tom Bombadil - Foil - Showcase Scrolls',
+  'Tom Bombadil - Showcase', 'Tom Bombadil - Showcase Scrolls', 'Tom Bombadil - Surge Foil - Showcase'].map((n) => product(n, LTR));
+const names = (pick) => pick.ranked.filter((r) => r.score != null).map((r) => r.product.product_name);
+
+test('Polluted Bonds (WOT) 34: the plain and the Anime products are a choice, the plain one listed first', () => {
+  for (const finish of ['foil', 'nonfoil']) {
+    const pick = chooseProduct(line({ name: 'Polluted Bonds', set_code: 'WOT', collector_number: '34', finish, treatments: ['borderless', 'showcase'] }), BONDS);
+    assert.equal(pick.status, 'choose', finish);
+    const order = names(pick);
+    assert.ok(order.indexOf(finish === 'foil' ? 'Polluted Bonds - Foil' : 'Polluted Bonds')
+      < order.indexOf(finish === 'foil' ? 'Polluted Bonds - Foil - Anime Borderless' : 'Polluted Bonds - Anime Borderless'), finish);
+  }
+});
+
+test('Tom Bombadil (LTR): Showcase beside Showcase Scrolls is a choice, unless the card says which', () => {
+  const tom = (over) => line({ name: 'Tom Bombadil', set_code: 'LTR', ...over });
+  // Without the card's Scryfall facts: "Scrolls" is an extra word, and the two can't be told apart.
+  assert.equal(chooseProduct(tom({ collector_number: '685', treatments: ['showcase'] }), TOM).status, 'choose');
+  assert.equal(chooseProduct(tom({ collector_number: '685', finish: 'foil', treatments: ['showcase'] }), TOM).status, 'choose');
+  assert.equal(chooseProduct(tom({ collector_number: '331', treatments: ['borderless', 'showcase'] }), TOM).status, 'choose');
+  // With them: 685 is a scroll, 331 isn't.
+  const scroll = chooseProduct(tom({ collector_number: '685', treatments: ['showcase', 'scroll'] }), TOM, { evidence: true });
+  assert.equal(scroll.status, 'auto');
+  assert.equal(scroll.product.product_name, 'Tom Bombadil - Showcase Scrolls');
+  assert.equal(scroll.expected, 'Tom Bombadil - Showcase Scrolls');
+  assert.equal(chooseProduct(tom({ collector_number: '685', finish: 'foil', treatments: ['showcase', 'scroll'] }), TOM, { evidence: true })
+    .product.product_name, 'Tom Bombadil - Foil - Showcase Scrolls');
+  const ring = chooseProduct(tom({ collector_number: '331', treatments: ['borderless', 'showcase'] }), TOM, { evidence: true });
+  assert.equal(ring.status, 'auto');
+  assert.equal(ring.product.product_name, 'Tom Bombadil - Showcase');
+});
+
+test('the Scryfall facts behind the evidence families', () => {
+  assert.deepEqual(evidenceTreatments({ promo_types: ['scroll'], frame: '2015', border_color: 'black', released_at: '2023-06-23' }), ['scroll']);
+  assert.deepEqual(evidenceTreatments({ promo_types: ['poster'], frame: '2015', border_color: 'borderless', released_at: '2023-06-23' }), ['poster']);
+  // Mystery Booster 2's reprints in an old look; the originals are just their set.
+  assert.deepEqual(evidenceTreatments({ frame: 'future', border_color: 'black', released_at: '2024-08-02' }), ['futureframe']);
+  assert.deepEqual(evidenceTreatments({ frame: '1997', border_color: 'white', released_at: '2024-08-02' }), ['whiteborder']);
+  assert.deepEqual(evidenceTreatments({ frame: 'future', border_color: 'black', released_at: '2007-05-04' }), []);
+  assert.deepEqual(evidenceTreatments({ frame: '1993', border_color: 'white', released_at: '1995-04-01' }), []);
+  assert.deepEqual(evidenceTreatments(null), []);
+  // Read on a product only with the card's facts.
+  assert.deepEqual(wordFamilies('Showcase Scrolls'), ['showcase']);
+  assert.deepEqual(extraWords('Showcase Scrolls'), ['Scrolls']);
+  assert.deepEqual(wordFamilies('Showcase Scrolls', { evidence: true }), ['showcase', 'scroll']);
+  assert.deepEqual(extraWords('Showcase Scrolls', { evidence: true }), []);
+  assert.deepEqual(extraWords('Anime Borderless'), ['Anime']);
+  assert.deepEqual(extraWords('Japanese Alternate Art'), []);
+  assert.deepEqual(wordFamilies('Retro Schematic'), []);
+  assert.deepEqual(readVariant(product('X (A)', 'Fallen Empires'), line({})).extra, ['A']);
+});
+
+test('an extra word on our own trait, or a word with no family, is never guessed past', () => {
+  const at = (list, over) => chooseProduct(line({ name: 'X', ...over }), list.map((n) => product(n, 'March of the Machine')));
+  assert.equal(at(['X', 'X - Borderless Manga'], { treatments: ['borderless'] }).status, 'choose');
+  assert.equal(at(['X - Showcase', 'X - Showcase Scrolls'], { treatments: ['showcase'] }).status, 'choose');
+  assert.equal(at(['X - Theme Booster Exclusive'], {}).status, 'choose');   // alone, but CC may not carry ours
+  assert.equal(at(['X', 'X (A)'], {}).status, 'choose');   // a bracket that isn't ours reads as an extra word
+  // Fallen Empires' arts: the plain name was never certain.
+  const thrull = ['Armor Thrull', 'Armor Thrull (Kirschner)', 'Armor Thrull (Menges)', 'Armor Thrull (Spencer)'].map((n) => product(n, 'Fallen Empires'));
+  assert.equal(chooseProduct(line({ name: 'Armor Thrull', set_code: 'FEM', collector_number: '33b' }), thrull).status, 'choose');
+  // A word with no family on a rival blocks the exact name.
+  const glass = ['Ratchet - Foil', 'Ratchet - Foil - Shattered Glass'].map((n) => product(n, 'Transformers'));
+  assert.equal(chooseProduct(line({ name: 'Ratchet', finish: 'foil' }), glass).status, 'choose');
+});
+
+test('what the evidence settles stays automatic', () => {
+  // A plain card's product beside a special foil of the same words and a showcase.
+  const rat = ['Ratadrabik of Urborg - Foil', 'Ratadrabik of Urborg - Foil - Showcase', 'Ratadrabik of Urborg - Textured Foil']
+    .map((n) => product(n, 'Dominaria United'));
+  const textured = chooseProduct(line({ name: 'Ratadrabik of Urborg', finish: 'foil', treatments: ['showcase', 'textured'] }), rat);
+  assert.equal(textured.status, 'auto');
+  assert.equal(textured.product.product_name, 'Ratadrabik of Urborg - Textured Foil');
+  // Surge foil over plain foil, both borderless.
+  const cecil = ['Cecil - Foil - Borderless', 'Cecil - Surge Foil - Borderless'].map((n) => product(n, 'Final Fantasy'));
+  assert.equal(chooseProduct(line({ name: 'Cecil', finish: 'foil', treatments: ['borderless', 'surgefoil'] }), cecil).product.product_name,
+    'Cecil - Surge Foil - Borderless');
+  // The List: a set code that isn't our number's prefix is another printing.
+  const boots = ['Swiftfoot Boots - The List', 'Swiftfoot Boots (M12) - The List'].map((n) => product(n, 'The List'));
+  const b = chooseProduct(line({ name: 'Swiftfoot Boots', set_code: 'PLST', collector_number: 'A25-234' }), boots);
+  assert.equal(b.status, 'auto');
+  assert.equal(b.product.product_name, 'Swiftfoot Boots - The List');
+  assert.equal(chooseProduct(line({ name: 'Serra Ascendant', set_code: 'PLST', collector_number: 'M11-28' }),
+    [product('Serra Ascendant (PAGL) - The List', 'The List')]).status, 'choose');
+  // A Japanese card: a product without a Japanese word is another printing.
+  const jp = ['X', 'X - Japanese Alternate Art'].map((n) => product(n, 'Strixhaven Mystical Archive'));
+  assert.equal(chooseProduct(line({ name: 'X', lang: 'ja', treatments: ['japanese'] }), jp).product.product_name, 'X - Japanese Alternate Art');
+  // The fullest of nested words: plain ⊂ Showcase for a borderless showcase card.
+  const beorn = ['Beorn - Showcase', 'Beorn'].map((n) => product(n, 'The Hobbit'));
+  assert.equal(chooseProduct(line({ name: 'Beorn', treatments: ['borderless', 'showcase'] }), beorn).product.product_name, 'Beorn - Showcase');
+});
+
+test('only a person\'s pick is remembered, and only a person\'s pick is used', () => {
+  assert.equal(usableLink({ source: 'staff' }), true);
+  assert.equal(usableLink({ source: 'auto' }), false);
+  assert.equal(usableLink(null), false);
+  assert.equal(linkToSave('staff'), 'staff');
+  assert.equal(linkToSave('match'), null);
+  assert.equal(linkToSave('link'), null);
+});
+
+test('the exact name: accents, a front face, and the number only when it is ours', () => {
+  const gloin = chooseProduct(line({ name: 'Glóin, Dwarf Emissary' }), [product('Gloin, Dwarf Emissary', LTR)]);
+  assert.ok(gloin.ranked[0].reasons.includes('exact'));
+  const emeritus = chooseProduct(line({ name: 'Emeritus of Ideation // Ancestral Recall', set_code: 'SOS' }),
+    [product('Emeritus of Ideation', 'Secrets of Strixhaven')]);
+  assert.equal(emeritus.expected, 'Emeritus of Ideation');
+  assert.ok(emeritus.ranked[0].reasons.includes('exact'));
+  const moria = chooseProduct(line({ name: 'Mines of Moria', set_code: 'LTR', collector_number: '257', finish: 'foil' }),
+    ['Mines of Moria - Foil', 'Mines of Moria (0342) - Foil - Borderless'].map((n) => product(n, LTR)));
+  assert.equal(moria.expected, 'Mines of Moria - Foil');
+  assert.equal(moria.status, 'auto');
+  assert.ok(moria.ranked[0].reasons.includes('exact'));
+  // CC's own spelling of our number.
+  assert.equal(chooseProduct(line({ name: 'Mines of Moria', set_code: 'LTR', collector_number: '342', finish: 'foil', treatments: ['borderless'] }),
+    ['Mines of Moria - Foil', 'Mines of Moria (0342) - Foil - Borderless'].map((n) => product(n, LTR))).expected,
+  'Mines of Moria (0342) - Foil - Borderless');
 });

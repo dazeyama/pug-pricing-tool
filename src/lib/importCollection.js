@@ -11,7 +11,7 @@ import { allPages, inChunks } from './inChunks.js';
 import { scryfallCards, scryfallCollection } from './todaysPrices.js';
 import { normNumber } from './query.js';
 import { readSetMap, saveLink } from './ccExport.js';
-import { fold } from './ccMatch.js';
+import { fold, usableLink } from './ccMatch.js';
 import { nameKey } from './normalize.js';
 import { magicTreatments } from './printings.js';
 import { lineText } from './lineFormat.js';
@@ -270,8 +270,10 @@ export async function matchImport(rows, onStep, format = 'cc') {
   }
   const productIds = [...new Set([...product.values()].map((p) => p.product_id))];
   const { data: linkRows, error: linkError } = await inChunks(
-    (part) => supabase.from('cc_product_links').select('scryfall_id, finish, product_id').in('product_id', part), productIds);
+    (part) => supabase.from('cc_product_links').select('scryfall_id, finish, product_id, source').in('product_id', part), productIds);
   fail(linkError, "Couldn't read the remembered matches");
+  // Only a person's picks name a product's printing (decision 486).
+  const staffLinks = (linkRows ?? []).filter(usableLink);
 
   // Rows already answered: a pick remembered for this name, or the one
   // printing the export links to this product.
@@ -284,7 +286,7 @@ export async function matchImport(rows, onStep, format = 'cc') {
       continue;
     }
     const p = product.get(r.index);
-    const ids = [...new Set((linkRows ?? []).filter((k) => p && k.product_id === p.product_id && k.finish === finish)
+    const ids = [...new Set(staffLinks.filter((k) => p && k.product_id === p.product_id && k.finish === finish)
       .map((k) => k.scryfall_id))];
     if (ids.length === 1) known.set(r.index, { id: ids[0], finish, via: 'link' });
   }

@@ -7,6 +7,20 @@ import { nameKey } from './normalize.js';
 import { normNumber } from './query.js';
 import { isEtchedKind } from './ccNames.js';
 
+/**
+ * Is a remembered product link to be used (decision 486)? Only a person's pick: an 'auto' row (written before
+ * the app stopped remembering its own matches, or restored from an old backup) is ignored.
+ * @param {{ source?: string }|null} link  a cc_product_links row
+ */
+export const usableLink = (link) => link?.source === 'staff';
+
+/**
+ * What an exported match remembers (export_learn): 'staff' for a person's pick, nothing for one the app made by
+ * itself, which it makes again next time (decision 486).
+ * @param {'staff'|'link'|'match'|string|null} by  how the export dialog's line was matched
+ */
+export const linkToSave = (by) => (by === 'staff' ? 'staff' : null);
+
 /** "Homura, Human Ascendant // Homura's Essence" → "Homura, Human Ascendant". */
 export const frontFace = (name) => String(name ?? '').split(' // ')[0];
 
@@ -139,63 +153,149 @@ export function expectedFoilKind(finish, treatments = []) {
   return special ? SPECIAL_FOILS[special] : 'Foil';
 }
 
-// The variant families, in the order CC writes them (export spec 7.4), each
-// with the CC words that show it.
+// The variant families, in the order CC writes them (export spec 7.4; decisions 484–485). Each has `name`, how CC
+// writes it; `re`, the test that a CC variant word shows it; and `words`, its own spellings in CC's names. What a
+// variant word says beyond its families' spellings is an extra word ("Anime Borderless": Anime; "Showcase
+// Scrolls": Scrolls), which tells another printing apart and which no family explains.
+// `evidence` families come only from the card's Scryfall facts (evidenceTreatments): they are read on a product
+// only when those facts were looked at, so that a printing without one is known not to be one. A family that
+// `joins` another is written with it as one word ("Showcase Scrolls", "Borderless Poster").
 const FAMILIES = [
-  ['prerelease', 'Prerelease Promo', /pre-?release/i],
-  ['promopack', 'Promo Pack', /promo pack/i],
-  ['thelist', 'The List', /^the list$/i],
-  ['extendedart', 'Extended Art', /extended art/i],
-  ['borderless', 'Borderless', /borderless/i],
-  ['showcase', 'Showcase', /showcase|scrolls/i],
-  ['retro', 'Retro Frame', /retro (frame|schematic)/i],
-  ['fullart', 'Full Art', /full art/i],
-  ['serialized', 'Serialized', /serial/i],
-  ['buyabox', 'Buy-a-Box Promo', /buy-a-box/i],
-  ['bundle', 'Bundle Promo', /bundle/i],
-  ['textless', 'Textless', /textless/i],
-  // A Japanese printing (owner, 2026-10-16): "Japanese Alternate Art", "Japanese", "(JP Exclusive)";
-  // not "Japan Showcase", an English card's frame.
-  ['japanese', 'Japanese', /japanese|\bjp\b/i],
+  { key: 'prerelease', name: 'Prerelease Promo', re: /pre-?release/i, words: /pre-?release( promos?)?/gi },
+  { key: 'promopack', name: 'Promo Pack', re: /promo pack/i, words: /promo pack/gi },
+  { key: 'thelist', name: 'The List', re: /^the list$/i, words: /the list/gi },
+  { key: 'extendedart', name: 'Extended Art', re: /extended art/i, words: /extended art/gi },
+  { key: 'borderless', name: 'Borderless', re: /borderless/i, words: /borderless/gi },
+  { key: 'poster', name: 'Borderless Poster', joins: 'borderless', re: /\bposter\b/i, words: /\bposter\b/gi, evidence: true },
+  { key: 'showcase', name: 'Showcase', re: /showcase/i, words: /showcase/gi },
+  { key: 'scroll', name: 'Showcase Scrolls', joins: 'showcase', re: /\bscrolls?\b/i, words: /\bscrolls?\b/gi, evidence: true },
+  // An English card's frame (owner, 2026-10-16), not a Japanese printing.
+  { key: 'japanshowcase', name: 'Japan Showcase', joins: 'showcase', re: /\bjapan showcase\b/i, words: /\bjapan\b/gi, evidence: true },
+  { key: 'retro', name: 'Retro Frame', re: /retro frame/i, words: /retro frame/gi },
+  { key: 'futureframe', name: 'Future Frame', re: /future (sight )?frame/i, words: /future (sight )?frame/gi, evidence: true },
+  { key: 'whiteborder', name: 'White Border', re: /white border/i, words: /white border(ed)?/gi, evidence: true },
+  { key: 'fullart', name: 'Full Art', re: /full art/i, words: /full art/gi },
+  { key: 'serialized', name: 'Serialized', re: /serial/i, words: /serial( numbered|ized)?/gi },
+  { key: 'buyabox', name: 'Buy-a-Box Promo', re: /buy-a-box/i, words: /buy-a-box( promos?)?/gi },
+  { key: 'bundle', name: 'Bundle Promo', re: /bundle/i, words: /bundle( promo)?/gi },
+  { key: 'textless', name: 'Textless', re: /textless/i, words: /textless/gi },
+  // A Japanese printing (owner, 2026-10-16): "Japanese Alternate Art", "Japanese", "(JP Exclusive)".
+  { key: 'japanese', name: 'Japanese', re: /japanese|\bjp\b/i, words: /(japanese|\bjp\b)( alternate art)?/gi },
 ];
+const FAMILY = new Map(FAMILIES.map((f) => [f.key, f]));
+
+/** Magic's later reprints in an old look (Mystery Booster 2's): CC names their frame or border; the originals' it doesn't. */
+const LATER_REPRINT_FROM = '2008-01-01';
+
+/**
+ * The evidence families a printing has, from its Scryfall card (decision 485): the facts the app keeps no
+ * treatment for, which CC writes as words beside a family ("Showcase Scrolls", "Borderless Poster").
+ * @param {object|null} card  a Scryfall card
+ * @returns {string[]}
+ */
+export function evidenceTreatments(card) {
+  if (!card) return [];
+  const promos = card.promo_types ?? [];
+  const later = (card.released_at ?? '') >= LATER_REPRINT_FROM;
+  return [
+    promos.includes('scroll') && 'scroll',
+    promos.includes('poster') && 'poster',
+    promos.includes('japanshowcase') && 'japanshowcase',
+    card.frame === 'future' && later && 'futureframe',
+    card.border_color === 'white' && later && 'whiteborder',
+  ].filter(Boolean);
+}
 
 /** Our line's variant families, in CC's order. */
 export function lineFamilies(line) {
   const t = new Set(line.treatments ?? []);
   if (String(line.set_code ?? '').toLowerCase() === 'plst') t.add('thelist');
-  return FAMILIES.filter(([key]) => t.has(key)).map(([key]) => key);
+  return FAMILIES.filter((f) => t.has(f.key)).map((f) => f.key);
 }
 
-/** The families a CC variant word shows ("Borderless Showcase" → borderless, showcase); none → other. */
-export function wordFamilies(word) {
-  return FAMILIES.filter(([, , re]) => re.test(word)).map(([key]) => key);
+const readable = (evidence) => FAMILIES.filter((f) => evidence || !f.evidence);
+
+/**
+ * The families a CC variant word shows ("Borderless Showcase" → borderless, showcase); none → other. The evidence
+ * families only with `evidence` (the card's Scryfall facts were looked at).
+ */
+export function wordFamilies(word, { evidence = false } = {}) {
+  return readable(evidence).filter((f) => f.re.test(word)).map((f) => f.key);
+}
+
+/** A variant word's extra words: what's left once its families' own spellings are taken out ("Anime Borderless" → Anime). */
+export function extraWords(word, { evidence = false } = {}) {
+  let rest = String(word ?? '');
+  for (const f of readable(evidence)) if (f.re.test(word)) rest = rest.replace(f.words, ' ');
+  return rest.split(/[\s()]+/).filter((w) => /[a-z0-9]/i.test(w));
+}
+
+const isNumberBracket = (bracket) => bracket != null && /^\d+[a-z★]*$/i.test(bracket);
+/** The prefix of a List card's number ("CMA-216" → cma), which CC writes as a set code in brackets. */
+const numberPrefix = (line) => /^([a-z0-9]+)-/i.exec(String(line.collector_number ?? ''))?.[1]?.toLowerCase() ?? null;
+
+/**
+ * How a product reads for a line: the families its variant words show, the extra words beside them, the words
+ * with no family at all, each word on its own. A bracket that is neither a number nor our set code ("(A)",
+ * "(Full Art)") reads as a variant word. A flavor-named product's first word is the card's name, not a variant.
+ * @returns {{ families: Set<string>, extra: string[], other: string[], plain: boolean,
+ *   words: { word: string, bracket: boolean, families: string[], extra: string[] }[] }}
+ */
+export function readVariant(cand, line, { flavor = null, evidence = false } = {}) {
+  const variants = [...(cand.variants ?? [])];
+  if (flavor && variants.length && fold(variants[0]) === fold(line.name)) variants.shift();   // "Flavor - Name"
+  const list = variants.map((word) => ({ word, bracket: false }));
+  const b = cand.bracket;
+  if (b != null && !isNumberBracket(b) && String(b).toLowerCase() !== numberPrefix(line)) list.push({ word: b, bracket: true });
+  const families = new Set();
+  const extra = [];
+  const other = [];
+  const words = list.map(({ word, bracket }) => {
+    const fams = wordFamilies(word, { evidence });
+    const more = fams.length ? extraWords(word, { evidence }) : [];
+    for (const f of fams) families.add(f);
+    if (fams.length) extra.push(...more);
+    else if (bracket) extra.push(word);
+    else other.push(word);
+    return { word, bracket, families: fams, extra: more };
+  });
+  return { families, extra, other, plain: !list.length, words };
 }
 
 /**
  * The name CC would most likely use, in CC's order (export spec 7.4):
  * <name>[ (<number>)][ - <foil kind>][ - <variants…>].
  * @param {object} line  name, collector_number, finish, treatments, set_code
- * @param {{ number?: boolean, flavor?: string|null }} [opts]
+ * @param {{ number?: boolean|string, flavor?: string|null }} [opts]  number: true for the card's collector number,
+ *   or the number as CC spells it ("0342")
  */
 export function expectedName(line, { number = false, flavor = null } = {}) {
   const parts = [flavor ? `${flavor} - ${line.name}` : line.name];
-  if (number) parts[0] += ` (${line.collector_number})`;
+  if (number) parts[0] += ` (${number === true ? line.collector_number : number})`;
   const foil = expectedFoilKind(line.finish, line.treatments);
   if (foil) parts.push(foil);
-  for (const key of lineFamilies(line)) parts.push(FAMILIES.find(([k]) => k === key)[1]);
+  const keys = lineFamilies(line);
+  for (const key of keys) {
+    // A family CC writes as one word with another: that word, in the other's place.
+    if (keys.some((k) => FAMILY.get(k).joins === key)) continue;
+    parts.push(FAMILY.get(key).name);
+  }
   return parts.join(' - ');
 }
 
-const collapse = (s) => String(s ?? '').replace(/\s+/g, ' ').trim().toLowerCase();
+// What an extra word costs a product: more than one of our families earns (+3), so "Anime Borderless" never
+// outranks the plain product for a borderless card (decision 485).
+const EXTRA_WORD = 4;
 
 /**
  * Score one candidate product for a line (export spec 7.4, step 3). Returns
- * null when it fails a required check (finish, collector number).
+ * null when it fails a required check (finish, collector number). The score
+ * only orders the candidates: chooseProduct decides whether one is certain.
  * @param {object} line
  * @param {{ product_name: string, bracket: string|null, foil_kind: string|null, variants: string[] }} cand
- * @param {{ expected: string, flavor: string|null }} want
+ * @param {{ expected: string, flavor: string|null, evidence?: boolean }} want
  */
-export function scoreCandidate(line, cand, { expected, flavor }) {
+export function scoreCandidate(line, cand, { expected, flavor, evidence = false }) {
   // Finish: none ↔ non-foil; Foil Etched ↔ etched; any other foil ↔ foil.
   const kind = cand.foil_kind;
   if (line.finish === 'nonfoil' && kind) return null;
@@ -206,15 +306,19 @@ export function scoreCandidate(line, cand, { expected, flavor }) {
   const reasons = [];
   // Collector number in brackets: required to match when it's a number.
   const bracket = cand.bracket;
-  if (bracket != null && /^\d+[a-z★]*$/i.test(bracket)) {
+  const prefix = numberPrefix(line);
+  if (isNumberBracket(bracket)) {
     if (normNumber(bracket) !== normNumber(line.collector_number)) return null;
     score += 5;
     reasons.push('number');
   } else if (bracket != null) {
-    // A set code (The List's "(PAGL)"): matches the card number's prefix when it has one.
-    const prefix = /^([a-z0-9]+)-/i.exec(String(line.collector_number ?? ''))?.[1];
-    if (prefix && prefix.toLowerCase() === bracket.toLowerCase()) score += 3;
-    else score -= 1;
+    // A set code (The List's "(PAGL)"): matches the card number's prefix when it has one; another set code is
+    // another printing. Any other bracket is read with the variant words below.
+    if (prefix && prefix === String(bracket).toLowerCase()) score += 3;
+    else if (prefix) {
+      score -= EXTRA_WORD;
+      reasons.push('other printing');
+    }
   }
   // A named special foil that's ours scores above plain Foil.
   const wantFoil = expectedFoilKind(line.finish, line.treatments);
@@ -223,25 +327,26 @@ export function scoreCandidate(line, cand, { expected, flavor }) {
   } else if (kind && wantFoil) {
     score -= 1;
   }
-  // Variants: ours found +3 each; theirs we can't explain −2 (a family) or −1 (another word).
-  const variants = [...(cand.variants ?? [])];
-  if (flavor && variants.length && fold(variants[0]) === fold(line.name)) variants.shift();   // "Flavor - Name"
-  const ours = new Set(lineFamilies(line));
-  const theirs = new Set();
-  for (const word of variants) {
-    const fams = wordFamilies(word);
-    if (!fams.length) {
+  // Variants: ours found +3 each; theirs we can't explain −2 (a family) or −1 (another word); a word with an
+  // extra word beside its family (or a bracket that isn't ours) −4.
+  const read = readVariant(cand, line, { flavor, evidence });
+  for (const w of read.words) {
+    if (w.bracket && prefix) continue;   // charged above as another printing's set code
+    if (w.extra.length || (w.bracket && !w.families.length)) {
+      score -= EXTRA_WORD;
+      reasons.push(`extra: ${w.word}`);
+    } else if (!w.families.length) {
       score -= 1;
-      reasons.push(`other: ${word}`);
+      reasons.push(`other: ${w.word}`);
     }
-    for (const f of fams) theirs.add(f);
   }
+  const ours = new Set(lineFamilies(line));
   for (const f of ours) {
-    if (theirs.has(f)) score += 3;
+    if (read.families.has(f)) score += 3;
     else score -= 1;
   }
-  for (const f of theirs) if (!ours.has(f)) score -= 2;
-  if (collapse(cand.product_name) === collapse(expected)) {
+  for (const f of read.families) if (!ours.has(f)) score -= 2;
+  if (fold(cand.product_name) === fold(expected)) {
     score += 100;
     reasons.push('exact');
   }
@@ -249,54 +354,92 @@ export function scoreCandidate(line, cand, { expected, flavor }) {
 }
 
 /**
- * Pick a line's product from its candidates (export spec 7.4, 7.1 rule 4):
- * 'auto' when one passes the checks or one leads clearly; 'choose' when
- * staff must pick (a tie, or candidates that fail the checks); 'none' when
- * there are no candidates at all. `home` is the line's own category, when
- * candidates also come from one kept as the same (searchCategories): theirs
- * score 2 less, so a card in both is matched in its own, as before.
+ * Pick a line's product from its candidates (export spec 7.4, 7.1 rule 4; decision 484, "never guess"):
+ * 'auto' only when the product is certain, 'choose' when staff must pick, 'none' when there are no candidates
+ * at all. Certain means, among the products that pass the finish and number checks (in the line's own category
+ * when it has any: `home`, when candidates also come from one kept as the same, searchCategories):
+ *  - the evidence first thins them: when one carries our collector number, the unnumbered ones are other
+ *    printings; a set code in brackets that isn't our number's prefix is another printing;
+ *  - one product is left; or, setting aside every product that is clearly another printing (it shows a trait
+ *    the card hasn't, it lacks the card's Japanese, or it has the same words in another foil kind), one is left;
+ *  - or the leader shows only the card's traits, in its foil kind, and every other product left shows strictly
+ *    fewer of the leader's words (plain ⊂ "Showcase" ⊂ a borderless showcase card: the fullest is taken).
+ * A word the matcher can't read (an extra word, "Anime", "Scrolls"; or one with no family, "Gold-Stamped
+ * Signature") never sets a product aside, so it blocks the last rule; and a product carrying one is never taken
+ * by itself. The scores only order the candidates, so Needs a choice lists the likeliest first.
  * @param {object} line
  * @param {object[]} candidates  cc_products rows for the line's name
- * @param {{ flavor?: string|null, home?: string|null }} [opts]
+ * @param {{ flavor?: string|null, home?: string|null, evidence?: boolean }} [opts]  evidence: the line's
+ *   treatments carry its Scryfall card's evidence families (evidenceTreatments), so their words are read
  * @returns {{ status: 'auto'|'choose'|'none', product: object|null, ranked: object[], expected: string }}
  */
-export function chooseProduct(line, candidates, { flavor = null, home = null } = {}) {
+export function chooseProduct(line, candidates, { flavor = null, home = null, evidence = false } = {}) {
   const lineKey = nameKey(line.name);
   // Flavor-named products ("Aggro Amalgam - Voracious Hydra") count when the first suffix is our name.
   let own = (candidates ?? []).filter((c) => c.base_key === lineKey
     || (flavor && c.base_key === nameKey(flavor) && fold(c.variants?.[0]) === fold(line.name)));
   // A two-part card CC lists by its front only (a Kamigawa flip card,
-  // "Homura, Human Ascendant"), when nothing has the full name.
+  // "Homura, Human Ascendant"), when nothing has the full name: CC's name is the front's.
+  let named = line;
   if (!own.length && line.name.includes(' // ')) {
     const front = nameKey(frontFace(line.name));
     own = (candidates ?? []).filter((c) => c.base_key === front);
+    named = { ...line, name: frontFace(line.name) };
   }
-  const useFlavor = flavor && own.some((c) => c.base_key === nameKey(flavor));
-  const numbered = own.some((c) => c.bracket != null && /^\d+[a-z★]*$/i.test(c.bracket));
-  const expected = expectedName(line, { number: numbered, flavor: useFlavor ? flavor : null });
+  const useFlavor = flavor && own.some((c) => c.base_key === nameKey(flavor)) ? flavor : null;
+  // The number is in CC's name only when a product carries ours ("Fabricate (2090)"), as CC spells it.
+  const ourNumber = own.find((c) => isNumberBracket(c.bracket) && normNumber(c.bracket) === normNumber(line.collector_number));
+  const expected = expectedName(named, { number: ourNumber?.bracket ?? false, flavor: useFlavor });
   if (!own.length) return { status: 'none', product: null, ranked: [], expected };
+  const want = { expected, flavor: useFlavor, evidence };
+  const byScore = (a, b) => (b.score ?? -Infinity) - (a.score ?? -Infinity) || a.product.product_name.localeCompare(b.product.product_name);
   const ranked = own
     .map((product) => {
-      const s = scoreCandidate(line, product, { expected, flavor: useFlavor ? flavor : null });
+      const s = scoreCandidate(named, product, want);
       if (s && home && product.category !== home) {
         s.score -= 2;
         s.reasons.push('other category');
       }
       return { product, ...(s ?? { score: null, reasons: [] }) };
     })
-    .sort((a, b) => (b.score ?? -Infinity) - (a.score ?? -Infinity) || a.product.product_name.localeCompare(b.product.product_name));
+    .sort(byScore);
   // When CC lists one with our collector number in brackets, the ones with no
   // number are other printings (an older Secret Lair drop of the same card).
-  if (ranked.some((r) => r.reasons?.includes('number'))) {
+  const numbered = ranked.some((r) => r.reasons?.includes('number'));
+  if (numbered) {
     for (const r of ranked) {
       if (r.score != null && !r.reasons.includes('number')) r.score -= 4;
     }
-    ranked.sort((a, b) => (b.score ?? -Infinity) - (a.score ?? -Infinity) || a.product.product_name.localeCompare(b.product.product_name));
+    ranked.sort(byScore);
   }
-  const passing = ranked.filter((r) => r.score != null);
-  if (passing.length === 1) return { status: 'auto', product: passing[0].product, ranked, expected };
-  if (passing.length > 1 && passing[0].score >= passing[1].score + 2) {
-    return { status: 'auto', product: passing[0].product, ranked, expected };
-  }
+  const product = certainProduct(named, ranked, { home, numbered, flavor: useFlavor, evidence });
+  if (product) return { status: 'auto', product, ranked, expected };
   return { status: 'choose', product: null, ranked, expected };
+}
+
+/** chooseProduct's "never guess" rule: the one certain product among the ranked candidates, or null. */
+function certainProduct(line, ranked, { home, numbered, flavor, evidence }) {
+  const passing = ranked.filter((r) => r.score != null);
+  const inHome = home ? passing.filter((r) => r.product.category === home) : [];
+  const pool = (inHome.length ? inHome : passing)
+    .filter((r) => !(numbered && !r.reasons.includes('number')) && !r.reasons.includes('other printing'))
+    .map((r) => ({ r, v: readVariant(r.product, line, { flavor, evidence }) }));
+  const mine = new Set(lineFamilies(line));
+  const wantFoil = fold(expectedFoilKind(line.finish, line.treatments) ?? '');
+  const unread = ({ v }) => v.extra.length > 0 || v.other.length > 0;
+  const ourFoil = ({ r }) => !r.product.foil_kind || fold(r.product.foil_kind) === wantFoil;
+  const clearlyOther = (x) => [...x.v.families].some((f) => !mine.has(f))
+    || (mine.has('japanese') && !x.v.families.has('japanese'))
+    || (!unread(x) && !ourFoil(x));
+  let pick = null;
+  if (pool.length === 1) pick = pool[0];
+  else {
+    const left = pool.filter((x) => !clearlyOther(x));
+    const [lead, ...rest] = left;
+    if (left.length === 1) pick = lead;
+    else if (lead && !unread(lead) && ourFoil(lead) && [...lead.v.families].every((f) => mine.has(f))
+      && rest.every((x) => !unread(x) && [...x.v.families].every((f) => lead.v.families.has(f))
+        && x.v.families.size < lead.v.families.size)) pick = lead;
+  }
+  return pick && !unread(pick) ? pick.r.product : null;
 }
