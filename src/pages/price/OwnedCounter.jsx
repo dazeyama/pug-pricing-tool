@@ -4,6 +4,7 @@ import {
   FIRST_CARD_BONUS, FIRST_PRINTING_BONUS, OWNED_CAP, OWNED_FREE, OWNED_STEP, ccRowText, finishWord, signedPct,
 } from '../../lib/ownedRates.js';
 import { useDismiss } from '../../lib/useDismiss.js';
+import InkStamp from './InkStamp.jsx';
 
 const copies = (n) => `${n} ${n === 1 ? 'copy' : 'copies'}`;
 
@@ -148,6 +149,8 @@ export default function OwnedCounter({
         </span>
       </button>
       {chips}
+      {/* Applied or not, stamped (owner, 2026-10-23; decision 459): whenever there's a rate to apply. */}
+      {suggested && <InkStamp applied={applied} />}
       {open && (
         <div className="owned-pop">
           <section className="owned-pop-box" aria-label="Copies we own">

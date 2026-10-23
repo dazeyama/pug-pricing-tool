@@ -167,6 +167,18 @@
 .owned-pop-note { margin: 0; color: var(--muted); }
 .owned-undo { border-color: var(--good); color: var(--good); }
 
+/* APPLIED / NOT APPLIED, stamped under the chips (decision 459; InkStamp.jsx), tilted like a hand stamp. */
+.ink-stamp {
+  display: block;
+  align-self: center;
+  width: 134px;
+  height: auto;
+  margin-top: 2px;
+  transform: rotate(-4deg);
+}
+.ink-stamp.applied { color: var(--good); transform: rotate(-3deg); }
+.ink-stamp.not-applied { color: var(--bad); }
+
 /* The price panel's Credit and Cash at the rate applied (QuotePanel): ↑ and a green ring for a bonus, ↓ and
    a red one for a cut (decision 457). */
 .quote-chip.raised { box-shadow: 0 0 0 2px color-mix(in srgb, var(--good) 70%, transparent); }

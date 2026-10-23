@@ -192,6 +192,8 @@ what happens. The findings are reported when the pass ends.
       none: both chips, "They cancel out". With the inventory unknown (none uploaded): no bonus. A low-end card
       (under $3) we've never had: no green chip, and the box says "No first-copy bonus on a low-end card" (decision
       458); one we own 4 of still gets the red chip.
+- [ ] **Stamps** (decision 459): with a rate to apply, a red **NOT APPLIED** ink stamp under the chips; Apply (or
+      Auto apply rates? checked) turns it into a green **APPLIED** one; no stamp when nothing changes the rate.
 - [ ] **Apply**: click the boxes to keep the box open, then **Apply ±N%**: the chips go solid with ✓, the price
       panel's Credit and Cash change, ↑ and a green ring for a bonus, ↓ and a red ring for a cut. ADD CARD: the line
       shows ✎ Credit / Cash at those rates. Apply, then pick another card: it isn't applied there. Editing a line:
