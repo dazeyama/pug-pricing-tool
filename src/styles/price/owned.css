@@ -90,7 +90,9 @@
 }
 .owned-tag.on { background: rgba(62, 207, 142, .18); color: var(--good); }
 /* The bonus and the cut, side by side under the boxes (decision 457): green and red, solid once applied. */
-.owned-chips { display: flex; justify-content: center; flex-wrap: wrap; gap: 4px; }
+/* On one line, both chips, so the stamp under them stays in the row (decision 464: wrapped, they pushed it out). */
+.owned-chips { display: flex; justify-content: center; flex-wrap: nowrap; gap: 3px; }
+.owned-chips .owned-tag { padding: 2px 5px; font-size: 10.5px; white-space: nowrap; }
 /* Muted (decision 463): pale tints, a little stronger once applied. */
 .owned-tag.bonus { background: rgba(62, 207, 142, .08); color: color-mix(in srgb, var(--good) 55%, var(--muted)); }
 .owned-tag.cut { background: rgba(255, 107, 107, .08); color: color-mix(in srgb, var(--bad) 55%, var(--muted)); }
