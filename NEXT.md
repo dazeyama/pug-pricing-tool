@@ -6,37 +6,21 @@ and function.
 
 ## Open
 
-- **P0 — Crystal Commerce matching: built, not pushed, untested in the app (2026-10-23; decisions 484–487).**
-  `MATCHING.md` items 1, 2, 4 and 6 are coded (`src/lib/ccMatch.js` `chooseProduct`/`certainProduct`,
-  `readVariant`, `evidenceTreatments`, `usableLink`, `linkToSave`; `src/lib/ccExport.js` `matchLines`;
-  `ExportDialog.jsx` `save` and the Matched rows' Change; `CcMatchingPanel.jsx`; Import Collection's printing lookup
-  in `importCollection.js`), with tests in `tests/ccMatch.test.js`. Left:
-  - **The owner's QA on dev**: TEST.md section 14, "Never guessed".
-  - **Item 3, the owner's, on the live site now** (the code ignores automatic links already, so this only tidies):
-    Settings → Crystal Commerce matching → Browse remembered products…: Forget "Polluted Bonds - Foil - Anime
-    Borderless" (automatic, foil); look at "Tom Bombadil - Showcase" (a staff pick for LTR 331, right for 331, wrong
-    if the card sold was the 685 scroll); check "Serra Ascendant (PAGL) - The List" for the M11-28 List card in CC.
-    The two exported lines' stamps stay wrong unless that day's file must be downloaded again (`MATCHING.md` item 3).
-  - **Item 5, migration 0010**: the item below.
+- **Never guess (decisions 484–487, migration 0010), live in v1.0.3-neverguess, QA'd by the owner on dev.**
+  `MATCHING.md` items 1–6 are done (item 3 by the owner on the live site, 2026-10-23). Left:
   - **Not built, on purpose**: Scryfall's other promo types as families (`planeswalkerdeck`, `gameday`,
     `storechampionship`, `wizardsplaynetwork`, `openhouse`, `themepack`, `release`, `judgegift`): CC spells them
     too many ways ("Planeswalker Deck Exclulsive", "Game Day & Store Championship Promos"), so each needs its
-    spellings read off the inventory first. They would only turn about 8 of dev's asks back into automatic matches.
-    The other item 7 switches stay switches (only the Japanese one-direction loosening is in).
+    spellings read off the inventory first (`src/lib/ccMatch.js` `FAMILIES`, `evidenceTreatments`). About 8 of
+    dev's asks would match by themselves. The other item 7 switches stay switches (only the Japanese one is in).
   - **Help is out of date** (edit when asked): Export → "Picking the product" (README.md, "leads the next by 2
     points"; step 1 "A remembered match" now means a staff pick only) and Settings → Crystal Commerce matching's
     Products row ("matched by the app").
-- **Migration 0010, written, reviewed and rehearsed, on neither database yet** (decision 486;
-  `supabase/migrations/0010_staff_links_only.sql`: `internal.export_learn` takes `'staff'` only, and the `auto`
-  rows are deleted, 382 on dev, 283 on prod; `scripts/db-test-run.sql` checks it). Dev and prod stay equal (both
-  0001–0009). For the owner's go, after close (9:30 PM), in one sitting: on the live site Settings → Backups →
-  Download backup first (the delete can't be undone but by a full restore; the rows are also listed in
-  `MATCHING.md` Appendix B), then CLAUDE.md's Database steps 3–6 (dev push, snapshot, test run, prod push,
-  structure-only compare), then CLAUDE.md's "next migration" line to 0011. Either order with the app push is
-  safe (the reviewer checked both); a v1.0.2 export dialog left open across the prod push could write an `auto`
-  row back, which the new build ignores. Review findings not acted on: Import Collection's own matcher now reads
-  "Retro Schematic" as a word, not Retro Frame (`importMatch.js`, out of scope); an `auto` sent over a staff row
-  isn't checked on its own in the test run (the function can't write `auto` any more).
+  - **The two wrong exported lines' stamps on prod** stay as they are unless that day's file must be downloaded
+    again (`MATCHING.md` item 3).
+  - **From 0010's review, not acted on:** Import Collection's own matcher now reads "Retro Schematic" as a word,
+    not Retro Frame (`importMatch.js`, out of scope); an `auto` sent over a staff row isn't checked on its own in
+    the test run (`export_learn` can't write `auto` any more).
 - **Copies we own (decisions 448–483), live in v1.0.2-quantity, tested by the owner on dev as it was built.** The counter
   (`OwnedCounter.jsx`, `useOwnedCopies.js`, `owned.js`), the suggestion (`ownedRates.js`), Apply and Auto apply
   rates? (`PricingScreen.jsx`, `useScanReceiver.js`, `useDraft.js` `setAutoRates`, `CollectionPage.jsx`
@@ -101,6 +85,10 @@ and function.
 
 ## Done
 
+- 2026-10-23: **Pushed as v1.0.3-neverguess** (the owner's ask, before the store opened), decisions 484–487: the
+  export never guesses a Crystal Commerce product, only staff picks are remembered and used, a lost staff pick is
+  asked again. Migration 0010 on dev (snapshot, test run: all 626 passed) and on prod the same sitting, the
+  structure-only compare the same; the owner downloaded a backup on the live site first. Dev and prod both 0001–0010.
 - 2026-10-23: **The never-guess matcher built** (`MATCHING.md` items 1, 2, 4, 6; decisions 484–487; the owner: "Build
   everything from MATCHING.md in one go"). Measured against HEAD's matcher on the sweep's data
   (`C:\ClaudeProjects\temp\pug-matching\measure-new.mjs`): of dev's 1,814 automatic matches, 18 now ask once (27

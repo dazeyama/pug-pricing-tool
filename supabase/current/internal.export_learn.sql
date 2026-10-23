@@ -6,13 +6,13 @@ AS $function$
 begin
   insert into cc_product_links (scryfall_id, finish, product_id, product_name, category, source, linked_at, linked_by)
   select distinct on (l.scryfall_id, l.finish)
-         l.scryfall_id, l.finish, p.product_id, p.product_name, p.category, e ->> 'link', now(), p_user
+         l.scryfall_id, l.finish, p.product_id, p.product_name, p.category, 'staff', now(), p_user
     from jsonb_array_elements(p_matches) e
     join buy_lines l on l.id = (e ->> 'line_id')::uuid
     join cc_products p on p.file_id = p_file and p.product_id = e ->> 'product_id'
-   where e ->> 'link' in ('staff', 'auto')
+   where e ->> 'link' = 'staff'
      and l.scryfall_id is not null and l.finish in ('nonfoil', 'foil', 'etched')
-   order by l.scryfall_id, l.finish, (e ->> 'link') = 'staff' desc
+   order by l.scryfall_id, l.finish
   on conflict (scryfall_id, finish) do update set
     product_id = excluded.product_id, product_name = excluded.product_name, category = excluded.category,
     source = excluded.source, linked_at = excluded.linked_at, linked_by = excluded.linked_by;

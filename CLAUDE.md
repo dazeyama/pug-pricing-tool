@@ -112,16 +112,16 @@ tests (`npm test`, commit only on `fail 0`) and the build.
 
 ## Where it stands (2026-10-23)
 
-- Live: **v1.0.2-quantity** (2026-10-23; decisions through 483), on **prod** (`zvxquzcfffmxwizonxuo`, the live
+- Live: **v1.0.3-neverguess** (2026-10-23; decisions through 487), on **prod** (`zvxquzcfffmxwizonxuo`, the live
   site's project since v1.0.0-launch, 2026-10-19): the GitHub Actions variables point there. Localhost and the phone
   scanner's LAN link stay on dev (`.env.development`), which keeps the store's data from before launch as the test
   copy.
 - The migrations were squashed on 2026-10-19: the baseline `0001` stands in for the old 0001–0084 (now in
-  `supabase/migrations-archive/`). Prod and dev both have 0001–0009 (0002 the Changelog lock, 0003 the counter
+  `supabase/migrations-archive/`). Prod and dev both have 0001–0010 (0002 the Changelog lock, 0003 the counter
   grant, 2026-10-19; 0004 the review leftovers, 2026-10-20; 0005 pulled bulk, 0006 settings logged and 0007 the
   inventory cleared in batches, on prod 2026-10-21; 0008 owned copies and Bulk pulled from exports there from the
-  start, decisions 448–449, and 0009 the rounding steps, 478, on prod 2026-10-23, the structure-only compare the
-  same). They stay equal (decision 381). The next migration is 0010.
+  start, decisions 448–449, 0009 the rounding steps, 478, and 0010 staff picks only remembered, 486, on prod
+  2026-10-23, the structure-only compare the same). They stay equal (decision 381). The next migration is 0011.
 - The CLI stays linked to dev (`supabase/.temp/project-ref`). Anything aimed at prod names it:
   `--linked --project-ref zvxquzcfffmxwizonxuo` for `migration list`, `db push` and `db query` (the flag overrides
   the link for that one command; the function deploys take `--project-ref` alone); no password was asked for it

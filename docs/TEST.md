@@ -476,6 +476,9 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       Change on it marks that product "detected". Pick "Polluted Bonds - Foil": it's "picked", and the next EXPORT of
       that printing shows it Matched, "remembered". Settings → Crystal Commerce matching counts the pick under Picked
       by staff; Tom Bombadil's match isn't remembered. A remembered card's Change marks no product "detected".
+- [ ] **A missing Scryfall tag proves nothing** (decision 485): Tom Bombadil (LTR) 331 non-foil, with no remembered
+      pick (Forget it in Settings first if dev has one): EXPORT puts it in **Needs a choice** ("Showcase" and
+      "Showcase Scrolls" both offered), never Matched by itself.
 - [ ] **A remembered product gone from the inventory** (decision 487): on dev, a card picked in an earlier export
       whose product the current Master Crystal Inventory no longer has (upload one without it): EXPORT puts it in
       **Needs a choice** with "Used to be … which isn't in the current inventory", nothing ticked, even when one
