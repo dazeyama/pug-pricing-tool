@@ -157,8 +157,9 @@ export function expectedFoilKind(finish, treatments = []) {
 // writes it; `re`, the test that a CC variant word shows it; and `words`, its own spellings in CC's names. What a
 // variant word says beyond its families' spellings is an extra word ("Anime Borderless": Anime; "Showcase
 // Scrolls": Scrolls), which tells another printing apart and which no family explains.
-// `evidence` families come only from the card's Scryfall facts (evidenceTreatments): they are read on a product
-// only when those facts were looked at, so that a printing without one is known not to be one. A family that
+// `evidence` families come only from the card's Scryfall facts (evidenceTreatments), one way: a product's word for
+// one is read as that family only when the card has it. A card without the tag may simply be missing it on
+// Scryfall, so for it the word stays an extra word and the product is never set aside on it. A family that
 // `joins` another is written with it as one word ("Showcase Scrolls", "Borderless Poster").
 const FAMILIES = [
   { key: 'prerelease', name: 'Prerelease Promo', re: /pre-?release/i, words: /pre-?release( promos?)?/gi },
@@ -213,11 +214,13 @@ export function lineFamilies(line) {
   return FAMILIES.filter((f) => t.has(f.key)).map((f) => f.key);
 }
 
-const readable = (evidence) => FAMILIES.filter((f) => evidence || !f.evidence);
+/** The families a word is read for: every ordinary one; of the evidence families, all (`true`) or those listed. */
+const readable = (evidence) => FAMILIES.filter((f) => !f.evidence || evidence === true
+  || (Array.isArray(evidence) && evidence.includes(f.key)));
 
 /**
  * The families a CC variant word shows ("Borderless Showcase" → borderless, showcase); none → other. The evidence
- * families only with `evidence` (the card's Scryfall facts were looked at).
+ * families only as `evidence` says: true for all, or the list of those the card has.
  */
 export function wordFamilies(word, { evidence = false } = {}) {
   return readable(evidence).filter((f) => f.re.test(word)).map((f) => f.key);
@@ -238,10 +241,12 @@ const numberPrefix = (line) => /^([a-z0-9]+)-/i.exec(String(line.collector_numbe
  * How a product reads for a line: the families its variant words show, the extra words beside them, the words
  * with no family at all, each word on its own. A bracket that is neither a number nor our set code ("(A)",
  * "(Full Art)") reads as a variant word. A flavor-named product's first word is the card's name, not a variant.
+ * The evidence families are read only for those the line has (its treatments carry evidenceTreatments).
  * @returns {{ families: Set<string>, extra: string[], other: string[], plain: boolean,
  *   words: { word: string, bracket: boolean, families: string[], extra: string[] }[] }}
  */
-export function readVariant(cand, line, { flavor = null, evidence = false } = {}) {
+export function readVariant(cand, line, { flavor = null } = {}) {
+  const evidence = lineFamilies(line).filter((k) => FAMILY.get(k).evidence);
   const variants = [...(cand.variants ?? [])];
   if (flavor && variants.length && fold(variants[0]) === fold(line.name)) variants.shift();   // "Flavor - Name"
   const list = variants.map((word) => ({ word, bracket: false }));
@@ -293,9 +298,9 @@ const EXTRA_WORD = 4;
  * only orders the candidates: chooseProduct decides whether one is certain.
  * @param {object} line
  * @param {{ product_name: string, bracket: string|null, foil_kind: string|null, variants: string[] }} cand
- * @param {{ expected: string, flavor: string|null, evidence?: boolean }} want
+ * @param {{ expected: string, flavor: string|null }} want
  */
-export function scoreCandidate(line, cand, { expected, flavor, evidence = false }) {
+export function scoreCandidate(line, cand, { expected, flavor }) {
   // Finish: none ↔ non-foil; Foil Etched ↔ etched; any other foil ↔ foil.
   const kind = cand.foil_kind;
   if (line.finish === 'nonfoil' && kind) return null;
@@ -329,7 +334,7 @@ export function scoreCandidate(line, cand, { expected, flavor, evidence = false 
   }
   // Variants: ours found +3 each; theirs we can't explain −2 (a family) or −1 (another word); a word with an
   // extra word beside its family (or a bracket that isn't ours) −4.
-  const read = readVariant(cand, line, { flavor, evidence });
+  const read = readVariant(cand, line, { flavor });
   for (const w of read.words) {
     if (w.bracket && prefix) continue;   // charged above as another printing's set code
     if (w.extra.length || (w.bracket && !w.families.length)) {
@@ -367,13 +372,12 @@ export function scoreCandidate(line, cand, { expected, flavor, evidence = false 
  * A word the matcher can't read (an extra word, "Anime", "Scrolls"; or one with no family, "Gold-Stamped
  * Signature") never sets a product aside, so it blocks the last rule; and a product carrying one is never taken
  * by itself. The scores only order the candidates, so Needs a choice lists the likeliest first.
- * @param {object} line
+ * @param {object} line  its treatments may carry its Scryfall card's evidence families (evidenceTreatments)
  * @param {object[]} candidates  cc_products rows for the line's name
- * @param {{ flavor?: string|null, home?: string|null, evidence?: boolean }} [opts]  evidence: the line's
- *   treatments carry its Scryfall card's evidence families (evidenceTreatments), so their words are read
+ * @param {{ flavor?: string|null, home?: string|null }} [opts]
  * @returns {{ status: 'auto'|'choose'|'none', product: object|null, ranked: object[], expected: string }}
  */
-export function chooseProduct(line, candidates, { flavor = null, home = null, evidence = false } = {}) {
+export function chooseProduct(line, candidates, { flavor = null, home = null } = {}) {
   const lineKey = nameKey(line.name);
   // Flavor-named products ("Aggro Amalgam - Voracious Hydra") count when the first suffix is our name.
   let own = (candidates ?? []).filter((c) => c.base_key === lineKey
@@ -391,7 +395,7 @@ export function chooseProduct(line, candidates, { flavor = null, home = null, ev
   const ourNumber = own.find((c) => isNumberBracket(c.bracket) && normNumber(c.bracket) === normNumber(line.collector_number));
   const expected = expectedName(named, { number: ourNumber?.bracket ?? false, flavor: useFlavor });
   if (!own.length) return { status: 'none', product: null, ranked: [], expected };
-  const want = { expected, flavor: useFlavor, evidence };
+  const want = { expected, flavor: useFlavor };
   const byScore = (a, b) => (b.score ?? -Infinity) - (a.score ?? -Infinity) || a.product.product_name.localeCompare(b.product.product_name);
   const ranked = own
     .map((product) => {
@@ -412,18 +416,18 @@ export function chooseProduct(line, candidates, { flavor = null, home = null, ev
     }
     ranked.sort(byScore);
   }
-  const product = certainProduct(named, ranked, { home, numbered, flavor: useFlavor, evidence });
+  const product = certainProduct(named, ranked, { home, numbered, flavor: useFlavor });
   if (product) return { status: 'auto', product, ranked, expected };
   return { status: 'choose', product: null, ranked, expected };
 }
 
 /** chooseProduct's "never guess" rule: the one certain product among the ranked candidates, or null. */
-function certainProduct(line, ranked, { home, numbered, flavor, evidence }) {
+function certainProduct(line, ranked, { home, numbered, flavor }) {
   const passing = ranked.filter((r) => r.score != null);
   const inHome = home ? passing.filter((r) => r.product.category === home) : [];
   const pool = (inHome.length ? inHome : passing)
     .filter((r) => !(numbered && !r.reasons.includes('number')) && !r.reasons.includes('other printing'))
-    .map((r) => ({ r, v: readVariant(r.product, line, { flavor, evidence }) }));
+    .map((r) => ({ r, v: readVariant(r.product, line, { flavor }) }));
   const mine = new Set(lineFamilies(line));
   const wantFoil = fold(expectedFoilKind(line.finish, line.treatments) ?? '');
   const unread = ({ v }) => v.extra.length > 0 || v.other.length > 0;

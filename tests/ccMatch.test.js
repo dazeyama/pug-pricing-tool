@@ -169,16 +169,17 @@ test('Tom Bombadil (LTR): Showcase beside Showcase Scrolls is a choice, unless t
   assert.equal(chooseProduct(tom({ collector_number: '685', treatments: ['showcase'] }), TOM).status, 'choose');
   assert.equal(chooseProduct(tom({ collector_number: '685', finish: 'foil', treatments: ['showcase'] }), TOM).status, 'choose');
   assert.equal(chooseProduct(tom({ collector_number: '331', treatments: ['borderless', 'showcase'] }), TOM).status, 'choose');
-  // With them: 685 is a scroll, 331 isn't.
-  const scroll = chooseProduct(tom({ collector_number: '685', treatments: ['showcase', 'scroll'] }), TOM, { evidence: true });
+  // Scryfall says 685 is a scroll: that settles it.
+  const scroll = chooseProduct(tom({ collector_number: '685', treatments: ['showcase', 'scroll'] }), TOM);
   assert.equal(scroll.status, 'auto');
   assert.equal(scroll.product.product_name, 'Tom Bombadil - Showcase Scrolls');
   assert.equal(scroll.expected, 'Tom Bombadil - Showcase Scrolls');
-  assert.equal(chooseProduct(tom({ collector_number: '685', finish: 'foil', treatments: ['showcase', 'scroll'] }), TOM, { evidence: true })
+  assert.equal(chooseProduct(tom({ collector_number: '685', finish: 'foil', treatments: ['showcase', 'scroll'] }), TOM)
     .product.product_name, 'Tom Bombadil - Foil - Showcase Scrolls');
-  const ring = chooseProduct(tom({ collector_number: '331', treatments: ['borderless', 'showcase'] }), TOM, { evidence: true });
-  assert.equal(ring.status, 'auto');
-  assert.equal(ring.product.product_name, 'Tom Bombadil - Showcase');
+  // No scroll tag proves nothing (Scryfall may lack it): 331 stays a choice, and so does a lone scroll product.
+  assert.equal(chooseProduct(tom({ collector_number: '331', treatments: ['borderless', 'showcase'] }), TOM).status, 'choose');
+  assert.equal(chooseProduct(tom({ collector_number: '331', treatments: ['showcase'] }),
+    [product('Tom Bombadil - Showcase Scrolls', LTR)]).status, 'choose');
 });
 
 test('the Scryfall facts behind the evidence families', () => {

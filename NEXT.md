@@ -17,7 +17,7 @@ and function.
     Borderless" (automatic, foil); look at "Tom Bombadil - Showcase" (a staff pick for LTR 331, right for 331, wrong
     if the card sold was the 685 scroll); check "Serra Ascendant (PAGL) - The List" for the M11-28 List card in CC.
     The two exported lines' stamps stay wrong unless that day's file must be downloaded again (`MATCHING.md` item 3).
-  - **Item 5, migration 0010**: see the next item.
+  - **Item 5, migration 0010**: the item below.
   - **Not built, on purpose**: Scryfall's other promo types as families (`planeswalkerdeck`, `gameday`,
     `storechampionship`, `wizardsplaynetwork`, `openhouse`, `themepack`, `release`, `judgegift`): CC spells them
     too many ways ("Planeswalker Deck Exclulsive", "Game Day & Store Championship Promos"), so each needs its
@@ -26,6 +26,17 @@ and function.
   - **Help is out of date** (edit when asked): Export → "Picking the product" (README.md, "leads the next by 2
     points"; step 1 "A remembered match" now means a staff pick only) and Settings → Crystal Commerce matching's
     Products row ("matched by the app").
+- **Migration 0010, written, reviewed and rehearsed, on neither database yet** (decision 486;
+  `supabase/migrations/0010_staff_links_only.sql`: `internal.export_learn` takes `'staff'` only, and the `auto`
+  rows are deleted, 382 on dev, 283 on prod; `scripts/db-test-run.sql` checks it). Dev and prod stay equal (both
+  0001–0009). For the owner's go, after close (9:30 PM), in one sitting: on the live site Settings → Backups →
+  Download backup first (the delete can't be undone but by a full restore; the rows are also listed in
+  `MATCHING.md` Appendix B), then CLAUDE.md's Database steps 3–6 (dev push, snapshot, test run, prod push,
+  structure-only compare), then CLAUDE.md's "next migration" line to 0011. Either order with the app push is
+  safe (the reviewer checked both); a v1.0.2 export dialog left open across the prod push could write an `auto`
+  row back, which the new build ignores. Review findings not acted on: Import Collection's own matcher now reads
+  "Retro Schematic" as a word, not Retro Frame (`importMatch.js`, out of scope); an `auto` sent over a staff row
+  isn't checked on its own in the test run (the function can't write `auto` any more).
 - **Copies we own (decisions 448–483), live in v1.0.2-quantity, tested by the owner on dev as it was built.** The counter
   (`OwnedCounter.jsx`, `useOwnedCopies.js`, `owned.js`), the suggestion (`ownedRates.js`), Apply and Auto apply
   rates? (`PricingScreen.jsx`, `useScanReceiver.js`, `useDraft.js` `setAutoRates`, `CollectionPage.jsx`
@@ -47,8 +58,8 @@ and function.
   once, and Restore's first press with "canceling statement due to statement timeout" (`backup_export`, one call for
   every table, 2 to 7.7 s on dev). The paged read that fixed it (decision 426) could leave cards out of the file
   when anything changed while it read, so it was undone. A fix must keep one read at one instant, so it needs the
-  database (a migration): take it with the next one, 0010 (0008 is owned copies only, decision 448; 0009 the
-  rounding only, 478). The test run's Backup pass hit the same limit once on 2026-10-23 (`restore_backup`,
+  database (a migration): take it with the next one, 0011 (0008 is owned copies only, decision 448; 0009 the
+  rounding only, 478; 0010 the remembered matches only, 486). The test run's Backup pass hit the same limit once on 2026-10-23 (`restore_backup`,
   `staff_users`) and passed on the retry.
 - **From the 2026-10-21 pre-push review, small, not fixed:** reopening a closed customer search shows Show all off
   until a letter is typed (`SearchBox.jsx`, the search effect keyed on `[text, showAll]`); a list whose every card
@@ -64,8 +75,8 @@ and function.
 - **The live site's first inventory upload on v1.0.1-day1** (decision 414): the live site most likely holds a
   second full copy of the Master Crystal Inventory (~152k products) from the owner's timed-out upload on the old
   build, and any uploads since. The first upload from the new build clears them ("Clearing the old file…").
-- **For the next migration, 0010, when there's a reason to write one** (the v1.0.1-day1 pre-push review; 0008
-  is owned copies only, decision 448, and 0009 the rounding only, 478): retire
+- **For the next migration, 0011, when there's a reason to write one** (the v1.0.1-day1 pre-push review; 0008
+  is owned copies only, decision 448, 0009 the rounding only, 478, and 0010 the remembered matches only, 486): retire
   `master_inventory_abort`, unused by the new build (decision 414), with its test-run checks and its place in the
   security-definer list. (The database's "under $1" and "Collection started from…" texts stay: the owner, 2026-10-21,
   "don't bother, no one will ever see that".) A stored `.gz` can be left in the `master-inventory` bucket if
@@ -92,10 +103,12 @@ and function.
 
 - 2026-10-23: **The never-guess matcher built** (`MATCHING.md` items 1, 2, 4, 6; decisions 484–487; the owner: "Build
   everything from MATCHING.md in one go"). Measured against HEAD's matcher on the sweep's data
-  (`C:\ClaudeProjects\temp\pug-matching\measure-new.mjs`): of dev's 1,814 automatic matches, 17 now ask once (27
-  without the Scryfall facts); one changes, to the right product (Tom Bombadil LTR 685 → "Showcase Scrolls"); three
-  that asked now match by themselves (Tom Bombadil LTR 331 → "Showcase", a textured-foil Ratadrabik, a List
-  Pandemonium). On prod's 283 automatic links the 2 asked are the two known mistakes. Untested in the app.
+  (`C:\ClaudeProjects\temp\pug-matching\measure-new.mjs`): of dev's 1,814 automatic matches, 18 now ask once (27
+  without the Scryfall facts); one changes, to the right product (Tom Bombadil LTR 685 → "Showcase Scrolls"); two
+  that asked now match by themselves (a textured-foil Ratadrabik, a List Pandemonium). On prod's 283 automatic
+  links 4 are asked: the two known mistakes and two LTR cards beside a "Borderless Poster" product. After the
+  pug-reviewer review of 0010 and the matcher, the Scryfall facts only confirm (a missing tag proves nothing).
+  Migration 0010 written, reviewed, rehearsed on dev (rolled back), not applied. Untested in the app.
 - 2026-10-23: **Overnight read-only audit of the export's matching** (the owner's ask after two wrong automatic
   matches on the live site): `MATCHING.md` written, the only change besides this file. The matcher ran under Node
   over dev's 1,979 Magic lines against inventory file 33 (SELECT only; the SQL and outputs in

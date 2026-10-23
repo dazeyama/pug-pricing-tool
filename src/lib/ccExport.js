@@ -140,11 +140,11 @@ export async function matchLines(lines, onStep, given = {}) {
       line, set, promo, card, flavor, category: where?.category ?? null, also, how: where?.how ?? null, candidates,
     };
     // The card's Scryfall facts the line keeps no treatment for ("Showcase Scrolls"), read for every line, old
-    // or new (decision 485); without the card, those words stay words the matcher can't read.
+    // or new (decision 485). They only confirm: without one, its word stays a word the matcher can't read.
     const matched = card
       ? { ...line, treatments: [...new Set([...(line.treatments ?? []), ...evidenceTreatments(card)])] }
       : line;
-    const pick = chooseProduct(matched, candidates, { flavor, home: also.length ? where.category : null, evidence: Boolean(card) });
+    const pick = chooseProduct(matched, candidates, { flavor, home: also.length ? where.category : null });
     if (linkedProduct) {
       // Its candidates still ranked, so Change can offer them.
       return { ...base, status: 'auto', product: linkedProduct, ranked: pick.ranked, expected: pick.expected, via: 'link', link };

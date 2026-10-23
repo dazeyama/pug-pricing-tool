@@ -476,6 +476,10 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       Change on it marks that product "detected". Pick "Polluted Bonds - Foil": it's "picked", and the next EXPORT of
       that printing shows it Matched, "remembered". Settings → Crystal Commerce matching counts the pick under Picked
       by staff; Tom Bombadil's match isn't remembered. A remembered card's Change marks no product "detected".
+- [ ] **A remembered product gone from the inventory** (decision 487): on dev, a card picked in an earlier export
+      whose product the current Master Crystal Inventory no longer has (upload one without it): EXPORT puts it in
+      **Needs a choice** with "Used to be … which isn't in the current inventory", nothing ticked, even when one
+      product would fit by itself.
 - [ ] Today's EXPORT is blocked ("until it's over").
 - [ ] **Export single buy…** works on any day, today included, with the SKU `101626-42`; only that buy becomes Completed,
       and the day's EXPORT skips it.

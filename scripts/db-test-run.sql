@@ -2255,11 +2255,11 @@ begin
     (select c.source_note from buy_lines c where c.source_line_id = mys));
   perform pg_temp.ok(s, 'Search shows it in Can''t upload cards',
     exists (select 1 from global_search('dbtest mystery', null, null, null, false) where collection_kind = 'system'));
-  perform pg_temp.ok(s, 'Each product picked is remembered for next time',
+  -- The foil card's match is sent as 'auto', as an old build would: nothing is remembered for it (decision 486).
+  perform pg_temp.ok(s, 'Each product staff picked is remembered for next time; the app''s own match isn''t',
     exists (select 1 from cc_product_links where scryfall_id = 'dbtest-dbt-001' and finish = 'nonfoil'
               and product_id = 'DBTEST-P1' and source = 'staff' and linked_by = u)
-    and exists (select 1 from cc_product_links where scryfall_id = 'dbtest-dbt-001' and finish = 'foil'
-                  and product_id = 'DBTEST-P2' and source = 'auto'));
+    and not exists (select 1 from cc_product_links where scryfall_id = 'dbtest-dbt-001' and finish = 'foil'));
   perform pg_temp.ok(s, '… and the set''s category',
     exists (select 1 from cc_set_map where scryfall_set = 'dbt' and promo_kind = '' and category = 'DBTEST Set'
               and source = 'staff'));
@@ -3634,6 +3634,17 @@ begin
   v_res := restore_backup(jsonb_set(v_payload, '{tables,cc_set_map}', '[]'), 'dbtest-empty-matches.json', u, a, 'RESTORE');
   perform pg_temp.ok(s, 'An empty list of set choices in the file leaves the ones here (0004)',
     exists (select 1 from cc_set_map where scryfall_set = 'dbt' and category = 'DBTEST Set'));
+
+  -- A backup from before 0010 holds the app's own matches ('auto'): it still restores them as they were (the app
+  -- ignores them, decision 486). The full restore below takes it away again.
+  v_res := restore_backup(jsonb_set(v_payload, '{tables,cc_product_links}',
+             coalesce(v_payload -> 'tables' -> 'cc_product_links', '[]') || jsonb_build_array(jsonb_build_object(
+               'scryfall_id', 'dbtest-dbt-001', 'finish', 'etched', 'product_id', 'DBTEST-P2',
+               'product_name', 'Dbtest Bolt - Foil', 'category', 'DBTEST Set', 'source', 'auto',
+               'linked_at', now(), 'linked_by', null))),
+           'dbtest-auto-matches.json', u, a, 'RESTORE');
+  perform pg_temp.ok(s, 'A backup with the app''s own old matches restores them (0010 kept the check)',
+    exists (select 1 from cc_product_links where scryfall_id = 'dbtest-dbt-001' and finish = 'etched' and source = 'auto'));
 
   -- Something made after the backup, for the restore to undo.
   v_after := collection_create('DBTEST After Backup', null, '', u, a);
