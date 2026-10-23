@@ -59,6 +59,8 @@
 }
 /* A cut to suggest: a faint warm tint on All printings; applied, a faint green one. */
 .owned-boxes.hot .owned-box.card { --owned: var(--warn); }
+/* Counts the inventory can't make for this printing: n/a, faded (decision 467). */
+.owned-boxes.unknown { opacity: .45; }
 .owned-boxes.applied .owned-box.card { --owned: var(--good); }
 .owned-boxes:hover .owned-box, .owned-boxes.on .owned-box {
   background: color-mix(in srgb, var(--owned, var(--muted)) 10%, rgba(24, 28, 46, .9));

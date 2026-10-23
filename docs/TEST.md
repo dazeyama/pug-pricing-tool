@@ -192,6 +192,9 @@ what happens. The findings are reported when the pass ends.
       none: both chips, "They cancel out". With the inventory unknown (none uploaded): no bonus. A low-end card
       (under $3) we've never had: no green chip, and the box says "No first-copy bonus on a low-end card" (decision
       458); one we own 4 of still gets the red chip.
+- [ ] **n/a** (decision 467): a printing the export would ask to choose a product for (several CC products could
+      be it): both boxes read n/a, faded, no chips or stamp, and the price panel's rate is unchanged; pointing says
+      why. A card CC has never had: 0 and 0, with the +10% chip.
 - [ ] **Stamps** (decision 459): with a rate to apply, a red **NOT APPLIED** ink stamp under the chips; Apply (or
       Auto apply rates? checked) turns it into a green **APPLIED** one; no stamp when nothing changes the rate.
       Click the stamp (decision 461): it switches, the new one dropping in larger over the old, shaking and

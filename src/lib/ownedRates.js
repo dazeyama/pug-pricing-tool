@@ -30,13 +30,21 @@ export const OWNED_CAP = 50;
 export function ownedCounts(raw) {
   const n = (v) => (v == null ? null : Number(v));
   const list = (rows) => (Array.isArray(rows) ? rows.map((r) => ({ ...r, qty: Number(r.qty), this: Boolean(r.this) })) : []);
-  const cc = { printing: n(raw?.cc_printing), card: n(raw?.cc_card), list: list(raw?.cc_list) };
+  const card = n(raw?.cc_card);
+  // None of the card in the inventory at all (a card never stocked, which no product can match): none of
+  // the printing either, a count as known as the card's (decision 467).
+  const printing = n(raw?.cc_printing) ?? (card === 0 ? 0 : null);
+  const cc = { printing, card, list: list(raw?.cc_list) };
   const ours = { printing: n(raw?.ours_printing) ?? 0, card: n(raw?.ours_card) ?? 0, list: list(raw?.ours_list) };
   return {
     printing: (cc.printing ?? 0) + ours.printing,
     card: (cc.card ?? 0) + ours.card,
     printingSure: cc.printing != null,
     cardSure: cc.card != null,
+    // Both counts known: the inventory could say which of its products is this printing (owner, 2026-10-23:
+    // "when crystal can't match we should just show n/a in both box, fade the element out, and show no
+    // stamp"; decision 467). Not known: no product clearly this printing, no inventory, or none with quantities.
+    known: cc.printing != null && cc.card != null,
     cc,
     ours,
     inventoryAt: raw?.inventory_at ?? null,
@@ -86,7 +94,8 @@ export const FIRST_CARD_BONUS = 5;
  */
 export function ownedAdjust(counts, { lowEnd = false } = {}) {
   const none = { bonus: 0, cut: 0, net: 0, firstPrinting: false, firstCard: false, over: 0, lowEndNoBonus: false };
-  if (!counts) return none;
+  // Counts the inventory couldn't make change nothing: no bonus, no cut (decision 467).
+  if (!counts || counts.known === false) return none;
   const firstCardCount = counts.cardSure && counts.card === 0;
   // None of the card is none of the printing, whatever the printing's own count could tell.
   const firstPrintingCount = firstCardCount || (counts.printingSure && counts.printing === 0);

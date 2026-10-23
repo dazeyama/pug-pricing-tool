@@ -74,6 +74,21 @@ test("the counts: the inventory's plus ours, unsure where the inventory couldn't
   assert.deepEqual(ownedCounts(null).cc.list, []);
 });
 
+// Owner, 2026-10-23 (decision 467): when the inventory can't match the printing, n/a and no rate change.
+test('known only when the inventory could count both; a card it has none of is a known 0', () => {
+  assert.equal(ownedCounts({ cc_printing: 2, cc_card: 5 }).known, true);
+  const unmatched = ownedCounts({ cc_printing: null, cc_card: 5, ours_printing: 0, ours_card: 1 });
+  assert.equal(unmatched.known, false);
+  assert.equal(ownedAdjust(unmatched).net, 0);
+  assert.equal(ownedAdjust(ownedCounts({ cc_printing: null, cc_card: 9 })).cut, 0);   // not even the cut
+  // Never stocked: no product to match, but none of the card means none of the printing.
+  const never = ownedCounts({ cc_printing: null, cc_card: 0, ours_printing: 0, ours_card: 0 });
+  assert.equal(never.known, true);
+  assert.equal(never.printing, 0);
+  assert.equal(ownedAdjust(never).net, 10);
+  assert.equal(ownedCounts({ cc_printing: null, cc_card: null, inventory_at: null }).known, false);
+});
+
 // Owner, 2026-10-22: "it has to show specifically, which printings we own".
 test('the lists of printings come through, counts as numbers, this printing marked', () => {
   const c = ownedCounts({

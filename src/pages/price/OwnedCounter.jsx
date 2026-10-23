@@ -92,11 +92,20 @@ export default function OwnedCounter({
   const c = owned.counts;
   const ready = owned.status === 'ok';
   const open = ready && (hover || pinned);
-  const num = (n, sure) => {
+  // The inventory can't say which of its products is this printing (or there's none, or no quantities): n/a
+  // in both, faded, no chips or stamp, the rate unchanged; the box says why (decision 467).
+  const unknown = ready && !c.known;
+  const num = (n) => {
     if (owned.status === 'loading') return '…';
     if (!ready) return '?';
-    return `${n}${sure ? '' : '+'}`;
+    return unknown ? 'n/a' : String(n);
   };
+  let unknownWhy = '';
+  if (unknown) {
+    if (c.inventoryAt == null) unknownWhy = 'No Master Crystal Inventory is uploaded, so what Crystal Commerce holds isn’t known.';
+    else if (!c.cardSure) unknownWhy = 'The inventory was uploaded before it kept quantities: upload it again to count it.';
+    else unknownWhy = 'Crystal Commerce has this card, but none of its products is clearly this printing (several could be, or none quite matches), so its count for this printing isn’t known. EXPORT asks which product it is; once one is chosen there, the counts show here.';
+  }
   // Under the boxes: a green chip for the bonus, a red one for the cut, side by side when both apply
   // (owner, 2026-10-23; decision 457); ✓ on each once the rate is on.
   const mark = applied ? '✓ ' : '';
@@ -146,9 +155,10 @@ export default function OwnedCounter({
       {autoBox}
       <button
         type="button"
-        className={`owned-boxes${adjust?.cut > 0 ? ' hot' : ''}${applied ? ' applied' : ''}${pinned ? ' on' : ''}`}
+        className={`owned-boxes${adjust?.cut > 0 ? ' hot' : ''}${applied ? ' applied' : ''}${pinned ? ' on' : ''}${unknown ? ' unknown' : ''}`}
         aria-expanded={open}
-        aria-label={ready ? `We own ${copies(c.printing)} of this printing and ${copies(c.card)} of this card` : 'Copies we own'}
+        aria-label={ready && !unknown ? `We own ${copies(c.printing)} of this printing and ${copies(c.card)} of this card`
+          : 'Copies we own'}
         title={owned.status === 'failed' ? owned.error : undefined}
         onMouseEnter={() => setHover(true)}
         onClick={() => {
@@ -158,11 +168,11 @@ export default function OwnedCounter({
       >
         <span className="owned-box printing">
           <span className="owned-label">This printing</span>
-          <b className="owned-num">{num(c?.printing, c?.printingSure)}</b>
+          <b className="owned-num">{num(c?.printing)}</b>
         </span>
         <span className="owned-box card">
           <span className="owned-label">All printings</span>
-          <b className="owned-num">{num(c?.card, c?.cardSure)}</b>
+          <b className="owned-num">{num(c?.card)}</b>
         </span>
       </button>
       {chips}
@@ -190,23 +200,27 @@ export default function OwnedCounter({
         <div className="owned-pop">
           <section className="owned-pop-box" aria-label="Copies we own">
             <div className="owned-pop-head">📦 Copies we own</div>
-            <p className="owned-pop-lead">
-              We own {copies(c.printing)} of this printing and {copies(c.card)} of this card.
-            </p>
+            {unknown ? (
+              <>
+                <p className="owned-pop-lead">The copies we own can&apos;t be counted for this printing.</p>
+                <p className="owned-pop-note">{unknownWhy} Until then the rate isn&apos;t changed.</p>
+              </>
+            ) : (
+              <p className="owned-pop-lead">
+                We own {copies(c.printing)} of this printing and {copies(c.card)} of this card.
+              </p>
+            )}
             <div className="owned-pop-lists">
               <div className="owned-pop-sub">In Crystal Commerce ({c.cc.card ?? '?'})</div>
               {c.inventoryAt == null ? <p className="owned-pop-note">No inventory uploaded.</p>
                 : !c.cardSure ? <p className="owned-pop-note">The inventory was uploaded before it kept quantities: upload it again to count it.</p>
                   : ccRows.length ? <ul className="owned-rows">{ccRows}</ul> : <p className="owned-pop-note">None.</p>}
-              {c.inventoryAt != null && c.cardSure && !c.printingSure && (
-                <p className="owned-pop-note">No clear Crystal Commerce product for this printing: its copies there aren&apos;t counted in it.</p>
-              )}
               <div className="owned-pop-sub">Ours, not in it yet ({c.ours.card})</div>
               {oursRows.length ? <ul className="owned-rows">{oursRows}</ul> : <p className="owned-pop-note">None.</p>}
             </div>
-            {/* What changes the rate, and why (decision 457). */}
-            <div className="owned-pop-sub">The rate</div>
-            {adjust && (adjust.bonus > 0 || adjust.cut > 0 || adjust.lowEndNoBonus) ? (
+            {/* What changes the rate, and why (decision 457); nothing when the counts aren't known (467). */}
+            {!unknown && <div className="owned-pop-sub">The rate</div>}
+            {unknown ? null : adjust && (adjust.bonus > 0 || adjust.cut > 0 || adjust.lowEndNoBonus) ? (
               <ul className="owned-adjust">
                 {adjust.lowEndNoBonus && (
                   <li>No first-copy bonus on a low-end card{lowEndWhy ? ` (${lowEndWhy})` : ''}.</li>
@@ -229,11 +243,7 @@ export default function OwnedCounter({
                 )}
               </ul>
             ) : (
-              <p className="owned-pop-note">
-                {c.cardSure && c.printingSure
-                  ? `No change: we have this printing, and ${OWNED_FREE} or fewer of the card.`
-                  : 'No change. A bonus for a first copy needs a count the inventory could make, which this isn’t.'}
-              </p>
+              <p className="owned-pop-note">No change: we have this printing, and {OWNED_FREE} or fewer of the card.</p>
             )}
             {adjust && adjust.bonus > 0 && adjust.cut > 0 && !suggested && (
               <p className="owned-pop-note">They cancel out: the card keeps its usual rate.</p>
