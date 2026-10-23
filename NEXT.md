@@ -15,9 +15,11 @@ and function.
   `scripts/db-test-run.sql` 2257–2262), item 3 forget the two wrong links on prod (Settings → Crystal Commerce
   matching → Browse remembered products…, or the prepared statement on the owner's word), item 4 a remembered pick
   whose product is gone goes to Needs a choice, item 5 migration 0010 (`internal.export_learn` staff only; delete
-  the auto links; dev and prod the same sitting, store closed). Prod's remembered links were not read (the
-  permission check refused the command): `MATCHING.md` Appendix B is the one-step read for the owner. Nothing
-  coded yet; Help's "Picking the product" goes out of date with item 1.
+  the auto links; dev and prod the same sitting, store closed). Prod's remembered links were read after the scan
+  (303: 283 auto, 20 staff; every auto one in `MATCHING.md` Appendix B with a right/wrong box). Polluted Bonds is
+  there as reported; Tom Bombadil (LTR) 685 is not: prod's `Tom Bombadil - Showcase` link is a staff pick for LTR
+  331, so item 3's statement misses it and the owner looks in Browse remembered products… first (section 2.5).
+  Nothing coded yet; Help's "Picking the product" goes out of date with item 1.
 - **Copies we own (decisions 448–483), live in v1.0.2-quantity, tested by the owner on dev as it was built.** The counter
   (`OwnedCounter.jsx`, `useOwnedCopies.js`, `owned.js`), the suggestion (`ownedRates.js`), Apply and Auto apply
   rates? (`PricingScreen.jsx`, `useScanReceiver.js`, `useDraft.js` `setAutoRates`, `CollectionPage.jsx`

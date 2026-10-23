@@ -14,8 +14,10 @@ cards sit in categories where CC sells the regular printing under the plain name
 one, and the card's own traits (from Scryfall) can't tell them apart. The sweep of dev's 1,880 printings shows the
 same shape in about 260 more automatic matches. The fix is a rule that never picks between products the card can't
 tell apart, extra words that count against a product, no more trusting matches the app made by itself, and a
-one-time clean-up of the links already remembered. Prod's remembered links were **not** read tonight (the
-permission check refused the command): Appendix B says how to read them in one step.
+one-time clean-up of the links already remembered. Prod's remembered links were read after the scan, one SELECT, nothing
+written: 303 links, 283 of them made by auto matches, every one of those listed in Appendix B with the evidence
+against it. Polluted Bonds is there as reported. Tom Bombadil (LTR) 685 is not: prod holds no link for that
+printing, and the `Tom Bombadil - Showcase` link it does hold is a **staff** pick for LTR 331 (section 2.5).
 
 **The first three things to ship:** 1 (the never-guess rule), 2 (auto matches are no longer remembered or
 trusted), 3 (forget the two wrong links on prod). Items 1 and 2 are code only; the migration (item 5) can wait for
@@ -229,11 +231,48 @@ the only foil that way).
 
 ### 2.5 Prod's remembered links
 
-Not read. The one SELECT the owner allowed was refused by this session's permission check (as was writing a file
-that named the live project), so no command touched prod tonight. The SQL is ready and read-only; Appendix B has
-the steps and the script that turns its answer into the audit table. What is known without it: both wrong matches
-were exported today, so both are stored as `source = 'auto'` links on prod (section 1.3, step 2) and will repeat
-until forgotten (item 3 of the plan).
+Read after the scan, from the session that started it, with the one SELECT in Appendix B (`cc_product_links` only;
+nothing written on prod). The evidence against each link comes from dev's copy of the same inventory file (33).
+
+| Source | Links |
+|---|---|
+| auto (the app's own match, remembered by `export_learn`) | 283 |
+| staff (picked in the review, or in Browse remembered products…) | 20 |
+| total | 303 |
+
+All 303 were made between 2026-10-20 and 2026-10-22, the three days of exports since launch, and every linked
+product exists in file 33. Of the 283 auto links: 6 point at a product with a word the matcher can't read (`Future
+Frame` twice, `White Border`, `Showcase Scrolls`, `Anime Borderless`, `Gemrazer`); 56 at a product with a trait word
+while a plain product of the same name and finish exists (the Enchanting Tales shape); 15 at one whose same-finish
+sibling shares its words; 4 at one whose sibling differs only by an extra word; 83 at the only product of that name
+and finish in its category. The rest sit among several siblings the matcher told apart by number or foil kind.
+Every auto row is in Appendix B with a right/wrong box; the 20 staff links are listed there too.
+
+**Polluted Bonds (WOT) 34, foil:** on prod as reported, `source = 'auto'` → `Polluted Bonds - Foil - Anime
+Borderless`, linked 2026-10-22 at 12:16 PM (Appendix B row 230). It repeats on the next export until forgotten
+(item 3).
+
+**Tom Bombadil (LTR) 685, non-foil: not on prod under its printing.** LTR 685's Scryfall id is `dba0b072-…`
+(checked against Scryfall on 2026-10-23: showcase frame, promo types `scroll` and `silverfoil`), and prod has no link
+for it. What prod has, both from the same export as Polluted Bonds (12:16 PM, 2026-10-22):
+
+| Printing | Linked to | Source |
+|---|---|---|
+| Tom Bombadil (LTR) 234, the regular card (`2ab04c49-…`) | `Tom Bombadil` | auto |
+| Tom Bombadil (LTR) 331, the showcase frame without the scroll (`3c7ce623-…`) | `Tom Bombadil - Showcase` | **staff** |
+
+Two readings, and only the owner can tell which. (a) The exported line was recorded at the buy as LTR 331 (dev's
+copy of that printing carries `borderless` and `showcase`, so the matcher ties `Showcase`, `Showcase Scrolls` and
+`Borderless Poster` at 2 points each and asks); the pick in the review went to `Tom Bombadil - Showcase`, first in
+the list by name, and was saved as a staff pick; the card in hand was the 685 scroll, so the 331 link is wrong.
+(b) The line was LTR 685, its auto link was already forgotten in the app during the audit, and the 331 staff link is
+right for a different card. Either way, item 3's prepared statement finds no row for `dba0b072`, and a wrong
+**staff** link is caught neither by item 2 (which trusts staff links) nor by item 5's clean-up (which deletes auto
+links). What to do, on the live site: Settings → Crystal Commerce matching → Browse remembered products… → search
+"Tom Bombadil", read which printings are linked, and Forget `Tom Bombadil - Showcase` if the card the store sold
+was the scroll. Section 1.1's reproduction stands for LTR 685 on dev. The lesson for the plan belongs with item 6,
+the review dialog: a tie between two names that differ by one word is not a one-click pick, and the review must
+show the difference.
 
 ---
 
@@ -367,6 +406,12 @@ delete from cc_product_links
    and (scryfall_id, finish) in (('e15e0521-1abf-4426-9f31-4081f068b184', 'foil'),      -- Polluted Bonds (WOT) 34
                                  ('dba0b072-65a1-4202-a9e0-e77466bb78ba', 'nonfoil'));  -- Tom Bombadil (LTR) 685
 ```
+
+**Checked against prod after the scan (section 2.5):** the statement above finds Polluted Bonds and nothing for
+Tom Bombadil, because prod has no link for LTR 685. The `Tom Bombadil - Showcase` link prod holds is a *staff*
+link for LTR 331 (`3c7ce623-bcf8-4d42-8a88-450bea7d7529`), which a `source = 'auto'` delete never touches. Look
+first in Browse remembered products…, and Forget it there once it is known to be wrong; nobody deletes a staff
+link by statement on a guess.
 
 **The stamps:** the two exported lines on prod carry the wrong `cc_product_id`, `cc_product_name` and
 `cc_category` in `buy_lines`; EXPORT on that day ("the same file again", decision 361) would write the wrong rows
@@ -746,42 +791,332 @@ card the matcher cannot tell from a sibling product with what it knows.
 | Valakut Exploration (ZNR) 303 *F* (showcase) | Valakut Exploration - Foil - Showcase (105) | Valakut Exploration - Foil (1) | a plain product also fits (CC may name our printing plainly) |
 ---
 
-## Appendix B — Prod's remembered links: the one read-only step, when the owner is ready
+## Appendix B — Prod's remembered links (read 2026-10-23, read-only)
 
-Not run tonight: the session's permission check refused the command (and refused writing a file that named the
-live project). The SQL is written and read-only; it reads `cc_product_links` and nothing else. Step by step, in
-PowerShell (where `npx` is blocked, so `npx.cmd`):
+Read from the session that started the scan, after the scan's own permission check had refused it:
+`links_by_source.sql` (one SELECT over `cc_product_links`: the count by source and every link) with
+`npx supabase db query --linked --project-ref zvxquzcfffmxwizonxuo --output-format json -f …`, saved as
+`C:\ClaudeProjects\temp\pug-matching\11_prod_links.json`. Then `prod-links-report.mjs` pulled the products of every
+linked card's name from dev's copy of inventory file 33 (`12_prod_link_products.sql`, dev only) and wrote the table
+below. Nothing was written on prod. Totals: 303 links, 283 auto, 20 staff, linked 2026-10-20 to 2026-10-22.
 
-1. Open PowerShell. Paste this as one line and press Enter. It runs the single SELECT in
-   `links_by_source.sql` (every remembered link, and a count by source) against the live project and saves the
-   answer beside it. Nothing is written on prod; the CLI stays linked to dev, the flag names prod for this one
-   command only.
+**The 20 staff links**, a person picked each (the one in bold is section 2.5's):
 
-   ```
-   cd C:\ClaudeProjects\pug-pricing-tool; npx.cmd supabase db query --linked --project-ref zvxquzcfffmxwizonxuo --output-format json -f C:\ClaudeProjects\temp\pug-matching\links_by_source.sql | Out-File -Encoding utf8 C:\ClaudeProjects\temp\pug-matching\11_prod_links.json
-   ```
+- Baral, Chief of Compliance (March of the Machine: Multiverse Legends, non-foil, 2026-10-20)
+- Fated Firepower - Borderless (Avatar: The Last Airbender, non-foil, 2026-10-20)
+- Griselbrand - 2014 Grand Prix Promo (Unique & Misc. Promos, foil, 2026-10-20)
+- Laughing Jasper Flint (0044) - Foil (Secret Lair Drop Series, foil, 2026-10-20)
+- Commandeer (Outlaws of Thunder Junction: Breaking News, non-foil, 2026-10-21)
+- Geth's Grimoire - The List (The List, non-foil, 2026-10-21)
+- Harvester of Misery - Extended Art (Outlaws of Thunder Junction: The Big Score, non-foil, 2026-10-21)
+- Knight Exemplar (Magic 2011) - The List (The List, non-foil, 2026-10-21)
+- Pandemonium - The List (The List, non-foil, 2026-10-21)
+- Sword of Wealth and Power - Foil (Outlaws of Thunder Junction: The Big Score, foil, 2026-10-21)
+- Transmutation Font - Foil - Showcase (Outlaws of Thunder Junction: The Big Score, foil, 2026-10-21)
+- Arcbound Ravager - Borderless (Teenage Mutant Ninja Turtles Source Material Cards, non-foil, 2026-10-22)
+- Caged Sun - Retro Frame (The Brothers' War: Retro Frame Artifacts, non-foil, 2026-10-22)
+- Increasing Vengeance (Strixhaven: Mystical Archives, non-foil, 2026-10-22)
+- Marang River Regent // Coil and Catch - Borderless (Tarkir: Dragonstorm, non-foil, 2026-10-22)
+- Raph's Jitte - Umezawa's Jitte - Borderless (Teenage Mutant Ninja Turtles Source Material Cards, non-foil, 2026-10-22)
+- Semblance Anvil - Retro Schematic (The Brothers' War: Retro Frame Artifacts, non-foil, 2026-10-22)
+- **Tom Bombadil - Showcase (The Lord of the Rings: Tales of Middle-earth, non-foil, 2026-10-22; LTR 331, see section 2.5)**
+- Unwinding Clock - Retro Frame (The Brothers' War: Retro Frame Artifacts, non-foil, 2026-10-22)
+- Well of Lost Dreams - Retro Frame (The Brothers' War: Retro Frame Artifacts, non-foil, 2026-10-22)
 
-2. Turn the answer into the audit table (two short steps; `node` is `C:\Program Files\nodejs\node.exe` if
-   PowerShell can't find it):
+**The 283 auto links.** The Evidence column, from file 33: *word the matcher can't read* (an extra word or a
+no-family word in the product's name: check these first); *a plain sibling exists* (a product with a trait word
+was chosen while the plain name exists in the same finish: the Enchanting Tales shape); *same-finish sibling shares
+its words*; *a sibling differs only by an extra word*; *only product of this name and finish in its category* (no
+choice was possible; wrong only if CC doesn't carry the printing); *several same-finish siblings* (told apart by
+number or foil kind). Tick each row; rows marked wrong whose cards were exported are the ones to check in Crystal
+Commerce. With item 5 every auto link goes anyway; this table is the audit of what the inventory may have received
+wrongly before today.
 
-   ```
-   cd C:\ClaudeProjects\temp\pug-matching; node prod-links-report.mjs sql
-   npx.cmd supabase db query --linked --output-format json -f C:\ClaudeProjects\temp\pug-matching\12_prod_link_products.sql | Out-File -Encoding utf8 C:\ClaudeProjects\temp\pug-matching\12_prod_link_products.json
-   node prod-links-report.mjs table
-   ```
-
-   The first command prints prod's count of links by source and writes a SELECT for dev (the same store inventory
-   file) that fetches the products of every linked card's name; the second runs it on dev; the third writes
-   `prod-links-appendix.md`: one row per **auto-sourced** link, with the product as linked, its category, finish and
-   date, the inventory evidence that makes it suspect (a word the matcher can't read, a same-finish sibling sharing
-   its words, a plain sibling, a sibling differing only by an extra word, or "only product of this name"), and a
-   **☐ right ☐ wrong** box. The two reported cards are marked in bold.
-
-3. Or hand `11_prod_links.json` to the next session and ask for the table.
-
-What to do with it: with item 5 of the plan every auto link goes anyway; the table is for the owner's audit of what
-the store's inventory may have received wrongly before today. Rows marked wrong whose cards were exported are the
-ones to check in Crystal Commerce.
+| # | Product (as linked) | Category | Finish | Linked | Evidence | Right? |
+|---|---|---|---|---|---|---|
+| 1 | Abandoned Air Temple | Avatar: The Last Airbender | nonfoil | 2026-10-20 | several same-finish siblings | ☐ right ☐ wrong |
+| 2 | Archmage of Runes - Foil | Foundations | foil | 2026-10-20 | several same-finish siblings | ☐ right ☐ wrong |
+| 3 | Avatar's Wrath | Avatar: The Last Airbender | nonfoil | 2026-10-20 | several same-finish siblings | ☐ right ☐ wrong |
+| 4 | Beorn the Fierce - Showcase | The Hobbit | nonfoil | 2026-10-20 | a plain sibling exists: Beorn the Fierce | ☐ right ☐ wrong |
+| 5 | Bitterbloom Bearer | Lorwyn Eclipsed | nonfoil | 2026-10-20 | several same-finish siblings | ☐ right ☐ wrong |
+| 6 | Cool but Rude | Teenage Mutant Ninja Turtles | nonfoil | 2026-10-20 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 7 | Darklight Phoenix | Reality Fracture | nonfoil | 2026-10-20 | several same-finish siblings | ☐ right ☐ wrong |
+| 8 | Dawn's Truce | Bloomburrow | nonfoil | 2026-10-20 | several same-finish siblings | ☐ right ☐ wrong |
+| 9 | Doctor Octopus, Master Planner | Marvel's Spider-Man | nonfoil | 2026-10-20 | several same-finish siblings | ☐ right ☐ wrong |
+| 10 | Dour Port-Mage | Bloomburrow | nonfoil | 2026-10-20 | several same-finish siblings | ☐ right ☐ wrong |
+| 11 | Elvish Piper | Masters 25 | nonfoil | 2026-10-20 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 12 | Enduring Courage | Duskmourn: House of Horror | nonfoil | 2026-10-20 | several same-finish siblings | ☐ right ☐ wrong |
+| 13 | For the Common Good - Foil | Bloomburrow | foil | 2026-10-20 | several same-finish siblings | ☐ right ☐ wrong |
+| 14 | Formidable Speaker | Lorwyn Eclipsed | nonfoil | 2026-10-20 | several same-finish siblings | ☐ right ☐ wrong |
+| 15 | Formidable Speaker - Extended Art | Lorwyn Eclipsed | nonfoil | 2026-10-20 | a plain sibling exists: Formidable Speaker | ☐ right ☐ wrong |
+| 16 | Genji Glove | Final Fantasy | nonfoil | 2026-10-20 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 17 | Gisa, the Hellraiser | Outlaws of Thunder Junction | nonfoil | 2026-10-20 | several same-finish siblings | ☐ right ☐ wrong |
+| 18 | Godless Shrine - Foil - Borderless | Edge of Eternities | foil | 2026-10-20 | same-finish sibling shares its words: Godless Shrine - Galaxy Foil - Borderless; a plain sibling exists: Godless Shrine - Foil | ☐ right ☐ wrong |
+| 19 | Greater Good | Battlebond | nonfoil | 2026-10-20 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 20 | Haliya, Guided by Light | Edge of Eternities | nonfoil | 2026-10-20 | several same-finish siblings | ☐ right ☐ wrong |
+| 21 | Hallowed Fountain | Lorwyn Eclipsed | nonfoil | 2026-10-20 | several same-finish siblings | ☐ right ☐ wrong |
+| 22 | Jace's Archivist | Commander 2013 | nonfoil | 2026-10-20 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 23 | Jeleva, Nephalia's Scourge | Commander 2013 | nonfoil | 2026-10-20 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 24 | Liliana the Faultless | Reality Fracture | nonfoil | 2026-10-20 | several same-finish siblings | ☐ right ☐ wrong |
+| 25 | Loot, Exuberant Explorer | Foundations | nonfoil | 2026-10-20 | several same-finish siblings | ☐ right ☐ wrong |
+| 26 | Luminarch Ascension | Masters 25 | nonfoil | 2026-10-20 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 27 | Michelangelo, Weirdness to 11 - Borderless | Teenage Mutant Ninja Turtles | nonfoil | 2026-10-20 | a plain sibling exists: Michelangelo, Weirdness to 11 | ☐ right ☐ wrong |
+| 28 | Miles Morales // Ultimate Spider-Man | Marvel's Spider-Man | nonfoil | 2026-10-20 | several same-finish siblings | ☐ right ☐ wrong |
+| 29 | Nekusar, the Mindrazer | Commander 2013 | nonfoil | 2026-10-20 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 30 | Orim's Chant | Modern Horizons 3 | nonfoil | 2026-10-20 | several same-finish siblings | ☐ right ☐ wrong |
+| 31 | Overgrown Tomb | Lorwyn Eclipsed | nonfoil | 2026-10-20 | several same-finish siblings | ☐ right ☐ wrong |
+| 32 | Raphael, Ninja Destroyer - Borderless | Teenage Mutant Ninja Turtles | nonfoil | 2026-10-20 | a plain sibling exists: Raphael, Ninja Destroyer | ☐ right ☐ wrong |
+| 33 | Samut, Hazoret's Champion | Reality Fracture | nonfoil | 2026-10-20 | several same-finish siblings | ☐ right ☐ wrong |
+| 34 | Spellseeker | Battlebond | nonfoil | 2026-10-20 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 35 | Steam Vents | Lorwyn Eclipsed | nonfoil | 2026-10-20 | several same-finish siblings | ☐ right ☐ wrong |
+| 36 | Sudden Spoiling | Commander 2013 | nonfoil | 2026-10-20 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 37 | Temple Bell | Commander 2013 | nonfoil | 2026-10-20 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 38 | Terrasymbiosis | Edge of Eternities | nonfoil | 2026-10-20 | several same-finish siblings | ☐ right ☐ wrong |
+| 39 | Trade Routes | Ninth Edition | nonfoil | 2026-10-20 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 40 | True-Name Nemesis | Commander 2013 | nonfoil | 2026-10-20 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 41 | Watery Grave - Foil - Borderless | Edge of Eternities | foil | 2026-10-20 | same-finish sibling shares its words: Watery Grave - Galaxy Foil - Borderless; a plain sibling exists: Watery Grave - Foil | ☐ right ☐ wrong |
+| 42 | Windcrag Siege | Tarkir: Dragonstorm | nonfoil | 2026-10-20 | several same-finish siblings | ☐ right ☐ wrong |
+| 43 | Wistfulness | Lorwyn Eclipsed | nonfoil | 2026-10-20 | several same-finish siblings | ☐ right ☐ wrong |
+| 44 | Academy Manufactor | Modern Horizons 2 | nonfoil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 45 | Ajani, Nacatl Pariah // Ajani, Nacatl Avenger | Modern Horizons 3 | nonfoil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 46 | Archon of Cruelty | Modern Horizons 2 | nonfoil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 47 | Arena of Glory | Modern Horizons 3 | nonfoil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 48 | Birds of Paradise | Mystery Booster | nonfoil | 2026-10-21 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 49 | Brago, King Eternal - The List | The List | nonfoil | 2026-10-21 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 50 | Bristly Bill, Spine Sower | Outlaws of Thunder Junction | nonfoil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 51 | Brought Back - The List | The List | nonfoil | 2026-10-21 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 52 | Case of the Crimson Pulse | Murders at Karlov Manor | nonfoil | 2026-10-21 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 53 | Chord of Calling - Foil | Ravnica Remastered | foil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 54 | Collective Restraint - The List | The List | nonfoil | 2026-10-21 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 55 | Delney, Streetwise Lookout | Murders at Karlov Manor | nonfoil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 56 | Demonic Tutor - The List | The List | nonfoil | 2026-10-21 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 57 | Draco | Mystery Booster | nonfoil | 2026-10-21 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 58 | Dragonlair Spider - The List | The List | nonfoil | 2026-10-21 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 59 | Emerald Medallion | Modern Horizons 3 | nonfoil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 60 | Emrakul, the World Anew | Modern Horizons 3 | nonfoil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 61 | Entomb - Foil | Premium Deck Series: Graveborn | foil | 2026-10-21 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 62 | Expedited Inheritance - Promo Pack | Promo Pack: Murders at Karlov Manor | nonfoil | 2026-10-21 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 63 | Final Fortune - Future Frame | Mystery Booster 2 | nonfoil | 2026-10-21 | word the matcher can't read: Future Frame; only product of this name and finish in its category | ☐ right ☐ wrong |
+| 64 | Flare of Duplication - Foil - Borderless | Modern Horizons 3 | foil | 2026-10-21 | a plain sibling exists: Flare of Duplication - Foil | ☐ right ☐ wrong |
+| 65 | Fractured Sanity | Modern Horizons 2 | nonfoil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 66 | Fractured Sanity - Showcase | Modern Horizons 2 | nonfoil | 2026-10-21 | a plain sibling exists: Fractured Sanity | ☐ right ☐ wrong |
+| 67 | Ghostway - Retro Frame | Ravnica Remastered | nonfoil | 2026-10-21 | a plain sibling exists: Ghostway | ☐ right ☐ wrong |
+| 68 | Goreclaw, Terror of Qal Sisma - The List | The List | nonfoil | 2026-10-21 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 69 | Great Train Heist | Outlaws of Thunder Junction | nonfoil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 70 | Greater Good - Future Frame | Mystery Booster 2 | nonfoil | 2026-10-21 | word the matcher can't read: Future Frame; only product of this name and finish in its category | ☐ right ☐ wrong |
+| 71 | Guide of Souls | Modern Horizons 3 | nonfoil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 72 | Jet Medallion | Modern Horizons 3 | nonfoil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 73 | Kederekt Parasite - The List | The List | nonfoil | 2026-10-21 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 74 | Koth, Fire of Resistance - Foil | Phyrexia: All Will Be One | foil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 75 | Kozilek, the Broken Reality | Modern Horizons 3 | nonfoil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 76 | Leyline of the Guildpact | Murders at Karlov Manor | nonfoil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 77 | Lilah, Undefeated Slickshot - Foil | Outlaws of Thunder Junction | foil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 78 | Magda, the Hoardmaster | Outlaws of Thunder Junction | nonfoil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 79 | Magda, the Hoardmaster - Promo Pack | Promo Pack: Outlaws of Thunder Junction | nonfoil | 2026-10-21 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 80 | Memory Erosion | Mystery Booster | nonfoil | 2026-10-21 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 81 | Minamo, School at Water's Edge - Foil | Mystery Booster | foil | 2026-10-21 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 82 | Mycosynth Lattice - The List | The List | nonfoil | 2026-10-21 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 83 | Nethergoyf | Modern Horizons 3 | nonfoil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 84 | Nettlecyst | Modern Horizons 2 | nonfoil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 85 | Oko, the Ringleader - Borderless | Outlaws of Thunder Junction | nonfoil | 2026-10-21 | a plain sibling exists: Oko, the Ringleader | ☐ right ☐ wrong |
+| 86 | Pack Rat | Return to Ravnica | nonfoil | 2026-10-21 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 87 | Patriarch's Bidding | Modern Horizons 2 | nonfoil | 2026-10-21 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 88 | Pearl Medallion | Modern Horizons 3 | nonfoil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 89 | Phelia, Exuberant Shepherd | Modern Horizons 3 | nonfoil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 90 | Psychic Frog - Retro Frame | Modern Horizons 3 | nonfoil | 2026-10-21 | a plain sibling exists: Psychic Frog | ☐ right ☐ wrong |
+| 91 | Ragavan, Nimble Pilferer | Modern Horizons 2 | nonfoil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 92 | Rakdos, Patron of Chaos | Murders at Karlov Manor | nonfoil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 93 | Rakdos, the Muscle - Showcase | Outlaws of Thunder Junction | nonfoil | 2026-10-21 | a plain sibling exists: Rakdos, the Muscle | ☐ right ☐ wrong |
+| 94 | Ripples of Undeath | Modern Horizons 3 | nonfoil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 95 | Ruby Medallion | Modern Horizons 3 | nonfoil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 96 | Sacred Foundry | Ravnica Remastered | nonfoil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 97 | Sanctum Weaver | Modern Horizons 2 | nonfoil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 98 | Sapphire Medallion | Modern Horizons 3 | nonfoil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 99 | Scalding Tarn | Modern Horizons 2 | nonfoil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 100 | Seasoned Pyromancer | Modern Horizons | nonfoil | 2026-10-21 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 101 | Seedtime - White Border | Mystery Booster 2 | nonfoil | 2026-10-21 | word the matcher can't read: White Border; only product of this name and finish in its category | ☐ right ☐ wrong |
+| 102 | Serra Ascendant (PAGL) - The List | The List | nonfoil | 2026-10-21 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 103 | Shifting Woodland | Modern Horizons 3 | nonfoil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 104 | Six | Modern Horizons 3 | nonfoil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 105 | Slickshot Show-Off | Outlaws of Thunder Junction | nonfoil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 106 | Slickshot Show-Off - Foil - Extended Art | Outlaws of Thunder Junction | foil | 2026-10-21 | a plain sibling exists: Slickshot Show-Off - Foil | ☐ right ☐ wrong |
+| 107 | Slickshot Show-Off - Foil - Prerelease Promo | Pre-Release Promos | foil | 2026-10-21 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 108 | Solitude | Modern Horizons 2 | nonfoil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 109 | Soulless Jailer | Phyrexia: All Will Be One | nonfoil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 110 | Sowing Mycospawn | Modern Horizons 3 | nonfoil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 111 | Sphinx of the Steel Wind - Foil | Premium Deck Series: Graveborn | foil | 2026-10-21 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 112 | Spirebluff Canal - Foil | Outlaws of Thunder Junction | foil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 113 | Sylvan Safekeeper | Modern Horizons 3 | nonfoil | 2026-10-21 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 114 | Tamiyo, Inquisitive Student // Tamiyo, Seasoned Scholar | Modern Horizons 3 | nonfoil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 115 | Tasha's Hideous Laughter - The List | The List | nonfoil | 2026-10-21 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 116 | Teysa Karlov | Ravnica Allegiance | nonfoil | 2026-10-21 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 117 | Three Steps Ahead - Promo Pack | Promo Pack: Outlaws of Thunder Junction | nonfoil | 2026-10-21 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 118 | Titania, Protector of Argoth - Borderless | Modern Horizons 2 | nonfoil | 2026-10-21 | a plain sibling exists: Titania, Protector of Argoth | ☐ right ☐ wrong |
+| 119 | Treasonous Ogre - Foil | Mystery Booster | foil | 2026-10-21 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 120 | Tyrranax Rex | Phyrexia: All Will Be One | nonfoil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 121 | Ugin's Labyrinth - Borderless | Modern Horizons 3 | nonfoil | 2026-10-21 | a plain sibling exists: Ugin's Labyrinth | ☐ right ☐ wrong |
+| 122 | Unsettled Mariner | Modern Horizons | nonfoil | 2026-10-21 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 123 | Vraska, the Silencer - Showcase | Outlaws of Thunder Junction | nonfoil | 2026-10-21 | a plain sibling exists: Vraska, the Silencer | ☐ right ☐ wrong |
+| 124 | Warren Soultrader | Modern Horizons 3 | nonfoil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 125 | Warren Soultrader - Foil | Modern Horizons 3 | foil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 126 | Watery Grave | Ravnica Remastered | nonfoil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 127 | Wrath of the Skies | Modern Horizons 3 | nonfoil | 2026-10-21 | several same-finish siblings | ☐ right ☐ wrong |
+| 128 | Wrath of the Skies - Retro Frame | Modern Horizons 3 | nonfoil | 2026-10-21 | a plain sibling exists: Wrath of the Skies | ☐ right ☐ wrong |
+| 129 | Yavimaya, Cradle of Growth - Extended Art | Modern Horizons 2 | nonfoil | 2026-10-21 | a plain sibling exists: Yavimaya, Cradle of Growth | ☐ right ☐ wrong |
+| 130 | Yavimaya, Cradle of Growth - Foil - Retro Frame | Modern Horizons 2 | foil | 2026-10-21 | a plain sibling exists: Yavimaya, Cradle of Growth - Foil | ☐ right ☐ wrong |
+| 131 | Aclazotz, Deepest Betrayal // Temple of the Dead | The Lost Caverns of Ixalan | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 132 | Agatha of the Vile Cauldron | Wilds of Eldraine | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 133 | Agent Frank Horrigan | Universes Beyond: Fallout | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 134 | Ancient Stirrings - Foil | Secret Lair Drop Series | foil | 2026-10-22 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 135 | Angel of Suffering | Streets of New Capenna | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 136 | Anim Pakal, Thousandth Moon | The Lost Caverns of Ixalan | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 137 | Archmage Emeritus | Strixhaven: School of Mages | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 138 | Arwen, Mortal Queen - Extended Art | The Lord of the Rings: Tales of Middle-earth | nonfoil | 2026-10-22 | a plain sibling exists: Arwen, Mortal Queen | ☐ right ☐ wrong |
+| 139 | Bard, King of Dale - Borderless | The Hobbit | nonfoil | 2026-10-22 | a plain sibling exists: Bard, King of Dale | ☐ right ☐ wrong |
+| 140 | Baxter, Fly in the Ointment | Teenage Mutant Ninja Turtles Eternal-Legal | nonfoil | 2026-10-22 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 141 | Belladonna Took | The Hobbit | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 142 | Beorn the Fierce | The Hobbit | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 143 | Bilbo's Gambit | The Hobbit | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 144 | Blade Historian | Strixhaven: School of Mages | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 145 | Blasphemous Act | Teenage Mutant Ninja Turtles Eternal-Legal | nonfoil | 2026-10-22 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 146 | Bloodforged Battle-Axe | Universes Beyond: Fallout | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 147 | Blossoming Tortoise - Foil | Wilds of Eldraine | foil | 2026-10-22 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 148 | Blot Out the Sky - Extended Art | Strixhaven: School of Mages | nonfoil | 2026-10-22 | a plain sibling exists: Blot Out the Sky | ☐ right ☐ wrong |
+| 149 | Brotherhood Regalia - Foil | Universes Beyond: Assassin's Creed | foil | 2026-10-22 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 150 | Call of the Ring - Extended Art | The Lord of the Rings: Tales of Middle-earth | nonfoil | 2026-10-22 | a plain sibling exists: Call of the Ring | ☐ right ☐ wrong |
+| 151 | Call of the Ring - Surge Foil - Extended Art | The Lord of the Rings: Tales of Middle-earth | foil | 2026-10-22 | same-finish sibling shares its words: Call of the Ring - Foil - Extended Art; a plain sibling exists: Call of the Ring - Foil | ☐ right ☐ wrong |
+| 152 | Call the Spirit Dragons - Showcase | Tarkir: Dragonstorm | nonfoil | 2026-10-22 | a plain sibling exists: Call the Spirit Dragons | ☐ right ☐ wrong |
+| 153 | Castle Locthwain | Throne of Eldraine | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 154 | Cauldron of Essence - Extended Art | Secrets of Strixhaven | nonfoil | 2026-10-22 | a plain sibling exists: Cauldron of Essence | ☐ right ☐ wrong |
+| 155 | Clown Car | Unfinity | nonfoil | 2026-10-22 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 156 | Cori-Steel Cutter - Promo Pack | Promo Pack: Tarkir: Dragonstorm | nonfoil | 2026-10-22 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 157 | Crackle with Power | Secrets of Strixhaven: Mystical Archive | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 158 | Crashing Footfalls - Foil - Borderless | Special Guests | foil | 2026-10-22 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 159 | Deafening Silence - Foil - Showcase | Special Guests | foil | 2026-10-22 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 160 | Deathcap Glade | Secrets of Strixhaven | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 161 | Decadent Dragon // Expensive Taste - Showcase | Wilds of Eldraine | nonfoil | 2026-10-22 | a plain sibling exists: Decadent Dragon // Expensive Taste | ☐ right ☐ wrong |
+| 162 | Deflecting Palm | Secrets of Strixhaven: Mystical Archive | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 163 | Diabolic Intent - Foil - Promo Pack | Promo Pack: The Brothers' War | foil | 2026-10-22 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 164 | Dracogenesis - Showcase | Tarkir: Dragonstorm | nonfoil | 2026-10-22 | a plain sibling exists: Dracogenesis | ☐ right ☐ wrong |
+| 165 | Dragon's Desire - Borderless | The Hobbit: Eternal-Legal | nonfoil | 2026-10-22 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 166 | Dragonologist - Foil | Tarkir: Dragonstorm | foil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 167 | Elven Chorus | The Lord of the Rings: Tales of Middle-earth | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 168 | Elven Chorus - Extended Art | The Lord of the Rings: Tales of Middle-earth | nonfoil | 2026-10-22 | a plain sibling exists: Elven Chorus | ☐ right ☐ wrong |
+| 169 | Elven Chorus - Foil - Showcase Scrolls | The Lord of the Rings: Tales of Middle-earth | foil | 2026-10-22 | word the matcher can't read: Showcase Scrolls; a plain sibling exists: Elven Chorus - Foil | ☐ right ☐ wrong |
+| 170 | Emeritus of Ideation | Secrets of Strixhaven | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 171 | Exhibition Tidecaller | Secrets of Strixhaven | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 172 | Falco Spara, Pactweaver | Streets of New Capenna | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 173 | Faramir, Prince of Ithilien - Surge Foil - Showcase | The Lord of the Rings: Tales of Middle-earth | foil | 2026-10-22 | same-finish sibling shares its words: Faramir, Prince of Ithilien - Foil - Showcase \| Faramir, Prince of Ithilien - Foil - Showcase Scrolls; a plain sibling exists: Faramir, Prince of Ithilien - Foil; a sibling differs only by an extra word: Faramir, Prince of Ithilien - Foil - Showcase Scrolls | ☐ right ☐ wrong |
+| 174 | Fateful Discovery | The Hobbit | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 175 | Felothar, Dawn of the Abzan - Foil | Tarkir: Dragonstorm | foil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 176 | Feral Ghoul | Universes Beyond: Fallout | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 177 | Fervent Champion | Throne of Eldraine | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 178 | Flame of Anor | The Lord of the Rings: Tales of Middle-earth | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 179 | Folio of Fancies | Throne of Eldraine | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 180 | Forced Fruition | Wilds of Eldraine: Enchanting Tales | nonfoil | 2026-10-22 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 181 | Forge Anew | The Lord of the Rings: Tales of Middle-earth | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 182 | Game Over | Teenage Mutant Ninja Turtles Eternal-Legal | nonfoil | 2026-10-22 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 183 | Gandalf, Goblins' Bane // Flameshape | The Hobbit | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 184 | Gandalf, Goblins' Bane // Flameshape - Borderless | The Hobbit | nonfoil | 2026-10-22 | a plain sibling exists: Gandalf, Goblins' Bane // Flameshape | ☐ right ☐ wrong |
+| 185 | Gandalf, Goblins' Bane // Flameshape - Foil - Borderless | The Hobbit | foil | 2026-10-22 | same-finish sibling shares its words: Gandalf, Goblins' Bane // Flameshape - Surge Foil - Borderless; a plain sibling exists: Gandalf, Goblins' Bane // Flameshape - Foil | ☐ right ☐ wrong |
+| 186 | Get Lost | The Lost Caverns of Ixalan | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 187 | Gishath, Sun's Avatar | The Lost Caverns of Ixalan | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 188 | Gloin, Dwarf Emissary | The Lord of the Rings: Tales of Middle-earth | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 189 | Grand Coliseum - Surge Foil | Teenage Mutant Ninja Turtles Eternal-Legal | foil | 2026-10-22 | same-finish sibling shares its words: Grand Coliseum - Foil | ☐ right ☐ wrong |
+| 190 | Grave Researcher - Foil - Promo Pack | Promo Pack: Secrets of Strixhaven | foil | 2026-10-22 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 191 | Greensleeves, Maro-Sorcerer - Rainbow Foil | Secret Lair Drop Series | foil | 2026-10-22 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 192 | Growing Rites of Itlimoc // Itlimoc, Cradle of the Sun - Extended Art | The Lost Caverns of Ixalan | nonfoil | 2026-10-22 | a plain sibling exists: Growing Rites of Itlimoc // Itlimoc, Cradle of the Sun | ☐ right ☐ wrong |
+| 193 | Heliod's Intervention - Promo Pack | Promo Pack: Theros Beyond Death | nonfoil | 2026-10-22 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 194 | Horn of Gondor - Surge Foil - Extended Art | The Lord of the Rings: Tales of Middle-earth | foil | 2026-10-22 | same-finish sibling shares its words: Horn of Gondor - Foil - Extended Art; a plain sibling exists: Horn of Gondor - Foil | ☐ right ☐ wrong |
+| 195 | Hulking Raptor | The Lost Caverns of Ixalan | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 196 | Irma, Part-Time Mutant | Teenage Mutant Ninja Turtles Eternal-Legal | nonfoil | 2026-10-22 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 197 | Krang, Utrom Warlord | Teenage Mutant Ninja Turtles | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 198 | Last Light of Durin's Day - Surge Foil - Showcase | The Hobbit | foil | 2026-10-22 | same-finish sibling shares its words: Last Light of Durin's Day - Foil - Showcase; a plain sibling exists: Last Light of Durin's Day - Foil | ☐ right ☐ wrong |
+| 199 | Leatherhead, Iron Gator | Teenage Mutant Ninja Turtles Eternal-Legal | nonfoil | 2026-10-22 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 200 | Leonardo, Worldly Warrior | Teenage Mutant Ninja Turtles Eternal-Legal | nonfoil | 2026-10-22 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 201 | Level Up | Teenage Mutant Ninja Turtles Eternal-Legal | nonfoil | 2026-10-22 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 202 | Leyline of the Void | Wilds of Eldraine: Enchanting Tales | nonfoil | 2026-10-22 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 203 | Likeness Looter | Wilds of Eldraine | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 204 | Liliana's Mastery | Game Night: Free-For-All | nonfoil | 2026-10-22 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 205 | Lord Xander, the Collector | Streets of New Capenna | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 206 | MacCready, Lamplight Mayor | Universes Beyond: Fallout | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 207 | Marchesa, the Black Rose (2009) | Secret Lair Drop Series | nonfoil | 2026-10-22 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 208 | Mathemagics - Extended Art | Secrets of Strixhaven | nonfoil | 2026-10-22 | a plain sibling exists: Mathemagics | ☐ right ☐ wrong |
+| 209 | Matzalantli, the Great Door // The Core | The Lost Caverns of Ixalan | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 210 | Mechanized Production | Universes Beyond: Fallout | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 211 | Mines of Moria - Foil | The Lord of the Rings: Tales of Middle-earth | foil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 212 | Mirelurk Queen | Universes Beyond: Fallout | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 213 | Mona Lisa, Ever Adaptable | Teenage Mutant Ninja Turtles Eternal-Legal | nonfoil | 2026-10-22 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 214 | Mount Doom | The Lord of the Rings: Tales of Middle-earth | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 215 | Mount Doom - Foil - Borderless | The Lord of the Rings: Tales of Middle-earth | foil | 2026-10-22 | same-finish sibling shares its words: Mount Doom - Foil - Borderless Poster \| Mount Doom - Foil - Borderless Poster (Serialized) \| Mount Doom - Surge Foil - Borderless; a plain sibling exists: Mount Doom - Foil; a sibling differs only by an extra word: Mount Doom - Foil - Borderless Poster | ☐ right ☐ wrong |
+| 216 | My Precious | The Hobbit | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 217 | Nature's Rhythm | Tarkir: Dragonstorm | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 218 | Nature's Rhythm - Borderless | Tarkir: Dragonstorm | nonfoil | 2026-10-22 | a plain sibling exists: Nature's Rhythm | ☐ right ☐ wrong |
+| 219 | Nature's Rhythm - Promo Pack | Promo Pack: Tarkir: Dragonstorm | nonfoil | 2026-10-22 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 220 | Neriv, Heart of the Storm | Tarkir: Dragonstorm | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 221 | Night's Whisper (7110) - Foil | Secret Lair Drop Series | foil | 2026-10-22 | same-finish sibling shares its words: Night's Whisper (1937) - Foil | ☐ right ☐ wrong |
+| 222 | Nogi, Draco-Zealot - Foil | Game Night: Free-For-All | foil | 2026-10-22 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 223 | Ojer Kaslem, Deepest Growth // Temple of Cultivation - Foil - Showcase | The Lost Caverns of Ixalan | foil | 2026-10-22 | a plain sibling exists: Ojer Kaslem, Deepest Growth // Temple of Cultivation - Foil | ☐ right ☐ wrong |
+| 224 | Ojer Kaslem, Deepest Growth // Temple of Cultivation - Showcase | The Lost Caverns of Ixalan | nonfoil | 2026-10-22 | a plain sibling exists: Ojer Kaslem, Deepest Growth // Temple of Cultivation | ☐ right ☐ wrong |
+| 225 | Ojer Pakpatiq, Deepest Epoch // Temple of Cyclical Time - Showcase | The Lost Caverns of Ixalan | nonfoil | 2026-10-22 | a plain sibling exists: Ojer Pakpatiq, Deepest Epoch // Temple of Cyclical Time | ☐ right ☐ wrong |
+| 226 | Oppression | Wilds of Eldraine: Enchanting Tales | nonfoil | 2026-10-22 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 227 | Orcrist, Goblin-cleaver - Showcase | The Hobbit | nonfoil | 2026-10-22 | a plain sibling exists: Orcrist, Goblin-cleaver | ☐ right ☐ wrong |
+| 228 | Pathbreaker Ibex - Foil - Borderless | Special Guests | foil | 2026-10-22 | same-finish sibling shares its words: Pathbreaker Ibex - First-Place Foil - Borderless | ☐ right ☐ wrong |
+| 229 | Phial of Galadriel - Foil | The Lord of the Rings: Tales of Middle-earth | foil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 230 | Polluted Bonds - Foil - Anime Borderless | Wilds of Eldraine: Enchanting Tales | foil | 2026-10-22 | **Polluted Bonds (WOT) 34 *F*, reported wrong**; word the matcher can't read: Anime Borderless; same-finish sibling shares its words: Polluted Bonds - Confetti Foil - Anime Borderless; a plain sibling exists: Polluted Bonds - Foil; a sibling differs only by an extra word: Polluted Bonds - Confetti Foil - Anime Borderless | ☐ right ☐ wrong |
+| 231 | Primal Vigor | Wilds of Eldraine: Enchanting Tales | nonfoil | 2026-10-22 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 232 | Prismari, the Inspiration | Secrets of Strixhaven | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 233 | Prismatic Omen | Wilds of Eldraine: Enchanting Tales | nonfoil | 2026-10-22 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 234 | Professor Dellian Fel | Secrets of Strixhaven | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 235 | Pyretic Ritual | Secrets of Strixhaven: Mystical Archive | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 236 | Quandrix, the Proof - Foil | Secrets of Strixhaven | foil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 237 | Radagast of Rhosgobel | The Hobbit | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 238 | Ral Zarek, Guest Lecturer | Secrets of Strixhaven | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 239 | Rankle, Master of Pranks | Throne of Eldraine | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 240 | Raph & Mikey, Troublemakers - Showcase | Teenage Mutant Ninja Turtles | nonfoil | 2026-10-22 | a plain sibling exists: Raph & Mikey, Troublemakers | ☐ right ☐ wrong |
+| 241 | Ray Fillet, Wave Warrior | Teenage Mutant Ninja Turtles Eternal-Legal | nonfoil | 2026-10-22 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 242 | Resonating Lute | Secrets of Strixhaven | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 243 | Restless Reef | The Lost Caverns of Ixalan | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 244 | Restoration Seminar | Secrets of Strixhaven | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 245 | Roaming Throne - Borderless | The Lost Caverns of Ixalan | nonfoil | 2026-10-22 | a plain sibling exists: Roaming Throne | ☐ right ☐ wrong |
+| 246 | Saruman of Many Colors - Borderless | The Hobbit: Eternal-Legal | nonfoil | 2026-10-22 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 247 | Scrapheap | Urza's Legacy | nonfoil | 2026-10-22 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 248 | Shamanic Revelation - Foil | Secrets of Strixhaven: Mystical Archive | foil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 249 | Shared Animosity | Wilds of Eldraine: Enchanting Tales | nonfoil | 2026-10-22 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 250 | Shelob, Child of Ungoliant - Extended Art | The Lord of the Rings: Tales of Middle-earth | nonfoil | 2026-10-22 | a plain sibling exists: Shelob, Child of Ungoliant | ☐ right ☐ wrong |
+| 251 | Shiko, Paragon of the Way - Showcase | Tarkir: Dragonstorm | nonfoil | 2026-10-22 | a plain sibling exists: Shiko, Paragon of the Way | ☐ right ☐ wrong |
+| 252 | Smaug the Magnificent | The Hobbit | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 253 | Sorin, Grim Nemesis | Shadows Over Innistrad | nonfoil | 2026-10-22 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 254 | Spiteful Banditry | The Lord of the Rings: Tales of Middle-earth | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 255 | Sram, Senior Edificer | Time Spiral Remastered | nonfoil | 2026-10-22 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 256 | Sundown Pass | Secrets of Strixhaven | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 257 | Sundown Pass - Foil | Secrets of Strixhaven | foil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 258 | The Arkenstone | The Hobbit | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 259 | The Battle of Bywater - Extended Art | The Lord of the Rings: Tales of Middle-earth | nonfoil | 2026-10-22 | a plain sibling exists: The Battle of Bywater | ☐ right ☐ wrong |
+| 260 | The Lonely Mountain (0207) - Borderless | The Hobbit | nonfoil | 2026-10-22 | same-finish sibling shares its words: The Lonely Mountain (0248) - Borderless; a plain sibling exists: The Lonely Mountain | ☐ right ☐ wrong |
+| 261 | The Lonely Mountain (0248) - Borderless | The Hobbit | nonfoil | 2026-10-22 | same-finish sibling shares its words: The Lonely Mountain (0207) - Borderless; a plain sibling exists: The Lonely Mountain | ☐ right ☐ wrong |
+| 262 | The Shire | The Lord of the Rings: Tales of Middle-earth | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 263 | The Shire - Borderless | The Lord of the Rings: Tales of Middle-earth | nonfoil | 2026-10-22 | a plain sibling exists: The Shire | ☐ right ☐ wrong |
+| 264 | The Watcher in the Water | The Lord of the Rings: Tales of Middle-earth | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 265 | The Watcher in the Water - Extended Art | The Lord of the Rings: Tales of Middle-earth | nonfoil | 2026-10-22 | a plain sibling exists: The Watcher in the Water | ☐ right ☐ wrong |
+| 266 | The Watcher in the Water - Surge Foil - Extended Art | The Lord of the Rings: Tales of Middle-earth | foil | 2026-10-22 | a plain sibling exists: The Watcher in the Water - Foil | ☐ right ☐ wrong |
+| 267 | There and Back Again - Foil | The Lord of the Rings: Tales of Middle-earth | foil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 268 | Thought-Knot Seer - Borderless | Special Guests | nonfoil | 2026-10-22 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 269 | Thranduil, the Elvenking - Borderless | The Hobbit | nonfoil | 2026-10-22 | a plain sibling exists: Thranduil, the Elvenking | ☐ right ☐ wrong |
+| 270 | Titania, Voice of Gaea | The Brothers' War | nonfoil | 2026-10-22 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 271 | Tom Bombadil | The Lord of the Rings: Tales of Middle-earth | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 272 | Toxic Sheepsquatch - Gemrazer - Foil - Showcase | Universes Beyond: Fallout | foil | 2026-10-22 | word the matcher can't read: Gemrazer; same-finish sibling shares its words: Toxic Sheepsquatch - Gemrazer - Surge Foil - Showcase; a sibling differs only by an extra word: Toxic Sheepsquatch - Gemrazer - Surge Foil - Showcase | ☐ right ☐ wrong |
+| 273 | Triceraton Commander - Showcase | Teenage Mutant Ninja Turtles | nonfoil | 2026-10-22 | a plain sibling exists: Triceraton Commander | ☐ right ☐ wrong |
+| 274 | Undergrowth Stadium | Teenage Mutant Ninja Turtles Eternal-Legal | nonfoil | 2026-10-22 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 275 | Ureni, the Song Unending | Tarkir: Dragonstorm | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 276 | Vernal Fen | Teenage Mutant Ninja Turtles Eternal-Legal | nonfoil | 2026-10-22 | only product of this name and finish in its category | ☐ right ☐ wrong |
+| 277 | Virtue of Knowledge // Vantress Visions | Wilds of Eldraine | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 278 | Virtue of Persistence // Locthwain Scorn - Foil | Wilds of Eldraine | foil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 279 | Witch-king of Angmar | The Lord of the Rings: Tales of Middle-earth | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 280 | Withering Curse | Secrets of Strixhaven | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 281 | Wizard's Staff | The Hobbit | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 282 | Wizard's Staff - Foil | The Hobbit | foil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
+| 283 | Zaffai and the Tempests | Secrets of Strixhaven | nonfoil | 2026-10-22 | several same-finish siblings | ☐ right ☐ wrong |
 
 ---
 
