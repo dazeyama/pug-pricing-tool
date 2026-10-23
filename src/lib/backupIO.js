@@ -76,8 +76,11 @@ export async function restoreBackup(data, fileName, userId, deviceId) {
     p_typed: 'RESTORE',
   }));
   if (error) throw new Error(dbMessage(error, 'The restore failed, and nothing was changed', RESTORE_ERRORS));
-  // A backup made before Can't upload cards existed (export spec 9.5): make it again.
+  // A backup made before Can't upload cards existed (export spec 9.5): make it again. Bulk pulled from exports
+  // too, there from the start since 0008 (decision 449).
   const { error: ensureError } = await supabase.rpc('cant_upload_ensure');
   if (ensureError) console.error("Couldn't make Can't upload cards again", ensureError);
+  const { error: pulledError } = await supabase.rpc('pulled_ensure');
+  if (pulledError) console.error("Couldn't make Bulk pulled from exports again", pulledError);
   return counts;
 }

@@ -218,7 +218,9 @@ section('Starting rows (not from dev: what the old migrations seeded)');
 put(`-- The master percentages start at the store's 33.34 / 66.68 (decision 333; 0001 seeded 33 / 66).`,
   `insert into public.settings (key, value) values ('cash_pct', '33.34'), ('credit_pct', '66.68') on conflict (key) do nothing;`,
   `-- 0028: the Can't upload cards collection.`,
-  `select public.cant_upload_ensure();`);
+  `select public.cant_upload_ensure();`,
+  `-- 0008: Bulk pulled from exports, there from the start too (decision 449).`,
+  `select public.pulled_ensure();`);
 
 const text = L.join('\n') + '\n';
 fs.writeFileSync(out, text);

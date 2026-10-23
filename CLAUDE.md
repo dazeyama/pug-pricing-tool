@@ -121,7 +121,7 @@ tests (`npm test`, commit only on `fail 0`) and the build.
   `supabase/migrations-archive/`). Prod and dev both have 0001–0007 (0002 the Changelog lock, 0003 the counter
   grant, 2026-10-19; 0004 the review leftovers, 2026-10-20; 0005 pulled bulk, 0006 settings logged and 0007 the
   inventory cleared in batches, on prod 2026-10-21). They stay equal (decision 381). **Dev also has 0008** (owned
-  copies, decision 448, 2026-10-22); prod gets it at the owner's go, after store hours. The next migration is 0009.
+  copies, decision 448, and Bulk pulled from exports there from the start, 449; 2026-10-22); prod gets it at the owner's go, after store hours. The next migration is 0009.
 - The CLI stays linked to dev (`supabase/.temp/project-ref`). Anything aimed at prod names it:
   `--linked --project-ref zvxquzcfffmxwizonxuo` for `migration list`, `db push` and `db query` (the flag overrides
   the link for that one command; the function deploys take `--project-ref` alone); no password was asked for it

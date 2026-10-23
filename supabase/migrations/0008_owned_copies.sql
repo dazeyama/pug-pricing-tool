@@ -670,3 +670,8 @@ begin
   return p_line_id;
 end;
 $function$;
+
+-- Bulk pulled from exports there from the start, empty, as Can't upload cards is (0001 ends with
+-- cant_upload_ensure; owner, 2026-10-22: "a default System collection for Bulk pulled from exports so it exists
+-- empty"). Until now the first card pulled made it (0005). A store that has it already keeps it as it is.
+select public.pulled_ensure();

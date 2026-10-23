@@ -58,7 +58,8 @@ async function knownCodes() {
 
 // Bulk pulled from exports is Completed on the screens (decision 423) while the database still
 // has it Paid/Ours, so global_search returns its cards: they're dropped here, Show all or not.
-// Its id, looked up at most every five minutes (the row appears with the first (>…) export).
+// Its id, looked up at most every five minutes (there from the start since 0008, decision 449; before, the row
+// appeared with the first (>…) export).
 let pulled = { at: 0, id: null };
 async function pulledCollectionId() {
   if (Date.now() - pulled.at < 5 * 60_000) return pulled.id;

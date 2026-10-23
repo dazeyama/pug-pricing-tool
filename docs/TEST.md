@@ -380,6 +380,10 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       and on its own details bar, whose hint says "Always Completed, and left out of the header search"; × still
       removes a card at once and EXPORT still works; the header search for a card in it finds nothing there, with
       Show all on or off, while the same card in Can't upload cards is still found.
+- [ ] **Bulk pulled from exports there from the start** (decision 449): on a store that never pulled a card (the
+      live site, once 0008 is on it: look, don't pull one), the Collections tab's System table shows it empty
+      beside Can't upload cards, grey Completed; opening it shows no cards, and EXPORT has nothing to send. On dev,
+      restoring a backup made before it existed brings it back, empty.
 
 ## 12. Collections tab: projects
 

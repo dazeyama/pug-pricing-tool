@@ -6,7 +6,11 @@ and function.
 
 ## Open
 
-- **Dev is ahead of prod: migration 0008 (owned copies, decision 448) is on dev only.** Prod gets it at the owner's
+- **Dev is ahead of prod: migration 0008 (owned copies, decision 448; and Bulk pulled from exports made empty from
+  the start, decision 449) is on dev only.** 449's line is a no-op on dev (the collection's been there since dev's
+  first pull) and was added to 0008 after it was applied there, as 448's last changes were. After the prod push,
+  look on prod (read-only): `select count(*) from buys where system_key = 'pulled'` is 1; the structure-only
+  compare can't see rows. Prod gets it at the owner's
   go when the store isn't using the app (CLAUDE.md Database step 6: `db push --linked --project-ref
   zvxquzcfffmxwizonxuo`, then the structure-only compare with `C:\ClaudeProjects\temp\dev-run-0008.json`). The
   app code that uses it isn't pushed before. The live build works with 0008 on prod (same signatures).
@@ -19,7 +23,8 @@ and function.
   count as in it. Placeholders aren't counted (nothing ever exports or completes one). On the live site, the CC
   counts start with the first inventory upload after 0008 is on prod. **Help out of date:** the Buy tab's price
   panel section has no counter, Apply or Auto apply rates?.
-- **Unpushed:** decision 448, owned copies (needs migration 0008 on prod first), decision 435, Magic's promos after its normal printings (`cardSearch.js` `rank`, `scryfall.js`
+- **Unpushed:** decision 449, Bulk pulled from exports there empty (with 0008; `backupIO.js` `restoreBackup`),
+  decision 448, owned copies (needs migration 0008 on prod first), decision 435, Magic's promos after its normal printings (`cardSearch.js` `rank`, `scryfall.js`
   `isPromo`), decisions 436–439, the backup JustTCG key, 440–441, the Export dialog's held pick and Undo, 442, a click keeping a menu group's flyout open, 443–445, the Magic printouts' new order and Print MTG / PKM in
   buy order, 446, accents in searches, and 447, Alt+A for mimp mode.
   Untested in the app. **Edge Functions changed:**
