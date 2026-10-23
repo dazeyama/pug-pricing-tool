@@ -10,7 +10,7 @@ const copies = (n) => `${n} ${n === 1 ? 'copy' : 'copies'}`;
  * finish, and the card in every printing, each the inventory's Total Qty plus ours not in it yet.
  * Pointing at it shows a box in the price warnings' style: "We own X copies of this printing and Y copies
  * of this card", and for each copy of the card over 2, 5% off its rate to apply with a click (it goes on
- * ADD CARD as the card's own rate). Under it, Auto apply rates? for the buy. Nothing changes a rate unless
+ * ADD CARD as the card's own rate). Above it, Auto apply rates? for the buy. Nothing changes a rate unless
  * the worker clicks Apply or checks the box.
  * @param {object} p
  * @param {object|null} p.candidate  the selected card, or null
@@ -55,8 +55,8 @@ export default function OwnedCounter({ candidate, owned, suggested, applied, app
     const why = !candidate ? 'Copies we own appear here' : 'Copies we own: Magic only for now';
     return (
       <div className="owned">
-        <div className="owned-empty">{why}</div>
         {autoBox}
+        <div className="owned-empty">{why}</div>
       </div>
     );
   }
@@ -96,6 +96,8 @@ export default function OwnedCounter({ candidate, owned, suggested, applied, app
 
   return (
     <div className="owned" ref={box} onMouseLeave={() => setHover(false)}>
+      {/* Auto apply rates? at the top (owner, 2026-10-22; decision 456). */}
+      {autoBox}
       <button
         type="button"
         className={`owned-boxes${suggested ? ' hot' : ''}${applied ? ' applied' : ''}${pinned ? ' on' : ''}`}
@@ -118,7 +120,6 @@ export default function OwnedCounter({ candidate, owned, suggested, applied, app
         </span>
       </button>
       {tag}
-      {autoBox}
       {open && (
         <div className="owned-pop">
           <section className="owned-pop-box" aria-label="Copies we own">

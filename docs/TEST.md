@@ -189,7 +189,7 @@ what happens. The findings are reported when the pass ends.
       price panel's Credit and Cash drop, with ↓ and a green ring. ADD CARD: the line shows ✎ Credit / Cash at those
       rates. Apply, then pick another card: it isn't applied there. Editing a line: the box says to use Set Rate.
       On a project: "A project has no rates."
-- [ ] **Auto apply rates?** under the boxes: check it, add a card we own 3+ of: it goes on at the lower rate
+- [ ] **Auto apply rates?** above the boxes (decision 456): check it, add a card we own 3+ of: it goes on at the lower rate
       without clicking Apply; one we own 2 or fewer of: its usual rate. The cards already on the list keep theirs.
       Reload: still checked. CONFIRM BUY: the next buy starts unchecked. On an overnight buy, checking it puts
       "auto apply rates: off → on" in the Changelog. With the phone paired and the box checked, a scanned card we

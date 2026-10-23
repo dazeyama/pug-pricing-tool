@@ -1,5 +1,5 @@
 /* The copies we own (decision 448), at the right of the info row, beside the card's details: two boxes,
-   this printing and all printings, with Auto apply rates? under them. Its box of details hangs below it,
+   this printing and all printings, with Auto apply rates? above them (decision 456). Its box of details hangs below it,
    over the suggestions, as the price warnings' does over Finish & Details. */
 .area-info { display: flex; justify-content: space-between; gap: 16px; }
 .area-info .card-info { flex: 1 1 auto; min-width: 0; }
