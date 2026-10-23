@@ -47,7 +47,7 @@ export default function OwnedCounter({
 
   useDismiss(() => setPinned(false), { ref: box, when: pinned, escape: false });
 
-  // The stamp switching (decision 461): which stamp it was, while the old one fades and the new one lands
+  // The stamp switching (decisions 461, 462): which stamp it was, while the new one lands over it
   // (0.3 s); only when the same card's state changes, never as a new card comes up.
   const [flip, setFlip] = useState(null);   // { from: boolean, n: number } or null
   const last = useRef({ key: null, applied });
@@ -164,7 +164,8 @@ export default function OwnedCounter({
       </button>
       {chips}
       {/* Applied or not, stamped (owner, 2026-10-23; decision 459): whenever there's a rate to apply. A click
-          switches it, as Apply does (decision 461): the old stamp fades, the new one drops in and lands. */}
+          switches it, as Apply does (decision 461): the new one drops in over the old and lands, the old one
+          fading only at the end (decision 462). */}
       {suggested && (
         <button
           type="button"

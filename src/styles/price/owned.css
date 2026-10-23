@@ -176,10 +176,12 @@
   height: auto;
   transform: rotate(var(--tilt));
 }
-.ink-stamp.applied { --tilt: -3deg; color: #12c42a; }
+/* APPLIED tilts the other way to NOT APPLIED (decision 462). */
+.ink-stamp.applied { --tilt: 3deg; color: #12c42a; }
 .ink-stamp.not-applied { color: #ff1a1a; }
-/* The stamp is the switch (decision 461): a click applies the rate or takes it off. While it switches, the old
-   one fades and the new one drops in from larger, lands with a shake and settles, in 0.3 s. */
+/* The stamp is the switch (decision 461): a click applies the rate or takes it off. While it switches, the new
+   one drops in from larger over the old, lands with a shake and settles, in 0.3 s; the old one fades only in
+   the last frames (decision 462). */
 .stamp-btn {
   display: grid;
   justify-items: center;
@@ -194,10 +196,12 @@
 .stamp-btn:disabled { cursor: default; }
 .stamp-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
 .stamp-btn:not(:disabled):hover .ink-stamp:not(.leaving) { filter: brightness(1.15); }
-.ink-stamp.leaving { animation: stamp-out 120ms ease-out forwards; }
+/* The old stamp stays as it is under the new one, fading only in the last frames (decision 462). */
+.ink-stamp.leaving { animation: stamp-out 300ms linear forwards; }
 .ink-stamp.landing { position: relative; z-index: 1; animation: stamp-in 300ms cubic-bezier(.2, .9, .3, 1) both; }
 @keyframes stamp-out {
-  to { opacity: 0; transform: rotate(var(--tilt)) scale(.94); }
+  0%, 80% { opacity: 1; }
+  100% { opacity: 0; }
 }
 @keyframes stamp-in {
   0% { opacity: 0; transform: rotate(var(--tilt)) translateY(-8px) scale(1.8); }
