@@ -80,42 +80,44 @@ export default function OwnedCopiesPanel() {
   return (
     <section className="cardpanel settings-panel settings-wide">
       <div className="cardpanel-head"><strong>Copies we own</strong></div>
+      {/* Three columns across the full width, so it fits the panels' fixed height with no scroll (owner,
+          2026-10-23; decision 475): what it is and its switches, the cut, the bonuses. */}
       <div className="cardpanel-body owned-set">
-        <p className="hint">
-          On the Price screen, Magic cards show how many copies we own (Crystal Commerce&apos;s inventory and ours
-          not in it yet) and suggest a rate: lower when we have plenty, higher for a first copy. Each percent is of
-          the card&apos;s rate (Credit 60% at 10% lower is 54%). Nothing changes a rate until a worker applies it,
-          or checks Auto apply rates? for the buy.
-        </p>
-        <OwnedSwitch
-          field="on"
-          label="Show copies we own on the Price screen"
-          hint="Off: no counter, no suggested rate, and no Auto apply rates?."
-        />
-        <div className="owned-set-cols">
-          <fieldset className="owned-set-group" disabled={!cfg.on}>
-            <legend>The cut</legend>
-            <OwnedBox field="free" label="Copies before a cut starts" count />
-            <OwnedBox field="step" label="Lower for each copy over that" />
-            <OwnedBox field="cap" label="At most" />
-          </fieldset>
-          <fieldset className="owned-set-group" disabled={!cfg.on}>
-            <legend>First-copy bonuses</legend>
-            <OwnedBox field="first_printing" label="First of this printing" prefix="+" />
-            <OwnedBox field="first_card" label="First of this card, on top" prefix="+" />
-            <OwnedSwitch field="low_end_bonus" label="Bonuses on low-end cards too" />
-          </fieldset>
+        <div className="owned-set-intro">
+          <p className="hint">
+            On the Price screen, Magic cards show how many copies we own (Crystal Commerce&apos;s inventory and ours
+            not in it yet) and suggest a rate: lower when we have plenty, higher for a first copy. Each percent is
+            of the card&apos;s rate (Credit 60% at 10% lower is 54%). Nothing changes a rate until a worker applies
+            it, or checks Auto apply rates? for the buy.
+          </p>
+          <OwnedSwitch
+            field="on"
+            label="Show copies we own on the Price screen"
+            hint="Off: no counter, no suggested rate, and no Auto apply rates?."
+          />
+          <OwnedSwitch
+            field="auto_default"
+            label="New walk-in buys start with Auto apply rates? checked"
+            hint="Overnight buys keep their own box, off till checked."
+          />
+          <p className="hint owned-set-example">
+            With these: {cfg.free + 2} copies of a card, {ownedCut(cfg.free + 2, cfg)}% lower
+            {capAt != null ? `; ${capAt} or more, ${cfg.cap}% lower` : ''}; a card we&apos;ve never had, {firstBoth}% higher
+            {cfg.first_printing > 0 ? `; a new printing of one we have, ${cfg.first_printing}% higher` : ''}.
+          </p>
         </div>
-        <OwnedSwitch
-          field="auto_default"
-          label="New walk-in buys start with Auto apply rates? checked"
-          hint="Overnight buys keep their own box, off till checked."
-        />
-        <p className="hint owned-set-example">
-          With these: {cfg.free + 2} copies of a card, {ownedCut(cfg.free + 2, cfg)}% lower
-          {capAt != null ? `; ${capAt} or more, ${cfg.cap}% lower` : ''}; a card we&apos;ve never had, {firstBoth}% higher
-          {cfg.first_printing > 0 ? `; a new printing of one we have, ${cfg.first_printing}% higher` : ''}.
-        </p>
+        <fieldset className="owned-set-group" disabled={!cfg.on}>
+          <legend>The cut</legend>
+          <OwnedBox field="free" label="Copies before a cut starts" count />
+          <OwnedBox field="step" label="Lower for each copy over that" />
+          <OwnedBox field="cap" label="At most" />
+        </fieldset>
+        <fieldset className="owned-set-group" disabled={!cfg.on}>
+          <legend>First-copy bonuses</legend>
+          <OwnedBox field="first_printing" label="First of this printing" prefix="+" />
+          <OwnedBox field="first_card" label="First of this card, on top" prefix="+" />
+          <OwnedSwitch field="low_end_bonus" label="Bonuses on low-end cards too" />
+        </fieldset>
       </div>
     </section>
   );

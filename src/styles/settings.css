@@ -239,10 +239,16 @@
 .credit-what::after { content: " —"; color: var(--muted); }
 .credit-from { color: var(--muted); }
 
-/* Settings → Copies we own (decision 474): the cut and the bonuses side by side, a switch above and below. */
-.owned-set { display: flex; flex-direction: column; gap: 12px; }
-.owned-set > .hint { margin: 0; }
-.owned-set-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+/* Settings → Copies we own (decision 474): three columns across the full width, so it fits the panels' fixed
+   height without scrolling (decision 475): what it is and its switches, the cut, the bonuses. */
+.owned-set {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.owned-set-intro { display: flex; flex-direction: column; gap: 10px; }
+.owned-set-intro .hint { margin: 0; }
 .owned-set-group {
   margin: 0;
   padding: 10px 14px 12px;
