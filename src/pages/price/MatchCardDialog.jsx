@@ -9,8 +9,9 @@ import { useToast } from '../../components/Toast.jsx';
 /**
  * Which Crystal Commerce product is this printing? (owner, 2026-10-23; decision 468): from the owned-copies
  * counter's n/a, the export's own choice for one card: its candidates, a search, and "Always use … for this
- * set" when its set has no category yet. A pick is remembered for the printing and finish just as a pick in
- * EXPORT is (cc_product_links), so the next export takes it too, and the counter counts again.
+ * set" when its set has no category yet. A pick is only selected until SAVE (decision 469), then remembered for
+ * the printing and finish just as a pick in EXPORT is (cc_product_links), so the next export takes it too, and
+ * the counter counts again; CANCEL (or Esc, or a click outside) leaves everything as it was.
  * @param {{ candidate: object, finish: string, userId: string|null, onPicked: () => void, onClose: () => void }} props
  */
 export default function MatchCardDialog({ candidate, finish, userId, onPicked, onClose }) {
@@ -18,6 +19,8 @@ export default function MatchCardDialog({ candidate, finish, userId, onPicked, o
   const [match, setMatch] = useState(null);   // the match, or { error }
   const [always, setAlways] = useState(false);
   const [saving, setSaving] = useState(false);
+  // The product picked, saved only on SAVE (owner, 2026-10-23: "not apply until save is pressed"; decision 469).
+  const [picked, setPicked] = useState(null);
 
   useEffect(() => {
     let live = true;
@@ -30,8 +33,9 @@ export default function MatchCardDialog({ candidate, finish, userId, onPicked, o
     };
   }, [candidate, finish]);
 
-  async function pick(product) {
-    if (saving || !match?.line) return;
+  async function save() {
+    const product = picked;
+    if (saving || !product || !match?.line) return;
     setSaving(true);
     try {
       await saveLink(match.line, product, userId);
@@ -57,14 +61,32 @@ export default function MatchCardDialog({ candidate, finish, userId, onPicked, o
   );
 
   return (
-    <Modal title="Which Crystal Commerce product is this?" onClose={onClose} wide>
+    <Modal
+      title="Which Crystal Commerce product is this?"
+      onClose={saving ? undefined : onClose}
+      wide
+      footer={(
+        <>
+          <button type="button" className="btn ghost" disabled={saving} onClick={onClose}>CANCEL</button>
+          <button
+            type="button"
+            className={`btn primary${saving ? ' busy' : ''}`}
+            disabled={!picked || saving}
+            title={picked ? `Remember ${picked.product_name} (${picked.category}) for this printing` : 'Pick a product first'}
+            onClick={save}
+          >
+            SAVE
+          </button>
+        </>
+      )}
+    >
       {!match && <p className="hint">Finding its Crystal Commerce products…</p>}
       {match?.error && <p className="status err">{match.error}</p>}
       {match?.line && (
         <>
           <p className="hint">
-            Pick the product this printing is filed under. It&apos;s remembered as a pick in EXPORT is, so the
-            copies we own count, and the next export takes it without asking.
+            Pick the product this printing is filed under, then SAVE. It&apos;s remembered as a pick in EXPORT
+            is, so the copies we own count, and the next export takes it without asking. CANCEL leaves it as it was.
           </p>
           <ChooseRow
             r={match}
@@ -75,7 +97,7 @@ export default function MatchCardDialog({ candidate, finish, userId, onPicked, o
             onManual={() => {}}
             always={always}
             onAlways={setAlways}
-            onPick={pick}
+            onPick={setPicked}
             onNone={() => {}}
             allowNone={false}
           />
