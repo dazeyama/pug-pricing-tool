@@ -112,7 +112,8 @@ tests (`npm test`, commit only on `fail 0`) and the build.
 
 ## Where it stands (2026-10-23)
 
-- Live: **v1.0.3-neverguess** (2026-10-23; decisions through 487), on **prod** (`zvxquzcfffmxwizonxuo`, the live
+- Live: **v1.0.3-neverguess** (2026-10-23), then pushes without a bump, the last on 2026-10-23 (decisions through
+  488), on **prod** (`zvxquzcfffmxwizonxuo`, the live
   site's project since v1.0.0-launch, 2026-10-19): the GitHub Actions variables point there. Localhost and the phone
   scanner's LAN link stay on dev (`.env.development`), which keeps the store's data from before launch as the test
   copy.

@@ -25,8 +25,6 @@ and function.
   (`OwnedCounter.jsx`, `useOwnedCopies.js`, `owned.js`), the suggestion (`ownedRates.js`), Apply and Auto apply
   rates? (`PricingScreen.jsx`, `useScanReceiver.js`, `useDraft.js` `setAutoRates`, `CollectionPage.jsx`
   `list.autoRates`), Settings → Copies we own (`OwnedCopiesPanel.jsx`). TEST.md section 7 and 16 have its cases.
-  **Done, not pushed, untested** (decision 488): the APPLIED / NOT APPLIED stamp no longer shakes when it lands; it
-  presses down (squash, darker ink) and then holds still (`owned.css` `stamp-in`), for the owner's QA on dev.
   Not checked: how long a count takes on the live site. Known limit: the app can't tell when CC's CSV was taken, so
   cards exported between taking it and uploading it count as in it. **On the live site the CC counts start with the
   next Master Crystal Inventory upload** (the owner's to do: one uploaded before 0008 has no quantities, so the
@@ -87,6 +85,9 @@ and function.
 
 ## Done
 
+- 2026-10-23: **Pushed without a bump** (the owner's ask, after their look on dev), decision 488: the APPLIED /
+  NOT APPLIED stamp presses down when it lands (a quick squash, darker ink) and then holds still, no shake
+  (`owned.css` `stamp-in`). No migrations (dev and prod both 0001–0010), no Edge Function changes. Nothing unpushed.
 - 2026-10-23: **Pushed as v1.0.3-neverguess** (the owner's ask, before the store opened), decisions 484–487: the
   export never guesses a Crystal Commerce product, only staff picks are remembered and used, a lost staff pick is
   asked again. Migration 0010 on dev (snapshot, test run: all 626 passed) and on prod the same sitting, the
