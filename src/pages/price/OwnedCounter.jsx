@@ -49,17 +49,20 @@ export default function OwnedCounter({
 
   // The stamp switching (decisions 461, 462): which stamp it was, while the new one lands over it
   // (0.3 s); only when the same card's state changes, never as a new card comes up.
+  // Only a stamp already showing switches: a card coming up with Auto apply rates on shows APPLIED straight
+  // away, though its count arriving turns it on (owner, 2026-10-23; decision 466).
   const [flip, setFlip] = useState(null);   // { from: boolean, n: number } or null
-  const last = useRef({ key: null, applied });
+  const shown = Boolean(suggested);
+  const last = useRef({ key: null, applied, shown });
   useEffect(() => {
     const key = `${candidate?.key ?? ''}|${owned.key ?? ''}`;
     const was = last.current;
-    last.current = { key, applied };
-    if (was.key !== key || was.applied === applied) return undefined;
+    last.current = { key, applied, shown };
+    if (was.key !== key || !was.shown || !shown || was.applied === applied) return undefined;
     setFlip((f) => ({ from: was.applied, n: (f?.n ?? 0) + 1 }));
     const done = setTimeout(() => setFlip(null), 320);
     return () => clearTimeout(done);
-  }, [applied, candidate?.key, owned.key]);
+  }, [applied, shown, candidate?.key, owned.key]);
 
   const autoBox = auto && (
     <label className="owned-auto" title="Every card added to this buy goes on at the rate the copies we own suggest: a first copy's bonus, the cut for copies over 2">
