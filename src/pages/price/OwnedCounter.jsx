@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { formatMoney, payout } from '../../lib/money.js';
-import { OWNED_FREE, ccRowText, finishWord } from '../../lib/ownedRates.js';
+import {
+  FIRST_CARD_BONUS, FIRST_PRINTING_BONUS, OWNED_CAP, OWNED_FREE, OWNED_STEP, ccRowText, finishWord, signedPct,
+} from '../../lib/ownedRates.js';
 import { useDismiss } from '../../lib/useDismiss.js';
 
 const copies = (n) => `${n} ${n === 1 ? 'copy' : 'copies'}`;
@@ -9,13 +11,17 @@ const copies = (n) => `${n} ${n === 1 ? 'copy' : 'copies'}`;
  * The copies we own (owner, 2026-10-22; decision 448), beside the card's details: this printing in its
  * finish, and the card in every printing, each the inventory's Total Qty plus ours not in it yet.
  * Pointing at it shows a box in the price warnings' style: "We own X copies of this printing and Y copies
- * of this card", and for each copy of the card over 2, 5% off its rate to apply with a click (it goes on
- * ADD CARD as the card's own rate). Above it, Auto apply rates? for the buy. Nothing changes a rate unless
+ * of this card", each printing we own, and what changes the card's rate: 5% off for each copy of the card
+ * over 2; 5% on for the first of this printing, 5% more for the first of the card (decision 457); stacked,
+ * to apply with a click (it goes on ADD CARD as the card's own rate). Above it, Auto apply rates? for the buy. Nothing changes a rate unless
  * the worker clicks Apply or checks the box.
  * @param {object} p
  * @param {object|null} p.candidate  the selected card, or null
  * @param {{ status: string, counts: object|null, error: string|null }} p.owned  useOwnedCopies
- * @param {{ cash: number, credit: number, cut: number }|null} p.suggested  the lower rates, or null (2 or fewer)
+ * @param {string|null} p.finish  the printing's finish (Magic)
+ * @param {object|null} p.adjust  ownedAdjust: the first-copy bonuses and the cut, stacked (decision 457)
+ * @param {{ cash: number, credit: number, net: number }|null} p.suggested  the rates they come to, or null
+ *   (nothing changes, or a bonus and a cut cancel out)
  * @param {boolean} p.applied  the suggestion goes on with ADD CARD (clicked, or Auto apply rates)
  * @param {string|null} p.applyBlocked  why it can't be applied here, or null
  * @param {number|null} p.price  the card's price, for the amounts
@@ -23,7 +29,9 @@ const copies = (n) => `${n} ${n === 1 ? 'copy' : 'copies'}`;
  * @param {{ on: boolean, onChange: (on: boolean) => void, disabled: boolean }|null} p.auto  the box, or none
  * @param {() => void} p.onDone  back to the search field
  */
-export default function OwnedCounter({ candidate, owned, suggested, applied, applyBlocked, price, onApply, auto, onDone }) {
+export default function OwnedCounter({
+  candidate, owned, finish = null, adjust = null, suggested, applied, applyBlocked, price, onApply, auto, onDone,
+}) {
   const [hover, setHover] = useState(false);
   const [pinned, setPinned] = useState(false);
   const box = useRef(null);
@@ -37,7 +45,7 @@ export default function OwnedCounter({ candidate, owned, suggested, applied, app
   useDismiss(() => setPinned(false), { ref: box, when: pinned, escape: false });
 
   const autoBox = auto && (
-    <label className="owned-auto" title="Every card added to this buy that we own more than 2 of goes on at the lower rate">
+    <label className="owned-auto" title="Every card added to this buy goes on at the rate the copies we own suggest: a first copy's bonus, the cut for copies over 2">
       <input
         type="checkbox"
         checked={auto.on}
@@ -69,12 +77,30 @@ export default function OwnedCounter({ candidate, owned, suggested, applied, app
     if (!ready) return '?';
     return `${n}${sure ? '' : '+'}`;
   };
-  // Under the boxes (owner, 2026-10-22: the boxes half as tall): the lower rate there is, or that it's on.
-  const tag = suggested ? (
-    <span className={`owned-tag${applied ? ' on' : ''}`}>
-      {applied ? `✓ ${suggested.cut}% lower on` : `${suggested.cut}% lower?`}
-    </span>
+  // Under the boxes: a green chip for the bonus, a red one for the cut, side by side when both apply
+  // (owner, 2026-10-23; decision 457); ✓ on each once the rate is on.
+  const mark = applied ? '✓ ' : '';
+  const chips = adjust && (adjust.bonus > 0 || adjust.cut > 0) ? (
+    <div className="owned-chips">
+      {adjust.bonus > 0 && (
+        <span className={`owned-tag bonus${applied ? ' on' : ''}`} title={adjust.firstCard ? 'First of this card' : 'First of this printing'}>
+          {mark}+{adjust.bonus}% first
+        </span>
+      )}
+      {adjust.cut > 0 && (
+        <span className={`owned-tag cut${applied ? ' on' : ''}`} title={`${copies(adjust.over)} of the card over ${OWNED_FREE}`}>
+          {mark}−{adjust.cut}% owned
+        </span>
+      )}
+    </div>
   ) : null;
+  const rates = suggested && (
+    <>
+      <span className="is-credit">Credit {suggested.credit}%</span> /{' '}
+      <span className="is-cash">Cash {suggested.cash}%</span>
+      {price != null && ` (${formatMoney(payout(price, suggested.credit))} / ${formatMoney(payout(price, suggested.cash))})`}
+    </>
+  );
   // Which printings (owner, 2026-10-22: "it has to show specifically, which printings we own").
   const thisMark = <span className="owned-this">this printing</span>;
   const ccRows = c?.cc.list.map((p) => (
@@ -100,7 +126,7 @@ export default function OwnedCounter({ candidate, owned, suggested, applied, app
       {autoBox}
       <button
         type="button"
-        className={`owned-boxes${suggested ? ' hot' : ''}${applied ? ' applied' : ''}${pinned ? ' on' : ''}`}
+        className={`owned-boxes${adjust?.cut > 0 ? ' hot' : ''}${applied ? ' applied' : ''}${pinned ? ' on' : ''}`}
         aria-expanded={open}
         aria-label={ready ? `We own ${copies(c.printing)} of this printing and ${copies(c.card)} of this card` : 'Copies we own'}
         title={owned.status === 'failed' ? owned.error : undefined}
@@ -119,7 +145,7 @@ export default function OwnedCounter({ candidate, owned, suggested, applied, app
           <b className="owned-num">{num(c?.card, c?.cardSure)}</b>
         </span>
       </button>
-      {tag}
+      {chips}
       {open && (
         <div className="owned-pop">
           <section className="owned-pop-box" aria-label="Copies we own">
@@ -138,13 +164,41 @@ export default function OwnedCounter({ candidate, owned, suggested, applied, app
               <div className="owned-pop-sub">Ours, not in it yet ({c.ours.card})</div>
               {oursRows.length ? <ul className="owned-rows">{oursRows}</ul> : <p className="owned-pop-note">None.</p>}
             </div>
-            {suggested ? (
+            {/* What changes the rate, and why (decision 457). */}
+            <div className="owned-pop-sub">The rate</div>
+            {adjust && (adjust.bonus > 0 || adjust.cut > 0) ? (
+              <ul className="owned-adjust">
+                {adjust.firstPrinting && (
+                  <li className="is-bonus">
+                    <b>+{FIRST_PRINTING_BONUS}%</b> first of this printing: we own none of it{finishWord(finish) ? ` in ${finishWord(finish)}` : ''}.
+                  </li>
+                )}
+                {adjust.firstCard && (
+                  <li className="is-bonus">
+                    <b>+{FIRST_CARD_BONUS}% more</b>, first of this card: we own none of it in any printing.
+                  </li>
+                )}
+                {adjust.cut > 0 && (
+                  <li className="is-cut">
+                    <b>−{adjust.cut}%</b> for {copies(adjust.over)} of the card over {OWNED_FREE}
+                    {' '}({OWNED_STEP}% each, up to {OWNED_CAP}%).
+                  </li>
+                )}
+              </ul>
+            ) : (
+              <p className="owned-pop-note">
+                {c.cardSure && c.printingSure
+                  ? `No change: we have this printing, and ${OWNED_FREE} or fewer of the card.`
+                  : 'No change. A bonus for a first copy needs a count the inventory could make, which this isn’t.'}
+              </p>
+            )}
+            {adjust && (adjust.bonus > 0 || adjust.cut > 0) && !suggested && (
+              <p className="owned-pop-note">They cancel out: the card keeps its usual rate.</p>
+            )}
+            {suggested && (
               <>
                 <p className="owned-pop-suggest">
-                  {copies(c.card - OWNED_FREE)} over {OWNED_FREE}: {suggested.cut}% lower,{' '}
-                  <span className="is-credit">Credit {suggested.credit}%</span> /{' '}
-                  <span className="is-cash">Cash {suggested.cash}%</span>
-                  {price != null && ` (${formatMoney(payout(price, suggested.credit))} / ${formatMoney(payout(price, suggested.cash))})`}
+                  {adjust.bonus > 0 && adjust.cut > 0 ? 'Together' : 'So'} <b>{signedPct(suggested.net)}</b>: {rates}
                 </p>
                 {auto?.on && !applyBlocked ? (
                   <p className="owned-pop-note">Auto apply rates is on: this card goes on at this rate.</p>
@@ -159,12 +213,10 @@ export default function OwnedCounter({ candidate, owned, suggested, applied, app
                       onDone();
                     }}
                   >
-                    {applied ? `✓ ${suggested.cut}% lower on ADD CARD: undo` : `Apply ${suggested.cut}% lower`}
+                    {applied ? `✓ ${signedPct(suggested.net)} on ADD CARD: undo` : `Apply ${signedPct(suggested.net)}`}
                   </button>
                 )}
               </>
-            ) : (
-              <p className="owned-pop-note">No lower rate: we own {OWNED_FREE} or fewer of this card.</p>
             )}
           </section>
         </div>

@@ -20,7 +20,7 @@ import { useDismiss } from '../../lib/useDismiss.js';
  */
 export default function QuotePanel({
   candidate, loading, condition, price, source, cashPct, creditPct, cashWhy = '', creditWhy = '', warnings, trend = null, onDone,
-  bulkPer = null, placeholder = false, lowered = false,
+  bulkPer = null, placeholder = false, adjusted = 0,
 }) {
   // Which box floats over Finish & Details: 'warn' (the warnings) or 'trend'
   // (the 📈 / 📉), while hovered, or clicked to keep it open.
@@ -56,10 +56,12 @@ export default function QuotePanel({
       title += ` of ${formatMoney(price)}`;
       if (Math.abs(raw - amount) >= 0.005) title += `, rounded down from ${formatMoney(raw)}`;
     }
-    // ↓: the lower rate for the copies we own, applied (decision 448).
+    // ↑ / ↓: the rate for the copies we own, applied (decisions 448, 457): raised by a first-copy bonus,
+    // lowered by the cut for copies over 2.
+    const way = adjusted > 0 ? ' raised' : adjusted < 0 ? ' lowered' : '';
     return (
-      <span className={`quote-chip ${label.toLowerCase()}${lowered ? ' lowered' : ''}`} title={title}>
-        <span className="quote-chip-label">{lowered && '↓ '}{label}</span>
+      <span className={`quote-chip ${label.toLowerCase()}${way}`} title={title}>
+        <span className="quote-chip-label">{adjusted > 0 && '↑ '}{adjusted < 0 && '↓ '}{label}</span>
         <b>{loading ? '…' : formatMoney(amount)}</b>
       </span>
     );

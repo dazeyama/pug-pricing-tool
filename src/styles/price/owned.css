@@ -92,6 +92,12 @@
   color: var(--warn);
 }
 .owned-tag.on { background: rgba(62, 207, 142, .18); color: var(--good); }
+/* The bonus and the cut, side by side under the boxes (decision 457): green and red, solid once applied. */
+.owned-chips { display: flex; justify-content: center; flex-wrap: wrap; gap: 4px; }
+.owned-tag.bonus { background: rgba(62, 207, 142, .16); color: var(--good); }
+.owned-tag.cut { background: rgba(255, 107, 107, .16); color: var(--bad); }
+.owned-tag.bonus.on { background: var(--good); color: #0d1a14; }
+.owned-tag.cut.on { background: var(--bad); color: #1a0d0d; }
 .owned-auto {
   display: flex;
   align-items: center;
@@ -151,13 +157,20 @@
   background: color-mix(in srgb, var(--accent) 22%, transparent);
 }
 .owned-pop-suggest { margin: 0 0 8px; font-variant-numeric: tabular-nums; }
+/* What changes the rate: each bonus in green, the cut in red (decision 457). */
+.owned-adjust { margin: 0 0 6px; padding-left: 18px; }
+.owned-adjust li + li { margin-top: 2px; }
+.owned-adjust .is-bonus b { color: var(--good); }
+.owned-adjust .is-cut b { color: var(--bad); }
 .owned-pop-suggest .is-credit { color: var(--credit); font-weight: 700; }
 .owned-pop-suggest .is-cash { color: var(--cash); font-weight: 700; }
 .owned-pop-note { margin: 0; color: var(--muted); }
 .owned-undo { border-color: var(--good); color: var(--good); }
 
-/* The price panel's Credit and Cash at the lower rate, applied: ↓ and a green ring (QuotePanel). */
-.quote-chip.lowered { box-shadow: 0 0 0 2px color-mix(in srgb, var(--good) 70%, transparent); }
+/* The price panel's Credit and Cash at the rate applied (QuotePanel): ↑ and a green ring for a bonus, ↓ and
+   a red one for a cut (decision 457). */
+.quote-chip.raised { box-shadow: 0 0 0 2px color-mix(in srgb, var(--good) 70%, transparent); }
+.quote-chip.lowered { box-shadow: 0 0 0 2px color-mix(in srgb, var(--bad) 70%, transparent); }
 
 /* Short windows: the info row is 150px (buylist.css). */
 @media (max-height: 820px) {

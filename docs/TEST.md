@@ -185,12 +185,18 @@ what happens. The findings are reported when the pass ends.
       "We own X copies of this printing and Y copies of this card.", then each printing: In Crystal Commerce (set ·
       foil / variant ×N) and Ours, not in it yet (set #number ×N), the one picked marked "this printing", and the
       suggestion with its Credit / Cash. Pick a Pokémon card: "Copies we own: Magic only for now".
-- [ ] **Apply**: click the boxes to keep the box open, then **Apply N% lower**: the boxes go green ("−N% on"), the
-      price panel's Credit and Cash drop, with ↓ and a green ring. ADD CARD: the line shows ✎ Credit / Cash at those
-      rates. Apply, then pick another card: it isn't applied there. Editing a line: the box says to use Set Rate.
-      On a project: "A project has no rates."
+- [ ] **Bonus and cut** (decision 457): a card we've never had (0 and 0): a green "+10% first" chip under the boxes;
+      its box's The rate section lists "+5% first of this printing" and "+5% more, first of this card", So +10%.
+      Another printing of a card we own 1–2 of: "+5% first". A card we own 4 of, this printing none: a green "+5%
+      first" and a red "−10% owned" chip side by side, the box says "Together −5%". 3 of the card, this printing
+      none: both chips, "They cancel out". With the inventory unknown (none uploaded): no bonus.
+- [ ] **Apply**: click the boxes to keep the box open, then **Apply ±N%**: the chips go solid with ✓, the price
+      panel's Credit and Cash change, ↑ and a green ring for a bonus, ↓ and a red ring for a cut. ADD CARD: the line
+      shows ✎ Credit / Cash at those rates. Apply, then pick another card: it isn't applied there. Editing a line:
+      the box says to use Set Rate. On a project: "A project has no rates."
 - [ ] **Auto apply rates?** above the boxes (decision 456): check it, add a card we own 3+ of: it goes on at the lower rate
-      without clicking Apply; one we own 2 or fewer of: its usual rate. The cards already on the list keep theirs.
+      without clicking Apply; a card we've never had: the +10% rate; one we own 1–2 of, this printing included: its
+      usual rate. The cards already on the list keep theirs.
       Reload: still checked. CONFIRM BUY: the next buy starts unchecked. On an overnight buy, checking it puts
       "auto apply rates: off → on" in the Changelog. With the phone paired and the box checked, a scanned card we
       own 3+ of goes on at the lower rate.

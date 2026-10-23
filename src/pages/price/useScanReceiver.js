@@ -19,7 +19,7 @@ import { isTimeout, withTimeout } from '../../lib/timeout.js';
 import { createStayAwake } from '../../lib/stayAwake.js';
 import { lineRate } from '../../lib/rates.js';
 import { ownedCopies } from '../../lib/owned.js';
-import { ownedCounts, ownedCut, ownedRates } from '../../lib/ownedRates.js';
+import { ownedAdjust, ownedCounts, ownedRates } from '../../lib/ownedRates.js';
 
 // Cards from the paired phone (docs/SCAN_FUNCTION.md 8.3). Each scan the
 // phone sends is claimed here, one at a time in the order they came, priced
@@ -199,15 +199,16 @@ export function useScanReceiver({ deviceId, label, session, target, list, roundU
       });
     }
 
-    // Auto apply rates? on (decision 448): the lower rate for the copies we own, as ADD CARD gives it. Not
+    // Auto apply rates? on (decision 448): the rate for the copies we own, as ADD CARD gives it. Not
     // counted in time, or not at all: its usual rate, as a card added by hand whose count failed.
     if (now.autoRates) {
       try {
         const counts = ownedCounts(await withTimeout(ownedCopies(candidate, finish), OWNED_MS));
-        const lower = ownedRates(lineRate(line, now.autoRates), ownedCut(counts.card));
-        if (lower) {
-          line.custom_cash_pct = lower.cash;
-          line.custom_credit_pct = lower.credit;
+        // The first-copy bonuses and the cut, stacked (decision 457).
+        const own = ownedRates(lineRate(line, now.autoRates), ownedAdjust(counts));
+        if (own) {
+          line.custom_cash_pct = own.cash;
+          line.custom_credit_pct = own.credit;
         }
       } catch (e) {
         console.warn('Counting the copies we own for a scan failed; added at its usual rate', e);

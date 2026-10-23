@@ -37,7 +37,7 @@ import { useScanReceiver } from './useScanReceiver.js';
 import ScanChip from './ScanChip.jsx';
 import OwnedCounter from './OwnedCounter.jsx';
 import { useOwnedCopies } from './useOwnedCopies.js';
-import { ownedCut, ownedRates } from '../../lib/ownedRates.js';
+import { ownedAdjust, ownedRates, signedPct } from '../../lib/ownedRates.js';
 import { candidateKeyOf, editQuery, nameQuery, pinFirst } from '../../lib/candidateKey.js';
 
 const BACKGROUND = { '--stage-bg': `url(${import.meta.env.BASE_URL}background.webp)` };
@@ -681,10 +681,12 @@ export default function PricingScreen({
   let applyBlocked = null;
   if (!rateControls) applyBlocked = list.setLineRate ? `${locked ?? ratesLocked}.` : 'A project has no rates.';
   else if (editing) applyBlocked = 'Editing a card: right-click its line → Set Rate to change its rate.';
-  const suggested = owned.status === 'ok' && !bulk ? ownedRates(quoteRate, ownedCut(owned.counts.card)) : null;
+  // The bonuses for a first copy and the cut for copies over 2, stacked (decision 457).
+  const adjust = owned.status === 'ok' && !bulk ? ownedAdjust(owned.counts) : null;
+  const suggested = adjust ? ownedRates(quoteRate, adjust) : null;
   const applied = suggested && !applyBlocked && (autoOn || appliedKey === owned.key) ? suggested : null;
   const shownRate = applied ?? quoteRate;
-  const appliedWhy = applied ? `${applied.cut}% lower for the copies we own` : null;
+  const appliedWhy = applied ? `${signedPct(applied.net)} for the copies we own` : null;
   // With Auto apply rates on, a Magic card waits for its count (a moment) so it goes on at the right rate.
   if (!addBlocked && autoOn && !editing && magic && owned.status === 'loading') addBlocked = 'Counting the copies we own';
 
@@ -774,6 +776,8 @@ export default function PricingScreen({
                 <OwnedCounter
                   candidate={selected}
                   owned={owned}
+                  finish={finish}
+                  adjust={adjust}
                   suggested={suggested}
                   applied={Boolean(applied)}
                   applyBlocked={applyBlocked}
@@ -826,7 +830,7 @@ export default function PricingScreen({
               creditPct={shownRate.credit}
               cashWhy={appliedWhy ?? whyText(quoteRate.why.cash, rates)}
               creditWhy={appliedWhy ?? whyText(quoteRate.why.credit, rates)}
-              lowered={Boolean(applied)}
+              adjusted={applied ? applied.net : 0}
               warnings={warnings}
               trend={manual == null && !bulk ? trends[condition] : null}
               onDone={focusSearch}

@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ccRowText, cutRate, finishWord, ownedCounts, ownedCut, ownedRates } from '../src/lib/ownedRates.js';
+import {
+  adjustRate, ccRowText, finishWord, ownedAdjust, ownedCounts, ownedCut, ownedRates, signedPct,
+} from '../src/lib/ownedRates.js';
 
 // Owner, 2026-10-22 (decision 448): 5% per copy of the card over 2, as a percent of the rate, up to 50%.
 test('the cut: nothing up to 2 copies, then 5% a copy, 50% at most', () => {
@@ -14,16 +16,40 @@ test('the cut: nothing up to 2 copies, then 5% a copy, 50% at most', () => {
   assert.equal(ownedCut(null), 0);
 });
 
-test('a rate lowered as a percent of itself, kept to the cent of a percent', () => {
+test('a rate changed as a percent of itself, kept to the cent of a percent, never past 100', () => {
   // The owner's examples: Credit 60% / Cash 40% with 4 owned; Force of Will on the high end (70 / 40).
-  assert.equal(cutRate(60, 10), 54);
-  assert.equal(cutRate(40, 10), 36);
-  assert.equal(cutRate(70, 10), 63);
-  assert.equal(cutRate(65, 5), 61.75);
-  assert.equal(cutRate(45, 5), 42.75);
-  assert.equal(cutRate(60, 50), 30);
-  assert.deepEqual(ownedRates({ cash: 40, credit: 60 }, 20), { cash: 32, credit: 48, cut: 20 });
-  assert.equal(ownedRates({ cash: 40, credit: 60 }, 0), null);
+  assert.equal(adjustRate(60, -10), 54);
+  assert.equal(adjustRate(40, -10), 36);
+  assert.equal(adjustRate(70, -10), 63);
+  assert.equal(adjustRate(65, -5), 61.75);
+  assert.equal(adjustRate(45, -5), 42.75);
+  assert.equal(adjustRate(60, -50), 30);
+  assert.equal(adjustRate(60, 10), 66);
+  assert.equal(adjustRate(95, 10), 100);
+  assert.deepEqual(ownedRates({ cash: 40, credit: 60 }, { net: -20 }), { cash: 32, credit: 48, net: -20, adjust: { net: -20 } });
+  assert.equal(ownedRates({ cash: 40, credit: 60 }, { net: 0 }), null);
+});
+
+// Owner, 2026-10-23 (decision 457): +5% for the first of this printing, 5% more for the first of the card,
+// stacking with the cut.
+test('bonuses for a first copy, stacked with the cut', () => {
+  const counts = (printing, card, sure = true) => ({ printing, card, printingSure: sure, cardSure: sure });
+  assert.deepEqual(ownedAdjust(counts(0, 0)),
+    { bonus: 10, cut: 0, net: 10, firstPrinting: true, firstCard: true, over: 0 });
+  assert.equal(ownedAdjust(counts(0, 1)).net, 5);   // the first of this printing only
+  assert.equal(ownedAdjust(counts(1, 2)).net, 0);   // neither
+  const both = ownedAdjust(counts(0, 4));            // first printing, 2 copies of the card over 2
+  assert.equal(both.bonus, 5);
+  assert.equal(both.cut, 10);
+  assert.equal(both.net, -5);
+  assert.equal(ownedAdjust(counts(0, 3)).net, 0);   // they cancel out
+  // A count the inventory couldn't make gets no bonus: it might be a card we have.
+  assert.equal(ownedAdjust(counts(0, 0, false)).bonus, 0);
+  assert.equal(ownedAdjust({ printing: 0, card: 2, printingSure: false, cardSure: true }).bonus, 0);
+  assert.equal(ownedAdjust({ printing: 0, card: 0, printingSure: false, cardSure: true }).bonus, 10);
+  assert.equal(ownedAdjust(null).net, 0);
+  assert.equal(signedPct(10), '+10%');
+  assert.equal(signedPct(-5), '−5%');
 });
 
 test("the counts: the inventory's plus ours, unsure where the inventory couldn't count", () => {
