@@ -50,18 +50,18 @@
   gap: 1px;
   min-width: 0;
   padding: 4px;
-  border: 1px solid var(--owned, var(--border));
+  /* Quiet, as the card's details box is (owner, 2026-10-23: "more subtle and muted"; decision 463): the
+     stamp is the one pop of colour. */
+  border: 1px solid color-mix(in srgb, var(--owned, var(--border)) 45%, var(--border));
   border-radius: 10px;
-  background: color-mix(in srgb, var(--owned, var(--border)) 12%, rgba(24, 28, 46, .92));
+  background: color-mix(in srgb, var(--owned, var(--border)) 5%, rgba(24, 28, 46, .9));
   transition: border-color .15s, background .15s;
 }
-.owned-box.printing { --owned: var(--accent); }
-.owned-box.card { --owned: var(--pal-slate); }
-/* More than 2 of the card: a lower rate to suggest, in amber; green once it's applied. */
+/* A cut to suggest: a faint warm tint on All printings; applied, a faint green one. */
 .owned-boxes.hot .owned-box.card { --owned: var(--warn); }
 .owned-boxes.applied .owned-box.card { --owned: var(--good); }
 .owned-boxes:hover .owned-box, .owned-boxes.on .owned-box {
-  background: color-mix(in srgb, var(--owned, var(--border)) 22%, rgba(24, 28, 46, .92));
+  background: color-mix(in srgb, var(--owned, var(--muted)) 10%, rgba(24, 28, 46, .9));
 }
 .owned-label {
   font-size: 10.5px;
@@ -77,11 +77,8 @@
   font-weight: 800;
   line-height: 1;
   font-variant-numeric: tabular-nums;
-  color: var(--owned, var(--text));
+  color: color-mix(in srgb, var(--owned, var(--text)) 30%, #c9cddd);
 }
-.owned-box.card .owned-num { color: var(--text); }
-.owned-boxes.hot .owned-box.card .owned-num { color: var(--warn); }
-.owned-boxes.applied .owned-box.card .owned-num { color: var(--good); }
 .owned-tag {
   align-self: center;
   padding: 2px 10px;
@@ -94,10 +91,11 @@
 .owned-tag.on { background: rgba(62, 207, 142, .18); color: var(--good); }
 /* The bonus and the cut, side by side under the boxes (decision 457): green and red, solid once applied. */
 .owned-chips { display: flex; justify-content: center; flex-wrap: wrap; gap: 4px; }
-.owned-tag.bonus { background: rgba(62, 207, 142, .16); color: var(--good); }
-.owned-tag.cut { background: rgba(255, 107, 107, .16); color: var(--bad); }
-.owned-tag.bonus.on { background: var(--good); color: #0d1a14; }
-.owned-tag.cut.on { background: var(--bad); color: #1a0d0d; }
+/* Muted (decision 463): pale tints, a little stronger once applied. */
+.owned-tag.bonus { background: rgba(62, 207, 142, .08); color: color-mix(in srgb, var(--good) 55%, var(--muted)); }
+.owned-tag.cut { background: rgba(255, 107, 107, .08); color: color-mix(in srgb, var(--bad) 55%, var(--muted)); }
+.owned-tag.bonus.on { background: rgba(62, 207, 142, .16); color: color-mix(in srgb, var(--good) 75%, var(--muted)); }
+.owned-tag.cut.on { background: rgba(255, 107, 107, .16); color: color-mix(in srgb, var(--bad) 75%, var(--muted)); }
 .owned-auto {
   display: flex;
   align-items: center;
@@ -105,12 +103,12 @@
   gap: 6px;
   margin: 0;
   font-size: 12.5px;
-  font-weight: 600;
-  color: var(--text);
+  font-weight: 500;
+  color: var(--muted);
   cursor: pointer;
   white-space: nowrap;
 }
-.owned-auto input { margin: 0; accent-color: var(--good); }
+.owned-auto input { margin: 0; accent-color: color-mix(in srgb, var(--good) 60%, var(--muted)); }
 .owned-auto:has(input:disabled) { opacity: .55; cursor: not-allowed; }
 /* The details box: below the counter, right-aligned to it, wider than it; its top padding bridges the gap
    so moving the mouse down onto it doesn't close it. */
