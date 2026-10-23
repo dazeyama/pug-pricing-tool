@@ -198,8 +198,9 @@
 .ink-stamp.applied { --tilt: 3deg; color: #12c42a; }
 .ink-stamp.not-applied { color: #ff1a1a; }
 /* The stamp is the switch (decision 461): a click applies the rate or takes it off. While it switches, the new
-   one drops in from larger over the old, lands with a shake and settles, in 0.3 s; the old one fades only in
-   the last frames (decision 462). */
+   one drops in from larger over the old and lands, in 0.3 s; the old one fades only in the last frames
+   (decision 462). It presses down on landing, a quick squash and darker ink, then holds still while the ink
+   lightens back (decision 488). */
 .stamp-btn {
   display: grid;
   justify-items: center;
@@ -216,18 +217,17 @@
 .stamp-btn:not(:disabled):hover .ink-stamp:not(.leaving) { filter: brightness(1.15); }
 /* The old stamp stays as it is under the new one, fading only in the last frames (decision 462). */
 .ink-stamp.leaving { animation: stamp-out 300ms linear forwards; }
-.ink-stamp.landing { position: relative; z-index: 1; animation: stamp-in 300ms cubic-bezier(.2, .9, .3, 1) both; }
+/* Not held after the end (backwards, not both), so hover's brighter ink still shows on the landed stamp. */
+.ink-stamp.landing { position: relative; z-index: 1; animation: stamp-in 300ms cubic-bezier(.2, .9, .3, 1) backwards; }
 @keyframes stamp-out {
   0%, 80% { opacity: 1; }
   100% { opacity: 0; }
 }
 @keyframes stamp-in {
   0% { opacity: 0; transform: rotate(var(--tilt)) translateY(-8px) scale(1.8); }
-  45% { opacity: 1; transform: rotate(var(--tilt)) scale(1); }
-  58% { transform: rotate(calc(var(--tilt) - 2deg)) translateX(-2px); }
-  72% { transform: rotate(calc(var(--tilt) + 1.5deg)) translateX(2px); }
-  86% { transform: rotate(calc(var(--tilt) - .5deg)) translateX(-1px); }
-  100% { transform: rotate(var(--tilt)); }
+  45% { opacity: 1; transform: rotate(var(--tilt)) scale(1.04, .93); filter: brightness(.7); }
+  60% { transform: rotate(var(--tilt)); }
+  100% { transform: rotate(var(--tilt)); filter: brightness(1); }
 }
 /* No motion wanted: it just switches. */
 @media (prefers-reduced-motion: reduce) {

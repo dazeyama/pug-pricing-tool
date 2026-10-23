@@ -25,6 +25,8 @@ and function.
   (`OwnedCounter.jsx`, `useOwnedCopies.js`, `owned.js`), the suggestion (`ownedRates.js`), Apply and Auto apply
   rates? (`PricingScreen.jsx`, `useScanReceiver.js`, `useDraft.js` `setAutoRates`, `CollectionPage.jsx`
   `list.autoRates`), Settings → Copies we own (`OwnedCopiesPanel.jsx`). TEST.md section 7 and 16 have its cases.
+  **Done, not pushed, untested** (decision 488): the APPLIED / NOT APPLIED stamp no longer shakes when it lands; it
+  presses down (squash, darker ink) and then holds still (`owned.css` `stamp-in`), for the owner's QA on dev.
   Not checked: how long a count takes on the live site. Known limit: the app can't tell when CC's CSV was taken, so
   cards exported between taking it and uploading it count as in it. **On the live site the CC counts start with the
   next Master Crystal Inventory upload** (the owner's to do: one uploaded before 0008 has no quantities, so the
