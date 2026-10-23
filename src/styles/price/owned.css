@@ -11,6 +11,9 @@
   gap: 6px;
   position: relative;
 }
+/* With a card, only as tall as its boxes, note and box, so its details hang just under them, not from the
+   foot of the row (owner, 2026-10-22, with the boxes at half height; decision 455). Empty, it fills the row. */
+.owned:has(.owned-boxes) { align-self: flex-start; }
 .owned-empty {
   flex: 1;
   display: flex;
