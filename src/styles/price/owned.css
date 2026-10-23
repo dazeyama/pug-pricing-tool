@@ -60,8 +60,8 @@
 /* A cut to suggest: a faint warm tint on All printings; applied, a faint green one. */
 .owned-boxes.hot .owned-box.card { --owned: var(--warn); }
 /* Counts the inventory can't make for this printing: n/a, faded (decision 467). */
+/* No change on pointing (decision 471: it flashed). */
 .owned-boxes.unknown { opacity: .45; }
-.owned-boxes.unknown:hover { opacity: .65; }
 /* "(click to match)" under an n/a that can be matched (decision 470): a quiet grey chip, centred. */
 .owned-tag.owned-match {
   border: 0;
