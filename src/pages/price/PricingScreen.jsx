@@ -36,6 +36,7 @@ import { useScanSession } from './useScanSession.js';
 import { useScanReceiver } from './useScanReceiver.js';
 import ScanChip from './ScanChip.jsx';
 import OwnedCounter from './OwnedCounter.jsx';
+import MatchCardDialog from './MatchCardDialog.jsx';
 import { useOwnedCopies } from './useOwnedCopies.js';
 import { isLowEnd, ownedAdjust, ownedRates, signedPct } from '../../lib/ownedRates.js';
 import { candidateKeyOf, editQuery, nameQuery, pinFirst } from '../../lib/candidateKey.js';
@@ -285,6 +286,8 @@ export default function PricingScreen({
   const owned = useOwnedCopies(card, magic ? finish : null);
   const [appliedKey, setAppliedKey] = useState(null);
   const [autoBusy, setAutoBusy] = useState(false);
+  // The matching dialog for the selected printing, from the counter's n/a (decision 468).
+  const [matching, setMatching] = useState(false);
 
   // ADD CARD's requirements (spec 8.8), besides a user (GuardButton).
   const pricesLoading = prices.status === 'loading' || prices.status === 'waiting';
@@ -798,6 +801,13 @@ export default function PricingScreen({
                       setAutoBusy(false);
                     },
                   } : null}
+                  onMatch={offline ? null : () => {
+                    if (!user) {
+                      pulse();
+                      return;
+                    }
+                    setMatching(true);
+                  }}
                   onDone={focusSearch}
                 />
               )}
@@ -952,6 +962,19 @@ export default function PricingScreen({
           // The paired phone (docs/SCAN_FUNCTION.md 8.2), while Magic is on.
           scanChip={searchGames.mtg ? <ScanChip session={scan.session} onUnpair={scan.unpair} /> : null}
         />
+
+        {matching && selected && magic && finish && (
+          <MatchCardDialog
+            candidate={selected}
+            finish={finish}
+            userId={user?.id ?? null}
+            onPicked={owned.refresh}
+            onClose={() => {
+              setMatching(false);
+              focusSearch();
+            }}
+          />
+        )}
 
         {showAll && (
           <ShowAllModal

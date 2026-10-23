@@ -195,6 +195,11 @@ what happens. The findings are reported when the pass ends.
 - [ ] **n/a** (decision 467): a printing the export would ask to choose a product for (several CC products could
       be it): both boxes read n/a, faded, no chips or stamp, and the price panel's rate is unchanged; pointing says
       why. A card CC has never had: 0 and 0, with the +10% chip.
+- [ ] **Match one card** (decision 468): click that n/a: **Which Crystal Commerce product is this?** lists the
+      export's candidates, a search and View on Scryfall (no Sell price, no "None of these"). Pick one: a toast says
+      it's matched, the dialog closes and the boxes count again (numbers, not n/a). EXPORT that card later: it's
+      Matched, "remembered". Esc or a click outside closes the dialog without a pick. The export dialog's Needs a
+      choice and Change still work as before (the same component).
 - [ ] **Stamps** (decision 459): with a rate to apply, a red **NOT APPLIED** ink stamp under the chips; Apply (or
       Auto apply rates? checked) turns it into a green **APPLIED** one; no stamp when nothing changes the rate.
       Click the stamp (decision 461): it switches, the new one dropping in larger over the old, shaking and

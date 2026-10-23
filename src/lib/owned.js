@@ -32,6 +32,31 @@ export function warmOwnedCopies() {
   readContext().catch(() => {});
 }
 
+/**
+ * One printing's match as the export makes it (decision 468): for the Price screen's matching dialog, when
+ * no product is clearly this printing. A matchLines result (its line, set, candidates ranked…).
+ * @param {object} candidate  a Magic candidate, with its Scryfall card
+ * @param {string} finish
+ */
+export async function matchPrinting(candidate, finish) {
+  const line = { id: `owned:${candidate.key}`, ...magicPrinting(candidate, finish) };
+  const ctx = await readContext();
+  if (!ctx) throw new Error('Upload the Master Crystal Inventory in Settings first.');
+  const { results } = await matchLines([line], null, {
+    context: ctx, cards: new Map([[line.scryfall_id, candidate.scryfall]]),
+  });
+  return results[0];
+}
+
+/**
+ * Forget what's kept so a printing is counted afresh (decision 468): after a product is picked for it, and
+ * the set choices, which a pick can change ("Always use … for this set").
+ */
+export function forgetOwnedCopies(candidate, finish) {
+  counts.delete(`${candidate.scryfall?.id}|${finish}`);
+  context = null;
+}
+
 async function lookUp(candidate, finish) {
   const line = { id: `owned:${candidate.key}`, ...magicPrinting(candidate, finish) };
   const baseKeys = baseKeysFor(line, candidate.scryfall?.flavor_name ?? null);

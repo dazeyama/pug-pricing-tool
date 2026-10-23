@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ownedCopies, warmOwnedCopies } from '../../lib/owned.js';
+import { forgetOwnedCopies, ownedCopies, warmOwnedCopies } from '../../lib/owned.js';
 import { ownedCounts } from '../../lib/ownedRates.js';
 
 /**
@@ -13,6 +13,8 @@ import { ownedCounts } from '../../lib/ownedRates.js';
 export function useOwnedCopies(card, finish) {
   const key = card?.game === 'mtg' && card.scryfall && finish ? `${card.key}|${finish}` : null;
   const [state, setState] = useState({ key: null, status: 'off', counts: null, error: null });
+  // Counted again on asking (decision 468: a product picked for it in the matching dialog).
+  const [round, setRound] = useState(0);
   // What matching reads, read as the Price screen opens rather than with its first card (decision 453).
   useEffect(() => warmOwnedCopies(), []);
 
@@ -31,9 +33,15 @@ export function useOwnedCopies(card, finish) {
       live = false;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps -- the key stands for the card and finish
-  }, [key]);
+  }, [key, round]);
 
-  if (!key) return { status: 'off', key: null, counts: null, error: null };
+  /** Count this printing again, from the database (after a product was picked for it). */
+  const refresh = () => {
+    if (card && finish) forgetOwnedCopies(card, finish);
+    setRound((n) => n + 1);
+  };
+
+  if (!key) return { status: 'off', key: null, counts: null, error: null, refresh };
   // Another card's answer still in: this one's loading.
-  return state.key === key ? state : { status: 'loading', key, counts: null, error: null };
+  return { ...(state.key === key ? state : { status: 'loading', key, counts: null, error: null }), refresh };
 }

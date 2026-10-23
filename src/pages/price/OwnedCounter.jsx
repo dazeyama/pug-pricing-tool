@@ -29,11 +29,12 @@ const copies = (n) => `${n} ${n === 1 ? 'copy' : 'copies'}`;
  * @param {number|null} p.price  the card's price, for the amounts
  * @param {() => void} p.onApply  toggles a clicked suggestion
  * @param {{ on: boolean, onChange: (on: boolean) => void, disabled: boolean }|null} p.auto  the box, or none
+ * @param {(() => void)|null} [p.onMatch]  opens the matching dialog, for an n/a no product clearly matches (468)
  * @param {() => void} p.onDone  back to the search field
  */
 export default function OwnedCounter({
   candidate, owned, finish = null, adjust = null, lowEndWhy = '', suggested, applied, applyBlocked, price, onApply, auto,
-  onDone,
+  onMatch = null, onDone,
 }) {
   const [hover, setHover] = useState(false);
   const [pinned, setPinned] = useState(false);
@@ -104,8 +105,10 @@ export default function OwnedCounter({
   if (unknown) {
     if (c.inventoryAt == null) unknownWhy = 'No Master Crystal Inventory is uploaded, so what Crystal Commerce holds isn’t known.';
     else if (!c.cardSure) unknownWhy = 'The inventory was uploaded before it kept quantities: upload it again to count it.';
-    else unknownWhy = 'Crystal Commerce has this card, but none of its products is clearly this printing (several could be, or none quite matches), so its count for this printing isn’t known. EXPORT asks which product it is; once one is chosen there, the counts show here.';
+    else unknownWhy = 'Crystal Commerce has this card, but none of its products is clearly this printing (several could be, or none quite matches), so its count for this printing isn’t known. Click the boxes to pick its product (EXPORT asks the same); once one is chosen, the counts show here.';
   }
+  // That last case can be settled here: the boxes open the export's choice for this one card (decision 468).
+  const matchable = unknown && c.inventoryAt != null && c.cardSure && Boolean(onMatch);
   // Under the boxes: a green chip for the bonus, a red one for the cut, side by side when both apply
   // (owner, 2026-10-23; decision 457); ✓ on each once the rate is on.
   const mark = applied ? '✓ ' : '';
@@ -159,9 +162,14 @@ export default function OwnedCounter({
         aria-expanded={open}
         aria-label={ready && !unknown ? `We own ${copies(c.printing)} of this printing and ${copies(c.card)} of this card`
           : 'Copies we own'}
-        title={owned.status === 'failed' ? owned.error : undefined}
+        title={owned.status === 'failed' ? owned.error : matchable ? 'Click to pick its Crystal Commerce product' : undefined}
         onMouseEnter={() => setHover(true)}
         onClick={() => {
+          if (matchable) {
+            setHover(false);
+            onMatch();
+            return;
+          }
           setPinned((p) => !p);
           onDone();
         }}
