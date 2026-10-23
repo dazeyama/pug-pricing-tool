@@ -27,7 +27,8 @@ and function.
   count as in it. Placeholders aren't counted (nothing ever exports or completes one). On the live site, the CC
   counts start with the first inventory upload after 0008 is on prod. **Help out of date:** the Buy tab's price
   panel section has no counter, Apply or Auto apply rates?.
-- **Unpushed:** decision 478, the rounding steps from $10 halved (`money.js` `priceStep`, migration 0009 on dev,
+- **Unpushed:** decision 480, the price panel's chips 16px under the price (`quote.css`; measured, not tried in
+  the app), decision 478, the rounding steps from $10 halved (`money.js` `priceStep`, migration 0009 on dev,
   `SellFloorPanel.jsx`'s table, Help's Rounding; untested in the app; needs 0009 on prod first). After the push, a
   past buy's Cash/Credit on its day page, a Quote and a folded Changelog run are worked out again with the new
   steps, so they can read 50 cents more than when it was confirmed ($27.90 showed $27, now $27.50); its paid

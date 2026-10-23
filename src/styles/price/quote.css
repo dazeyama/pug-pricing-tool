@@ -90,7 +90,9 @@
   background: linear-gradient(90deg, #232842 25%, #343c60 50%, #232842 75%) 0 0 / 250% 100%;
   animation: shimmer 1.2s linear infinite;
 }
-.quote-chips { display: flex; gap: 8px; }
+/* 16px under the price, clear of the chips' glow (owner, 2026-10-23; decision 480): 8px more than the panel's
+   gap, which a short window's 150px row with a price warning still has room for. */
+.quote-chips { display: flex; gap: 8px; margin-top: 8px; }
 .quote-chip {
   display: inline-flex;
   align-items: baseline;
