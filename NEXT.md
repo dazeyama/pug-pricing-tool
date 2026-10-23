@@ -19,9 +19,10 @@ and function.
   (303: 283 auto, 20 staff; every auto one in `MATCHING.md` Appendix B with a right/wrong box). Polluted Bonds is
   there as reported; Tom Bombadil (LTR) 685 is not: prod's `Tom Bombadil - Showcase` link is a staff pick for LTR
   331, so item 3's statement misses it and the owner looks in Browse remembered products… first (section 2.5).
-  Under the recommended rule 65 of prod's 283 auto links are uncertain: 1 confirmed wrong (Polluted Bonds), 1
-  likely wrong (`Serra Ascendant (PAGL) - The List` for the M11 List printing), 63 right by Scryfall's facts
-  (section 2.5, Appendix B.2). Scryfall carries `scroll`, `poster`, `japanshowcase`, the `future` frame and the
+  The owner judged the first rule's cost too high (63 right matches sent to staff on prod's history), so the
+  recommendation is rule 5 (section 3): on prod's 283 auto links it refuses 9, 2 once the new Scryfall-backed
+  families are in, and those 2 are the mistakes: 1 confirmed (Polluted Bonds), 1 likely (`Serra Ascendant (PAGL) -
+  The List` for the M11 List printing). On dev's history it asks 26 of 1,814 (16 with the families). Scryfall carries `scroll`, `poster`, `japanshowcase`, the `future` frame and the
   white border, which the app drops (`printings.js` `magicTraits`): item 1 adds them as families, so the LTR
   Showcase Scrolls case matches on evidence. Nothing coded yet; Help's "Picking the product" goes out of date with item 1.
 - **Copies we own (decisions 448–483), live in v1.0.2-quantity, tested by the owner on dev as it was built.** The counter
@@ -92,7 +93,7 @@ and function.
   matches on the live site): `MATCHING.md` written, the only change besides this file. The matcher ran under Node
   over dev's 1,979 Magic lines against inventory file 33 (SELECT only; the SQL and outputs in
   `C:\ClaudeProjects\temp\pug-matching\`, `sweep.mjs` and `rules.mjs` reusable to re-measure a rule), both cases
-  reproduced with the real product names, three never-guess rules measured (rule 3b recommended: 247 of today's
+  reproduced with the real product names, six never-guess rules measured (rule 5 recommended: 26 of today's
   1,814 automatic matches would ask a person once, then be remembered), the inventory's 82 "family word plus an
   extra word" strings listed, a read-only review of the whole pipeline folded in (15 findings). No code, tests,
   migrations or docs changed; nothing written on dev or prod; prod not read.
