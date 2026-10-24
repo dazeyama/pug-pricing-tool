@@ -61,7 +61,8 @@ export function ownedFrom(value) {
  * `owned_copies`' answer as the counter shows it: each count is the inventory's plus ours not in it yet.
  * A count is unsure when the inventory couldn't count its share (no inventory, an inventory uploaded before
  * 0008, or, for the printing, no clear CC product): what's shown is then only what could be counted.
- * @param {object|null} raw  { cc_printing, cc_card, ours_printing, ours_card, inventory_at, cc_match }
+ * @param {object|null} raw  { cc_printing, cc_card, ours_printing, ours_card, inventory_at, cc_match,
+ *   cc_match_failed }
  * The lists say which printings those are (the owner: "it has to show specifically, which printings we own"):
  * the inventory's products by category and name, ours by set, number and finish, most first. `cc.match` is
  * the product the printing matched (owned.js), with copies or not; null when none clearly is it (decision 499).
@@ -70,7 +71,7 @@ export function ownedFrom(value) {
  *     match: { product_id: string, category: string, name: string }|null },
  *   ours: { printing: number, card: number,
  *     list: { set_code: string, set_name: string|null, number: string, finish: string, qty: number, this: boolean }[] },
- *   inventoryAt: string|null }}
+ *   inventoryAt: string|null, known: boolean, matchFailed: boolean }}
  */
 export function ownedCounts(raw) {
   const n = (v) => (v == null ? null : Number(v));
@@ -92,6 +93,9 @@ export function ownedCounts(raw) {
     // "when crystal can't match we should just show n/a in both box, fade the element out, and show no
     // stamp"; decision 467). Not known: no product clearly this printing, no inventory, or none with quantities.
     known: cc.printing != null && cc.card != null,
+    // Not known because the match didn't go through (a request failed), not because no product is clearly it:
+    // the box says so and offers to try again, never a match by hand (decision 500).
+    matchFailed: Boolean(raw?.cc_match_failed) && !(cc.printing != null && cc.card != null),
     cc,
     ours,
     inventoryAt: raw?.inventory_at ?? null,

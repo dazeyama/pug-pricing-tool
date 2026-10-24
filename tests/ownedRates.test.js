@@ -118,6 +118,19 @@ test('the matched product comes through, in stock or not; none when no product c
   assert.equal(ownedCounts(null).cc.match, null);
 });
 
+// Owner, 2026-10-24 (decision 500): a match that didn't go through says so, apart from no clear product.
+test('a failed match: unknown and told apart, no rate change; a card never stocked is still a known 0', () => {
+  const failed = ownedCounts({ cc_printing: null, cc_card: 2, ours_card: 0, inventory_at: 'x', cc_match_failed: true });
+  assert.equal(failed.known, false);
+  assert.equal(failed.matchFailed, true);
+  assert.equal(ownedAdjust(failed).net, 0);
+  assert.equal(ownedCounts({ cc_printing: null, cc_card: 2, inventory_at: 'x' }).matchFailed, false);
+  // None of the card in CC: the count is known whatever the match did.
+  const never = ownedCounts({ cc_printing: null, cc_card: 0, inventory_at: 'x', cc_match_failed: true });
+  assert.equal(never.known, true);
+  assert.equal(never.matchFailed, false);
+});
+
 // Owner, 2026-10-23 (decision 474): Settings → Copies we own.
 test('the setting: read over the defaults, anything out of range or missing falls back', () => {
   assert.deepEqual(ownedFrom(null), DEFAULT_OWNED);

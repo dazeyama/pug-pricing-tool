@@ -99,19 +99,26 @@ export default function OwnedCounter({
   // The inventory can't say which of its products is this printing (or there's none, or no quantities): n/a
   // in both, faded, no chips or stamp, the rate unchanged; the box says why (decision 467).
   const unknown = ready && !c.known;
+  // Not known because the match didn't go through: ? rather than n/a, and a click tries again (decision 500).
+  const failedMatch = unknown && c.matchFailed;
   const num = (n) => {
     if (owned.status === 'loading') return '…';
-    if (!ready) return '?';
+    if (!ready || failedMatch) return '?';
     return unknown ? 'n/a' : String(n);
+  };
+  const retry = () => {
+    setHover(false);
+    owned.refresh?.();
   };
   let unknownWhy = '';
   if (unknown) {
-    if (c.inventoryAt == null) unknownWhy = 'No Master Crystal Inventory is uploaded, so what Crystal Commerce holds isn’t known.';
+    if (failedMatch) unknownWhy = 'Matching it to its Crystal Commerce product didn’t go through (the connection, most likely), so its count for this printing isn’t known. Click the boxes to try again.';
+    else if (c.inventoryAt == null) unknownWhy = 'No Master Crystal Inventory is uploaded, so what Crystal Commerce holds isn’t known.';
     else if (!c.cardSure) unknownWhy = 'The inventory was uploaded before it kept quantities: upload it again to count it.';
     else unknownWhy = 'Crystal Commerce has this card, but none of its products is clearly this printing (several could be, or none quite matches), so its count for this printing isn’t known. Click the boxes to pick its product (EXPORT asks the same); once one is chosen, the counts show here.';
   }
   // That last case can be settled here: the boxes open the export's choice for this one card (decision 468).
-  const matchable = unknown && c.inventoryAt != null && c.cardSure && Boolean(onMatch);
+  const matchable = unknown && !failedMatch && c.inventoryAt != null && c.cardSure && Boolean(onMatch);
   // The numbers the answer was worked out with (Settings → Copies we own, decision 474).
   const cfg = adjust?.cfg ?? DEFAULT_OWNED;
   // Under the boxes: a green chip for the bonus, a red one for the cut, side by side when both apply
@@ -167,9 +174,15 @@ export default function OwnedCounter({
         aria-expanded={open}
         aria-label={ready && !unknown ? `We own ${copies(c.printing)} of this printing and ${copies(c.card)} of this card`
           : 'Copies we own'}
-        title={owned.status === 'failed' ? owned.error : matchable ? 'Click to pick its Crystal Commerce product' : undefined}
+        title={owned.status === 'failed' ? owned.error
+          : failedMatch ? 'Matching it to Crystal Commerce didn’t go through: click to try again'
+            : matchable ? 'Click to pick its Crystal Commerce product' : undefined}
         onMouseEnter={() => setHover(true)}
         onClick={() => {
+          if (failedMatch) {
+            retry();
+            return;
+          }
           if (matchable) {
             setHover(false);
             onMatch();
@@ -200,6 +213,11 @@ export default function OwnedCounter({
           }}
         >
           (click to match)
+        </button>
+      )}
+      {failedMatch && (
+        <button type="button" className="owned-tag owned-match" onClick={retry}>
+          (didn&apos;t go through: try again)
         </button>
       )}
       {/* Applied or not, stamped (owner, 2026-10-23; decision 459): whenever there's a rate to apply. A click

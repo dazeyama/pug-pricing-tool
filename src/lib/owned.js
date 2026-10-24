@@ -61,6 +61,9 @@ export function forgetOwnedCopies(candidate, finish) {
   context = null;
 }
 
+/** A match that didn't go through, told apart from no product matched. */
+const FAILED = Symbol('match failed');
+
 async function lookUp(candidate, finish) {
   const line = { id: `owned:${candidate.key}`, ...magicPrinting(candidate, finish) };
   const baseKeys = baseKeysFor(line, candidate.scryfall?.flavor_name ?? null);
@@ -72,8 +75,8 @@ async function lookUp(candidate, finish) {
     p_finish: finish,
   });
   // The count and the printing's product at once (decision 453: they were one after the other). The product,
-  // when the export would take one without asking; a match that fails just leaves the printing's inventory
-  // count unknown, as no clear product does.
+  // when the export would take one without asking; a match that fails leaves the printing's inventory count
+  // unknown, and says so: it isn't "no clear product" (decision 500).
   const matching = readContext().then(async (ctx) => {
     if (!ctx) return null;
     const { results } = await matchLines([line], null, {
@@ -82,10 +85,11 @@ async function lookUp(candidate, finish) {
     return results[0]?.status === 'auto' ? results[0].product ?? null : null;
   }).catch((e) => {
     console.warn("Matching this printing to its Crystal Commerce product failed; its count there isn't known", e);
-    return null;
+    return FAILED;
   });
   const [{ data, error }, product] = await Promise.all([count(null), matching]);
   if (error) throw new Error(`Couldn't count the copies we own: ${error.message}`);
+  if (product === FAILED) return { ...data, cc_match_failed: true };
   if (!product) return data;
   // The product itself, for the box to name at its top: the list has only products with copies, so one with
   // none in stock would be missing (decision 499).
@@ -119,10 +123,18 @@ export function ownedCopies(candidate, finish) {
   const key = `${candidate.scryfall?.id}|${finish}`;
   const hit = counts.get(key);
   if (fresh(hit, COUNTS_MS)) return hit.promise;
-  const promise = lookUp(candidate, finish).catch((e) => {
-    counts.delete(key);
+  const kept = { at: Date.now(), gen: matchGeneration() };
+  // Neither a failure nor a match that didn't go through is kept: the card picked again asks afresh (decision 500).
+  const forget = () => {
+    if (counts.get(key) === kept) counts.delete(key);
+  };
+  kept.promise = lookUp(candidate, finish).then((raw) => {
+    if (raw?.cc_match_failed) forget();
+    return raw;
+  }, (e) => {
+    forget();
     throw e;
   });
-  counts.set(key, { at: Date.now(), gen: matchGeneration(), promise });
-  return promise;
+  counts.set(key, kept);
+  return kept.promise;
 }

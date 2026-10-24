@@ -227,6 +227,12 @@ what happens. The findings are reported when the pass ends.
       "Crystal Commerce: <product name> · <category>", the product the export would take. A printing CC holds none
       of (This printing 0, the card in stock): the line still names its product. An n/a printing, or none
       uploaded: no such line, only the reason. Match an n/a card (above): the line shows the product picked.
+- [ ] **A match that didn't go through** (decision 500): in DevTools → Network, right-click a request → Block request
+      URL, and block `rpc/cc_candidates` (the match's request only; the count still goes through). Pick a Magic
+      card CC has: both boxes read **?**, faded, with "(didn't go through: try again)" under them, no (click to
+      match), no chips or stamp; pointing says it didn't go through. Unblock it and click the chip (or the boxes):
+      the counts come in. Blocked again, pick another card, unblock, then pick that card again: counted afresh,
+      not the "?" from before.
 - [ ] **Stamps** (decision 459): with a rate to apply, a red **NOT APPLIED** ink stamp under the chips; Apply (or
       Auto apply rates? checked) turns it into a green **APPLIED** one; no stamp when nothing changes the rate.
       Click the stamp (decision 461): it switches, the new one dropping in larger over the old and pressing down
