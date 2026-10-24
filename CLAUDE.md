@@ -7,8 +7,10 @@ evidence, plan for what breaks and verify here); then the sections of **docs/DES
 
 **A new session only:** run `node scripts/code-map.mjs` and read **CODE_MAP.md**, the whole of it, in two reads (the spec's
 sections and every decision's title, each file's header and exports, the database, the docs). It's built fresh
-each time and git ignores it. **A fork skips this:** when this conversation already holds CODE_MAP.md's text from
-the session it was forked from, use that, and look up only the files added since.
+each time and git ignores it. Then read `.claude/skills/release/SKILL.md` and `.claude/agents/pug-reviewer.md`
+(about 3.5k together, recommended), so every fork knows the push and review steps. **A fork skips this:** when
+this conversation already holds CODE_MAP.md's text from the session it was forked from, use that, and look up only
+the files added since.
 
 ### The main session and its four forks
 
@@ -181,10 +183,9 @@ tests (`npm test`, commit only on `fail 0`) and the build.
   `docs/DESIGN_SPEC.md`. Code comments citing them mean those copies: `git show d158ee3:<path>` for the first
   five, `git show 681c5c6:<path>` for the last three.
 
-## Where it stands (2026-10-23)
+## Where it stands (2026-10-24)
 
-- Live: **v1.0.3-neverguess** (2026-10-23), then pushes without a bump, the last on 2026-10-23 (decisions through
-  488), on **prod** (`zvxquzcfffmxwizonxuo`, the live
+- Live: **v1.0.4-setup** (2026-10-24, decisions through 495), on **prod** (`zvxquzcfffmxwizonxuo`, the live
   site's project since v1.0.0-launch, 2026-10-19): the GitHub Actions variables point there. Localhost and the phone
   scanner's LAN link stay on dev (`.env.development`), which keeps the store's data from before launch as the test
   copy.
