@@ -40,13 +40,15 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-24 (Export session): **Under $10 takes every row, and drops a stuck-on "Foil"** (decision 498, the
+  owner's ask): the first list missed about 1,040 names in CC's newer sets, whose URLs lack the
+  `magic_the_gathering_singles-` prefix; the URL test is gone (`src/lib/underTen.js` `underTenName`, `STUCK_FOIL`).
+  Untested in the app.
 - 2026-10-24 (Export session): **Ctrl+Click Download copies Magic singles under $10** (decision 497, the owner's
   ask, a secret like 285): Settings → Master Crystal Inventory's Download, Ctrl or Cmd+Click, copies `1 <name>` a
   line (`src/lib/underTen.js` `underTenName`, `underTenText`, tests in `tests/underTen.test.js`;
-  `masterInventory.js` `underTenList`; `MasterInventoryPanel.jsx` `copyUnderTen`). Untested in the app. Not
-  checked: the real file's Sell Price format (`parseMoney` takes "1.23", "$1.23", "1,234.56"; three decimals would
-  read as unreadable and be left out), and a clipboard refused when the window loses the front during the read
-  (a toast says so).
+  `masterInventory.js` `underTenList`; `MasterInventoryPanel.jsx` `copyUnderTen`). The owner tried it: 3,400 names,
+  quick. Not checked: a clipboard refused when the window loses the front during the read (a toast says so).
 - 2026-10-24: **`scripts/db-baseline.mjs` retired** (decision 496, the owner's ask): last copy at `a8fb952` (the
   spec's Retired documents row, CLAUDE.md's Where things are); `scripts/lib/linked.mjs`'s comment updated.
 - 2026-10-24: **`.claude/launch.json` ignored** (the owner's ask): Claude's preview config stays per computer

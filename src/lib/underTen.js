@@ -1,34 +1,40 @@
-import { catalogPath, parseProductName, totalQty } from './ccNames.js';
+import { parseProductName, totalQty } from './ccNames.js';
 import { parseMoney } from './money.js';
 
 // Ctrl+Click on Settings → Master Crystal Inventory's Download (decision 497,
-// a secret like 285's): every Magic single in stock under $10, as a plain
-// list, "1 <card name>" a line, for the owner's "PUG Under 10" collection in
+// a secret like 285's): every card in stock under $10, as a plain list,
+// "1 <card name>" a line, for the owner's "PUG Under 10" collection in
 // Collection Manager. Read from the stored CSV (cc_products has no price).
-// Pure, for tests.
+// Every row counts: the store's inventory file is Magic singles only, and
+// CC's newer sets have no `magic_the_gathering_singles-` in their URLs
+// (decision 498). Pure, for tests.
 
 /** Below this Sell Price a product counts. */
 export const UNDER_PRICE = 10;
 
 const collator = new Intl.Collator('en', { sensitivity: 'base', numeric: true });
 
-/** Is this CC product URL a Magic single's (its catalog path in a `magic_the_gathering_singles-…` category)? */
-export const isMagicSingle = (url) => catalogPath(url).startsWith('magic_the_gathering_singles-');
+/**
+ * "Foil" stuck on the name without CC's " - " (decision 498): "Narset,
+ * Enlightened Master Foil", "Skyship Weatherlight Alternate Art Foil". The
+ * card named Foil has no space before it, so it stays.
+ */
+const STUCK_FOIL = /(?:\s+Alternate Art)?\s*-?\s+Foil$/i;
 
 /**
  * One inventory CSV row (PapaParse, header: true): its card name, without the
- * bracket, foil kind or variants ("A // B" as written), when it's a Magic
- * single with 1 or more in stock and a Sell Price under $10; otherwise null.
- * A blank or unreadable price is left out.
+ * bracket, foil kind or variants ("A // B" as written), when it has 1 or more
+ * in stock and a Sell Price under $10; otherwise null. A blank or unreadable
+ * price is left out.
  * @returns {{ name: string, key: string }|null}
  */
 export function underTenName(row) {
-  if (!isMagicSingle(row?.URL)) return null;
-  if (!((totalQty(row['Total Qty']) ?? 0) >= 1)) return null;
+  if (!((totalQty(row?.['Total Qty']) ?? 0) >= 1)) return null;
   const price = parseMoney(row['Sell Price']);
   if (price == null || price >= UNDER_PRICE) return null;
-  const { base, baseKey } = parseProductName(row['Product Name']);
-  return base ? { name: base, key: baseKey } : null;
+  const { base } = parseProductName(row['Product Name']);
+  const name = base.replace(STUCK_FOIL, '') || base;
+  return name ? { name, key: parseProductName(name).baseKey } : null;
 }
 
 /**

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { isMagicSingle, underTenName, underTenText } from '../src/lib/underTen.js';
+import { underTenName, underTenText } from '../src/lib/underTen.js';
 
 // Hand-made rows in the inventory CSV's shape; never the real file.
 const HOST = 'http://playersuniongames.crystalcommerce.com/catalog/';
@@ -11,12 +11,22 @@ const row = (name, price, qty = '1', path = 'magic_the_gathering_singles-odyssey
   URL: `${HOST}${path}/${name.toLowerCase().replace(/\W+/g, '_')}/123`,
 });
 
-test('Magic singles only, by the catalog path', () => {
-  assert.equal(isMagicSingle(`${HOST}magic_the_gathering_singles-odyssey/mirari/1`), true);
-  assert.equal(isMagicSingle(`${HOST}magic_the_gathering_sealed_product-boxes/x/1`), false);
-  assert.equal(isMagicSingle(`${HOST}pokemon_singles-base_set/charizard/1`), false);
-  assert.equal(isMagicSingle(''), false);
-  assert.equal(underTenName(row('Mirari', '2.00', '1', 'pokemon_singles-base_set')), null);
+test('every category counts, the newer sets without the singles prefix too (decision 498)', () => {
+  assert.equal(underTenName(row('Mirari', '2.00')).name, 'Mirari');
+  assert.equal(underTenName(row('Llanowar Elves', '0.25', '3', 'foundations')).name, 'Llanowar Elves');
+  assert.equal(underTenName(row('Cloud, Midgar Mercenary', '4.00', '1', 'final_fantasy')).name,
+    'Cloud, Midgar Mercenary');
+});
+
+test('"Foil" stuck on the name without " - " is dropped; the card named Foil stays', () => {
+  assert.equal(underTenName(row('Narset, Enlightened Master Foil - Prerelease Promo', '3.00')).name,
+    'Narset, Enlightened Master');
+  assert.equal(underTenName(row('Skyship Weatherlight Alternate Art Foil', '3.00')).name, 'Skyship Weatherlight');
+  assert.equal(underTenName(row('Foil', '0.50')).name, 'Foil');
+  assert.equal(underTenName(row('Foil - Foil', '0.50')).name, 'Foil');
+  const list = underTenText([row('Narset, Enlightened Master Foil - Prerelease Promo', '3.00'),
+    row('Narset, Enlightened Master', '5.00')].map(underTenName));
+  assert.equal(list.text, '1 Narset, Enlightened Master');
 });
 
 test('in stock, under $10, the price written with or without $', () => {
