@@ -47,6 +47,11 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-24: **Condition prices sized to their buttons** (decision 505, the owner's ask, Buy tab session):
+  `PriceTable.jsx` `priceStyle` gives the price's width in ems (`src/lib/priceFit.js` `priceEms`, tested in
+  `tests/priceFit.test.js`); `conditions.css` `.pc-price` sizes it to 84% of its button, 18px at most. Measured
+  in the font on dev's sign-in page (the app needs the store's sign-in), not on the live buttons; untested in
+  the app.
 - 2026-10-24: **"Crystal Commerce Match:"** (decision 504, the owner's ask, Buy tab session): the Copies we own
   box's line in `OwnedCounter.jsx`. Untested in the app.
 - 2026-10-24: **The Copies we own box's title a little bigger** (decision 503, the owner's ask, Buy tab session):

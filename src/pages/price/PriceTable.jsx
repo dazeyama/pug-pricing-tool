@@ -3,12 +3,12 @@ import { Link } from 'react-router-dom';
 import { CONDITIONS } from '../../lib/prices.js';
 import { isTcgplayerBase, isTcgplayerPrice, showsTcgplayer } from '../../lib/ladder.js';
 import { formatEur, formatMoney, parseMoney, roundDownPrice, roundUpPrice } from '../../lib/money.js';
+import { priceEms } from '../../lib/priceFit.js';
 import { timeAgo } from '../../lib/time.js';
 
-/** Big prices, stepping down so "$1,234.56" still fits a button. */
+/** Big prices, as big as their button leaves room for: its width in ems, for conditions.css (decision 505). */
 function priceStyle(text) {
-  const n = text.length;
-  return { '--pc-size': n <= 6 ? '18px' : n === 7 ? '16px' : n === 8 ? '14px' : '12.5px' };
+  return { '--pc-em': priceEms(text) };
 }
 
 /**

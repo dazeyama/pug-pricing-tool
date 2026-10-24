@@ -167,6 +167,10 @@ what happens. The findings are reported when the pass ends.
 - [ ] **Rounding** (decision 478): a card at $12.80 market shows $12.50 (was $12), one at $123.45 shows $123 (was
       $120); under $10 it still goes by the quarter. Cash and Credit round the same way: a $55 list at 45% cash is
       $24.50. Help → Rounding and Settings → Export sell floor's table show the new steps.
+- [ ] **Prices sized to their buttons** (decision 505): a card at about $65 NM ($63.50 on the button) has room each
+      side on every condition button, on a 1920 window and on a laptop one (1200 × 650); a $9.50 price is bigger, a
+      $163.50 one smaller, a whole-dollar one ($63) a full 18px. A $1,234.50 price fits too, small. A manual price
+      sizes the same way.
 - [ ] **Right-click a card → Set Rate:** its own Cash % and Credit %, Maintain ratio, a red box when Cash is over
       Credit; the line is tinted with ✎; **Clear Rate** takes it off.
 - [ ] A custom rate for the whole buy shows its percentage with ✎ in the totals.
