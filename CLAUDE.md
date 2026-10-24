@@ -5,7 +5,7 @@
 Read, in this order: **NEXT.md** (repo root), then tell me what's open; **FABLE.md** (how to scope, gather
 evidence, plan for what breaks and verify here); then the sections of **docs/DESIGN_SPEC.md** the task touches.
 
-**A new session only:** run `node scripts/code-map.mjs` and read **CODE_MAP.md**, the whole of it (the spec's
+**A new session only:** run `node scripts/code-map.mjs` and read **CODE_MAP.md**, the whole of it, in two reads (the spec's
 sections and every decision's title, each file's header and exports, the database, the docs). It's built fresh
 each time and git ignores it. **A fork skips this:** when this conversation already holds CODE_MAP.md's text from
 the session it was forked from, use that, and look up only the files added since.
