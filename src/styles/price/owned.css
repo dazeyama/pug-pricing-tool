@@ -151,9 +151,13 @@
   color: var(--accent);
 }
 .owned-pop-lead { margin: 0 0 6px; font-size: 14px; font-weight: 700; }
-/* The Crystal Commerce product this printing matched, under the head (decision 499). */
+/* The Crystal Commerce product this printing matched, under the head (decision 499): exactly two lines, the
+   product's on one line, cut with … when too long (the whole of it on pointing), its name bold in the head's
+   blue (decision 501). */
 .owned-pop-match { margin: 0 0 6px; color: var(--muted); }
-.owned-pop-match b { color: var(--text); }
+.owned-pop-match > span { display: block; }
+.owned-pop-match-product { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.owned-pop-match b { color: var(--accent); }
 /* Which printings: the inventory's, then ours, one line each; a long list scrolls inside the box. */
 .owned-pop-lists { max-height: 260px; overflow-y: auto; margin: 0 -6px 8px 0; padding-right: 6px; }
 .owned-pop-sub {
