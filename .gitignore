@@ -54,3 +54,6 @@ scan-fixtures/
 
 # The map a new session builds and reads (scripts/code-map.mjs)
 CODE_MAP.md
+
+# Claude's preview server config (port 5190), per computer
+.claude/launch.json

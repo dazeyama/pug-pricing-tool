@@ -38,6 +38,9 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-24: **`.claude/launch.json` ignored** (the owner's ask): Claude's preview config stays per computer
+  (`.gitignore`), so a push's status check is empty. The v1.0.4-setup review's other notes closed by the owner, no
+  change: Help's lone-product and lost-pick wording, `code-map.mjs`'s run-path check.
 - 2026-10-24: **Pushed as v1.0.4-setup** (the owner's ask, written "v1.04-setup"; 1.0.4 since npm's versions take
   no leading zero), decisions 489–495: Help's matching sections (484–487), the mixed-rates \* on an all-low-end
   list (489), TEST.md's new cases and SETUP.md's paused-project check, three docs retired (490), CODE_MAP.md for
