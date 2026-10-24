@@ -245,11 +245,12 @@ export default function OwnedCounter({
           <section className="owned-pop-box" aria-label="Copies we own">
             <div className="owned-pop-head">📦 Copies we own</div>
             {/* The product this printing matched, in stock or not (decision 499); none matched, the n/a says why.
-                Two lines, the product on the second, its name bold in the head's blue (decision 501). */}
+                Two lines, the product on the second, in quotes and all of it bold in the head's blue (decisions
+                501, 502). */}
             {c.cc.match && (
               <p className="owned-pop-match" title={`${c.cc.match.name} · ${c.cc.match.category}`}>
                 <span>Crystal Commerce:</span>
-                <span className="owned-pop-match-product"><b>{c.cc.match.name}</b> · {c.cc.match.category}</span>
+                <b className="owned-pop-match-product">“{c.cc.match.name} · {c.cc.match.category}”</b>
               </p>
             )}
             {unknown ? (

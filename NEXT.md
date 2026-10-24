@@ -47,6 +47,8 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-24: **The whole matched product in quotes, in blue** (decision 502, the owner's ask, Buy tab session):
+  `OwnedCounter.jsx` and `owned.css` `.owned-pop-match-product`. Untested in the app.
 - 2026-10-24: **The box's CC product on two lines, its name in blue** (decision 501, the owner's ask, Buy tab
   session): `OwnedCounter.jsx` splits the line; `owned.css` `.owned-pop-match-product` keeps the product on one
   line (… when long), the name bold in `--accent`. Untested in the app.
