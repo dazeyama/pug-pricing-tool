@@ -8,8 +8,8 @@ marks each task done here when it's finished, with the exact file and function o
 
 - **Unpushed** (2026-10-24): Help's matching sections (484–487), the mixed-rates \* fix (489), TEST.md's new cases
   and SETUP.md's paused-project check, three docs retired (490), CODE_MAP.md for new sessions (491), the main
-  session and its four forks (492), tasks passed on by the main session (493). No migrations; dev and prod both
-  0001–0010.
+  session and its four forks (492), tasks passed on by the main session (493), outside your area and messages
+  (494). No migrations; dev and prod both 0001–0010.
 - **For migration 0011, when there's a reason to write one:**
   - F2, the backup's 8 s statement limit (decision 430): `backup_export` (one call for every table, 2 to 7.7 s on
     dev) can time out; the fix must keep one read at one instant, so it needs the database. The test run's Backup
@@ -42,6 +42,9 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-24: **Outside your area, and when sessions message** (decision 494, the owner's ask): CLAUDE.md's two new
+  sections under Start of a session replace the fork brief's "say so before changing anything outside it" and the
+  Passing tasks on bullet. Not tried yet.
 - 2026-10-24: **Tasks passed on by the main session** (decision 493, the owner's ask): CLAUDE.md, Working beside
   the other sessions: a task the main session passes to a fork, quoting the owner, counts as the owner's; a fork
   still asks before a push, a prod migration or deleting data. Not tried yet.

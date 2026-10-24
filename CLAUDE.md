@@ -25,8 +25,8 @@ the hub: questions across areas, NEXT.md's Unpushed line, and the push when I as
 | Phone scanner (`scanner`) | `src/scan/` |
 
 Each fork's brief: "You're the <Session> session, forked from the main session, so its reading is yours: skip Start
-of a session. Your area: <Area>. Wait for my first task. Work in your area and the shared docs; say so before
-changing anything outside it. Don't start sessions, push, or run the release skill."
+of a session. Your area: <Area>. Wait for my first task. Work in your area; outside it, follow Outside your area
+below. Don't start sessions, push, or run the release skill."
 
 ### Working beside the other sessions
 
@@ -48,9 +48,29 @@ once, and what one leaves half-done is in the others' checks.
   session's half-done work isn't yours to fix; say so.
 - **Only the main session pushes**, and only when I ask: a fork never runs the release skill. A push sends every
   session's commits, so the main session lists what each area committed since the last push before it goes.
-- **Passing tasks on.** The main session can message a fork (`SendMessage`, its `local_…` id) and a fork the main
-  session. A task the main session passes on, quoting my words, counts as mine. A fork still asks me before anything
-  outward-facing (a push, a prod migration, deleting data). Forks talk to each other through the main session.
+
+### Outside your area
+
+- **Just do it, and name it in the handoff:** small changes your own task needs in someone else's files: a caller of
+  something you changed, a shared helper or component, `src/state/`, a migration your feature needs, the shared docs.
+- **Ask me first:** changing how another area behaves (what staff see or what gets exported there), or a large edit
+  to another area's main file (`PricingScreen.jsx`, `DayPage.jsx`, `ExportDialog.jsx`, `Scanner.jsx`): another
+  session may be mid-edit in it.
+
+### Messages
+
+Sessions message each other with `SendMessage` (the session's `local_…` id). Short and to the point, one message
+per thing, and never a progress report: the main session already gets a note each time a fork ends a turn. Look
+before asking: what another session did is in `git log`, NEXT.md and the files.
+
+- **A fork messages the main session** when it's blocked on something another area or I must answer, when its
+  change touches another area's files or behaviour (a heads-up, so the main session can pass it on), or when it
+  finished something another area is waiting on.
+- **The main session messages a fork** to pass on a task from me, quoting my words (it counts as mine), or to pass
+  on another session's change that affects that fork's work.
+- **Forks message each other directly** only about a file they're both changing right now; anything else goes
+  through the main session.
+- A fork still asks me before anything outward-facing: a push, a prod migration, deleting data.
 
 ## NEXT.md
 
