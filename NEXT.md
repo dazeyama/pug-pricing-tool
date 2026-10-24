@@ -6,6 +6,8 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
+- **Unpushed** (the main session's line), no migrations or Edge Functions: the stale-page fix (decision 507,
+  main session).
 - **For migration 0011, when there's a reason to write one:**
   - F2, the backup's 8 s statement limit (decision 430): `backup_export` (one call for every table, 2 to 7.7 s on
     dev) can time out; the fix must keep one read at one instant, so it needs the database. The test run's Backup
@@ -42,6 +44,12 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-24: **A page opened before a push says to reload** (decision 507, the owner's report from work, main
+  session): Print MTG on a tab opened before the 11:05 push failed with "Failed to fetch dynamically imported
+  module" (the old `auditPdf-DLNn6FRa.js` is a 404 on the live site). `src/main.jsx` listens for
+  `vite:preloadError` and `src/lib/staleBuild.js` `explainStaleBuild` (tested) puts the plain words on the
+  error, so the toast says to reload (F5). Lint, 503 tests and the build pass; untested in the app. Not
+  pushed. Not done: the page doesn't notice a new build by itself; a tab is only told when it next loads a part.
 - 2026-10-24: **Pushed without a bump** (the owner's ask), decisions 496–506: `scripts/db-baseline.mjs` retired
   and `.claude/launch.json` ignored (496); Export and printouts: Ctrl+Click Download copies Magic singles under
   $10 (497, 498); Buy tab: the Copies we own box names its Crystal Commerce product (499–504), and the condition

@@ -4,6 +4,7 @@ import { HashRouter } from 'react-router-dom';
 import App from './App.jsx';
 import { watchUiZoom } from './lib/uiScale.js';
 import { watchScanMode } from './lib/mobile.js';
+import { explainStaleBuild } from './lib/staleBuild.js';
 
 import './styles/tokens.css';
 import './styles/base.css';
@@ -24,6 +25,9 @@ import './styles/scan.css';
 watchUiZoom();
 // A phone (or #/scan) is the scanner: no desktop-only notice, no laptop zoom (lib/mobile.js).
 watchScanMode();
+// A part loaded only when needed that a push has since replaced (decision 507): the error goes on to its caller,
+// as before, in words that say to reload (lib/staleBuild.js).
+window.addEventListener('vite:preloadError', (e) => explainStaleBuild(e.payload));
 // Localhost on dev wears a faint DEV watermark, so it can't be taken for the live site (decision 382; base.css).
 // Written as import.meta.env.DEV itself: a build replaces it with false and drops the line, dev's ref with it.
 if (import.meta.env.DEV && import.meta.env.VITE_SUPABASE_URL?.startsWith('https://psucrzljraxeootwnltf.')) {
