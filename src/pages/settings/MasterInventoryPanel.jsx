@@ -5,7 +5,7 @@ import { useConnection } from '../../state/connection.jsx';
 import { useToast } from '../../components/Toast.jsx';
 import GuardButton from '../../components/GuardButton.jsx';
 import UserTag from '../../components/UserTag.jsx';
-import { checkCsv, downloadCsv, uploadCsv } from '../../lib/masterInventory.js';
+import { checkCsv, downloadCsv, underTenList, uploadCsv } from '../../lib/masterInventory.js';
 import { withLoading } from '../../lib/loading.js';
 import { formatDateTime } from '../../lib/time.js';
 
@@ -19,6 +19,7 @@ export default function MasterInventoryPanel() {
   const picker = useRef(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [copying, setCopying] = useState(false);
   // Where a big upload is (owner, 2026-09-30: the real file is 40 MB+).
   const [stage, setStage] = useState(null);   // null | { step, pct? }: check, compress, upload, load, save, prune
 
@@ -54,6 +55,34 @@ export default function MasterInventoryPanel() {
       await withLoading(() => downloadCsv(row));
     } catch (err) {
       toast(err.message, 'err');
+    }
+  }
+
+  // Ctrl+Click (a secret, decision 497): every Magic single in stock under $10, copied as a
+  // plain list. It only reads, so no user is needed.
+  async function copyUnderTen(row) {
+    if (offline) {
+      toast('No connection', 'err');
+      return;
+    }
+    setCopying(true);
+    try {
+      const list = await withLoading(() => underTenList(row));
+      if (!list.names) {
+        toast('No Magic singles in stock under $10 in this file.', 'err');
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(list.text);
+        toast(`Copied ${list.names.toLocaleString()} card name${list.names === 1 ? '' : 's'} under $10.`, 'ok');
+      } catch {
+        // The browser only lets a page in front copy: switching away while it reads loses it.
+        toast("Couldn't copy to the clipboard. Keep this window in front while it reads, then try again.", 'err');
+      }
+    } catch (err) {
+      toast(err.message, 'err');
+    } finally {
+      setCopying(false);
     }
   }
 
@@ -99,7 +128,12 @@ export default function MasterInventoryPanel() {
             <dt>Current file</dt>
             <dd>
               <strong>{current.original_filename}</strong>
-              <button type="button" className="btn small ghost inv-dl" onClick={() => download(current)}>
+              <button
+                type="button"
+                className={`btn small ghost inv-dl${copying ? ' busy' : ''}`}
+                disabled={copying}
+                onClick={(e) => (e.ctrlKey || e.metaKey ? copyUnderTen(current) : download(current))}
+              >
                 Download
               </button>
             </dd>

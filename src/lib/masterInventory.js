@@ -3,6 +3,7 @@ import { supabase } from './supabase.js';
 import { fileStamp } from './time.js';
 import { gunzip, gzip, isGzipPath } from './gzip.js';
 import { productRow } from './ccNames.js';
+import { underTenName, underTenText } from './underTen.js';
 
 // Master Crystal Inventory (spec 11.1): check a Crystal Commerce CSV and store
 // it in the private `master-inventory` bucket, replacing the one before: only
@@ -254,15 +255,51 @@ function saveBlob(blob, name) {
 }
 
 /**
+ * A stored copy as the CSV it was: a gzipped one is unpacked here.
+ * @param {{ storage_path: string }} row
+ * @returns {Promise<Blob>}
+ */
+async function storedCsv(row) {
+  const { data, error } = await supabase.storage.from(BUCKET).download(row.storage_path);
+  if (error) throw new Error(`Download failed: ${error.message}`);
+  return isGzipPath(row.storage_path) ? gunzip(data) : data;
+}
+
+/**
+ * Ctrl+Click on Download (decision 497): every Magic single in stock under
+ * $10 in the stored copy, as a plain list (lib/underTen.js), read in chunks.
+ * @param {{ storage_path: string, original_filename: string }} row
+ * @returns {Promise<{ text: string, names: number }>}
+ */
+export async function underTenList(row) {
+  const csv = new File([await storedCsv(row)], row.original_filename, { type: 'text/csv' });
+  const names = [];
+  await new Promise((resolve, reject) => {
+    Papa.parse(csv, {
+      header: true,
+      skipEmptyLines: 'greedy',
+      chunkSize: 2 * 1024 * 1024,
+      chunk: (results) => {
+        for (const r of results.data) {
+          const n = underTenName(r);
+          if (n) names.push(n);
+        }
+      },
+      complete: resolve,
+      error: reject,
+    });
+  });
+  return underTenText(names);
+}
+
+/**
  * Save a stored copy to this computer as the CSV it was, under its original
  * name: a gzipped one is unpacked here first.
  * @param {{ storage_path: string, original_filename: string }} row
  */
 export async function downloadCsv(row) {
   if (isGzipPath(row.storage_path)) {
-    const { data, error } = await supabase.storage.from(BUCKET).download(row.storage_path);
-    if (error) throw new Error(`Download failed: ${error.message}`);
-    const csv = await gunzip(data);
+    const csv = await storedCsv(row);
     saveBlob(new Blob([csv], { type: 'text/csv' }), row.original_filename);
     return;
   }
