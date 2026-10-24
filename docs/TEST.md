@@ -8,7 +8,7 @@ what happens. The findings are reported when the pass ends.
   http://localhost:5180). **Never prod.**
 - **Who:** the owner, or Claude in the browser pane at the owner's request (FABLE.md, "a smoke pass the owner asks
   for"). The owner does the phone, two-computer and store cases.
-- **How long:** about two hours, 237 cases.
+- **How long:** about two hours, 269 cases.
 
 ## Ground rules
 
@@ -56,7 +56,8 @@ what happens. The findings are reported when the pass ends.
 - [ ] **A customer by name** (decision 424): type the first name of a customer with a Completed buy: a **Customers**
       section at the top lists their buys and collections (Buy N · who · when, the name, phone and card count), **Show
       all** has flipped on by itself and the Completed ones show faded; untick Show all: it stays off and the
-      Completed ones go; type another letter: it flips on again. Clicking a buy opens its day page with the buy
+      Completed ones go; close the list and click back in: still off (decision 426); type another letter: it flips
+      on again. Clicking a buy opens its day page with the buy
       flashing; a collection opens its screen. The placeholder reads "Search cards, customers, phone numbers…".
 - [ ] **A customer by phone** (decision 424): `(555) 123-4567`, `555-123-4567`, `5551234567` and the last seven digits
       all find the same customer, with no card results and no "contain that card" message; `117` and `117/331` still
@@ -169,6 +170,10 @@ what happens. The findings are reported when the pass ends.
 - [ ] **Right-click a card → Set Rate:** its own Cash % and Credit %, Maintain ratio, a red box when Cash is over
       Credit; the line is tinted with ✎; **Clear Rate** takes it off.
 - [ ] A custom rate for the whole buy shows its percentage with ✎ in the totals.
+- [ ] **Mixed rates** (decisions 413, 426, 489): a list with a $1, a $10 and a $50 card: Cash and Credit show a
+      **\***, and pointing at either lists "1 low-end (under $3) card at Cash 25% / Credit 50%", the high-end card
+      and "1 card at the master rate …". Only low-end cards (two at $1): the \* still shows, with one bullet. Only
+      $10 cards: no \*. A custom rate for the whole buy: no \*.
 - [ ] **A failed price lookup isn't kept** (decisions 357, 368): with the `prices` request blocked (DevTools →
       Network), select a card: "Couldn't load prices" with Retry; unblock it and press Retry: the prices come in
       without a reload.
@@ -177,6 +182,8 @@ what happens. The findings are reported when the pass ends.
       tab and come back: NM again.
 - [ ] **A locked price source** (decision 402): right-click Use TCGplayer: "🔒 Use TCGplayer", and the next card is
       priced from TCGplayer; select a card with no TCGplayer price: the lock goes, with a toast saying why.
+      With the lock on, a card with a TCGplayer price in one finish only: switch to the other finish (or version):
+      the lock goes the same way (decision 427).
 - [ ] **Sorting the list** (decision 403): a list of Magic and Pokémon cards: **$ ↓** orders each game's cards by
       price, high first; **WUBRG** orders the Magic ones white, blue, black, red, green, multicolor, colorless,
       lands (A–Z in each), the Pokémon ones as added; **Added** puts them back; bulk stays on top throughout. On a
@@ -218,8 +225,9 @@ what happens. The findings are reported when the pass ends.
       matching → Browse remembered products…, go back to the Buy tab and pick the card again: n/a, with no refresh.
 - [ ] **Stamps** (decision 459): with a rate to apply, a red **NOT APPLIED** ink stamp under the chips; Apply (or
       Auto apply rates? checked) turns it into a green **APPLIED** one; no stamp when nothing changes the rate.
-      Click the stamp (decision 461): it switches, the new one dropping in larger over the old, shaking and
-      settling, the old one fading only at the very end (decision 462), all in 0.3 s; APPLIED tilts up to the
+      Click the stamp (decision 461): it switches, the new one dropping in larger over the old and pressing down
+      as it lands (a quick squash, darker ink), then holding still, no shake (decision 488), the old one fading
+      only at the very end (decision 462), all in 0.3 s; APPLIED tilts up to the
       right, NOT APPLIED down, and the price panel's Credit / Cash change with it; click again to switch back.
       With Auto apply rates? checked the stamp doesn't switch, and pointing at it says why.
 - [ ] **Apply**: click the boxes to keep the box open, then **Apply ±N%**: the chips go solid with ✓, the price
@@ -264,6 +272,13 @@ what happens. The findings are reported when the pass ends.
 - [ ] **CONFIRM BUY with the connection gone** (decisions 363, 367, 371): wifi off, press Confirm buy: an error, then
       "Its answer was lost: it may have gone through. Press Confirm buy again to find out."; wifi on, press again:
       the buy is confirmed once (BUY COMPLETE, one buy on the day page).
+- [ ] **The lost answer's dialog stays open** (decision 430): wifi pulled mid-press so the buy saves and its answer
+      is lost: the list reloads empty and the dialog stays open at 0 cards; wifi back, press again: BUY COMPLETE.
+- [ ] **A later press keeps the first press's 🚩** (decision 374): as above with 🚩 Flag check for condition ticked;
+      wifi back, untick 🚩 and press again: the buy is flagged 🚩, from the press that went through. While that press
+      reads back, the button reads Confirming… and can't be pressed.
+- [ ] **CONFIRM BUY closes when the buy goes** (decision 427): CONFIRM BUY's dialog open in one tab; confirm or
+      CANCEL the same buy in another: the first tab's dialog closes once its list is empty.
 - [ ] **Two tabs, one confirm** (decision 367): the Buy tab open twice, same user; confirm in one; in the other,
       change the price and press Confirm buy: "This buy changed on another computer — reloaded.", no BUY COMPLETE.
 - [ ] **ADD CARD after a lost answer** (decision 388): add a card with the wifi pulled mid-press, so the toast says
@@ -450,6 +465,9 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       project it's greyed on the project's own ⋯, and the table's ⋯ stops with the same message before the dialog
       ("Part of this project is exported: Undo export… first, only if…"; decision 339).
 - [ ] A project can be marked Completed with no export.
+- [ ] **Ours on a project** (decision 427): Export MTG csv (all) on a project asks "Mark this project Completed?" in
+      words that say **Ours**, as its chip does, never Paid/Ours; a greyed Convert to buy… gives its reason the same
+      way.
 
 ## 13. Collections tab: Import Collection
 
@@ -483,10 +501,22 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       whose product the current Master Crystal Inventory no longer has (upload one without it): EXPORT puts it in
       **Needs a choice** with "Used to be … which isn't in the current inventory", nothing ticked, even when one
       product would fit by itself.
-- [ ] Today's EXPORT is blocked ("until it's over").
+- [ ] **A pick holds, then folds away** (decision 440): in an EXPORT's Needs a choice with two or more cards, pick a
+      product: the card stays where it was for half a second, greyed with "✓ Picked: <product>" and not clickable,
+      then folds away and the next card slides up; meanwhile Needs a choice's count leaves it out and Continue stays
+      greyed. None of these the same, "✓ None of these". With reduced motion on in Windows, it goes after the half
+      second without the fold.
+- [ ] **Undo last pick** (decision 441): after a pick, the footer's left shows **Undo last pick** with the card and
+      its product; pressed, the card is back in Needs a choice with nothing ticked; pressed again, the pick before.
+      In **Check Crystal Commerce matches**, Undo also takes back what was remembered (Settings → Crystal Commerce
+      matching's count goes back); a ticked "Always use the picked product's category for <set>" stays, and Undo
+      says so.
+- [ ] **Today** (decision 427): today's EXPORT and COMPLETE are blocked ("until it's over"), but EXPORT ▾ opens on
+      today's Magic day: Print MTG (all) and (>$1.49) print, and only the Export items are greyed, with the reason.
 - [ ] **Export single buy…** works on any day, today included, with the SKU `101626-42`; only that buy becomes Completed,
       and the day's EXPORT skips it.
-- [ ] **Mark Paid/Ours again…** undoes that buy's export alone, after asking.
+- [ ] **Mark Paid/Ours again…** undoes that buy's export alone, after asking. On a buy whose (>$1.49) export pulled a
+      card, the question says its cards come back out of Bulk pulled from exports too (decision 426).
 - [ ] **Mark as completed** (decisions 295, 277): a Magic buy's cards cross out and its names turn grey; Mark Paid/Ours
       again brings them back; a Pokémon buy has nothing struck. On a past day with that buy and an exported one, the
       day's ⋯ → Mark Paid/Ours again… says it brings back 1 buy and the hand-completed one stays; after it, that buy
@@ -497,6 +527,8 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       Completed moves only its live cards, the dialog says so (decision 296); a buy with nothing live is blocked. When
       the buy stays like that, the dialog says the payment stays with the buy, the new project is paid $0, and the
       Calendar's **Export Cash Buys** counts the cash once, on the buy (the project's row reads $0; decision 341).
+      With a Completed side holding a line of 3 copies, the dialog's "Its N Completed cards" says 3, not 1
+      (decision 426).
 - [ ] **Convert to overnight buy** (decision 335; Convert ▸) asks once with nothing to type, showing the buy's name, phone and Last
       4 ID 1312; the overnight buy opens, Paid/Ours, with the buy's cards, rates and what was paid; the Changelog says "Buy
       converted to overnight buy"; with no customer name it's greyed. With Completed cards the buy stays with them and
@@ -534,16 +566,25 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       $1.50 or more today, with their prices; Print buy (all) prints them all.
 - [ ] **A buy's ⋯ in groups** (decisions 422, 425): a Magic buy's ⋯ reads Mark as completed, ◂ Print, ◂ Export,
       ◂ Convert, Edit in project view, Delete buy…; pointing at ◂ Print opens its two items to the left of the menu,
-      pointing at ◂ Export swaps to its items, a click on a group toggles it, ← or → opens and → (pointing back at
-      the group) closes from the keyboard; a greyed item in a group shows its reason. A Pokémon buy's ◂ Print has
+      pointing at ◂ Export swaps to its items, a click on a group opens it and a second click leaves it open
+      (decision 442), ← or → opens and → (pointing back at the group) closes from the keyboard; a greyed item in a group shows its reason. A Pokémon buy's ◂ Print has
       Print buy and Print stickers.
 - [ ] **EXPORT ▾ in groups** (decisions 422, 425): a Magic day's EXPORT ▾ shows ◂ Print (Print MTG (all), (>$1.49))
       and ◂ Export (Export MTG csv (all), (>$1.49)), each opening to the left; a Pokémon day's shows ◂ Print (Print
-      PKM?, Print PKM Stickers?) and Complete day… on its own; a collection's ◂ Print has all four prints; Can't upload
+      PKM?, Print PKM Stickers?) and Complete day… on its own; a collection's ◂ Print has all four prints and the
+      two in buy order; Can't upload
       cards' Export csv is on its own. A blocked Export item still says why when clicked. With the window narrowed
       so a flyout can't fit to the left of the day page's ⋯, it opens to the right and the arrow reads "Print ▸".
 - [ ] **The printout's foot** (decision 419): on Print MTG (all), "Page 1 of N" sits at the right margin and the key
       ("Today's market price: amber = …, red = …") runs from the left without touching it.
+- [ ] **The Magic printouts' order** (decision 443): Print MTG (all) on a day with several cards in one category:
+      inside it, white, blue, black, red, green, multicolor, colourless, lands, then a card with no Scryfall card; in
+      each pile by name A–Z, then collector number, then NM, LP, MP, HP, DMG, then non-foil, foil, etched.
+- [ ] **Print MTG in buy order** (decision 444): a past Magic day with two buys: EXPORT ▾ → ◂ Print → Print MTG in
+      buy order: one row per card line, the first buy's cards as added, then the second's; no category bands and no
+      NM line; the file is `audit-magic-<day>-buy-order.pdf`. A collection has it too, its cards as added.
+- [ ] **Print PKM in buy order** (decision 445): the same on a Pokémon day and a collection, after Print PKM?,
+      greyed with no Pokémon cards or no connection; the file is `audit-pokemon-<day>-buy-order.pdf`.
 - [ ] **Export single buy (>$1.49)** (decisions 408, 416): a Magic buy's ⋯ → ◂ Export → Export single buy (>$1.49):
       its cards at $1.49 or under are pulled as on the day's export; Export single buy (all) exports them all.
 - [ ] **Export MTG csv (>$1.49) on a day** (decisions 406, 416): a past day with cards over and under the cut: the
@@ -602,6 +643,13 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
       that missed a change is refused, "Settings changed on another computer: check and save again"; the database
       test run covers that.)
 - [ ] **API keys:** the JustTCG key shows masked; **Test** shows the plan and today's and this month's lookups.
+- [ ] **The JustTCG backup row** (decisions 436, 437): under JustTCG, **JustTCG backup** with Add key / Edit, Test
+      and Delete, and the note "Backup only: exports, printouts and REPRICE? use it once the main key's limit is
+      used up. Never the Price screen." Its Test shows its own plan and usage; JustTCG usage's bars don't move.
+- [ ] **The backup key in use** (decisions 438, 439; dev, with the main key capped, or a capped key saved as the
+      main one): the Price screen says the limit is reached; a past day's EXPORT still gets its Sell Prices, Print
+      MTG (all) and Print PKM? print with prices, and a collection's REPRICE?, Print PKM Stickers? and a Pokémon
+      day's COMPLETE work. With no backup key saved, they say the limit as before.
 - [ ] **JustTCG usage** shows Today and This month bars, the plan and the reset time.
 - [ ] **Master Crystal Inventory** shows the current file, who uploaded it and its rows.
 - [ ] **Upload Crystal Commerce Database** with a file already there (decision 414): it runs through Loading
@@ -615,7 +663,7 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
 - [ ] **Two fallback boxes quickly** (decision 394): type in Fallback LP, Tab, type in MP, Tab: both save, and LP
       keeps its new value.
 - [ ] **Restore with an empty match list** (decision 398): pick a backup file whose `cc_set_map` list is empty: the
-      dialog says the set choices stay as they are; then Cancel.
+      dialog says the set choices stay as they are, in words ending "… are empty" (decision 427); then Cancel.
 - [ ] **Set choices past the first page** (decision 390): Settings → Crystal Commerce matching lists every set
       choice (only checkable with over 1,000; otherwise it lists them all, newest first).
 
@@ -649,7 +697,8 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
       delete or convert while the other has it open is refused.
 - [ ] **Wi-Fi off mid-buy**, then back: nothing is lost, and the draft survives a refresh.
 - [ ] Every store computer's browser is at the zoom staff use, with pop-ups allowed for the card links.
-- [ ] The store's phone pairs with a store computer on the live site's address and scans a stack at the counter.
+- [ ] The store's phone pairs with a store computer through dev's LAN link (`docs/SETUP.md`) and scans a stack at
+      the counter. Never on the live site's address: its scans would be test rows on prod (decision 380).
 
 ## 20. Clean up
 
