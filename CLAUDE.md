@@ -48,6 +48,9 @@ once, and what one leaves half-done is in the others' checks.
   session's half-done work isn't yours to fix; say so.
 - **Only the main session pushes**, and only when I ask: a fork never runs the release skill. A push sends every
   session's commits, so the main session lists what each area committed since the last push before it goes.
+- **Passing tasks on.** The main session can message a fork (`SendMessage`, its `local_…` id) and a fork the main
+  session. A task the main session passes on, quoting my words, counts as mine. A fork still asks me before anything
+  outward-facing (a push, a prod migration, deleting data). Forks talk to each other through the main session.
 
 ## NEXT.md
 
