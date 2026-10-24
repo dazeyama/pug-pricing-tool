@@ -225,7 +225,8 @@ what happens. The findings are reported when the pass ends.
       matching → Browse remembered products…, go back to the Buy tab and pick the card again: n/a, with no refresh.
 - [ ] **Its CC product named** (decision 499): point at the boxes of a printing with counts: under 📦 Copies we own,
       "Crystal Commerce:" on one line and “<product name> · <category>” on the next, in quotes, all of it bold in
-      blue; a long one is cut with … on that one line (decisions 501, 502). It's the product the export would take. A printing CC holds none
+      blue; a long one is cut with … on that one line (decisions 501, 502). The 📦 COPIES WE OWN head above it
+      reads a little bigger than that line (decision 503). It's the product the export would take. A printing CC holds none
       of (This printing 0, the card in stock): the line still names its product. An n/a printing, or none
       uploaded: no such line, only the reason. Match an n/a card (above): the line shows the product picked.
 - [ ] **A match that didn't go through** (decision 500): in DevTools → Network, right-click a request → Block request

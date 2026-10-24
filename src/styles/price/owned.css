@@ -142,9 +142,10 @@
   font-size: 13px;
   line-height: 1.4;
 }
+/* 14px, up from 12, so the head stays ahead of the matched product under it (decision 503). */
 .owned-pop-head {
   margin-bottom: 6px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 800;
   letter-spacing: .08em;
   text-transform: uppercase;
