@@ -1394,19 +1394,20 @@ builds itself is ever written to the file.
 
 Every card goes through four steps:
 
-1. **A remembered match.** A product remembered for this printing and finish is used straight away,
-   if it's still in the inventory.
+1. **A staff pick.** A product staff picked for this printing and finish is used straight away, if
+   it's still in the inventory. If it's gone, the card goes to **Needs a choice** with a *Used to be …*
+   note.
 2. **The category.** The card's set becomes a Crystal Commerce category.
 3. **The candidates.** Every product in that category with the card's name.
-4. **The pick.** The app checks and scores each candidate against the card. One clear winner is
-   **Matched**. Anything else goes to **Needs a choice**.
+4. **The pick.** The app checks each candidate against the card. It takes one by itself only when
+   it's certain: that's **Matched**. Anything else goes to **Needs a choice**. The app never guesses.
 
 At the same time it fetches today's prices for the Sell Prices. A line in the window shows what
 it's doing.
 
 The rules are in `src/lib/ccMatch.js` (category, expected name, scores) and `src/lib/ccNames.js`
-(reading product names). Tests cover both. On the store's inventory of October 1, 2026, 190 of 200
-random English printings matched on their own. Of the rest, 2 needed a choice and 8 had no category.
+(reading product names). Tests cover both. Of the 1,814 printings the app had matched by itself up to
+October 23, 2026, these rules ask about 18 once and match the rest.
 
 ### Finding the category
 
@@ -1433,16 +1434,30 @@ for the card the same way, from its finish and the traits saved at the buy, such
 Showcase or Extended Art. A Rainbow Foil Fabricate, number 2090, expects `Fabricate (2090) - Rainbow Foil`.
 
 The candidates are the products in the category with the card's name. The app drops a candidate when
-its finish doesn't fit, or its bracketed number isn't the card's. It scores the rest. The exact
-expected name wins outright. The right number, the right foil and each matching variant add points.
-Variants the card doesn't have take points away.
+its finish doesn't fit, or its bracketed number isn't the card's. Of the rest, it takes one by itself
+only in these cases:
 
-- **Matched** when one candidate is left, or the best leads the next by 2 points or more.
-- **Needs a choice** otherwise, best first.
+- **One is left.**
+- **One is left once the others are clearly another printing:** a trait the card hasn't, no Japanese
+  word for a Japanese card, or the same words in another foil kind.
+- **The fullest fit.** The best shows only the card's own traits, and every other product fewer of
+  them. For a borderless showcase card, "Showcase" wins over the plain product.
+
+A product with a word that isn't one of the card's known traits, such as "Anime" in "Anime
+Borderless", is never taken by itself.
+
+- **Matched** in those cases.
+- **Needs a choice** otherwise, best first. The scores only set this order: the right number, the
+  right foil and each matching variant add points, and other words take points away.
 - **Can't upload** when no product has the card's name.
 
-A remembered match skips all of this. It's kept by printing and finish and points at a Product
-ID, so a product renamed in a newer inventory is still found.
+Some traits come from the card's Scryfall facts: Showcase Scrolls, Borderless Poster, Japan
+Showcase, and on reprints Future Frame and White Border. They only confirm a product. A fact Scryfall
+doesn't have rules nothing out.
+
+A staff pick skips all of this. It's kept by printing and finish and points at a Product ID, so a
+product renamed in a newer inventory is still found. A product the app finds by itself isn't
+remembered: it's found again at each export.
 
 ### 2. Review
 
@@ -1549,9 +1564,9 @@ same file again. Nothing changes. It needs the connection.
 
 ### Remembered matches
 
-The app remembers every product picked by staff, and every card it matched and exported. The next
-export of that printing matches it straight away. **Settings → Crystal Commerce matching** lists
-them.
+The app remembers every product picked by staff. The next export of that printing takes it straight
+away. A card the app matched by itself is worked out again each time. **Settings → Crystal Commerce
+matching** lists the picks.
 
 <br>
 
@@ -1916,10 +1931,10 @@ bonus set to 0 is no bonus.
 | | |
 |---|---|
 | **Sets** | Sets whose Crystal Commerce category staff picked during an export. **Forget** removes one. |
-| **Products** | How many products are remembered: picked by staff, matched by the app, and in all. |
+| **Products** | How many products staff picked. Only these are remembered: a product the app finds by itself is found again at each export. |
 | **Browse remembered products…** | Opens the list. Search by name. **Show 50 more** loads more. **Forget** removes one. |
 
-The app works a forgotten match out again on the next export.
+The app works a forgotten product out again on the next export, or asks again if it isn't certain.
 
 ### Backups
 
