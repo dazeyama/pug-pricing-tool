@@ -7,7 +7,8 @@ marks each task done here when it's finished, with the exact file and function o
 ## Open
 
 - **Unpushed** (2026-10-24): Help's matching sections (484–487), the mixed-rates \* fix (489), TEST.md's new cases
-  and SETUP.md's paused-project check, three docs retired (490). No migrations; dev and prod both 0001–0010.
+  and SETUP.md's paused-project check, three docs retired (490), CODE_MAP.md for new sessions (491). No
+  migrations; dev and prod both 0001–0010.
 - **For migration 0011, when there's a reason to write one:**
   - F2, the backup's 8 s statement limit (decision 430): `backup_export` (one call for every table, 2 to 7.7 s on
     dev) can time out; the fix must keep one read at one instant, so it needs the database. The test run's Backup
@@ -40,6 +41,11 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-24: **CODE_MAP.md for a new session, not a fork** (decision 491, the owner's ask): `scripts/code-map.mjs`
+  (`buildMap`, `headerOf`, `exportsOf`; tests in `tests/codeMap.test.js`) writes the spec map and the code map;
+  `.gitignore` keeps it out of git; CLAUDE.md's Start of a session runs it in a new session only. 25 files have no
+  header comment or exports, so their line is the name alone (most pages, e.g. `DayPage.jsx`); a header added
+  later shows up the next time the map is built.
 - 2026-10-24: **Three finished docs retired** (decision 490, the owner's ask): `MATCHING.md`, `SQUASH.md` and
   `docs/TEAM_FEEDBACK.md`, last copies at `681c5c6` (the spec's Retired documents row). SQUASH.md's live facts
   moved first: the migration gotchas to CLAUDE.md's Database section, prod's Max rows to `docs/SETUP.md`.

@@ -51,3 +51,6 @@ public/tesseract/
 
 # The scanner benchmark's photos (docs/SCAN_FUNCTION.md 11.3)
 scan-fixtures/
+
+# The map a new session builds and reads (scripts/code-map.mjs)
+CODE_MAP.md
