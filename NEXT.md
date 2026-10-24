@@ -10,7 +10,8 @@ marks each task done here when it's finished, with the exact file and function o
   ignored and `362aec6` `scripts/db-baseline.mjs` retired (496), both from before the forks; Export and printouts:
   `ce1013c` Ctrl+Click Download copies Magic singles under $10 (497), `bcd6a81` every row read and a stuck-on
   "Foil" dropped (498), `b52987c` NEXT.md only; Buy tab: `23515e3` the Copies we own box names its CC product
-  (499).
+  (499), `e32e1d2` a match that didn't go through says so (500), `2047b92`, `6f1dbe2`, `0e0d52b` and `f25bd52`
+  the product line's look and wording (501–504), `de23ee7` condition prices sized to their buttons (505).
 - **For migration 0011, when there's a reason to write one:**
   - F2, the backup's 8 s statement limit (decision 430): `backup_export` (one call for every table, 2 to 7.7 s on
     dev) can time out; the fix must keep one read at one instant, so it needs the database. The test run's Backup
