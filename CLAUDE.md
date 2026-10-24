@@ -179,9 +179,10 @@ tests (`npm test`, commit only on `fail 0`) and the build.
   it reports, it doesn't fix) and relay its findings.
 - `.claude/skills/release/SKILL.md`: the push, with or without a version bump.
 - Retired docs (the export and scanner specs, the completion map, the Pokémon price audit, smoke test results, the
-  team feedback plan, the squash runbook, the matching audit): the "Retired documents" row at the top of
-  `docs/DESIGN_SPEC.md`. Code comments citing them mean those copies: `git show d158ee3:<path>` for the first
-  five, `git show 681c5c6:<path>` for the last three.
+  team feedback plan, the squash runbook, the matching audit) and the squash's baseline generator: the "Retired
+  documents" row at the top of `docs/DESIGN_SPEC.md`. Code comments citing them mean those copies: `git show
+  d158ee3:<path>` for the first five, `git show 681c5c6:<path>` for the next three, `git show
+  a8fb952:scripts/db-baseline.mjs` for the generator.
 
 ## Where it stands (2026-10-24)
 

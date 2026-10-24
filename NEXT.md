@@ -38,6 +38,8 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-24: **`scripts/db-baseline.mjs` retired** (decision 496, the owner's ask): last copy at `a8fb952` (the
+  spec's Retired documents row, CLAUDE.md's Where things are); `scripts/lib/linked.mjs`'s comment updated.
 - 2026-10-24: **`.claude/launch.json` ignored** (the owner's ask): Claude's preview config stays per computer
   (`.gitignore`), so a push's status check is empty. The v1.0.4-setup review's other notes closed by the owner, no
   change: Help's lone-product and lost-pick wording, `code-map.mjs`'s run-path check.

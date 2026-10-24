@@ -1,7 +1,8 @@
 // What the database scripts share: the project the Supabase CLI is linked to,
 // whether it's dev (the one .env.development names), and a query against it
 // through `npx supabase db query --linked` (the Management API: no Docker).
-// Used by db-baseline.mjs and db-snapshot.mjs. Reads no secrets.
+// Used by db-snapshot.mjs (and by db-baseline.mjs until it was retired,
+// decision 496). Reads no secrets.
 
 import fs from 'node:fs';
 import os from 'node:os';
