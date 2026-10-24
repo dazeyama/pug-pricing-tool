@@ -133,9 +133,12 @@ Studio").
 messages everywhere, and the Supabase dashboard shows the project as paused.
 
 **To restore it:** Supabase dashboard → your organization → the paused project →
-**Resume project**, and confirm. It takes a few minutes. Then, on the live site: sign in,
-price one card (the API key and the Edge Functions are kept), and open the Changelog.
-Live updates come back with it; nothing has to be set again.
+**Resume project**, and confirm. It takes a few minutes. Then, on the live site, sign in and
+look without writing anything (decision 380): Settings shows the JustTCG key masked, the
+usage and the Master Crystal Inventory, and the Changelog opens. Don't price a test card or
+press Test: both move the usage counter. The API key and the Edge Functions are kept, so the
+store's first real card proves them. Live updates come back with it; nothing has to be set
+again.
 
 **To keep it from pausing** during a planned closure: open the live site and sign in once
 during the week, or visit the project in the dashboard when the warning email comes.
