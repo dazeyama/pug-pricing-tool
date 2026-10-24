@@ -27,6 +27,18 @@ test('mixed rates: low end, high end, own rate, the rest at the master rate', ()
   assert.deepEqual(mixedRateLines([line(10, { quantity: 4 }), line(20)], custom), [], 'every card at one custom rate: none');
 });
 
+// Decision 489: one rate, but not the list's, still has its note.
+test('mixed rates: every card low-end, or every card on its own rate', () => {
+  assert.deepEqual(mixedRateLines([line(1, { quantity: 5 }), line(2)], master), [
+    '6 low-end (under $3) cards at Cash 25% / Credit 50%',
+  ]);
+  assert.deepEqual(mixedRateLines([line(10, { custom_cash_pct: 45, custom_credit_pct: 70 })], master), [
+    '1 card with their own rate (Set Rate) at Cash 45% / Credit 70%',
+  ]);
+  const custom = { ...master, customCash: 40, customCredit: 70, cash: 40, credit: 70 };
+  assert.deepEqual(mixedRateLines([line(1), line(50)], custom), [], 'a custom rate turns the tiers off: none');
+});
+
 test('the shipped tiers: under $3 at 50/25, over $35 at 70/40', () => {
   assert.deepEqual(tiers, {
     low: { under: 3, credit: 50, cash: 25 },

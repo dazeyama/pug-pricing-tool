@@ -156,8 +156,8 @@ const GROUP_ORDER = ['low', 'high', 'own', 'fixed', 'custom', 'base'];
 /**
  * The mixed rates in bullets (decision 413): each group of cards on one rate, by why: "12 low-end
  * (under $3) cards at Cash 25% / Credit 50%". Struck cards count, as in the totals. Empty when
- * every card is on the list's own rate, or every card is on one rate (a buy-wide custom rate; smoke
- * pass, decision 426).
+ * every card is on the list's own rate (a buy-wide custom rate included, decision 426); a list
+ * whose every card is low-end still has its note (decision 489).
  * @param {object[]} lines
  * @param {object} rates  as rateTotals takes them
  * @returns {string[]}
@@ -174,7 +174,8 @@ export function mixedRateLines(lines, rates) {
     groups.set(key, g);
   }
   const all = [...groups.values()];
-  if (all.length < 2 || all.every((g) => g.why === 'base')) return [];
+  const own = (g) => g.cash === Number(rates?.cash) && g.credit === Number(rates?.credit);
+  if (all.every(own)) return [];
   return all
     .sort((a, b) => GROUP_ORDER.indexOf(a.why) - GROUP_ORDER.indexOf(b.why) || b.n - a.n)
     .map((g) => {
