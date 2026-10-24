@@ -44,14 +44,14 @@
 .pc-warn { margin-right: 4px; font-size: 14px; letter-spacing: 0; }
 .pc-manual { margin-right: 4px; font-size: 15px; letter-spacing: 0; color: var(--warn); }
 .price-btn.on .pc-manual { color: #fff; }
-/* A price fills at most 84% of its button's room (a fifth of the row less the gaps, less 8px of border and
-   padding), 18px at the most: "$63.50" is 12.3px in the 300px card column, 14.2px in the 336px one and 18px
-   on a tall window (decision 505; --pc-em from lib/priceFit.js). */
+/* A price fills at most 94% of its button's room (a fifth of the row less the gaps, less 8px of border and
+   padding), 18px at the most: "$63.50" is 13.8px in the 300px card column, 15.9px in the 336px one and 18px
+   on a tall window (decisions 505, 506; --pc-em from lib/priceFit.js). */
 .pc-price {
   display: flex;
   flex-direction: column;
   align-items: center;
-  font-size: min(18px, calc(((100cqw - 16px) / 5 - 8px) * .84 / var(--pc-em, 3.32)));
+  font-size: min(18px, calc(((100cqw - 16px) / 5 - 8px) * .94 / var(--pc-em, 3.32)));
   font-weight: 800;
   line-height: 1.1;
   white-space: nowrap;
