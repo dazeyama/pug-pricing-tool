@@ -223,6 +223,10 @@ what happens. The findings are reported when the pass ends.
       choice and Change still work as before (the same component).
 - [ ] **A forgotten match** (decision 473): after matching that card, forget it in Settings → Crystal Commerce
       matching → Browse remembered products…, go back to the Buy tab and pick the card again: n/a, with no refresh.
+- [ ] **Its CC product named** (decision 499): point at the boxes of a printing with counts: under 📦 Copies we own,
+      "Crystal Commerce: <product name> · <category>", the product the export would take. A printing CC holds none
+      of (This printing 0, the card in stock): the line still names its product. An n/a printing, or none
+      uploaded: no such line, only the reason. Match an n/a card (above): the line shows the product picked.
 - [ ] **Stamps** (decision 459): with a rate to apply, a red **NOT APPLIED** ink stamp under the chips; Apply (or
       Auto apply rates? checked) turns it into a green **APPLIED** one; no stamp when nothing changes the rate.
       Click the stamp (decision 461): it switches, the new one dropping in larger over the old and pressing down

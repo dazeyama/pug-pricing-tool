@@ -61,11 +61,13 @@ export function ownedFrom(value) {
  * `owned_copies`' answer as the counter shows it: each count is the inventory's plus ours not in it yet.
  * A count is unsure when the inventory couldn't count its share (no inventory, an inventory uploaded before
  * 0008, or, for the printing, no clear CC product): what's shown is then only what could be counted.
- * @param {object|null} raw  { cc_printing, cc_card, ours_printing, ours_card, inventory_at }
+ * @param {object|null} raw  { cc_printing, cc_card, ours_printing, ours_card, inventory_at, cc_match }
  * The lists say which printings those are (the owner: "it has to show specifically, which printings we own"):
- * the inventory's products by category and name, ours by set, number and finish, most first.
+ * the inventory's products by category and name, ours by set, number and finish, most first. `cc.match` is
+ * the product the printing matched (owned.js), with copies or not; null when none clearly is it (decision 499).
  * @returns {{ printing: number, card: number, printingSure: boolean, cardSure: boolean,
- *   cc: { printing: number|null, card: number|null, list: { category: string, name: string, qty: number, this: boolean }[] },
+ *   cc: { printing: number|null, card: number|null, list: { category: string, name: string, qty: number, this: boolean }[],
+ *     match: { product_id: string, category: string, name: string }|null },
  *   ours: { printing: number, card: number,
  *     list: { set_code: string, set_name: string|null, number: string, finish: string, qty: number, this: boolean }[] },
  *   inventoryAt: string|null }}
@@ -77,7 +79,9 @@ export function ownedCounts(raw) {
   // None of the card in the inventory at all (a card never stocked, which no product can match): none of
   // the printing either, a count as known as the card's (decision 467).
   const printing = n(raw?.cc_printing) ?? (card === 0 ? 0 : null);
-  const cc = { printing, card, list: list(raw?.cc_list) };
+  const m = raw?.cc_match;
+  const match = m?.name ? { product_id: m.product_id ?? null, category: m.category ?? '', name: m.name } : null;
+  const cc = { printing, card, list: list(raw?.cc_list), match };
   const ours = { printing: n(raw?.ours_printing) ?? 0, card: n(raw?.ours_card) ?? 0, list: list(raw?.ours_list) };
   return {
     printing: (cc.printing ?? 0) + ours.printing,

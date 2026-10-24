@@ -44,6 +44,11 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-24: **The Copies we own box names its CC product** (decision 499, the owner's ask, Buy tab session):
+  `owned.js` `lookUp` returns the matched product as `cc_match`, `ownedRates.js` `ownedCounts` carries it as
+  `cc.match`, and `OwnedCounter.jsx` shows "Crystal Commerce: <name> · <category>" under the box's head
+  (`owned.css` `.owned-pop-match`), with copies or none; nothing new for n/a or no inventory. Test in
+  `tests/ownedRates.test.js`, case in TEST.md section 7. Untested in the app.
 - 2026-10-24 (Export session): **Under $10 takes every row, and drops a stuck-on "Foil"** (decision 498, the
   owner's ask): the first list missed about 1,040 names in CC's newer sets, whose URLs lack the
   `magic_the_gathering_singles-` prefix; the URL test is gone (`src/lib/underTen.js` `underTenName`, `STUCK_FOIL`).

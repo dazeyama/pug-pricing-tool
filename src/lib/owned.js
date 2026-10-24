@@ -87,19 +87,23 @@ async function lookUp(candidate, finish) {
   const [{ data, error }, product] = await Promise.all([count(null), matching]);
   if (error) throw new Error(`Couldn't count the copies we own: ${error.message}`);
   if (!product) return data;
+  // The product itself, for the box to name at its top: the list has only products with copies, so one with
+  // none in stock would be missing (decision 499).
+  const cc_match = { product_id: product.product_id, category: product.category, name: product.product_name };
 
   // A product staff linked at export that's filed under another name isn't among the card's: ask again with
   // it, so it's counted for the card too (rare).
   if (!baseKeys.includes(product.base_key) || String(product.category).startsWith('Art Series')) {
     const again = await count(product.product_id);
     if (again.error) throw new Error(`Couldn't count the copies we own: ${again.error.message}`);
-    return again.data;
+    return { ...again.data, cc_match };
   }
   // Else it's in the card's list when it has copies: the printing's count is its, 0 when it has none
   // (unknown, as the card's, when the inventory has no quantities).
   const listed = (data.cc_list ?? []).find((p) => p.product_id === product.product_id);
   return {
     ...data,
+    cc_match,
     cc_printing: data.cc_card == null ? null : Number(listed?.qty ?? 0),
     cc_list: (data.cc_list ?? []).map((p) => ({ ...p, this: p.product_id === product.product_id })),
   };

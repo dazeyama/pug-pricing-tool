@@ -107,6 +107,17 @@ test('the lists of printings come through, counts as numbers, this printing mark
   assert.equal(finishWord('foil'), 'foil');
 });
 
+// Owner, 2026-10-24 (decision 499): which CC product the printing matched, named in the box.
+test('the matched product comes through, in stock or not; none when no product clearly is it', () => {
+  const c = ownedCounts({
+    cc_printing: 0, cc_card: 3, cc_list: [{ category: 'Alliances', name: 'Force of Will', qty: 3, this: false }],
+    cc_match: { product_id: 'p9', category: 'Double Masters', name: 'Force of Will - Foil' },
+  });
+  assert.deepEqual(c.cc.match, { product_id: 'p9', category: 'Double Masters', name: 'Force of Will - Foil' });
+  assert.equal(ownedCounts({ cc_printing: null, cc_card: 5 }).cc.match, null);
+  assert.equal(ownedCounts(null).cc.match, null);
+});
+
 // Owner, 2026-10-23 (decision 474): Settings → Copies we own.
 test('the setting: read over the defaults, anything out of range or missing falls back', () => {
   assert.deepEqual(ownedFrom(null), DEFAULT_OWNED);
