@@ -19,6 +19,10 @@ marks each task done here when it's finished, with the exact file and function o
     `storechampionship`, `wizardsplaynetwork`, `openhouse`, `themepack`, `release`, `judgegift`). CC spells them
     too many ways, so each needs its spellings read off the inventory first (`src/lib/ccMatch.js` `FAMILIES`,
     `evidenceTreatments`); about 8 of dev's asks would then match by themselves.
+  - Left as is, the owner's call (Export session, 2026-10-24): about 15 CC products have "Foil" stuck on the name
+    without " - " ("Narset, Enlightened Master Foil - Prerelease Promo", "… Alternate Art Foil"), so
+    `parseProductName` (`ccNames.js`) keeps it in the base and the export and Copies we own can't find them by
+    name (Needs a choice / n/a, never a wrong match). Only the under-$10 list drops it (decision 498).
   - The two wrong exported lines' stamps on prod stay unless that day's file must be downloaded again
     (`git show 681c5c6:MATCHING.md`, item 3).
   - From 0010's review, not acted on: Import Collection reads "Retro Schematic" as a word, not Retro Frame
