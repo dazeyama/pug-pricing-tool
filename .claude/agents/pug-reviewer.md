@@ -51,11 +51,11 @@ touch (search it for the decision numbers in the diff).
      `public, internal, pg_temp`);
    - new functions: `revoke … from public, anon`, `grant … to authenticated, service_role`;
    - `supabase/current/` refreshed with the migration; checks added to `scripts/db-test-run.sql`;
-   - `SQUASH.md`'s current last migration (N) moved on;
+   - CLAUDE.md's "next migration" number in Where it stands moved on;
    - app code that needs a migration not yet applied to the live site's project (it would break the live site).
 3. **Two sources of truth that disagree:** app logic vs the database function doing the same job; the code vs its
    decision row in `docs/DESIGN_SPEC.md`; a new behaviour with no case in `docs/TEST.md`; docs that point at each
-   other (`CLAUDE.md` "Where it stands", `NEXT.md`, `SQUASH.md`, `.claude/skills/release/SKILL.md`) saying
+   other (`CLAUDE.md` "Where it stands", `NEXT.md`, `.claude/skills/release/SKILL.md`) saying
    different things; the lint hook's scope vs `npx eslint .`.
 4. **Secrets:** real keys on added lines (`sb_secret_` followed by 16+ key characters; a JWT, `eyJ….eyJ….`), a
    `.env*` file, a CSV, or "PUG Pricing Tool.txt" anywhere in the change. Key *names* in grants and docs are not

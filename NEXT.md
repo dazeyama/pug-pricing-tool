@@ -7,7 +7,7 @@ marks each task done here when it's finished, with the exact file and function o
 ## Open
 
 - **Unpushed** (2026-10-24): Help's matching sections (484–487), the mixed-rates \* fix (489), TEST.md's new cases
-  and SETUP.md's paused-project check. No migrations; dev and prod both 0001–0010.
+  and SETUP.md's paused-project check, three docs retired (490). No migrations; dev and prod both 0001–0010.
 - **For migration 0011, when there's a reason to write one:**
   - F2, the backup's 8 s statement limit (decision 430): `backup_export` (one call for every table, 2 to 7.7 s on
     dev) can time out; the fix must keep one read at one instant, so it needs the database. The test run's Backup
@@ -20,7 +20,7 @@ marks each task done here when it's finished, with the exact file and function o
     too many ways, so each needs its spellings read off the inventory first (`src/lib/ccMatch.js` `FAMILIES`,
     `evidenceTreatments`); about 8 of dev's asks would then match by themselves.
   - The two wrong exported lines' stamps on prod stay unless that day's file must be downloaded again
-    (`MATCHING.md` item 3).
+    (`git show 681c5c6:MATCHING.md`, item 3).
   - From 0010's review, not acted on: Import Collection reads "Retro Schematic" as a word, not Retro Frame
     (`importMatch.js`); an `auto` sent over a staff row isn't checked on its own in the test run.
 - **Small, from the 2026-10-21 review, not fixed:** reopening a closed customer search shows Show all off until a
@@ -40,6 +40,11 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-24: **Three finished docs retired** (decision 490, the owner's ask): `MATCHING.md`, `SQUASH.md` and
+  `docs/TEAM_FEEDBACK.md`, last copies at `681c5c6` (the spec's Retired documents row). SQUASH.md's live facts
+  moved first: the migration gotchas to CLAUDE.md's Database section, prod's Max rows to `docs/SETUP.md`.
+  References fixed in CLAUDE.md, FABLE.md, TEST.md, SETUP.md and pug-reviewer; code comments keep citing them, as
+  with decision 336.
 - 2026-10-24: **NEXT.md trimmed**, on the owner's ask (630 lines to about 60): closed items and the Done history
   before v1.0.3-neverguess dropped (in git). Closed by the owner: the live site's setup (the computer named, the
   users added, the CC CSV uploaded, which also starts the copies-we-own counts and clears the second inventory
@@ -62,5 +67,5 @@ marks each task done here when it's finished, with the exact file and function o
 - 2026-10-23: **Pushed as v1.0.3-neverguess**, decisions 484–487: the export never guesses a Crystal Commerce
   product; only staff picks are remembered and used; a lost staff pick is asked again. Migration 0010 on dev
   (snapshot, test run: all 626 passed) and on prod the same sitting, the structure-only compare the same. The
-  matching audit behind it is `MATCHING.md`; `C:\ClaudeProjects\temp\pug-matching\` `sweep.mjs` and `rules.mjs`
+  matching audit behind it is `MATCHING.md` (retired, `git show 681c5c6:MATCHING.md`); `C:\ClaudeProjects\temp\pug-matching\` `sweep.mjs` and `rules.mjs`
   re-measure a rule.

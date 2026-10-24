@@ -717,4 +717,4 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
       API's 100 s, decision 448), and prints "All passed: N checks" (622 at migration 0008, about 90 s). It runs after every
       migration: on dev with `--save`, then, once the migration is on prod, there with `--structure-only
       --project-ref zvxquzcfffmxwizonxuo --confirm zvxquzcfffmxwizonxuo --compare <that dev run>`: the fingerprints
-      only, every one the same. The checks themselves never run on prod (decision 380; SQUASH.md section 11).
+      only, every one the same. The checks themselves never run on prod (decisions 380, 381).

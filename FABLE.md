@@ -15,8 +15,9 @@ The concrete fixes this review found (`FABLE_REPORT.md`, items A1–C6) were
 all made on 2026-10-16 and the report retired. It's in git history
 (`git show 0ef948c:FABLE_REPORT.md`): code comments that cite
 "FABLE_REPORT C1" and the like point there. What it left for later, the
-migration squash and locking the Changelog to the database (0072), is in
-`SQUASH.md`; the rules it found are below. The same goes for the smoke
+migration squash and locking the Changelog to the database (0072), was done
+from `SQUASH.md` (retired, `git show 681c5c6:SQUASH.md`); the rules it found
+are below. The same goes for the smoke
 test of its last phase: comments citing "TEST_PASS finding 1" point at
 `git show 4412187:TEST_PASS.md`, and its results are in `git show d158ee3:docs/TEST_RUNS.md`.
 
@@ -307,7 +308,7 @@ rule is what keeps it from coming back.
 | Repeats a 10-line RPC-call ritual per action | Ten `setBusy(true)→withLoading(rpc)→setBusy(false)→toast→reload` blocks in `DayPage.jsx:235-465` while `useCollection` already has `run()` | One `run(name, args, failure)` per page/hook; the action functions become one line each. |
 | Lets a component accrete every concern | `PricingScreen.jsx` 900 lines, 17 props, ~25 `useState`; `DayPage.jsx` 1277 lines with three modals and a panel inline | A component over ~300 lines or with a second unrelated `useEffect` cluster gets split: pure logic to `lib/`, state to a hook, sub-views to files. |
 | Re-derives a value that is already in scope | `PricingScreen.jsx:545` rebuilds `variantOpts` (L254); L556 recomputes `conditionVariants` though `marketVariants` (L301) exists | Before computing, scroll up. If the same inputs are already combined, use that binding. |
-| Re-emits whole SQL function bodies to change one line | `collection_set_status` defined 8×, `export_lines` 7×, `draft_add_line`/`draft_update_line`/`collection_add_line`/`collection_update_line` 6× each; `0055` is 1,871 lines | Unavoidable with `create or replace`, so: (a) one function per migration unless they must move together; (b) write it as a patch of the `supabase/current/<fn>.sql` snapshot, so the diff is reviewable (SQUASH.md section 11). |
+| Re-emits whole SQL function bodies to change one line | `collection_set_status` defined 8×, `export_lines` 7×, `draft_add_line`/`draft_update_line`/`collection_add_line`/`collection_update_line` 6× each; `0055` is 1,871 lines | Unavoidable with `create or replace`, so: (a) one function per migration unless they must move together; (b) write it as a patch of the `supabase/current/<fn>.sql` snapshot, so the diff is reviewable (a script that asserts each replacement matches once). |
 | Duplicates the merge predicate in four functions | `0062_placeholders.sql:65-70,124-129,212-217,297-302` (and `internal.same_line`) | One `internal.same_card(a, b)` predicate; four callers. Any new "same line" rule changes one place. |
 | Infers in the app what the RPC should return | `markPlaceholder` from `set_code = 'BULK'` because `global_search`'s return table lacks `bulk_kind` | Change the contract, not the consumer: add the column to the return table. |
 | Nested ternaries in JSX | `PricingScreen.jsx:763-766`; `QuotePanel.jsx:86-89` | Two levels max. Beyond that, a named `const` or a small function above the `return`. |

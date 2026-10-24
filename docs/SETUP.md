@@ -105,7 +105,8 @@ CSVs and the API keys stay as they are. Try it on **dev** first.
 3. Deploy the Edge Functions: `npx supabase functions deploy prices --project-ref <new ref> --use-api --no-verify-jwt`,
    and the same for `secrets`.
 4. Point the site at it: the GitHub Actions variables `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`, then
-   re-run the deploy (or push). Settings → Data API → Max rows as before (SQUASH.md section 10).
+   re-run the deploy (or push). Settings → Data API → Max rows as before: 1,000, the default (the app pages
+   through any limit, so a lower one is slower, not wrong; decisions 346, 365, 373).
 5. Sign in on the site, add one staff user (Restore needs a picked user), then Settings → Backups → **Restore
    from backup…** with the newest backup. Buys, collections, the Changelog, staff, settings and the learned Crystal
    Commerce matches come back; the buy numbers carry on past the highest in the file.

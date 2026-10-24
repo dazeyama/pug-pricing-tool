@@ -94,21 +94,25 @@ tests (`npm test`, commit only on `fail 0`) and the build.
 - Helpers only the database's own functions call live in the `internal` schema (migration 0040), which the API
   doesn't serve. A function that calls one must `set search_path = public, internal` (security-definer:
   `public, internal, pg_temp`); a plain `= public` can't find them.
-- The squash and the move to prod: `SQUASH.md`. The baseline is `0001_baseline.sql` and the Changelog lock is
-  migration 0002; prod starts empty; localhost always uses dev.
+- The squash (decision 332) is done: the baseline is `0001_baseline.sql` and the Changelog lock is migration 0002;
+  prod started empty; localhost always uses dev. Its runbook is retired (`git show 681c5c6:SQUASH.md`).
+- Gotchas: a function whose `returns table` changes needs `drop function` first, and a drop loses its grants, so
+  grant it to `authenticated` again (0063's pattern). `db query` runs one transaction only when the file itself
+  has `begin;` and `rollback;`. `db push` and `--project-ref` have no guard: the ref typed in the command is the
+  check, so read it before pressing Enter.
 
 ## Where things are
 
-- `docs/TEAM_FEEDBACK.md`: the team feedback plan (printout, individual rates, bulk; phases T1–T3).
 - `docs/SCAN_LEARNINGS.md`: what the first attempt at auto scanning taught us (rolled back 2026-10-16).
 - `docs/TEST.md`: the smoke test, one pass, tab by tab; a pass reports its findings when it ends.
 - `docs/SETUP.md`: running, deploying, and the phone scanner's LAN link.
 - `.claude/agents/pug-reviewer.md`: the standard review. When I ask for a review, hand it to this agent (read-only;
   it reports, it doesn't fix) and relay its findings.
 - `.claude/skills/release/SKILL.md`: the push, with or without a version bump.
-- Retired docs (the export and scanner specs, the completion map, the Pokémon price audit, smoke test results): the
-  "Retired documents" row at the top of `docs/DESIGN_SPEC.md`. Code comments citing them mean those copies,
-  `git show d158ee3:<path>`.
+- Retired docs (the export and scanner specs, the completion map, the Pokémon price audit, smoke test results, the
+  team feedback plan, the squash runbook, the matching audit): the "Retired documents" row at the top of
+  `docs/DESIGN_SPEC.md`. Code comments citing them mean those copies: `git show d158ee3:<path>` for the first
+  five, `git show 681c5c6:<path>` for the last three.
 
 ## Where it stands (2026-10-23)
 
