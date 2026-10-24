@@ -249,7 +249,7 @@ export default function OwnedCounter({
                 501, 502). */}
             {c.cc.match && (
               <p className="owned-pop-match" title={`${c.cc.match.name} · ${c.cc.match.category}`}>
-                <span>Crystal Commerce:</span>
+                <span>Crystal Commerce Match:</span>
                 <b className="owned-pop-match-product">“{c.cc.match.name} · {c.cc.match.category}”</b>
               </p>
             )}

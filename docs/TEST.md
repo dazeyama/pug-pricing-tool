@@ -224,7 +224,7 @@ what happens. The findings are reported when the pass ends.
 - [ ] **A forgotten match** (decision 473): after matching that card, forget it in Settings → Crystal Commerce
       matching → Browse remembered products…, go back to the Buy tab and pick the card again: n/a, with no refresh.
 - [ ] **Its CC product named** (decision 499): point at the boxes of a printing with counts: under 📦 Copies we own,
-      "Crystal Commerce:" on one line and “<product name> · <category>” on the next, in quotes, all of it bold in
+      "Crystal Commerce Match:" on one line (decision 504) and “<product name> · <category>” on the next, in quotes, all of it bold in
       blue; a long one is cut with … on that one line (decisions 501, 502). The 📦 COPIES WE OWN head above it
       reads a little bigger than that line (decision 503). It's the product the export would take. A printing CC holds none
       of (This printing 0, the card in stock): the line still names its product. An n/a printing, or none
