@@ -6,12 +6,6 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
-- **Unpushed** (the main session's line), no migrations or Edge Functions: `a8fb952` `.claude/launch.json`
-  ignored and `362aec6` `scripts/db-baseline.mjs` retired (496), both from before the forks; Export and printouts:
-  `ce1013c` Ctrl+Click Download copies Magic singles under $10 (497), `bcd6a81` every row read and a stuck-on
-  "Foil" dropped (498), `b52987c` NEXT.md only; Buy tab: `23515e3` the Copies we own box names its CC product
-  (499), `e32e1d2` a match that didn't go through says so (500), `2047b92`, `6f1dbe2`, `0e0d52b` and `f25bd52`
-  the product line's look and wording (501–504), `de23ee7` condition prices sized to their buttons (505).
 - **For migration 0011, when there's a reason to write one:**
   - F2, the backup's 8 s statement limit (decision 430): `backup_export` (one call for every table, 2 to 7.7 s on
     dev) can time out; the fix must keep one read at one instant, so it needs the database. The test run's Backup
@@ -48,6 +42,15 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-24: **Pushed without a bump** (the owner's ask), decisions 496–506: `scripts/db-baseline.mjs` retired
+  and `.claude/launch.json` ignored (496); Export and printouts: Ctrl+Click Download copies Magic singles under
+  $10 (497, 498); Buy tab: the Copies we own box names its Crystal Commerce product (499–504), and the condition
+  prices sized to their buttons (505, 506). No migrations (dev and prod both 0001–0010), no Edge Function
+  changes. Nothing unpushed. Help out of date: Buy → Copies we own (`README.md`), for the "Crystal Commerce
+  Match:" line (499–504) and the new ? "(didn't go through: try again)" (500). The review's other notes, not
+  acted on: the under-$10 list drops only a stuck-on " Foil", so a "Galaxy Foil" written without " - " would keep
+  "Galaxy" (`underTen.js`); the Ctrl+Click copy likely fails in Safari and Firefox (it runs seconds after the
+  click); `priceFit.js`'s widths are Segoe UI's, so a Mac's font may sit closer to the button's edges.
 - 2026-10-24: **Condition prices sized to their buttons** (decision 505, the owner's ask, Buy tab session):
   `PriceTable.jsx` `priceStyle` gives the price's width in ems (`src/lib/priceFit.js` `priceEms`, tested in
   `tests/priceFit.test.js`); `conditions.css` `.pc-price` sizes it to 94% of its button (84% at first, decision
