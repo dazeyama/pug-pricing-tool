@@ -10,6 +10,45 @@ sections and every decision's title, each file's header and exports, the databas
 each time and git ignores it. **A fork skips this:** when this conversation already holds CODE_MAP.md's text from
 the session it was forked from, use that, and look up only the files added since.
 
+### The main session and its four forks
+
+A new session that isn't a fork, and whose first message gives no specific task, is the **main session**. Once it
+has done the reading above and told me what's open, it starts the four area sessions below as forks of itself
+(`start_session`, context "fork", initiation "user_asked", one each, with the name and brief below), then stays as
+the hub: questions across areas, NEXT.md's Unpushed line, and the push when I ask. A fork never starts sessions.
+
+| Session (`name`) | Area |
+|---|---|
+| Buy tab (`buy`) | search, prices, rates, copies we own, the buy list, CONFIRM BUY: `src/pages/price/`; in `src/lib/`, `prices`, `rates`, `cardSearch`, `scryfall`, `tcgdex`, `justtcgCards`, `owned*`; the `prices` Edge Function |
+| Records (`records`) | collections, projects, day pages, Calendar, Changelog, header search, statuses, backups, Settings: `src/pages/collections/`, `src/pages/day/`, `DayPage.jsx`, `CollectionPage.jsx`, `src/pages/settings/`; `changelog.js`, `status.js`, `backup*.js` |
+| Export and printouts (`export`) | Crystal Commerce matching, the export dialog, Mass Create, Print MTG / PKM, stickers, Import Collection, the inventory: `src/pages/export/`; `ccMatch.js`, `ccExport.js`, `ccNames.js`, `massCreate.js`, `auditP*.js`, `stickerPdf.js`, `import*.js`, `masterInventory.js` |
+| Phone scanner (`scanner`) | `src/scan/` |
+
+Each fork's brief: "You're the <Session> session, forked from the main session, so its reading is yours: skip Start
+of a session. Your area: <Area>. Wait for my first task. Work in your area and the shared docs; say so before
+changing anything outside it. Don't start sessions, push, or run the release skill."
+
+### Working beside the other sessions
+
+The main session and the four forks share this folder and `main`: no branches, so what one writes the others see at
+once, and what one leaves half-done is in the others' checks.
+
+- **Decision numbers collide.** Every fork inherited the same "next number", so it's always out of date. Right before
+  writing a decision row, read the highest number on disk (`grep -oE '^\| [0-9]+ \|' docs/DESIGN_SPEC.md | tr -dc
+  '0-9\n' | sort -n | tail -1`), never CODE_MAP's, memory's or this conversation's, take the next one, and commit
+  the row with its change straight away. A code comment cites the number the row ended up with.
+- **NEXT.md collides.** Another session may have changed it since you read it: re-read the part you'll touch, change
+  only your own entries with small Edits (never a rewrite of the file), and name your session in each entry. The
+  Unpushed line is the main session's.
+- **TEST.md collides.** Re-read before editing; add your cases in your area's section; leave the case count in the
+  header to the main session.
+- **Commits:** stage your files by path (`git add <path>…`, never `-A` or `.`). A shared doc may also hold another
+  session's edit; committing it with yours is fine, said in the handoff.
+- **Checks run on the whole folder.** When lint, a test or the build fails, look at which file first: another
+  session's half-done work isn't yours to fix; say so.
+- **Only the main session pushes**, and only when I ask: a fork never runs the release skill. A push sends every
+  session's commits, so the main session lists what each area committed since the last push before it goes.
+
 ## NEXT.md
 
 After each task I give you, mark it done in NEXT.md and list anything pending or half-finished with the exact file
