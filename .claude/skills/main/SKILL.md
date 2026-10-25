@@ -41,11 +41,11 @@ commit:
 | Item | Area | Commits | Where to look | Untested | Migration | Risk |
 |---|---|---|---|---|---|---|
 
-Build it from `git log`, NEXT.md's entries and the forks' notes (decision 530). Where to look: the tab, the button
-or entry and what should happen, from the fork's handoff. Untested: what nobody has tried, the owner included, or
-"the owner tested" when NEXT.md says so. Migration: its number and whether prod has it yet, else blank. Risk: what
-could break for staff or the export, or blank. An item whose handoff gave no Where to look says so in that column
-rather than guessing one.
+Build it from NEXT.md's Done entries, which carry each handoff's where to look, untested and migration (decision
+533), with `git log` for the commits (decision 530). Where to look: the tab, the button or entry and what should
+happen. Untested: what nobody has tried, the owner included, or "the owner tested" when NEXT.md says so. Migration:
+its number and whether prod has it yet, else blank. Risk: what could break for staff or the export, or blank. An
+item whose entry gives no Where to look says so in that column rather than guessing one.
 
 How the sessions share the folder, work outside their area and message each other: CLAUDE.md, Working beside the
 other sessions, Outside your area and Messages.

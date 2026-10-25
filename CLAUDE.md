@@ -76,7 +76,10 @@ before asking: what another session did is in `git log`, NEXT.md and the files.
 ## NEXT.md
 
 After each task I give you, mark it done in NEXT.md and list anything pending or half-finished with the exact file
-and function involved.
+and function involved. The Done entry is the handoff's record (decision 533): the main session can't read a fork's
+chat (its note of a turn is a few hundred characters), so the entry also carries where to look (the tab, the button
+or entry, what should happen), what's untested, and the migration's number if there is one; the QA table (decision
+530) is built from these.
 
 ## QA Handoff
 
