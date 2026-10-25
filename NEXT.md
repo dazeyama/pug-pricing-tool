@@ -9,7 +9,8 @@ marks each task done here when it's finished, with the exact file and function o
 - **Unpushed** (main session): decisions 527–535, the side session's rules for the main session and its forks
   (`477dc49` to `c1489e5`, 12 commits: `/main`, the test hook, migration numbers from disk, the QA table, three
   tries, the shared-folder git rules, the Done entry as the record, `git status` before another area's file, re-read
-  after a compaction). Docs and `.claude/` only; nothing the site serves changes.
+  after a compaction); then the launch clean-up's records (536). Docs and `.claude/` only; nothing the site serves
+  changes.
 - **From the v1.0.5-rainbow review, not acted on** (main session): SAVE EDIT on a priced card while Skip pricing is
   on clears its price with no warning (`PricingScreen.jsx` ~615, as decision 514 says); an unpriced card's edit
   reads "$0.00" in the Changelog (`collection_update_line` logs `unit_price` 0; only 0012's add logs none); a
@@ -32,10 +33,16 @@ marks each task done here when it's finished, with the exact file and function o
   it took too much room): tell ×0 from ×1 on that row in a way that takes no more room (`OwnedCounter.jsx`, the
   rows' render).
 - **Known limit, left as is:** how long a copies-we-own count takes on the live site isn't measured.
-- **Later:** the clean-up (the spec's Phase 10 list, `C:\ClaudeProjects\temp\pug-squash\` included) waits until
-  prod has run a while.
 
 ## Done
+
+- 2026-10-25: **The launch clean-up** (main session, the owner's ask; decision 536): the PUG scratch from finished
+  work in `C:\ClaudeProjects\temp`, `temp\pug-squash` and the three pre-launch project copies in
+  `C:\ClaudeProjects\pug-pricing-tool-backups` sent to the Recycle Bin (the owner empties it); the tags
+  `pre-squash`, `rollback-pre-squash`, `rollback-pre-launch` and `pre-export-build` deleted (commits in the
+  decision row). Where to look: those folders, `git tag`. Still the owner's call: `scripts/pokellector-jp.mjs`,
+  `scripts/scan-benchmark.mjs` with `temp\line-fixtures`, `title-fixtures` and `scan-run`, and the 2026-10-09
+  card-data downloads in temp (`scry_names.json`, `tcgdex_*.json`, `ptcg_sets.json`). No migration. Unpushed.
 
 - 2026-10-25: **After a compaction, re-read the area's state** (side session, the owner's ask; decision 535):
   CLAUDE.md, Working beside the other sessions, one bullet: before the next edit after a compaction, re-read

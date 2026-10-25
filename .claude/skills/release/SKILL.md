@@ -91,8 +91,8 @@ git push origin main
 git push origin vX          # bump only
 ```
 
-**Never `git push --tags`.** Local-only tags (`scanner-attempt-1`, `rollback-pre-launch`, `rollback-pre-squash`,
-`pre-export-build`, and `pre-squash` at the squash) stay off GitHub.
+**Never `git push --tags`.** Local-only tags (`scanner-attempt-1`; the rollback tags went at the launch clean-up,
+decision 536) stay off GitHub.
 
 ## 8. Watch the deploy
 
