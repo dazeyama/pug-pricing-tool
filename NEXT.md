@@ -30,6 +30,10 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-25: **The QA table; three tries at a failing check** (side session, the owner's ask; decisions 530, 531):
+  `.claude/skills/main/SKILL.md` section 3, one table of everything since the last push when the owner asks what's
+  ready to QA and before each push; CLAUDE.md, Checks: three failed fixes, then stop and say. Not tried yet: the
+  first QA table comes from the next `/main` session. Unpushed, with the entries below.
 - 2026-10-25: **Migration numbers read from disk** (side session, the owner's ask; decision 529): CLAUDE.md, Working
   beside the other sessions: the next migration is the one after the last file in `supabase/migrations/`, committed
   at once to claim it. The suggested HANDOFF.md not made (529 says why). Unpushed, with the entry below.
