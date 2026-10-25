@@ -205,7 +205,7 @@ what happens. The findings are reported when the pass ends.
       its details, **This printing** and **All printings** show counts ("…" first). A card we own 3+ of: All
       printings turns amber with "−5%?" (one copy over 2), "−10%?" (two)… Point at the boxes (decision 518): the box
       below reads "We own Y · X of this printing", then the change (red "−20%", green "+10%" or "no change"); under it
-      Credit / Cash with their amounts and the reason in one line ("4 copies over 2, at 5% each"), the stamp beside
+      Credit / Cash, the rates only, no amounts (decision 523), and the reason, one to a line (522) ("4 copies over 2, at 5% each"), the stamp beside
       them (decision 521),
       then **The printings we own**: one ruled list, this printing first marked "this printing", then the rest
       (set · foil / variant ×N), ours not in Crystal Commerce yet tagged "not in CC yet" (set #number ×N). No 📦 head,

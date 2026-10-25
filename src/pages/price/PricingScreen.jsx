@@ -802,7 +802,6 @@ export default function PricingScreen({
                   suggested={suggested}
                   applied={Boolean(applied)}
                   applyBlocked={applyBlocked}
-                  price={unitPrice}
                   onApply={() => setAppliedKey((k) => (k === owned.key ? null : owned.key))}
                   auto={list.autoRates && rateControls ? {
                     on: autoOn,

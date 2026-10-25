@@ -36,6 +36,8 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-24: **The box's Credit / Cash without their amounts** (decision 523, the owner's ask, Buy tab session):
+  `OwnedCounter.jsx` `rates`, its `price` prop dropped (and `PricingScreen.jsx`'s). Untested in the app.
 - 2026-10-24: **The box's reasons one to a line** (decision 522, the owner's ask, Buy tab session):
   `ownedRates.js` `ownedReason`, `owned.css` `.owned-why`. Untested in the app.
 - 2026-10-24: **A plain Apply button under the boxes, the stamp in the box** (decision 521, the owner's ask, Buy tab

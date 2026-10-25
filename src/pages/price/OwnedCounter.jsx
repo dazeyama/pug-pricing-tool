@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { formatMoney, payout } from '../../lib/money.js';
 import {
   DEFAULT_OWNED, ownedReason, ownedRows, signedPct,
 } from '../../lib/ownedRates.js';
@@ -28,14 +27,13 @@ const copies = (n) => `${n} ${n === 1 ? 'copy' : 'copies'}`;
  *   (nothing changes, or a bonus and a cut cancel out)
  * @param {boolean} p.applied  the suggestion goes on with ADD CARD (clicked, or Auto apply rates)
  * @param {string|null} p.applyBlocked  why it can't be applied here, or null
- * @param {number|null} p.price  the card's price, for the amounts
  * @param {() => void} p.onApply  toggles a clicked suggestion
  * @param {{ on: boolean, onChange: (on: boolean) => void, disabled: boolean }|null} p.auto  the box, or none
  * @param {(() => void)|null} [p.onMatch]  opens the matching dialog, for an n/a no product clearly matches (468)
  * @param {() => void} p.onDone  back to the search field
  */
 export default function OwnedCounter({
-  candidate, owned, finish = null, adjust = null, lowEndWhy = '', suggested, applied, applyBlocked, price, onApply, auto,
+  candidate, owned, finish = null, adjust = null, lowEndWhy = '', suggested, applied, applyBlocked, onApply, auto,
   onMatch = null, onDone,
 }) {
   const [hover, setHover] = useState(false);
@@ -143,7 +141,6 @@ export default function OwnedCounter({
     <>
       <span className="is-credit">Credit {suggested.credit}%</span> /{' '}
       <span className="is-cash">Cash {suggested.cash}%</span>
-      {price != null && ` (${formatMoney(payout(price, suggested.credit))} / ${formatMoney(payout(price, suggested.cash))})`}
     </>
   );
   // The box as one verdict and one list (owner, 2026-10-24; decision 518): what we own and what it does to the
