@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { isUnpriced, noneShowPrice, showsNoPrice, unpricedCards } from '../src/lib/unpriced.js';
+import {
+  isUnpriced, noneShowPrice, priceOf, showsNoPrice, unpricedCards, unpricedFields,
+} from '../src/lib/unpriced.js';
 import { rateTotals } from '../src/lib/rates.js';
 
 // Projects that skip pricing (decision 513): a card added with no price, 'unpriced' at $0.
@@ -31,4 +33,24 @@ test('a card with no price adds nothing to the market', () => {
   assert.equal(rateTotals([none, priced], rates).market, rateTotals([priced], rates).market);
   // At $0 it would read as low-end: the list's totals leave it out (BuyList's Totals).
   assert.equal(rateTotals([none], rates).off.low, 2);
+});
+
+// Decision 514: the Price screen's ADD CARD and a phone's scan while Skip pricing is on.
+test("a card going in with no price: $0 'unpriced', nothing looked up kept, only what it's given", () => {
+  const f = unpricedFields({ version: 'v1', scan: { scan_id: 's' } });
+  assert.equal(f.unit_price, 0);
+  assert.equal(f.market_price, null);
+  assert.equal(f.price_source, 'unpriced');
+  assert.equal(isUnpriced(f), true);
+  assert.deepEqual(f.price_snapshot, { version: 'v1', scan: { scan_id: 's' }, skip_pricing: true });
+  assert.equal(f.justtcg_card_id, null);
+  assert.equal(f.justtcg_variant_id, null);
+  assert.ok(!Number.isNaN(Date.parse(f.priced_at)));
+  assert.deepEqual(unpricedFields().price_snapshot, { skip_pricing: true });
+});
+
+test('the price a line is said to be at: none for a card with no price', () => {
+  assert.equal(priceOf(none), null);
+  assert.equal(priceOf(priced), 1.5);
+  assert.equal(priceOf(null), null);
 });

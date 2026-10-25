@@ -16,11 +16,12 @@ import { useDismiss } from '../../lib/useDismiss.js';
  * clicking keeps the box open until the next click anywhere (owner: nothing
  * else may lose room to it). The 📈 / 📉 beside the price opens its own box
  * the same way (owner, 2026-10-14).
+ * A project's Skip pricing (`skipped`, decision 514): with no price typed, "Not priced" and why, no chips.
  * @param {{ source: 'justtcg'|'fallback'|'tcgplayer'|'cardmarket'|'manual'|null, warnings: string[] }} props
  */
 export default function QuotePanel({
   candidate, loading, condition, price, source, cashPct, creditPct, cashWhy = '', creditWhy = '', warnings, trend = null, onDone,
-  bulkPer = null, placeholder = false, adjusted = 0,
+  bulkPer = null, placeholder = false, adjusted = 0, skipped = false,
 }) {
   // Which box floats over Finish & Details: 'warn' (the warnings) or 'trend'
   // (the 📈 / 📉), while hovered, or clicked to keep it open.
@@ -68,6 +69,8 @@ export default function QuotePanel({
   };
   const warned = !loading && warnings.length > 0;
   const trended = !loading && trend != null;
+  // Skip pricing, no price typed: nothing to show but that (decision 514).
+  const notPriced = skipped && price == null;
   const pin = (kind) => {
     setPinned((p) => (p === kind ? null : kind));
     onDone();
@@ -86,7 +89,12 @@ export default function QuotePanel({
               : <><span className={`quote-cond cond-${condition.toLowerCase()}`}>{condition}</span> price</>}
           {tag && !loading && <span className={`quote-tag ${source}`}>{tag}</span>}
         </div>
-        {loading ? (
+        {notPriced ? (
+          <>
+            <div className="quote-price none not-priced">Not priced</div>
+            <p className="quote-skip">⚡ Skip pricing is on: cards go in with no price.</p>
+          </>
+        ) : loading ? (
           <div className="quote-price shimmer" aria-label="Loading price" />
         ) : (
           <div className={`quote-price${price == null ? ' none' : ''}`}>
@@ -106,10 +114,12 @@ export default function QuotePanel({
             )}
           </div>
         )}
-        <div className="quote-chips">
-          {chip('Credit', creditPct, creditWhy)}
-          {chip('Cash', cashPct, cashWhy)}
-        </div>
+        {!notPriced && (
+          <div className="quote-chips">
+            {chip('Credit', creditPct, creditWhy)}
+            {chip('Cash', cashPct, cashWhy)}
+          </div>
+        )}
         {warned && (
           <button
             type="button"

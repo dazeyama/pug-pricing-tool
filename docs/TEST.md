@@ -265,6 +265,15 @@ what happens. The findings are reported when the pass ends.
       Reload: still checked. CONFIRM BUY: the next buy starts unchecked. On an overnight buy, checking it puts
       "auto apply rates: off → on" in the Changelog. With the phone paired and the box checked, a scanned card we
       own 3+ of goes on at the lower rate.
+- [ ] **Skip pricing on the Price screen** (decision 514; dev): on `SMOKE Project` with **⚡ Skip pricing: on**, pick
+      a Magic and a Pokémon card: no "Loading prices…", the condition buttons read **—**, the price panel **Not
+      priced** with "⚡ Skip pricing is on: cards go in with no price.", no Use TCGplayer / Use Cardmarket. In DevTools
+      → Network, no request to the `prices` function. Pick a condition and ADD CARD at once: it goes in with **—**,
+      no waiting, counted under **Not priced**. Click that line, change its condition, SAVE EDIT: still **—**. Type a
+      manual price (Alt+M) and ADD CARD: it goes in at that price. With the phone paired, a scan goes in with **—**
+      and the phone's strip shows no price. Turn the switch off with a card picked: its prices load and ADD CARD
+      waits for them as usual; click an unpriced line: it's priced at today's price on SAVE EDIT. Turn it on with a
+      card loading: the loading stops and the buttons read —.
 
 ## 8. Buy tab: the buy list and CONFIRM BUY
 

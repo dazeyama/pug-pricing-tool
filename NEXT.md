@@ -59,6 +59,14 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-24: **Skip pricing on the Price screen** (decision 514, item 6 part 2, the owner's ask, Buy tab session):
+  `PricingScreen.jsx` reads `list.skipPricing`; `usePriceQuote.js` asks `usePrices` for nothing then (status
+  'skipped', no fallback, Cardmarket or warnings); `usePrinting.js` runs no TCGplayer versions search by itself;
+  ADD CARD and SAVE EDIT build the line unpriced (`buyLine.js` `buildLine`'s `unpriced`, `unpriced.js`
+  `unpricedFields`) unless a manual price is typed; `useScanReceiver.js` adds a phone's scan unpriced and tells the
+  phone no price (`priceOf`); `PriceTable.jsx` and `QuotePanel.jsx` say "⚡ Skip pricing is on". Tests in
+  `tests/unpriced.test.js`. Needs migration 0012 on prod before it's pushed (the main session's). Untested in the
+  app.
 - 2026-10-24 (Export session): **A collection's or project's Custom SKU is its day and its number that day**
   (decision 511, the owner's item 4): "102426-1", "102426-2", collections and projects counted together, from 1
   each store day. Migration 0011 (`internal.collection_sku_days`, `internal.collection_sku`, the collection branch

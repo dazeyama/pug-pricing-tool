@@ -20,6 +20,7 @@ import { createStayAwake } from '../../lib/stayAwake.js';
 import { lineRate } from '../../lib/rates.js';
 import { ownedCopies } from '../../lib/owned.js';
 import { isLowEnd, ownedAdjust, ownedCounts, ownedFrom, ownedRates } from '../../lib/ownedRates.js';
+import { priceOf } from '../../lib/unpriced.js';
 
 // Cards from the paired phone (docs/SCAN_FUNCTION.md 8.3). Each scan the
 // phone sends is claimed here, one at a time in the order they came, priced
@@ -116,7 +117,7 @@ export function useScanReceiver({ deviceId, label, session, target, list, roundU
     // Claimed again after its "added" was lost (review, 2026-10-16): the line it made is in the
     // list already, under its id. Said so again, nothing added.
     const made = lineOfScan(now.list.lines, scan.id);
-    if (made) return { status: 'added', lineId: made.id, price: made.unit_price, source: made.price_source };
+    if (made) return { status: 'added', lineId: made.id, price: priceOf(made), source: made.price_source };
     const user = now.user;
     if (!user) return { status: 'failed', note: `Pick a user on ${now.label} first.` };
     const card = await scry.cardById(scan.scryfall_id);
@@ -142,6 +143,17 @@ export function useScanReceiver({ deviceId, label, session, target, list, roundU
         result: null,
         variant: null,
         snapshot: { manual, override: null, warnings: [], trend: null, scan: stamp },
+      });
+    } else if (now.list.skipPricing) {
+      // A project's Skip pricing (decision 514): nothing looked up, the card goes in with no price.
+      line = buildLine({
+        ...common,
+        ladder: priceLadder({}, null, now.pct, 'mtg', { up }),
+        manual: null,
+        result: null,
+        variant: null,
+        unpriced: true,
+        snapshot: { version: null, scan: stamp },
       });
     } else {
       const tcgplayer = fallbackPrice(candidate, { finish });
@@ -228,7 +240,7 @@ export function useScanReceiver({ deviceId, label, session, target, list, roundU
     }
     if (!id) return { status: 'failed', note: `${now.label} couldn't add it: its screen says why.` };
     latest.current.onAdded(id, { card, finish });
-    return { status: 'added', lineId: id, price: line.unit_price, source: line.price_source };
+    return { status: 'added', lineId: id, price: priceOf(line), source: line.price_source };
   }, []);
 
   /**

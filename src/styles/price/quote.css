@@ -66,6 +66,9 @@
   white-space: nowrap;
 }
 .quote-price.none { color: var(--muted); }
+/* A project's Skip pricing (decision 514): words, not a price, so smaller; the reason under them. */
+.quote-price.not-priced { font-size: 30px; }
+.quote-skip { margin: 8px 0 0; font-size: 12.5px; color: var(--warn); }
 /* 📈 / 📉 just right of the price, out of its centring (owner, 2026-10-14). */
 .quote-price { position: relative; }
 .quote-trend {

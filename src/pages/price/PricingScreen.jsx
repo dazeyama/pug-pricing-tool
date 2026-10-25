@@ -160,8 +160,10 @@ export default function PricingScreen({
     && String(editing.line?.price_snapshot?.version ?? '').startsWith('jt:'));
   // That version as saved, should the search not bring it back (decision 369).
   const savedVersion = needSiblings ? { ...lineVersion(editing.line), label: 'As saved' } : null;
+  // A project's Skip pricing (decisions 513, 514): no price looked up, cards go in with none.
+  const skip = Boolean(list.skipPricing);
   const { setPrinting, pokemon, siblings, magic, finish, tcgSiblings, versions, version } = usePrinting(selected, card, {
-    needSiblings, savedVersion,
+    needSiblings, savedVersion, skip,
   });
 
   // Condition, manual price and override, the manual price box, a placeholder's name (usePricing.js).
@@ -176,7 +178,7 @@ export default function PricingScreen({
     englishName, prices, result, market, fallback, settingValues, fallbackPct, eurUsd, cardmarketEur, cardmarketUsd,
     activeOverride, autoCardmarket, ladder, warnings, marketVariants, trends,
   } = usePriceQuote({
-    card, selected, bulk, pokemon, versions, version, finish, magic, search, override, roundUp,
+    card, selected, bulk, pokemon, versions, version, finish, magic, search, override, roundUp, skip,
   });
   // Settings → Copies we own (decision 474): the counter on or off, and the numbers it works with.
   const ownedCfg = ownedFrom(settingValues.owned_copies);
@@ -302,7 +304,8 @@ export default function PricingScreen({
   // A locked price source this card doesn't have (decision 402): the lock goes, and a toast says
   // why. Looked at once the card and its prices are in (a Pokémon card's after its details load),
   // and again for each finish or version picked on it (smoke pass; decision 427).
-  const settledFor = card && !pricesLoading && (magic || pokemon.resolved)
+  // Not while Skip pricing is on: no source has a price then, so none is "missing" (decision 514).
+  const settledFor = card && !skip && !pricesLoading && (magic || pokemon.resolved)
     ? `${card.key}|${finish ?? ''}|${version?.id ?? ''}` : null;
   useEffect(() => {
     if (!settledFor || !lockedSource) return;
@@ -336,14 +339,15 @@ export default function PricingScreen({
     else if (offline) addBlocked = 'No connection';
   }
   else if (magic ? !finish : !version) addBlocked = "Waiting for the card's versions";
+  // Skip pricing (decision 514): no price to wait for, nor one needed.
   // A version only TCGplayer's search prices (a stamp it sells apart) isn't priced as the plain card
   // while its search is running or after it failed (decision 359); a manual price is its own (369).
-  else if (!magic && !version.tcgplayerId && !tcgSiblings.settled) addBlocked = 'Waiting for its TCGplayer versions';
-  else if (!magic && !version.tcgplayerId && tcgSiblings.failed && manual == null) {
+  else if (!skip && !magic && !version.tcgplayerId && !tcgSiblings.settled) addBlocked = 'Waiting for its TCGplayer versions';
+  else if (!skip && !magic && !version.tcgplayerId && tcgSiblings.failed && manual == null) {
     addBlocked = "Its TCGplayer versions didn't load: enter a manual price (Alt+M), or reload the page to try again";
   }
-  else if (pricesLoading) addBlocked = 'Waiting for prices';
-  else if (unitPrice == null) addBlocked = 'No price: enter a manual price (Alt+M)';
+  else if (!skip && pricesLoading) addBlocked = 'Waiting for prices';
+  else if (!skip && unitPrice == null) addBlocked = 'No price: enter a manual price (Alt+M)';
   else if (parseQty(qty) == null) addBlocked = 'Quantity must be 1 to 99';
   else if (offline) addBlocked = 'No connection';
   const canEdit = Boolean(user) && !offline && !locked;
@@ -607,7 +611,9 @@ export default function PricingScreen({
       variant: ladder[condition]?.source === 'justtcg' ? marketVariants[condition] ?? null : null,
       imageUrl: magic ? null : images.thumb,
       englishName,
-      snapshot: {
+      // Skip pricing (decision 514): no price, unless one was typed; of what's on screen only its version.
+      unpriced: skip,
+      snapshot: skip && manual == null ? { version: version?.id ?? null } : {
         justtcg: market,
         fallback,
         cardmarket: cardmarketEur != null ? { eur: cardmarketEur, rate: eurUsd } : null,
@@ -853,6 +859,7 @@ export default function PricingScreen({
               cashWhy={appliedWhy ?? whyText(quoteRate.why.cash, rates)}
               creditWhy={appliedWhy ?? whyText(quoteRate.why.credit, rates)}
               adjusted={applied ? applied.net : 0}
+              skipped={prices.status === 'skipped'}
               warnings={warnings}
               trend={manual == null && !bulk ? trends[condition] : null}
               onDone={focusSearch}

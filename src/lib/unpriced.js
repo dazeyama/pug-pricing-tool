@@ -13,6 +13,25 @@ export const NOT_PRICED_TIP = "Not priced: added while Skip pricing was on. EXPO
 /** A card added with no price. */
 export const isUnpriced = (line) => line?.price_source === UNPRICED;
 
+/**
+ * A line's price fields when it goes in with no price (decision 514): $0 'unpriced', no market price, no
+ * JustTCG listing, and of what was on screen only `snapshot` (its version, the scan it came from), since
+ * nothing was looked up. A manual price typed meanwhile is a price: buildLine keeps it instead.
+ * @param {object} [snapshot]
+ */
+export const unpricedFields = (snapshot = {}) => ({
+  unit_price: 0,
+  market_price: null,
+  price_source: UNPRICED,
+  price_snapshot: { ...snapshot, skip_pricing: true },
+  priced_at: new Date().toISOString(),
+  justtcg_card_id: null,
+  justtcg_variant_id: null,
+});
+
+/** The price a line is said to be at (the phone's strip, decision 514): none for a card with no price. */
+export const priceOf = (line) => (isUnpriced(line) ? null : line?.unit_price ?? null);
+
 /** A card that shows no price: one with none, unless an export has given it a Sell Price since. */
 export const showsNoPrice = (line) => isUnpriced(line) && line.cc_sell_price == null;
 

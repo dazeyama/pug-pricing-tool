@@ -38,6 +38,8 @@ export default function PriceTable({
   }, [manualOpen]);
 
   const loading = prices.status === 'loading' || prices.status === 'waiting';
+  // A project's Skip pricing (decision 514): nothing looked up; a dash on each button, a manual price still typed.
+  const skipped = prices.status === 'skipped';
 
   function apply() {
     const value = parseMoney(text);
@@ -51,6 +53,10 @@ export default function PriceTable({
   const tooltip = (code, i) => {
     const key = `Alt+${i + 1}`;
     if (!candidate || loading) return `${code} · ${key}`;
+    if (skipped) {
+      const typed = manual != null && code === condition ? `manual ${formatMoney(manual)} · ` : '';
+      return `${code} · ${typed}Skip pricing is on: no price looked up · ${key}`;
+    }
     const e = ladder[code];
     const rounded = e.raw != null && e.raw !== e.price ? `, rounded ${roundUp ? 'up' : 'down'} from ${formatMoney(e.raw)}` : '';
     let about = 'no price: enter a manual price';
@@ -176,6 +182,7 @@ export default function PriceTable({
 
   let caption = null;
   if (!candidate) caption = <span className="muted">Prices appear when a card is selected.</span>;
+  else if (skipped) caption = <span className="warn">⚡ Skip pricing is on: cards go in with no price.</span>;
   else if (prices.status === 'no-key') {
     caption = <span className="warn">No JustTCG key yet. <Link to="/settings">Add it in Settings</Link>.</span>;
   } else if (prices.status === 'quota') caption = <span className="warn">JustTCG limit reached: enter prices manually.</span>;
@@ -229,8 +236,9 @@ export default function PriceTable({
       </div>
       <div className="price-foot">
         <div className="price-tools">
-          {overrideButton('fallback', 'Use TCGplayer', fbUsable, fbTitle)}
-          {overrideButton('cardmarket', 'Use Cardmarket', cmUsable, cmTitle)}
+          {/* Nothing to choose a source from while Skip pricing is on (decision 514). */}
+          {!skipped && overrideButton('fallback', 'Use TCGplayer', fbUsable, fbTitle)}
+          {!skipped && overrideButton('cardmarket', 'Use Cardmarket', cmUsable, cmTitle)}
           {manualOpen ? (
             <span className="manual-edit">
               $

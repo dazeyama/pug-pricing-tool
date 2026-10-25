@@ -13,19 +13,23 @@ import {
  * the chosen printing, the fallbacks, Cardmarket's, the five prices shown and
  * used (the ladder), the reasons to doubt them, and their sharp moves. Worked
  * out afresh every render from what's chosen; no state of its own.
+ * `skip`: a project's Skip pricing is on (decision 514): nothing is looked up, every price is none, and
+ * `prices.status` is 'skipped'.
  */
 export function usePriceQuote({
-  card, selected, bulk, pokemon, versions, version, finish, magic, search, override, roundUp,
+  card, selected, bulk, pokemon, versions, version, finish, magic, search, override, roundUp, skip = false,
 }) {
   // A Japanese card's English name (Pokédex number): shown beside the
   // Japanese one, and used for JustTCG, TCGplayer and Cardmarket searches.
   const englishName = useEnglishPokemonName(pokemon.card, card?.lang);
   // A TCGplayer-only version (a separate product) is looked up once it's chosen, not
   // for every card (decision 289): the card's own products go in every time.
-  const prices = usePrices(card, {
+  // Skip pricing: not asked at all, so no JustTCG request and no wait (decision 514).
+  const asked = usePrices(skip ? null : card, {
     pokemon, versions: versions.filter((v) => !v.tcgplayerOnly || v.id === version?.id),
     jaName: englishName || search.parsed?.name, waitName: englishName === undefined,
   });
+  const prices = skip && card ? { status: 'skipped', error: null, results: null, retry: asked.retry } : asked;
   const result = resultFor(card, prices.results, { finish, version, versions });
   const variantOpts = {
     game: card?.game,
@@ -36,7 +40,7 @@ export function usePriceQuote({
   const market = conditionPrices(result?.card, variantOpts);
   // A product the function refused (another card's: decision 288) gets no fallback either: TCGdex's
   // market price for it is the same wrong card's.
-  const fallback = result?.refused ? null : fallbackPrice(card, { finish, version });
+  const fallback = result?.refused || skip ? null : fallbackPrice(card, { finish, version });
   const { values: settingValues } = useSettings();
   const fallbackPct = settingValues[selected?.game === 'pokemon' ? 'fallback_pct_pokemon' : 'fallback_pct_mtg'];
   // Use Fallback / Use Cardmarket (owner, 2026-09-29): every JustTCG price
@@ -45,7 +49,7 @@ export function usePriceQuote({
   // Fallback needs JustTCG prices to replace; Use Cardmarket needs a
   // Cardmarket price and the day's euro rate.
   const eurUsd = useEurUsd();
-  const cardmarketEur = cardmarketPrice(card, { finish, version });
+  const cardmarketEur = skip ? null : cardmarketPrice(card, { finish, version });
   const cardmarketUsd = cardmarketEur != null && eurUsd != null ? cardmarketEur * eurUsd : null;
   const canUseFallback = fallback != null && CONDITIONS.some((c) => market[c] != null);
   const activeOverride = (override === 'fallback' && canUseFallback) || (override === 'cardmarket' && cardmarketUsd != null)
@@ -71,7 +75,7 @@ export function usePriceQuote({
       game: 'pokemon', lang: card.lang, finish: unlimited.finish, firstEdition: false,
     }).NM
     : null;
-  const warnings = bulk ? [] : priceWarnings({
+  const warnings = bulk || skip ? [] : priceWarnings({
     market, fallback, pct: fallbackPct, unlimitedNM, cardmarket: cardmarketEur, eurUsd,
   });
   // 📈 / 📉 (owner, 2026-10-14): a JustTCG price shown that rose or fell

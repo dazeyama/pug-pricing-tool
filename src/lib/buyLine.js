@@ -5,6 +5,7 @@ import { CONDITIONS } from './prices.js';
 import { magicTreatments } from './printings.js';
 import { nameKey } from './normalize.js';
 import * as scry from './scryfall.js';
+import { unpricedFields } from './unpriced.js';
 
 // Where a fallback price came from → price_source (owner, 2026-09-29).
 const FALLBACK_SOURCES = {
@@ -72,10 +73,11 @@ export function magicPrinting(c, finish) {
  * @param {object|null} p.variant  the JustTCG variant for the condition
  * @param {string|null} p.imageUrl
  * @param {string|null} [p.englishName]  a Japanese card's English name (pokemonNames.js)
+ * @param {boolean} [p.unpriced]  a project's Skip pricing is on (decision 514): no price, unless one was typed
  */
 export function buildLine({
   candidate: c, finish, version, pokemonCard, condition, quantity, ladder, manual, snapshot, result, variant, imageUrl,
-  englishName,
+  englishName, unpriced = false,
 }) {
   const entry = ladder[condition];
   const unitPrice = manual ?? entry?.price;
@@ -100,6 +102,8 @@ export function buildLine({
     justtcg_card_id: result?.card ? String(result.card.uuid ?? result.card.id) : null,
     justtcg_variant_id: variant ? String(variant.uuid ?? variant.id) : null,
     image_url: imageUrl ?? null,
+    // Skip pricing (decision 514): nothing was looked up, so no price; a manual price typed is still one.
+    ...(unpriced && manual == null ? unpricedFields(snapshot) : {}),
   };
 
   if (c.game === 'mtg') {

@@ -16,7 +16,7 @@ const ownProductCards = (versions) => [...new Set(versions.map((v) => v.tcgplaye
  * selection, `card` the same unless it's bulk (then null). `savedVersion`: the
  * TCGplayer-only version a line being edited was saved on (lineVersion).
  */
-export function usePrinting(selected, card, { needSiblings = false, savedVersion = null } = {}) {
+export function usePrinting(selected, card, { needSiblings = false, savedVersion = null, skip = false } = {}) {
   // The chosen finish (Magic) or version (Pokémon) of the selected card. Tied
   // to the card's key, so a newly selected card starts on its defaults.
   const [printing, setPrinting] = useState({ key: null, finish: null, version: null });
@@ -35,7 +35,8 @@ export function usePrinting(selected, card, { needSiblings = false, savedVersion
   // come from the price result, which has the product whole: no search.
   const ownVersions = card?.game !== 'pokemon' ? []
     : card.source === 'justtcg' ? justtcgVersions(card.justtcg, card.suffix, card.lang) : pokemonVersions(pokemon.card);
-  const needed = needSiblings || ownVersions.some((v) => !v.tcgplayerId);
+  // A project's Skip pricing (decision 514): never by itself, a JustTCG request each; by hand it still runs.
+  const needed = !skip && (needSiblings || ownVersions.some((v) => !v.tcgplayerId));
   const tcgSiblings = usePokemonSiblings(card, pokemon, { needed });
   const listed = card?.game !== 'pokemon' ? ownVersions
     : withTcgplayerVersions(ownVersions, tcgSiblings.cards?.length ? tcgSiblings.cards : ownProductCards(ownVersions), card);
