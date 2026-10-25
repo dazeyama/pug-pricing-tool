@@ -30,6 +30,13 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-25: **Three more fork rules** (side session, the owner's ask; decisions 532–534): CLAUDE.md, Working beside
+  the other sessions: stage and commit in one call, never `-A`, `.`, `-u`, `commit -a` or `--amend`, and never
+  stash, reset, `checkout --`, restore or clean (532); the NEXT.md section: a Done entry carries where to look,
+  what's untested and the migration number, so the QA table reads from NEXT.md (533, `/main` section 3 updated);
+  Outside your area: `git status --short <path>` before editing another area's file, message and wait if it's
+  modified (534). Where to look: the three CLAUDE.md sections named. Untested: whether forks follow them is seen
+  in their next commits and entries. No migration. Unpushed, with the entries below.
 - 2026-10-25: **The QA table; three tries at a failing check** (side session, the owner's ask; decisions 530, 531):
   `.claude/skills/main/SKILL.md` section 3, one table of everything since the last push when the owner asks what's
   ready to QA and before each push; CLAUDE.md, Checks: three failed fixes, then stop and say. Not tried yet: the
