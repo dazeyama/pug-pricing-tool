@@ -73,6 +73,9 @@ before asking: what another session did is in `git log`, NEXT.md and the files.
 - **Forks message each other directly** only about a file they're both changing right now; anything else goes
   through the main session.
 - A fork still asks me before anything outward-facing: a push, a prod migration, deleting data.
+- **Memory notes are the main session's** (decision 517): the sessions share one memory folder, so a fork writes
+  none; it messages the main session a rule worth remembering, and a rule the main session passes on is already
+  saved.
 
 ## NEXT.md
 
