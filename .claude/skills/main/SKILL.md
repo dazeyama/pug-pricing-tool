@@ -19,7 +19,7 @@ inherit this conversation, so what's read here is theirs. Then tell the owner wh
 
 Start the four area sessions below as forks of this one: `start_session`, context "fork", initiation
 "user_asked", one each, with the name and brief below. Then stay as the hub: questions across areas, NEXT.md's
-Unpushed line, memory notes (decision 517), and the push when the owner asks.
+Unpushed line, memory notes (decision 517), the QA table (3 below), and the push when the owner asks.
 
 | Session (`name`) | Area |
 |---|---|
@@ -31,6 +31,21 @@ Unpushed line, memory notes (decision 517), and the push when the owner asks.
 Each fork's brief: "You're the <Session> session, forked from the main session, so its reading is yours: skip Start
 of a session. Your area: <Area>. Wait for my first task. Work in your area; outside it, follow Outside your area
 in CLAUDE.md. Don't start sessions, push, or run the release skill."
+
+## 3. The QA table
+
+When the owner asks what's ready to QA, and before each push (in place of CLAUDE.md's list of what each area
+committed), give one table of everything since the last push (`git log <last tag>..HEAD`), one row per item, not per
+commit:
+
+| Item | Area | Commits | Where to look | Untested | Migration | Risk |
+|---|---|---|---|---|---|---|
+
+Build it from `git log`, NEXT.md's entries and the forks' notes (decision 530). Where to look: the tab, the button
+or entry and what should happen, from the fork's handoff. Untested: what nobody has tried, the owner included, or
+"the owner tested" when NEXT.md says so. Migration: its number and whether prod has it yet, else blank. Risk: what
+could break for staff or the export, or blank. An item whose handoff gave no Where to look says so in that column
+rather than guessing one.
 
 How the sessions share the folder, work outside their area and message each other: CLAUDE.md, Working beside the
 other sessions, Outside your area and Messages.
