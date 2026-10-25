@@ -14,15 +14,13 @@ marks each task done here when it's finished, with the exact file and function o
 - **Unpushed** (the main session's line), no migrations or Edge Functions: `33e7915` the stale-page fix (507, main
   session); `afd9088` the printout's Showcase only (508, Export and printouts) and the details folding on ADD CARD
   (509, Records), one commit; `3482a9e` Secret Lair foils priced from their own product (510, Buy tab); `70cc049`
-  Phyrexian, Dwarven and Elvish printings in English searches (512, Buy tab); NEXT.md.
-- **The owner's six items of 2026-10-24** (main session, passed on one per fork at a time):
-  - Done, unpushed: 1 (510), 2 (508), 3 (509), 5 (512).
-  - With their forks: 4, Export and printouts: a collection's or project's Custom SKU `<MMDDYY>-<n>`, n counting
-    that day's collection and project exports together from 1 (migration 0011). 6 part 1, Records: the project's
-    skip-pricing switch, any time (REPRICE? prices the cards once it's off), and priceless lines (migration 0012).
-  - Waiting: 6 part 2, Buy tab after 5 and Records' part 1: the Price screen skips the price fetch and adds cards
-    with no price while the switch is on.
-  - 0011 and 0012 go to prod together, at the owner's moment (after the store closes).
+  Phyrexian, Dwarven and Elvish printings in English searches (512, Buy tab); NEXT.md. **Needing 0011 and 0012 on
+  prod first:** `3c7f5eb` projects that skip pricing, part 1 (513, Records); `8c3e6e1` a collection's Custom SKU
+  is its day and its number that day (511, Export and printouts); `c690126` skip pricing on the Price screen (514,
+  Buy tab).
+- **The owner's six items of 2026-10-24** (main session, passed on one per fork at a time): all six committed,
+  unpushed and untested in the app: 1 (510), 2 (508), 3 (509), 4 (511), 5 (512), 6 (513, 514). 4 and 6 wait for
+  prod to have 0011 and 0012.
 - **For migration 0011, when there's a reason to write one** (now 0013 or later):
   - F2, the backup's 8 s statement limit (decision 430): `backup_export` (one call for every table, 2 to 7.7 s on
     dev) can time out; the fix must keep one read at one instant, so it needs the database. The test run's Backup
