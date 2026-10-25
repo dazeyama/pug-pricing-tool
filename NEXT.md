@@ -6,6 +6,8 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
+- **Push tonight, 2026-10-24** (the owner's call): after a few more things the owner wants first. Prod already
+  has 0011–0013, so the live app runs the old code on the new database until then.
 - **Unpushed** (the main session's line), no Edge Functions; migrations 0011–0013 already on prod (2026-10-24,
   the structure-only compare against dev's run the same): `33e7915` the stale-page fix (507, main
   session); `afd9088` the printout's Showcase only (508, Export and printouts) and the details folding on ADD CARD
