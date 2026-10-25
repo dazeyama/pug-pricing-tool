@@ -6,21 +6,13 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
-- **Push tonight, 2026-10-24** (the owner's call): after a few more things the owner wants first. Prod already
-  has 0011–0013, so the live app runs the old code on the new database until then.
-- **Unpushed** (the main session's line), no Edge Functions; migrations 0011–0013 already on prod (2026-10-24,
-  the structure-only compare against dev's run the same): `33e7915` the stale-page fix (507, main
-  session); `afd9088` the printout's Showcase only (508, Export and printouts) and the details folding on ADD CARD
-  (509, Records), one commit; `3482a9e` Secret Lair foils priced from their own product (510, Buy tab); `70cc049`
-  Phyrexian, Dwarven and Elvish printings in English searches (512, Buy tab); `3c7f5eb` projects that skip
-  pricing, part 1 (513, Records); `8c3e6e1` a collection's Custom SKU is its day and its number that day (511,
-  Export and printouts); `c690126` skip pricing on the Price screen (514, Buy tab); `c5b9096`
-  `master_inventory_abort` retired and an automatic match over a staff pick checked (515, Export and printouts);
-  `89dcb9d` "Retro Schematic" read as Retro Frame and a schematic family (516, Buy tab); `529361a` memory notes
-  are the main session's (517, main session); `f4f5a46` to `7f51f96` the Copies we own box redone as one verdict
-  and one list, from the owner's pick of six mockups (518–525, Buy tab; 520 rolled back); Help brought up to date
-  in the Unslop style, the owner's ask: `b9df8e2` the numbered Custom SKUs (Export and printouts), `610a6e0` Copies
-  we own (Buy tab), `b4a33c5` Skip pricing (Records); NEXT.md.
+- **From the v1.0.5-rainbow review, not acted on** (main session): SAVE EDIT on a priced card while Skip pricing is
+  on clears its price with no warning (`PricingScreen.jsx` ~615, as decision 514 says); an unpriced card's edit
+  reads "$0.00" in the Changelog (`collection_update_line` logs `unit_price` 0; only 0012's add logs none); a
+  collection SKU `102426-1` has a single buy's `102426-<n>` form, so if CC's search matches part of a SKU, `-1` also
+  finds `-10` and up (unchecked against CC); the Secret Lair foils list's generator sits outside the repo
+  (`C:/ClaudeProjects/temp/sld-foils`, `src/lib/sldFoilProducts.js:12`); `OwnedCounter.jsx`'s header comment still
+  puts Apply in the verdict line (decision 521 moved it).
 - **For a migration, when there's a reason to write one** (0014 or later):
   - F2, the backup's 8 s statement limit (decision 430): `backup_export` (one call for every table, 2 to 7.7 s on
     dev) can time out; the fix must keep one read at one instant, so it needs the database. The test run's Backup
@@ -37,6 +29,17 @@ marks each task done here when it's finished, with the exact file and function o
   prod has run a while.
 
 ## Done
+
+- 2026-10-25: **Pushed as v1.0.5-rainbow** (the owner's ask), decisions 507–526: the stale-page reload message
+  (507); the owner's six items: the printout's Showcase only (508), the details folding on ADD CARD (509), Secret
+  Lair foils priced from their own product (510), collections' and projects' Custom SKUs numbered by the day (511),
+  Phyrexian, Dwarven and Elvish printings in English searches (512), projects that skip pricing (513, 514), with
+  a TCGplayer-only Pokémon card added unpriced keeping its JustTCG id (526, the pre-push review's finding, Buy tab);
+  `master_inventory_abort` retired and an automatic match over a staff pick checked (515); "Retro Schematic" as
+  Retro Frame and a schematic family (516); memory notes the main session's (517); the Copies we own box redone
+  as one verdict and one list (518–525, 520 rolled back); Help brought up to date for Copies we own, the numbered
+  Custom SKUs and Skip pricing. Migrations 0011–0013 went to prod first, the same night (structure-only compare
+  the same); no Edge Function changes. Nothing unpushed.
 
 - 2026-10-24 (Records session): **Help says how Skip pricing works** (decisions 513, 514, the owner's ask):
   `README.md`, A collection → **Skip pricing**, a new section between REPRICE? and EXPORT (the switch, the Price
