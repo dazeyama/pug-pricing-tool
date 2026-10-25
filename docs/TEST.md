@@ -8,7 +8,7 @@ what happens. The findings are reported when the pass ends.
   http://localhost:5180). **Never prod.**
 - **Who:** the owner, or Claude in the browser pane at the owner's request (FABLE.md, "a smoke pass the owner asks
   for"). The owner does the phone, two-computer and store cases.
-- **How long:** about two hours, 280 cases.
+- **How long:** about two hours, 282 cases.
 
 ## Ground rules
 
@@ -341,6 +341,8 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
 (docs/SETUP.md). Without a phone, `#/scan` in a second browser on the laptop uses the webcam. The run log
 (`C:\ClaudeProjects\temp\scan-run\scan-log.jsonl`) records each card on the LAN server.
 
+- [ ] **Add to Home Screen** (decision 539, the live site on an iPhone, nothing written): Safari's Share → Add to
+      Home Screen offers the name **PUG Scanner** and the round Players' Union logo on dark blue, not a grey "P".
 - [ ] **Pairing:** the phone lists the laptop's Buy tab, a project and a collection as they open and close; Pokémon
       only or a Paid/Ours collection greys the row with why; a tap pairs, and the laptop shows **📱 <phone> · 0
       scanned** with ×; × or leaving the price screen sends the phone back to its list, saying why.
