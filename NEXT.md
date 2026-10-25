@@ -36,6 +36,7 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-24: **Copies we own box: six simpler layouts drawn** (the owner's ask, Buy tab session), mockups only, no code: https://claude.ai/artifact/5ZCfQSxyU9tfb6gBpD2gJf. Waiting on the owner's pick; building it is the next task (`OwnedCounter.jsx`, `owned.css`).
 - 2026-10-24: **Closed, accepted** (the owner's call, main session): the app can't tell when CC's CSV was taken, so
   cards exported between downloading it and uploading it count as in it (`owned_copies` compares `cc_exported_at`
   with `uploaded_at`). The owner uploads right after downloading and never exports in between.
