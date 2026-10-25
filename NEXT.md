@@ -36,6 +36,9 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-24 (Export session): **Help says how collections' and projects' Custom SKUs are numbered** (decision
+  511, the owner's ask): `README.md`'s The file → Custom SKU row, Confirm's summary (`102426-#`), Undo export… and
+  the collection's list heading.
 - 2026-10-24: **Help's Copies we own brought up to date** (the owner's ask, Buy tab session): `README.md` Buy →
   Copies we own for decisions 500 and 518–525 (one verdict and one list, the full CC name on this printing's row,
   the plain Apply under the boxes and the stamp in the box, reasons one to a line, no amounts, "?"). Settings →
