@@ -523,6 +523,9 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
 - [ ] A Sell Price that isn't a number is **Can't import**, with its line number.
 - [ ] A CSV dropped on an **empty** collection or project imports into it; on one with cards, a message says it can't.
 - [ ] Picks are remembered: the same file again matches them straight away.
+- [ ] **Retro Schematic** (decision 516): a file with "Semblance Anvil - Retro Schematic" and "Semblance Anvil - Retro
+      Frame" (The Brothers' War: Retro Frame Artifacts) matches them to BRR 115 and BRR 52, each Matched, not Needs a
+      choice. EXPORT a BRR 115 and a BRR 52 line: Matched to "… - Retro Schematic" and "… - Retro Frame".
 
 ## 14. Calendar tab and day pages
 

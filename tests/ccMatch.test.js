@@ -198,7 +198,9 @@ test('the Scryfall facts behind the evidence families', () => {
   assert.deepEqual(extraWords('Showcase Scrolls', { evidence: true }), []);
   assert.deepEqual(extraWords('Anime Borderless'), ['Anime']);
   assert.deepEqual(extraWords('Japanese Alternate Art'), []);
-  assert.deepEqual(wordFamilies('Retro Schematic'), []);
+  // Retro Frame and the schematic family that joins it (decision 516; before, no family at all).
+  assert.deepEqual(wordFamilies('Retro Schematic'), ['retro', 'schematic']);
+  assert.deepEqual(extraWords('Retro Schematic'), []);
   assert.deepEqual(readVariant(product('X (A)', 'Fallen Empires'), line({})).extra, ['A']);
 });
 

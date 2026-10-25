@@ -35,9 +35,8 @@ marks each task done here when it's finished, with the exact file and function o
     `evidenceTreatments`); about 8 of dev's asks would then match by themselves.
   - The two wrong exported lines' stamps on prod stay unless that day's file must be downloaded again
     (`git show 681c5c6:MATCHING.md`, item 3).
-  - From 0010's review, passed on 2026-10-24 for tonight's push (main session): "Retro Schematic" read as Retro
-    Frame (Buy tab, in Export's `importMatch.js` / `ccMatch.js`); the test-run check of an `auto` sent over a staff
-    row (Export and printouts, with 0013 below).
+  - From 0010's review, passed on 2026-10-24 for tonight's push (main session): the test-run check of an `auto`
+    sent over a staff row (Export and printouts, with 0013 below). ("Retro Schematic": done, decision 516.)
 - **The owner's part of the smoke test** (`docs/TEST.md`, dev only): section 10 (the phone), the two-computer and
   network-off cases, and section 19.
 - **Known limits, left as is:** the app can't tell when CC's CSV was taken, so cards exported between taking it and
@@ -51,6 +50,11 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-24: **"Retro Schematic" read as Retro Frame and a schematic family** (decision 516, the owner's ask, Buy
+  tab session, in Export's files): `ccMatch.js` `FAMILIES` (`schematic`, joining `retro`) and `evidenceTreatments`
+  (`isSchematic`: BRR from 64 on); `importMatch.js` `printingLine` and `scorePrinting` read a printing's Scryfall
+  facts as the export does. Tests in `tests/retroSchematic.test.js` and `tests/ccMatch.test.js`. Untested in the
+  app (dev has no BRR line).
 - 2026-10-24: **Closed, won't fix** (the owner's call, main session): about 15 CC products with "Foil" stuck on
   the name without " - " stay unfound by name at export and in Copies we own (Needs a choice / n/a, never a wrong
   match; only the under-$10 list drops it, decision 498); reopening a closed customer search shows Show all off

@@ -172,7 +172,10 @@ const FAMILIES = [
   { key: 'scroll', name: 'Showcase Scrolls', joins: 'showcase', re: /\bscrolls?\b/i, words: /\bscrolls?\b/gi, evidence: true },
   // An English card's frame (owner, 2026-10-16), not a Japanese printing.
   { key: 'japanshowcase', name: 'Japan Showcase', joins: 'showcase', re: /\bjapan showcase\b/i, words: /\bjapan\b/gi, evidence: true },
-  { key: 'retro', name: 'Retro Frame', re: /retro frame/i, words: /retro frame/gi },
+  { key: 'retro', name: 'Retro Frame', re: /retro (frame|schematic)/i, words: /retro( frame)?/gi },
+  // A Brothers' War Retro Artifacts schematic (decision 516): "Retro Schematic", one word with Retro Frame. Known
+  // for sure from the card's number (evidenceTreatments), so an ordinary family: a plain retro card sets it aside.
+  { key: 'schematic', name: 'Retro Schematic', joins: 'retro', re: /\bschematic\b/i, words: /\bschematic\b/gi },
   { key: 'futureframe', name: 'Future Frame', re: /future (sight )?frame/i, words: /future (sight )?frame/gi, evidence: true },
   { key: 'whiteborder', name: 'White Border', re: /white border/i, words: /white border(ed)?/gi, evidence: true },
   { key: 'fullart', name: 'Full Art', re: /full art/i, words: /full art/gi },
@@ -190,6 +193,12 @@ const FAMILY = new Map(FAMILIES.map((f) => [f.key, f]));
 /** A printing's language families: a product without the card's language is another printing (decisions 269, 512). */
 const LANGUAGE_FAMILIES = ['japanese', 'phyrexian'];
 
+/**
+ * A Brothers' War Retro Artifacts schematic (decision 516): Scryfall marks nothing for one, so its number says it,
+ * 64–126 and the serialized 64z–126z (1–63 are the plain retro frame).
+ */
+const isSchematic = (card) => String(card?.set ?? '').toLowerCase() === 'brr' && parseInt(card?.collector_number, 10) >= 64;
+
 /** Magic's later reprints in an old look (Mystery Booster 2's): CC names their frame or border; the originals' it doesn't. */
 const LATER_REPRINT_FROM = '2008-01-01';
 
@@ -204,6 +213,7 @@ export function evidenceTreatments(card) {
   const promos = card.promo_types ?? [];
   const later = (card.released_at ?? '') >= LATER_REPRINT_FROM;
   return [
+    isSchematic(card) && 'schematic',
     promos.includes('scroll') && 'scroll',
     promos.includes('poster') && 'poster',
     promos.includes('japanshowcase') && 'japanshowcase',

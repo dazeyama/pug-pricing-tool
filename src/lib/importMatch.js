@@ -11,7 +11,9 @@
 import { nameKey } from './normalize.js';
 import { normNumber } from './query.js';
 import { isEtchedKind, parseProductName } from './ccNames.js';
-import { expectedFoilKind, expectedName, fold, frontFace, lineFamilies, ruleGuesses, wordFamilies } from './ccMatch.js';
+import {
+  evidenceTreatments, expectedFoilKind, expectedName, fold, frontFace, lineFamilies, ruleGuesses, wordFamilies,
+} from './ccMatch.js';
 import { magicTreatments } from './printings.js';
 
 /** The columns a Mass Create file must have (Custom SKU, our export's last column, is optional). */
@@ -251,7 +253,8 @@ export function printingLine(card, finish) {
     name: card.name,
     collector_number: card.collector_number,
     finish,
-    treatments: magicTreatments(card, finish),
+    // With the card's Scryfall facts, as the export reads them (a Retro Artifacts schematic, decision 516).
+    treatments: [...new Set([...magicTreatments(card, finish), ...evidenceTreatments(card)])],
     set_code: card.set,
   };
 }
@@ -303,7 +306,9 @@ export function scorePrinting(row, card) {
   const variants = [...p.variants];
   if (flavor && variants.length && fold(variants[0]) === fold(card.name)) variants.shift();   // "Flavor - Name"
   const theirs = new Set();
-  for (const word of variants) for (const f of wordFamilies(word)) theirs.add(f);
+  // A product's words for an evidence family read as it only for a card that has it, as at export (decision 516).
+  const evidence = evidenceTreatments(card);
+  for (const word of variants) for (const f of wordFamilies(word, { evidence })) theirs.add(f);
   for (const [f, re] of CATEGORY_FAMILIES) if (re.test(row.category)) theirs.add(f);
   const ours = new Set(lineFamilies(line));
   for (const f of ours) score += theirs.has(f) ? 3 : -3;
