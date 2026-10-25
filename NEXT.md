@@ -25,25 +25,19 @@ marks each task done here when it's finished, with the exact file and function o
   - F2, the backup's 8 s statement limit (decision 430): `backup_export` (one call for every table, 2 to 7.7 s on
     dev) can time out; the fix must keep one read at one instant, so it needs the database. The test run's Backup
     pass hit it once (`restore_backup`, `staff_users`) and passed on the retry.
-  - Retire `master_inventory_abort` (unused since decision 414), with its test-run checks and its place in the
+  - Passed on 2026-10-24 to Export and printouts as migration 0013, for tonight's prod push with 0011 and 0012
+    (main session): retire `master_inventory_abort` (unused since decision 414), with its test-run checks and its place in the
     security-definer list.
 - **Matching leftovers (decisions 484–487):**
   - Not built, on purpose: Scryfall's other promo types as families (`planeswalkerdeck`, `gameday`,
     `storechampionship`, `wizardsplaynetwork`, `openhouse`, `themepack`, `release`, `judgegift`). CC spells them
     too many ways, so each needs its spellings read off the inventory first (`src/lib/ccMatch.js` `FAMILIES`,
     `evidenceTreatments`); about 8 of dev's asks would then match by themselves.
-  - Left as is, the owner's call (Export session, 2026-10-24): about 15 CC products have "Foil" stuck on the name
-    without " - " ("Narset, Enlightened Master Foil - Prerelease Promo", "… Alternate Art Foil"), so
-    `parseProductName` (`ccNames.js`) keeps it in the base and the export and Copies we own can't find them by
-    name (Needs a choice / n/a, never a wrong match). Only the under-$10 list drops it (decision 498).
   - The two wrong exported lines' stamps on prod stay unless that day's file must be downloaded again
     (`git show 681c5c6:MATCHING.md`, item 3).
-  - From 0010's review, not acted on: Import Collection reads "Retro Schematic" as a word, not Retro Frame
-    (`importMatch.js`); an `auto` sent over a staff row isn't checked on its own in the test run.
-- **Small, from the 2026-10-21 review, not fixed:** reopening a closed customer search shows Show all off until a
-  letter is typed (`SearchBox.jsx`, the search effect keyed on `[text, showAll]`). Plausible, not confirmed: if the
-  connection comes back while a CONFIRM BUY press checks its own answer and the check fails anyway, the dialog can
-  still close (`useDraft.js` clears `unsure` before `confirm_buy` and sets it again only after `run` returns).
+  - From 0010's review, passed on 2026-10-24 for tonight's push (main session): "Retro Schematic" read as Retro
+    Frame (Buy tab, in Export's `importMatch.js` / `ccMatch.js`); the test-run check of an `auto` sent over a staff
+    row (Export and printouts, with 0013 below).
 - **The owner's part of the smoke test** (`docs/TEST.md`, dev only): section 10 (the phone), the two-computer and
   network-off cases, and section 19.
 - **Known limits, left as is:** the app can't tell when CC's CSV was taken, so cards exported between taking it and
@@ -56,6 +50,12 @@ marks each task done here when it's finished, with the exact file and function o
   prod has run a while.
 
 ## Done
+
+- 2026-10-24: **Closed, won't fix** (the owner's call, main session): about 15 CC products with "Foil" stuck on
+  the name without " - " stay unfound by name at export and in Copies we own (Needs a choice / n/a, never a wrong
+  match; only the under-$10 list drops it, decision 498); reopening a closed customer search shows Show all off
+  until a letter is typed (`SearchBox.jsx`); CONFIRM BUY's dialog possibly closing when a reconnect lands during
+  its read-back (`useDraft.js`, plausible, never seen).
 
 - 2026-10-24: **Skip pricing on the Price screen** (decision 514, item 6 part 2, the owner's ask, Buy tab session):
   `PricingScreen.jsx` reads `list.skipPricing`; `usePriceQuote.js` asks `usePrices` for nothing then (status
