@@ -127,11 +127,15 @@ export const finishWord = (finish) => (finish && finish !== 'nonfoil' ? finish :
 export function ownedRows(c) {
   if (!c) return [];
   // This printing's row by its product's full name, to be checked here ("Wrath of God · Fourth Edition", as the
-  // match line said; decision 519); the others by what tells them apart (ccRowText).
-  const product = (p, qty, mine) => ({
-    key: `cc:${p.product_id ?? `${p.category}|${p.name}`}`, text: mine ? `${p.name} · ${p.category}` : ccRowText(p),
-    title: `${p.category} · ${p.name}`, qty, this: mine, ours: false,
-  });
+  // match line said; decision 519), and pointing at it shows the same whole when it's cut short (decision 537);
+  // the others by what tells them apart (ccRowText), their category and full name on pointing.
+  const product = (p, qty, mine) => {
+    const full = `${p.name} · ${p.category}`;
+    return {
+      key: `cc:${p.product_id ?? `${p.category}|${p.name}`}`, text: mine ? full : ccRowText(p),
+      title: mine ? full : `${p.category} · ${p.name}`, qty, this: mine, ours: false,
+    };
+  };
   const rows = c.cc.list.map((p) => product(p, p.qty, p.this));
   const m = c.cc.match;
   if (m && c.cc.card != null && !c.cc.list.some((p) => p.this)) rows.push(product(m, 0, true));

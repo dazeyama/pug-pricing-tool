@@ -150,6 +150,9 @@ test('one list: this printing first, then most first; its product at ×0 when we
     ['Revised Edition', 2, false, false],
     ['SLD #185 Secret Lair Drop', 1, false, true],
   ]);
+  // Pointing at this printing's row shows its full name as the row says it (decision 537).
+  assert.equal(rows[0].title, 'Wrath of God · Fourth Edition');
+  assert.equal(rows[1].title, 'Revised Edition · Wrath of God');
   // None of this printing in stock: its matched product is a row at ×0, first.
   const none = ownedCounts({
     cc_printing: 0, cc_card: 2, inventory_at: 'x',

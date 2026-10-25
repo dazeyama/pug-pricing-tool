@@ -240,7 +240,8 @@ what happens. The findings are reported when the pass ends.
       matching → Browse remembered products…, go back to the Buy tab and pick the card again: n/a, with no refresh.
 - [ ] **Its CC product named** (decisions 499, 518, 519): point at the boxes of a printing with counts: the list's
       first row, marked "this printing", is the product the export would take, by its full name and category ("Wrath
-      of God · Fourth Edition"); the other rows by category and variant only. A printing CC holds none of (This printing
+      of God · Fourth Edition"); the other rows by category and variant only. A long name cut with …: pointing at the
+      row shows it whole, in the same order (decision 537). A printing CC holds none of (This printing
       0, the card in stock): that row is still there, at ×0. An n/a printing, or none uploaded: no "this printing"
       row, "Can't count this printing" and the reason. Match an n/a card (above): the row shows the product picked.
 - [ ] **A match that didn't go through** (decision 500): in DevTools → Network, right-click a request → Block request
@@ -249,7 +250,8 @@ what happens. The findings are reported when the pass ends.
       match), no chips or stamp; pointing says it didn't go through. Unblock it and click the chip (or the boxes):
       the counts come in. Blocked again, pick another card, unblock, then pick that card again: counted afresh,
       not the "?" from before.
-- [ ] **Stamps** (decisions 459, 521): with a rate to apply, the box has a red **NOT APPLIED** ink stamp beside
+- [ ] **Stamps** (decisions 459, 521, 537): with a rate to apply, the box has a red **NOT APPLIED** ink stamp, about as
+      far from the change above it as from the list below, beside
       Credit / Cash; Apply (or Auto apply rates? checked) turns it into a green **APPLIED** one; no stamp when nothing
       changes the rate. Click the stamp (decision 461): it switches, the new one dropping in larger over the old and pressing down
       as it lands (a quick squash, darker ink), then holding still, no shake (decision 488), the old one fading

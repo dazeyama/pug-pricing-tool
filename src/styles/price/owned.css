@@ -164,7 +164,9 @@
    the stamp at 160px is 162px across tilted (5px to spare) and 49px tall. 170px pushed Cash onto a second line. */
 .owned-body { display: flex; align-items: center; gap: 10px; }
 .owned-body-text { flex: 1; min-width: 0; }
-.owned-body .stamp-btn { flex: none; margin-top: 0; }
+/* 5px lower than centred (decision 537): measured, the ink sat 1.3px under the change above it and 11.4px over the
+   list below (one reason; 10.4 and 20.4 with two), so 5px evens both. Relative, so the box's height stays. */
+.owned-body .stamp-btn { flex: none; margin-top: 0; position: relative; top: 5px; }
 .owned-body .ink-stamp { width: 160px; }
 /* The plain Apply button under the boxes, in the stamp's old place (decision 521): the counter's width. */
 .owned-apply { align-self: stretch; white-space: nowrap; }

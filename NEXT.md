@@ -36,6 +36,9 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-25: **The box's stamp a little lower; this printing's full name on pointing** (decision 537, the owner's
+  ask, Buy tab session): `owned.css` `.owned-body .stamp-btn` 5px lower (measured), `ownedRates.js` `ownedRows`
+  title. Untested in the app.
 - 2026-10-25: **A rollback point at v1.0.5-rainbow** (main session, the owner's ask): the local tag
   `rollback-v1.0.5-rainbow` (`3c226bb`, the app the same as v1.0.5-rainbow's `2077f69`; never pushed) and
   `C:\ClaudeProjects\pug-pricing-tool-backups\backup-20261025-005622-rollback-v1.0.5-rainbow\`: the project copy
