@@ -206,6 +206,10 @@ tests (`npm test`, commit only on `fail 0`) and the build.
 Write or Edit are also linted as they're saved, and the unit tests they can affect run (the hooks in
 `.claude/settings.json`; a test failure there is a note, not a block, decision 528).
 
+Three tries, then stop (decision 531): when lint, a test or the build still fails after three attempts at fixing it,
+stop and tell me what's failing, in which file, and what you tried, instead of digging further. Look first at whose
+file it is (Working beside the other sessions): another session's half-done work isn't a try of yours.
+
 ### Writing Code Files
 
 Never write Python, JS, or other source files through Bash heredocs or echo, and don't edit them in place with
