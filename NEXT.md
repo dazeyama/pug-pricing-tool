@@ -19,8 +19,6 @@ marks each task done here when it's finished, with the exact file and function o
   `89dcb9d` "Retro Schematic" read as Retro Frame and a schematic family (516, Buy tab); `529361a` memory notes
   are the main session's (517, main session); `f4f5a46` to `7f51f96` the Copies we own box redone as one verdict
   and one list, from the owner's pick of six mockups (518–525, Buy tab; 520 rolled back); NEXT.md.
-- **The owner's six items of 2026-10-24** (main session, passed on one per fork at a time): all six committed,
-  unpushed and untested in the app: 1 (510), 2 (508), 3 (509), 4 (511), 5 (512), 6 (513, 514).
 - **For a migration, when there's a reason to write one** (0014 or later):
   - F2, the backup's 8 s statement limit (decision 430): `backup_export` (one call for every table, 2 to 7.7 s on
     dev) can time out; the fix must keep one read at one instant, so it needs the database. The test run's Backup
@@ -37,6 +35,9 @@ marks each task done here when it's finished, with the exact file and function o
   prod has run a while.
 
 ## Done
+
+- 2026-10-24: **Today's work tested by the owner** (main session): the six items (508–514), Retro Schematic (516)
+  and the Copies we own box (518–525), tried in the app as they landed. Closed.
 
 - 2026-10-24: **The stamp a little smaller; Credit / Cash always one line** (decision 525, the owner's ask, Buy tab
   session): `owned.css` `.owned-body .ink-stamp` 170 → 160px (measured with the bold line), `.owned-rates` nowrap.
