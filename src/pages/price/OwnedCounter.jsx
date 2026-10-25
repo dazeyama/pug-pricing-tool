@@ -159,22 +159,49 @@ export default function OwnedCounter({
   const why = unknown
     ? `${unknownWhy} Until then the rate isn’t changed.`
     : ownedReason(adjust, { lowEndWhy, finish });
-  // Apply where a rate can be applied by hand; else a line says why not (Auto apply rates on, or blocked here).
+  // Where a rate can't be applied by hand, a line in the box says why (Auto apply rates on, or blocked here).
   let applyNote = null;
   if (suggested && auto?.on && !applyBlocked) applyNote = 'Auto apply rates is on: this card goes on at this rate.';
   else if (suggested && applyBlocked) applyNote = applyBlocked;
-  const applyButton = suggested && !applyNote && (
+  // Under the boxes, always in view: a plain Apply button (owner, 2026-10-24: "so that the button always visible
+  // is more normal looking"; decision 521), the stamp's old place. A click applies or takes off the rate.
+  const pct = suggested ? signedPct(suggested.net) : '';
+  let applyLabel = `Apply ${pct}`;
+  if (auto?.on && !applyBlocked) applyLabel = `✓ ${pct} auto`;
+  else if (applied) applyLabel = `✓ ${pct} applied`;
+  const applyButton = suggested && (
     <button
       type="button"
-      className={`btn small ${applied ? 'owned-undo' : 'primary'}`}
-      title={applied ? `${signedPct(suggested.net)} goes on with ADD CARD: click to take it off`
-        : `${signedPct(suggested.net)} goes on with ADD CARD`}
+      className={`btn small owned-apply ${applied ? 'owned-undo' : 'primary'}`}
+      disabled={Boolean(applyBlocked) || Boolean(auto?.on)}
+      title={applyBlocked || (auto?.on
+        ? 'Auto apply rates is on: every card goes on at this rate. Uncheck it to choose card by card.'
+        : applied ? `${pct} goes on with ADD CARD: click to take it off` : `${pct} goes on with ADD CARD`)}
       onClick={() => {
         onApply();
         onDone();
       }}
     >
-      {applied ? '✓ Undo' : 'Apply'}
+      {applyLabel}
+    </button>
+  );
+  // In the box: the stamp, applied or not (decision 459), still the switch (461), the new one landing over the old
+  // (462, 488); moved here from under the boxes (decision 521).
+  const stampButton = suggested && (
+    <button
+      type="button"
+      className="stamp-btn"
+      disabled={Boolean(applyBlocked) || Boolean(auto?.on)}
+      title={applyBlocked || (auto?.on
+        ? 'Auto apply rates is on: every card goes on at this rate. Uncheck it to choose card by card.'
+        : applied ? 'Click to take the rate off' : 'Click to apply the rate')}
+      onClick={() => {
+        onApply();
+        onDone();
+      }}
+    >
+      {flip && <InkStamp key={`out-${flip.n}`} applied={flip.from} className="leaving" />}
+      <InkStamp key={`in-${flip?.n ?? 0}`} applied={applied} className={flip ? 'landing' : ''} />
     </button>
   );
 
@@ -234,37 +261,24 @@ export default function OwnedCounter({
           (didn&apos;t go through: try again)
         </button>
       )}
-      {/* Applied or not, stamped (owner, 2026-10-23; decision 459): whenever there's a rate to apply. A click
-          switches it, as Apply does (decision 461): the new one drops in over the old and lands, the old one
-          fading only at the end (decision 462). */}
-      {suggested && (
-        <button
-          type="button"
-          className="stamp-btn"
-          disabled={Boolean(applyBlocked) || Boolean(auto?.on)}
-          title={applyBlocked || (auto?.on
-            ? 'Auto apply rates is on: every card goes on at this rate. Uncheck it to choose card by card.'
-            : applied ? 'Click to take the rate off' : 'Click to apply the rate')}
-          onClick={() => {
-            onApply();
-            onDone();
-          }}
-        >
-          {flip && <InkStamp key={`out-${flip.n}`} applied={flip.from} className="leaving" />}
-          <InkStamp key={`in-${flip?.n ?? 0}`} applied={applied} className={flip ? 'landing' : ''} />
-        </button>
-      )}
+      {/* A plain Apply button, always in view (decision 521; the stamp was here, decisions 459–462). */}
+      {applyButton}
       {open && (
         <div className="owned-pop">
           <section className="owned-pop-box" aria-label="Copies we own">
             <div className="owned-verdict">
               <span className="owned-say">{verdict}</span>
               <span className={`owned-pct${pctTone}`}>{suggested ? signedPct(suggested.net) : 'no change'}</span>
-              {applyButton}
             </div>
-            {suggested && <p className="owned-rates">{rates}</p>}
-            {why && <p className="owned-why">{why}</p>}
-            {applyNote && <p className="owned-why">{applyNote}</p>}
+            {/* Credit, Cash and why, with the stamp beside them (decision 521). */}
+            <div className="owned-body">
+              <div className="owned-body-text">
+                {suggested && <p className="owned-rates">{rates}</p>}
+                {why && <p className="owned-why">{why}</p>}
+                {applyNote && <p className="owned-why">{applyNote}</p>}
+              </div>
+              {stampButton}
+            </div>
             {/* Ours and the inventory's in one list, this printing first (decision 518). */}
             <div className="owned-pop-sub">The printings we own</div>
             {rows.length ? (

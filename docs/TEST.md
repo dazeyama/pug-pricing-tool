@@ -204,8 +204,9 @@ what happens. The findings are reported when the pass ends.
 - [ ] **Copies we own** (decision 448; dev, after an inventory upload from this build): pick Force of Will. Right of
       its details, **This printing** and **All printings** show counts ("…" first). A card we own 3+ of: All
       printings turns amber with "−5%?" (one copy over 2), "−10%?" (two)… Point at the boxes (decision 518): the box
-      below reads "We own Y · X of this printing", then the change (red "−20%", green "+10%" or "no change") and
-      **Apply**; under it Credit / Cash with their amounts, the reason in one line ("4 copies over 2, at 5% each"),
+      below reads "We own Y · X of this printing", then the change (red "−20%", green "+10%" or "no change"); under it
+      Credit / Cash with their amounts and the reason in one line ("4 copies over 2, at 5% each"), the stamp beside
+      them (decision 521),
       then **The printings we own**: one ruled list, this printing first marked "this printing", then the rest
       (set · foil / variant ×N), ours not in Crystal Commerce yet tagged "not in CC yet" (set #number ×N). No 📦 head,
       no second list. While a card's finish is still loading the boxes read "…", never "Magic only for now"
@@ -215,8 +216,8 @@ what happens. The findings are reported when the pass ends.
       project, a confirmed buy's Edit, a Paid/Ours (locked) overnight buy and Can't upload cards: no counter and no
       Auto apply rates?. An open overnight buy has both.
 - [ ] **Looks** (decisions 463–466, 471): the boxes and chips in muted colours, the stamp the one bright thing; each
-      chip centred under its box, both on one line with the stamp still in the row. A new card coming up with Auto
-      apply rates? checked shows APPLIED straight away, no stamp animation. Pointing at faded n/a boxes doesn't
+      chip centred under its box, both on one line with the Apply button still in the row. A new card coming up with
+      Auto apply rates? checked shows APPLIED straight away in its box, no stamp animation. Pointing at faded n/a boxes doesn't
       brighten them.
 - [ ] **Bonus and cut** (decision 457): a card we've never had (0 and 0): a green "+10% first" chip under the boxes;
       its box reads "We own none", "+10%", and "First of this printing (+5%) and of this card (+5%)" (decision 518).
@@ -248,14 +249,15 @@ what happens. The findings are reported when the pass ends.
       match), no chips or stamp; pointing says it didn't go through. Unblock it and click the chip (or the boxes):
       the counts come in. Blocked again, pick another card, unblock, then pick that card again: counted afresh,
       not the "?" from before.
-- [ ] **Stamps** (decision 459): with a rate to apply, a red **NOT APPLIED** ink stamp under the chips; Apply (or
-      Auto apply rates? checked) turns it into a green **APPLIED** one; no stamp when nothing changes the rate.
-      Click the stamp (decision 461): it switches, the new one dropping in larger over the old and pressing down
+- [ ] **Stamps** (decisions 459, 521): with a rate to apply, the box has a red **NOT APPLIED** ink stamp beside
+      Credit / Cash; Apply (or Auto apply rates? checked) turns it into a green **APPLIED** one; no stamp when nothing
+      changes the rate. Click the stamp (decision 461): it switches, the new one dropping in larger over the old and pressing down
       as it lands (a quick squash, darker ink), then holding still, no shake (decision 488), the old one fading
       only at the very end (decision 462), all in 0.3 s; APPLIED tilts up to the
       right, NOT APPLIED down, and the price panel's Credit / Cash change with it; click again to switch back.
       With Auto apply rates? checked the stamp doesn't switch, and pointing at it says why.
-- [ ] **Apply**: click the boxes to keep the box open, then **Apply** (it reads **✓ Undo** after): the chips go solid with ✓, the price
+- [ ] **Apply** (decision 521): under the chips, a plain **Apply −20%** button the counter's width; click it (it reads
+      **✓ −20% applied** after, a click takes it off; with Auto apply rates? on, a greyed **✓ −20% auto**): the chips go solid with ✓, the price
       panel's Credit and Cash change, ↑ and a soft green glow for a bonus, ↓ and a red one for a cut, pulsing slowly
       (decisions 472, 481), 16px under the big price, the glow clear of it (decision 480). ADD CARD: the line
       shows ✎ Credit / Cash at those rates. Apply, then pick another card: it isn't applied there. Editing a line:

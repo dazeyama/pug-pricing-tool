@@ -36,6 +36,9 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-24: **A plain Apply button under the boxes, the stamp in the box** (decision 521, the owner's ask, Buy tab
+  session): `OwnedCounter.jsx` (`applyButton`, `stampButton`), `owned.css` (`.owned-apply`, `.owned-body`).
+  Untested in the app.
 - 2026-10-24: **Rolled back: "none" for ×0 on this printing's row** (decision 520, the owner's call, Buy tab
   session): `75c70ca` reverted, it took too much room. Still open from the owner: telling ×0 from ×1 on that row,
   in a way that takes no more room (`OwnedCounter.jsx`, the rows' render).

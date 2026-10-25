@@ -159,6 +159,13 @@
 .owned-pct.cut { background: rgba(255, 107, 107, .16); color: var(--bad); }
 .owned-pct.bonus { background: rgba(62, 207, 142, .16); color: var(--good); }
 .owned-verdict .btn { flex: none; }
+/* Credit, Cash and why, the stamp beside them (decision 521), smaller than it was under the boxes. */
+.owned-body { display: flex; align-items: center; gap: 10px; }
+.owned-body-text { flex: 1; min-width: 0; }
+.owned-body .stamp-btn { flex: none; margin-top: 6px; }
+.owned-body .ink-stamp { width: 100px; }
+/* The plain Apply button under the boxes, in the stamp's old place (decision 521): the counter's width. */
+.owned-apply { align-self: stretch; white-space: nowrap; }
 .owned-rates { margin: 6px 0 0; font-variant-numeric: tabular-nums; }
 .owned-rates .is-credit { color: var(--credit); font-weight: 700; }
 .owned-rates .is-cash { color: var(--cash); font-weight: 700; }
