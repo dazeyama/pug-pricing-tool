@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { formatMoney, payout } from '../../lib/money.js';
 import {
-  DEFAULT_OWNED, ccRowText, finishWord, signedPct,
+  DEFAULT_OWNED, ownedReason, ownedRows, signedPct,
 } from '../../lib/ownedRates.js';
 import { useDismiss } from '../../lib/useDismiss.js';
 import InkStamp from './InkStamp.jsx';
@@ -11,8 +11,9 @@ const copies = (n) => `${n} ${n === 1 ? 'copy' : 'copies'}`;
 /**
  * The copies we own (owner, 2026-10-22; decision 448), beside the card's details: this printing in its
  * finish, and the card in every printing, each the inventory's Total Qty plus ours not in it yet.
- * Pointing at it shows a box in the price warnings' style: "We own X copies of this printing and Y copies
- * of this card", each printing we own, and what changes the card's rate: as shipped, 5% off for each copy of
+ * Pointing at it shows a box in the price warnings' style, one verdict and one list (decision 518): "We own Y ·
+ * X of this printing" with the change and Apply, Credit and Cash, why, and every printing we own. What changes
+ * the card's rate: as shipped, 5% off for each copy of
  * the card over 2; 5% on for the first of this printing, 5% more for the first of the card (decision 457; the
  * numbers are Settings → Copies we own's, decision 474); stacked,
  * to apply with a click (it goes on ADD CARD as the card's own rate). Above it, Auto apply rates? for the buy. Nothing changes a rate unless
@@ -145,24 +146,37 @@ export default function OwnedCounter({
       {price != null && ` (${formatMoney(payout(price, suggested.credit))} / ${formatMoney(payout(price, suggested.cash))})`}
     </>
   );
-  // Which printings (owner, 2026-10-22: "it has to show specifically, which printings we own").
-  const thisMark = <span className="owned-this">this printing</span>;
-  const ccRows = c?.cc.list.map((p) => (
-    <li key={p.product_id ?? `${p.category}|${p.name}`} className={p.this ? 'is-this' : undefined}>
-      <span className="owned-row-name" title={`${p.category} · ${p.name}`}>{ccRowText(p)}</span>
-      {p.this && thisMark}
-      <b>×{p.qty}</b>
-    </li>
-  ));
-  const oursRows = c?.ours.list.map((p) => (
-    <li key={`${p.scryfall_id}|${p.set_code}|${p.number}|${p.finish}`} className={p.this ? 'is-this' : undefined}>
-      <span className="owned-row-name">
-        {p.set_code} #{p.number}{p.set_name ? ` ${p.set_name}` : ''}{finishWord(p.finish) && ` · ${finishWord(p.finish)}`}
-      </span>
-      {p.this && thisMark}
-      <b>×{p.qty}</b>
-    </li>
-  ));
+  // The box as one verdict and one list (owner, 2026-10-24; decision 518): what we own and what it does to the
+  // rate, with Apply, on one line; Credit and Cash; why; then every printing we own (owner, 2026-10-22: "it has
+  // to show specifically, which printings we own") in one list.
+  const rows = ownedRows(c);
+  let verdict;
+  if (unknown) verdict = failedMatch ? 'Didn’t go through' : 'Can’t count this printing';
+  else if (c?.card === 0) verdict = 'We own none';
+  else verdict = <>We own {c?.card} <span className="dim">· {c?.printing || 'none'} of this printing</span></>;
+  let pctTone = '';
+  if (suggested) pctTone = suggested.net > 0 ? ' bonus' : ' cut';
+  const why = unknown
+    ? `${unknownWhy} Until then the rate isn’t changed.`
+    : ownedReason(adjust, { lowEndWhy, finish });
+  // Apply where a rate can be applied by hand; else a line says why not (Auto apply rates on, or blocked here).
+  let applyNote = null;
+  if (suggested && auto?.on && !applyBlocked) applyNote = 'Auto apply rates is on: this card goes on at this rate.';
+  else if (suggested && applyBlocked) applyNote = applyBlocked;
+  const applyButton = suggested && !applyNote && (
+    <button
+      type="button"
+      className={`btn small ${applied ? 'owned-undo' : 'primary'}`}
+      title={applied ? `${signedPct(suggested.net)} goes on with ADD CARD: click to take it off`
+        : `${signedPct(suggested.net)} goes on with ADD CARD`}
+      onClick={() => {
+        onApply();
+        onDone();
+      }}
+    >
+      {applied ? '✓ Undo' : 'Apply'}
+    </button>
+  );
 
   return (
     <div className="owned" ref={box} onMouseLeave={() => setHover(false)}>
@@ -243,87 +257,28 @@ export default function OwnedCounter({
       {open && (
         <div className="owned-pop">
           <section className="owned-pop-box" aria-label="Copies we own">
-            <div className="owned-pop-head">📦 Copies we own</div>
-            {/* The product this printing matched, in stock or not (decision 499); none matched, the n/a says why.
-                Two lines, the product on the second, in quotes and all of it bold in the head's blue (decisions
-                501, 502). */}
-            {c.cc.match && (
-              <p className="owned-pop-match" title={`${c.cc.match.name} · ${c.cc.match.category}`}>
-                <span>Crystal Commerce Match:</span>
-                <b className="owned-pop-match-product">“{c.cc.match.name} · {c.cc.match.category}”</b>
-              </p>
-            )}
-            {unknown ? (
-              <>
-                <p className="owned-pop-lead">The copies we own can&apos;t be counted for this printing.</p>
-                <p className="owned-pop-note">{unknownWhy} Until then the rate isn&apos;t changed.</p>
-              </>
-            ) : (
-              <p className="owned-pop-lead">
-                We own {copies(c.printing)} of this printing and {copies(c.card)} of this card.
-              </p>
-            )}
-            <div className="owned-pop-lists">
-              <div className="owned-pop-sub">In Crystal Commerce ({c.cc.card ?? '?'})</div>
-              {c.inventoryAt == null ? <p className="owned-pop-note">No inventory uploaded.</p>
-                : !c.cardSure ? <p className="owned-pop-note">The inventory was uploaded before it kept quantities: upload it again to count it.</p>
-                  : ccRows.length ? <ul className="owned-rows">{ccRows}</ul> : <p className="owned-pop-note">None.</p>}
-              <div className="owned-pop-sub">Ours, not in it yet ({c.ours.card})</div>
-              {oursRows.length ? <ul className="owned-rows">{oursRows}</ul> : <p className="owned-pop-note">None.</p>}
+            <div className="owned-verdict">
+              <span className="owned-say">{verdict}</span>
+              <span className={`owned-pct${pctTone}`}>{suggested ? signedPct(suggested.net) : 'no change'}</span>
+              {applyButton}
             </div>
-            {/* What changes the rate, and why (decision 457); nothing when the counts aren't known (467). */}
-            {!unknown && <div className="owned-pop-sub">The rate</div>}
-            {unknown ? null : adjust && (adjust.bonus > 0 || adjust.cut > 0 || adjust.lowEndNoBonus) ? (
-              <ul className="owned-adjust">
-                {adjust.lowEndNoBonus && (
-                  <li>No first-copy bonus on a low-end card{lowEndWhy ? ` (${lowEndWhy})` : ''}.</li>
-                )}
-                {adjust.firstPrinting && (
-                  <li className="is-bonus">
-                    <b>+{cfg.first_printing}%</b> first of this printing: we own none of it{finishWord(finish) ? ` in ${finishWord(finish)}` : ''}.
+            {suggested && <p className="owned-rates">{rates}</p>}
+            {why && <p className="owned-why">{why}</p>}
+            {applyNote && <p className="owned-why">{applyNote}</p>}
+            {/* Ours and the inventory's in one list, this printing first (decision 518). */}
+            <div className="owned-pop-sub">The printings we own</div>
+            {rows.length ? (
+              <ul className="owned-rows">
+                {rows.map((r) => (
+                  <li key={r.key} className={r.this ? 'is-this' : undefined}>
+                    <span className="owned-row-name" title={r.title ?? undefined}>{r.text}</span>
+                    {r.this && <span className="owned-this">this printing</span>}
+                    {r.ours && <span className="owned-this ours">not in CC yet</span>}
+                    <b>×{r.qty}</b>
                   </li>
-                )}
-                {adjust.firstCard && (
-                  <li className="is-bonus">
-                    <b>+{cfg.first_card}% more</b>, first of this card: we own none of it in any printing.
-                  </li>
-                )}
-                {adjust.cut > 0 && (
-                  <li className="is-cut">
-                    <b>−{adjust.cut}%</b> for {copies(adjust.over)} of the card over {cfg.free}
-                    {' '}({cfg.step}% each, up to {cfg.cap}%).
-                  </li>
-                )}
+                ))}
               </ul>
-            ) : (
-              <p className="owned-pop-note">No change: we have this printing, and {cfg.free} or fewer of the card.</p>
-            )}
-            {adjust && adjust.bonus > 0 && adjust.cut > 0 && !suggested && (
-              <p className="owned-pop-note">They cancel out: the card keeps its usual rate.</p>
-            )}
-            {suggested && (
-              <>
-                <p className="owned-pop-suggest">
-                  {adjust.bonus > 0 && adjust.cut > 0 ? 'Together' : 'So'} <b>{signedPct(suggested.net)}</b>: {rates}
-                </p>
-                {auto?.on && !applyBlocked ? (
-                  <p className="owned-pop-note">Auto apply rates is on: this card goes on at this rate.</p>
-                ) : applyBlocked ? (
-                  <p className="owned-pop-note">{applyBlocked}</p>
-                ) : (
-                  <button
-                    type="button"
-                    className={`btn small ${applied ? 'owned-undo' : 'primary'}`}
-                    onClick={() => {
-                      onApply();
-                      onDone();
-                    }}
-                  >
-                    {applied ? `✓ ${signedPct(suggested.net)} on ADD CARD: undo` : `Apply ${signedPct(suggested.net)}`}
-                  </button>
-                )}
-              </>
-            )}
+            ) : <p className="owned-pop-note">None.</p>}
           </section>
         </div>
       )}

@@ -203,11 +203,13 @@ what happens. The findings are reported when the pass ends.
       on the list do nothing meanwhile, and it reorders once at the end.
 - [ ] **Copies we own** (decision 448; dev, after an inventory upload from this build): pick Force of Will. Right of
       its details, **This printing** and **All printings** show counts ("…" first). A card we own 3+ of: All
-      printings turns amber with "−5%?" (one copy over 2), "−10%?" (two)… Point at the boxes: the box below says
-      "We own X copies of this printing and Y copies of this card.", then each printing: In Crystal Commerce (set ·
-      foil / variant ×N) and Ours, not in it yet (set #number ×N), the one picked marked "this printing", and the
-      suggestion with its Credit / Cash. While a card's finish is still loading the boxes read "…", never "Magic
-      only for now" (decision 482).
+      printings turns amber with "−5%?" (one copy over 2), "−10%?" (two)… Point at the boxes (decision 518): the box
+      below reads "We own Y · X of this printing", then the change (red "−20%", green "+10%" or "no change") and
+      **Apply**; under it Credit / Cash with their amounts, the reason in one line ("4 copies over 2, at 5% each"),
+      then **The printings we own**: one ruled list, this printing first marked "this printing", then the rest
+      (set · foil / variant ×N), ours not in Crystal Commerce yet tagged "not in CC yet" (set #number ×N). No 📦 head,
+      no second list. While a card's finish is still loading the boxes read "…", never "Magic only for now"
+      (decision 482).
 - [ ] **Where it shows** (decisions 477, 479): with no card selected, only **Auto apply rates?** shows there (no empty
       box). Pick a Pokémon card, or search PKM only: no counter at all, the details box takes the width. On a
       project, a confirmed buy's Edit, a Paid/Ours (locked) overnight buy and Can't upload cards: no counter and no
@@ -217,12 +219,12 @@ what happens. The findings are reported when the pass ends.
       apply rates? checked shows APPLIED straight away, no stamp animation. Pointing at faded n/a boxes doesn't
       brighten them.
 - [ ] **Bonus and cut** (decision 457): a card we've never had (0 and 0): a green "+10% first" chip under the boxes;
-      its box's The rate section lists "+5% first of this printing" and "+5% more, first of this card", So +10%.
+      its box reads "We own none", "+10%", and "First of this printing (+5%) and of this card (+5%)" (decision 518).
       Another printing of a card we own 1–2 of: "+5% first". A card we own 4 of, this printing none: a green "+5%
-      first" and a red "−10% owned" chip side by side, the box says "Together −5%". 3 of the card, this printing
-      none: both chips, "They cancel out". With the inventory unknown (none uploaded): no bonus. A low-end card
-      (under $3) we've never had: no green chip, and the box says "No first-copy bonus on a low-end card" (decision
-      458); one we own 4 of still gets the red chip.
+      first" and a red "−10% owned" chip side by side, the box's change reads "−5%". 3 of the card, this printing
+      none: both chips, "no change", "…: they cancel out". With the inventory unknown (none uploaded): no bonus. A
+      low-end card (under $3) we've never had: no green chip, and the box says "No first-copy bonus on a low-end card"
+      (decision 458); one we own 4 of still gets the red chip.
 - [ ] **n/a** (decision 467): a printing the export would ask to choose a product for (several CC products could
       be it): both boxes read n/a, faded, no chips or stamp, and the price panel's rate is unchanged; pointing says
       why. A grey **(click to match)** chip sits centred under the boxes (decision 470) and opens the same dialog
@@ -235,12 +237,10 @@ what happens. The findings are reported when the pass ends.
       choice and Change still work as before (the same component).
 - [ ] **A forgotten match** (decision 473): after matching that card, forget it in Settings → Crystal Commerce
       matching → Browse remembered products…, go back to the Buy tab and pick the card again: n/a, with no refresh.
-- [ ] **Its CC product named** (decision 499): point at the boxes of a printing with counts: under 📦 Copies we own,
-      "Crystal Commerce Match:" on one line (decision 504) and “<product name> · <category>” on the next, in quotes, all of it bold in
-      blue; a long one is cut with … on that one line (decisions 501, 502). The 📦 COPIES WE OWN head above it
-      reads a little bigger than that line (decision 503). It's the product the export would take. A printing CC holds none
-      of (This printing 0, the card in stock): the line still names its product. An n/a printing, or none
-      uploaded: no such line, only the reason. Match an n/a card (above): the line shows the product picked.
+- [ ] **Its CC product named** (decisions 499, 518): point at the boxes of a printing with counts: the list's first
+      row, marked "this printing", is the product the export would take. A printing CC holds none of (This printing
+      0, the card in stock): that row is still there, at ×0. An n/a printing, or none uploaded: no "this printing"
+      row, "Can't count this printing" and the reason. Match an n/a card (above): the row shows the product picked.
 - [ ] **A match that didn't go through** (decision 500): in DevTools → Network, right-click a request → Block request
       URL, and block `rpc/cc_candidates` (the match's request only; the count still goes through). Pick a Magic
       card CC has: both boxes read **?**, faded, with "(didn't go through: try again)" under them, no (click to
@@ -254,7 +254,7 @@ what happens. The findings are reported when the pass ends.
       only at the very end (decision 462), all in 0.3 s; APPLIED tilts up to the
       right, NOT APPLIED down, and the price panel's Credit / Cash change with it; click again to switch back.
       With Auto apply rates? checked the stamp doesn't switch, and pointing at it says why.
-- [ ] **Apply**: click the boxes to keep the box open, then **Apply ±N%**: the chips go solid with ✓, the price
+- [ ] **Apply**: click the boxes to keep the box open, then **Apply** (it reads **✓ Undo** after): the chips go solid with ✓, the price
       panel's Credit and Cash change, ↑ and a soft green glow for a bonus, ↓ and a red one for a cut, pulsing slowly
       (decisions 472, 481), 16px under the big price, the glow clear of it (decision 480). ADD CARD: the line
       shows ✎ Credit / Cash at those rates. Apply, then pick another card: it isn't applied there. Editing a line:

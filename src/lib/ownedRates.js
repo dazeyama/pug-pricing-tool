@@ -118,6 +118,58 @@ export function ccRowText(p) {
 export const finishWord = (finish) => (finish && finish !== 'nonfoil' ? finish : '');
 
 /**
+ * The printings we own as one list (decision 518): the inventory's products and ours not in it yet together, this
+ * printing first, then most first. Where the inventory could count, the product this printing matched is a row of
+ * its own even with none of it (×0): it says which product the printing is. Ours are `ours` ("not in CC yet").
+ * @param {ReturnType<typeof ownedCounts>|null} c
+ * @returns {{ key: string, text: string, title: string|null, qty: number, this: boolean, ours: boolean }[]}
+ */
+export function ownedRows(c) {
+  if (!c) return [];
+  const product = (p, qty, mine) => ({
+    key: `cc:${p.product_id ?? `${p.category}|${p.name}`}`, text: ccRowText(p), title: `${p.category} · ${p.name}`,
+    qty, this: mine, ours: false,
+  });
+  const rows = c.cc.list.map((p) => product(p, p.qty, p.this));
+  const m = c.cc.match;
+  if (m && c.cc.card != null && !c.cc.list.some((p) => p.this)) rows.push(product(m, 0, true));
+  for (const p of c.ours.list) {
+    rows.push({
+      key: `ours:${p.scryfall_id}|${p.set_code}|${p.number}|${p.finish}`,
+      text: `${p.set_code} #${p.number}${p.set_name ? ` ${p.set_name}` : ''}${finishWord(p.finish) ? ` · ${finishWord(p.finish)}` : ''}`,
+      title: null, qty: p.qty, this: p.this, ours: true,
+    });
+  }
+  return rows.map((r, i) => ({ r, i }))
+    .sort((a, b) => Number(b.r.this) - Number(a.r.this) || b.r.qty - a.r.qty || a.i - b.i)
+    .map(({ r }) => r);
+}
+
+/**
+ * Why the copies we own change the card's rate, in one line (decision 518): "4 copies over 2, at 5% each",
+ * "First of this printing (+5%) and of this card (+5%)"; with nothing to change, why not.
+ * @param {ReturnType<typeof ownedAdjust>|null} adjust
+ * @param {{ lowEndWhy?: string, finish?: string|null }} [o]  lowEndWhy: "low end: cards under $3"
+ */
+export function ownedReason(adjust, { lowEndWhy = '', finish = null } = {}) {
+  if (!adjust) return '';
+  const { cfg } = adjust;
+  const parts = [];
+  const printing = `first of this printing${finishWord(finish) ? ` in ${finishWord(finish)}` : ''} (+${cfg.first_printing}%)`;
+  if (adjust.firstPrinting && adjust.firstCard) parts.push(`${printing} and of this card (+${cfg.first_card}%)`);
+  else if (adjust.firstPrinting) parts.push(printing);
+  else if (adjust.firstCard) parts.push(`first of this card (+${cfg.first_card}%)`);
+  if (adjust.cut > 0) {
+    const capped = adjust.over * cfg.step > cfg.cap ? `, ${cfg.cap}% at most` : '';
+    parts.push(`${adjust.over} ${adjust.over === 1 ? 'copy' : 'copies'} over ${cfg.free}, at ${cfg.step}% each${capped}`);
+  }
+  if (adjust.lowEndNoBonus) parts.push(`no first-copy bonus on a low-end card${lowEndWhy ? ` (${lowEndWhy})` : ''}`);
+  let text = parts.length ? parts.join('; ') : `we have this printing, and ${cfg.free} or fewer of the card`;
+  if (adjust.bonus > 0 && adjust.cut > 0 && adjust.net === 0) text += ': they cancel out';
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+/**
  * Percent off the card's rate for this many copies of the card owned: as shipped, 0 up to 2, then 5 a copy,
  * 50 at most (Settings → Copies we own, decision 474).
  * @param {number} cardCount

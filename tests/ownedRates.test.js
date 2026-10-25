@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   DEFAULT_OWNED, adjustRate, ccRowText, finishWord, isLowEnd, ownedAdjust, ownedCounts, ownedCut, ownedFrom, ownedRates,
+  ownedReason, ownedRows,
   signedPct,
 } from '../src/lib/ownedRates.js';
 
@@ -129,6 +130,49 @@ test('a failed match: unknown and told apart, no rate change; a card never stock
   const never = ownedCounts({ cc_printing: null, cc_card: 0, inventory_at: 'x', cc_match_failed: true });
   assert.equal(never.known, true);
   assert.equal(never.matchFailed, false);
+});
+
+// Owner, 2026-10-24 (decision 518): the box as one verdict and one list.
+test('one list: this printing first, then most first; its product at ×0 when we have none; ours tagged', () => {
+  const wrath = ownedCounts({
+    cc_printing: 1, cc_card: 5, ours_printing: 0, ours_card: 1, inventory_at: 'x',
+    cc_list: [
+      { product_id: 'r', category: 'Revised Edition', name: 'Wrath of God', qty: 2, this: false },
+      { product_id: 'f', category: 'Fourth Edition', name: 'Wrath of God', qty: 1, this: true },
+    ],
+    ours_list: [{ scryfall_id: 's', set_code: 'SLD', set_name: 'Secret Lair Drop', number: '185', finish: 'nonfoil', qty: 1, this: false }],
+    cc_match: { product_id: 'f', category: 'Fourth Edition', name: 'Wrath of God' },
+  });
+  const rows = ownedRows(wrath);
+  assert.deepEqual(rows.map((r) => [r.text, r.qty, r.this, r.ours]), [
+    ['Fourth Edition', 1, true, false],
+    ['Revised Edition', 2, false, false],
+    ['SLD #185 Secret Lair Drop', 1, false, true],
+  ]);
+  // None of this printing in stock: its matched product is a row at ×0, first.
+  const none = ownedCounts({
+    cc_printing: 0, cc_card: 2, inventory_at: 'x',
+    cc_list: [{ product_id: 'r', category: 'Revised Edition', name: 'Wrath of God', qty: 2, this: false }],
+    cc_match: { product_id: 'f', category: 'Fourth Edition', name: 'Wrath of God' },
+  });
+  assert.deepEqual(ownedRows(none).map((r) => [r.text, r.qty, r.this]), [['Fourth Edition', 0, true], ['Revised Edition', 2, false]]);
+  // An inventory without quantities: no ×0 row, the count isn't known.
+  assert.deepEqual(ownedRows(ownedCounts({ cc_card: null, cc_match: { category: 'A', name: 'B' } })), []);
+  assert.deepEqual(ownedRows(null), []);
+});
+
+test('the reason in one line: the cut, the bonuses, a low-end card, nothing to change, cancelling out', () => {
+  const r = (counts, o) => ownedReason(ownedAdjust(ownedCounts(counts), o), o);
+  assert.equal(r({ cc_printing: 1, cc_card: 6 }), '4 copies over 2, at 5% each');
+  assert.equal(r({ cc_printing: 0, cc_card: 0 }), 'First of this printing (+5%) and of this card (+5%)');
+  assert.equal(r({ cc_printing: 0, cc_card: 0 }, { finish: 'foil' }), 'First of this printing in foil (+5%) and of this card (+5%)');
+  assert.equal(r({ cc_printing: 0, cc_card: 2 }), 'First of this printing (+5%)');
+  assert.equal(r({ cc_printing: 0, cc_card: 0 }, { lowEnd: true, lowEndWhy: 'low end: cards under $3' }),
+    'No first-copy bonus on a low-end card (low end: cards under $3)');
+  assert.equal(r({ cc_printing: 1, cc_card: 2 }), 'We have this printing, and 2 or fewer of the card');
+  assert.equal(r({ cc_printing: 0, cc_card: 3 }), 'First of this printing (+5%); 1 copy over 2, at 5% each: they cancel out');
+  assert.equal(r({ cc_printing: 1, cc_card: 20 }), '18 copies over 2, at 5% each, 50% at most');
+  assert.equal(ownedReason(null), '');
 });
 
 // Owner, 2026-10-23 (decision 474): Settings → Copies we own.
