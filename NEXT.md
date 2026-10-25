@@ -52,6 +52,13 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-24: **Secret Lair foils priced from their own product** (decision 510, the owner's ask, Buy tab
+  session): `src/lib/sldFoilProducts.js` (`SLD_FOIL_PRODUCTS`, 673 pairs from TCGplayer's catalogue via
+  tcgcsv.com; `sldFoilLookup`, `sldFoilResult`) wired into `prices.js` `lookupsFor` and `resultFor` beside the
+  surge foils; tests in `tests/sldFoil.test.js`. No JustTCG call was made to check it, so whether JustTCG prices
+  each foil product is untested; 72 of Scryfall's 605 SLD foils with no price aren't covered (most have no
+  TCGplayer product on Scryfall). A new drop needs the table made again: `C:\ClaudeProjects\temp\sld-foils\`,
+  `node rainbow.mjs` then `node write-sld.mjs`. Untested in the app.
 - 2026-10-24 (Records session): **Adding a card folds a collection's details** (decision 509, the owner's item 3 of
   6): `CollectionPage.jsx`'s `list.add` counts each add that went through (`folds`); `CollectionDetails.jsx` folds
   on each new count, even if reopened. Covers ADD CARD, Enter and a phone's scan (all through `list.add`),

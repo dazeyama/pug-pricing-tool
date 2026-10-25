@@ -162,6 +162,9 @@ what happens. The findings are reported when the pass ends.
       "JustTCG's MP …, as JustTCG has no NM price".
 - [ ] **Surge foils priced** (decision 316): `Altered Ego FIC 317` with FOIL is priced (~$0.40, JustTCG's conditions);
       its non-foil ~$0.20.
+- [ ] **Secret Lair foils priced** (decision 510): `Fabricate SLD 2090` with FOIL is priced from JustTCG (its Rainbow
+      Foil, not "no price" and not the non-foil's), its non-foil as before; `Abrade SLD 2179` the same. Hovering NM
+      says JustTCG. A Galaxy Foil, `Aggressive Mining SLD 2108` with FOIL, is priced too.
 - [ ] **Totals** show Cash and Credit at the master 33.34% / 66.68%; cards under $3 or over $35 use the low-end and
       high-end rates.
 - [ ] **Rounding** (decision 478): a card at $12.80 market shows $12.50 (was $12), one at $123.45 shows $123 (was
