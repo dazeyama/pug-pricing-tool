@@ -8,7 +8,15 @@ marks each task done here when it's finished, with the exact file and function o
 
 - **Unpushed** (the main session's line), no migrations or Edge Functions: the stale-page fix (decision 507,
   main session).
-- **For migration 0011, when there's a reason to write one:**
+- **The owner's six items of 2026-10-24** (main session, passed on one per fork at a time):
+  - Passed on: 1, Secret Lair Rainbow Foil prices (Buy tab); 2, a printout's "Borderless" and "Showcase" read
+    Showcase only (Export and printouts); 3, the collection details fold on every ADD CARD (Records).
+  - Waiting: 4, Export and printouts after 2: a collection's or project's Custom SKU `<MMDDYY>-<n>`, n counting
+    that day's collection and project exports together from 1 (migration 0011, dev and prod in one sitting).
+    5, Buy tab after 1: Phyrexian and Dwarven printings that come in English packs found in search, as decision 269.
+    6, projects that skip pricing, in parts: a switch on the project's screen, any time (REPRICE? prices the cards
+    once it's off); cards added while it's on have no price, and the totals say not priced. Records for the switch
+    and its migration, then Buy tab for the Price screen.
   - F2, the backup's 8 s statement limit (decision 430): `backup_export` (one call for every table, 2 to 7.7 s on
     dev) can time out; the fix must keep one read at one instant, so it needs the database. The test run's Backup
     pass hit it once (`restore_backup`, `staff_users`) and passed on the retry.
