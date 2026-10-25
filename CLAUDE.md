@@ -14,21 +14,8 @@ the files added since.
 
 ### The main session and its four forks
 
-A new session that isn't a fork, and whose first message gives no specific task, is the **main session**. Once it
-has done the reading above and told me what's open, it starts the four area sessions below as forks of itself
-(`start_session`, context "fork", initiation "user_asked", one each, with the name and brief below), then stays as
-the hub: questions across areas, NEXT.md's Unpushed line, and the push when I ask. A fork never starts sessions.
-
-| Session (`name`) | Area |
-|---|---|
-| Buy tab (`buy`) | search, prices, rates, copies we own, the buy list, CONFIRM BUY: `src/pages/price/`; in `src/lib/`, `prices`, `rates`, `cardSearch`, `scryfall`, `tcgdex`, `justtcgCards`, `owned*`; the `prices` Edge Function |
-| Records (`records`) | collections, projects, day pages, Calendar, Changelog, header search, statuses, backups, Settings: `src/pages/collections/`, `src/pages/day/`, `DayPage.jsx`, `CollectionPage.jsx`, `src/pages/settings/`; `changelog.js`, `status.js`, `backup*.js` |
-| Export and printouts (`export`) | Crystal Commerce matching, the export dialog, Mass Create, Print MTG / PKM, stickers, Import Collection, the inventory: `src/pages/export/`; `ccMatch.js`, `ccExport.js`, `ccNames.js`, `massCreate.js`, `auditP*.js`, `stickerPdf.js`, `import*.js`, `masterInventory.js` |
-| Phone scanner (`scanner`) | `src/scan/` |
-
-Each fork's brief: "You're the <Session> session, forked from the main session, so its reading is yours: skip Start
-of a session. Your area: <Area>. Wait for my first task. Work in your area; outside it, follow Outside your area
-below. Don't start sessions, push, or run the release skill."
+The main session starts only when I run `/main` (`.claude/skills/main/SKILL.md`: the four area forks, their briefs,
+the hub's jobs). Any other session is a side session, and neither it nor a fork starts sessions (decision 527).
 
 ### Working beside the other sessions
 
