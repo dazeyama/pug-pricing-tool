@@ -18,7 +18,9 @@ marks each task done here when it's finished, with the exact file and function o
   `master_inventory_abort` retired and an automatic match over a staff pick checked (515, Export and printouts);
   `89dcb9d` "Retro Schematic" read as Retro Frame and a schematic family (516, Buy tab); `529361a` memory notes
   are the main session's (517, main session); `f4f5a46` to `7f51f96` the Copies we own box redone as one verdict
-  and one list, from the owner's pick of six mockups (518–525, Buy tab; 520 rolled back); NEXT.md.
+  and one list, from the owner's pick of six mockups (518–525, Buy tab; 520 rolled back); Help brought up to date
+  in the Unslop style, the owner's ask: `b9df8e2` the numbered Custom SKUs (Export and printouts), `610a6e0` Copies
+  we own (Buy tab), `b4a33c5` Skip pricing (Records); NEXT.md.
 - **For a migration, when there's a reason to write one** (0014 or later):
   - F2, the backup's 8 s statement limit (decision 430): `backup_export` (one call for every table, 2 to 7.7 s on
     dev) can time out; the fix must keep one read at one instant, so it needs the database. The test run's Backup
