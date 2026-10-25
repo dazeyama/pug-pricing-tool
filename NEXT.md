@@ -9,7 +9,7 @@ marks each task done here when it's finished, with the exact file and function o
 - **Unpushed** (main session): decisions 527–535, the side session's rules for the main session and its forks
   (`477dc49` to `c1489e5`, 12 commits: `/main`, the test hook, migration numbers from disk, the QA table, three
   tries, the shared-folder git rules, the Done entry as the record, `git status` before another area's file, re-read
-  after a compaction); then the launch clean-up's records (536). Docs and `.claude/` only; nothing the site serves
+  after a compaction); then the launch clean-up's records (536) and the new rollback point's. Docs and `.claude/` only; nothing the site serves
   changes.
 - **From the v1.0.5-rainbow review, not acted on** (main session): SAVE EDIT on a priced card while Skip pricing is
   on clears its price with no warning (`PricingScreen.jsx` ~615, as decision 514 says); an unpriced card's edit
@@ -35,6 +35,14 @@ marks each task done here when it's finished, with the exact file and function o
 - **Known limit, left as is:** how long a copies-we-own count takes on the live site isn't measured.
 
 ## Done
+
+- 2026-10-25: **A rollback point at v1.0.5-rainbow** (main session, the owner's ask): the local tag
+  `rollback-v1.0.5-rainbow` (`3c226bb`, the app the same as v1.0.5-rainbow's `2077f69`; never pushed) and
+  `C:\ClaudeProjects\pug-pricing-tool-backups\backup-20261025-005622-rollback-v1.0.5-rainbow\`: the project copy
+  (`.git`, `.env*`, `supabase\.temp`; no `node_modules` or `dist`), `pug-pricing-tool.bundle` (`--all`, verified),
+  `db-test-run-dev.json` (641 checks, all passed) and `README.txt` with the roll-back steps. Not in it yet: the
+  data backups, the owner's to download (Settings → Download backup, the live site for prod and localhost for
+  dev) into that folder. No migration. Unpushed.
 
 - 2026-10-25: **The launch clean-up** (main session, the owner's ask; decision 536): the PUG scratch from finished
   work in `C:\ClaudeProjects\temp`, `temp\pug-squash` and the three pre-launch project copies in

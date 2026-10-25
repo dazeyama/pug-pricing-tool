@@ -91,8 +91,8 @@ git push origin main
 git push origin vX          # bump only
 ```
 
-**Never `git push --tags`.** Local-only tags (`scanner-attempt-1`; the rollback tags went at the launch clean-up,
-decision 536) stay off GitHub.
+**Never `git push --tags`.** Local-only tags (`scanner-attempt-1`, `rollback-v1.0.5-rainbow`; the older rollback
+tags went at the launch clean-up, decision 536) stay off GitHub.
 
 ## 8. Watch the deploy
 
