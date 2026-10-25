@@ -28,13 +28,15 @@ marks each task done here when it's finished, with the exact file and function o
     session). ("Retro Schematic": done, decision 516.)
 - **The owner's part of the smoke test** (`docs/TEST.md`, dev only): section 10 (the phone), the two-computer and
   network-off cases, and section 19.
-- **Known limits, left as is:** the app can't tell when CC's CSV was taken, so cards exported between taking it and
-  uploading it count as in it (`owned.js`, `owned_copies` compares `cc_exported_at` with the file's `uploaded_at`);
-  how long a copies-we-own count takes on the live site isn't measured.
+- **Known limit, left as is:** how long a copies-we-own count takes on the live site isn't measured.
 - **Later:** the clean-up (the spec's Phase 10 list, `C:\ClaudeProjects\temp\pug-squash\` included) waits until
   prod has run a while.
 
 ## Done
+
+- 2026-10-24: **Closed, accepted** (the owner's call, main session): the app can't tell when CC's CSV was taken, so
+  cards exported between downloading it and uploading it count as in it (`owned_copies` compares `cc_exported_at`
+  with `uploaded_at`). The owner uploads right after downloading and never exports in between.
 
 - 2026-10-24: **Closed** (the owner's call, main session): won't fix, Scryfall's other promo types as matching
   families (`planeswalkerdeck`, `gameday`, `storechampionship` and the rest; about 8 of dev's asks, under the
