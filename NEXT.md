@@ -6,11 +6,6 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
-- **Unpushed** (main session): decisions 527–535, the side session's rules for the main session and its forks
-  (`477dc49` to `c1489e5`, 12 commits: `/main`, the test hook, migration numbers from disk, the QA table, three
-  tries, the shared-folder git rules, the Done entry as the record, `git status` before another area's file, re-read
-  after a compaction); then the launch clean-up's records (536) and the new rollback point's. Docs and `.claude/` only; nothing the site serves
-  changes.
 - **From the v1.0.5-rainbow review, not acted on** (main session): SAVE EDIT on a priced card while Skip pricing is
   on clears its price with no warning (`PricingScreen.jsx` ~615, as decision 514 says); an unpriced card's edit
   reads "$0.00" in the Changelog (`collection_update_line` logs `unit_price` 0; only 0012's add logs none); a
@@ -36,6 +31,11 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-25: **Pushed without a bump** (the owner's ask, the review skipped on the owner's word: "the changes are
+  tiny"), decisions 527–537: the rules for the main session and its forks (527–535, docs and `.claude/` only), the
+  launch clean-up (536) and the rollback point's records, and the Copies we own box's stamp 5px lower with this
+  printing's full name on pointing (537, Buy tab). No migrations (dev and prod both 0001–0013), no Edge Function
+  changes. Nothing unpushed.
 - 2026-10-25: **The box's stamp a little lower; this printing's full name on pointing** (decision 537, the owner's
   ask, Buy tab session): `owned.css` `.owned-body .stamp-btn` 5px lower (measured), `ownedRates.js` `ownedRows`
   title. Untested in the app.
