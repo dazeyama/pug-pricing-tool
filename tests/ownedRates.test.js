@@ -171,7 +171,11 @@ test('the reason in one line: the cut, the bonuses, a low-end card, nothing to c
   assert.equal(r({ cc_printing: 0, cc_card: 0 }, { lowEnd: true, lowEndWhy: 'low end: cards under $3' }),
     'No first-copy bonus on a low-end card (low end: cards under $3)');
   assert.equal(r({ cc_printing: 1, cc_card: 2 }), 'We have this printing, and 2 or fewer of the card');
-  assert.equal(r({ cc_printing: 0, cc_card: 3 }), 'First of this printing (+5%); 1 copy over 2, at 5% each: they cancel out');
+  // One line each (decision 522).
+  assert.equal(r({ cc_printing: 0, cc_card: 3 }), 'First of this printing (+5%);\n1 copy over 2, at 5% each: they cancel out');
+  assert.equal(r({ cc_printing: 0, cc_card: 6 }), 'First of this printing (+5%);\n4 copies over 2, at 5% each');
+  assert.equal(r({ cc_printing: 0, cc_card: 6 }, { lowEnd: true }),
+    '4 copies over 2, at 5% each;\nNo first-copy bonus on a low-end card');
   assert.equal(r({ cc_printing: 1, cc_card: 20 }), '18 copies over 2, at 5% each, 50% at most');
   assert.equal(ownedReason(null), '');
 });

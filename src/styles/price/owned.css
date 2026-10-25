@@ -169,7 +169,8 @@
 .owned-rates { margin: 6px 0 0; font-variant-numeric: tabular-nums; }
 .owned-rates .is-credit { color: var(--credit); font-weight: 700; }
 .owned-rates .is-cash { color: var(--cash); font-weight: 700; }
-.owned-why { margin: 4px 0 0; color: var(--muted); }
+/* Each reason on its own line (decision 522). */
+.owned-why { margin: 4px 0 0; color: var(--muted); white-space: pre-line; }
 .owned-pop-sub {
   margin: 10px 0 2px;
   font-size: 11px;

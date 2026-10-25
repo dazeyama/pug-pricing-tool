@@ -148,8 +148,9 @@ export function ownedRows(c) {
 }
 
 /**
- * Why the copies we own change the card's rate, in one line (decision 518): "4 copies over 2, at 5% each",
- * "First of this printing (+5%) and of this card (+5%)"; with nothing to change, why not.
+ * Why the copies we own change the card's rate (decision 518): "4 copies over 2, at 5% each", "First of this
+ * printing (+5%) and of this card (+5%)"; with nothing to change, why not. Each reason on its own line, ";" at the
+ * end of all but the last (decision 522; the box keeps the line breaks).
  * @param {ReturnType<typeof ownedAdjust>|null} adjust
  * @param {{ lowEndWhy?: string, finish?: string|null }} [o]  lowEndWhy: "low end: cards under $3"
  */
@@ -166,9 +167,10 @@ export function ownedReason(adjust, { lowEndWhy = '', finish = null } = {}) {
     parts.push(`${adjust.over} ${adjust.over === 1 ? 'copy' : 'copies'} over ${cfg.free}, at ${cfg.step}% each${capped}`);
   }
   if (adjust.lowEndNoBonus) parts.push(`no first-copy bonus on a low-end card${lowEndWhy ? ` (${lowEndWhy})` : ''}`);
-  let text = parts.length ? parts.join('; ') : `we have this printing, and ${cfg.free} or fewer of the card`;
-  if (adjust.bonus > 0 && adjust.cut > 0 && adjust.net === 0) text += ': they cancel out';
-  return text.charAt(0).toUpperCase() + text.slice(1);
+  if (!parts.length) parts.push(`we have this printing, and ${cfg.free} or fewer of the card`);
+  if (adjust.bonus > 0 && adjust.cut > 0 && adjust.net === 0) parts[parts.length - 1] += ': they cancel out';
+  // One line each (owner, 2026-10-24; decision 522): "First of this printing (+5%);" over "4 copies over 2, …".
+  return parts.map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(';\n');
 }
 
 /**
