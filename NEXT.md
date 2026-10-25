@@ -22,10 +22,6 @@ marks each task done here when it's finished, with the exact file and function o
     dev) can time out; the fix must keep one read at one instant, so it needs the database. The test run's Backup
     pass hit it once (`restore_backup`, `staff_users`) and passed on the retry.
 - **Matching leftovers (decisions 484–487):**
-  - Not built, on purpose: Scryfall's other promo types as families (`planeswalkerdeck`, `gameday`,
-    `storechampionship`, `wizardsplaynetwork`, `openhouse`, `themepack`, `release`, `judgegift`). CC spells them
-    too many ways, so each needs its spellings read off the inventory first (`src/lib/ccMatch.js` `FAMILIES`,
-    `evidenceTreatments`); about 8 of dev's asks would then match by themselves.
   - The two wrong exported lines' stamps on prod stay unless that day's file must be downloaded again
     (`git show 681c5c6:MATCHING.md`, item 3).
   - From 0010's review: the test-run check of an `auto` sent over a staff row is done (decision 515, Export
@@ -33,15 +29,18 @@ marks each task done here when it's finished, with the exact file and function o
 - **The owner's part of the smoke test** (`docs/TEST.md`, dev only): section 10 (the phone), the two-computer and
   network-off cases, and section 19.
 - **Known limits, left as is:** the app can't tell when CC's CSV was taken, so cards exported between taking it and
-  uploading it count as in it (`owned.js`); how long a copies-we-own count takes on the live site isn't measured;
-  `settings_log` takes the app's sentence as written, and the key and match entries are guarded for a user only by
-  the app; the `settings_save` first-save race is tested only one save after the other; a stored `.gz` can be left
-  in the `master-inventory` bucket if the clearing's last answer is lost (`pruneProducts`,
-  `src/lib/masterInventory.js`).
+  uploading it count as in it (`owned.js`, `owned_copies` compares `cc_exported_at` with the file's `uploaded_at`);
+  how long a copies-we-own count takes on the live site isn't measured.
 - **Later:** the clean-up (the spec's Phase 10 list, `C:\ClaudeProjects\temp\pug-squash\` included) waits until
   prod has run a while.
 
 ## Done
+
+- 2026-10-24: **Closed** (the owner's call, main session): won't fix, Scryfall's other promo types as matching
+  families (`planeswalkerdeck`, `gameday`, `storechampionship` and the rest; about 8 of dev's asks, under the
+  owner's 20-card bar). Accepted as is: `settings_log` taking the app's sentence as written (the key and match
+  entries guarded only by the app); the `settings_save` first-save race tested one save after the other; a `.gz`
+  left in the `master-inventory` bucket if the clearing's last answer is lost (`pruneProducts`).
 
 - 2026-10-24 (Export session): **`master_inventory_abort` retired, and an `auto` over a staff pick checked**
   (decision 515, the owner's ask): migration 0013 drops it, on dev; its test-run checks and its place in the
