@@ -91,6 +91,16 @@ export function matchCategory(result) {
 }
 
 /**
+ * A line's treatments as a printout shows them: a showcase card is Showcase,
+ * never Borderless as well (decision 508; Phyrexia: All Will Be One's showcase
+ * cards are borderless on Scryfall). The Price screen keeps both.
+ */
+function printedTreatments(treatments) {
+  const keys = treatments ?? [];
+  return keys.includes('showcase') ? keys.filter((k) => k !== 'borderless') : keys;
+}
+
+/**
  * One row's parts (team plan 3.5): the name and count; its set ("2X2") and
  * collector number ("117") and condition, which the PDF lines up in chips;
  * its finish and treatments ("Foil", "Borderless"), chips after the name;
@@ -103,7 +113,7 @@ export function auditRow(line, qty = line.quantity, bucket = 'unknown', price = 
     set: String(line.set_code ?? '').toUpperCase(),
     number: String(line.collector_number ?? ''),
     condition: line.condition || 'NM',
-    extras: [FINISH_WORDS[line.finish], ...(line.treatments ?? []).map(magicTreatmentLabel)].filter(Boolean),
+    extras: [FINISH_WORDS[line.finish], ...printedTreatments(line.treatments).map(magicTreatmentLabel)].filter(Boolean),
     bucket,
     price,
   };

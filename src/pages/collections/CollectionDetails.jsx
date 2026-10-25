@@ -116,14 +116,21 @@ export function PaidText({ buy, withMethod = false }) {
  * banners. Unfolded: name, phone, Last 4 ID and notes edited in place, the
  * status dropdown and step button, and who created and last edited it.
  * Always unfolded when a collection opens (owner, 2026-09-30); folding
- * lasts until it's closed.
+ * lasts until it's closed. `folds` counts the cards added: each one folds
+ * the details again, even if they were opened since (decision 509).
  */
 export default function CollectionDetails({
   buy, byId, api, canChangeStatus, statusBlocked, deleteBlocked,
   viewOnly, holder, onTakeOver, onUnlock, onReopen, onUnreject, onInfo, onStatus, onDelete,
   convertBlocked = null, onConvert, printBlocked = null, onPrint, unexportBlocked = null, onUnexport,
+  folds = 0,
 }) {
   const [open, setOpen] = useState(true);
+  const [foldsSeen, setFoldsSeen] = useState(folds);
+  if (folds !== foldsSeen) {
+    setFoldsSeen(folds);
+    setOpen(false);
+  }
   const toggle = () => setOpen((o) => !o);
   if (buy.system_key) return <SystemDetails buy={buy} open={open} onToggle={toggle} viewOnly={viewOnly} holder={holder} onTakeOver={onTakeOver} />;
   // A project (owner, 2026-10-01): no phone, ID, offer or price paid, and

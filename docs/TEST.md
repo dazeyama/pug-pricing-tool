@@ -434,6 +434,9 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
 - [ ] **Rejected:** `SMOKE Rejected`, from Priced, rejected with a reason, locks (no adding, editing or REPRICE?;
       EXPORT downloads the file only), shows $0 paid in red and is left out of the header search unless Show all; **Reopen** goes back to Priced
       with its offer; the Paid/Ours dialog's **Mark as Rejected?** switches to the Reject dialog.
+- [ ] **Adding a card folds the details** (decision 509): on `SMOKE Collection`, with the details open, ADD CARD: they
+      fold to the header bar; open them again, add another (Enter this time): they fold again. The same in a project,
+      and for a card scanned from the phone. SAVE EDIT leaves them as they are.
 - [ ] 📞 on a Priced collection counts calls, each in the Changelog.
 - [ ] REPRICE? on a Processing collection says "rounded down as always".
 - [ ] ⋯ → **Print overnight buy** opens its Magic cards' printout.
@@ -599,6 +602,10 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
 - [ ] **Print MTG in buy order** (decision 444): a past Magic day with two buys: EXPORT ▾ → ◂ Print → Print MTG in
       buy order: one row per card line, the first buy's cards as added, then the second's; no category bands and no
       NM line; the file is `audit-magic-<day>-buy-order.pdf`. A collection has it too, its cards as added.
+- [ ] **Showcase, never Borderless too** (decision 508): a buy with a Phyrexia: All Will Be One showcase card (e.g.
+      Elesh Norn, Mother of Machines, borderless showcase) and a borderless non-showcase card: Print MTG (all) and
+      Print MTG in buy order show the first as **Showcase** only and the second as **Borderless**; the Buy tab's
+      details panel still lists both for the first.
 - [ ] **Print PKM in buy order** (decision 445): the same on a Pokémon day and a collection, after Print PKM?,
       greyed with no Pokémon cards or no connection; the file is `audit-pokemon-<day>-buy-order.pdf`.
 - [ ] **Export single buy (>$1.49)** (decisions 408, 416): a Magic buy's ⋯ → ◂ Export → Export single buy (>$1.49):

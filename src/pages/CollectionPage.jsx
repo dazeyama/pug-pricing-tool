@@ -77,6 +77,7 @@ function CollectionScreen({ id }) {
   const [repricing, setRepricing] = useState(false);    // REPRICE? (owner, 2026-10-01)
   const [dragging, setDragging] = useState(false);      // a file held over the window
   const [dropped, setDropped] = useState(null);         // the CSV dropped, while its import dialog is open
+  const [folds, setFolds] = useState(0);                // cards added: each folds the details (decision 509)
   const keptBuy = useKeptBuy(buy?.kept_buy_id);         // the buy that kept the payment (decision 397)
   const back = () => navigate('/collections');
 
@@ -463,7 +464,12 @@ function CollectionScreen({ id }) {
     lines: col.lines,
     loaded: col.loaded,
     busy: col.busy,
-    add: col.add,
+    // A card added (ADD CARD, Enter or a phone's scan) folds the details (decision 509).
+    add: async (...args) => {
+      const added = await col.add(...args);
+      if (added) setFolds((n) => n + 1);
+      return added;
+    },
     update: col.update,
     remove: col.remove,
     // Struck cards (owner, 2026-10-16): a Paid/Ours collection's × strikes
@@ -531,6 +537,7 @@ function CollectionScreen({ id }) {
               statusBlocked={statusBlocked}
               deleteBlocked={deleteBlocked}
               viewOnly={viewOnly}
+              folds={folds}
               holder={{ label: holderLabel, user: holderUser, since: lock.holder?.since }}
               onTakeOver={() => setAsking('takeover')}
               onUnlock={() => {

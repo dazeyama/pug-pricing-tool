@@ -52,6 +52,15 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-24 (Records session): **Adding a card folds a collection's details** (decision 509, the owner's item 3 of
+  6): `CollectionPage.jsx`'s `list.add` counts each add that went through (`folds`); `CollectionDetails.jsx` folds
+  on each new count, even if reopened. Covers ADD CARD, Enter and a phone's scan (all through `list.add`),
+  overnight buys and projects; SAVE EDIT doesn't fold. `PricingScreen.jsx` unchanged. TEST.md case in section 11.
+  Untested in the app.
+- 2026-10-24 (Export session): **A showcase card prints as Showcase, never Borderless too** (decision 508, the
+  owner's ask, item 2 of 6): every Magic printout drops Borderless from a line that's also Showcase
+  (`src/lib/auditPrint.js` `printedTreatments`, used by `auditRow`; test in `tests/auditPrint.test.js`); the Price
+  screen and the stored treatments are unchanged. TEST.md case in section 14. Untested in the app.
 - 2026-10-24: **A page opened before a push says to reload** (decision 507, the owner's report from work, main
   session): Print MTG on a tab opened before the 11:05 push failed with "Failed to fetch dynamically imported
   module" (the old `auditPdf-DLNn6FRa.js` is a 404 on the live site). `src/main.jsx` listens for

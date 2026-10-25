@@ -139,6 +139,12 @@ test("a row's words", () => {
     name: 'Lightning Bolt', qty: 3, set: '2X2', number: '117', condition: 'MP', extras: ['Foil', 'Borderless', 'Surge foil'],
     bucket: 'red', price: 2.5,
   });
+  // A borderless showcase card prints as Showcase alone (decision 508); Borderless alone stays.
+  const both = auditRow(line({ name: 'Elesh Norn, Mother of Machines', finish: 'foil', treatments: ['borderless', 'showcase'] }));
+  assert.deepEqual(both.extras, ['Foil', 'Showcase']);
+  assert.deepEqual(auditRow(line({ name: 'Ichormoon Gauntlet', treatments: ['borderless'] })).extras, ['Borderless']);
+  assert.deepEqual(auditRow(line({ name: 'Ichormoon Gauntlet', treatments: ['showcase', 'surgefoil'] })).extras,
+    ['Showcase', 'Surge foil']);
   assert.equal(magicTreatmentLabel('extendedart'), 'Extended art');
   assert.equal(magicTreatmentLabel('promopack'), 'Promo pack stamp');
   assert.equal(magicTreatmentLabel('variant:Foil Etched'), 'Foil Etched');
