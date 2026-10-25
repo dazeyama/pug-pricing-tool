@@ -195,17 +195,6 @@
 }
 /* Ours, not in the inventory yet (decision 518). */
 .owned-this.ours { background: rgba(255, 204, 102, .14); color: var(--warn); }
-/* None of this printing in place of ×0, which read like ×1 (decision 520): a word, in its own amber pill. */
-.owned-rows li b.owned-none {
-  padding: 0 8px;
-  border: 1px solid color-mix(in srgb, var(--warn) 55%, transparent);
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: .04em;
-  text-transform: uppercase;
-  color: var(--warn);
-}
 .owned-pop-note { margin: 0; color: var(--muted); }
 .owned-undo { border-color: var(--good); color: var(--good); }
 

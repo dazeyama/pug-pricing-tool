@@ -239,8 +239,7 @@ what happens. The findings are reported when the pass ends.
       matching → Browse remembered products…, go back to the Buy tab and pick the card again: n/a, with no refresh.
 - [ ] **Its CC product named** (decisions 499, 518, 519): point at the boxes of a printing with counts: the list's
       first row, marked "this printing", is the product the export would take, by its full name and category ("Wrath
-      of God · Fourth Edition"); the other rows by category and variant only. With none of this printing, its row
-      ends in an amber **NONE** pill, not ×0 (decision 520). A printing CC holds none of (This printing
+      of God · Fourth Edition"); the other rows by category and variant only. A printing CC holds none of (This printing
       0, the card in stock): that row is still there, at ×0. An n/a printing, or none uploaded: no "this printing"
       row, "Can't count this printing" and the reason. Match an n/a card (above): the row shows the product picked.
 - [ ] **A match that didn't go through** (decision 500): in DevTools → Network, right-click a request → Block request
