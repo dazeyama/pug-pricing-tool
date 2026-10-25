@@ -144,8 +144,9 @@ test('one list: this printing first, then most first; its product at ×0 when we
     cc_match: { product_id: 'f', category: 'Fourth Edition', name: 'Wrath of God' },
   });
   const rows = ownedRows(wrath);
+  // This printing's row by its product's full name (decision 519), the others by category and variant.
   assert.deepEqual(rows.map((r) => [r.text, r.qty, r.this, r.ours]), [
-    ['Fourth Edition', 1, true, false],
+    ['Wrath of God · Fourth Edition', 1, true, false],
     ['Revised Edition', 2, false, false],
     ['SLD #185 Secret Lair Drop', 1, false, true],
   ]);
@@ -155,7 +156,7 @@ test('one list: this printing first, then most first; its product at ×0 when we
     cc_list: [{ product_id: 'r', category: 'Revised Edition', name: 'Wrath of God', qty: 2, this: false }],
     cc_match: { product_id: 'f', category: 'Fourth Edition', name: 'Wrath of God' },
   });
-  assert.deepEqual(ownedRows(none).map((r) => [r.text, r.qty, r.this]), [['Fourth Edition', 0, true], ['Revised Edition', 2, false]]);
+  assert.deepEqual(ownedRows(none).map((r) => [r.text, r.qty, r.this]), [['Wrath of God · Fourth Edition', 0, true], ['Revised Edition', 2, false]]);
   // An inventory without quantities: no ×0 row, the count isn't known.
   assert.deepEqual(ownedRows(ownedCounts({ cc_card: null, cc_match: { category: 'A', name: 'B' } })), []);
   assert.deepEqual(ownedRows(null), []);

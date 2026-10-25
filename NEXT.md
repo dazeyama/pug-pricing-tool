@@ -36,6 +36,9 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-24: **This printing's row names its CC product in full** (decision 519, the owner's ask, Buy tab
+  session): `ownedRates.js` `ownedRows`, "Wrath of God · Fourth Edition" on the "this printing" row only. Untested
+  in the app.
 - 2026-10-24: **The Copies we own box as one verdict and one list** (decision 518, the owner's pick of six mockups,
   https://claude.ai/artifact/5ZCfQSxyU9tfb6gBpD2gJf, Buy tab session): `OwnedCounter.jsx` box rebuilt;
   `ownedRates.js` `ownedRows` (one list, this printing first, its product at ×0 when none) and `ownedReason` (the

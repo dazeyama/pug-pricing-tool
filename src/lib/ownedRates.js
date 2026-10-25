@@ -126,9 +126,11 @@ export const finishWord = (finish) => (finish && finish !== 'nonfoil' ? finish :
  */
 export function ownedRows(c) {
   if (!c) return [];
+  // This printing's row by its product's full name, to be checked here ("Wrath of God · Fourth Edition", as the
+  // match line said; decision 519); the others by what tells them apart (ccRowText).
   const product = (p, qty, mine) => ({
-    key: `cc:${p.product_id ?? `${p.category}|${p.name}`}`, text: ccRowText(p), title: `${p.category} · ${p.name}`,
-    qty, this: mine, ours: false,
+    key: `cc:${p.product_id ?? `${p.category}|${p.name}`}`, text: mine ? `${p.name} · ${p.category}` : ccRowText(p),
+    title: `${p.category} · ${p.name}`, qty, this: mine, ours: false,
   });
   const rows = c.cc.list.map((p) => product(p, p.qty, p.this));
   const m = c.cc.match;
