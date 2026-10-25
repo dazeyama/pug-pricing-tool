@@ -51,6 +51,9 @@ once, and what one leaves half-done is in the others' checks.
 
 - **Just do it, and name it in the handoff:** small changes your own task needs in someone else's files: a caller of
   something you changed, a shared helper or component, `src/state/`, a migration your feature needs, the shared docs.
+  First `git status --short <path>` (decision 534): a file already modified that you didn't touch is another session
+  mid-edit, so message that session (or the main session if you don't know whose it is) before you edit it, and
+  wait; the shared docs are the exception, where the small-Edits rule above already covers it.
 - **Ask me first:** changing how another area behaves (what staff see or what gets exported there), or a large edit
   to another area's main file (`PricingScreen.jsx`, `DayPage.jsx`, `ExportDialog.jsx`, `Scanner.jsx`): another
   session may be mid-edit in it.
