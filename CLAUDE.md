@@ -199,7 +199,8 @@ tests (`npm test`, commit only on `fail 0`) and the build.
 ### Checks
 
 `export PATH="/c/Program Files/nodejs:$PATH"`, then `npx eslint .`, `npm test` and `npm run build`. Edits made with
-Write or Edit are also linted as they're saved (the hook in `.claude/settings.json`).
+Write or Edit are also linted as they're saved, and the unit tests they can affect run (the hooks in
+`.claude/settings.json`; a test failure there is a note, not a block, decision 528).
 
 ### Writing Code Files
 
