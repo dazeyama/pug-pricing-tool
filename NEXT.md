@@ -36,6 +36,8 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-24: **None of this printing says "none", not ×0** (decision 520, the owner's ask, Buy tab session):
+  `OwnedCounter.jsx` row render, `owned.css` `.owned-none`. Untested in the app.
 - 2026-10-24: **This printing's row names its CC product in full** (decision 519, the owner's ask, Buy tab
   session): `ownedRates.js` `ownedRows`, "Wrath of God · Fourth Edition" on the "this printing" row only. Untested
   in the app.

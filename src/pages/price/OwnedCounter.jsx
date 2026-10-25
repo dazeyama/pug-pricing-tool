@@ -274,7 +274,8 @@ export default function OwnedCounter({
                     <span className="owned-row-name" title={r.title ?? undefined}>{r.text}</span>
                     {r.this && <span className="owned-this">this printing</span>}
                     {r.ours && <span className="owned-this ours">not in CC yet</span>}
-                    <b>×{r.qty}</b>
+                    {/* None of this printing: said so, never a ×0 that reads like ×1 (decision 520). */}
+                    {r.qty === 0 ? <b className="owned-none">none</b> : <b>×{r.qty}</b>}
                   </li>
                 ))}
               </ul>
