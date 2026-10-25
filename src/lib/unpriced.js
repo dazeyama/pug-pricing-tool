@@ -29,6 +29,20 @@ export const unpricedFields = (snapshot = {}) => ({
   justtcg_variant_id: null,
 });
 
+/**
+ * A TCGplayer-only Pokémon card's JustTCG card id when nothing was looked up (decision 526): its version carries it,
+ * as a card known only from TCGplayer does, so the line keeps it and REPRICE?, SAVE EDIT and Convert to buy find the
+ * card again. None for a TCGdex card on its own version, nor for Magic: they're found by their own ids.
+ * @param {object} candidate  the selected card (cardSearch candidate)
+ * @param {object|null} version  the Pokémon version chosen
+ * @returns {string|null}
+ */
+export function unpricedCardId(candidate, version) {
+  if (candidate?.game !== 'pokemon') return null;
+  if (version?.tcgplayerOnly && version.justtcgId != null) return String(version.justtcgId);
+  return candidate.source === 'justtcg' && candidate.justtcgId != null ? String(candidate.justtcgId) : null;
+}
+
 /** The price a line is said to be at (the phone's strip, decision 514): none for a card with no price. */
 export const priceOf = (line) => (isUnpriced(line) ? null : line?.unit_price ?? null);
 

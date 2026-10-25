@@ -1,8 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  isUnpriced, noneShowPrice, priceOf, showsNoPrice, unpricedCards, unpricedFields,
+  isUnpriced, noneShowPrice, priceOf, showsNoPrice, unpricedCardId, unpricedCards, unpricedFields,
 } from '../src/lib/unpriced.js';
+import { candidateKeyOf } from '../src/lib/candidateKey.js';
 import { rateTotals } from '../src/lib/rates.js';
 
 // Projects that skip pricing (decision 513): a card added with no price, 'unpriced' at $0.
@@ -47,6 +48,23 @@ test("a card going in with no price: $0 'unpriced', nothing looked up kept, only
   assert.equal(f.justtcg_variant_id, null);
   assert.ok(!Number.isNaN(Date.parse(f.priced_at)));
   assert.deepEqual(unpricedFields().price_snapshot, { skip_pricing: true });
+});
+
+// Decision 526: a TCGplayer-only Pokémon card added while Skip pricing is on keeps its JustTCG card id.
+test("an unpriced TCGplayer-only Pokémon card keeps its own JustTCG card id; others don't take one", () => {
+  // A card known only from TCGplayer: its versions carry the card's id (justtcgVersions).
+  const known = { game: 'pokemon', source: 'justtcg', justtcgId: 'pokemon-jp-x-1' };
+  assert.equal(unpricedCardId(known, { tcgplayerOnly: true, justtcgId: 'pokemon-jp-x-1' }), 'pokemon-jp-x-1');
+  assert.equal(unpricedCardId(known, null), 'pokemon-jp-x-1');   // the candidate's own, failing a version
+  // A TCGdex card on a TCGplayer-only version (Cosmos Holo…): the version's product.
+  const dex = { game: 'pokemon', tcgdexId: 'sv1-1' };
+  assert.equal(unpricedCardId(dex, { tcgplayerOnly: true, justtcgId: 'cosmos-1' }), 'cosmos-1');
+  // A TCGdex card on its own version, and Magic: found by their own ids, unchanged.
+  assert.equal(unpricedCardId(dex, { tcgplayerOnly: false, justtcgId: 'x' }), null);
+  assert.equal(unpricedCardId({ game: 'mtg', justtcgId: 'x' }, null), null);
+  // The line's key then finds the card again (SAVE EDIT), where it was "pokemon:en:jt:null".
+  assert.equal(candidateKeyOf({ game: 'pokemon', lang: 'en', tcgdex_id: null, justtcg_card_id: unpricedCardId(known, null) }),
+    'pokemon:en:jt:pokemon-jp-x-1');
 });
 
 test('the price a line is said to be at: none for a card with no price', () => {

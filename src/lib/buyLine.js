@@ -5,7 +5,7 @@ import { CONDITIONS } from './prices.js';
 import { magicTreatments } from './printings.js';
 import { nameKey } from './normalize.js';
 import * as scry from './scryfall.js';
-import { unpricedFields } from './unpriced.js';
+import { unpricedCardId, unpricedFields } from './unpriced.js';
 
 // Where a fallback price came from → price_source (owner, 2026-09-29).
 const FALLBACK_SOURCES = {
@@ -133,5 +133,8 @@ export function buildLine({
     oracle_id: null,
     tcgdex_id: c.tcgdexId ?? null,   // none for a card known only from TCGplayer
     tcgplayer_id: version.tcgplayerId ?? null,
+    // Skip pricing (decision 526): no price result to take the JustTCG card id from, so a TCGplayer-only card keeps
+    // its own; without it the line could never be found again (REPRICE?, SAVE EDIT, Convert to buy).
+    justtcg_card_id: common.justtcg_card_id ?? (unpriced ? unpricedCardId(c, version) : null),
   };
 }
