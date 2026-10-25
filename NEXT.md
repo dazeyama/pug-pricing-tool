@@ -30,6 +30,12 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-25: **The main session starts with /main; a hook runs the tests an edit can affect** (side session, the
+  owner's ask; decisions 527, 528): the fork table and briefs moved from CLAUDE.md to `.claude/skills/main/SKILL.md`
+  (only the owner can run it), so a session without a task no longer forks; `.claude/hooks/test-edit.mjs`, the
+  second Edit / Write hook in `.claude/settings.json`, runs the tests that import the edited file (directly or
+  through others) and passes a failure on as a note. Not tried yet: the next `/main`, and the hook's first edit
+  in a new session (hooks load at a session's start). Unpushed: 477dc49, 491f4ff and this entry.
 - 2026-10-25: **Pushed as v1.0.5-rainbow** (the owner's ask), decisions 507–526: the stale-page reload message
   (507); the owner's six items: the printout's Showcase only (508), the details folding on ADD CARD (509), Secret
   Lair foils priced from their own product (510), collections' and projects' Custom SKUs numbered by the day (511),
