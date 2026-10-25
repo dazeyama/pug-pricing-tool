@@ -226,3 +226,28 @@ export function creditOfferForLines(cash, lines, rates, priceOf = countedPrice) 
   if (uniform || !rawCash) return creditOfferFor(cash, rates.cash, rates.credit);
   return roundDownPrice((Number(cash) * rawCredit) / rawCash);
 }
+
+/**
+ * The rates a list actually pays (decision 538): its Cash and Credit as a share of its Market, each card at its
+ * own rate, before rounding; and `ratio`, Credit ÷ Cash, the one creditOfferForLines turns a cash offer into
+ * credit with. With every card on the list's rates, or nothing priced yet, they're the list's rates.
+ * @returns {{ cash: number, credit: number, ratio: number|null }}
+ */
+export function listRates(lines, rates, priceOf = countedPrice) {
+  let market = 0;
+  let rawCash = 0;
+  let rawCredit = 0;
+  for (const l of lines) {
+    const r = lineRate(l, rates);
+    const amount = priceOf(l) * l.quantity;
+    market += amount;
+    rawCash += amount * r.cash;
+    rawCredit += amount * r.credit;
+  }
+  if (!market) {
+    const cash = Number(rates.cash);
+    const credit = Number(rates.credit);
+    return { cash, credit, ratio: cash ? credit / cash : null };
+  }
+  return { cash: rawCash / market, credit: rawCredit / market, ratio: rawCash ? rawCredit / rawCash : null };
+}

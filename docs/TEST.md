@@ -437,6 +437,11 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
 - [ ] **+ Overnight buy** needs a name, a 10-digit phone and the Last 4 ID; Create shows what's missing; the name
       suggests past customers and fills the phone, never the Last 4 ID.
 - [ ] `SMOKE Collection`: cards added, **Mark as Priced** (an offer), **Mark as Paid/Ours** (the price paid).
+- [ ] **The rates the list pays** (decision 538): a collection with a $1 card and a $50 card (low end and high end)
+      next to $10 ones: Mark as Priced's Cash and Credit read the list's own rates (each total ÷ Market, not the
+      master 33.34% / 66.68%), and the hint says "the cash offer × N" with N = Credit % ÷ Cash %; typing 100 gives
+      a credit offer of 100 × N, rounded down. With every card between the tiers the labels are the master rates and
+      N is 2. Mark as Paid/Ours shows the same rates.
 - [ ] **EXPORT stamps, doesn't complete** (decision 294): EXPORT on the Paid/Ours collection stamps its Magic cards (the
       Custom SKU chip shows, prices turn green) and leaves it Paid/Ours; EXPORT again says every Magic card is exported.
 - [ ] **Completed by hand:** the status menu or "Mark as Completed →" sets Completed from Paid/Ours; Reopen puts it back

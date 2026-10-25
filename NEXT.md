@@ -31,6 +31,12 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-25 (Records session): **Mark as Priced shows the rates the list pays** (decision 538, the owner's ask):
+  Cash and Credit in Mark as Priced and Mark as Paid/Ours read each total over Market (`listRates`,
+  `src/lib/rates.js`; `Quote`, `src/pages/collections/DealModals.jsx`), and the hint names the ratio the credit
+  offer uses ("the cash offer × 1.79"). No migration. Where to look: a Processing collection with low-end or
+  high-end cards → Mark as Priced → the two percentages and the hint; a list all on the master rates still reads
+  33.34% / 66.68% and × 2. Untested in the app.
 - 2026-10-25: **Pushed without a bump** (the owner's ask, the review skipped on the owner's word: "the changes are
   tiny"), decisions 527–537: the rules for the main session and its forks (527–535, docs and `.claude/` only), the
   launch clean-up (536) and the rollback point's records, and the Copies we own box's stamp 5px lower with this

@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { creditOfferFor, payout } from '../src/lib/money.js';
 import {
-  DEFAULT_TIERS, creditOfferForLines, customNote, lineRate, mixedRateLines, otherRate, rateTotals, tiersFrom,
+  DEFAULT_TIERS, creditOfferForLines, customNote, lineRate, listRates, mixedRateLines, otherRate, rateTotals, tiersFrom,
 } from '../src/lib/rates.js';
 
 // Individual rates (docs/TEAM_FEEDBACK.md 4, owner 2026-10-14).
@@ -127,4 +127,17 @@ test('credit offers: as before on one rate, the same deal on mixed rates', () =>
   // $10 at 33/66 and $40 at 40/70: Cash 3.30 + 16 = 19.30, Credit 6.60 + 28 = 34.60.
   assert.equal(creditOfferForLines(100, [line(10), line(40)], master), 179);   // 179.27 → dollar steps
   assert.equal(creditOfferForLines(null, [line(10)], master), null);
+});
+
+// Decision 538: the rates the list pays, and their ratio, as Mark as Priced shows them.
+test("a list's own rates: the base rates on one rate, the cards' blend on mixed rates", () => {
+  assert.deepEqual(listRates([line(10, { quantity: 4 })], master), { cash: 33, credit: 66, ratio: 2 });
+  assert.deepEqual(listRates([], master), { cash: 33, credit: 66, ratio: 2 }, 'nothing priced: the base rates');
+  // $10 at 33/66 and $40 at 40/70: Cash 19.30 and Credit 34.60 of a $50 Market.
+  const r = listRates([line(10), line(40)], master);
+  assert.equal(Math.round(r.cash * 100) / 100, 38.6);
+  assert.equal(Math.round(r.credit * 100) / 100, 69.2);
+  assert.equal(Math.round(r.ratio * 1000) / 1000, 1.793);
+  // The same ratio the credit offer uses: $100 cash → $179.27, rounded down to $179.
+  assert.equal(creditOfferForLines(100, [line(10), line(40)], master), 179);
 });

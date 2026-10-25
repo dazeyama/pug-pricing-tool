@@ -2,7 +2,7 @@ import { useState } from 'react';
 import Modal from '../../components/Modal.jsx';
 import OwnRateAlert from '../../components/OwnRateAlert.jsx';
 import { formatMoney, parseMoney } from '../../lib/money.js';
-import { creditOfferForLines, rateTotals } from '../../lib/rates.js';
+import { creditOfferForLines, listRates, rateTotals } from '../../lib/rates.js';
 import CustomRateMark from '../../components/CustomRateMark.jsx';
 
 // The deal (owner, 2026-09-29): prices are simple maths, but the price is
@@ -10,21 +10,27 @@ import CustomRateMark from '../../components/CustomRateMark.jsx';
 // made; marking it Paid/Ours records what was actually paid, in cash or
 // credit. Both are typed in, never worked out alone.
 
+/** A rate or a ratio to two decimals at most: 38.71, 33.34, 2. */
+const twoPlaces = (n) => String(Math.round(n * 100) / 100);
+
 /**
  * What the maths says: Market, and Cash / Credit with each card at its own
- * rate (docs/TEAM_FEEDBACK.md 4.4); the labels keep the collection's rates.
+ * rate (docs/TEAM_FEEDBACK.md 4.4). The labels are the rates the list pays,
+ * Cash and Credit over Market (decision 538), so their ratio is the one the
+ * credit offer uses; with every card on the collection's rates, those rates.
  */
 function Quote({ lines, rates }) {
   const t = rateTotals(lines, rates);
+  const paid = listRates(lines, rates);
   const customChip = <CustomRateMark totals={t} />;
   return (
     <div className="confirm-totals">
       <div className="total-row"><span>Market</span><strong>{formatMoney(t.market)}</strong></div>
       <div className="total-row cash">
-        <span>Cash ({Number(rates.cash)}%){customChip}</span><strong>{formatMoney(t.cash)}</strong>
+        <span>Cash ({twoPlaces(paid.cash)}%){customChip}</span><strong>{formatMoney(t.cash)}</strong>
       </div>
       <div className="total-row credit">
-        <span>Credit ({Number(rates.credit)}%){customChip}</span><strong>{formatMoney(t.credit)}</strong>
+        <span>Credit ({twoPlaces(paid.credit)}%){customChip}</span><strong>{formatMoney(t.credit)}</strong>
       </div>
     </div>
   );
@@ -82,6 +88,7 @@ export function OfferModal({ lines, rates, current, busy, onSave, onClose }) {
   const cash = parseMoney(text);
   const credit = creditOfferForLines(cash, lines, rates);
   const mixed = rateTotals(lines, rates).mixed;
+  const paid = listRates(lines, rates);
   const ready = cash != null && !busy;
   const save = () => {
     if (ready) onSave({ cash, credit });
@@ -105,10 +112,12 @@ export function OfferModal({ lines, rates, current, busy, onSave, onClose }) {
           Credit offer <strong>{credit != null ? formatMoney(credit) : '—'}</strong>
         </span>
       </div>
+      {/* The ratio itself (decision 538): Credit ÷ Cash, the rates shown above. */}
       <p className="hint">
+        {paid.ratio != null && <>The credit offer is the cash offer × {twoPlaces(paid.ratio)}, rounded down: </>}
         {mixed
-          ? "The credit offer is the same deal at its cards' rates (their Credit ÷ their Cash), rounded down."
-          : `The credit offer is the same deal at this collection's rates (${Number(rates.cash)}% cash, ${Number(rates.credit)}% credit), rounded down.`}
+          ? `the same deal at its cards' rates (${twoPlaces(paid.credit)}% credit ÷ ${twoPlaces(paid.cash)}% cash).`
+          : `the same deal at this collection's rates (${twoPlaces(paid.credit)}% credit ÷ ${twoPlaces(paid.cash)}% cash).`}
       </p>
     </Modal>
   );
