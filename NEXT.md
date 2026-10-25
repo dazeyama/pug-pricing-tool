@@ -30,6 +30,10 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-25: **After a compaction, re-read the area's state** (side session, the owner's ask; decision 535):
+  CLAUDE.md, Working beside the other sessions, one bullet: before the next edit after a compaction, re-read
+  NEXT.md's entries for your area and the `/main` skill's area table. Where to look: that section. Untested: seen
+  the first time a fork compacts. No migration. Unpushed, with the entries below.
 - 2026-10-25: **Three more fork rules** (side session, the owner's ask; decisions 532–534): CLAUDE.md, Working beside
   the other sessions: stage and commit in one call, never `-A`, `.`, `-u`, `commit -a` or `--amend`, and never
   stash, reset, `checkout --`, restore or clean (532); the NEXT.md section: a Done entry carries where to look,

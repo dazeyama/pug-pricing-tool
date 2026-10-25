@@ -43,6 +43,8 @@ once, and what one leaves half-done is in the others' checks.
   own, undo it with Edit; to see a file as committed, `git show HEAD:<path>`.
 - **Checks run on the whole folder.** When lint, a test or the build fails, look at which file first: another
   session's half-done work isn't yours to fix; say so.
+- **After a compaction** (decision 535), before the next edit, re-read NEXT.md's entries for your area and the
+  `/main` skill's area table: the summary keeps the gist of your work, not the exact state, and both are on disk.
 - **Only the main session pushes**, and only when I ask: a fork never runs the release skill. A push sends every
   session's commits, so before it goes the main session gives the QA table of everything since the last push (the
   `/main` skill, decision 530).
