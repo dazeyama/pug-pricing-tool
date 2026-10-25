@@ -72,8 +72,8 @@ marks each task done here when it's finished, with the exact file and function o
   `buy_lines_unpriced_in_project`; `collection_update_info` takes the switch, `collection_add_line` logs no price),
   reviewed and rehearsed. The switch is in a Paid/Ours project's banner (`CollectionDetails.jsx`); the list shows
   — and a Not priced totals row (`BuyList.jsx`, `src/lib/unpriced.js`); REPRICE? and both Convert to buy… items
-  stop with why (`CollectionPage.jsx`, `RowAction.jsx`). Test-run section "Skip pricing (0012)". **Not done yet:**
-  0012 on dev (the Export session pushes 0011 + 0012 together, then the snapshot and the test run), then prod with
+  stop with why (`CollectionPage.jsx`, `RowAction.jsx`). Test-run section "Skip pricing (0012)". On dev with
+  0011 (the Export session's push, snapshot and test run: all passed, its 13 checks too); **not on prod yet**, with
   0011. Left as is: a card with no price reads "Bought $0" in the export dialog (`ExportDialog.jsx`, the Export
   session's) and $0 in the Changelog's remove, edit and export rows (only the add's row shows none); a Pokémon
   one with no price today prints a 50¢ sticker. Part 2, the Buy tab's: `PricingScreen` reads `list.skipPricing`
