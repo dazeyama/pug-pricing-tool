@@ -28,6 +28,9 @@ marks each task done here when it's finished, with the exact file and function o
     session). ("Retro Schematic": done, decision 516.)
 - **The owner's part of the smoke test** (`docs/TEST.md`, dev only): section 10 (the phone), the two-computer and
   network-off cases, and section 19.
+- **Copies we own: ×0 vs ×1 on this printing's row** (the owner's, Buy tab; decision 520's "none" was rolled back,
+  it took too much room): tell ×0 from ×1 on that row in a way that takes no more room (`OwnedCounter.jsx`, the
+  rows' render).
 - **Known limit, left as is:** how long a copies-we-own count takes on the live site isn't measured.
 - **Later:** the clean-up (the spec's Phase 10 list, `C:\ClaudeProjects\temp\pug-squash\` included) waits until
   prod has run a while.
@@ -97,8 +100,7 @@ marks each task done here when it's finished, with the exact file and function o
   session): `OwnedCounter.jsx` (`applyButton`, `stampButton`), `owned.css` (`.owned-apply`, `.owned-body`).
   Untested in the app.
 - 2026-10-24: **Rolled back: "none" for ×0 on this printing's row** (decision 520, the owner's call, Buy tab
-  session): `75c70ca` reverted, it took too much room. Still open from the owner: telling ×0 from ×1 on that row,
-  in a way that takes no more room (`OwnedCounter.jsx`, the rows' render).
+  session): `75c70ca` reverted, it took too much room. Telling ×0 from ×1 on that row: under Open.
 - 2026-10-24: **This printing's row names its CC product in full** (decision 519, the owner's ask, Buy tab
   session): `ownedRates.js` `ownedRows`, "Wrath of God · Fourth Edition" on the "this printing" row only. Untested
   in the app.
