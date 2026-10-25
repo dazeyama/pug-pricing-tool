@@ -645,14 +645,20 @@ Each number is Crystal Commerce's quantity, from the last Master Crystal Invento
 store's own copies that aren't in it yet: cards in Paid/Ours buys and collections not exported, and
 cards exported since that upload. Placeholders don't count.
 
-**Pointing at the boxes** opens **📦 Copies we own**. Clicking them keeps it open.
+**Pointing at the boxes** opens a box under them. Clicking the boxes keeps it open.
 
-- *We own 3 copies of this printing and 8 copies of this card.*
-- **In Crystal Commerce** lists each of its products for the card, with its quantity. **Ours, not in it
-  yet** lists the store's own copies by printing. **this printing** marks the selected one.
-- **The rate** says what changes it and why, then the rates it comes to, with what they pay for this
-  card. A $10 card at Credit 60% / Cash 40% reads *So −10%: Credit 54% / Cash 36% ($5.25 / $3.50)*.
-- **Apply −10%** puts that rate on the card. Clicked again (**✓ −10% on ADD CARD: undo**), it comes off.
+- The top line says what the store owns and what that does to the rate: *We own 4 · 1 of this
+  printing*, then the change. It reads **−10%** in red, **+10%** in green, or *no change*.
+- Under it, **Credit** and **Cash** at that rate: a card at Credit 60% / Cash 40% reads *Credit 54% /
+  Cash 36%*. The price panel shows what they pay.
+- Then the reason. Each reason has its own line, so a new printing of a card the store has 6 of reads
+  *First of this printing (+5%);* over *4 copies over 2, at 5% each*.
+- The stamp sits beside them, red **NOT APPLIED** or green **APPLIED**. Clicking it applies the rate or
+  takes it off.
+- **The printings we own** lists every copy in one list, most first. The selected printing comes first,
+  marked **this printing**, by its Crystal Commerce product's full name: *Wrath of God · Fourth
+  Edition*. It reads ×0 when the store has none of it. Copies that aren't in Crystal Commerce yet are
+  marked **not in CC yet**.
 
 **The rate.** With the numbers Settings starts with:
 
@@ -670,18 +676,18 @@ cards exported since that upload. Placeholders don't count.
 Under the boxes, a **green chip** shows a bonus (*+10% first*) and a **red chip** the cut (*−10%
 owned*). A ✓ marks them once the rate is applied.
 
-**APPLIED / NOT APPLIED.** Whenever there's a rate to suggest, an ink stamp under the chips says whether
-the card goes on at it: red **NOT APPLIED** or green **APPLIED**. Clicking the stamp switches it, as
-Apply does. Once applied, the price panel's **Credit** and **Cash** show the new amounts with **↑** or
-**↓** and a soft glow, and hovering them says *for the copies we own*.
+**Apply.** Whenever there's a rate to suggest, a button under the chips applies it: **Apply −10%**.
+Once clicked it reads **✓ −10% applied**, and a second click takes the rate off. The stamp in the box
+switches with it. Once applied, the price panel's **Credit** and **Cash** show the new amounts with
+**↑** or **↓** and a soft glow, and hovering them says *for the copies we own*.
 
 **ADD CARD** adds the card at the applied rate as **its own rate**, tinted with a ✎ in the list, as Set
 Rate does. Right-click → **Set Rate** or **Clear Rate** changes it afterwards. Editing a line never
-changes its rate: the stamp says to use Set Rate instead.
+changes its rate: Apply is greyed out, and pointing at it says to use Set Rate instead.
 
 **Auto apply rates?** sits above the boxes. Ticked, every card added to the buy goes on at its
-suggested rate without a click, cards from a paired phone included. The stamp then can't be clicked.
-Cards already on the list keep their rates.
+suggested rate without a click, cards from a paired phone included. Apply then reads **✓ −10% auto**
+and can't be clicked, and neither can the stamp. Cards already on the list keep their rates.
 
 - It belongs to the buy. An overnight buy keeps it with its details. A walk-in buy keeps it until it's
   confirmed or cancelled.
@@ -691,8 +697,8 @@ Cards already on the list keep their rates.
   fails, the card goes on at its usual rate and a message says so.
 - With no card selected, the checkbox shows on its own.
 
-**n/a.** When the count can't be made, both boxes read **n/a**, faded, with no chips and no stamp. The
-rate isn't changed. Pointing at them says why:
+**n/a.** When the count can't be made, both boxes read **n/a**, faded, with no chips and no Apply. The
+rate isn't changed. Pointing at them says *Can't count this printing*, and why:
 
 - No Master Crystal Inventory is uploaded.
 - The inventory was uploaded before the app kept quantities. Uploading it again fixes it.
@@ -704,6 +710,11 @@ same choice EXPORT asks. The worker picks the product and presses **SAVE**. **CA
 everything as it was. Once saved, the counts show at once, EXPORT uses that product for this printing,
 and it joins Settings → Crystal Commerce matching's remembered products. Forgetting it there brings the
 n/a back, with no refresh needed.
+
+**?** means the match to Crystal Commerce didn't go through. Most often the connection dropped. Both
+boxes read **?**, faded, and **(didn't go through: try again)** shows under them. Pointing at them says
+*Didn't go through*. Clicking the chip or the boxes counts the card again, and so does picking the card
+again. The rate isn't changed until it does.
 
 ### The buy list
 
