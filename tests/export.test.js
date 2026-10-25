@@ -5,7 +5,7 @@ import { sellPriceFor } from '../src/lib/sellPrice.js';
 import { settingSummary } from '../src/lib/settingText.js';
 import { targetOf } from '../src/lib/changelog.js';
 import {
-  customSkuFor, customSkuForDay, fileSafe, massCreateCsv, massCreateRows, nearMintPrice, nearMintPrices, withoutRestamps,
+  confirmSku, customSkuFor, customSkuForDay, fileSafe, massCreateCsv, massCreateRows, nearMintPrice, nearMintPrices, withoutRestamps,
 } from '../src/lib/massCreate.js';
 
 // docs/EXPORT_FUNCTION.md 5.3: the buy steps, upward.
@@ -211,4 +211,15 @@ test('the Custom SKU of a calendar day', () => {
   assert.equal(customSkuForDay('2026-10-16'), '101626');
   assert.equal(customSkuForDay('2026-06-07'), '60726');
   assert.equal(customSkuForDay('2026-11-01'), '110126');
+});
+
+// A collection's or project's number of the day is given when it saves (decision 511).
+test('the Custom SKU the Confirm step shows', () => {
+  const when = new Date('2026-10-24T20:00:00Z');
+  assert.equal(confirmSku({ kind: 'day', day: '2026-10-16' }, false, when), '101626');
+  assert.equal(confirmSku({ kind: 'buy', day: '2026-10-16', number: 42 }, false, when), '101626-42');
+  assert.equal(confirmSku({ kind: 'collection' }, false, when), '102426-#');
+  assert.equal(confirmSku({ kind: 'collection' }, true, when), '102426');
+  assert.equal(confirmSku({ kind: 'cant_upload' }, false, when), '102426');
+  assert.equal(confirmSku({ kind: 'pulled' }, false, when), '102426');
 });

@@ -642,6 +642,12 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
 - [ ] The review screen shows **sets NM $X** on such a card, with the working on hover.
 - [ ] EXPORT on a day or collection already exported downloads the same file again; nothing changes.
 - [ ] A card that can't match goes to **Can't upload cards** and isn't in the file.
+- [ ] **A collection's number of the day** (decision 511): export two Paid/Ours collections (or a collection and a
+      project) the same day: the Confirm step reads Custom SKU **102426-#** (today's date as every SKU writes it, no
+      leading zero on the month), "# the day's next collection number"; the files' Custom SKU column reads `102426-1`
+      then `102426-2` (or the day's next ones), each in its own Changelog entry. EXPORT on the first again downloads
+      its file with its own number; Undo export… then EXPORT gives it the next number, not its old one. A day page's
+      EXPORT and Export single buy keep the day's date and the day's date with the buy's number.
 - [ ] **An export with the connection gone** (decisions 362, 371): wifi off, press Export: it says it may have
       exported and to look at the page; wifi on, press Export again: it exports once, or, if the first went through,
       downloads that file. A retry never exports the same cards twice.

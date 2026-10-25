@@ -15,6 +15,7 @@ declare
   v_names  text[] := '{}';
   v_master numeric;
   v_auto   boolean;
+  v_skip   boolean;
 begin
   if p_user is null then
     raise exception 'no_user';
@@ -29,6 +30,13 @@ begin
                     or coalesce((p_fields ->> 'auto_rates')::boolean, false)) then
     raise exception 'project_rates';
   end if;
+  -- Skip pricing is true or false, and a project's only (decision 513).
+  if p_fields ? 'skip_pricing' and jsonb_typeof(p_fields -> 'skip_pricing') is distinct from 'boolean' then
+    raise exception 'bad_skip_pricing';
+  end if;
+  if not b.project and coalesce((p_fields ->> 'skip_pricing')::boolean, false) then
+    raise exception 'skip_pricing_project';
+  end if;
   v_name := b.customer_name;
   v_phone := b.phone;
   v_notes := b.notes;
@@ -36,6 +44,7 @@ begin
   v_cash := b.custom_cash_pct;
   v_credit := b.custom_credit_pct;
   v_auto := b.auto_rates;
+  v_skip := b.skip_pricing;
 
   if p_fields ? 'name' then
     v_name := btrim(regexp_replace(coalesce(p_fields ->> 'name', ''), '\s+', ' ', 'g'));
@@ -118,13 +127,23 @@ begin
     end if;
   end if;
 
+  -- Skip pricing (decision 513): the cards added from now on go in with no price.
+  if p_fields ? 'skip_pricing' then
+    v_skip := coalesce((p_fields ->> 'skip_pricing')::boolean, false);
+    if v_skip is distinct from b.skip_pricing then
+      v_rows := v_rows || jsonb_build_object('field', 'skip pricing',
+        'before', case when b.skip_pricing then 'on' else 'off' end, 'after', case when v_skip then 'on' else 'off' end);
+      v_names := v_names || 'skip pricing'::text;
+    end if;
+  end if;
+
   if jsonb_array_length(v_rows) = 0 then
     return;
   end if;
 
   update buys
      set customer_name = v_name, phone = v_phone, id_last4 = v_last4, notes = v_notes,
-         custom_cash_pct = v_cash, custom_credit_pct = v_credit, auto_rates = v_auto,
+         custom_cash_pct = v_cash, custom_credit_pct = v_credit, auto_rates = v_auto, skip_pricing = v_skip,
          version = version + 1, updated_at = now(), last_edited_by = p_user
    where id = p_buy_id
   returning * into b;

@@ -6,6 +6,11 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
+- **Dev is ahead of prod: migrations 0011 (Export session, decision 511) and 0012 (Records, decision 513) are on dev
+  only** (pushed 2026-10-24). Prod takes both together at the owner's moment, after the store closes (CLAUDE.md
+  Database step 6, `--project-ref zvxquzcfffmxwizonxuo`, then the structure-only compare against
+  `C:/ClaudeProjects/temp/pug-dbrun-0011-0012.json`). The app code that goes with them isn't pushed before prod has
+  them: 0011's Confirm step would say "102426-#" while prod still stamps "102426".
 - **Unpushed** (the main session's line), no migrations or Edge Functions: `33e7915` the stale-page fix (507, main
   session); `afd9088` the printout's Showcase only (508, Export and printouts) and the details folding on ADD CARD
   (509, Records), one commit; `3482a9e` Secret Lair foils priced from their own product (510, Buy tab); `70cc049`
@@ -54,6 +59,14 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-24 (Export session): **A collection's or project's Custom SKU is its day and its number that day**
+  (decision 511, the owner's item 4): "102426-1", "102426-2", collections and projects counted together, from 1
+  each store day. Migration 0011 (`internal.collection_sku_days`, `internal.collection_sku`, the collection branch
+  of `public.export_lines`), on dev; the Confirm step shows "102426-#" (`massCreate.js` `confirmSku`,
+  `ExportDialog.jsx`). Tests: `tests/export.test.js`, the test run's Export and Security sections. Untested in the
+  app. For the owner to decide: whether Can't upload cards and Bulk pulled from exports get numbers too (now
+  today's date, as before); a collection or project exported twice the same day (a project in two batches) gets two
+  numbers; a file-only download keeps today's date. Help's The file → Custom SKU row (`README.md`) is out of date.
 - 2026-10-24 (Records session): **Projects that skip pricing, part 1** (decision 513, the owner's item 6):
   migration 0012 (`buys.skip_pricing`; `price_source` `'unpriced'` at $0; the trigger
   `buy_lines_unpriced_in_project`; `collection_update_info` takes the switch, `collection_add_line` logs no price),

@@ -252,9 +252,15 @@ begin
    where ns.nspname in ('public', 'internal') and p.prosecdef;
   perform pg_temp.ok(s, 'Only the expected functions run with the owner''s rights',
     -- internal.request_begin / request_end (0004): the only way to the done requests, which the app can't read.
-    v = 'internal.insert_event, internal.remember_customer, internal.request_begin, internal.request_end, '
-        || 'public.cc_products_load, public.master_inventory_abort, public.master_inventory_finish, '
-        || 'public.master_inventory_prune, public.restore_backup', v);
+    -- internal.collection_sku (0011): the only way to the collections' numbers of the day.
+    v = 'internal.collection_sku, internal.insert_event, internal.remember_customer, internal.request_begin, '
+        || 'internal.request_end, public.cc_products_load, public.master_inventory_abort, '
+        || 'public.master_inventory_finish, public.master_inventory_prune, public.restore_backup', v);
+  perform pg_temp.ok(s, 'The collections'' numbers of the day can''t be read or changed by the app (0011)',
+    not has_table_privilege('authenticated', 'internal.collection_sku_days', 'SELECT')
+    and not has_table_privilege('authenticated', 'internal.collection_sku_days', 'UPDATE')
+    and not has_table_privilege('anon', 'internal.collection_sku_days', 'SELECT')
+    and not has_function_privilege('anon', 'internal.collection_sku(timestamptz)', 'EXECUTE'));
 
   select string_agg(ns.nspname || '.' || p.proname, ', ' order by ns.nspname || '.' || p.proname) into v
     from pg_proc p join pg_namespace ns on ns.oid = p.pronamespace
@@ -2420,7 +2426,9 @@ declare
   v_c uuid := pg_temp.id('coll');
   c1 uuid := pg_temp.id('coll_bolt');
   cp uuid := pg_temp.id('coll_pika');
-  v_sku text := internal.cc_custom_sku(now());
+  v_today text := internal.cc_custom_sku(now());
+  v_sku text;
+  v_n integer;
   v_x uuid;
   v_c3 uuid;
   v_pp uuid;
@@ -2448,10 +2456,16 @@ begin
   v := export_lines(jsonb_build_object('kind', 'collection', 'buy_id', v_c, 'version', pg_temp.version(v_c)),
                     jsonb_build_array(pg_temp.match(c1, 'DBTEST-P1', 1.25)), '{}', '[]', u, a);
   perform pg_temp.ok(s, 'EXPORT stamps a Paid/Ours collection''s Magic cards; its status stays (0073)',
-    (v ->> 'cards')::integer = 3 and v ->> 'sku' = v_sku
+    (v ->> 'cards')::integer = 3
     and (select status = 'paid' and completed_at is null from buys where id = v_c)
     and (select cc_status = 'exported' from buy_lines where id = c1)
     and (select cc_status is null from buy_lines where id = cp), v::text);
+  -- Its Custom SKU is today and its number of the day (decision 511): "102426-3".
+  v_sku := v ->> 'sku';
+  perform pg_temp.ok(s, '… its Custom SKU today''s date and its number of the day (0011)',
+    v_sku ~ ('^' || v_today || '-[1-9][0-9]*$')
+    and (select cc_custom_sku = v_sku from buy_lines where id = c1), v::text);
+  v_n := split_part(v_sku, '-', 2)::integer;
   perform pg_temp.ok(s, '… and the Changelog says so',
     exists (select 1 from events where target_id = v_c and action = 'collection_exported'
               and summary = format('Exported 3 cards (Custom SKU %s).', v_sku)));
@@ -2509,8 +2523,9 @@ begin
   end;
   v := export_lines(jsonb_build_object('kind', 'collection', 'buy_id', v_c, 'version', pg_temp.version(v_c)),
                     jsonb_build_array(pg_temp.match(c1, 'DBTEST-P1', 1.25)), '{}', '[]', u, a);
-  perform pg_temp.ok(s, '… and EXPORT offers the cards again',
-    (v ->> 'cards')::integer = 3 and (select cc_status = 'exported' and cc_custom_sku = v_sku from buy_lines where id = c1), v::text);
+  perform pg_temp.ok(s, '… and EXPORT offers the cards again, with the next number: an undone one isn''t given again (0011)',
+    (v ->> 'cards')::integer = 3 and v ->> 'sku' = v_today || '-' || (v_n + 1)
+    and (select cc_status = 'exported' and cc_custom_sku = v_today || '-' || (v_n + 1) from buy_lines where id = c1), v::text);
   -- An exported card is frozen (0081): in a Paid/Ours customer collection, × can't remove or strike it.
   begin
     perform collection_remove_line(c1, 1, u, a, null, null);
@@ -2543,6 +2558,12 @@ begin
     and (select cc_status is null from buy_lines where id = v_c3)
     and exists (select 1 from events where target_id = v_x and action = 'collection_unexported'
                   and summary = 'Export undone: 2 cards no longer marked exported; 2 taken back out of Can''t upload cards or Bulk pulled from exports.'), v::text);
+  -- Another collection the same day: the count is shared, and the export above with nothing to stamp took no number.
+  v := export_lines(jsonb_build_object('kind', 'collection', 'buy_id', v_x, 'version', pg_temp.version(v_x)),
+                    jsonb_build_array(pg_temp.match(v_c3, 'DBTEST-P4', 1.25)), '{}', '[]', u, a);
+  perform pg_temp.ok(s, 'A second collection the same day takes the next number; one with nothing exported took none (0011)',
+    v ->> 'sku' = v_today || '-' || (v_n + 2)
+    and (select cc_custom_sku = v_today || '-' || (v_n + 2) from buy_lines where id = v_c3), v::text);
 
   v_pp := project_create('DBTEST Pokémon Project', '', u, a);
   perform lock_acquire(v_pp, a, u);
@@ -3553,27 +3574,6 @@ exception when others then
   perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
 end $$;
 
--- ============================================= Backup pass (its own run)
--- db-test-run.mjs runs everything above in one transaction and the Backup checks below in a second (decision 448):
--- their three full restores take about a minute on dev, and one pass over it all outgrew the 100 s the API waits
--- for an answer. The second pass has the kit, Staff and computers and the Buy tab (buy1) too; this is the one
--- thing it needs from the Export checks, which have made it already in the first.
-reset role;
-insert into cc_set_map (scryfall_set, promo_kind, category, source, updated_at, updated_by)
-values ('dbt', '', 'DBTEST Set', 'staff', now(), null)
-on conflict (scryfall_set, promo_kind) do nothing;
-set local role authenticated;
-
--- ======================================================= Backup and restore
--- The restore resets the Changelog's numbering; it's set back after.
-reset role;
-select pg_temp.put('events_seq_before_restore', (select last_value::text from events_seq_seq));
-set local role authenticated;
-
-do $$
-declare
-  s text := 'Backup';
-  u uuid := pg_temp.id('u1');
 -- ========================================= Projects that skip pricing (0012)
 do $$
 declare
@@ -3669,6 +3669,27 @@ exception when others then
   perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
 end $$;
 
+-- ============================================= Backup pass (its own run)
+-- db-test-run.mjs runs everything above in one transaction and the Backup checks below in a second (decision 448):
+-- their three full restores take about a minute on dev, and one pass over it all outgrew the 100 s the API waits
+-- for an answer. The second pass has the kit, Staff and computers and the Buy tab (buy1) too; this is the one
+-- thing it needs from the Export checks, which have made it already in the first.
+reset role;
+insert into cc_set_map (scryfall_set, promo_kind, category, source, updated_at, updated_by)
+values ('dbt', '', 'DBTEST Set', 'staff', now(), null)
+on conflict (scryfall_set, promo_kind) do nothing;
+set local role authenticated;
+
+-- ======================================================= Backup and restore
+-- The restore resets the Changelog's numbering; it's set back after.
+reset role;
+select pg_temp.put('events_seq_before_restore', (select last_value::text from events_seq_seq));
+set local role authenticated;
+
+do $$
+declare
+  s text := 'Backup';
+  u uuid := pg_temp.id('u1');
   a uuid := pg_temp.id('devA');
   v_counts jsonb;
   v_payload jsonb;

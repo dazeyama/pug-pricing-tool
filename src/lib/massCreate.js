@@ -101,6 +101,20 @@ export function customSkuForDay(day) {
 }
 
 /**
+ * The Custom SKU the export dialog's Confirm step shows, as the server will stamp it: a day page's is
+ * its day; a single buy's that day and the buy's number; a collection's or project's today and its
+ * number of the day, given only when it saves (decision 511), so "102426-#"; Can't upload cards',
+ * Bulk pulled from exports' and a file-only download's, today.
+ * @param {{ kind: string, day?: string, number?: number }|null} target
+ */
+export function confirmSku(target, fileOnly = false, when = new Date()) {
+  if (target?.kind === 'day') return customSkuForDay(target.day);
+  if (target?.kind === 'buy' && target.day) return `${customSkuForDay(target.day)}-${target.number}`;
+  if (target?.kind === 'collection' && !fileOnly) return `${customSkuFor(when)}-#`;
+  return customSkuFor(when);
+}
+
+/**
  * The file's rows from exported lines (each with its cc_* stamps and
  * quantity): lines with the same product, condition and Sell Price merge,
  * their quantities added; sorted by Category, Product Name, then condition.

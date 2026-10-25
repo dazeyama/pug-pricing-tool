@@ -81,7 +81,9 @@ begin
   perform collection_event(b, p_user, p_device, 'collection_cards_added', array[r.game], (internal.line_counts(array[r])).cards, 0,
     internal.lines_totals(b, array[v_rec]),
     jsonb_build_array(jsonb_build_object('sign', '+', 'qty', r.quantity, 'bulk_per', internal.bulk_per(r.bulk_kind), 'game', r.game,
-      'unit_price', r.unit_price, 'text', coalesce(p_text, r.quantity || ' ' || r.name),
+      -- No price for a card added with none (decision 513): the Changelog shows none, not $0.
+      'unit_price', case when r.price_source = 'unpriced' then null else r.unit_price end,
+      'text', coalesce(p_text, r.quantity || ' ' || r.name),
       'cash_pct', internal.line_pct(v_rec, b, 'cash'), 'credit_pct', internal.line_pct(v_rec, b, 'credit'))),
     '[]', sentence(internal.lines_count_text(array[r]) || ' added'));
   perform internal.request_end(p_request, v_line::text);

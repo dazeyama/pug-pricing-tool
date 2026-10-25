@@ -7,7 +7,7 @@ import { useDevice } from '../../state/device.jsx';
 import { useToast } from '../../components/Toast.jsx';
 import { lineTextWithCondition } from '../../lib/lineFormat.js';
 import { formatMoney } from '../../lib/money.js';
-import { CONDITION_WORDS, customSkuFor, customSkuForDay, massCreateRows, nearMintPrices, productKey } from '../../lib/massCreate.js';
+import { CONDITION_WORDS, confirmSku, customSkuFor, massCreateRows, nearMintPrices, productKey } from '../../lib/massCreate.js';
 import {
   downloadMassCreate, exportLanded, forgetLink, linkKey, matchLines, saveExport, saveLink, saveSetMap, sellPrices,
 } from '../../lib/ccExport.js';
@@ -335,11 +335,9 @@ export default function ExportDialog({
     setReopened((s) => new Set(s).add(r.line.id));
   }
 
-  // The Custom SKU the server will stamp (0071): a day page's is its day; a single buy's
-  // that day with the buy's number; a collection's, project's or Can't upload's is today's.
-  const skuText = target?.kind === 'day' ? customSkuForDay(target.day)
-    : target?.kind === 'buy' && target.day ? `${customSkuForDay(target.day)}-${target.number}`
-      : customSkuFor(new Date());
+  // The Custom SKU the server will stamp (0071; a collection's number of the day, decision 511).
+  const skuText = confirmSku(target, Boolean(fileOnly));
+  const skuNumbered = skuText.endsWith('-#');
   /** The matched lines as the file will have them: its rows (the Confirm step's count) and NM prices. */
   const fileLines = groups.matched.map((r) => ({
     cc_status: 'exported',
@@ -721,7 +719,7 @@ export default function ExportDialog({
                 <>
                   Export <strong>{toExport} card{toExport === 1 ? '' : 's'}</strong> ({previewRows().length} row
                   {previewRows().length === 1 ? '' : 's'}) to a Crystal Commerce Mass Create file, Custom SKU{' '}
-                  <strong>{skuText}</strong>.{' '}
+                  <strong>{skuText}</strong>{skuNumbered && ", # the day's next collection number, given when it's saved"}.{' '}
                   {pullOut ? <>The cards here become <strong>Completed</strong>.</> : <>They leave Can't upload cards.</>}
                 </>
               ) : pullOut ? (
