@@ -1084,8 +1084,9 @@ EXPORT sends the collection's Magic cards to Crystal Commerce. See
 
 **Print MTG?**, **Print PKM?** and **Print PKM Stickers?** work in every status.
 
-An exported collection shows its **Custom SKU** in the list heading, whatever its status. Its
-exported cards' prices show in green. Those are its Sell Prices.
+An exported collection shows its **Custom SKU**, such as `102426-2`, in the list heading, whatever its
+status. Crystal Commerce finds the collection's cards by it, apart from any other collection exported
+that day. Its exported cards' prices show in green. Those are its Sell Prices.
 
 **EXPORT ▾** opens two groups. Pointing at a group, or clicking it, opens its items to its left.
 **◂ Print** holds **Print MTG (all)**, **Print MTG (>$1.49)** and **Print MTG in buy order**, the audit
@@ -1104,8 +1105,8 @@ Rate.
 Undo export… is in the ⋯ menu once the collection or project has been exported. It asks first, then
 takes the export back. The exported Magic cards lose their Custom SKU, product and Sell Price, so
 EXPORT offers them again, and their copies in Can't upload cards come back out. The status doesn't
-change, whatever it is. The Changelog shows *Export undone (Custom SKU 101826): 3 cards no longer
-marked exported*.
+change, whatever it is. The Changelog shows *Export undone (Custom SKU 101826-1): 3 cards no longer
+marked exported*. Exported again, it takes the day's next number, not its old one.
 
 It doesn't undo the file already downloaded. If the file was uploaded to Crystal Commerce, someone
 takes those rows out there by hand. Like EXPORT, it needs this computer to be the one editing the
@@ -1500,7 +1501,8 @@ choice.
 
 ### 3. Confirm
 
-Confirm shows a summary: how many cards, how many rows, and the **Custom SKU**.
+Confirm shows a summary: how many cards, how many rows, and the **Custom SKU**. For a collection or
+project it reads `102426-#`, because the number is given when the export is saved.
 
 If any cards can't upload, a red list names them. On a (>…) export, the pulled cards are listed in
 amber under them. The worker pulls those cards out of the physical batch and ticks **I've pulled these
@@ -1545,7 +1547,7 @@ After the export, Sell Prices show in green wherever the card appears.
 | | |
 |---|---|
 | **Name** | `cc-mass-create-magic-2026-10-06.csv` for a day. Collections and single buys get their own names. |
-| **Custom SKU** | A date, month-day-year, with no leading zero on the month: 10/09/26 is `100926`, 6/17/26 is `61726`. A day's export uses **the day's** date, whenever it's run. A single buy's adds the buy's number: `101626-42`. A collection's, a project's and Can't upload cards' use today's. It's on every row. |
+| **Custom SKU** | A date, month-day-year, with no leading zero on the month: 10/09/26 is `100926`, 6/17/26 is `61726`. A day's export uses **the day's** date, whenever it's run. A single buy's adds the buy's number: `101626-42`. A collection's or project's adds its number of the day: the first one exported on 10/24/26 is `102426-1`, the next `102426-2`. Collections and projects count together, and the count starts again at 1 each day. Each export takes the next number, so a collection undone and exported again gets a new one. Can't upload cards, Bulk pulled from exports and a file-only download use today's date alone. It's on every row. |
 | **Conditions** | Near Mint, Lightly Played, Moderately Played, Heavily Played, Damaged. |
 | **Rows** | One per product and condition. Quantities are added together. |
 | **Quantity** | Added to the stock already in Crystal Commerce. |

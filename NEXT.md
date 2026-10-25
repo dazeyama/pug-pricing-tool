@@ -36,6 +36,10 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-24: **Help's Copies we own brought up to date** (the owner's ask, Buy tab session): `README.md` Buy →
+  Copies we own for decisions 500 and 518–525 (one verdict and one list, the full CC name on this printing's row,
+  the plain Apply under the boxes and the stamp in the box, reasons one to a line, no amounts, "?"). Settings →
+  Copies we own needed no change.
 - 2026-10-24: **Today's work tested by the owner** (main session): the six items (508–514), Retro Schematic (516)
   and the Copies we own box (518–525), tried in the app as they landed. Closed.
 
