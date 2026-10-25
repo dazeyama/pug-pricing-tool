@@ -182,8 +182,13 @@ const FAMILIES = [
   { key: 'textless', name: 'Textless', re: /textless/i, words: /textless/gi },
   // A Japanese printing (owner, 2026-10-16): "Japanese Alternate Art", "Japanese", "(JP Exclusive)".
   { key: 'japanese', name: 'Japanese', re: /japanese|\bjp\b/i, words: /(japanese|\bjp\b)( alternate art)?/gi },
+  // A Phyrexian-language printing (decision 512): "Elesh Norn, Mother of Machines - Phyrexian". Scryfall's language
+  // says it surely, so not an evidence family. (CC writes no word for the Dwarven and Elvish ones.)
+  { key: 'phyrexian', name: 'Phyrexian', re: /\bphyrexian\b/i, words: /\bphyrexian\b/gi },
 ];
 const FAMILY = new Map(FAMILIES.map((f) => [f.key, f]));
+/** A printing's language families: a product without the card's language is another printing (decisions 269, 512). */
+const LANGUAGE_FAMILIES = ['japanese', 'phyrexian'];
 
 /** Magic's later reprints in an old look (Mystery Booster 2's): CC names their frame or border; the originals' it doesn't. */
 const LATER_REPRINT_FROM = '2008-01-01';
@@ -366,7 +371,7 @@ export function scoreCandidate(line, cand, { expected, flavor }) {
  *  - the evidence first thins them: when one carries our collector number, the unnumbered ones are other
  *    printings; a set code in brackets that isn't our number's prefix is another printing;
  *  - one product is left; or, setting aside every product that is clearly another printing (it shows a trait
- *    the card hasn't, it lacks the card's Japanese, or it has the same words in another foil kind), one is left;
+ *    the card hasn't, it lacks the card's Japanese or Phyrexian, or it has the same words in another foil kind), one is left;
  *  - or the leader shows only the card's traits, in its foil kind, and every other product left shows strictly
  *    fewer of the leader's words (plain ⊂ "Showcase" ⊂ a borderless showcase card: the fullest is taken).
  * A word the matcher can't read (an extra word, "Anime", "Scrolls"; or one with no family, "Gold-Stamped
@@ -433,7 +438,7 @@ function certainProduct(line, ranked, { home, numbered, flavor }) {
   const unread = ({ v }) => v.extra.length > 0 || v.other.length > 0;
   const ourFoil = ({ r }) => !r.product.foil_kind || fold(r.product.foil_kind) === wantFoil;
   const clearlyOther = (x) => [...x.v.families].some((f) => !mine.has(f))
-    || (mine.has('japanese') && !x.v.families.has('japanese'))
+    || LANGUAGE_FAMILIES.some((f) => mine.has(f) && !x.v.families.has(f))
     || (!unread(x) && !ourFoil(x));
   let pick = null;
   if (pool.length === 1) pick = pool[0];

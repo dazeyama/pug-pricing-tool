@@ -24,11 +24,15 @@ const STAMPS = {
 };
 
 /** Fixed display order for the usual traits; special foils and stamps follow. */
-const ORDER = ['borderless', 'showcase', 'extendedart', 'fullart', 'retro', 'textless', 'serialized', 'japanese'];
+const ORDER = ['borderless', 'showcase', 'extendedart', 'fullart', 'retro', 'textless', 'serialized', 'japanese',
+  'phyrexian', 'dwarven', 'elvish'];
 const TRAIT_LABELS = {
   borderless: 'Borderless', showcase: 'Showcase', extendedart: 'Extended art', fullart: 'Full art',
   retro: 'Retro frame', textless: 'Textless', serialized: 'Serialized', japanese: 'Japanese',
+  phyrexian: 'Phyrexian', dwarven: 'Dwarven', elvish: 'Elvish',
 };
+/** The invented languages English packs carry (decision 512): Scryfall's code → its trait. */
+const LANGUAGE_TRAITS = { ph: 'phyrexian', dw: 'dwarven', qya: 'elvish' };
 
 function foilName(key) {
   return SPECIAL_FOILS[key] ?? `${key.replace(/foil$/, '').replace(/^./, (c) => c.toUpperCase())} foil`;
@@ -59,6 +63,9 @@ export function magicTraits(card, finish = null) {
   if (promos.includes('serialized')) t.set('serialized', TRAIT_LABELS.serialized);
   // A Japanese-only printing (owner, 2026-10-16): a checkbox beside the set's English one.
   if (card.lang === 'ja') t.set('japanese', TRAIT_LABELS.japanese);
+  // A Phyrexian, Dwarven or Elvish printing, the same way (decision 512).
+  const language = LANGUAGE_TRAITS[card.lang];
+  if (language) t.set(language, TRAIT_LABELS[language]);
   for (const p of promos) {
     if ((SPECIAL_FOILS[p] || /foil$/.test(p)) && finish !== 'nonfoil') t.set(`foil:${p}`, foilName(p));
     if (STAMPS[p]) t.set(`stamp:${p}`, STAMPS[p]);

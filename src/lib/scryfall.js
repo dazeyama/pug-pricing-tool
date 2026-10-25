@@ -230,9 +230,13 @@ export function keepListed(card, number) {
  * one, else the printing's own language. So the Japanese printings English
  * packs carry (Mystical Archive's Japanese alternate art: "Cyclonic Rift SOA
  * 79") come up in a plain English search, the Japanese copies of English
- * cards don't, and other languages' own printings are left out.
+ * cards don't, and other languages' own printings are left out. The invented
+ * languages English packs carry too (decision 512): Phyrexian ("ph": Elesh
+ * Norn ONE 285), Dwarven ("dw": Mox Amber HOC 96) and Elvish ("qya", Quenya:
+ * Sol Ring LTC 408). Scryfall has no other printing in them.
  */
-export const keptLanguage = (card) => card.lang === 'en' || card.lang === 'ja';
+export const KEPT_LANGUAGES = ['en', 'ja', 'ph', 'dw', 'qya'];
+export const keptLanguage = (card) => KEPT_LANGUAGES.includes(card.lang);
 
 /**
  * A promo printing: prerelease, promo pack, event and store promos (Scryfall's

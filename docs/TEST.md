@@ -101,6 +101,11 @@ what happens. The findings are reported when the pass ends.
       shows both (the number first, as printed); `rootborn def 21` shows MM3 21 and PLST MM3-21, not RVR-26.
 - [ ] **Japanese Magic printings:** `Cyclonic Rift SOA 79` is marked **JP**; where the set has the card in English too,
       the **Japanese** checkbox in Details flips between the two.
+- [ ] **Phyrexian, Dwarven and Elvish printings** (decision 512): `Elesh Norn, Mother of Machines` shows ONE 285 (in
+      Phyrexian) among its printings, with **Phyrexian** in Details flipping to the English ONE 10; `Mox Amber` shows
+      HOC 96 (**Dwarven**); `Sol Ring` shows LTC 408–410 (**Elvish**). No German, French or other copies. EXPORT a
+      day with the Phyrexian Elesh Norn: Matched to "Elesh Norn, Mother of Machines - Phyrexian"; the English one to
+      the plain product, not Needs a choice.
 - [ ] Right-click on a suggestion searches its name; Newest / Oldest first sorts the printings; **… show all** opens
       every match (arrows move, Enter picks, Esc closes).
 - [ ] **Japanese Pokémon prices:** JP on, `025/165 SV2a` (Pikachu) shows JustTCG prices, not only Cardmarket.

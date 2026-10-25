@@ -54,6 +54,13 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-24: **Phyrexian, Dwarven and Elvish printings in English searches** (decision 512, the owner's ask, Buy tab
+  session): `scryfall.js` `keptLanguage` keeps `ph`, `dw` and `qya` (`KEPT_LANGUAGES`), so the Buy tab, the
+  details' siblings and Import Collection find them; `printings.js` `magicTraits` gives each a language trait;
+  `ccMatch.js` reads CC's " - Phyrexian" as a family (`LANGUAGE_FAMILIES`). Tests in `tests/packLanguages.test.js`.
+  Left as is: no tag on the line or a JP-style badge on the suggestion (the line stays `lang` en; the database
+  allows only en and ja), and the phone scanner's own name search (`src/scan/`) wasn't looked at. Untested in
+  the app.
 - 2026-10-24: **Secret Lair foils priced from their own product** (decision 510, the owner's ask, Buy tab
   session): `src/lib/sldFoilProducts.js` (`SLD_FOIL_PRODUCTS`, 673 pairs from TCGplayer's catalogue via
   tcgcsv.com; `sldFoilLookup`, `sldFoilResult`) wired into `prices.js` `lookupsFor` and `resultFor` beside the
