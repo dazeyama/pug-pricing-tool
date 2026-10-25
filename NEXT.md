@@ -30,6 +30,9 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-25: **Migration numbers read from disk** (side session, the owner's ask; decision 529): CLAUDE.md, Working
+  beside the other sessions: the next migration is the one after the last file in `supabase/migrations/`, committed
+  at once to claim it. The suggested HANDOFF.md not made (529 says why). Unpushed, with the entry below.
 - 2026-10-25: **The main session starts with /main; a hook runs the tests an edit can affect** (side session, the
   owner's ask; decisions 527, 528): the fork table and briefs moved from CLAUDE.md to `.claude/skills/main/SKILL.md`
   (only the owner can run it), so a session without a task no longer forks; `.claude/hooks/test-edit.mjs`, the

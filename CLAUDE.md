@@ -26,6 +26,9 @@ once, and what one leaves half-done is in the others' checks.
   writing a decision row, read the highest number on disk (`grep -oE '^\| [0-9]+ \|' docs/DESIGN_SPEC.md | tr -dc
   '0-9\n' | sort -n | tail -1`), never CODE_MAP's, memory's or this conversation's, take the next one, and commit
   the row with its change straight away. A code comment cites the number the row ended up with.
+- **Migration numbers collide too.** Right before writing a migration, take the next number after the last file in
+  `supabase/migrations/` (`ls supabase/migrations | tail -1`), never Where it stands', NEXT.md's, memory's or this
+  conversation's, and commit the file straight away (unapplied is fine) so the number is claimed (decision 529).
 - **NEXT.md collides.** Another session may have changed it since you read it: re-read the part you'll touch, change
   only your own entries with small Edits (never a rewrite of the file), and name your session in each entry. The
   Unpushed line is the main session's.
