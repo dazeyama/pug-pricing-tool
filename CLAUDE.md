@@ -34,8 +34,13 @@ once, and what one leaves half-done is in the others' checks.
   Unpushed line is the main session's.
 - **TEST.md collides.** Re-read before editing; add your cases in your area's section; leave the case count in the
   header to the main session.
-- **Commits:** stage your files by path (`git add <path>…`, never `-A` or `.`). A shared doc may also hold another
-  session's edit; committing it with yours is fine, said in the handoff.
+- **Commits:** stage and commit in one call (`git add <path>… && git commit …`), by path, never `-A`, `.`, `-u` or
+  `commit -a`: the sessions share one index, so files left staged go out in whichever session commits next, and a
+  sweep takes another session's edits. Never `--amend`: the last commit may be another session's. A shared doc may
+  also hold another session's edit; committing it with yours is fine, said in the handoff.
+- **Never stash, reset, `checkout --`, `restore` or `clean`** (decision 532). The uncommitted edits in the folder may
+  be another session's half-done change, and those commands throw them away with no trace. To drop an edit of your
+  own, undo it with Edit; to see a file as committed, `git show HEAD:<path>`.
 - **Checks run on the whole folder.** When lint, a test or the build fails, look at which file first: another
   session's half-done work isn't yours to fix; say so.
 - **Only the main session pushes**, and only when I ask: a fork never runs the release skill. A push sends every
