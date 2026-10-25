@@ -16,9 +16,10 @@ import CollectionDetails from './collections/CollectionDetails.jsx';
 import { collectionKind, collectionRates, isClosed, statusLabel, statusText } from './collections/status.js';
 import { tiersFrom } from '../lib/rates.js';
 import { isStruck, movesOn } from '../lib/struck.js';
+import { isUnpriced } from '../lib/unpriced.js';
 import { ConfirmModal, ConvertToBuyModal, DeleteCollectionModal, RejectModal } from './collections/CollectionModals.jsx';
 import { OfferModal, PaidModal } from './collections/DealModals.jsx';
-import { PROJECT_EXPORTED, useCollection, useKeptBuy } from './collections/useCollection.js';
+import { PROJECT_EXPORTED, UNPRICED_CONVERT, useCollection, useKeptBuy } from './collections/useCollection.js';
 import { useCollectionLock } from './collections/useCollectionLock.js';
 import ExportButton from '../components/ExportButton.jsx';
 import { useBulkCut, useSettings } from '../state/settings.jsx';
@@ -136,6 +137,8 @@ function CollectionScreen({ id }) {
     // The way out named (owner, 2026-10-22; decision 452).
     [!col.lines.some((l) => !isStruck(l) && !l.cc_status),
       'Every card here is exported, so their prices stay: ⋯ → Undo export… first to reprice them'],
+    // Skip pricing (decision 513): no price lookups while it's on.
+    [buy?.skip_pricing, 'Skip pricing is on: turn it off to price the cards'],
   ]);
 
   // A CSV dropped on an empty collection or project imports into it (owner,
@@ -425,6 +428,8 @@ function CollectionScreen({ id }) {
     [buy?.status === 'completed', 'Completed: reopen it (back to Ours) first'],   // a project's word (decision 427)
     [exportedLines.length > 0, PROJECT_EXPORTED],
     [!col.lines.length, 'No cards to convert'],
+    // A buy is never unpriced (decision 513): its cards priced first.
+    [col.lines.some(isUnpriced), UNPRICED_CONVERT],
   ]);
   // Undo export… (owner, 2026-10-18; decision 298): from the computer holding the lock, like EXPORT.
   const unexportBlocked = firstReason([
@@ -472,6 +477,8 @@ function CollectionScreen({ id }) {
     },
     update: col.update,
     remove: col.remove,
+    // Skip pricing (decision 513): a project's cards go in with no price while it's on.
+    skipPricing: Boolean(buy?.project && buy?.skip_pricing),
     // Struck cards (owner, 2026-10-16): a Paid/Ours collection's × strikes
     // first; not a project's or Can't upload cards' (× removes at once).
     // Restore wherever a struck card could be removed.
@@ -538,6 +545,7 @@ function CollectionScreen({ id }) {
               deleteBlocked={deleteBlocked}
               viewOnly={viewOnly}
               folds={folds}
+              busy={col.busy}
               holder={{ label: holderLabel, user: holderUser, since: lock.holder?.since }}
               onTakeOver={() => setAsking('takeover')}
               onUnlock={() => {

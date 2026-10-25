@@ -3574,6 +3574,101 @@ do $$
 declare
   s text := 'Backup';
   u uuid := pg_temp.id('u1');
+-- ========================================= Projects that skip pricing (0012)
+do $$
+declare
+  s text := 'Skip pricing (0012)';
+  u uuid := pg_temp.id('u1');
+  a uuid := pg_temp.id('devA');
+  bd uuid := pg_temp.id('devB');
+  unpriced jsonb := '{"unit_price": 0, "market_price": null, "price_source": "unpriced", "priced_at": null}';
+  p uuid;
+  c uuid;
+  dr uuid;
+  l1 uuid;
+  l2 uuid;
+begin
+  p := project_create('DBTEST Skip Project', '', u, a);
+  perform lock_acquire(p, a, u);
+  perform collection_update_info(p, '{"skip_pricing": true}', u, a, pg_temp.version(p));
+  perform pg_temp.ok(s, 'A project can skip pricing, in the Changelog (0012)',
+    (select skip_pricing from buys where id = p)
+    and exists (select 1 from events where action = 'collection_info_edited' and target_id = p
+                  and fields = '[{"field": "skip pricing", "before": "off", "after": "on"}]'::jsonb));
+  begin
+    perform collection_update_info(p, '{"skip_pricing": "yes"}', u, a, pg_temp.version(p));
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, '… true or false only', sqlerrm, 'bad_skip_pricing');
+  end;
+
+  l1 := collection_add_line(p, pg_temp.line('Dbtest Skip', 'DBS', '001', 1, 0) || unpriced, true, u, a, null, null);
+  perform collection_add_line(p, pg_temp.line('Dbtest Skip', 'DBS', '001', 1, 0) || unpriced, true, u, a, null, null);
+  perform pg_temp.ok(s, 'Its cards go in with no price, and two copies make one line (0012)',
+    (select price_source = 'unpriced' and unit_price = 0 and quantity = 2 from buy_lines where id = l1)
+    and (select count(*) from buy_lines where buy_id = p) = 1);
+  perform pg_temp.ok(s, '… and the Changelog shows no price for them, not $0',
+    (select count(*) from events where action = 'collection_cards_added' and target_id = p) = 2
+    and not exists (select 1 from events where action = 'collection_cards_added' and target_id = p
+                      and lines -> 0 -> 'unit_price' is distinct from 'null'::jsonb));
+  begin
+    perform collection_add_line(p, pg_temp.line('Dbtest Skip', 'DBS', '002', 1, 1) || '{"unit_price": 1, "price_source": "unpriced"}',
+                                true, u, a, null, null);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.ok(s, 'A card with no price is at $0', sqlerrm like '%buy_lines_unpriced_check%', sqlerrm);
+  end;
+  begin
+    perform collection_add_line(p, pg_temp.bulk('mtg_100_common', 1, 0) || '{"price_source": "unpriced"}', true, u, a, null, null);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.ok(s, '… and never bulk', sqlerrm like '%buy_lines_bulk_check%', sqlerrm);
+  end;
+
+  c := collection_create('DBTEST Skip Collection', null, '', u, a);
+  perform lock_acquire(c, a, u);
+  begin
+    perform collection_update_info(c, '{"skip_pricing": true}', u, a, pg_temp.version(c));
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'An overnight buy can''t skip pricing', sqlerrm, 'skip_pricing_project');
+  end;
+  begin
+    perform collection_add_line(c, pg_temp.line('Dbtest Skip', 'DBS', '001', 1, 0) || unpriced, true, u, a, null, null);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, '… nor take a card with no price', sqlerrm, 'unpriced_cards');
+  end;
+  dr := draft_for_device(bd, u);
+  begin
+    perform draft_add_line(bd, pg_temp.line('Dbtest Skip', 'DBS', '001', 1, 0) || unpriced, u, true);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, '… nor a walk-in buy', sqlerrm, 'unpriced_cards');
+  end;
+  perform draft_cancel(dr);
+
+  begin
+    perform project_to_buy(p, u, a, 'DBTEST Skip Buyer', '5550100041', 2, 'credit', '', 50, 65, pg_temp.version(p));
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'Convert to buy refuses a project with a card not priced', sqlerrm, 'unpriced_cards');
+  end;
+  perform pg_temp.ok(s, '… and leaves it as it was', exists (select 1 from buys where id = p)
+    and (select buy_id = p from buy_lines where id = l1));
+
+  perform collection_update_info(p, '{"skip_pricing": false}', u, a, pg_temp.version(p));
+  perform collection_reprice(p, jsonb_build_array(jsonb_build_object('line_id', l1, 'unit_price', 1.5, 'market_price', 3,
+    'price_source', 'justtcg', 'price_snapshot', '{}'::jsonb)), u, a, pg_temp.version(p));
+  perform pg_temp.ok(s, 'Switched off, REPRICE? prices it (0012)',
+    not (select skip_pricing from buys where id = p)
+    and (select price_source = 'justtcg' and unit_price = 1.5 from buy_lines where id = l1));
+
+  -- An export can still send one to Can't upload cards, unpriced; its Sell Price is the export's.
+  -- (Every Magic card still here goes in the export: l1 too.)
+  l2 := collection_add_line(p, pg_temp.line('Dbtest Skip', 'DBS', '003', 1, 0) || unpriced, true, u, a, null, null);
+  perform export_lines(jsonb_build_object('kind', 'collection', 'buy_id', p, 'version', pg_temp.version(p)),
+                       '[]', array[l1, l2], '[]', u, a);
+  perform pg_temp.ok(s, 'A card with no price can go to Can''t upload cards (0012)',
+    exists (select 1 from buy_lines where source_line_id = l2 and price_source = 'unpriced'));
+exception when others then
+  declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;
+  perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
+end $$;
+
   a uuid := pg_temp.id('devA');
   v_counts jsonb;
   v_payload jsonb;

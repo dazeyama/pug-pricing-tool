@@ -492,6 +492,13 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       project it's greyed on the project's own ⋯, and the table's ⋯ stops with the same message before the dialog
       ("Part of this project is exported: Undo export… first, only if…"; decision 339).
 - [ ] A project can be marked Completed with no export.
+- [ ] **Skip pricing** (decision 513, part 1; the Price screen's part is the Buy tab's): on `SMOKE Project`'s banner,
+      **Skip pricing: off** → **⚡ Skip pricing: on** (amber); the banner says cards go in with no price, the
+      Changelog has "Details edited: skip pricing" (off → on), and REPRICE? is greyed ("Skip pricing is on…"). A card
+      with no price (once part 2 is in) shows **—** in the list, its tooltip says why, and the totals have an amber
+      **Not priced** row with Market, Cash and Credit leaving it out (— when no card has a price, no mixed-rates \*).
+      Convert to buy… is greyed ("Some cards here have no price…"). Off again: REPRICE? prices those cards, the
+      row goes, and Convert to buy works. An overnight buy's banner has no such button.
 - [ ] **Ours on a project** (decision 427): Export MTG csv (all) on a project asks "Mark this project Completed?" in
       words that say **Ours**, as its chip does, never Paid/Ours; a greyed Convert to buy… gives its reason the same
       way.

@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ConvertToBuyModal, DeleteCollectionModal } from './CollectionModals.jsx';
-import { PROJECT_EXPORTED, useCollection } from './useCollection.js';
+import { PROJECT_EXPORTED, UNPRICED_CONVERT, useCollection } from './useCollection.js';
+import { isUnpriced } from '../../lib/unpriced.js';
 import { collectionRates } from './status.js';
 import { tiersFrom } from '../../lib/rates.js';
 import { useDevice } from '../../state/device.jsx';
@@ -34,6 +35,8 @@ export default function RowAction({ id, action, onClose }) {
   // Gone before (or while) its dialog was open, nothing to convert, or exported (decision 339:
   // the table's list doesn't load the cards, so it can't grey the item).
   const exported = col.lines.some((l) => l.cc_status);
+  // Cards with no price (decision 513): a buy is never unpriced, so it stops here, as on the project's own ⋯.
+  const unpriced = col.lines.some(isUnpriced);
   useEffect(() => {
     if (!col.loaded || done.current) return;
     if (col.missing) {
@@ -45,9 +48,12 @@ export default function RowAction({ id, action, onClose }) {
     } else if (action === 'convert' && buy && exported) {
       toast(PROJECT_EXPORTED, 'err');
       onClose();
+    } else if (action === 'convert' && buy && unpriced) {
+      toast(`${UNPRICED_CONVERT}.`, 'err');
+      onClose();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps -- action is fixed for the dialog's life; onClose and toast are the caller's
-  }, [col.loaded, col.missing, buy, col.lines.length, exported]);
+  }, [col.loaded, col.missing, buy, col.lines.length, exported, unpriced]);
 
   if (!col.loaded || !buy) return null;
 

@@ -10,6 +10,7 @@ import { BULK_ITEMS, bulkItem, bulkShortText, cardCounts, countText, isValuedBul
 import CustomRateMark from '../../components/CustomRateMark.jsx';
 import RemoveModal from '../../components/RemoveModal.jsx';
 import { isStruck, struckNote } from '../../lib/struck.js';
+import { NOT_PRICED_TIP, isUnpriced, noneShowPrice, showsNoPrice, unpricedCards } from '../../lib/unpriced.js';
 import { PULLED_TIP, frozenNote } from '../collections/useCollection.js';
 import { useStaff } from '../../state/staff.jsx';
 import { GAMES } from '../../lib/games.js';
@@ -334,10 +335,15 @@ function Totals({
 }) {
   const [ratesOpen, setRatesOpen] = useState(false);
   const toast = useToast();
-  const t = rateTotals(lines, rates);
+  // A project's cards with no price (decision 513): left out, or at $0 they'd read as low-end; counted apart.
+  const priced = lines.filter((l) => !showsNoPrice(l));
+  const notPriced = unpricedCards(lines);
+  const noFigure = noneShowPrice(lines);
+  const money = (n) => (noFigure ? '—' : formatMoney(n));
+  const t = rateTotals(priced, rates);
   const customChip = <CustomRateMark totals={t} />;
   // Mixed rates (decision 413): a * by Cash and Credit, and pointing at the row lists each group.
-  const mixed = mixedRateLines(lines, rates);
+  const mixed = mixedRateLines(priced, rates);
   const mixedTitle = mixed.length ? `Mixed rates:\n${mixed.map((m) => `• ${m}`).join('\n')}` : undefined;
   const star = mixed.length > 0 && <span className="mixed-rate-mark" aria-label="Mixed rates">*</span>;
   const pct = (which, label) => {
@@ -364,12 +370,17 @@ function Totals({
   };
   return (
     <div className="totals">
-      <div className="total-row"><span>Market</span><strong>{formatMoney(t.market)}</strong></div>
+      {notPriced > 0 && (
+        <div className="total-row not-priced" title="Added while Skip pricing was on: EXPORT works out their Sell Prices; REPRICE? prices them once it's off">
+          <span>Not priced</span><strong>{notPriced} card{notPriced === 1 ? '' : 's'}</strong>
+        </div>
+      )}
+      <div className="total-row"><span>Market</span><strong>{money(t.market)}</strong></div>
       <div className="total-row cash" title={mixedTitle}>
-        <span>{pct('cash', 'Cash')}{star}{customChip}</span><strong>{formatMoney(t.cash)}</strong>
+        <span>{pct('cash', 'Cash')}{star}{customChip}</span><strong>{money(t.cash)}</strong>
       </div>
       <div className="total-row credit" title={mixedTitle}>
-        <span>{pct('credit', 'Credit')}{star}{customChip}</span><strong>{formatMoney(t.credit)}</strong>
+        <span>{pct('credit', 'Credit')}{star}{customChip}</span><strong>{money(t.credit)}</strong>
       </div>
       {ratesOpen && (
         <RatesPanel
@@ -668,10 +679,11 @@ export default function BuyList({
                   {/* The same column before and after an export: a Sell price is green. */}
                   <span
                     className={`line-price${l.cc_sell_price != null ? ' is-sell' : ''}`}
-                    title={l.cc_sell_price != null ? `Sell price from the export · bought at ${formatMoney(l.unit_price)}`
-                      : isValuedBulk(l) ? `Value per item (${bulkItem(l.bulk_kind)?.per} cards)` : 'Price per card'}
+                    title={l.cc_sell_price != null ? `Sell price from the export · bought at ${isUnpriced(l) ? 'no price' : formatMoney(l.unit_price)}`
+                      : showsNoPrice(l) ? NOT_PRICED_TIP
+                        : isValuedBulk(l) ? `Value per item (${bulkItem(l.bulk_kind)?.per} cards)` : 'Price per card'}
                   >
-                    {formatMoney(l.cc_sell_price ?? l.unit_price)}
+                    {showsNoPrice(l) ? '—' : formatMoney(l.cc_sell_price ?? l.unit_price)}
                   </span>
                   <button
                     type="button"
@@ -680,7 +692,7 @@ export default function BuyList({
                       ? 'Being edited: SAVE EDIT saves the changes, Esc leaves it as it was'
                       : isStruck(l)
                         ? `${struckNote(l, staff.byId)}.${onRestore ? '\nRight-click → Restore puts it back; × removes it for good.' : ''}`
-                        : `${l.name_en ? `${l.name} · ` : ''}${formatMoney(l.unit_price)} each${locked || l.cc_status ? '' : ' · click to edit'}${l.cc_status ? `\n${frozenNote(l)}` : ''}${rateNote(l, rates) ? `\n${rateNote(l, rates)}` : ''}`}
+                        : `${l.name_en ? `${l.name} · ` : ''}${isUnpriced(l) ? 'not priced' : `${formatMoney(l.unit_price)} each`}${locked || l.cc_status ? '' : ' · click to edit'}${l.cc_status ? `\n${frozenNote(l)}` : ''}${!isUnpriced(l) && rateNote(l, rates) ? `\n${rateNote(l, rates)}` : ''}`}
                     onClick={() => clickLine(l)}
                   >
                     {lineText(l)}

@@ -55,6 +55,9 @@ export const PULLED_TIP = "Bulk at the export: pulled from the upload. It's in B
 export const frozenNote = (line) => ({ cant_upload: LINE_CANT_UPLOAD, pulled: LINE_PULLED }[line.cc_status] ?? LINE_EXPORTED);
 
 export const PROJECT_EXPORTED = "Part of this project is exported: Undo export… first, only if its file wasn't uploaded to Crystal Commerce.";
+/** Convert to buy with cards added while Skip pricing was on (decision 513): a buy is never unpriced. */
+// REPRICE? keeps a card that has no price today as it is: an edit gives it one by hand.
+export const UNPRICED_CONVERT = 'Some cards here have no price: turn Skip pricing off and REPRICE? first (a card with no price today: click it to price it)';
 
 const MESSAGES = {
   ...DB_MESSAGES,
@@ -92,6 +95,11 @@ const MESSAGES = {
   project_completed: 'This project is Completed: reopen it (back to Paid/Ours) first.',
   project_exported: PROJECT_EXPORTED,
   empty_buy: 'There are no cards to convert.',
+  // Skip pricing (decision 513): a project's only, and its cards with no price stay in it.
+  // The database raises it wherever a card with no price would leave a project; Convert to buy stops before it.
+  unpriced_cards: 'A card with no price only goes in a project: price it first.',
+  bad_skip_pricing: 'Skip pricing is on or off.',
+  skip_pricing_project: 'Only a project can skip pricing.',
   // Import Collection (owner, 2026-10-09).
   not_empty: 'This collection already has cards: a file can only go into an empty one.',
   nothing_to_import: 'There are no cards to import.',

@@ -254,6 +254,9 @@
 .cd-banner[class*="tone-"] { background: color-mix(in srgb, var(--tone) 14%, transparent); color: var(--tone); font-weight: 700; }
 .cd-banner .is-cash, .cd-banner .is-credit { color: inherit; }
 .cd-banner .user-tag { color: var(--text); }
+/* Skip pricing (decision 513): on reads in amber, like a note to mind. */
+.cd-banner .skip-pricing { flex: none; white-space: nowrap; }
+.cd-banner .skip-pricing.on { border-color: var(--warn); color: var(--warn); }
 .cd-fields {
   display: grid;
   grid-template-columns: 62px minmax(0, 1fr);

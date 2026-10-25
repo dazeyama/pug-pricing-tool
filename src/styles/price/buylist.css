@@ -191,6 +191,8 @@
   font-variant-numeric: tabular-nums;
 }
 .total-row strong { font-size: 16px; }
+/* A project's cards with no price (decision 513), counted above Market. */
+.total-row.not-priced { color: var(--warn); }
 .pct-link {
   padding: 0;
   border: none;

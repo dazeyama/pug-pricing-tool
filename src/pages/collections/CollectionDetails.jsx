@@ -123,7 +123,7 @@ export default function CollectionDetails({
   buy, byId, api, canChangeStatus, statusBlocked, deleteBlocked,
   viewOnly, holder, onTakeOver, onUnlock, onReopen, onUnreject, onInfo, onStatus, onDelete,
   convertBlocked = null, onConvert, printBlocked = null, onPrint, unexportBlocked = null, onUnexport,
-  folds = 0,
+  folds = 0, busy = false,
 }) {
   const [open, setOpen] = useState(true);
   const [foldsSeen, setFoldsSeen] = useState(folds);
@@ -241,7 +241,24 @@ export default function CollectionDetails({
           )}
           {buy.status === 'paid' && project && (
             <div className={`cd-banner ${tone}`}>
-              <span>Project: the store's own cards. Add, price and remove them; mark it Completed when it's done.</span>
+              <span>
+                {buy.skip_pricing
+                  ? "Project, skipping pricing: cards go in with no price, and EXPORT works out their Sell Prices. Mark it Completed when it's done."
+                  : "Project: the store's own cards. Add, price and remove them; mark it Completed when it's done."}
+              </span>
+              {/* Skip pricing (decision 513): on or off any time, in the banner so it shows folded too. */}
+              <GuardButton
+                className={`btn small ghost skip-pricing${buy.skip_pricing ? ' on' : ''}`}
+                aria-pressed={Boolean(buy.skip_pricing)}
+                disabled={busy}
+                looksDisabled={!api.canEdit}
+                title={buy.skip_pricing
+                  ? 'Price cards again as they’re added. REPRICE? prices the ones added with no price'
+                  : 'Add cards with no price: no price lookups, so nothing waits. EXPORT works out their Sell Prices'}
+                onClick={() => (api.canEdit ? onInfo({ skip_pricing: !buy.skip_pricing }) : api.editBlocked())}
+              >
+                {buy.skip_pricing ? '⚡ Skip pricing: on' : 'Skip pricing: off'}
+              </GuardButton>
             </div>
           )}
           {buy.status === 'paid' && !project && (

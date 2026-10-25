@@ -54,6 +54,18 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-24 (Records session): **Projects that skip pricing, part 1** (decision 513, the owner's item 6):
+  migration 0012 (`buys.skip_pricing`; `price_source` `'unpriced'` at $0; the trigger
+  `buy_lines_unpriced_in_project`; `collection_update_info` takes the switch, `collection_add_line` logs no price),
+  reviewed and rehearsed. The switch is in a Paid/Ours project's banner (`CollectionDetails.jsx`); the list shows
+  — and a Not priced totals row (`BuyList.jsx`, `src/lib/unpriced.js`); REPRICE? and both Convert to buy… items
+  stop with why (`CollectionPage.jsx`, `RowAction.jsx`). Test-run section "Skip pricing (0012)". **Not done yet:**
+  0012 on dev (the Export session pushes 0011 + 0012 together, then the snapshot and the test run), then prod with
+  0011. Left as is: a card with no price reads "Bought $0" in the export dialog (`ExportDialog.jsx`, the Export
+  session's) and $0 in the Changelog's remove, edit and export rows (only the add's row shows none); a Pokémon
+  one with no price today prints a 50¢ sticker. Part 2, the Buy tab's: `PricingScreen` reads `list.skipPricing`
+  and sends `price_source: 'unpriced'`, `unit_price: 0`, `market_price: null` (`UNPRICED`, `src/lib/unpriced.js`);
+  phone scans into the project too. Untested in the app.
 - 2026-10-24: **Phyrexian, Dwarven and Elvish printings in English searches** (decision 512, the owner's ask, Buy tab
   session): `scryfall.js` `keptLanguage` keeps `ph`, `dw` and `qya` (`KEPT_LANGUAGES`), so the Buy tab, the
   details' siblings and Import Collection find them; `printings.js` `magicTraits` gives each a language trait;
