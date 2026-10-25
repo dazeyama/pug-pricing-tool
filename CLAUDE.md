@@ -191,11 +191,13 @@ tests (`npm test`, commit only on `fail 0`) and the build.
   Actions variables point there. Localhost and the phone scanner's LAN link stay on dev (`.env.development`), which
   keeps the store's data from before launch as the test copy.
 - The migrations were squashed on 2026-10-19: the baseline `0001` stands in for the old 0001–0084 (now in
-  `supabase/migrations-archive/`). Prod and dev both have 0001–0010 (0002 the Changelog lock, 0003 the counter
+  `supabase/migrations-archive/`). Prod and dev both have 0001–0013 (0002 the Changelog lock, 0003 the counter
   grant, 2026-10-19; 0004 the review leftovers, 2026-10-20; 0005 pulled bulk, 0006 settings logged and 0007 the
   inventory cleared in batches, on prod 2026-10-21; 0008 owned copies and Bulk pulled from exports there from the
   start, decisions 448–449, 0009 the rounding steps, 478, and 0010 staff picks only remembered, 486, on prod
-  2026-10-23, the structure-only compare the same). They stay equal (decision 381). The next migration is 0011.
+  2026-10-23; 0011 the collection SKU numbers, 511, 0012 projects that skip pricing, 513, and 0013
+  `master_inventory_abort` retired, 515, on prod 2026-10-24, the structure-only compare the same). They stay equal
+  (decision 381). The next migration is 0014.
 - The CLI stays linked to dev (`supabase/.temp/project-ref`). Anything aimed at prod names it:
   `--linked --project-ref zvxquzcfffmxwizonxuo` for `migration list`, `db push` and `db query` (the flag overrides
   the link for that one command; the function deploys take `--project-ref` alone); no password was asked for it

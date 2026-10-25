@@ -6,22 +6,17 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
-- **Dev is ahead of prod: migrations 0011 (Export session, decision 511), 0012 (Records, decision 513) and 0013
-  (Export session, decision 515) are on dev only** (pushed 2026-10-24). Prod takes all three together at the owner's
-  moment, after the store closes (CLAUDE.md Database step 6, `--project-ref zvxquzcfffmxwizonxuo`, then the
-  structure-only compare against `C:/ClaudeProjects/temp/pug-dbrun-0011-0013.json`, the dev run after 0013; the
-  older `pug-dbrun-0011-0012.json` is one function off now). The app code that goes with 0011 and 0012 isn't pushed
-  before prod has them: 0011's Confirm step would say "102426-#" while prod still stamps "102426".
-- **Unpushed** (the main session's line), no migrations or Edge Functions: `33e7915` the stale-page fix (507, main
+- **Unpushed** (the main session's line), no Edge Functions; migrations 0011–0013 already on prod (2026-10-24,
+  the structure-only compare against dev's run the same): `33e7915` the stale-page fix (507, main
   session); `afd9088` the printout's Showcase only (508, Export and printouts) and the details folding on ADD CARD
   (509, Records), one commit; `3482a9e` Secret Lair foils priced from their own product (510, Buy tab); `70cc049`
-  Phyrexian, Dwarven and Elvish printings in English searches (512, Buy tab); NEXT.md. **Needing 0011 and 0012 on
-  prod first:** `3c7f5eb` projects that skip pricing, part 1 (513, Records); `8c3e6e1` a collection's Custom SKU
-  is its day and its number that day (511, Export and printouts); `c690126` skip pricing on the Price screen (514,
-  Buy tab).
+  Phyrexian, Dwarven and Elvish printings in English searches (512, Buy tab); `3c7f5eb` projects that skip
+  pricing, part 1 (513, Records); `8c3e6e1` a collection's Custom SKU is its day and its number that day (511,
+  Export and printouts); `c690126` skip pricing on the Price screen (514, Buy tab); `c5b9096`
+  `master_inventory_abort` retired and an automatic match over a staff pick checked (515, Export and printouts);
+  `89dcb9d` "Retro Schematic" read as Retro Frame and a schematic family (516, Buy tab); NEXT.md.
 - **The owner's six items of 2026-10-24** (main session, passed on one per fork at a time): all six committed,
-  unpushed and untested in the app: 1 (510), 2 (508), 3 (509), 4 (511), 5 (512), 6 (513, 514). 4 and 6 wait for
-  prod to have 0011 and 0012.
+  unpushed and untested in the app: 1 (510), 2 (508), 3 (509), 4 (511), 5 (512), 6 (513, 514).
 - **For a migration, when there's a reason to write one** (0014 or later):
   - F2, the backup's 8 s statement limit (decision 430): `backup_export` (one call for every table, 2 to 7.7 s on
     dev) can time out; the fix must keep one read at one instant, so it needs the database. The test run's Backup
