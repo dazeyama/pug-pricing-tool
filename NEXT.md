@@ -36,6 +36,9 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-24: **The stamp a little smaller; Credit / Cash always one line** (decision 525, the owner's ask, Buy tab
+  session): `owned.css` `.owned-body .ink-stamp` 170 → 160px (measured with the bold line), `.owned-rates` nowrap.
+  Untested in the app.
 - 2026-10-24: **The box's stamp as big as its room** (decision 524, the owner's ask, Buy tab session): `owned.css`
   `.owned-body .ink-stamp` 100 → 170px, measured on a rebuilt box (the live one needs the store's sign-in).
   Untested in the app.

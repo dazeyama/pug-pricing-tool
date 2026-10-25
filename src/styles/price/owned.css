@@ -159,17 +159,17 @@
 .owned-pct.cut { background: rgba(255, 107, 107, .16); color: var(--bad); }
 .owned-pct.bonus { background: rgba(62, 207, 142, .16); color: var(--good); }
 .owned-verdict .btn { flex: none; }
-/* Credit, Cash and why, the stamp beside them (decision 521), as big as the room beside them allows (decision 524):
-   measured, 352px inside the box less the widest line (Credit / Cash, 164px) and the gap leaves 177px, and the
-   stamp tilted 4° needs 1.4% more than its width, so 170px, its drawing's own size; about 53px tall tilted, inside
-   the three lines' 65px. */
+/* Credit, Cash and why, the stamp beside them (decision 521), as big as the room beside them allows (decisions
+   524, 525): measured, 352px inside the box less the Credit / Cash line in bold (174.5px) and the gap leaves 167.5px;
+   the stamp at 160px is 162px across tilted (5px to spare) and 49px tall. 170px pushed Cash onto a second line. */
 .owned-body { display: flex; align-items: center; gap: 10px; }
 .owned-body-text { flex: 1; min-width: 0; }
 .owned-body .stamp-btn { flex: none; margin-top: 0; }
-.owned-body .ink-stamp { width: 170px; }
+.owned-body .ink-stamp { width: 160px; }
 /* The plain Apply button under the boxes, in the stamp's old place (decision 521): the counter's width. */
 .owned-apply { align-self: stretch; white-space: nowrap; }
-.owned-rates { margin: 6px 0 0; font-variant-numeric: tabular-nums; }
+/* Credit and Cash always on one line (decision 525). */
+.owned-rates { margin: 6px 0 0; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .owned-rates .is-credit { color: var(--credit); font-weight: 700; }
 .owned-rates .is-cash { color: var(--cash); font-weight: 700; }
 /* Each reason on its own line (decision 522). */
