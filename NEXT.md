@@ -8,12 +8,12 @@ marks each task done here when it's finished, with the exact file and function o
 
 - **Unpushed** (the main session's line), no migrations or Edge Functions: `33e7915` the stale-page fix (507, main
   session); `afd9088` the printout's Showcase only (508, Export and printouts) and the details folding on ADD CARD
-  (509, Records), one commit; `3482a9e` Secret Lair foils priced from their own product (510, Buy tab); NEXT.md.
+  (509, Records), one commit; `3482a9e` Secret Lair foils priced from their own product (510, Buy tab); `70cc049`
+  Phyrexian, Dwarven and Elvish printings in English searches (512, Buy tab); NEXT.md.
 - **The owner's six items of 2026-10-24** (main session, passed on one per fork at a time):
-  - Done, unpushed: 1 (510), 2 (508), 3 (509).
+  - Done, unpushed: 1 (510), 2 (508), 3 (509), 5 (512).
   - With their forks: 4, Export and printouts: a collection's or project's Custom SKU `<MMDDYY>-<n>`, n counting
-    that day's collection and project exports together from 1 (migration 0011). 5, Buy tab: Phyrexian and Dwarven
-    printings that come in English packs found in search, as decision 269. 6 part 1, Records: the project's
+    that day's collection and project exports together from 1 (migration 0011). 6 part 1, Records: the project's
     skip-pricing switch, any time (REPRICE? prices the cards once it's off), and priceless lines (migration 0012).
   - Waiting: 6 part 2, Buy tab after 5 and Records' part 1: the Price screen skips the price fetch and adds cards
     with no price while the switch is on.
