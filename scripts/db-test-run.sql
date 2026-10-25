@@ -254,8 +254,11 @@ begin
     -- internal.request_begin / request_end (0004): the only way to the done requests, which the app can't read.
     -- internal.collection_sku (0011): the only way to the collections' numbers of the day.
     v = 'internal.collection_sku, internal.insert_event, internal.remember_customer, internal.request_begin, '
-        || 'internal.request_end, public.cc_products_load, public.master_inventory_abort, '
+        || 'internal.request_end, public.cc_products_load, '
         || 'public.master_inventory_finish, public.master_inventory_prune, public.restore_backup', v);
+  -- Unused since decision 414; an unfinished upload is cleared by master_inventory_prune (0013).
+  perform pg_temp.ok(s, 'master_inventory_abort is retired (0013)',
+    not exists (select 1 from pg_proc where proname = 'master_inventory_abort'));
   perform pg_temp.ok(s, 'The collections'' numbers of the day can''t be read or changed by the app (0011)',
     not has_table_privilege('authenticated', 'internal.collection_sku_days', 'SELECT')
     and not has_table_privilege('authenticated', 'internal.collection_sku_days', 'UPDATE')
@@ -2000,14 +2003,12 @@ declare
   v_old_path text := (select storage_path from master_inventory_files where is_current);
   v_old_had boolean := exists (select 1 from cc_products where file_id = cc_current_file());
   v_f uuid;
-  v_f2 uuid;
   v_f3 uuid;
   v_r jsonb;
   v_calls integer := 0;
   v_max integer := 0;
   v_gone text[] := '{}';
   v_n integer;
-  v_path text;
   v_pruned text[];
   v_rows jsonb := '[
     {"product_id": "DBTEST-P1", "cc_id": "900001", "product_name": "Dbtest Bolt", "category": "DBTEST Set",
@@ -2029,11 +2030,6 @@ begin
     perform master_inventory_finish(gen_random_uuid());
     raise exception 'dbt_no_error';
   exception when others then perform pg_temp.err(s, '… so is finishing an upload', sqlerrm, 'not_signed_in');
-  end;
-  begin
-    perform master_inventory_abort(gen_random_uuid());
-    raise exception 'dbt_no_error';
-  exception when others then perform pg_temp.err(s, '… and abandoning one', sqlerrm, 'not_signed_in');
   end;
   begin
     perform master_inventory_prune();
@@ -2134,12 +2130,6 @@ begin
   perform pg_temp.ok(s, 'Candidates by base name and category',
     (select count(*) from cc_candidates('[{"key": "k", "category": "DBTEST Set", "base_keys": ["dbtest bolt"]}]')) = 2
     and (select count(*) from cc_candidates('[{"key": "k", "category": null, "base_keys": ["dbtest mystery", "dbtest bolt"]}]')) = 3);
-  v_f2 := master_inventory_start('dbtest/inventory-dbtest-2.csv', 'inventory-dbtest-2.csv', 1, 0, '{}', u);
-  v_path := master_inventory_abort(v_f2);
-  perform pg_temp.ok(s, 'An unfinished upload can be abandoned',
-    v_path = 'dbtest/inventory-dbtest-2.csv' and not exists (select 1 from master_inventory_files where id = v_f2));
-  v_path := master_inventory_abort(v_f);
-  perform pg_temp.ok(s, 'The current file can''t be', v_path is null and cc_current_file() = v_f);
 exception when others then
   declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;
   perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
@@ -2266,6 +2256,13 @@ begin
     exists (select 1 from cc_product_links where scryfall_id = 'dbtest-dbt-001' and finish = 'nonfoil'
               and product_id = 'DBTEST-P1' and source = 'staff' and linked_by = u)
     and not exists (select 1 from cc_product_links where scryfall_id = 'dbtest-dbt-001' and finish = 'foil'));
+  -- An 'auto' sent over that staff pick, as an old build would (0010's review): the pick stays exactly as it was.
+  select to_jsonb(k) into v from cc_product_links k where scryfall_id = 'dbtest-dbt-001' and finish = 'nonfoil';
+  perform internal.export_learn(jsonb_build_array(pg_temp.match(bolt, 'DBTEST-P2', 2.50, 'auto')), '[]',
+                                cc_current_file(), u);
+  perform pg_temp.ok(s, '… and an automatic match sent over a staff pick leaves the pick as it was (0010)',
+    (select to_jsonb(k) from cc_product_links k where scryfall_id = 'dbtest-dbt-001' and finish = 'nonfoil') = v
+    and v ->> 'product_id' = 'DBTEST-P1' and v ->> 'source' = 'staff', v::text);
   perform pg_temp.ok(s, '… and the set''s category',
     exists (select 1 from cc_set_map where scryfall_set = 'dbt' and promo_kind = '' and category = 'DBTEST Set'
               and source = 'staff'));

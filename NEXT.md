@@ -6,11 +6,12 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
-- **Dev is ahead of prod: migrations 0011 (Export session, decision 511) and 0012 (Records, decision 513) are on dev
-  only** (pushed 2026-10-24). Prod takes both together at the owner's moment, after the store closes (CLAUDE.md
-  Database step 6, `--project-ref zvxquzcfffmxwizonxuo`, then the structure-only compare against
-  `C:/ClaudeProjects/temp/pug-dbrun-0011-0012.json`). The app code that goes with them isn't pushed before prod has
-  them: 0011's Confirm step would say "102426-#" while prod still stamps "102426".
+- **Dev is ahead of prod: migrations 0011 (Export session, decision 511), 0012 (Records, decision 513) and 0013
+  (Export session, decision 515) are on dev only** (pushed 2026-10-24). Prod takes all three together at the owner's
+  moment, after the store closes (CLAUDE.md Database step 6, `--project-ref zvxquzcfffmxwizonxuo`, then the
+  structure-only compare against `C:/ClaudeProjects/temp/pug-dbrun-0011-0013.json`, the dev run after 0013; the
+  older `pug-dbrun-0011-0012.json` is one function off now). The app code that goes with 0011 and 0012 isn't pushed
+  before prod has them: 0011's Confirm step would say "102426-#" while prod still stamps "102426".
 - **Unpushed** (the main session's line), no migrations or Edge Functions: `33e7915` the stale-page fix (507, main
   session); `afd9088` the printout's Showcase only (508, Export and printouts) and the details folding on ADD CARD
   (509, Records), one commit; `3482a9e` Secret Lair foils priced from their own product (510, Buy tab); `70cc049`
@@ -21,13 +22,10 @@ marks each task done here when it's finished, with the exact file and function o
 - **The owner's six items of 2026-10-24** (main session, passed on one per fork at a time): all six committed,
   unpushed and untested in the app: 1 (510), 2 (508), 3 (509), 4 (511), 5 (512), 6 (513, 514). 4 and 6 wait for
   prod to have 0011 and 0012.
-- **For migration 0011, when there's a reason to write one** (now 0013 or later):
+- **For a migration, when there's a reason to write one** (0014 or later):
   - F2, the backup's 8 s statement limit (decision 430): `backup_export` (one call for every table, 2 to 7.7 s on
     dev) can time out; the fix must keep one read at one instant, so it needs the database. The test run's Backup
     pass hit it once (`restore_backup`, `staff_users`) and passed on the retry.
-  - Passed on 2026-10-24 to Export and printouts as migration 0013, for tonight's prod push with 0011 and 0012
-    (main session): retire `master_inventory_abort` (unused since decision 414), with its test-run checks and its place in the
-    security-definer list.
 - **Matching leftovers (decisions 484–487):**
   - Not built, on purpose: Scryfall's other promo types as families (`planeswalkerdeck`, `gameday`,
     `storechampionship`, `wizardsplaynetwork`, `openhouse`, `themepack`, `release`, `judgegift`). CC spells them
@@ -35,8 +33,8 @@ marks each task done here when it's finished, with the exact file and function o
     `evidenceTreatments`); about 8 of dev's asks would then match by themselves.
   - The two wrong exported lines' stamps on prod stay unless that day's file must be downloaded again
     (`git show 681c5c6:MATCHING.md`, item 3).
-  - From 0010's review, passed on 2026-10-24 for tonight's push (main session): the test-run check of an `auto`
-    sent over a staff row (Export and printouts, with 0013 below). ("Retro Schematic": done, decision 516.)
+  - From 0010's review: the test-run check of an `auto` sent over a staff row is done (decision 515, Export
+    session). ("Retro Schematic": done, decision 516.)
 - **The owner's part of the smoke test** (`docs/TEST.md`, dev only): section 10 (the phone), the two-computer and
   network-off cases, and section 19.
 - **Known limits, left as is:** the app can't tell when CC's CSV was taken, so cards exported between taking it and
@@ -50,6 +48,11 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-24 (Export session): **`master_inventory_abort` retired, and an `auto` over a staff pick checked**
+  (decision 515, the owner's ask): migration 0013 drops it, on dev; its test-run checks and its place in the
+  security-definer list are gone (prune's checks cover both cases); the test run's Export section sends
+  `internal.export_learn` an `auto` over a staff pick and checks the pick is left as it was. Test run after 0013:
+  `C:/ClaudeProjects/temp/pug-dbrun-0011-0013.json`.
 - 2026-10-24: **"Retro Schematic" read as Retro Frame and a schematic family** (decision 516, the owner's ask, Buy
   tab session, in Export's files): `ccMatch.js` `FAMILIES` (`schematic`, joining `retro`) and `evidenceTreatments`
   (`isSchematic`: BRR from 64 on); `importMatch.js` `printingLine` and `scorePrinting` read a printing's Scryfall
