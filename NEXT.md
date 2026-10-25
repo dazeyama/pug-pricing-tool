@@ -6,7 +6,6 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
-- **Unpushed** (main session): decision 538, Mark as Priced's rates (`590e3ca`, Records).
 - **From the v1.0.5-rainbow review, not acted on** (main session): SAVE EDIT on a priced card while Skip pricing is
   on clears its price with no warning (`PricingScreen.jsx` ~615, as decision 514 says); an unpriced card's edit
   reads "$0.00" in the Changelog (`collection_update_line` logs `unit_price` 0; only 0012's add logs none); a
@@ -31,6 +30,10 @@ marks each task done here when it's finished, with the exact file and function o
 - **Known limit, left as is:** how long a copies-we-own count takes on the live site isn't measured.
 
 ## Done
+
+- 2026-10-25: **Pushed without a bump** (the owner's ask, the review skipped on the owner's word), decision 538:
+  Mark as Priced and Mark as Paid/Ours show the rates the list pays, and the credit offer's ratio (`590e3ca`,
+  Records). No migrations (dev and prod both 0001–0013), no Edge Function changes. Nothing unpushed.
 
 - 2026-10-25 (Records session): **Mark as Priced shows the rates the list pays** (decision 538, the owner's ask):
   Cash and Credit in Mark as Priced and Mark as Paid/Ours read each total over Market (`listRates`,
