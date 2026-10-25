@@ -1081,6 +1081,46 @@ A message afterwards says how many prices changed and the Market total before an
 With every card exported there's nothing to reprice, and REPRICE? says so: *Every card here is
 exported, so their prices stay: ⋯ → Undo export… first to reprice them*.
 
+While a project's Skip pricing is on, REPRICE? is greyed out. See [Skip pricing](#skip-pricing).
+
+### Skip pricing
+
+A project can skip pricing. Its cards then go in with no price, so the app looks nothing up and spends
+no JustTCG lookups. It suits a big box that only needs exporting, because EXPORT works out every card's
+Sell Price anyway. Only projects have it. Overnight buys are always priced.
+
+The switch is a button in the project's banner, under the details' header bar. It shows with the
+details folded too. **Skip pricing: off** turns it on. It then reads **⚡ Skip pricing: on** in amber,
+and the banner says *Project, skipping pricing: cards go in with no price, and EXPORT works out their
+Sell Prices*. The worker can turn it on or off at any time. Each change goes in the Changelog as
+*Details edited: skip pricing*.
+
+While it's on:
+
+- The screen looks up no prices, so nothing waits for them. The search, the card, its printings,
+  finish and condition work as usual.
+- The condition buttons read **—**. The price panel reads **Not priced**, with *⚡ Skip pricing is on:
+  cards go in with no price.* Use TCGplayer and Use Cardmarket aren't shown.
+- **ADD CARD** puts the card in at once, with no price. SAVE EDIT does the same, and so does a card
+  scanned on the phone.
+- A manual price typed with ✎ or **Alt+M** is still a price. The card goes in at it.
+- Bulk keeps its value from Settings.
+
+In the Collection list, a card with no price shows **—** where its price would be. The totals count
+these cards in an amber **Not priced** row, above Market. Market, Cash and Credit leave them out, and
+read **—** when no card has a price.
+
+**EXPORT** works out each card's Sell Price from today's prices, as for any other card. A card with no
+price at all today gets the Export sell floor.
+
+**REPRICE?** is greyed out while the switch is on, with *Skip pricing is on: turn it off to price the
+cards*. Once it's off, REPRICE? gives the cards with no price today's buy price, like the rest. A card
+that has no price today stays without one. The worker clicks it and types a price.
+
+**Convert to buy…** waits until every card has a price, because a buy always has one. The project's ⋯
+and the Collections tab's row ⋯ both say *Some cards here have no price: turn Skip pricing off and
+REPRICE? first (a card with no price today: click it to price it)*.
+
 ### EXPORT
 
 EXPORT sends the collection's Magic cards to Crystal Commerce. See
@@ -1143,7 +1183,8 @@ project. The app deletes the project and opens today's day page. The Changelog s
 It's greyed out while another computer is editing the project, once the project is Completed
 (Reopen it first), or when it has no cards. It's greyed out too while any of its cards is exported
 or in Can't upload cards, and says *Part of this project is exported: Undo export… first, only if
-its file wasn't uploaded to Crystal Commerce*.
+its file wasn't uploaded to Crystal Commerce*. A project with a card that has no price waits for it
+to be priced. See [Skip pricing](#skip-pricing).
 
 ### Delete overnight buy…
 

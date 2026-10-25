@@ -135,6 +135,8 @@ export const PAGES = [
     id: 'calls-reprice', chapter: 'A collection', start: 'A collection > Calls', title: 'Calls and REPRICE?',
     images: [{ src: 'reprice', caption: 'Reprice this collection?' }],
   },
+  // Skip pricing (decisions 513, 514): its own page, so the contents name it.
+  { id: 'skip-pricing', chapter: 'A collection', start: 'A collection > Skip pricing' },
   {
     id: 'collection-export', chapter: 'A collection', start: 'A collection > EXPORT',
     images: [{ src: 'completed', caption: 'A Completed collection' }],

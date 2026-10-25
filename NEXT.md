@@ -36,6 +36,10 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-24 (Records session): **Help says how Skip pricing works** (decisions 513, 514, the owner's ask):
+  `README.md`, A collection → **Skip pricing**, a new section between REPRICE? and EXPORT (the switch, the Price
+  screen while it's on, the list's — and the Not priced row, EXPORT, REPRICE?, Convert to buy), with a line and a
+  link in REPRICE? and Convert to buy…; its own Help page (`src/pages/help/pages.js`, `skip-pricing`).
 - 2026-10-24 (Export session): **Help says how collections' and projects' Custom SKUs are numbered** (decision
   511, the owner's ask): `README.md`'s The file → Custom SKU row, Confirm's summary (`102426-#`), Undo export… and
   the collection's list heading.
