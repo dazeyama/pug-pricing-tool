@@ -1,5 +1,29 @@
 {
   "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f \"$CLAUDE_PROJECT_DIR/.claude/workmode\" ] && echo \"Work mode: on since $(cat \"$CLAUDE_PROJECT_DIR/.claude/workmode\") (CLAUDE.md, Work mode: questions for the owner go to the main session; blocked, say so and keep working).\"; exit 0",
+            "shell": "bash",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f \"$CLAUDE_PROJECT_DIR/.claude/workmode\" ] && echo \"Work mode: on since $(cat \"$CLAUDE_PROJECT_DIR/.claude/workmode\") (CLAUDE.md, Work mode: questions for the owner go to the main session; blocked, say so and keep working).\"; exit 0",
+            "shell": "bash",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Edit|Write",
