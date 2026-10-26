@@ -216,10 +216,10 @@ tests (`npm test`, commit only on `fail 0`) and the build.
   d158ee3:<path>` for the first five, `git show 681c5c6:<path>` for the next three, `git show
   a8fb952:scripts/db-baseline.mjs` for the generator.
 
-## Where it stands (2026-10-25)
+## Where it stands (2026-10-26)
 
-- Live: **v1.0.5-rainbow** (2026-10-25, decisions through 526; then pushes without a bump, the last on 2026-10-25,
-  decisions through 538), on **prod** (`zvxquzcfffmxwizonxuo`, the live
+- Live: **v1.0.5-rainbow** (2026-10-25, decisions through 526; then pushes without a bump, the last on 2026-10-26,
+  decisions through 540), on **prod** (`zvxquzcfffmxwizonxuo`, the live
   site's project since v1.0.0-launch, 2026-10-19): the GitHub
   Actions variables point there. Localhost and the phone scanner's LAN link stay on dev (`.env.development`), which
   keeps the store's data from before launch as the test copy.

@@ -6,7 +6,6 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
-- **Unpushed** (main session): decision 539, the Home Screen icon and name.
 - **From the v1.0.5-rainbow review, not acted on** (main session): SAVE EDIT on a priced card while Skip pricing is
   on clears its price with no warning (`PricingScreen.jsx` ~615, as decision 514 says); an unpriced card's edit
   reads "$0.00" in the Changelog (`collection_update_line` logs `unit_price` 0; only 0012's add logs none); a
@@ -32,6 +31,11 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-26: **Pushed without a bump** (the owner's ask), decisions 539–540: the Home Screen icon and the name
+  "PUG Scanner" on a phone (539, `public/apple-touch-icon.png`, `index.html`), and work mode (540: `/workmode`, its
+  hook and CLAUDE.md's rules; `.claude/` and docs only). No migrations (dev and prod both 0001–0013), no Edge
+  Function changes. Nothing unpushed.
+
 - 2026-10-26: **Work mode, `/workmode on` / `off`** (side session, the owner's ask; decision 540): the switch is
   `.claude/workmode` (git-ignored); `.claude/skills/workmode/SKILL.md` writes or deletes it and tells each running
   fork; the UserPromptSubmit and SessionStart hooks in `.claude/settings.json` add "Work mode: on since …" to
@@ -41,7 +45,7 @@ marks each task done here when it's finished, with the exact file and function o
   turn in any session shows the line; `/workmode off` clears it. Untested: the hook's dry run passed (silent
   without the file, one line with it); not yet seen whether the hook fires on a turn a fork starts from another
   session's message (the CLAUDE.md check of the file is the fallback); the skill not run. No migration. Remote
-  Control stays the owner's own setting. Unpushed: 5ca5ff9, f57dba3, c825cdd and this entry.
+  Control stays the owner's own setting. Pushed 2026-10-26.
 - 2026-10-25: **A Home Screen icon and name on a phone** (decision 539, the owner's ask, main session):
   `public/apple-touch-icon.png` (the logo on `--bg`, 180 × 180, opaque) and two tags in `index.html`
   (`apple-touch-icon`, `apple-mobile-web-app-title` "PUG Scanner"; the name was my pick, the owner didn't choose
