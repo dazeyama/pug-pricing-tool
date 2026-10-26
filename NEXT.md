@@ -6,6 +6,14 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
+- **From the 2026-10-26 review of work mode, not acted on** (main session, decision 540): the hook's line
+  (`.claude/settings.json`) speaks to every session, not only forks, and `.claude/workmode` never expires, so a
+  forgotten switch reroutes a later side session's or new `/main`'s questions; a fork's prod or delete approval
+  relayed by message isn't the owner's consent to the harness, so it may stall on a prompt in its own chat;
+  CLAUDE.md's "your next item in NEXT.md" for a blocked fork clashes with "Wait for my first task" and one change at
+  a time; whether the UserPromptSubmit hook fires on a turn started by a message is untried; the skill's switch path
+  is relative to the shell's folder; `/main`'s hub jobs don't list relaying questions.
+
 - **From the v1.0.5-rainbow review, not acted on** (main session): SAVE EDIT on a priced card while Skip pricing is
   on clears its price with no warning (`PricingScreen.jsx` ~615, as decision 514 says); an unpriced card's edit
   reads "$0.00" in the Changelog (`collection_update_line` logs `unit_price` 0; only 0012's add logs none); a
