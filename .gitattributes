@@ -1,2 +1,4 @@
 # Batch files must keep Windows line endings or cmd.exe can misread them.
 *.bat text eol=crlf
+# Shell scripts must keep Unix line endings or bash reads a stray \r on each line (the work mode hook, decision 541).
+*.sh text eol=lf
