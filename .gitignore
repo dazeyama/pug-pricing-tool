@@ -57,3 +57,6 @@ CODE_MAP.md
 
 # Claude's preview server config (port 5190), per computer
 .claude/launch.json
+
+# The work-mode switch (/workmode, decision 540): present means on, for every session in this folder
+.claude/workmode
