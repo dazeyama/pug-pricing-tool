@@ -32,6 +32,16 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-26: **Work mode, `/workmode on` / `off`** (side session, the owner's ask; decision 540): the switch is
+  `.claude/workmode` (git-ignored); `.claude/skills/workmode/SKILL.md` writes or deletes it and tells each running
+  fork; the UserPromptSubmit and SessionStart hooks in `.claude/settings.json` add "Work mode: on since …" to
+  every turn while it exists; CLAUDE.md, Work mode: on, a fork's questions go to the main session with its pick, a
+  blocked fork reports and keeps working, reversible in-area choices are the fork's ("picked in work mode" in its
+  Done entry), outward-facing actions still wait. Where to look: in the main session, `/workmode on`, then any
+  turn in any session shows the line; `/workmode off` clears it. Untested: the hook's dry run passed (silent
+  without the file, one line with it); not yet seen whether the hook fires on a turn a fork starts from another
+  session's message (the CLAUDE.md check of the file is the fallback); the skill not run. No migration. Remote
+  Control stays the owner's own setting. Unpushed: 5ca5ff9, f57dba3, c825cdd and this entry.
 - 2026-10-25: **A Home Screen icon and name on a phone** (decision 539, the owner's ask, main session):
   `public/apple-touch-icon.png` (the logo on `--bg`, 180 × 180, opaque) and two tags in `index.html`
   (`apple-touch-icon`, `apple-mobile-web-app-title` "PUG Scanner"; the name was my pick, the owner didn't choose
