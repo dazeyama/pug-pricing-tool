@@ -82,16 +82,19 @@ before asking: what another session did is in `git log`, NEXT.md and the files.
 
 I switch it with `/workmode on` / `off` in the main session (`.claude/skills/workmode/SKILL.md`, decision 540), for
 the days I work from the main thread alone. The file `.claude/workmode` (git-ignored) is the switch, and the hook
-adds "Work mode: on" to every turn while it's there; before asking me anything, and when blocked, check for that
-line (or `test -f .claude/workmode`). Off, the rules above apply as written. On, for a fork:
+(`.claude/hooks/workmode.sh`) adds "Work mode: on" to every turn while it's there. It runs out 12 hours after it's
+switched on (the file's age; decision 541): the hook goes quiet and it's off, even if the file is left behind.
+Before asking me anything, and when blocked, check for that line. It's for the four area forks only: a side session,
+and a fork while it's off, follow the rules above as written. On, for a fork:
 
 - **Every question for me goes to the main session,** never your own chat: the question, the choices you see, your
   pick, and your name. End the turn saying you've asked. The main session answers what the record answers
   (`git log`, NEXT.md, the spec, the files) and passes the rest to me quoting you; my answer comes back quoting my
   words (decision 493). If I answer in your chat anyway, take it and tell the main session it's settled.
 - **Blocked, say so and keep working.** Message the main session the block, what would clear it, and what you're
-  doing meanwhile (the next piece of the task that doesn't need the answer, or your next item in NEXT.md), then do
-  that; the main session redirects you if the pick is wrong. Blocked means: a question only I or another area can
+  doing meanwhile (the next piece of your current task that doesn't need the answer), then do that; the main
+  session redirects you if the pick is wrong. With no such piece, stop and wait: never start an item I didn't give
+  you (decision 541). Blocked means: a question only I or another area can
   answer, a file another session is mid-edit in (decision 534), a check failing in another session's file, a
   migration waiting on prod (decision 381), or three failed tries at a check (decision 531).
 - **A reversible choice inside your own area is yours** (a label's wording, the order of two fields, which of two

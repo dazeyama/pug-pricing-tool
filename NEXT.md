@@ -6,13 +6,12 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
-- **From the 2026-10-26 review of work mode, not acted on** (main session, decision 540): the hook's line
-  (`.claude/settings.json`) speaks to every session, not only forks, and `.claude/workmode` never expires, so a
-  forgotten switch reroutes a later side session's or new `/main`'s questions; a fork's prod or delete approval
-  relayed by message isn't the owner's consent to the harness, so it may stall on a prompt in its own chat;
-  CLAUDE.md's "your next item in NEXT.md" for a blocked fork clashes with "Wait for my first task" and one change at
-  a time; whether the UserPromptSubmit hook fires on a turn started by a message is untried; the skill's switch path
-  is relative to the shell's folder; `/main`'s hub jobs don't list relaying questions.
+- **Unpushed** (main session): decision 541, work mode's three fixes (docs and `.claude/` only), and NEXT.md's
+  review notes.
+- **From the 2026-10-26 review of work mode, still open** (main session, decision 540; the rest fixed by 541): a
+  fork's prod or delete approval relayed by message isn't the owner's consent to the harness, so it may stall on a
+  prompt in its own chat; whether the UserPromptSubmit hook fires on a turn started by a message is untried;
+  `/main`'s hub jobs don't list relaying questions.
 
 - **From the v1.0.5-rainbow review, not acted on** (main session): SAVE EDIT on a priced card while Skip pricing is
   on clears its price with no warning (`PricingScreen.jsx` ~615, as decision 514 says); an unpriced card's edit
@@ -38,6 +37,15 @@ marks each task done here when it's finished, with the exact file and function o
 - **Known limit, left as is:** how long a copies-we-own count takes on the live site isn't measured.
 
 ## Done
+
+- 2026-10-26: **Work mode for forks only, for 12 hours, never a new item** (decision 541, the owner's ask, main
+  session): `.claude/hooks/workmode.sh` (run by both hooks in `.claude/settings.json`) says the line is for the four
+  area forks and goes quiet once `.claude/workmode` is 12 hours old; CLAUDE.md's Work mode: the 12 hours, forks
+  only, and a blocked fork carries on with its current task or waits; `.claude/skills/workmode/SKILL.md`: the switch
+  at the repo's root, the 12 hours in on and the status. The 12 hours is my pick, not the owner's. Tried: the script
+  with no file, a fresh one, 11 and 13 hours old, both path styles (all exit 0, quiet at 13). Where to look:
+  `/workmode on`, then a fork's turn shows the new line; `/workmode` the next day says it ran out. Untried in a real
+  session (hooks load at a session's start). No migration.
 
 - 2026-10-26: **Pushed without a bump** (the owner's ask), decisions 539–540: the Home Screen icon and the name
   "PUG Scanner" on a phone (539, `public/apple-touch-icon.png`, `index.html`), and work mode (540: `/workmode`, its
