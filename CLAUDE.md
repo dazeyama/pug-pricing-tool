@@ -78,6 +78,31 @@ before asking: what another session did is in `git log`, NEXT.md and the files.
   none; it messages the main session a rule worth remembering, and a rule the main session passes on is already
   saved.
 
+### Work mode
+
+I switch it with `/workmode on` / `off` in the main session (`.claude/skills/workmode/SKILL.md`, decision 540), for
+the days I work from the main thread alone. The file `.claude/workmode` (git-ignored) is the switch, and the hook
+adds "Work mode: on" to every turn while it's there; before asking me anything, and when blocked, check for that
+line (or `test -f .claude/workmode`). Off, the rules above apply as written. On, for a fork:
+
+- **Every question for me goes to the main session,** never your own chat: the question, the choices you see, your
+  pick, and your name. End the turn saying you've asked. The main session answers what the record answers
+  (`git log`, NEXT.md, the spec, the files) and passes the rest to me quoting you; my answer comes back quoting my
+  words (decision 493). If I answer in your chat anyway, take it and tell the main session it's settled.
+- **Blocked, say so and keep working.** Message the main session the block, what would clear it, and what you're
+  doing meanwhile (the next piece of the task that doesn't need the answer, or your next item in NEXT.md), then do
+  that; the main session redirects you if the pick is wrong. Blocked means: a question only I or another area can
+  answer, a file another session is mid-edit in (decision 534), a check failing in another session's file, a
+  migration waiting on prod (decision 381), or three failed tries at a check (decision 531).
+- **A reversible choice inside your own area is yours** (a label's wording, the order of two fields, which of two
+  equal layouts): make it and record it in your Done entry as *picked in work mode: …*, so I can reverse it. A
+  choice that changes behaviour (what staff see or what gets exported), or touches another area, is asked.
+- **Still never on your own:** anything outward-facing (a push, a prod migration, deleting data) and the Ask me
+  first items (Outside your area) wait for my answer through the main session, however long that takes.
+
+On, for the main session: each fork's question reaches me as one message naming the fork, with the fork's pick, so
+I can answer in a word from my phone; the rest of the hub's jobs don't change.
+
 ## NEXT.md
 
 After each task I give you, mark it done in NEXT.md and list anything pending or half-finished with the exact file
