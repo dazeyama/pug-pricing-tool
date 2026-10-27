@@ -1230,8 +1230,15 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     const { name } = t;
     finding.current = true;
     say('muted', `${name}: finding its printings…`);
-    // Ranked by how the card looks, as a modern or an older card by what its strip showed (decision 567).
-    printingsFor(name, t.frame ?? null, { card: lockRef.current?.card ?? null, older: Boolean(t.olderLook), bottom: false })
+    // Ranked by how the card looks, as a modern or an older card by what its strip showed (decision 567), in
+    // LOOK_WAIT_MS at most (decision 570: it waited on Scryfall's whole retry budget, about a minute a page
+    // on a dead connection, and on every printing's picture): past that, unranked, or Which card? when the
+    // printings didn't come.
+    const enough = new AbortController();
+    const cap = setTimeout(() => enough.abort(), LOOK_WAIT_MS);
+    printingsFor(name, t.frame ?? null, {
+      card: lockRef.current?.card ?? null, older: Boolean(t.olderLook), bottom: false, signal: enough.signal,
+    })
       .then((old) => {
         if (openNow.current.pick || openNow.current.nameAsk || openNow.current.needs) return;
         if (!old?.cards.length) {
@@ -1250,6 +1257,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         if (!openNow.current.pick && !openNow.current.nameAsk) typeIt();
       })
       .finally(() => {
+        clearTimeout(cap);
         finding.current = false;
       });
   }
