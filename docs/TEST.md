@@ -404,8 +404,8 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       three tries does the phone say "No answer from the computer after three tries".
 - [ ] **The camera cut off** (decision 303): a call (or the phone's own camera) makes the strip say the phone has the
       camera; back, scanning carries on with the view still locked; a frozen picture restarts itself within seconds.
-- [ ] **Never stuck** (decisions 300, 549): on a slow network Scan card ends within 3 s, with the printing list or
-      "Couldn't read this card in time…"; after 1.5 s the button reads "Reading… tap to stop", and a tap stops it;
+- [ ] **Never stuck** (decisions 300, 549, 561): on a slow network Scan card ends within 3 s, with the printing list
+      or Which card?; after 1.5 s the button reads "Reading… tap to stop", and a tap stops it;
       holding Scan card (a buzz) starts over and reads the card in the holder, opening no menu or text selection.
 - [ ] **Stop is an abort** (decision 321): ■ Stop mid-read or mid-refocus takes the picture and the phone's green
       camera dot away at once; the camera stays off until START CAMERA.

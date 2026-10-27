@@ -9,8 +9,6 @@ marks each task done here when it's finished, with the exact file and function o
 - **From the v1.0.6-badscanner review, not acted on** (main session, 2026-10-27; none stopped the push):
   - Phone scanner: a modern card read by name only, with no strip clue, scores every printing 0, so the 3 s list
     and View all show its three oldest printings (`Scanner.jsx:990`, `:1138`). Design-level.
-  - Phone scanner, docs: `docs/TEST.md:407` (Never stuck) expects "Couldn't read this card in time", a message
-    561 removed; spec rows 557 and 561 describe a background printings fetch that 562 took out.
   - Buy tab: a TCGplayer-only Pokémon card whose version is changed under Skip pricing keeps the old
     `justtcg_card_id` (`unpriced.js:44`, `buyLine.js:141`) and REPRICE? prices the old version
     (`todaysPrices.js:137-144`); Magic and TCGdex lines are put right. Narrow, plausible.
@@ -41,6 +39,9 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-27 (Phone scanner session): **The review's doc findings** (the owner's pass-on): `docs/TEST.md` Never
+  stuck now expects the printing list or Which card? (561); spec rows 557 and 561 say 562 took the background
+  printings fetch out (the look with a name fetches them itself). Docs only.
 - 2026-10-27 (Phone scanner session): **The camera's timer shows tenths cut down** (decision 565, the review's
   finding): `src/scan/CardTimer.jsx` floors to tenths, so "3.0" is only a card whose 3 s ran out (held red); one
   done at 2.96 reads "2.9", held amber. Where to look: the phone, a card done just under 3 s: amber, not "3.0" red.
