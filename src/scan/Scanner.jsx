@@ -1166,6 +1166,9 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     // Its time held as the 3 s it ran (decision 568): the timer's last tick may still have read 2.9.
     if (t?.at) cardEnd.current = { at: t.at, ms: Math.max(CARD_MS, Date.now() - t.at) };
     if (cardTime.current === t) cardTime.current = null;
+    // Which read this choice belongs to (decision 571): Stop, the camera stopped or a Scan card press
+    // meanwhile move readRun on, and a list that opened after them would be for a card no longer asked about.
+    const run = readRun.current;
     // A modern card's printings still being ordered by look (decision 567): the choice waits for that, a
     // little at most, auto scan held off meanwhile, so the list is in the order the card looks.
     if (t?.looking) {
@@ -1174,17 +1177,17 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       Promise.race([t.looking, sleep(LOOK_WAIT_MS)]).then(() => {
         finding.current = false;
         t.stop?.abort();   // its choice is made now: a ranking still running ends (decision 569)
-        if (openNow.current.pick || openNow.current.nameAsk || openNow.current.needs) return;
-        offerChoice(t, { manual });
+        if (readRun.current !== run || openNow.current.pick || openNow.current.nameAsk || openNow.current.needs) return;
+        offerChoice(t, { manual, run });
       });
       return;
     }
     t?.stop?.abort();
-    offerChoice(t, { manual });
+    offerChoice(t, { manual, run });
   }
 
   /** The choice a card's 3 s end in (timeUp): its likeliest printings, the name's, or Which card?. */
-  function offerChoice(t, { manual }) {
+  function offerChoice(t, { manual, run = readRun.current }) {
     const v = view.current;
     v.pending = null;
     // Which guesses it offers (decision 551; owner, 2026-10-26, after a strip read as flavour text offered
@@ -1240,7 +1243,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       card: lockRef.current?.card ?? null, older: Boolean(t.olderLook), bottom: false, signal: enough.signal,
     })
       .then((old) => {
-        if (openNow.current.pick || openNow.current.nameAsk || openNow.current.needs) return;
+        if (readRun.current !== run || openNow.current.pick || openNow.current.nameAsk || openNow.current.needs) return;
         if (!old?.cards.length) {
           typeIt();
           return;
@@ -1254,7 +1257,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         play('needs_price');
       })
       .catch(() => {
-        if (!openNow.current.pick && !openNow.current.nameAsk) typeIt();
+        if (readRun.current === run && !openNow.current.pick && !openNow.current.nameAsk) typeIt();
       })
       .finally(() => {
         clearTimeout(cap);
@@ -1324,6 +1327,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     scanTicket.current += 1;
     busy.current = false;
     manualWaiting.current = false;
+    finding.current = false;   // a 3 s choice being found is dropped (decision 571)
     resetOcr();
     const v = view.current;
     v.held = null;
@@ -1346,6 +1350,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     scanTicket.current += 1;
     busy.current = false;
     manualWaiting.current = false;
+    finding.current = false;   // a 3 s choice being found is dropped (decision 571)
     relockDue.current = false;
     dropCardTime();
     resetOcr();
