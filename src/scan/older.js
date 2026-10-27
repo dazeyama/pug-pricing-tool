@@ -70,27 +70,6 @@ async function loadPicture(url, signal = null) {
 }
 
 /**
- * Read an older card in the frame: its name, and its number if it has one.
- * @param {object} frame  the camera's picture
- * @param {{ texts?: string[], card?: object, listMark?: boolean|null, signal?: AbortSignal }} [opts]
- *   listMark: The List's mark seen at the card's corner (listMark.js); texts: what the collector-line
- *   reading already read: on a black-bordered card it's the copyright line with the "123/350" in it, so
- *   no second read; signal: the scanner's look, its Scryfall pages and pictures dropped when the card's
- *   time is up (decision 550)
- * @returns {Promise<{ tier: 2|3, name: string, number: string|null, cards: object[], all: object[] }
- *   |{ name: null, guess: string }|null>}  { name: null, guess }: the title couldn't be named clearly,
- *   guess the reader's closest name ('' for none), for the Which card? box (decision 311); null: no
- *   printing of the name found; cards: one (the printing to take), or the likely ones, best first;
- *   all: every printing of that name, oldest first (the pick list's View all)
- */
-export async function readOlderCard(frame, { texts = [], card = null, listMark = null, signal = null, read = readText } = {}) {
-  const title = await readTitleName(frame, { card, read });
-  if (!title.name) return { name: null, guess: title.guess() };
-  const found = await printingsFor(title.name, frame, { texts, card, listMark, signal, read });
-  return found && { ...found, how: title.how };
-}
-
-/**
  * Just the card's name, from its title (decision 551: read on every look, beside the collector
  * strip, by the second reader): the title where it's found on the card (decision 308), each likely
  * place as one line till one names a card; then the best as a block (it copes with a stray mark

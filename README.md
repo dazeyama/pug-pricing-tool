@@ -1695,8 +1695,10 @@ recognise printed letters and shipped as one fixed 3 MB file.
 
 - **It reads; it doesn't write.** All it can do is say which letters are in a picture. It can't make
   up text, answer questions or invent a card, as a chatbot like ChatGPT can.
-- **Offline.** The picture never leaves the phone. Only the set code and number go online, to
-  Scryfall, to look the card up.
+- **Two readers at once.** One reads the collector line, the other the card's name, at the same
+  time, so reading the name costs no time.
+- **Offline.** The picture never leaves the phone. Only what's read, the set code, number and name, goes
+  online, to Scryfall, to look the card up.
 - **Fixed and predictable.** It never learns from our scans or changes: the same picture gives the
   same reading every time.
 
@@ -1729,8 +1731,10 @@ Tap one to scan into it.
 ### The scanning screen
 
 Top to bottom: the computer it's paired with (its list, its worker, how many cards scanned, 🔔 / 🔇 for
-the sounds, **Unpair**); the **condition**; the **finish**; the camera; the **info box**; the
-**last card**; **Scan card** and **+1**; and **Auto?**, **Reset view**, **💡** and **■ Stop**.
+the sounds, **Unpair**); the **condition**; the **finish**; the **name box**; the camera, with the
+**timer** in its top right corner; the **info box**; the **last card**; **Scan card** and **+1**; and
+**Auto?**, **Reset view**, **💡** and **■ Stop**. While a list or a question is open over the camera,
+it covers the name box and the info box too, for more room.
 
 ### Scanning
 
@@ -1743,16 +1747,24 @@ the sounds, **Unpair**); the **condition**; the **finish**; the camera; the **in
 4. Lay a card in the holder. A green outline shows the card once its edges are found, and the view
    **locks onto it**. From then on the screen shows just that card, large and still, until
    **Reset view**. The info box under it shows the card's **set code and number**, enlarged, set
-   level and cleaned up to black on white.
+   level and cleaned up to black on white. The name box above it shows the card's **name**, the
+   same way.
 5. Lay each card in turn. With **Auto?** ticked, a card goes in by itself once three things hold: its
    picture has changed from the last card's, it has stopped moving, and the reading is sure. The
-   reading is sure on one look when its set code, number, rarity and artist all agree, and otherwise
-   when two looks agree. The phone chimes the moment the card is sent:
+   reading is sure on one look when its set code, number, rarity and artist all agree, or when the
+   name read agrees with them, and otherwise when two looks agree. When the bottom line is only
+   partly read, the name's printings are checked against what was read, and one that clearly fits
+   goes in. The phone chimes the moment the card is sent:
    **two notes for a normal card, a brighter three for a foil.**
+6. **Each card has 3 seconds.** The timer in the camera's top right counts up while the card is
+   read, red from 2.1. When the card is done it stays on its time, bold amber, or red at 3.0 when
+   the time ran out. At 3 seconds without a sure answer, the scanner asks: the printing list opens
+   with the likeliest printings, best first, or the name's printings when only the name could be
+   read. Tap the right one. With nothing read at all, **Which card is it?** opens to type the name.
 
 | | |
 |---|---|
-| **Scan card** | Reads the card in view now, more thoroughly: every line of text on it, every search. A bar fills the button as it goes. Auto scan waits while it reads. **Hold it** to start over. See *Stuck?* below. |
+| **Scan card** | Reads the card in view now, more thoroughly: two more lines of text on it, and every search, within its own 3 seconds. A bar fills the button as it goes. Auto scan waits while it reads. When it can't be sure, it asks straight away, as above. **Hold it** to start over. See *Stuck?* below. |
 | **+1** | Another copy of the last card, exactly as it went in, with its printing, finish and condition, without reading anything. **Tapping the middle of the picture** does the same. Auto scan never adds the same card twice in a row by itself, so use +1 for a second copy. |
 | **Auto?** | Unticked, nothing goes in by itself. Scan card and +1 still work. |
 | **Reset view** | Lets go of the card. The next card found locks the view again. The scanner also finds the card again by itself every 20 cards, and when the camera comes back after an interruption, so the view keeps up as the stack grows. Stop doesn't move it. |
@@ -1785,17 +1797,17 @@ next card wakes it.
 camera comes back.
 
 - The scanner refuses a card printed in another language. Add it on the computer.
-- **Couldn't read this card:** set it aside and add it on the computer.
+- **Skip this card**, on a list or on Which card?, adds nothing: set the card aside and add it on the
+  computer.
 
 **Stuck?** Nothing waits for long:
 
-- After 3 seconds, Scan card reads **Reading… tap to stop**. Tapping it stops the read and starts the
+- After 1.5 seconds, Scan card reads **Reading… tap to stop**. Tapping it stops the read and starts the
   card reader afresh. Press Scan card again to read the card.
 - **Hold Scan card** for a moment to start over and read the card now. The phone buzzes. Auto scan
   forgets the last card too, so a card it won't read by itself gets read. The view stays locked, and
   **Reset view** lets go of the card.
-- On a slow connection, a read stops by itself after 20 seconds and says *"That took too long"*.
-  Press Scan card again.
+- On a slow connection, a card still gets only its 3 seconds, then the scanner asks, as above.
 - *"Still waiting on …: is its price screen open?"* shows when the computer hasn't taken a card
   after 15 seconds. *"No answer from the computer yet"* means the card may have gone in anyway.
   Check the list on the computer before scanning it again.
@@ -1823,20 +1835,19 @@ Cards printed before 2014 have no set code at the bottom.
 
 - **The view doesn't lock on them by itself.** Tap the picture while the green outline shows, and the
   view locks onto that card.
-- After a few looks with no set code, the scanner reads the card by its **title**. The info box shows
-  the card's name, and the button at its right end says **Number**, which goes back to the bottom
-  line for a modern card. **Title** does this straight away and always opens the printing list. Use it
-  when an older card seems stuck.
+- The scanner reads every card's name, so an older card needs nothing pressed. It knows a card is
+  older from its bottom line: a copyright year before 2015, a white border with no line at all, or a
+  few looks with no set code.
 - **1998 to 2014:** the "123/350" in the copyright line names the printing, when it can be read.
 - Otherwise the scanner ranks the printings by how the card looks: its art, black or white border,
-  frame, artist, set symbol and copyright year. A printing clearly ahead goes in by itself, once two
-  looks agree. Otherwise the printing list opens, best matches first. Tap the one whose set symbol
-  matches. **View all** shows every printing, oldest to newest. **Skip this card** adds nothing.
+  frame, artist, set symbol and copyright year. A printing clearly ahead goes in by itself. Otherwise
+  the printing list opens, best matches first. Tap the one whose set symbol matches. **View all**
+  shows every printing, oldest to newest. **Skip this card** adds nothing.
   **Let me type it** is for when the list is for the wrong card. The name box opens empty, the worker types the
   right name, and that card's printing list opens instead.
-- **Couldn't read the name. Which card is it?** opens when no reading names the title. It opens after
-  a few looks on its own, or at once from Scan card. The best guess is typed in. Correct it or pick
-  from the names under it, and the printing list opens. **Skip this card** adds nothing.
+- **Couldn't read the name. Which card is it?** opens when no reading names the title: at 3 seconds on
+  its own, or at once from Scan card. The best guess is typed in. Correct it or pick from the names
+  under it, and the printing list opens. **Skip this card** adds nothing.
 - An older card goes in as normal on Detect, because it has no foil star to go by. Pick **Foil**, or
   use **FOIL?** after.
 
