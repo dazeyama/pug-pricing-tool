@@ -25,9 +25,12 @@ const PRINTING_PAGES = 4;
 
 const plainNumber = (n) => String(n ?? '').replace(/^0+(?=\d)/, '').toLowerCase();
 
-/** A card's paper printings in English, oldest first (Scryfall gives them newest first). */
-async function printingsOf(name) {
-  const cards = await scry.searchAll(`!"${name.replace(/"/g, '')}" game:paper`, { maxPages: PRINTING_PAGES });
+/**
+ * A card's paper printings in English, oldest first (Scryfall gives them newest first). `signal`: the
+ * scanner's look, its pages dropped when the card's time is up (decision 550).
+ */
+async function printingsOf(name, signal = null) {
+  const cards = await scry.searchAll(`!"${name.replace(/"/g, '')}" game:paper`, { maxPages: PRINTING_PAGES, signal });
   return cards.filter((c) => c.lang === 'en').reverse();
 }
 
@@ -37,10 +40,11 @@ async function printingsOf(name) {
  * drawing area's size first: Scryfall's carry only a viewBox, and Safari
  * then doesn't know how big to draw one.
  */
-async function loadPicture(url) {
+async function loadPicture(url, signal = null) {
+  if (signal?.aborted) throw new Error('The card\'s time is up');   // decision 550
   let src = url;
   if (/\.svg(\?|$)/i.test(url)) {
-    const text = await (await fetch(url)).text();
+    const text = await (await fetch(url, { signal })).text();
     const box = /viewBox="\s*[-\d.]+[\s,]+[-\d.]+[\s,]+([\d.]+)[\s,]+([\d.]+)\s*"/.exec(text);
     const sized = box && !/<svg[^>]*\swidth=/.test(text) ? text.replace('<svg', `<svg width="${box[1]}" height="${box[2]}"`) : text;
     src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(sized)}`;
@@ -57,16 +61,18 @@ async function loadPicture(url) {
 /**
  * Read an older card in the frame: its name, and its number if it has one.
  * @param {object} frame  the camera's picture
- * @param {{ texts?: string[], card?: object, listMark?: boolean|null }} [opts]  listMark: The List's
- *   mark seen at the card's corner (listMark.js); texts: what the collector-line reading already read: on a
- *   black-bordered card it's the copyright line with the "123/350" in it, so no second read
+ * @param {{ texts?: string[], card?: object, listMark?: boolean|null, signal?: AbortSignal }} [opts]
+ *   listMark: The List's mark seen at the card's corner (listMark.js); texts: what the collector-line
+ *   reading already read: on a black-bordered card it's the copyright line with the "123/350" in it, so
+ *   no second read; signal: the scanner's look, its Scryfall pages and pictures dropped when the card's
+ *   time is up (decision 550)
  * @returns {Promise<{ tier: 2|3, name: string, number: string|null, cards: object[], all: object[] }
  *   |{ name: null, guess: string }|null>}  { name: null, guess }: the title couldn't be named clearly,
  *   guess the reader's closest name ('' for none), for the Which card? box (decision 311); null: no
  *   printing of the name found; cards: one (the printing to take), or the likely ones, best first;
  *   all: every printing of that name, oldest first (the pick list's View all)
  */
-export async function readOlderCard(frame, { texts = [], card = null, listMark = null } = {}) {
+export async function readOlderCard(frame, { texts = [], card = null, listMark = null, signal = null } = {}) {
   const names = await scry.loadNames();
   // The title where it's found on the card (decision 308), each likely place as one line till one
   // names a card; then the best as a block (it copes with a stray mark better).
@@ -75,7 +81,7 @@ export async function readOlderCard(frame, { texts = [], card = null, listMark =
   const how = {};
   const match = matchName(await findTitle(frame, reads, defaultCreateCanvas, (t) => matchName(t, names), { card, readings, how }), names);
   if (!match) return { name: null, guess: guessName(readings, names)?.name ?? '' };
-  const found = await printingsFor(match.name, frame, { texts, card, listMark });
+  const found = await printingsFor(match.name, frame, { texts, card, listMark, signal });
   // Which read named it (the run log): the usual line, the white letters, or the block.
   return found && { ...found, how: how.how ?? 'line' };
 }
@@ -102,7 +108,7 @@ export async function titleAmong(frame, cards, named, { card = null } = {}) {
  * @returns {Promise<{ tier: 2|3, name: string, number: string|null, cards: object[], all: object[] }|null>}
  *   null: Scryfall has no printing of that name
  */
-export async function printingsFor(name, frame, { texts = [], card = null, listMark = null } = {}) {
+export async function printingsFor(name, frame, { texts = [], card = null, listMark = null, signal = null } = {}) {
   const match = { name };
   const bottoms = [...texts];
   let old = bottoms.map(parseOldNumber).find(Boolean) ?? null;
@@ -110,7 +116,7 @@ export async function printingsFor(name, frame, { texts = [], card = null, listM
     bottoms.push(await readBottom(frame, (c) => readText(c, PSM_BLOCK), defaultCreateCanvas, { card }));
     old = parseOldNumber(bottoms.at(-1));
   }
-  const printings = await printingsOf(match.name);
+  const printings = await printingsOf(match.name, signal);
   if (!printings.length) return null;
   const sets = await scry.loadSets();
 
@@ -123,7 +129,7 @@ export async function printingsFor(name, frame, { texts = [], card = null, listM
     // the List's printing of it (decision 355: the mark used to count only when ranking).
     if (hits.length === 1) {
       const listed = listMark === true
-        ? listPrintingOf(hits[0], printings) ?? await scry.cardBySetNumber('plst', listNumber(hits[0])).catch(() => null)
+        ? listPrintingOf(hits[0], printings) ?? await scry.cardBySetNumber('plst', listNumber(hits[0]), { signal }).catch(() => null)
         : null;
       return { tier: 2, name: match.name, number: old.number, cards: [listed ?? hits[0]], all: printings };
     }
@@ -141,7 +147,7 @@ export async function printingsFor(name, frame, { texts = [], card = null, listM
       listMark,
       setIcon: (code) => sets.get(code)?.icon_svg_uri ?? null,
       setType: (code) => sets.get(code)?.set_type ?? null,
-      loadImage: loadPicture,
+      loadImage: (url) => loadPicture(url, signal),
       createCanvas: defaultCreateCanvas,
     });
     if (winner) return { tier, name: match.name, number, cards: [winner], all: printings };

@@ -276,15 +276,16 @@ export async function searchPrints(q, signal) {
  * Every printing a search finds (unique=prints), page after page up to
  * `maxPages` (175 a page): Import Collection's lookups (importCollection.js).
  * @param {string} q  a Scryfall query
- * @param {{ maxPages?: number }} [opts]
+ * @param {{ maxPages?: number, signal?: AbortSignal }} [opts]  signal: the scanner's look (decision 550),
+ *   a page given up before its turn taking none
  * @returns {Promise<any[]>}  Scryfall cards, newest first; none when nothing matched
  */
-export async function searchAll(q, { maxPages = 10 } = {}) {
+export async function searchAll(q, { maxPages = 10, signal } = {}) {
   const params = new URLSearchParams({ q, unique: 'prints', order: 'released', dir: 'desc' });
   let url = `${API}/cards/search?${params}`;
   const cards = [];
   for (let page = 0; url && page < maxPages; page++) {
-    const data = await searchJson(url, { via: bulkSearches });
+    const data = await searchJson(url, { via: bulkSearches, signal });
     if (!data) break;                      // 404: nothing matched; 400: a query Scryfall can't read
     cards.push(...(data.data ?? []));
     url = data.has_more ? data.next_page : null;

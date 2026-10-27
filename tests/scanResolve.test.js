@@ -139,12 +139,18 @@ test('set and number alone, read clearly: taken; with a wrong rarity: not by aut
   assert.equal(await resolveText('C 0113\nHOB', KNOWN, { search, lookup }), null);
 });
 
-test('the number unreadable: the artist and the rarity, in that set', async () => {
+test('the number unreadable: Scan card finds it by the artist and the rarity, in that set', async () => {
   const { search, lookup, asked, looked } = fakeSearch(HOB);
-  const found = await resolveText('R\nHOB • EN ⟿ MIKLOS LIGETI', KNOWN, { search, lookup });
+  const found = await resolveText('R\nHOB • EN ⟿ MIKLOS LIGETI', KNOWN, { search, lookup, manual: true });
   assert.equal(found.card.id, 'giant');
   assert.ok(asked.some((q) => /a:"ligeti"|a:"miklos"/.test(q)) || asked.some((q) => /r:rare/.test(q)));
   assert.deepEqual(looked, [], 'no number: nothing to look up directly');
+});
+
+test('the number unreadable on auto scan: no search, the next look reads again (decision 550)', async () => {
+  const { search, lookup, asked } = fakeSearch(HOB);
+  assert.equal(await resolveText('R\nHOB • EN ⟿ MIKLOS LIGETI', KNOWN, { search, lookup }), null);
+  assert.deepEqual(asked, []);
 });
 
 test('a number read as another card, the artist clearly not theirs: the card by the artist read', async () => {

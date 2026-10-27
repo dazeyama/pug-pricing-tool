@@ -35,8 +35,9 @@ import PickPrintingSheet from './PickPrintingSheet.jsx';
 import NameSheet from './NameSheet.jsx';
 
 // Auto scan (docs/SCAN_FUNCTION.md 6.3): the rest between one look at the
-// camera and the next, and the wait before the first.
-const REST_MS = 300;
+// camera and the next, and the wait before the first. 0.1 s (decision 550; was 0.3 s): a new card is
+// seen moving, then settled, two looks before it's read, so the rest came twice before every card.
+const REST_MS = 100;
 // Idle (owner, 2026-10-18: "fix", to "Auto scan never slows down"; decision 304): after this long with
 // nothing new in the holder (no card found, the art unchanged, no button pressed), a look a second
 // instead, to spare the battery and the heat; anything new and it's back to REST_MS.
@@ -46,14 +47,20 @@ const IDLE_REST_MS = 1_000;
 const DARK_AFTER = 4;
 /** A first read waiting for the second look that must agree: taken straight away, not after a rest. */
 const CONFIRM_MS = 50;
-const FIRST_LOOK_MS = 800;
+// The first look as soon as the camera's on (decision 550; was 0.8 s): a look with no picture yet does nothing.
+const FIRST_LOOK_MS = 0;
 // Older cards (tiers 2 and 3, 6.2) are read by their title. Auto scan
 // takes a card for an older one after this many looks in a row with no set
 // code at its bottom (owner, 2026-10-16: "When it's detected that it's
 // changing very rapidly like this shift to 2014 mode and focus the info box
 // on the card name instead, resetting to the normal bottom position upon
-// the next card"); then it reads the title, two looks naming the same card.
+// the next card"); then it reads the title once (decision 550): one printing
+// is sent, several open the printing list. A blank strip with ink in the title
+// is an older card at once (decision 550), with no looks to count.
 const OLDER_AFTER = 3;
+// Scan card reads at most this many blocks found on the card, besides its strip (decision 550; was every one
+// found, three at most): each read is about 0.3 s, and the card has 3 s.
+const SCAN_CARD_BLOCKS = 2;
 // The view found again every so many cards (owner, 2026-10-18: "As the stack gets taller it gets
 // closer in and the old crop loses its accuracy. Quietly resetting and re-cropping will help";
 // decision 312): after this many cards sent with one lock, the next looks find the card's edges again
@@ -582,8 +589,11 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     }
   }
 
-  /** One more look with no set code at the bottom; enough of them, and it's read as an older card. */
-  function noLineAgain(v, art) {
+  /**
+   * One more look with no set code at the bottom; enough of them, and it's read as an older card.
+   * `now`: a blank strip with ink in the title, an older card at once (decision 550).
+   */
+  function noLineAgain(v, art, { now = false } = {}) {
     v.noLine = (v.noLine ?? 0) + 1;
     v.lineArt ??= art;
     // A card whose strip names no set: the view found again first (decision 317), once a card, before
@@ -595,7 +605,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       relockTries.current = RELOCK_TRIES - 2;
       trace('relock-asked', { why: 'no set code' });
     }
-    if (!v.older && v.noLine >= OLDER_AFTER) {
+    if (!v.older && (now || v.noLine >= OLDER_AFTER)) {
       v.older = true;
       setTitleMode(true);
       trace('older-mode');
@@ -772,9 +782,9 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       // The List's mark at the card's corner (listMark.js), when the view's locked.
       let listSeen = null;
       if (lock) {
-        // This card's collector line, found in its zone and set level (owner, 2026-10-16).
-        const strip = straightCutout(frame, lock, defaultCreateCanvas);
-        const cut = strip.canvas;
+        // The settle check first, on the card's art alone (decision 550): a look that finds the card
+        // still moving, or the card last sent still there, stops before the strip is cut out and set
+        // level, so at 0.1 s apart those looks cost next to nothing.
         art = artPrint(frame, lock);
         // Something new in the holder since the last look (decision 304): not idle. And still moving
         // (decision 322): the card (or a hand) not where it was a look ago.
@@ -782,13 +792,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         if (!v.lastArt || moving) markActive();
         v.lastArt = art;
         v.moving = moving;
-        listSeen = findListMark(frame, lock.card, defaultCreateCanvas).mark;
         // Another card in: back to its bottom strip (the older mode was the last card's).
         if (v.lineArt && artDistance(v.lineArt, art) >= ART_CHANGED) leaveOlder(v);
-        // The info box: the bottom strip, or an older card's title.
-        showCutout(v.older ? titleCutout(frame, lock.card, defaultCreateCanvas) : cut);
-        const outOfFocus = strip.sharpness > 0 && strip.sharpness < BLUR_BELOW;
-        setBlurry(outOfFocus);
         // Still moving (owner, 2026-10-18: "the first read is happening slightly too early when waiting
         // for blur to clear after motion … there's 1 wasted early read often that is then, redone";
         // decision 322: 62 of 134 strip reads in the run had a failed read 0.6 s before): auto scan
@@ -801,6 +806,14 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           v.pending = null;
           leaveOlder(v);
         }
+        // This card's collector line, found in its zone and set level (owner, 2026-10-16).
+        const strip = straightCutout(frame, lock, defaultCreateCanvas);
+        const cut = strip.canvas;
+        listSeen = findListMark(frame, lock.card, defaultCreateCanvas).mark;
+        // The info box: the bottom strip, or an older card's title.
+        showCutout(v.older ? titleCutout(frame, lock.card, defaultCreateCanvas) : cut);
+        const outOfFocus = strip.sharpness > 0 && strip.sharpness < BLUR_BELOW;
+        setBlurry(outOfFocus);
         // Nothing in the strip: the holder empty, or a white-bordered older card (ink in its title).
         const inked = !manual && strip.sharpness === 0
           ? inkShare(titleCutout(frame, lock.card, defaultCreateCanvas)) > TITLE_INK
@@ -820,7 +833,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           dueIn(left(cardRead.at));
         }
         if (!manual && strip.sharpness === 0 && !v.older) {
-          if (inked) noLineAgain(v, art);
+          // Ink in the title over a blank strip: an older card, read by its title on this look (decision 550).
+          if (inked) noLineAgain(v, art, { now: true });
           if (!v.older) return;
         }
         if (!manual && outOfFocus) {
@@ -854,7 +868,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           // weighed together. Auto scan looks again instead (several more reads would keep it busy
           // while a new card is laid in; the strip is found on each card already, straighten.js).
           const onCard = cropTo(frame, lock.view, defaultCreateCanvas);
-          const located = locate(onCard);
+          const located = locate(onCard).slice(0, SCAN_CARD_BLOCKS);   // the likeliest first (decision 550)
           progress?.drop('card');
           located.forEach((_, i) => progress?.plan(`located-${i + 1}`, STEP_MS.ocr));
           const more = located.length ? await readCollectorLine(onCard, pattern, located, { all: true, progress }) : [];
@@ -874,8 +888,9 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         // Scan card before the view is locked: the whole picture, every block read.
         progress?.drop('strip');
         progress?.drop('card');
-        blocks.forEach((_, i) => progress?.plan(`located-${i + 1}`, STEP_MS.ocr));
-        attempts = blocks.length ? await readCollectorLine(frame, pattern, blocks, { all: true, progress }) : [];
+        const likely = blocks.slice(0, SCAN_CARD_BLOCKS);   // the likeliest first (decision 550)
+        likely.forEach((_, i) => progress?.plan(`located-${i + 1}`, STEP_MS.ocr));
+        attempts = likely.length ? await readCollectorLine(frame, pattern, likely, { all: true, progress }) : [];
         found = await resolveThorough(attempts.map((a) => a.text), known, { pattern, progress, ...net });
         via = 'scan-card-unlocked';
       }
@@ -923,12 +938,14 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       }
 
       // No modern collector line: an older card, by its title (and "123/350" from 1998 on). Scan
-      // card always tries it; auto scan in the older-card mode, two looks naming the same card.
+      // card always tries it; auto scan in the older-card mode, one read (decision 550).
       if (!found && (manual || (lock && v.older))) {
         if (manual) say('muted', 'No set code at the bottom: reading the title…');
         progress?.plan('older', STEP_MS.older);
         progress?.start('older');
-        const read = await readOlderCard(frame, { texts: attempts.map((a) => a.text), card: lock?.card ?? null, listMark: listSeen });
+        const read = await readOlderCard(frame, {
+          texts: attempts.map((a) => a.text), card: lock?.card ?? null, listMark: listSeen, signal: ask.signal,
+        });
         progress?.finish('older');
         if (stale()) return;
         foilSeen = undefined;   // an older card, read by its title: no mark to go by
@@ -953,16 +970,11 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           cardRead.tier = old.tier;
           cardRead.foilSeen = undefined;
         }
-        if (!manual) {
-          // Two looks must name the same card, and the same printing when one's to be taken.
-          const said = old ? `${old.name}|${old.cards.length === 1 ? old.cards[0].id : ''}` : null;
-          if (!old || v.pendingOld !== said) {
-            v.pendingOld = said;
-            return;
-          }
-          v.pendingOld = null;
-        }
-        // Two looks have named it: one printing, sent on this look.
+        // One read (decision 550; two looks had to agree before, a second title read of about 0.8 s):
+        // one printing, by its number and set size or clearly ahead by look, is sent on this look;
+        // several open the printing list. No printing of the name found: auto scan looks again.
+        if (!manual && !old) return;
+        v.pendingOld = null;
         if (old?.cards.length === 1) {
           found = { card: old.cards[0], tier: old.tier, sure: true };
           via = `title-${old.how}-${old.tier === 2 ? 'number' : 'look'}`;

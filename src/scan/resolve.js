@@ -451,7 +451,10 @@ export async function resolveText(text, known, {
     found = pickBest(pool, clues, take);
   }
   // Still no card clearly ahead: that set's cards of that rarity, and the artist's cards, in one search.
-  if (!found && wider) {
+  // Auto scan only with a number read (decision 550): with none, the searches were the slow failed
+  // reads of the run logs (1.4 to 2 s each, searches 550 ms apart), and another look, 0.1 s off,
+  // usually reads the number. Scan card still asks them.
+  if (!found && wider && (manual || clues.numbers.length)) {
     await ask(wider);
     found = pickBest(pool, clues, take);
   }
