@@ -663,7 +663,10 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     ctx.fillStyle = '#fff';
     ctx.fillRect(0, 0, w, h);
     const k = Math.min(w / src.width, h / src.height);
-    ctx.drawImage(src, (w - src.width * k) / 2, (h - src.height * k) / 2, src.width * k, src.height * k);
+    // The name at the title box's left edge, short or long (owner, 2026-10-26: "I always want it to be left
+    // aligned, even when it won't fill the entire box"; decision 555); the strip centred, as before.
+    const x = el === titleRef.current ? 0 : (w - src.width * k) / 2;
+    ctx.drawImage(src, x, (h - src.height * k) / 2, src.width * k, src.height * k);
   }
 
   /**
