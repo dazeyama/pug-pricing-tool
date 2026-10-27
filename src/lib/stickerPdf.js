@@ -32,14 +32,14 @@ export const SHEET = {
 };
 export const PER_SHEET = SHEET.columns * SHEET.rows;
 /**
- * The store printer's offset, in points (+dx moves everything right, +dy
- * down): every printer feeds a little off. Measured from a printed sticker
- * (owner, 2026-10-16, "Meowth [42]": the content sat 0.059 in right and
- * 0.047 in above the sticker's centre), so the print moves 0.06 in left and
- * 0.05 in down. The same numbers as the sticker-sheet tool's template.json
- * printer_offset; measure again from a sticker if the printer changes.
+ * The printer's offset, in points (+dx moves everything right, +dy down):
+ * every printer feeds a little off. None by default (owner, 2026-10-27,
+ * decision 573): the 0.06 in left, 0.05 in down measured on 2026-10-16 from
+ * a printed sticker ("Meowth [42]") was the owner's own printer's, not the
+ * store's. Measure again from a sticker printed on the store's printer
+ * before setting one; `stickerBox` and `stickerPdf` take an `offset`.
  */
-export const PRINTER_OFFSET = { dx: -0.06 * IN, dy: 0.05 * IN };
+export const PRINTER_OFFSET = { dx: 0, dy: 0 };
 
 const NAME_LETTERS = 6;      // "first 5ish letters of the name" (owner, 2026-10-16)
 // Kept clear inside each sticker (owner, after two test prints: "we can't be close to or

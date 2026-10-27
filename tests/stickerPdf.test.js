@@ -54,8 +54,8 @@ test('the sheet: 8 x 20 stickers of 1 in x 1/2 in from 0.29 in, 0.49 in; a print
   assert.deepEqual(stickerBox(0, none), { x: SHEET.left, y: SHEET.top, w: 72, h: 36 });
   assert.deepEqual(stickerBox(9, none), { x: SHEET.left + 72, y: SHEET.top + 36, w: 72, h: 36 });
   assert.deepEqual(stickerBox(159, none), { x: SHEET.left + 7 * 72, y: SHEET.top + 19 * 36, w: 72, h: 36 });
-  // The store printer's offset, measured from a printed sticker (2026-10-16), applies by default.
-  assert.deepEqual([PRINTER_OFFSET.dx, PRINTER_OFFSET.dy].map((v) => Math.round(v * 100) / 100), [-4.32, 3.6]);
+  // No printer offset by default (decision 573): the one measured on 2026-10-16 was the owner's own printer's.
+  assert.deepEqual(PRINTER_OFFSET, { dx: 0, dy: 0 });
   assert.equal(stickerBox(0).x, SHEET.left + PRINTER_OFFSET.dx);
   assert.equal(stickerBox(0).y, SHEET.top + PRINTER_OFFSET.dy);
   assert.equal(stickerBox(0, { dx: 2, dy: -3 }).x, SHEET.left + 2);

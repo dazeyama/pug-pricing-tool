@@ -6,6 +6,8 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
+- **Unpushed** (main session): decision 573, the Pokémon sticker sheet's printer offset removed
+  (`src/lib/stickerPdf.js`); the push is next, on the owner's ask.
 - **From the 2026-10-26 review of work mode, still open** (main session, decision 540; the rest fixed by 541): a
   fork's prod or delete approval relayed by message isn't the owner's consent to the harness, so it may stall on a
   prompt in its own chat; whether the UserPromptSubmit hook fires on a turn started by a message is untried;
@@ -33,6 +35,15 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-27 (main session): **The Pokémon sticker sheet's printer offset removed** (decision 573; the owner:
+  "remove the offset we calibrated for my person[al] printer from the print pokemon stickers sheet"):
+  `PRINTER_OFFSET` in `src/lib/stickerPdf.js` is `{ dx: 0, dy: 0 }`, so the stickers print at the grid's place
+  (0.29 in from the left, 0.49 in from the top, decision 281) with no shift; `stickerBox` and `stickerPdf` still
+  take an `offset`, for a measurement from the store's printer later. The test's default-offset check follows
+  (`tests/stickerPdf.test.js`). Where to look: a collection with Pokémon cards, EXPORT ▾ → Print PKM Stickers?,
+  the PDF printed at 100%: the content sits 0.06 in further right and 0.05 in higher than before. Untested on
+  paper. No migration. Made in the main session, not by the Export fork (the owner's "quickly"); the Export fork
+  told.
 - 2026-10-27: **Pushed without a bump, no review** (the owner's ask, "push no bump, no review"), decisions
   568–572, the 2026-10-27 push review's scanner fixes: the camera's timer holding the card's real time (568), a
   card's ranking by look ending with the card (569), the name-only 3 s choice in 4 s at most (570), no 3 s choice
