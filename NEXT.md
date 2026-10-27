@@ -13,11 +13,12 @@ marks each task done here when it's finished, with the exact file and function o
 - **The scanner made fast, a 3 s limit per card** (the owner, 2026-10-26, after a demo at work that was too slow;
   Phone scanner session): the analysis is done, from the dev run logs of 2026-10-18 to 10-20
   (`C:\ClaudeProjects\temp\scan-run\`, re-measured with `node scanstats.mjs <log>` and `node gaps.mjs <log>`
-  there). Next: the owner decides what the phone does when 3 s run out, then the pieces one at a time (the cap and
-  tighter time limits in `src/scan/Scanner.jsx` `scanFrame`, `ocr.js` `READ_MS`; no Scryfall searches on auto scan
-  without a number read, `resolve.js` `resolveText`; quicker pacing, `REST_MS` and the settle check; older cards
-  straight to the title, one read; Scan card within 3 s; maybe a card index on the phone instead of Scryfall
-  calls). Nothing changed in the app yet.
+  there). The 3 s cap and tighter limits are done (decision 549, Done below). Next, one at a time, the owner
+  picking the order: no Scryfall searches on auto scan without a number read (`resolve.js` `resolveText`);
+  quicker pacing (`Scanner.jsx` `REST_MS`, `FIRST_LOOK_MS` and the settle check); older cards straight to the
+  title, one read (`OLDER_AFTER`, `noLineAgain`), with the printings search dropped at a look's end (`older.js`
+  `printingsOf`, `scry.searchAll` takes no signal yet); Scan card's work trimmed to fit (`readCollectorLine`,
+  `resolveThorough`); maybe a card index on the phone instead of Scryfall calls (a new mechanism, the owner's call).
 - **From the 2026-10-26 review of work mode, still open** (main session, decision 540; the rest fixed by 541): a
   fork's prod or delete approval relayed by message isn't the owner's consent to the harness, so it may stall on a
   prompt in its own chat; whether the UserPromptSubmit hook fires on a turn started by a message is untried;
@@ -44,6 +45,23 @@ marks each task done here when it's finished, with the exact file and function o
 - **Known limit, left as is:** how long a copies-we-own count takes on the live site isn't measured.
 
 ## Done
+
+- 2026-10-26 (Phone scanner session): **3 s a card, then a pick list or set aside** (decision 549, the owner's
+  ask after the demo): `src/scan/Scanner.jsx` `CARD_MS`, `cardTime` (the card's 3 s from its first settled look on
+  auto scan, from the press on Scan card and Title) and `timeUp` (the three likeliest printings in the printing
+  list, else "Couldn't read this card in time: set it aside…"); `resolve.js` `likeliest` and `onCandidates` (the
+  candidates whether or not one is taken) and `signal` (a look's Scryfall requests dropped at its end); per try, a
+  lookup 1 s and a search 1.5 s; `ocr.js` `READ_MS` 1.5 s (was 5 s); Stop after 1.5 s (was 3 s); the typed name's
+  search keeps 10 s (`NAME_MS`). In the Buy tab's file: `src/lib/scryfall.js` `cardBySetNumber` and `searchQuick`
+  take `{ signal, timeoutMs }`, the scanner their only callers, defaults unchanged. Tests in
+  `tests/scanResolve.test.js`; TEST.md section 10, two new cases and Never stuck brought to 3 s. Where to look:
+  the phone on dev's LAN link, auto scan on, a stack of modern cards: each in by about 3 s; a card half out of the
+  holder: within 3 s the "Which card? Not sure: match the picture." list or the set-aside message; Scan card on a
+  hard card: the list. Untested on a phone. Picked by me, reversible: the reader's 1.5 s rather than the 1 s I first
+  proposed (tighter restarts the reader on a slow phone's good reads), Stop at 1.5 s, the list's wording. Not
+  covered: a blurry card that stays blurry is set aside at 3 s rather than waiting for focus; an older card's
+  printings search isn't dropped at a look's end. No migration. Help: Scanning from a phone is out of date (the
+  pick list at 3 s).
 
 - 2026-10-26: **The affected-tests hook removed** (side session, the owner's ask; decision 548, 528 struck):
   `.claude/hooks/test-edit.mjs` deleted with its `.claude/settings.json` entry; the lint hook stays, and the commit's

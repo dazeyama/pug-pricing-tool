@@ -404,9 +404,9 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       three tries does the phone say "No answer from the computer after three tries".
 - [ ] **The camera cut off** (decision 303): a call (or the phone's own camera) makes the strip say the phone has the
       camera; back, scanning carries on with the view still locked; a frozen picture restarts itself within seconds.
-- [ ] **Never stuck** (decision 300): on a slow network Scan card ends within 20 s with "That took too long…"; after
-      3 s the button reads "Reading… tap to stop", and a tap stops it; holding Scan card (a buzz) starts over and reads
-      the card in the holder, opening no menu or text selection.
+- [ ] **Never stuck** (decisions 300, 549): on a slow network Scan card ends within 3 s, with the printing list or
+      "Couldn't read this card in time…"; after 1.5 s the button reads "Reading… tap to stop", and a tap stops it;
+      holding Scan card (a buzz) starts over and reads the card in the holder, opening no menu or text selection.
 - [ ] **Stop is an abort** (decision 321): ■ Stop mid-read or mid-refocus takes the picture and the phone's green
       camera dot away at once; the camera stays off until START CAMERA.
 - [ ] **The computer never stuck** (decision 307): with the laptop on Slow 3G, scans finish or fail with a reason within
@@ -430,6 +430,14 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
 - [ ] **Let me type it** (decision 420): on a "Which …?" printing list, Let me type it (left of Skip this card) opens
       the name box empty, "Which card is it? Type its name."; type a name and Find printings: that name's printings
       list; pick one: it goes in. Skip from the box sets the card aside as before.
+- [ ] **3 s a card** (decision 549, Phone scanner session): auto scan on, time each modern card from laying it to
+      its chime: never past about 3 s. A card that doesn't read (half out of the holder, or a thumb over its bottom
+      line) opens "Which card? Not sure: match the picture." with up to three printings, best first, or, with none
+      read at all, "Couldn't read this card in time: set it aside and add it on the computer." and the error sound,
+      and the card isn't read again till the next one's laid. Pick one: it goes in as Scan card's would; Skip this
+      card: nothing goes in. Scan card on a card it can't make sure of shows the same list, not "Couldn't read".
+- [ ] **3 s, older cards** (decision 549): a pre-2014 card on auto scan either goes in, or within about 3 s shows
+      its name's printings to pick from.
 
 ## 11. Collections tab: collections
 
