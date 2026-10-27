@@ -43,6 +43,17 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-26 (Buy tab session): **SAVE EDIT never saves an unpriced card over a priced one** (decision 546; the
+  owner's ask through the main session: "What if we just made it so that an unpriced card can never be saved ontop of
+  an already priced one?"): while Skip pricing is on, SAVE EDIT on a line that has a price keeps its price fields as
+  they are (`unit_price`, `market_price`, `price_source`, `price_snapshot` with the edit's version written in,
+  `priced_at`, the JustTCG ids) unless a manual price was typed; an unpriced line's edit stays unpriced; ADD CARD and
+  a phone's scan are unchanged. `skipPricingFields` and `keptPriceFields` in `src/lib/unpriced.js` (tested in
+  `tests/unpriced.test.js`), used by `buildLine` (`buyLine.js`), which `PricingScreen.jsx` hands `editing.line`.
+  Known and accepted: an edit that changes the printing or condition keeps the old one's price; REPRICE? puts it
+  right once the switch is off. TEST.md case in section 7. No migration. Where to look: a project with a priced card,
+  Skip pricing turned on, click the card → SAVE EDIT: its price stays (no —, and Not priced doesn't grow); with a
+  manual price typed it goes in at that; an unpriced card edited stays —. Untested in the app.
 - 2026-10-26 (Records session): **The Changelog shows no price on a card with none** (decision 545; the owner's ask
   through the main session, "I don't want to do a migration for this"): a card row whose price is exactly $0 shows
   none after its text (`rowPrice`, `src/lib/changelog.js`, tested in `tests/changelog.test.js`;

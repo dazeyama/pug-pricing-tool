@@ -30,6 +30,36 @@ export const unpricedFields = (snapshot = {}) => ({
 });
 
 /**
+ * A line's price as it stands, for an edit to keep (decision 546): its price fields as saved, and its snapshot
+ * with what the edit records on top (its version).
+ * @param {object} line  the line being edited
+ * @param {object} [snapshot]  what the Price screen records of the edit
+ */
+export const keptPriceFields = (line, snapshot = {}) => ({
+  unit_price: line.unit_price,
+  market_price: line.market_price ?? null,
+  price_source: line.price_source,
+  price_snapshot: { ...(line.price_snapshot ?? {}), ...snapshot },
+  priced_at: line.priced_at,
+  justtcg_card_id: line.justtcg_card_id ?? null,
+  justtcg_variant_id: line.justtcg_variant_id ?? null,
+});
+
+/**
+ * The price fields of a card saved while Skip pricing is on (decision 514): none, since nothing was looked up.
+ * But a manual price typed is a price (nothing here: buildLine's own fields stand), and an edit of a card already
+ * priced keeps its price as it was (decision 546): an unpriced card is never saved over a priced one. If the edit
+ * changed the printing or condition, the kept price is the old one's; REPRICE? puts it right once the switch is off.
+ * @param {{ manual: number|null, edited: object|null, snapshot?: object }} p  `edited`: the line being edited, if any
+ * @returns {object} the fields to spread over the line
+ */
+export function skipPricingFields({ manual, edited, snapshot = {} }) {
+  if (manual != null) return {};
+  if (edited && !isUnpriced(edited)) return keptPriceFields(edited, snapshot);
+  return unpricedFields(snapshot);
+}
+
+/**
  * A TCGplayer-only Pokémon card's JustTCG card id when nothing was looked up (decision 526): its version carries it,
  * as a card known only from TCGplayer does, so the line keeps it and REPRICE?, SAVE EDIT and Convert to buy find the
  * card again. None for a TCGdex card on its own version, nor for Magic: they're found by their own ids.

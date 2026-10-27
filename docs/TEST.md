@@ -279,6 +279,11 @@ what happens. The findings are reported when the pass ends.
       and the phone's strip shows no price. Turn the switch off with a card picked: its prices load and ADD CARD
       waits for them as usual; click an unpriced line: it's priced at today's price on SAVE EDIT. Turn it on with a
       card loading: the loading stops and the buttons read —.
+- [ ] **SAVE EDIT never saves an unpriced card over a priced one** (decision 546; dev): on `SMOKE Project` with Skip
+      pricing off, add a card (it's priced); turn **⚡ Skip pricing: on**; click that line, change nothing, SAVE EDIT:
+      it keeps its price, not **—**, and **Not priced** doesn't grow. Again with its condition changed: the price
+      stays the old condition's (REPRICE? puts it right once the switch is off). Type a manual price (Alt+M) in the
+      edit: it goes in at that price. Click an unpriced line and SAVE EDIT: still **—**.
 
 ## 8. Buy tab: the buy list and CONFIRM BUY
 

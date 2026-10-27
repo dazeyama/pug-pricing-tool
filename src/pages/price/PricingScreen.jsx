@@ -611,8 +611,10 @@ export default function PricingScreen({
       variant: ladder[condition]?.source === 'justtcg' ? marketVariants[condition] ?? null : null,
       imageUrl: magic ? null : images.thumb,
       englishName,
-      // Skip pricing (decision 514): no price, unless one was typed; of what's on screen only its version.
+      // Skip pricing (decision 514): no price, unless one was typed; of what's on screen only its version. An edit
+      // of a card already priced keeps its price (decision 546).
       unpriced: skip,
+      edited: editing?.line ?? null,
       snapshot: skip && manual == null ? { version: version?.id ?? null } : {
         justtcg: market,
         fallback,

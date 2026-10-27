@@ -5,7 +5,7 @@ import { CONDITIONS } from './prices.js';
 import { magicTreatments } from './printings.js';
 import { nameKey } from './normalize.js';
 import * as scry from './scryfall.js';
-import { unpricedCardId, unpricedFields } from './unpriced.js';
+import { skipPricingFields, unpricedCardId } from './unpriced.js';
 
 // Where a fallback price came from → price_source (owner, 2026-09-29).
 const FALLBACK_SOURCES = {
@@ -74,10 +74,12 @@ export function magicPrinting(c, finish) {
  * @param {string|null} p.imageUrl
  * @param {string|null} [p.englishName]  a Japanese card's English name (pokemonNames.js)
  * @param {boolean} [p.unpriced]  a project's Skip pricing is on (decision 514): no price, unless one was typed
+ * @param {object|null} [p.edited]  the line being edited (SAVE EDIT): while Skip pricing is on, its price is kept
+ *   when it has one (decision 546)
  */
 export function buildLine({
   candidate: c, finish, version, pokemonCard, condition, quantity, ladder, manual, snapshot, result, variant, imageUrl,
-  englishName, unpriced = false,
+  englishName, unpriced = false, edited = null,
 }) {
   const entry = ladder[condition];
   const unitPrice = manual ?? entry?.price;
@@ -102,8 +104,9 @@ export function buildLine({
     justtcg_card_id: result?.card ? String(result.card.uuid ?? result.card.id) : null,
     justtcg_variant_id: variant ? String(variant.uuid ?? variant.id) : null,
     image_url: imageUrl ?? null,
-    // Skip pricing (decision 514): nothing was looked up, so no price; a manual price typed is still one.
-    ...(unpriced && manual == null ? unpricedFields(snapshot) : {}),
+    // Skip pricing (decision 514): nothing was looked up, so no price; a manual price typed is still one, and an
+    // edit of a card already priced keeps its price (decision 546).
+    ...(unpriced ? skipPricingFields({ manual, edited, snapshot }) : {}),
   };
 
   if (c.game === 'mtg') {

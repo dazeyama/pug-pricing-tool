@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  isUnpriced, noneShowPrice, priceOf, showsNoPrice, unpricedCardId, unpricedCards, unpricedFields,
+  isUnpriced, keptPriceFields, noneShowPrice, priceOf, showsNoPrice, skipPricingFields, unpricedCardId, unpricedCards,
+  unpricedFields,
 } from '../src/lib/unpriced.js';
 import { candidateKeyOf } from '../src/lib/candidateKey.js';
 import { rateTotals } from '../src/lib/rates.js';
@@ -48,6 +49,37 @@ test("a card going in with no price: $0 'unpriced', nothing looked up kept, only
   assert.equal(f.justtcg_variant_id, null);
   assert.ok(!Number.isNaN(Date.parse(f.priced_at)));
   assert.deepEqual(unpricedFields().price_snapshot, { skip_pricing: true });
+});
+
+// Decision 546: SAVE EDIT while Skip pricing is on never saves an unpriced card over a priced one.
+test("an edit while Skip pricing is on keeps a priced card's price; an unpriced one stays so; a typed price wins", () => {
+  const line = {
+    price_source: 'justtcg', unit_price: 1.5, market_price: 2.1, priced_at: '2026-10-20T18:00:00Z',
+    justtcg_card_id: 'c1', justtcg_variant_id: 'v1', price_snapshot: { version: 'v-old', override: null, scan: { scan_id: 's' } },
+  };
+  const kept = skipPricingFields({ manual: null, edited: line, snapshot: { version: 'v-new' } });
+  assert.deepEqual(kept, {
+    unit_price: 1.5, market_price: 2.1, price_source: 'justtcg', priced_at: '2026-10-20T18:00:00Z',
+    justtcg_card_id: 'c1', justtcg_variant_id: 'v1',
+    // The price as it was priced, the edit's version on top: if the edit changed the printing or condition the
+    // kept price is the old one's, and REPRICE? puts it right once the switch is off.
+    price_snapshot: { version: 'v-new', override: null, scan: { scan_id: 's' } },
+  });
+  assert.equal(isUnpriced(kept), false);
+  // An unpriced card edited stays unpriced, with the edit's version.
+  const still = skipPricingFields({
+    manual: null, edited: { ...none, price_snapshot: { version: 'v-old', skip_pricing: true } }, snapshot: { version: 'v-new' },
+  });
+  assert.equal(isUnpriced(still), true);
+  assert.deepEqual(still.price_snapshot, { version: 'v-new', skip_pricing: true });
+  // A new card goes in unpriced, as before; a manual price typed leaves buildLine's own fields standing.
+  assert.equal(isUnpriced(skipPricingFields({ manual: null, edited: null })), true);
+  assert.deepEqual(skipPricingFields({ manual: 3, edited: line }), {});
+  // A line with nothing recorded beside its price.
+  assert.deepEqual(keptPriceFields({ price_source: 'manual', unit_price: 2, priced_at: 't' }), {
+    unit_price: 2, market_price: null, price_source: 'manual', price_snapshot: {}, priced_at: 't',
+    justtcg_card_id: null, justtcg_variant_id: null,
+  });
 });
 
 // Decision 526: a TCGplayer-only Pokémon card added while Skip pricing is on keeps its JustTCG card id.
