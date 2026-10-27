@@ -240,6 +240,11 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   // cands }, from its first settled look; `cands` the likeliest printings its reads found
   // (id → { card, score }). Null with no card being read.
   const cardTime = useRef(null);
+  /** The card's 3 s let go, and its ranking by look ended with it (decision 569). */
+  function dropCardTime() {
+    cardTime.current?.stop?.abort();
+    cardTime.current = null;
+  }
   // When Scan card or Title was pressed, while its read runs: its 3 s, for the timer (decision 558).
   const pressClock = useRef(null);
   // A card's 3 s up with a name but no likely printing: its printings being found for the list, auto scan
@@ -259,7 +264,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   // A list opened stops the card's 3 s (decision 551): they ran out between a tap on Branching Bolt
   // and its send finishing on 2026-10-26, and the list opened again.
   const setPick = (next) => {
-    if (next) cardTime.current = null;
+    if (next) dropCardTime();
     setPickState(next);
   };
   // Which card? (decision 311): a title no read could name, its name to type: { guess, frame, card,
@@ -589,7 +594,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     lockRef.current = next;
     setLockState(next);
     view.current = { held: null, pending: null };
-    cardTime.current = null;
+    dropCardTime();
     sinceLock.current = 0;
     relockDue.current = false;
     relockTries.current = 0;
@@ -825,6 +830,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           // look; another card's art, and they start afresh. Up, and the phone asks (timeUp).
           const t = cardTime.current;
           if (!t || artDistance(t.art, art) >= ART_CHANGED) {
+            dropCardTime();   // another card: the last one's ranking by look ends (decision 569)
             cardTime.current = { at: Date.now(), art, frame, foilSeen: undefined, tier: 1, cands: new Map() };
             cardEnd.current = null;
           } else if (left(t.at) <= 0) {
@@ -838,7 +844,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         // The holder empty: a card taken away before its time ran out is done with (decision 559: its timer
         // would count on over the empty holder).
         if (!manual && !inked) {
-          cardTime.current = null;
+          dropCardTime();
           return;
         }
         // A blank strip with ink in the title: a white-bordered older card (decision 550), its title read
@@ -1011,17 +1017,21 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
             // first, the look breaks their ties.
             const t = cardRead;
             t.lookFor = name;
+            // Ended with its card (decision 569): sent, taken away, another laid, Stop, or its choice made.
+            t.stop ??= new AbortController();
             const clue = new Map(best.ranked.map((r) => [r.card.id, r.score]));
             t.looking = printingsFor(name, frame, {
               texts, card: lock?.card ?? null, listMark: listSeen, read: readTitleText, older: false, bottom: false,
+              signal: t.stop.signal,
             }).then((byName) => {
               const order = byName?.byLook;
-              if (!order?.length) return;
-              order.forEach((c, i) => {
-                const had = t.cands.get(c.id);
-                const score = (clue.get(c.id) ?? 0) + (order.length - i) / (order.length + 1);
-                t.cands.set(c.id, { card: c, score, printed: Boolean(had?.printed), named: true });
-              });
+              if (!order?.length || t.stop.signal.aborted) return;
+              // The look kept apart from the clue scores (decision 569): it only breaks their ties at 3 s,
+              // and a later look's better clue score (`collect` keeps the higher) still counts.
+              t.lookBonus = new Map(order.map((c, i) => [c.id, (order.length - i) / (order.length + 1)]));
+              for (const c of order) {
+                if (!t.cands.has(c.id)) t.cands.set(c.id, { card: c, score: clue.get(c.id) ?? 0, printed: false, named: true });
+              }
               t.byLook = order;
             }).catch(() => {}).finally(() => {
               t.looking = null;
@@ -1163,11 +1173,13 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       say('muted', `${t.name ?? 'The card'}: ordering its printings by look…`);
       Promise.race([t.looking, sleep(LOOK_WAIT_MS)]).then(() => {
         finding.current = false;
+        t.stop?.abort();   // its choice is made now: a ranking still running ends (decision 569)
         if (openNow.current.pick || openNow.current.nameAsk || openNow.current.needs) return;
         offerChoice(t, { manual });
       });
       return;
     }
+    t?.stop?.abort();
     offerChoice(t, { manual });
   }
 
@@ -1181,7 +1193,9 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     const all = [...(t?.cands.values() ?? [])];
     const ofName = t?.name ? all.filter((c) => c.named || sameName(c.card, t.name)) : [];
     const offered = ofName.length ? ofName : all.filter((c) => c.printed);
-    const top = offered.sort((a, b) => b.score - a.score).slice(0, CANDIDATES).map((c) => c.card);
+    // The look's order breaks the clue scores' ties (decisions 567, 569).
+    const ranked = (c) => c.score + (t?.lookBonus?.get(c.card.id) ?? 0);
+    const top = offered.sort((a, b) => ranked(b) - ranked(a)).slice(0, CANDIDATES).map((c) => c.card);
     trace('time-up', {
       manual, count: top.length, ms: t ? Date.now() - t.at : null,
       cards: top.map((c) => `${c.name} ${String(c.set).toUpperCase()} ${c.collector_number}`),
@@ -1306,7 +1320,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     const v = view.current;
     v.held = null;
     v.pending = null;
-    cardTime.current = null;
+    dropCardTime();
     endReading();
     if (text) say('muted', text);
   }
@@ -1325,7 +1339,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     busy.current = false;
     manualWaiting.current = false;
     relockDue.current = false;
-    cardTime.current = null;
+    dropCardTime();
     resetOcr();
     endReading();
     trace('stop-camera');
@@ -1346,7 +1360,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   /** Which card? (decision 311): the box opened, the reader's closest name in it. */
   function askName(ask) {
     trace('name-ask', { from: ask.from ?? null, guess: ask.guess });
-    cardTime.current = null;   // the box stops the card's 3 s, as a list does (decision 551)
+    dropCardTime();   // the box stops the card's 3 s, as a list does (decision 551)
     setNameAsk(ask);
     say('warn', lastDark.current
       ? `Couldn't read the name: it's too dark (${lightTip()}). Type it below, or skip the card.`
@@ -1400,7 +1414,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       if (key === lastSent.current) {
         v.held = art;
         v.pending = null;
-        cardTime.current = null;
+        dropCardTime();
         return;
       }
       if (!sure && v.pending !== key) {
@@ -1444,7 +1458,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     // The card's time held as it was when it was sent (decision 568); a card picked from a list has none.
     const startedAt = pressClock.current ?? cardTime.current?.at ?? null;
     if (startedAt) cardEnd.current = { at: startedAt, ms: Math.max(0, sentAt - startedAt) };
-    cardTime.current = null;   // this card's done: the next one's 3 s start when it's laid (decision 549)
+    dropCardTime();   // this card's done: the next one's 3 s start when it's laid (decision 549)
     setLocal(null);
     noteSent();
   }
