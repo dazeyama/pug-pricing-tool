@@ -6,20 +6,20 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
-- **Unpushed** (main session): decisions 541–563: work mode's three fixes and CLAUDE.md trimmed (541–543, docs and
-  `.claude/` only); the Secret Lair foils generator in the repo (544, Buy tab); the Changelog showing no price on a
-  card with none (545, Records); SAVE EDIT keeping a priced card's price under Skip pricing (546, Buy tab); the
-  matching audit page built and reverted the same day (547, no change in the app); the affected-tests hook removed
-  (548, `.claude/` and CLAUDE.md only); the scanner's 3 s a card, then a pick list or set aside (549), its waits
-  cut (550), the name read on every look by a second reader (551), the title's box above the camera (552) showing
-  the name alone (553), both boxes hidden while a sheet is open (554), the name at the box's left edge (555), auto
-  scan keeping on when its 3 s find nothing (556, undone by 561), older cards by name as soon as auto scan can tell
-  (557), the card's 3 s on the camera as a timer that counts up, holds and goes red from 2.1 s (558–560), 3 s with
-  nothing likely opening a choice (561), the name's printings scored on the strip with the older-card mode and
-  Title / Number retired (562), no re-crop by itself (563), and Help's Scanning from a phone brought up to date
-  (Phone scanner, tested by the owner on the phone; `src/scan/`, `src/styles/scan.css`, `src/lib/scryfall.js` with
-  its defaults unchanged, README.md); two memory notes folded into CLAUDE.md and `docs/DATABASE.md` (e368ed4). No
-  migrations. NEXT.md's notes.
+- **From the v1.0.6-badscanner review, not acted on** (main session, 2026-10-27; none stopped the push):
+  - Phone scanner: `printingsOf` (`older.js:32-40`) hands every caller the cached in-flight promise, bound to the
+    first caller's signal; when a look's fetch (`Scanner.jsx:983`) is still out at 3.0, `timeUp`'s
+    `printingsFor` gets that promise, the look's `finally` aborts it (`:1105`), and Which card? opens empty
+    instead of the name's printings (decision 561). Plausible, timing-dependent; no test of `printingsOf` with a
+    signal.
+  - Phone scanner: a modern card read by name only, with no strip clue, scores every printing 0, so the 3 s list
+    and View all show its three oldest printings (`Scanner.jsx:990`, `:1138`). Design-level.
+  - Phone scanner: `CardTimer.jsx:36-40` rounds 2.95–2.99 s to "3.0" and holds it red; 560 says amber before 3.0.
+  - Phone scanner, docs: `docs/TEST.md:407` (Never stuck) expects "Couldn't read this card in time", a message
+    561 removed; spec rows 557 and 561 describe a background printings fetch that 562 took out.
+  - Buy tab: a TCGplayer-only Pokémon card whose version is changed under Skip pricing keeps the old
+    `justtcg_card_id` (`unpriced.js:44`, `buyLine.js:141`) and REPRICE? prices the old version
+    (`todaysPrices.js:137-144`); Magic and TCGdex lines are put right. Narrow, plausible.
 - **From the 2026-10-26 review of work mode, still open** (main session, decision 540; the rest fixed by 541): a
   fork's prod or delete approval relayed by message isn't the owner's consent to the harness, so it may stall on a
   prompt in its own chat; whether the UserPromptSubmit hook fires on a turn started by a message is untried;
@@ -47,6 +47,15 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-27: **Pushed as v1.0.6-badscanner** (the owner's ask), decisions 541–563, 68 commits since the 2026-10-26
+  push: the scanner made fast (3 s a card with the timer on the camera, the name read on every look by a second
+  reader, the title's box above the camera, a choice at 3 s, the older-card mode and Title / Number retired, no
+  re-crop by itself; 549–563, tested by the owner on the phone over dev's LAN link) and Help's Scanning from a
+  phone rewritten; the Changelog showing no price on a card with none (545) and SAVE EDIT keeping a priced card's
+  price under Skip pricing (546), with Help's Skip pricing line; the Secret Lair foils generator in the repo (544);
+  the matching audit page built and reverted the same day (547, nothing in the app); work mode's fixes, CLAUDE.md
+  trimmed with the Database and Work mode docs moved out, the affected-tests hook removed, two memory notes folded
+  in (541–543, 548, docs and `.claude/` only). No migrations: prod and dev stay at 0013. Tag `v1.0.6-badscanner`.
 - 2026-10-27 (main session): **Help: Skip pricing's SAVE EDIT line brought up to date** (decision 546; the owner,
   before the push: "Yes, fix Help's Skip pricing line about SAVE EDIT now"): README.md's Skip pricing bullets now
   say SAVE EDIT keeps a priced card's price, even when the edit changed its printing or condition (REPRICE? puts it
