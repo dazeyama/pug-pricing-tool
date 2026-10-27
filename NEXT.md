@@ -49,6 +49,13 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-27 (Phone scanner session): **3 s with nothing likely: a choice, not a retry** (decision 561, the
+  owner's call, undoes 556's retry): `src/scan/Scanner.jsx` `timeUp` opens the read name's printings in the
+  printing list (`printingsFor`, auto scan held off by `finding` while they come), else Which card? with the
+  title's closest guess (`cardRead.guess`); the same when Scan card's 3 s run out. Where to look: the phone, a
+  card that won't read (Goblin Electromancer): at 3 s its printings to pick from, or Which card?; never "Still
+  reading". Untested on a phone. Not changed: Scan card ending inside its 3 s with nothing at all still says to
+  set the card aside. No migration.
 - 2026-10-27 (Phone scanner session): **The camera's timer red from 2.1 s** (decision 560, the owner's ask):
   `src/scan/CardTimer.jsx` and `.scan-card-timer.late` (`--bad`): red while counting from 2.1, held red and bold
   when the 3 s ran out; a card done sooner stays amber. Where to look: the phone, a slow card: red from 2.1, red at
@@ -74,7 +81,7 @@ marks each task done here when it's finished, with the exact file and function o
   `tests/scanOlder.test.js`. Where to look: the phone, auto scan, Goblin Electromancer and Guardian of Vitu-Ghazi:
   each goes in, or opens its printings, inside 3 s, no "Still reading" first; modern cards as before. Untested on
   a phone. No migration.
-- 2026-10-27 (Phone scanner session): **Auto scan keeps trying when its 3 s find nothing** (decision 556, the
+- 2026-10-27 (Phone scanner session): *(undone by 561, above)* **Auto scan keeps trying when its 3 s find nothing** (decision 556, the
   owner's ask with a screenshot): `src/scan/Scanner.jsx` `timeUp` on auto scan, with nothing found, says "Still
   reading this card…" (no error sound, the card not held) and the next look starts a fresh 3 s; the pick list at
   3 s and Scan card's message are unchanged. Where to look: the phone, auto scan, a pre-2014 card like Goblin
