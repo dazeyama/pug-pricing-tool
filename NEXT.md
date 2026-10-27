@@ -49,6 +49,12 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-27 (Phone scanner session): **The card's 3 s on the camera** (decision 558, the owner's ask):
+  `src/scan/CardTimer.jsx` counts down in tenths in the camera's top right while a card's 3 s run (auto scan's
+  `cardTime`, Scan card's and Title's `pressClock`), amber in the last second; `src/styles/scan.css`
+  `.scan-card-timer`. Where to look: the phone, lay a card: "3.0" counting down, small and see-through, gone when
+  the card goes in. Untested and not measured on a phone. Picked by me, reversible: tenths, 14 px, amber under 1 s.
+  No migration.
 - 2026-10-27 (Phone scanner session): **Older cards by name as soon as auto scan can tell** (decision 557, the
   owner's pick of three ideas): `src/scan/titles.js` `olderStripYear` (a copyright year before 2015, read loosely;
   the 14 of 479 failed strips in the logs that have one are all older cards) makes `noLineAgain` go to the
