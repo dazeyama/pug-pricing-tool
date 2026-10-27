@@ -360,6 +360,23 @@ export function parseCopyrightYear(text) {
 }
 
 /**
+ * The year on a pre-2015 card's copyright line as the collector strip reads it (decision 557), looser
+ * than parseCopyrightYear: the © is often read "@" or "&", and Wizards "Wards" or "W'zards" (2026-10-27:
+ * "'M& @ 2012 Wards of the Coast]", "MK 13 1993-2005 Was ads of he Co:"). A year 1993 to 2014 in a range,
+ * after a ©-like mark, or before a W-word. Since 2015 a card prints its copyright away from the strip, so
+ * a year here is an older card. Pure, for tests.
+ * @returns {number|null}
+ */
+export function olderStripYear(text) {
+  const t = String(text ?? '');
+  const YEAR = '(199[3-9]|200\\d|201[0-4])';
+  const range = new RegExp(`\\b(?:199[3-9]|200\\d|201[0-4])\\s*[-–—~]\\s*${YEAR}\\b`).exec(t);
+  if (range) return Number(range[1]);
+  const one = new RegExp(`(?:[©@&]|\\(c\\)|\\bc)\\s*${YEAR}\\b`, 'i').exec(t) ?? new RegExp(`\\b${YEAR}\\s+W`, 'i').exec(t);
+  return one ? Number(one[1]) : null;
+}
+
+/**
  * "123/350" in text read off a card's bottom: { number: '123', size: 350 },
  * or null. Pure, for tests. Leading zeros go, as Scryfall's numbers have none.
  */

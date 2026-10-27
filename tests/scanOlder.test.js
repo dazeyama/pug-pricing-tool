@@ -1,6 +1,19 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseCopyrightYear, parseOldNumber } from '../src/scan/titles.js';
+import { olderStripYear, parseCopyrightYear, parseOldNumber } from '../src/scan/titles.js';
+
+test('an older card\'s copyright line, as the strip reads it (decision 557)', () => {
+  // Read off the phone on 2026-10-27: Goblin Electromancer, Guardian of Vitu-Ghazi.
+  assert.equal(olderStripYear("==> Svetlin Velinov\n'M& @ 2012 Wards of the Coast]\n"), 2012);
+  assert.equal(olderStripYear('—> Wayne Reynolds\nMK 13 1993-2005 Was ads of he Co:\n'), 2005);
+  assert.equal(olderStripYear('TM & © 2009 Wizards of the Coast'), 2009);
+  // A modern strip, a set code and number: no year. One that lost its year: none either.
+  assert.equal(olderStripYear('R 0113\nHOB • EN ⟿ MIKLOS LIGETI'), null);
+  assert.equal(olderStripYear('M 0042\n40K • EN ⟿ SOMEBODY'), null);
+  assert.equal(olderStripYear('zr Sveum Velinov\nRK O20 CW ads 1 hie (pan)\n'), null);
+  // 2015 on: not an older card.
+  assert.equal(olderStripYear('© 2016 Wizards of the Coast'), null);
+});
 import { matchName, titleKey } from '../src/scan/nameMatch.js';
 
 // docs/SCAN_FUNCTION.md 6.2: older cards by their title and "123/350".
