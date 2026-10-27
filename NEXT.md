@@ -38,6 +38,15 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-26: **CLAUDE.md trimmed and three sections moved** (side session, the owner's ask; decisions 542, 543):
+  20,268 → 14,170 bytes, 268 → 200 lines (30%). The wording pass kept every rule (merged bullets, dates dropped
+  only beside a decision number); then the Database steps, CLI link, `internal` schema, gotchas and squash moved
+  to `docs/DATABASE.md` (read before any migration work), Work mode's four bullets to
+  `.claude/skills/workmode/SKILL.md` (What changes while it's on; the hook's line now names it), and the 0002–0013
+  history to a pointer. Where to look: CLAUDE.md's Database and Work mode sections, each a pointer plus the rules;
+  `docs/DATABASE.md`. Untested: whether a fork reads `docs/DATABASE.md` before its next migration, and the skill's
+  rules section the next time work mode is on; the hook's dry run passed (a 12-hour-old switch file stayed silent,
+  a fresh one printed the new line). No migration. Unpushed: df651cb, 46ad15a, 68c3065, 0322493 and this entry.
 - 2026-10-26: **Work mode for forks only, for 12 hours, never a new item** (decision 541, the owner's ask, main
   session): `.claude/hooks/workmode.sh` (run by both hooks in `.claude/settings.json`) says the line is for the four
   area forks and goes quiet once `.claude/workmode` is 12 hours old; CLAUDE.md's Work mode: the 12 hours, forks
