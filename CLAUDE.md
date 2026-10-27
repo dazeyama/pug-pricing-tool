@@ -180,8 +180,8 @@ gotchas and the squash.
 ### Checks
 
 `export PATH="/c/Program Files/nodejs:$PATH"`, then `npx eslint .`, `npm test` (commit only on `fail 0`) and
-`npm run build`. The hooks in `.claude/settings.json` lint each Edit or Write as it's saved and run the unit tests
-it can affect (a failure there is a note, not a block, decision 528).
+`npm run build`. The hook in `.claude/settings.json` lints each Edit or Write as it's saved (the affected-tests hook
+of decision 528 was removed, decision 548: the commit's `npm test` is the test check).
 
 **Three tries, then stop** (decision 531): when lint, a test or the build still fails after three attempts at
 fixing it, stop and tell me what's failing, in which file, and what you tried. Look first at whose file it is

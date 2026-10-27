@@ -37,6 +37,10 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-26: **The affected-tests hook removed** (side session, the owner's ask; decision 548, 528 struck):
+  `.claude/hooks/test-edit.mjs` deleted with its `.claude/settings.json` entry; the lint hook stays, and the commit's
+  `npm test` is the test check again. Where to look: an Edit in a new session shows only "Linting the edited file".
+  Untested: nothing to test. No migration. Unpushed, with the entry below.
 - 2026-10-26 (main session): **The CC matching audit page, built and reverted the same day** (decision 547; the
   owner: "That was a dead end. I want to go back to the commit before any work began on the repo in regards to the
   audit page."): the seven commits 238e459–1774c4d (the page as that day's decisions 547–549, and their NEXT.md

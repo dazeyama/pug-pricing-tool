@@ -34,13 +34,6 @@
             "shell": "bash",
             "timeout": 30,
             "statusMessage": "Linting the edited file"
-          },
-          {
-            "type": "command",
-            "command": "command -v node >/dev/null 2>&1 || export PATH=\"/c/Program Files/nodejs:$PATH\"; node \"$CLAUDE_PROJECT_DIR/.claude/hooks/test-edit.mjs\"",
-            "shell": "bash",
-            "timeout": 60,
-            "statusMessage": "Running the tests the edit can affect"
           }
         ]
       }
