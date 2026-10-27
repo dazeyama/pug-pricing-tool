@@ -248,6 +248,8 @@ html[data-scan] .toast { max-width: none; }
   pointer-events: none;
 }
 .scan-card-timer.done { color: #ffc46b; font-weight: 800; }
+/* From 2.1 s, and held so when the 3 s ran out (decision 560). */
+.scan-card-timer.late { color: var(--bad); }
 /* Scan card across the top; Auto?, Reset view, the light and Stop in a row under it. */
 .scan-actions { flex: none; display: flex; flex-direction: column; gap: 8px; }
 .scan-actions-row { display: flex; gap: 8px; }

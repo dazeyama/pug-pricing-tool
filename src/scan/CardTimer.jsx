@@ -27,9 +27,14 @@ export default function CardTimer({ read }) {
     return () => clearInterval(timer);
   }, [read]);
   if (!shown) return null;
+  const text = (shown.ms / 1000).toFixed(1);
+  // Red from 2.1 s on, and held red when the card's 3 s ran out (owner, 2026-10-27: "make the timer red
+  // between 2.1 and 3.0 seconds, and when it finishes at 3.0, leave it red"; decision 560). A card done
+  // sooner is held amber.
+  const red = shown.done ? Number(text) >= 3 : Number(text) >= 2.1;
   return (
-    <div className={`scan-card-timer${shown.done ? ' done' : ''}`} aria-hidden="true">
-      {(shown.ms / 1000).toFixed(1)}
+    <div className={`scan-card-timer${shown.done ? ' done' : ''}${red ? ' late' : ''}`} aria-hidden="true">
+      {text}
     </div>
   );
 }
