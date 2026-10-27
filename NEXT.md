@@ -9,7 +9,6 @@ marks each task done here when it's finished, with the exact file and function o
 - **From the v1.0.6-badscanner review, not acted on** (main session, 2026-10-27; none stopped the push):
   - Phone scanner: a modern card read by name only, with no strip clue, scores every printing 0, so the 3 s list
     and View all show its three oldest printings (`Scanner.jsx:990`, `:1138`). Design-level.
-  - Phone scanner: `CardTimer.jsx:36-40` rounds 2.95–2.99 s to "3.0" and holds it red; 560 says amber before 3.0.
   - Phone scanner, docs: `docs/TEST.md:407` (Never stuck) expects "Couldn't read this card in time", a message
     561 removed; spec rows 557 and 561 describe a background printings fetch that 562 took out.
   - Buy tab: a TCGplayer-only Pokémon card whose version is changed under Skip pricing keeps the old
@@ -42,6 +41,10 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-27 (Phone scanner session): **The camera's timer shows tenths cut down** (decision 565, the review's
+  finding): `src/scan/CardTimer.jsx` floors to tenths, so "3.0" is only a card whose 3 s ran out (held red); one
+  done at 2.96 reads "2.9", held amber. Where to look: the phone, a card done just under 3 s: amber, not "3.0" red.
+  Untested on a phone. No migration.
 - 2026-10-27 (Phone scanner session): **A name's printings fetched once, ended by no one caller** (decision 564,
   the v1.0.6-badscanner review's finding, passed on by the owner): `src/scan/older.js` `printingsOf` shares one
   fetch with no caller's signal; each caller's signal gives up only its own wait. Tests in
