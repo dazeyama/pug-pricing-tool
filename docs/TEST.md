@@ -8,7 +8,7 @@ what happens. The findings are reported when the pass ends.
   http://localhost:5180). **Never prod.**
 - **Who:** the owner, or Claude in the browser pane at the owner's request (FABLE.md, "a smoke pass the owner asks
   for"). The owner does the phone, two-computer and store cases.
-- **How long:** about two hours, 292 cases.
+- **How long:** about two hours, 293 cases.
 
 ## Ground rules
 

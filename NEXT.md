@@ -6,10 +6,23 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
-- **Unpushed** (main session): decisions 564–566, the v1.0.6-badscanner review's fixes: a name's printings fetched
-  once and ended by no one caller (564) and the camera's timer showing tenths cut down, not rounded (565), with
-  TEST.md's Never stuck case and spec rows 557 and 561 put right (Phone scanner, untested on the phone); a kept
-  price's line taking the JustTCG card the edit names (566, Buy tab, untested in the app). No migrations.
+- **From the 2026-10-27 push's review (564–567), not acted on** (main session; none stopped the push):
+  - Phone scanner, 565: on auto scan the 3 s end inside a look and `timeUp` nulls `cardTime` in the same task
+    (`Scanner.jsx:682`, `:1148`), so the held value is the last tick's, "2.9" amber, not "3.0" red
+    (`CardTimer.jsx:32-37`); between looks it still holds red. Confirmed by reading, timing-dependent.
+  - Phone scanner, 567: the 3 s "nothing likely" choice ranks by look before it opens (`Scanner.jsx:1207-1230`)
+    with no 4 s cap and no signal: it waits on the shared fetch's full retry budget (about 56 s a page on a dead
+    Scryfall, `transport.js:62-96`) and downloads every printing's picture first; older cards take the path too.
+    Row 567's "4 s more at most" holds only on the `t.looking` branch (`:1151-1160`).
+  - Phone scanner, 567: the background ranking (`Scanner.jsx:1007-1020`) has no signal, so ■ Stop, the card's send
+    or its removal don't end it; it keeps downloading and ranking into the dead `t.cands`. Its `.then`
+    (`:1012-1016`) overwrites candidates with look 1's clue scores, bypassing `collect`'s keep-the-higher rule
+    (`:697`). From 564: the shared fetch now fetches all its pages whatever happens.
+  - Phone scanner: a stale printing list can open after ■ Stop or a Scan card press during that wait
+    (`:1154-1158`, `:1211-1216` guard only on `openNow`). Plausible.
+  - Phone scanner, docs: no TEST.md case for 565 or 567; `docs/TEST.md:399` and `PickPrintingSheet.jsx:13-14`
+    still say oldest first; spec row 567's "nothing is sent on a modern card's look alone" doesn't hold for Scan
+    card (`Scanner.jsx:1034-1056`, `older: false`); row 557's file list still names the background fetch.
 - **From the 2026-10-26 review of work mode, still open** (main session, decision 540; the rest fixed by 541): a
   fork's prod or delete approval relayed by message isn't the owner's consent to the harness, so it may stall on a
   prompt in its own chat; whether the UserPromptSubmit hook fires on a turn started by a message is untried;
@@ -37,6 +50,12 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-27: **Pushed without a bump** (the owner's ask, "quietly push no bump"), decisions 564–567, the
+  v1.0.6-badscanner review's six findings fixed: a name's printings fetched once and ended by no one caller (564),
+  the camera's timer showing tenths cut down (565), a modern card's printings ordered by how it looks (567),
+  TEST.md's Never stuck case and spec rows 557 and 561 put right (Phone scanner, untested on the phone); a kept
+  price's line taking the JustTCG card the edit names (566, Buy tab, untested in the app). No migrations: prod and
+  dev stay at 0013.
 - 2026-10-27 (Buy tab session): **A kept price's line takes the JustTCG card the edit names** (decision 566; the
   v1.0.6-badscanner review's finding, the owner's ask through the main session): with Skip pricing on, SAVE EDIT on a
   priced TCGplayer-only Pokémon card kept the old card's `justtcg_card_id` (decision 546) when the edit chose a
