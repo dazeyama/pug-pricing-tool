@@ -5,6 +5,8 @@ import {
   cardLabel, declineRule, emptyPicks, groupUnits, inferRules, isDataFile, isPicksFile, nextStep, picksFileName,
   productHasToken, progress, recordPick, recordSetChoice, settleGroup, skipUnit, undoLast,
 } from '../../../lib/auditCc.js';
+import { lineText } from '../../../lib/lineFormat.js';
+import ChooseRow from '../ChooseRow.jsx';
 import { readStored, writeStored } from './auditDb.js';
 import AuditCategories from './AuditCategories.jsx';
 import '../../../styles/auditcc.css';
@@ -19,21 +21,32 @@ import '../../../styles/auditcc.css';
 
 const imageOf = (id) => `https://api.scryfall.com/cards/${encodeURIComponent(id)}?format=image&version=normal`;
 const n = (x) => Number(x ?? 0).toLocaleString('en-US');
-const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-/** The product's name with its unread words marked. */
-function Highlight({ name, words }) {
-  const list = (words ?? []).filter(Boolean);
-  if (!list.length) return name;
-  const re = new RegExp(`(${list.map(escapeRe).join('|')})`, 'gi');
-  return name.split(re).map((part, i) => (list.some((w) => w.toLowerCase() === part.toLowerCase())
-    ? <mark key={i}>{part}</mark> : <span key={i}>{part}</span>));
-}
 
 /** The rows a unit offers: the products left first, then the ones set aside, then the other finish or number. */
 function rowsOf(unit) {
   const products = unit.products ?? [];
   return [...products.filter((p) => p.left), ...products.filter((p) => p.passes && !p.left), ...products.filter((p) => !p.passes)];
+}
+
+/** A unit's candidate as a cc_products row, the shape ChooseRow and the search's results have. */
+const asProduct = (p) => ({ product_id: p.id, product_name: p.name, category: p.category, bracket: p.bracket, foil_kind: p.foil_kind, variants: p.variants });
+
+/**
+ * A unit as the export dialog's Needs a choice row sees a matched line (ccExport.js matchLines): its line, and its
+ * candidates ranked, the ones failing the finish or number checks with no score (listed last, "a different finish
+ * or number").
+ */
+function chooseRowOf(unit, rows) {
+  return {
+    line: {
+      id: unit.key, quantity: 1, name: unit.name, set_code: String(unit.set).toUpperCase(), collector_number: unit.collector_number,
+      finish: unit.finish, treatments: unit.treatments, lang: unit.lang,
+    },
+    ranked: rows.map((p) => ({ product: asProduct(p), score: p.passes ? p.score : null })),
+    category: unit.category,
+    set: { code: unit.set, name: unit.set_name },
+    wasLinked: null,
+  };
 }
 
 export default function AuditCcPage() {
@@ -85,7 +98,8 @@ export default function AuditCcPage() {
     setRuleChoice(0);
     writeStored('picks', next).then((ok) => setStored(ok));
   };
-  const pick = (productId) => unit && update(recordPick(picks, unit, productId));
+  /** A candidate's id, a product found by the search (a cc_products row), or null for none. */
+  const pick = (choice) => unit && update(recordPick(picks, unit, choice));
   const skip = () => unit && update(skipUnit(picks, unit.key));
   const undo = () => picks?.history.length && update(undoLast(picks));
   const applyRule = () => rules[ruleChoice] && update(settleGroup(picks, step.group, rules[ruleChoice], byKey));
@@ -267,40 +281,55 @@ export default function AuditCcPage() {
           </section>
 
           <section className="acc-choices">
-            {step.phase !== 'done' && step.phase !== 'rule' && (
-              <p className="acc-group">
-                {step.phase === 'example' && <>Group {step.groupIndex} of {step.groupCount} · <strong>“{step.group.display}”</strong> · {n(step.group.units.length)} units · example {step.exampleIndex} of {step.exampleCount}</>}
-                {step.phase === 'card' && <>Card by card · <strong>{step.group.display}</strong> · {n(step.left)} left{step.skippedLeft ? ` (${n(step.skippedLeft)} skipped)` : ''}{unit?.anyStock ? ' · in stock' : ''}</>}
-                {step.phase === 'none' && <>No product left · {n(step.left)} left · Enter says <strong>none</strong>; a number picks one anyway</>}
-              </p>
-            )}
-
-            {(step.phase === 'example' || step.phase === 'card' || step.phase === 'none') && (
-              <>
-                <ol className="acc-rows">
-                  {rows.map((p, i) => (
-                    <li
-                      key={p.id}
-                      className={`acc-row${i === current ? ' on' : ''}${!p.left ? ' aside' : ''}${!p.passes ? ' other' : ''}`}
-                      onClick={() => pick(p.id)}
-                    >
-                      <kbd>{i < 9 ? i + 1 : '·'}</kbd>
-                      <span className="acc-name"><Highlight name={p.name} words={p.words} /></span>
-                      <span className="acc-cat">{p.category}</span>
-                      {p.qty > 0 && <span className="acc-qty">×{p.qty}</span>}
-                      <span className="acc-score">{p.score ?? '—'}</span>
-                      {p.leader && <span className="acc-tag">leader</span>}
-                      {p.passes && !p.left && <span className="acc-tag">set aside</span>}
-                      {!p.passes && <span className="acc-tag">other finish or number</span>}
-                      {step.group.token && productHasToken(p, step.group.token, unit) && <span className="acc-tag word">the word</span>}
-                    </li>
-                  ))}
-                  <li className={`acc-row none${current == null ? ' on' : ''}`} onClick={() => pick(null)}>
-                    <kbd>N</kbd><span className="acc-name">None of these (can't upload)</span>
-                  </li>
-                </ol>
-                <p className="acc-keys">1–9 select · ↑ ↓ move · Enter confirm · N none · S skip · Backspace undo · click a row to pick it</p>
-              </>
+            {(step.phase === 'example' || step.phase === 'card' || step.phase === 'none') && unit && (
+              // The export dialog's own Needs a choice (ExportDialog.jsx, ChooseRow.jsx): the same rows, "None of
+              // these" and "Find another CC product…"; a click picks at once, as there.
+              <div className="xd">
+                <section className="xd-group choose">
+                  <h4>
+                    Needs a choice
+                    <span className="xd-count">
+                      {step.phase === 'example' && <>group {step.groupIndex} of {step.groupCount} · “{step.group.display}” · {n(step.group.units.length)} units · example {step.exampleIndex} of {step.exampleCount}</>}
+                      {step.phase === 'card' && <>card by card · {step.group.display} · {n(step.left)} left{step.skippedLeft ? ` (${n(step.skippedLeft)} skipped)` : ''}{unit.anyStock ? ' · in stock' : ''}</>}
+                      {step.phase === 'none' && <>no product left · {n(step.left)} left · Enter says none</>}
+                    </span>
+                  </h4>
+                  {/* No radio is preselected (a checked one fires nothing when clicked): the keys' selection is the
+                      "Enter" chip instead. */}
+                  <ChooseRow
+                    key={unit.key}
+                    r={chooseRowOf(unit, rows)}
+                    label={(
+                      <span className="xd-line">
+                        {lineText(chooseRowOf(unit, rows).line)}
+                        <span className="xd-where">{unit.category}</span>
+                      </span>
+                    )}
+                    onPick={(product) => pick(product)}
+                    onNone={() => pick(null)}
+                    tagOf={(product) => {
+                      const i = rows.findIndex((p) => p.id === product.product_id);
+                      const p = rows[i];
+                      if (!p) return <span className="xd-tag">found by search</span>;
+                      return (
+                        <>
+                          {i < 9 && <kbd className="acc-key">{i + 1}</kbd>}
+                          {i === current && <span className="acc-sel">↵ Enter</span>}
+                          {p.qty > 0 && <span className="acc-qty">×{p.qty}</span>}
+                          {p.score != null && <span className="acc-score">{p.score}</span>}
+                          {p.leader && <span className="xd-tag">leader</span>}
+                          {p.passes && !p.left && <span className="xd-tag">set aside</span>}
+                          {step.group.token && productHasToken(p, step.group.token, unit) && <span className="xd-tag acc-word">the word</span>}
+                        </>
+                      );
+                    }}
+                  />
+                </section>
+                <p className="acc-keys">
+                  Click a product to pick it · 1–9 select · ↑ ↓ move · Enter picks the one marked ↵{current == null ? ' (none now)' : ''} ·
+                  N none · S skip · Backspace undo · the search finds any product in the inventory
+                </p>
+              </div>
             )}
 
             {step.phase === 'rule' && (

@@ -43,6 +43,14 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-26 (Export session): **The audit's picker is the export dialog's Needs a choice, with its search**
+  (decision 548, the owner's ask): `AuditCcPage.jsx` draws the right side with `ChooseRow` (the candidates as radio
+  rows, None of these, Find another CC product…), the audit's chips through ChooseRow's new optional `tagOf` (the
+  export dialog passes none: unchanged there); a searched pick is kept with `found: true` (`auditCc.js`
+  `recordPick`, tested). Where to look: `#/audit-cc` on localhost → a card → the amber Needs a choice box; type in
+  Find another CC product… and click a result: the next card comes up, and Download picks shows it with
+  `"found": true`; a click on any row picks it at once; 1–9 move the ↵ Enter chip, Enter picks it. Untested in the
+  browser; also worth a glance: the export dialog's Needs a choice and Change look as before. No migration.
 - 2026-10-26 (Export session): **The Crystal Commerce matching audit page, `#/audit-cc`** (decision 547, the owner's
   ask through the main session): a temporary secret page, dev only (`src/lib/devDb.js` `onDevDatabase`, the DEV
   watermark's check; `App.jsx` adds the route only then, in its own chunk; `main.jsx` uses the same check), the

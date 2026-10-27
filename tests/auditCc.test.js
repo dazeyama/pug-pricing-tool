@@ -215,6 +215,20 @@ test('undo takes back a pick, a skip, a rule with everything it settled, a decli
   assert.equal(undoLast(picks), picks, 'nothing left to undo');
 });
 
+test('a pick found by the search keeps its product and says so; a candidate picked as a row is no "found"', () => {
+  const u = unit({ products: [product('Card', { leader: true })] });
+  let picks = recordPick(emptyPicks({}), u, { product_id: '9001', product_name: 'Card - Anime Borderless', category: 'Wilds of Eldraine: Enchanting Tales' });
+  assert.deepEqual(
+    [picks.picks[u.key].product_id, picks.picks[u.key].product_name, picks.picks[u.key].category, picks.picks[u.key].found],
+    ['9001', 'Card - Anime Borderless', 'Wilds of Eldraine: Enchanting Tales', true],
+  );
+  picks = recordPick(picks, u, { product_id: u.products[0].id, product_name: 'Card', category: 'X' });
+  assert.equal(picks.picks[u.key].found, undefined);
+  assert.equal(picks.picks[u.key].product_name, 'Card');
+  picks = undoLast(picks);
+  assert.equal(picks.picks[u.key].found, true, 'undo puts the found pick back');
+});
+
 test('the files are told apart by their format', () => {
   assert.ok(isDataFile({ format: 'pug-audit-cc-data', units: [] }));
   assert.ok(!isDataFile({ format: 'pug-audit-cc-picks', picks: {} }));

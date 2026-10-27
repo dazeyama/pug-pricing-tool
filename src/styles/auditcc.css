@@ -56,6 +56,25 @@
 .acc-tag.word { border-color: var(--warn); color: var(--warn); }
 .acc-keys { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
 
+/* The picker is the export dialog's Needs a choice (export.css .xd, ChooseRow.jsx), a little larger to fill the screen,
+   with the audit's chips: the key, the stock, the score, the leader, the group's word, and ↵ on the keys' selection. */
+.acc-choices .xd { font-size: 15px; }
+.acc-choices .xd-group h4 { font-size: 16px; }
+.acc-choices .xd-option { padding: 5px 0; font-size: 15px; }
+.acc-choices .xd-option input { transform: scale(1.2); }
+.acc-choices .xd-search { max-width: 460px; padding: 7px 10px; font-size: 14px; }
+.acc-key {
+  margin-left: 8px; padding: 0 6px; border: 1px solid var(--border); border-radius: 5px;
+  background: var(--bg); color: var(--muted); font-family: inherit; font-size: 11.5px; font-weight: 700;
+}
+.acc-choices .acc-qty, .acc-choices .acc-score { margin-left: 6px; }
+.acc-choices .acc-score { min-width: 0; }
+.acc-word { border-color: var(--warn) !important; color: var(--warn) !important; }
+.acc-sel {
+  margin-left: 8px; padding: 0 8px; border-radius: 999px;
+  background: var(--accent-2); color: #fff; font-size: 11.5px; font-weight: 700;
+}
+
 /* The rule step. */
 .acc-rule { display: flex; flex-direction: column; gap: 10px; }
 .acc-rule-opt { display: flex; gap: 10px; padding: 10px 12px; border: 2px solid var(--border); border-radius: 8px; background: var(--panel); cursor: pointer; }

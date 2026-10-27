@@ -297,11 +297,21 @@ const HISTORY = 500;
 const push = (picks, entry) => ({ ...picks, history: [...picks.history, entry].slice(-HISTORY) });
 
 /**
- * One pick: a product (its id) or none (null) for a unit, by hand or by a rule.
+ * One pick: a product or none (null) for a unit, by hand or by a rule. The product is one of the unit's candidates
+ * (its id), or one found by "Find another CC product…" (a cc_products row, kept with `found: true`).
+ * @param {string|{ product_id: string, product_name: string, category: string }|null} choice
  * @returns {object} the new picks file
  */
-export function recordPick(picks, unit, productId, { rule = null, at = new Date().toISOString() } = {}) {
-  const product = productId ? unit.products.find((p) => p.id === productId) ?? null : null;
+export function recordPick(picks, unit, choice, { rule = null, at = new Date().toISOString() } = {}) {
+  let product = null;
+  let found = false;
+  if (choice && typeof choice === 'object') {
+    const own = unit.products.find((p) => p.id === String(choice.product_id)) ?? null;
+    product = own ?? { id: String(choice.product_id), name: choice.product_name, category: choice.category };
+    found = !own;
+  } else if (choice) {
+    product = unit.products.find((p) => p.id === choice) ?? { id: choice, name: null, category: null };
+  }
   const before = picks.picks[unit.key] ?? null;
   const next = {
     ...picks,
@@ -309,7 +319,8 @@ export function recordPick(picks, unit, productId, { rule = null, at = new Date(
       ...picks.picks,
       [unit.key]: {
         scryfall_id: unit.scryfall_id, finish: unit.finish, card: cardLabel(unit),
-        product_id: productId, product_name: product?.name ?? null, category: product?.category ?? null, rule, at,
+        product_id: product?.id ?? null, product_name: product?.name ?? null, category: product?.category ?? null,
+        ...(found ? { found: true } : {}), rule, at,
       },
     },
   };

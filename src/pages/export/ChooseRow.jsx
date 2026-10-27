@@ -22,11 +22,12 @@ const scryfallCardUrl = (line) => (line.set_code && line.collector_number
  * (`current`) selected and the app's own match (`detected`) marked, and works
  * as a draft: Done applies the pick and the price, Cancel drops them (owner,
  * 2026-10-01). `allowNone` false leaves "None of these" out (the Price screen's matching, decision 468: it only
- * means something to an export).
+ * means something to an export). `tagOf` adds chips after a candidate's category (the matching audit's key, stock and
+ * score, decision 547); the export dialog passes none.
  */
 export default function ChooseRow({
   r, label, price, current = null, detected = null, sell, manual, onManual, always, onAlways, onPick, onNone,
-  onDone, onCancel, heldNote = null, allowNone = true,
+  onDone, onCancel, heldNote = null, allowNone = true, tagOf = null,
 }) {
   const draft = Boolean(onDone);
   const [draftPick, setDraftPick] = useState(null);     // a product, or 'none' (Change, until Done)
@@ -98,6 +99,7 @@ export default function ChooseRow({
       <span className="xd-product">
         {p.product_name}
         <span className="xd-cat">{p.category}</span>
+        {tagOf?.(p)}
         {note && <span className="xd-note">{note}</span>}
         {detected?.product_id === p.product_id && (
           <span className="xd-tag" title="The product the app matched by itself">detected</span>
