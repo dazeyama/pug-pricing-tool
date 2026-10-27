@@ -246,7 +246,14 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   // holding off meanwhile (decision 561).
   const finding = useRef(false);
   // When the card being read began, for the timer: Scan card's press, else auto scan's card (decision 559).
-  const readCardClock = useCallback(() => pressClock.current ?? cardTime.current?.at ?? null, []);
+  // How the last card ended, for the timer to hold (decision 568): { at, ms }, ms the card's real time,
+  // 3.0 or more when its 3 s ran out; null while a card is being read, or when one was taken away.
+  const cardEnd = useRef(null);
+  const readCardClock = useCallback(() => {
+    if (pressClock.current) return { at: pressClock.current };
+    if (cardTime.current) return { at: cardTime.current.at };
+    return cardEnd.current;
+  }, []);
   // An older card that could be several printings: { tier, name, cards } to pick from.
   const [pick, setPickState] = useState(null);
   // A list opened stops the card's 3 s (decision 551): they ran out between a tap on Branching Bolt
@@ -819,6 +826,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           const t = cardTime.current;
           if (!t || artDistance(t.art, art) >= ART_CHANGED) {
             cardTime.current = { at: Date.now(), art, frame, foilSeen: undefined, tier: 1, cands: new Map() };
+            cardEnd.current = null;
           } else if (left(t.at) <= 0) {
             timeUp(t, { manual: false });
             return;
@@ -1145,6 +1153,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
    *   tier: number, cands: Map<string, { card: object, score: number }> }} t
    */
   function timeUp(t, { manual }) {
+    // Its time held as the 3 s it ran (decision 568): the timer's last tick may still have read 2.9.
+    if (t?.at) cardEnd.current = { at: t.at, ms: Math.max(CARD_MS, Date.now() - t.at) };
     if (cardTime.current === t) cardTime.current = null;
     // A modern card's printings still being ordered by look (decision 567): the choice waits for that, a
     // little at most, auto scan held off meanwhile, so the list is in the order the card looks.
@@ -1240,6 +1250,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     trace('scan-card-press');
     const pressedAt = Date.now();   // its 3 s count from here, the wait for an auto look included (decision 549)
     pressClock.current = pressedAt;
+    cardEnd.current = null;
     const run = ++readRun.current;
     manualWaiting.current = true;   // auto scan holds off till Scan card is done: nothing interrupts it
     const bar = createProgress();
@@ -1430,6 +1441,9 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     });
     lastSent.current = key;
     v.held = art;
+    // The card's time held as it was when it was sent (decision 568); a card picked from a list has none.
+    const startedAt = pressClock.current ?? cardTime.current?.at ?? null;
+    if (startedAt) cardEnd.current = { at: startedAt, ms: Math.max(0, sentAt - startedAt) };
     cardTime.current = null;   // this card's done: the next one's 3 s start when it's laid (decision 549)
     setLocal(null);
     noteSent();

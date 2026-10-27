@@ -9,17 +9,21 @@ import { useEffect, useState } from 'react';
 // so the scanner's screen isn't drawn again with it.
 
 /**
- * @param {{ read: () => number|null }} props  read: when the card's time began (Scanner.jsx: Scan card's
- *   press, else auto scan's cardTime), null with none running; a stable function
+ * @param {{ read: () => ({ at: number, ms?: number }|null) }} props  read: the card's clock (Scanner.jsx):
+ *   { at } while it's read (Scan card's press, else auto scan's cardTime); { at, ms } once it's done, ms its
+ *   real time (decision 568); null with none; a stable function
  */
 export default function CardTimer({ read }) {
   const [shown, setShown] = useState(null);   // { at, ms, done }
   useEffect(() => {
     const timer = setInterval(() => {
-      const at = read();
+      const clock = read();
       setShown((s) => {
-        if (at != null) return { at, ms: Date.now() - at, done: false };
-        // The card's done (sent, its list opened, or taken away): its last time held, locked in.
+        if (clock && clock.ms == null) return { at: clock.at, ms: Date.now() - clock.at, done: false };
+        // The card's done, its real time held (decision 568: the last tick could be 2.9 when its 3 s ran
+        // out inside a look).
+        if (clock) return s?.done && s.at === clock.at && s.ms === clock.ms ? s : { at: clock.at, ms: clock.ms, done: true };
+        // Taken away: its last time held, locked in.
         if (s && !s.done) return { ...s, done: true };
         return s;
       });
