@@ -1101,8 +1101,10 @@ While it's on:
   finish and condition work as usual.
 - The condition buttons read **—**. The price panel reads **Not priced**, with *⚡ Skip pricing is on:
   cards go in with no price.* Use TCGplayer and Use Cardmarket aren't shown.
-- **ADD CARD** puts the card in at once, with no price. SAVE EDIT does the same, and so does a card
-  scanned on the phone.
+- **ADD CARD** puts the card in at once, with no price, and so does a card scanned on the phone.
+- **SAVE EDIT** on a card that already has a price keeps that price, even if the edit changed its
+  printing or condition (REPRICE? puts it right once the switch is off). A card with no price stays
+  without one.
 - A manual price typed with ✎ or **Alt+M** is still a price. The card goes in at it.
 - Bulk keeps its value from Settings.
 

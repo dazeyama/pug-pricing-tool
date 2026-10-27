@@ -47,6 +47,12 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-27 (main session): **Help: Skip pricing's SAVE EDIT line brought up to date** (decision 546; the owner,
+  before the push: "Yes, fix Help's Skip pricing line about SAVE EDIT now"): README.md's Skip pricing bullets now
+  say SAVE EDIT keeps a priced card's price, even when the edit changed its printing or condition (REPRICE? puts it
+  right once the switch is off), and a card with no price stays without one; ADD CARD and a phone's scan as
+  before. A Buy tab Help section, edited here as a one-line fix and told to the Buy tab. Where to look: Help →
+  Skip pricing, "While it's on". No migration.
 - 2026-10-27 (Phone scanner session): **The scanner made fast, closed: the owner tested** (the owner: "I've been
   testing this whole time, testing is looking good. Close as done."): decisions 549–563 and Help, below, tried
   on the phone over dev's LAN link as they landed. The analysis and its scripts stay in
