@@ -21,11 +21,10 @@ marks each task done here when it's finished, with the exact file and function o
   prompt in its own chat; whether the UserPromptSubmit hook fires on a turn started by a message is untried;
   `/main`'s hub jobs don't list relaying questions.
 
-- **From the v1.0.5-rainbow review, not acted on** (main session): the Secret Lair foils list's generator sits
-  outside the repo (`C:/ClaudeProjects/temp/sld-foils`, `src/lib/sldFoilProducts.js:12`; passed to the Buy tab
-  session 2026-10-26, "Go ahead and move it"); `OwnedCounter.jsx`'s header comment still puts Apply in the verdict
-  line (decision 521 moved it). The Skip pricing items: their own entry above. The collection SKU `-1` vs `-10`
-  search: closed, the owner checked it in CC.
+- **From the v1.0.5-rainbow review, not acted on** (main session): `OwnedCounter.jsx`'s header comment still puts
+  Apply in the verdict line (decision 521 moved it). The rest: the Skip pricing items have their own entry above;
+  the Secret Lair foils generator is in the repo (decision 544, Buy tab, `89cae2b`); the collection SKU `-1` vs
+  `-10` search is closed, the owner checked it in CC.
 - **For a migration, when there's a reason to write one** (0014 or later):
   - F2, the backup's 8 s statement limit (decision 430): `backup_export` (one call for every table, 2 to 7.7 s on
     dev) can time out; the fix must keep one read at one instant, so it needs the database. The test run's Backup
