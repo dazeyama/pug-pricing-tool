@@ -6,14 +6,14 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
-- **Unpushed** (main session): decisions 541–550: work mode's three fixes and CLAUDE.md trimmed (541–543, docs and
+- **Unpushed** (main session): decisions 541–554: work mode's three fixes and CLAUDE.md trimmed (541–543, docs and
   `.claude/` only); the Secret Lair foils generator in the repo (544, Buy tab); the Changelog showing no price on a
   card with none (545, Records); SAVE EDIT keeping a priced card's price under Skip pricing (546, Buy tab); the
   matching audit page built and reverted the same day (547, no change in the app); the affected-tests hook removed
   (548, `.claude/` and CLAUDE.md only); the scanner's 3 s a card, then a pick list or set aside (549), its waits
   cut (550), the name read on every look by a second reader (551), the title's box above the camera (552) showing
-  the name alone (553) (Phone scanner; `src/scan/`, `src/styles/scan.css`, `src/lib/scryfall.js` with its defaults
-  unchanged); two memory notes folded into CLAUDE.md and `docs/DATABASE.md` (e368ed4). No migrations. NEXT.md's
+  the name alone (553), both boxes hidden while a sheet is open (554) (Phone scanner; `src/scan/`,
+  `src/styles/scan.css`, `src/lib/scryfall.js` with its defaults unchanged); two memory notes folded into CLAUDE.md and `docs/DATABASE.md` (e368ed4). No migrations. NEXT.md's
   notes.
 - **The scanner made fast, a 3 s limit per card** (the owner, 2026-10-26, after a demo at work that was too slow;
   Phone scanner session): the analysis is done, from the dev run logs of 2026-10-18 to 10-20
