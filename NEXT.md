@@ -7,10 +7,6 @@ marks each task done here when it's finished, with the exact file and function o
 ## Open
 
 - **From the 2026-10-27 push's review (564–567), not acted on** (main session; none stopped the push):
-  - Phone scanner, 567: the 3 s "nothing likely" choice ranks by look before it opens (`Scanner.jsx:1207-1230`)
-    with no 4 s cap and no signal: it waits on the shared fetch's full retry budget (about 56 s a page on a dead
-    Scryfall, `transport.js:62-96`) and downloads every printing's picture first; older cards take the path too.
-    Row 567's "4 s more at most" holds only on the `t.looking` branch (`:1151-1160`).
   - Phone scanner: a stale printing list can open after ■ Stop or a Scan card press during that wait
     (`:1154-1158`, `:1211-1216` guard only on `openNow`). Plausible.
   - Phone scanner, docs: no TEST.md case for 565 or 567; `docs/TEST.md:399` and `PickPrintingSheet.jsx:13-14`
@@ -43,6 +39,11 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-27 (Phone scanner session): **The name-only 3 s choice in 4 s at most** (decision 570, the push review's
+  finding): `src/scan/Scanner.jsx` `offerChoice` gives its `printingsFor` a signal ended at `LOOK_WAIT_MS`; past
+  it the printings come unranked, or Which card? opens when they didn't come. Where to look: the phone with the
+  wifi off after a name's read (dev): at 3 s, within 4 s more, a list or Which card?, never a minute's wait.
+  Untested on a phone. No migration.
 - 2026-10-27 (Phone scanner session): **A card's ranking by look ends with the card** (decision 569, the push
   review's finding): `src/scan/Scanner.jsx` gives each card's ranking a signal (`t.stop`), ended by
   `dropCardTime` wherever the card is let go (sent, taken away, another laid, Stop, the camera stopped, a list or
