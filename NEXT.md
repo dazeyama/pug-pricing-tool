@@ -6,16 +6,20 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
-- **Unpushed** (main session): decisions 541–556: work mode's three fixes and CLAUDE.md trimmed (541–543, docs and
+- **Unpushed** (main session): decisions 541–563: work mode's three fixes and CLAUDE.md trimmed (541–543, docs and
   `.claude/` only); the Secret Lair foils generator in the repo (544, Buy tab); the Changelog showing no price on a
   card with none (545, Records); SAVE EDIT keeping a priced card's price under Skip pricing (546, Buy tab); the
   matching audit page built and reverted the same day (547, no change in the app); the affected-tests hook removed
   (548, `.claude/` and CLAUDE.md only); the scanner's 3 s a card, then a pick list or set aside (549), its waits
   cut (550), the name read on every look by a second reader (551), the title's box above the camera (552) showing
   the name alone (553), both boxes hidden while a sheet is open (554), the name at the box's left edge (555), auto
-  scan keeping on when its 3 s find nothing (556) (Phone scanner; `src/scan/`, `src/styles/scan.css`,
-  `src/lib/scryfall.js` with its defaults unchanged); two memory notes folded into CLAUDE.md and `docs/DATABASE.md`
-  (e368ed4). No migrations. NEXT.md's notes.
+  scan keeping on when its 3 s find nothing (556, undone by 561), older cards by name as soon as auto scan can tell
+  (557), the card's 3 s on the camera as a timer that counts up, holds and goes red from 2.1 s (558–560), 3 s with
+  nothing likely opening a choice (561), the name's printings scored on the strip with the older-card mode and
+  Title / Number retired (562), no re-crop by itself (563), and Help's Scanning from a phone brought up to date
+  (Phone scanner, tested by the owner on the phone; `src/scan/`, `src/styles/scan.css`, `src/lib/scryfall.js` with
+  its defaults unchanged, README.md); two memory notes folded into CLAUDE.md and `docs/DATABASE.md` (e368ed4). No
+  migrations. NEXT.md's notes.
 - **From the 2026-10-26 review of work mode, still open** (main session, decision 540; the rest fixed by 541): a
   fork's prod or delete approval relayed by message isn't the owner's consent to the harness, so it may stall on a
   prompt in its own chat; whether the UserPromptSubmit hook fires on a turn started by a message is untried;
