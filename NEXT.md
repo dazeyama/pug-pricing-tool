@@ -6,16 +6,10 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
-- **Unpushed** (main session): decisions 541–547: work mode's three fixes and CLAUDE.md trimmed (541–543, docs and
+- **Unpushed** (main session): decisions 541–546: work mode's three fixes and CLAUDE.md trimmed (541–543, docs and
   `.claude/` only); the Secret Lair foils generator in the repo (544, Buy tab); the Changelog showing no price on a
-  card with none (545, Records); SAVE EDIT keeping a priced card's price under Skip pricing (546, Buy tab); the CC
-  matching audit page, dev only, not in the live bundle (547, Export). No migrations. NEXT.md's notes.
-- **The strategic CC matching audit, after the page** (the owner, 2026-10-26; Export session): the page is built
-  (decision 547, Done below); the owner collects the picks on dev. Then, as later tasks: the import of the picks
-  into dev and prod (picks → `cc_product_links` staff rows, set choices → `cc_set_map`; the JSON's shape is
-  `src/lib/auditCc.js` `emptyPicks`) and the confirmed rules into `ccMatch.js`'s families with decision rows and
-  tests; the 2026-10-24 "won't fix" on promo-type families reopened by the count (Planeswalker Deck Exclusive 199,
-  Theme Deck Exclusive 166 units); then the page goes.
+  card with none (545, Records); SAVE EDIT keeping a priced card's price under Skip pricing (546, Buy tab). No
+  migrations. NEXT.md's notes.
 - **From the 2026-10-26 review of work mode, still open** (main session, decision 540; the rest fixed by 541): a
   fork's prod or delete approval relayed by message isn't the owner's consent to the harness, so it may stall on a
   prompt in its own chat; whether the UserPromptSubmit hook fires on a turn started by a message is untried;
@@ -43,38 +37,6 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
-- 2026-10-26 (Export session): **The audit's rules: None, most of the picks, and Show me 3 more** (decision 549, the
-  owner's ask): `src/lib/auditCc.js` (`applyRule` answers a product or None; `inferRules` counts every hand pick in
-  the group, None and searched picks included, and offers a rule fitting 60% or more with its misses;
-  `moreExamples`, `examplesOf`, `canShowMore`), the rule step in `AuditCcPage.jsx`, tested in `tests/auditCc.test.js`.
-  Where to look: `#/audit-cc` → a group's rule step: each rule reads "Fits n of your m picks" (green all, amber
-  most) and lists the picks it gets wrong; a rule can say "otherwise None (can't upload)" and its sample shows None
-  rows; "Show me 3 more (M)" brings three more examples of the group, then the rule step again; with no rule, Enter
-  shows more. A group already settled or declined keeps its answers. Untested in the browser. No migration.
-- 2026-10-26 (Export session): **The audit's picker is the export dialog's Needs a choice, with its search**
-  (decision 548, the owner's ask): `AuditCcPage.jsx` draws the right side with `ChooseRow` (the candidates as radio
-  rows, None of these, Find another CC product…), the audit's chips through ChooseRow's new optional `tagOf` (the
-  export dialog passes none: unchanged there); a searched pick is kept with `found: true` (`auditCc.js`
-  `recordPick`, tested). Where to look: `#/audit-cc` on localhost → a card → the amber Needs a choice box; type in
-  Find another CC product… and click a result: the next card comes up, and Download picks shows it with
-  `"found": true`; a click on any row picks it at once; 1–9 move the ↵ Enter chip, Enter picks it. Untested in the
-  browser; also worth a glance: the export dialog's Needs a choice and Change look as before. No migration.
-- 2026-10-26 (Export session): **The Crystal Commerce matching audit page, `#/audit-cc`** (decision 547, the owner's
-  ask through the main session): a temporary secret page, dev only (`src/lib/devDb.js` `onDevDatabase`, the DEV
-  watermark's check; `App.jsx` adds the route only then, in its own chunk; `main.jsx` uses the same check), the
-  whole screen a picker (`src/pages/export/audit/AuditCcPage.jsx`, `AuditCategories.jsx`, `auditDb.js` for
-  IndexedDB; `src/lib/auditCc.js` the word groups, the example cards, the rule inference, the order of work and the
-  picks file, tested in `tests/auditCc.test.js`; `src/styles/auditcc.css`). The data: `C:\ClaudeProjects\temp\
-  pug-matching\inventory\audit-cc-data.json` (4,597 units, 11 MB, from `inventory-sweep.mjs` there; the
-  measurement is `counts.md` in `C:\ClaudeProjects\temp\pug-matching\`). Where to look: `npm run dev`, sign in on
-  localhost, `#/audit-cc` → Load data… → that file (the browser keeps it) → the first group ("Modern Frame", 577
-  units) shows an example card with its candidates: 1–9 select, Enter confirms, N none, S skip, Backspace undoes;
-  after its three examples the rule sentence with what it settles and a sample, Y or Enter applies, N declines,
-  1–3 an alternative; Categories (top right) for the 57 categories no set reaches and the 40 sets with no category,
-  Enter taking the guess; Download picks saves the JSON, Load picks… resumes, Start over… forgets (asks first).
-  Untested in the browser (lint, 539 tests and the build pass; the live site's bundle carries neither the page nor
-  dev's ref, checked in `dist/`); the rule inference checked on hand-made 30A and Unfinity units only. No
-  migration; the page writes to no database. Picked in a bespoke tool: the group tokens, the keys, the layout.
 - 2026-10-26 (Buy tab session): **SAVE EDIT never saves an unpriced card over a priced one** (decision 546; the
   owner's ask through the main session: "What if we just made it so that an unpriced card can never be saved ontop of
   an already priced one?"): while Skip pricing is on, SAVE EDIT on a line that has a price keeps its price fields as
