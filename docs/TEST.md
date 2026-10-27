@@ -436,8 +436,13 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       read at all, "Couldn't read this card in time: set it aside and add it on the computer." and the error sound,
       and the card isn't read again till the next one's laid. Pick one: it goes in as Scan card's would; Skip this
       card: nothing goes in. Scan card on a card it can't make sure of shows the same list, not "Couldn't read".
-- [ ] **3 s, older cards** (decision 549): a pre-2014 card on auto scan either goes in, or within about 3 s shows
-      its name's printings to pick from.
+- [ ] **3 s, older cards** (decisions 549, 550): a pre-2014 card on auto scan either goes in, or within about 3 s
+      shows its name's printings to pick from. A white-bordered one: the info box moves to its title on the first
+      look, not after three.
+- [ ] **The waits cut** (decision 550): auto scan's first look comes as soon as the camera shows a picture; lay
+      modern cards one after another: each is read as soon as it stops moving, about 0.2 s after; one with its
+      number covered isn't searched for, and once uncovered is read on the next look. Scan card on a hard card
+      ends within 3 s.
 
 ## 11. Collections tab: collections
 

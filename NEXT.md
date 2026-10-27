@@ -15,12 +15,9 @@ marks each task done here when it's finished, with the exact file and function o
 - **The scanner made fast, a 3 s limit per card** (the owner, 2026-10-26, after a demo at work that was too slow;
   Phone scanner session): the analysis is done, from the dev run logs of 2026-10-18 to 10-20
   (`C:\ClaudeProjects\temp\scan-run\`, re-measured with `node scanstats.mjs <log>` and `node gaps.mjs <log>`
-  there). The 3 s cap and tighter limits are done (decision 549, Done below). Next, one at a time, the owner
-  picking the order: no Scryfall searches on auto scan without a number read (`resolve.js` `resolveText`);
-  quicker pacing (`Scanner.jsx` `REST_MS`, `FIRST_LOOK_MS` and the settle check); older cards straight to the
-  title, one read (`OLDER_AFTER`, `noLineAgain`), with the printings search dropped at a look's end (`older.js`
-  `printingsOf`, `scry.searchAll` takes no signal yet); Scan card's work trimmed to fit (`readCollectorLine`,
-  `resolveThorough`); maybe a card index on the phone instead of Scryfall calls (a new mechanism, the owner's call).
+  there). Every item of the analysis is built (decisions 549 and 550, Done below), for the owner to try together
+  on the phone. Left: maybe a card index on the phone instead of Scryfall calls (a new mechanism, the owner's
+  call); after a try on the phone, re-measure with the dev run log (`trace.js` writes it on the LAN link).
 - **From the 2026-10-26 review of work mode, still open** (main session, decision 540; the rest fixed by 541): a
   fork's prod or delete approval relayed by message isn't the owner's consent to the harness, so it may stall on a
   prompt in its own chat; whether the UserPromptSubmit hook fires on a turn started by a message is untried;
@@ -48,6 +45,19 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-26 (Phone scanner session): **The scanner's waits cut** (decision 550, the owner's ask: every Tighten
+  and Cut item at once): `src/scan/Scanner.jsx` `REST_MS` 0.1 s (was 0.3 s); the settle check on the card's art
+  before the strip is cut out and set level; `FIRST_LOOK_MS` 0 (was 0.8 s); `noLineAgain`'s `now`, a blank strip
+  with ink in the title straight to older-card mode; one title read on auto scan (was two that agreed): one
+  printing sent, several open the list; `SCAN_CARD_BLOCKS` 2. `resolve.js` `resolveText`: no Scryfall searches on
+  auto scan without a number read (Scan card still asks them). `older.js` and, in the Buy tab's file,
+  `src/lib/scryfall.js` `searchAll` take a `signal`: an older card's printings search and pictures dropped when its
+  3 s are up. Tests in `tests/scanResolve.test.js` (the no-number test split: Scan card finds it, auto scan asks
+  nothing). Where to look: with 549 below, on the phone over dev's LAN link: a stack of modern cards, each in
+  sooner than before; an older white-bordered card goes to its title on the first look and in, or its printings
+  list, within 3 s; Scan card done within 3 s. Untested on a phone. Not covered: the phone runs warmer while cards
+  come (three looks for one before); a single title read can send the wrong card where two reads would have
+  disagreed (only when one printing is left, by its number or clearly by look). No migration.
 - 2026-10-26 (Phone scanner session): **3 s a card, then a pick list or set aside** (decision 549, the owner's
   ask after the demo): `src/scan/Scanner.jsx` `CARD_MS`, `cardTime` (the card's 3 s from its first settled look on
   auto scan, from the press on Scan card and Title) and `timeUp` (the three likeliest printings in the printing
