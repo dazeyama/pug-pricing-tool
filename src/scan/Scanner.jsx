@@ -90,6 +90,8 @@ const CARD_MS = 3_000;
 const LOOK_MIN_MS = 500;
 // The typed name's printings (decision 311): searched after typing, not a read, so not held to 3 s.
 const NAME_MS = 10_000;
+// At a card's 3 s, how much longer the choice waits for its printings' order by look (decision 567), at most.
+const LOOK_WAIT_MS = 4_000;
 // Reading… can be tapped to stop once it's run this long (inside a card's 3 s, decision 549; was 3 s).
 const STOPPABLE_AFTER_MS = 1_500;
 // Holding Scan card this long starts over: the reader started afresh, what auto scan held forgotten.
@@ -947,6 +949,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       if (!found && !stripSet && cardRead) cardRead.noSet = (cardRead.noSet ?? 0) + 1;
       const olderLook = !stripSet && (blankStrip || Boolean(year) || (cardRead?.noSet ?? 0) >= NO_SET_LOOKS);
       v.olderLook = olderLook;   // the view found again by the card's edges alone (decision 312)
+      if (cardRead) cardRead.olderLook = olderLook;   // the 3 s choice's ranking by look (decision 567)
       // A strip that named no set is no longer re-cropped by itself (owner, 2026-10-27: "Remove this, reset
       // view can be a manual step"; decision 563, retiring 317): Reset view does it.
       let title = null;
@@ -992,6 +995,29 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
             found = { card: best.card, tier: olderLook ? (texts.some(parseOldNumber) ? 2 : 3) : undefined, sure: true };
             via = olderLook ? 'name+strip-older' : 'name+strip';
             if (olderLook) foilSeen = undefined;   // an older card's strip has no foil star to go by
+          } else if (!olderLook && !manual && cardRead && cardRead.lookFor !== name) {
+            // A modern card the strip's clues don't settle: its printings ranked by how the card looks, in
+            // the background, once a card (owner, 2026-10-27: "Order a modern card's printings by how the
+            // card looks, as older cards are, even if it's slower"; decision 567). The order only: the
+            // pick list at 3 s waits for it; nothing is sent on its look alone. Clue scores still count
+            // first, the look breaks their ties.
+            const t = cardRead;
+            t.lookFor = name;
+            const clue = new Map(best.ranked.map((r) => [r.card.id, r.score]));
+            t.looking = printingsFor(name, frame, {
+              texts, card: lock?.card ?? null, listMark: listSeen, read: readTitleText, older: false, bottom: false,
+            }).then((byName) => {
+              const order = byName?.byLook;
+              if (!order?.length) return;
+              order.forEach((c, i) => {
+                const had = t.cands.get(c.id);
+                const score = (clue.get(c.id) ?? 0) + (order.length - i) / (order.length + 1);
+                t.cands.set(c.id, { card: c, score, printed: Boolean(had?.printed), named: true });
+              });
+              t.byLook = order;
+            }).catch(() => {}).finally(() => {
+              t.looking = null;
+            });
           }
         }
       }
@@ -1007,6 +1033,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         progress?.start('older');
         const old = await printingsFor(name, frame, {
           texts, card: lock?.card ?? null, listMark: listSeen, signal: ask.signal, read: readTitleText,
+          // Scan card on a card that isn't plainly older: ranked as a modern one (decision 567).
+          older: olderLook, bottom: olderLook || !stripSet,
           onPrintings: (cards, { tier }) => {
             if (cardRead) cardRead.tier = tier;
             collect(cards.map((c, i) => ({ card: c, score: 50 - i })), { named: true });
@@ -1118,6 +1146,23 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
    */
   function timeUp(t, { manual }) {
     if (cardTime.current === t) cardTime.current = null;
+    // A modern card's printings still being ordered by look (decision 567): the choice waits for that, a
+    // little at most, auto scan held off meanwhile, so the list is in the order the card looks.
+    if (t?.looking) {
+      finding.current = true;
+      say('muted', `${t.name ?? 'The card'}: ordering its printings by look…`);
+      Promise.race([t.looking, sleep(LOOK_WAIT_MS)]).then(() => {
+        finding.current = false;
+        if (openNow.current.pick || openNow.current.nameAsk || openNow.current.needs) return;
+        offerChoice(t, { manual });
+      });
+      return;
+    }
+    offerChoice(t, { manual });
+  }
+
+  /** The choice a card's 3 s end in (timeUp): its likeliest printings, the name's, or Which card?. */
+  function offerChoice(t, { manual }) {
     const v = view.current;
     v.pending = null;
     // Which guesses it offers (decision 551; owner, 2026-10-26, after a strip read as flavour text offered
@@ -1134,9 +1179,12 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     if (top.length) {
       const name = top.every((c) => c.name === top[0].name) ? top[0].name : 'card';
       trace('pick-open', { via: 'pick-time', name, count: top.length, manual });
+      // View all: every printing of the name in the order the card looks, when that was worked out (decision 567).
+      const byLook = t.byLook?.length && name !== 'card' ? t.byLook : null;
       setPick({
-        tier: t.tier ?? 1, name, cards: top, all: top, art: t.art, frame: t.frame, foilSeen: t.foilSeen,
+        tier: t.tier ?? 1, name, cards: top, all: byLook ?? top, art: t.art, frame: t.frame, foilSeen: t.foilSeen,
         hint: 'Not sure: match the picture.', via: 'pick-time',
+        allNote: byLook ? `All ${byLook.length} printings, the likeliest by look first.` : null,
       });
       say('muted', 'Not sure which card: pick it, or skip it.');
       play('needs_price');
@@ -1158,7 +1206,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     const { name } = t;
     finding.current = true;
     say('muted', `${name}: finding its printings…`);
-    printingsFor(name, null, {})
+    // Ranked by how the card looks, as a modern or an older card by what its strip showed (decision 567).
+    printingsFor(name, t.frame ?? null, { card: lockRef.current?.card ?? null, older: Boolean(t.olderLook), bottom: false })
       .then((old) => {
         if (openNow.current.pick || openNow.current.nameAsk || openNow.current.needs) return;
         if (!old?.cards.length) {
@@ -1166,7 +1215,10 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           return;
         }
         trace('pick-open', { via: 'pick-time-name', name: old.name, count: old.cards.length, manual });
-        setPick({ ...old, art: t.art, frame: t.frame, hint: 'Not sure: match the picture.', via: 'pick-time-name' });
+        setPick({
+          ...old, all: old.byLook ?? old.all, art: t.art, frame: t.frame, hint: 'Not sure: match the picture.',
+          via: 'pick-time-name', allNote: old.byLook ? `All ${old.byLook.length} printings, the likeliest by look first.` : null,
+        });
         say('muted', `${old.name}: pick its printing.`);
         play('needs_price');
       })

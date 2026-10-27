@@ -122,16 +122,20 @@ export async function titleAmong(frame, cards, named, { card = null, read = read
  * `onPrintings`: told the likely printings as soon as they're known, unranked (decision 551), so
  * the pick list at a card's 3 s has them even while their pictures are still being compared.
  * `read`: which card reader (ocr.js).
+ * `older`: the card is an older one, its 2015-frame printings counted against (false for a modern card,
+ * decision 567). `bottom`: read the card's bottom for a "123/350" when the strip's readings have none
+ * (not for a modern card, which prints none).
  * @returns {Promise<{ tier: 2|3, name: string, number: string|null, cards: object[], all: object[] }|null>}
  *   null: Scryfall has no printing of that name
  */
 export async function printingsFor(name, frame, {
-  texts = [], card = null, listMark = null, signal = null, read = readText, onPrintings = null,
+  texts = [], card = null, listMark = null, signal = null, read = readText, onPrintings = null, older = true,
+  bottom = true,
 } = {}) {
   const match = { name };
   const bottoms = [...texts];
   let old = bottoms.map(parseOldNumber).find(Boolean) ?? null;
-  if (!old && frame) {
+  if (!old && frame && bottom) {
     bottoms.push(await readBottom(frame, (c) => read(c, PSM_BLOCK), defaultCreateCanvas, { card }));
     old = parseOldNumber(bottoms.at(-1));
   }
@@ -171,15 +175,17 @@ export async function printingsFor(name, frame, {
       text: bottoms.join(' '),
       year,
       number,
-      older: true,
+      older,
       listMark,
       setIcon: (code) => sets.get(code)?.icon_svg_uri ?? null,
       setType: (code) => sets.get(code)?.set_type ?? null,
       loadImage: (url) => loadPicture(url, signal),
       createCanvas: defaultCreateCanvas,
     });
-    if (winner) return { tier, name: match.name, number, cards: [winner], all: printings };
-    return { tier, name: match.name, number, cards: ranked.slice(0, PICK_MAX).map((r) => r.card), all: printings };
+    // `byLook`: every printing, best look first (decision 567: a modern card's list and View all in that order).
+    const byLook = ranked.map((r) => r.card);
+    if (winner) return { tier, name: match.name, number, cards: [winner], all: printings, byLook };
+    return { tier, name: match.name, number, cards: byLook.slice(0, PICK_MAX), all: printings, byLook };
   } catch (e) {
     if (!signal?.aborted) console.warn('Ranking the printings by look failed', e);
   }

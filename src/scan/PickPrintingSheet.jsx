@@ -27,7 +27,7 @@ export default function PickPrintingSheet({ pick, onPick, onSkip, onType }) {
   return (
     <div className="scan-sheet pick" role="dialog" aria-label={`Which printing of ${pick.name}?`}>
       <strong className="scan-pick-title">Which {pick.name}? {pick.hint ?? 'Match the set symbol.'}</strong>
-      {viewAll && <span className="scan-pick-note">All {all.length} printings, oldest to newest.</span>}
+      {viewAll && <span className="scan-pick-note">{pick.allNote ?? `All ${all.length} printings, oldest to newest.`}</span>}
       <div className="scan-pick-list">
         {shown.map((card) => (
           <button key={card.id} type="button" className="scan-pick" onClick={() => onPick(card)}>
