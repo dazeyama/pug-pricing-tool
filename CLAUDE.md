@@ -72,30 +72,15 @@ session did.
 
 ### Work mode
 
-I switch it with `/workmode on` / `off` in the main session (`.claude/skills/workmode/SKILL.md`, decision 540), for
-the days I work from the main thread alone. The switch is `.claude/workmode` (git-ignored); the hook
-(`.claude/hooks/workmode.sh`) adds "Work mode: on" to every turn while it's on, and it runs out 12 hours after it's
-switched on (the file's age, decision 541): then it's off even if the file is left behind. Check for that line
-before asking me anything and when blocked. It's for the four area forks only: a side session, and a fork while
-it's off, follow the rules above as written. On, for a fork:
-
-- **Every question for me goes to the main session,** never your own chat: the question, the choices you see, your
-  pick, and your name; end the turn saying you've asked. The main session answers what the record answers
-  (`git log`, NEXT.md, the spec, the files) and passes the rest to me quoting you; my answer comes back quoting my
-  words (decision 493). If I answer in your chat anyway, take it and tell the main session it's settled.
-- **Blocked, say so and keep working.** Tell the main session the block, what would clear it, and what you're doing
-  meanwhile (the next piece of your current task that doesn't need the answer), then do that; it redirects you if
-  the pick is wrong. With no such piece, stop and wait: never start an item I didn't give you (decision 541).
-  Blocked means: a question only I or another area can answer, a file another session is mid-edit in (534), a check
-  failing in another session's file, a migration waiting on prod (381), or three failed tries at a check (531).
-- **A reversible choice inside your own area is yours** (a label's wording, the order of two fields, which of two
-  equal layouts): make it and record it in your Done entry as *picked in work mode: …*, so I can reverse it. A
-  choice that changes behaviour (what staff see or what gets exported), or touches another area, is asked.
-- **Still never on your own:** anything outward-facing (a push, a prod migration, deleting data) and the Ask me
-  first items wait for my answer through the main session, however long that takes.
-
-On, for the main session: each fork's question reaches me as one message naming the fork, with the fork's pick, so
-I can answer in a word from my phone; the rest of the hub's jobs don't change.
+I switch it with `/workmode on` / `off` in the main session, for the days I work from the main thread alone
+(decision 540). The switch is `.claude/workmode` (git-ignored); the hook (`.claude/hooks/workmode.sh`) adds "Work
+mode: on" to every turn while it's on, and it runs out 12 hours after it's switched on (the file's age, decision
+541): then it's off even if the file is left behind. It's for the four area forks only: a side session, and a fork
+while it's off, follow the rules above as written. **On, a fork follows `.claude/skills/workmode/SKILL.md`, What
+changes while it's on** (decision 543): in short, every question for me goes to the main session with your pick;
+blocked, tell it and keep working on your current task, never a new item; a reversible choice in your own area is
+yours, recorded in your Done entry; outward-facing actions and the Ask me first items still wait for me. Check for
+the hook's line before asking me anything and when blocked.
 
 ## NEXT.md
 
