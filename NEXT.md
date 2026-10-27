@@ -16,8 +16,8 @@ marks each task done here when it's finished, with the exact file and function o
 - **The scanner made fast, a 3 s limit per card** (the owner, 2026-10-26, after a demo at work that was too slow;
   Phone scanner session): the analysis is done, from the dev run logs of 2026-10-18 to 10-20
   (`C:\ClaudeProjects\temp\scan-run\`, re-measured with `node scanstats.mjs <log>` and `node gaps.mjs <log>`
-  there). Every item of the analysis is built (decisions 549 and 550, Done below), for the owner to try together
-  on the phone. Left: maybe a card index on the phone instead of Scryfall calls (a new mechanism, the owner's
+  there). Every item of the analysis is built (decisions 549 and 550, Done below), and the name read on every
+  look by a second reader (551, after the owner's first try), for the owner to try together on the phone. Left: maybe a card index on the phone instead of Scryfall calls (a new mechanism, the owner's
   call); after a try on the phone, re-measure with the dev run log (`trace.js` writes it on the LAN link).
 - **From the 2026-10-26 review of work mode, still open** (main session, decision 540; the rest fixed by 541): a
   fork's prod or delete approval relayed by message isn't the owner's consent to the harness, so it may stall on a
@@ -46,6 +46,24 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-26 (Phone scanner session): **The name read on every look, by a second card reader** (decision 551, the
+  owner's ask after trying 549–550; that night's run log in `C:\ClaudeProjects\temp\scan-run\scan-log.jsonl`):
+  `src/scan/ocr.js` two readers (`readTitleText` beside `readText`); `nameMatch.js` `nearHits` narrows each
+  reading by letter pairs before Fuse (junk 1.2 s → 3 ms on the laptop, the Which card? guess 2.7 s → 31 ms; the
+  same answer on 1,504 of 1,505 misread names, `C:\ClaudeProjects\temp\scan-run\compare-match.mjs`); `older.js`
+  `readTitleName`, `printingsFor`'s `read` and `onPrintings`; `Scanner.jsx`: `nameRead` on every settled look, the
+  name making an unsure strip sure, a strip candidate of that name taken (set code as printed, clearly ahead),
+  older cards by their name's printings on the look it's read; `setPick` stops the 3 s, a pick holds the card at
+  once; `timeUp` offers only the name's cards, else cards whose set code was read as printed (`resolve.js`
+  `printed`, `CANDIDATES_KEPT` 12). Auto scan asks no search without a set code read. Tests in
+  `tests/scanOlder.test.js` and `tests/scanResolve.test.js`. Where to look: the phone on dev's LAN link, auto scan
+  on: a black-bordered pre-2014 card (Colossal Might) goes in, or its printings list opens, within 3 s; a
+  white-bordered one the same; a modern card goes in as fast as before; the Benalish case (a strip that reads
+  flavour text) offers only cards of the name read, or the set-aside message; Branching Bolt's list opens once;
+  the phone never freezes on a title it can't read. Untested on a phone: the second reader's memory and warmth on
+  an iPhone, and whether two readers truly read at once there. Picked by me, reversible: four letter pairs in ten
+  (two for the guess), 300 names scored, a candidate 1.5 ahead of others of its name. Not covered: the FNM title
+  read and Title's own press still use the first reader. No migration.
 - 2026-10-26 (Phone scanner session): **The scanner's waits cut** (decision 550, the owner's ask: every Tighten
   and Cut item at once): `src/scan/Scanner.jsx` `REST_MS` 0.1 s (was 0.3 s); the settle check on the card's art
   before the strip is cut out and set level; `FIRST_LOOK_MS` 0 (was 0.8 s); `noLineAgain`'s `now`, a blank strip

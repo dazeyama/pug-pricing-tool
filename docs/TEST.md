@@ -443,6 +443,11 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       modern cards one after another: each is read as soon as it stops moving, about 0.2 s after; one with its
       number covered isn't searched for, and once uncovered is read on the next look. Scan card on a hard card
       ends within 3 s.
+- [ ] **The name on every look** (decision 551): a black-bordered pre-2014 card (Colossal Might) and a
+      white-bordered one each go in, or open their printings list, within 3 s on auto scan; a modern card goes in
+      as fast as before. A card whose strip reads flavour text offers only cards of the name read at 3 s, or the
+      set-aside message, never cards of other names. Pick from a list: it opens once, not again. A title the
+      reader can't name never freezes the phone (Stop answers at once).
 
 ## 11. Collections tab: collections
 
