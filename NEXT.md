@@ -6,10 +6,10 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
-- **Unpushed** (main session): decisions 541–546: work mode's three fixes and CLAUDE.md trimmed (541–543, docs and
+- **Unpushed** (main session): decisions 541–547: work mode's three fixes and CLAUDE.md trimmed (541–543, docs and
   `.claude/` only); the Secret Lair foils generator in the repo (544, Buy tab); the Changelog showing no price on a
-  card with none (545, Records); SAVE EDIT keeping a priced card's price under Skip pricing (546, Buy tab). No
-  migrations. NEXT.md's notes.
+  card with none (545, Records); SAVE EDIT keeping a priced card's price under Skip pricing (546, Buy tab); the CC
+  matching audit page, dev only, not in the live bundle (547, Export). No migrations. NEXT.md's notes.
 - **The strategic CC matching audit, after the page** (the owner, 2026-10-26; Export session): the page is built
   (decision 547, Done below); the owner collects the picks on dev. Then, as later tasks: the import of the picks
   into dev and prod (picks → `cc_product_links` staff rows, set choices → `cc_set_map`; the JSON's shape is
