@@ -10,6 +10,13 @@ marks each task done here when it's finished, with the exact file and function o
   `.claude/` only); the Secret Lair foils generator in the repo (544, Buy tab); the Changelog showing no price on a
   card with none (545, Records); SAVE EDIT keeping a priced card's price under Skip pricing (546, Buy tab). No
   migrations. NEXT.md's notes.
+- **The strategic CC matching audit** (the owner, 2026-10-26; Export session building): a temporary secret page,
+  dev only, that fills the screen with a picker over the whole inventory's Needs a choice units (4,597, counted
+  2026-10-26 in `C:\ClaudeProjects\temp\pug-matching\counts.md`): word groups first, three picks teach a rule the
+  page applies to the group; picks and rules collected as a JSON file, nothing written by the page. Then, as later
+  tasks: the import of the picks into dev and prod (`cc_product_links`, `cc_set_map`) and the rules into
+  `ccMatch.js`'s families with decision rows; the 2026-10-24 "won't fix" on promo-type families reopened by the
+  count (Planeswalker Deck Exclusive 199, Theme Deck Exclusive 166 units).
 - **From the 2026-10-26 review of work mode, still open** (main session, decision 540; the rest fixed by 541): a
   fork's prod or delete approval relayed by message isn't the owner's consent to the harness, so it may stall on a
   prompt in its own chat; whether the UserPromptSubmit hook fires on a turn started by a message is untried;
