@@ -451,11 +451,11 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       2.5 stays amber.
 - [ ] **The timer's tenths** (decisions 565, 568): a card sent at 2.96 s holds "2.9" amber, never "3.0"; a card
       whose 3 s run out in the middle of a look holds "3.0" red, not the "2.9" its last tick showed.
-- [ ] **A modern card's printings by look** (decisions 567, 569–571, Phone scanner session): a much-reprinted
+- [ ] **A modern card's printings by look** (decisions 567, 569–572, Phone scanner session): a much-reprinted
       modern card (Lightning Bolt) with its bottom line covered: at 3 s "…: ordering its printings by look…", then
       the list with the printing in hand first; View all "the likeliest by look first". ■ Stop during that wait:
       no list opens after. With the wifi off once its name is read: a list or Which card? within 4 s more, never a
-      minute's wait.
+      minute's wait. Scan card on it: the list too, never sent on its look alone.
 - [ ] **The waits cut** (decision 550): auto scan's first look comes as soon as the camera shows a picture; lay
       modern cards one after another: each is read as soon as it stops moving, about 0.2 s after; one with its
       number covered isn't searched for, and once uncovered is read on the next look. Scan card on a hard card

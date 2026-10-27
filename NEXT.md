@@ -37,6 +37,12 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-27 (Phone scanner session): **Scan card lists a modern card's printing picked by look** (decision 572,
+  the owner's "yes"): `src/scan/Scanner.jsx`, on the name path, a modern card whose printing would be a look
+  winner opens the printing list instead, best look first (`PICK_LOOK_MAX` 12, View all by look); a printing
+  fixed by number and set size, and an older card's look winner, still go in. Row 567 notes it; TEST.md's "A
+  modern card's printings by look" case extended (no new case). Where to look: the phone, Scan card on Lightning
+  Bolt with its bottom covered: the list opens, the matching printing first. Untested on a phone. No migration.
 - 2026-10-27 (Phone scanner session): **The push review's doc findings** (the owner's pass-on): `docs/TEST.md`
   section 10, two cases, "The timer's tenths" (565, 568) and "A modern card's printings by look" (567, 569–571);
   `PickPrintingSheet.jsx`'s header says best first, by look where worked out; spec row 567 says Scan card still
