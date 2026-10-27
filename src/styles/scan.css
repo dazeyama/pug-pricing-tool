@@ -229,7 +229,8 @@ html[data-scan] .toast { max-width: none; }
   font-size: 13px;
   text-align: center;
 }
-/* A card's 3 s counting down, top right of the camera (decision 558): clear, but quiet; warm in its last second. */
+/* How long the card has taken, top right of the camera (decisions 558, 559): clear, but quiet while it counts;
+   held bold and amber once the card's done. */
 .scan-card-timer {
   position: absolute;
   top: 8px;
@@ -246,7 +247,7 @@ html[data-scan] .toast { max-width: none; }
   text-align: center;
   pointer-events: none;
 }
-.scan-card-timer.low { color: #ffc46b; }
+.scan-card-timer.done { color: #ffc46b; font-weight: 800; }
 /* Scan card across the top; Auto?, Reset view, the light and Stop in a row under it. */
 .scan-actions { flex: none; display: flex; flex-direction: column; gap: 8px; }
 .scan-actions-row { display: flex; gap: 8px; }

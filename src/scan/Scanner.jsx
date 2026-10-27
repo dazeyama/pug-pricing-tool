@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { CONDITIONS } from '../lib/ladder.js';
 import { readSession, writeSession } from '../lib/local.js';
 import { formatMoney } from '../lib/money.js';
@@ -248,6 +248,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const cardTime = useRef(null);
   // When Scan card or Title was pressed, while its read runs: its 3 s, for the timer (decision 558).
   const pressClock = useRef(null);
+  // When the card being read began, for the timer: Scan card's press, else auto scan's card (decision 559).
+  const readCardClock = useCallback(() => pressClock.current ?? cardTime.current?.at ?? null, []);
   // An older card that could be several printings: { tier, name, cards } to pick from.
   const [pick, setPickState] = useState(null);
   // A list opened stops the card's 3 s (decision 551): they ran out between a tap on Branching Bolt
@@ -872,6 +874,9 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           cardRead.frame = frame;
           dueIn(left(cardRead.at));
         }
+        // The holder empty: a card taken away before its time ran out is done with (decision 559: its timer
+        // would count on over the empty holder).
+        if (!manual && !inked) cardTime.current = null;
         if (!manual && strip.sharpness === 0 && !v.older) {
           // Ink in the title over a blank strip: an older card, read by its title on this look (decision 550).
           if (inked) noLineAgain(v, art, { now: true });
@@ -1698,7 +1703,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
               <p>Lay a card in the holder. The view locks onto the first card it finds; Reset view finds it again.</p>
             </div>
           )}
-          {camera.on && <CardTimer startedAt={() => pressClock.current ?? cardTime.current?.at ?? null} total={CARD_MS} />}
+          {camera.on && <CardTimer read={readCardClock} />}
           {ocrLoading && <div className="scan-stage-note">Loading the card reader (first scan only)…</div>}
           {plusAt > 0 && <div key={plusAt} className="scan-plus-flash" aria-hidden="true">+1</div>}
         </div>
