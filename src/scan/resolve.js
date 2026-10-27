@@ -49,6 +49,31 @@ const AS_LETTER = { 0: 'O', 1: 'I', 5: 'S', 8: 'B', 6: 'G', 2: 'Z' };
 const TAKE = { auto: { score: 6, lead: 1.5 }, manual: { score: 5, lead: 1 } };
 /** The quick way's card must score this much too: set and number as read, and the rarity or the artist. */
 const QUICK = 7.5;
+/**
+ * A card's 3 s (decision 549): a lookup waits this long for Scryfall's answer per try, a search
+ * this long (their first bytes came in 0.32 s and 0.97 s at worst on 2026-10-18); the look's own
+ * `signal` drops whatever is still out when the card's time is up.
+ */
+const LOOKUP_MS = 1_000;
+const SEARCH_MS = 1_500;
+/** A card scoring this much or more is one of the likeliest, for the pick list at 3 s (decision 549). */
+const CANDIDATE_MIN = 3;
+/** The pick list at 3 s shows this many (decision 549). */
+export const CANDIDATES = 3;
+
+/**
+ * The likeliest cards of a pool, best first, each with its score (decision 549): the ones the
+ * pick list at 3 s offers. Pure, for tests.
+ * @param {Iterable<object>} cards  Scryfall cards
+ * @returns {{ card: object, score: number }[]}
+ */
+export function likeliest(cards, clues) {
+  return [...new Map([...cards].filter(Boolean).map((c) => [c.id, c])).values()]
+    .map((card) => ({ card, score: scoreCard(card, clues) }))
+    .filter((r) => r.score >= CANDIDATE_MIN)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, CANDIDATES);
+}
 
 const plainNumber = (n) => String(n).toLowerCase().replace(/^0+(?=\d)/, '');
 
@@ -358,13 +383,13 @@ function refuseForeign(found, clues) {
   return found;
 }
 
-/** Look a printing up, a failure as no card. */
-async function lookUp(lookup, [set, number], onFail) {
+/** Look a printing up, a failure as no card. `signal`: the look's (decision 549). */
+async function lookUp(lookup, [set, number], onFail, signal = null) {
   try {
-    return await lookup(set, number);
+    return await lookup(set, number, { signal, timeoutMs: LOOKUP_MS });
   } catch (e) {
     onFail();
-    console.warn('A Scryfall lookup for the scanner failed', set, number, e);
+    if (!signal?.aborted) console.warn('A Scryfall lookup for the scanner failed', set, number, e);
     return null;
   }
 }
@@ -379,36 +404,44 @@ async function lookUp(lookup, [set, number], onFail) {
  * knows.
  * @param {string} text  what the OCR read
  * @param {Set<string>} known  every set code, upper case
- * @param {{ manual?: boolean, pattern?: RegExp, search?: (q: string) => Promise<object[]>,
- *   lookup?: (set: string, number: string) => Promise<object|null> }} [opts]
+ * @param {{ manual?: boolean, pattern?: RegExp, search?: (q: string, opts?: object) => Promise<object[]>,
+ *   lookup?: (set: string, number: string, opts?: object) => Promise<object|null>, signal?: AbortSignal,
+ *   onCandidates?: (likely: { card: object, score: number }[]) => void }} [opts]
  *   manual: a card a little less clearly ahead is taken; pattern: mtgscan's set-code pattern,
  *   whose own parse is a clue too (a set code run into its number: "HOB0113"); search and
- *   lookup: Scryfall's (tests pass their own)
+ *   lookup: Scryfall's (tests pass their own); signal: the look's, its requests dropped when the
+ *   card's time is up; onCandidates: told the likeliest cards found, whether or not one is taken
+ *   (decision 549)
  * @returns {Promise<{ card: object, score: number, quick?: boolean, sure?: boolean }|{ foreign: string }|null>}
  *   quick: taken on the direct lookup, no search asked; sure: every clue agrees (isSure)
  */
 export async function resolveText(text, known, {
   manual = false, pattern = null, search = scry.searchQuick, lookup = scry.cardBySetNumber,
+  signal = null, onCandidates = null,
 } = {}) {
   const key = `${manual ? 'm' : 'a'}:${String(text).trim()}`;
-  if (remembered.has(key)) return remembered.get(key);
+  if (remembered.has(key)) {
+    const kept = remembered.get(key);
+    onCandidates?.(kept.likely);
+    return kept.out;
+  }
   const { clues, top, direct, narrow, wider } = planFor(text, known, pattern);
   const take = manual ? TAKE.manual : TAKE.auto;
   const pool = new Map();
   let failed = false;
   const ask = async (q) => {
     try {
-      for (const c of await search(q)) pool.set(c.id, c);
+      for (const c of await search(q, { signal, timeoutMs: SEARCH_MS })) pool.set(c.id, c);
     } catch (e) {
       failed = true;
-      console.warn('A Scryfall search for the scanner failed', q, e);
+      if (!signal?.aborted) console.warn('A Scryfall search for the scanner failed', q, e);
     }
   };
   let found = null;
 
   // The quick way: the printings looked up directly; taken when the rarity and artist read agree
   // with it (and only one such card).
-  const looked = await Promise.all(direct.map((d) => lookUp(lookup, d, () => { failed = true; })));
+  const looked = await Promise.all(direct.map((d) => lookUp(lookup, d, () => { failed = true; }, signal)));
   const agreed = [...new Map(looked.filter((c) => confirms(c, clues)).map((c) => [c.id, c])).values()];
   const quick = agreed.length === 1 ? scoreCard(agreed[0], clues) : 0;
   if (quick >= QUICK) found = { card: agreed[0], score: quick, quick: true, sure: isSure(agreed[0], clues, top) };
@@ -423,7 +456,11 @@ export async function resolveText(text, known, {
     found = pickBest(pool, clues, take);
   }
   const out = refuseForeign(found, clues);
-  if (!failed) remembered.set(key, out);
+  // The likeliest, for the pick list at 3 s: the printings looked up as well as the searches' cards.
+  // None from a strip in another language: it's added on the computer.
+  const likely = out?.foreign ? [] : likeliest([...looked, ...pool.values()], clues);
+  if (!failed) remembered.set(key, { out, likely });
+  onCandidates?.(likely);
   return out;
 }
 
@@ -432,7 +469,7 @@ export async function resolveText(text, known, {
  * first, resolved by elimination; the first card clearly ahead.
  * @param {{ text: string, score: number }[]} attempts
  * @param {Set<string>} known
- * @param {object} [opts]  as resolveText's
+ * @param {object} [opts]  as resolveText's (onCandidates told once per reading resolved)
  */
 export async function resolveReadings(attempts, known, opts) {
   for (const a of attempts.slice(0, 3)) {
@@ -453,11 +490,13 @@ export async function resolveReadings(attempts, known, opts) {
  * step planned before the readings were known is dropped.
  * @param {string[]} texts  the readings: the strip's, the card's line's
  * @param {Set<string>} known
- * @param {{ pattern?: RegExp, search?: Function, lookup?: Function, progress?: object }} [opts]
+ * @param {{ pattern?: RegExp, search?: Function, lookup?: Function, progress?: object, signal?: AbortSignal,
+ *   onCandidates?: Function }} [opts]  signal and onCandidates: as resolveText's (decision 549)
  * @returns {Promise<{ card: object, score: number }|{ foreign: string }|null>}
  */
 export async function resolveThorough(texts, known, {
   pattern = null, search = scry.searchQuick, lookup = scry.cardBySetNumber, progress = null,
+  signal = null, onCandidates = null,
 } = {}) {
   const plans = [...new Set(texts.map((t) => String(t ?? '').trim()))]
     .filter((t) => /\d/.test(t))
@@ -472,16 +511,17 @@ export async function resolveThorough(texts, known, {
   const pool = new Map();
   if (direct.size) {
     progress?.start('lookups');
-    const looked = await Promise.all([...direct.values()].map((d) => lookUp(lookup, d, () => {})));
+    const looked = await Promise.all([...direct.values()].map((d) => lookUp(lookup, d, () => {}, signal)));
     for (const c of looked) if (c) pool.set(c.id, c);
     progress?.finish('lookups');
   }
   for (const [i, q] of queries.entries()) {
+    if (signal?.aborted) break;
     progress?.start(`search-${i}`);
     try {
-      for (const c of await search(q)) pool.set(c.id, c);
+      for (const c of await search(q, { signal, timeoutMs: SEARCH_MS })) pool.set(c.id, c);
     } catch (e) {
-      console.warn('A Scryfall search for the scanner failed', q, e);
+      if (!signal?.aborted) console.warn('A Scryfall search for the scanner failed', q, e);
     }
     progress?.finish(`search-${i}`);
   }
@@ -495,6 +535,7 @@ export async function resolveThorough(texts, known, {
     }
     return best;
   }).sort((a, b) => b.score - a.score);
+  onCandidates?.(ranked.filter((r) => r.score >= CANDIDATE_MIN).slice(0, CANDIDATES).map(({ card, score }) => ({ card, score })));
   const [first, next] = ranked;
   if (!first || first.score < TAKE.manual.score) return null;
   if (next && first.score - next.score < TAKE.manual.lead) return null;

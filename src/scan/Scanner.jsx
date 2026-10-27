@@ -10,7 +10,7 @@ import { useScans } from './useScans.js';
 import { useCamera } from './camera.js';
 import { insetTo, onScreen, showPart } from './guide.js';
 import { locate, paperSetCodes, readCollectorLine, readPrepared, setCodePattern } from './read.js';
-import { readClues, resolveReadings, resolveThorough } from './resolve.js';
+import { CANDIDATES, readClues, resolveReadings, resolveThorough } from './resolve.js';
 import { STEP_MS, createProgress } from './progress.js';
 import { findCard } from './cardEdges.js';
 import {
@@ -21,7 +21,7 @@ import { stripShowsFoil } from './foilMark.js';
 import { findListMark, listNumber } from './listMark.js';
 import { defaultCreateCanvas } from './recognition/canvasUtil.js';
 import { ocrWorker, onOcrStatus, resetOcr } from './ocr.js';
-import { isTimeout, withTimeout } from '../lib/timeout.js';
+import { isTimeout, TimeoutError, withTimeout } from '../lib/timeout.js';
 import { uuid } from '../lib/uuid.js';
 import { isMuted, play, resetSounds, setMuted, unlockSounds } from './sounds.js';
 import { printingsFor, readOlderCard, titleAmong } from './older.js';
@@ -78,16 +78,18 @@ const REFOCUS_AFTER = 4;
 const REFOCUS_GAP_MS = 6000;
 // Scan card's loading bar stays full this long once it's done.
 const BAR_DONE_MS = 250;
-// Unstuck (owner, 2026-10-18: "it kept getting stuck on 'Reading...' after hitting Scan Card"):
-// no look runs longer than this; whatever it waits on (Scryfall, the computer, the card
-// reader), it's given up and says so. Scan card's slowest honest run, timed from its steps on
-// 2026-10-18: four reads (1 s each on a phone), the lookups (0.3 s), about four searches (550 ms
-// apart, 1 s each) and an older card's title (about 5 s): some 15 s, so 20 s. An auto look:
-// one read, a lookup and two searches, about 4 s, so 10 s (every limit rounded up to 5 s).
-const MANUAL_DEADLINE_MS = 20_000;
-const AUTO_DEADLINE_MS = 10_000;
-// Reading… can be tapped to stop once it's run this long.
-const STOPPABLE_AFTER_MS = 3_000;
+// A card's time (owner, 2026-10-26, after a demo at work: "a full time limit of 3s to force a choice
+// to be made"; decision 549; was 10 s a look on auto scan and 20 s for Scan card): 3 s from the first
+// settled look at a card on auto scan, from the press on Scan card and Title. Whatever is still being
+// read or asked then is given up, and the phone shows the likeliest printings found to pick from, or
+// says to set the card aside (timeUp).
+const CARD_MS = 3_000;
+// The least a press's look is given once it starts, when waiting for an auto look took most of its 3 s.
+const LOOK_MIN_MS = 500;
+// The typed name's printings (decision 311): searched after typing, not a read, so not held to 3 s.
+const NAME_MS = 10_000;
+// Reading… can be tapped to stop once it's run this long (inside a card's 3 s, decision 549; was 3 s).
+const STOPPABLE_AFTER_MS = 1_500;
 // Holding Scan card this long starts over: the reader started afresh, what auto scan held forgotten.
 const LONG_PRESS_MS = 700;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -227,6 +229,10 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   // card's art when they began), `older`, read by its title now, `pendingOld`, what the last
   // title read gave (the name, and the printing if one was clearly ahead), for the next to agree with.
   const view = useRef({ held: null, pending: null });
+  // The card in the holder's 3 s on auto scan (decision 549): { at, art, frame, foilSeen, tier,
+  // cands }, from its first settled look; `cands` the likeliest printings its reads found
+  // (id → { card, score }). Null with no card being read.
+  const cardTime = useRef(null);
   // An older card that could be several printings: { tier, name, cards } to pick from.
   const [pick, setPick] = useState(null);
   // Which card? (decision 311): a title no read could name, its name to type: { guess, frame, card,
@@ -555,6 +561,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     lockRef.current = next;
     setLockState(next);
     view.current = { held: null, pending: null };
+    cardTime.current = null;
     setTitleMode(false);
     sinceLock.current = 0;
     relockDue.current = false;
@@ -644,7 +651,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
    * what went wrong, and always sends, the same card again included (a
    * second copy).
    */
-  async function scanFrame({ manual, progress = null }) {
+  async function scanFrame({ manual, progress = null, pressedAt = null }) {
     if (busy.current || !camera.on) return;
     const now = openNow.current;
     if (now.blocked) {
@@ -666,12 +673,41 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     const lookAt = Date.now();
     // How this look found its card, for the run log (trace.js).
     let via = null;
+    // The card's 3 s (decision 549): Scan card's from its press; auto scan's from the card's first
+    // settled look (cardTime), the look's deadline moved to it once the look knows it's that card
+    // (a 3 s left from a card taken out before its time was up isn't the next card's).
+    const left = (at) => CARD_MS - (Date.now() - at);
+    let expire;
+    let timer;
+    const deadline = new Promise((_, reject) => {
+      expire = reject;
+    });
+    const dueIn = (ms) => {
+      clearTimeout(timer);
+      timer = setTimeout(() => expire(new TimeoutError(CARD_MS)), Math.max(1, ms));
+    };
+    dueIn(manual ? Math.max(LOOK_MIN_MS, left(pressedAt ?? lookAt)) : CARD_MS);
+    // What this look asks Scryfall, dropped when it ends (its time up, or Stop), so nothing it leaves
+    // holds the search queue for the next card.
+    const ask = new AbortController();
+    // The card this look reads, and the likeliest printings its reads find: Scan card's own; auto
+    // scan's the card's (cardTime), kept across its looks.
+    let cardRead = manual ? { at: pressedAt ?? lookAt, art: null, frame: null, foilSeen: undefined, tier: 1, cands: new Map() } : null;
+    const collect = (likely) => {
+      if (!cardRead) return;
+      for (const { card: c, score } of likely ?? []) {
+        const had = cardRead.cands.get(c.id);
+        if (!had || had.score < score) cardRead.cands.set(c.id, { card: c, score });
+      }
+    };
+    const net = { signal: ask.signal, onCandidates: collect };
     const lookOnce = async () => {
       const frame = camera.capture();
       if (!frame) {
         if (manual) say('warn', "The camera isn't ready yet: press Scan card again.");
         return;
       }
+      if (cardRead) cardRead.frame = frame;
       noteLight(isDark(lightIn(frame, lockRef.current?.view ?? null)));
       const pattern = await setCodePattern();
       const known = await paperSetCodes();
@@ -765,9 +801,26 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           v.pending = null;
           leaveOlder(v);
         }
+        // Nothing in the strip: the holder empty, or a white-bordered older card (ink in its title).
+        const inked = !manual && strip.sharpness === 0
+          ? inkShare(titleCutout(frame, lock.card, defaultCreateCanvas)) > TITLE_INK
+          : true;
+        if (!manual && inked) {
+          // A card in the holder, settled (decision 549): its 3 s start now, or go on from its first
+          // look; another card's art, and they start afresh. Up, and the phone asks (timeUp).
+          const t = cardTime.current;
+          if (!t || artDistance(t.art, art) >= ART_CHANGED) {
+            cardTime.current = { at: Date.now(), art, frame, foilSeen: undefined, tier: 1, cands: new Map() };
+          } else if (left(t.at) <= 0) {
+            timeUp(t, { manual: false });
+            return;
+          }
+          cardRead = cardTime.current;
+          cardRead.frame = frame;
+          dueIn(left(cardRead.at));
+        }
         if (!manual && strip.sharpness === 0 && !v.older) {
-          // Nothing in the strip: the holder empty, or a white-bordered older card (ink in its title).
-          if (inkShare(titleCutout(frame, lock.card, defaultCreateCanvas)) > TITLE_INK) noLineAgain(v, art);
+          if (inked) noLineAgain(v, art);
           if (!v.older) return;
         }
         if (!manual && outOfFocus) {
@@ -785,6 +838,10 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         blurryLooks.current = 0;
         // The foil star between the set code and the language, or not (owner, 2026-10-16): on Detect only.
         if (finishMode === 'detect') foilSeen = stripShowsFoil(cut);
+        if (cardRead) {
+          cardRead.foilSeen = foilSeen;
+          cardRead.art ??= art;
+        }
         if (!manual && v.older) {
           // An older card: its title's read below, not the strip.
         } else {
@@ -802,11 +859,11 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           located.forEach((_, i) => progress?.plan(`located-${i + 1}`, STEP_MS.ocr));
           const more = located.length ? await readCollectorLine(onCard, pattern, located, { all: true, progress }) : [];
           attempts = [...attempts, ...more];
-          found = await resolveThorough(attempts.map((a) => a.text), known, { pattern, progress });
+          found = await resolveThorough(attempts.map((a) => a.text), known, { pattern, progress, ...net });
           via = 'scan-card';
         } else if (!v.older) {
           // What the strip names, the quick way first (resolve.js; owner, 2026-10-16).
-          found = await resolveReadings(attempts, known, { pattern });
+          found = await resolveReadings(attempts, known, { pattern, ...net });
           via = found?.quick ? 'strip-quick' : 'strip-search';
           if (found) leaveOlder(v);
           // No set code read at the bottom: once more towards the older-card mode.
@@ -819,7 +876,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         progress?.drop('card');
         blocks.forEach((_, i) => progress?.plan(`located-${i + 1}`, STEP_MS.ocr));
         attempts = blocks.length ? await readCollectorLine(frame, pattern, blocks, { all: true, progress }) : [];
-        found = await resolveThorough(attempts.map((a) => a.text), known, { pattern, progress });
+        found = await resolveThorough(attempts.map((a) => a.text), known, { pattern, progress, ...net });
         via = 'scan-card-unlocked';
       }
 
@@ -889,6 +946,13 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         }
         v.unread = 0;
         const old = read;
+        // Its printings, as the title read ranked them, are the likeliest now (decision 549): an older
+        // card's strip reads are guesswork.
+        if (old && cardRead) {
+          cardRead.cands = new Map(old.cards.slice(0, CANDIDATES).map((c, i) => [c.id, { card: c, score: 100 - i }]));
+          cardRead.tier = old.tier;
+          cardRead.foilSeen = undefined;
+        }
         if (!manual) {
           // Two looks must name the same card, and the same printing when one's to be taken.
           const said = old ? `${old.name}|${old.cards.length === 1 ? old.cards[0].id : ''}` : null;
@@ -913,7 +977,10 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       if (!found) {
         if (!manual) v.pending = null;
         trace('no-card', { manual, dark: lastDark.current, ms: Date.now() - lookAt, strip: attempts[0]?.text?.slice(0, 80) ?? null });
-        if (manual) {
+        if (manual && cardRead?.cands.size) {
+          // No card clearly ahead, but likely ones (decision 549): Scan card ends in a choice too.
+          timeUp(cardRead, { manual });
+        } else if (manual) {
           say('err', lastDark.current
             ? `Couldn't read this card: it's too dark. ${lightTip()[0].toUpperCase()}${lightTip().slice(1)}, then press Scan card again.`
             : "Couldn't read this card: set it aside and add it on the computer.");
@@ -931,7 +998,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       // ("A25-50"), when Scryfall has one (owner, 2026-10-16: "make sure that list and mystery
       // booster cards have 100% accuracy like the rest").
       if (listSeen && !found.tier) {
-        const listed = await scry.cardBySetNumber('plst', listNumber(found.card)).catch(() => null);
+        const listed = await scry.cardBySetNumber('plst', listNumber(found.card), { signal: ask.signal }).catch(() => null);
         if (listed) {
           found = { ...found, card: listed };
           via = `${via ?? 'strip'}+list`;
@@ -943,21 +1010,18 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       progress?.finish('send');
     };
     try {
-      await withTimeout(lookOnce(), manual ? MANUAL_DEADLINE_MS : AUTO_DEADLINE_MS);
+      await Promise.race([lookOnce(), deadline]);
     } catch (e) {
       if (stale()) return;   // stopped meanwhile: the screen is the next read's
       if (isTimeout(e)) {
-        // Too long (owner, 2026-10-18: stuck on "Reading…" on a slow network): given up, so the
-        // next look or press isn't held behind it.
+        // The card's 3 s up mid-look (decision 549; owner, 2026-10-18: stuck on "Reading…" on a slow
+        // network): given up, so the next look or press isn't held behind it, and the phone asks.
         trace('timeout', { manual, ms: Date.now() - lookAt });
         scanTicket.current += 1;
         busy.current = false;
-        if (manual) {
-          say('err', 'That took too long: the connection may be slow. Press Scan card to try again.');
-          play('error');
-        } else {
-          view.current.pending = null;
-        }
+        // Auto scan: the card this look was reading, if it got that far; else nothing is asked.
+        if (manual || cardRead) timeUp(cardRead, { manual });
+        else view.current.pending = null;
         return;
       }
       console.error('Scan failed', e);
@@ -967,8 +1031,48 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         play('error');
       }
     } finally {
+      clearTimeout(timer);
+      deadline.catch(() => {});   // the race is over: a deadline reached later is nobody's
+      ask.abort();   // nothing this look asked is needed now (decision 549)
       if (!stale()) busy.current = false;
     }
+  }
+
+  /**
+   * A card's 3 s up (owner, 2026-10-26: "show the top 3 candidates as a pick list on the phone, one
+   * tap to choose, or set the card aside"; decision 549): the likeliest printings its reads found,
+   * best first, three at most, to pick from (a tap sends it; Skip this card sets it aside). With
+   * none found, the phone says to set it aside, and the card isn't read again till another is laid.
+   * Scan card ending with no card clearly ahead comes here too.
+   * @param {{ at: number, art: Float32Array|null, frame: HTMLCanvasElement|null, foilSeen?: boolean,
+   *   tier: number, cands: Map<string, { card: object, score: number }> }} t
+   */
+  function timeUp(t, { manual }) {
+    if (cardTime.current === t) cardTime.current = null;
+    const v = view.current;
+    v.pending = null;
+    v.pendingOld = null;
+    const top = [...(t?.cands.values() ?? [])].sort((a, b) => b.score - a.score).slice(0, CANDIDATES).map((c) => c.card);
+    trace('time-up', {
+      manual, count: top.length, ms: t ? Date.now() - t.at : null,
+      cards: top.map((c) => `${c.name} ${String(c.set).toUpperCase()} ${c.collector_number}`),
+    });
+    if (top.length) {
+      const name = top.every((c) => c.name === top[0].name) ? top[0].name : 'card';
+      trace('pick-open', { via: 'pick-time', name, count: top.length, manual });
+      setPick({
+        tier: t.tier ?? 1, name, cards: top, all: top, art: t.art, frame: t.frame, foilSeen: t.foilSeen,
+        hint: 'Not sure: match the picture.', via: 'pick-time',
+      });
+      say('muted', 'Not sure which card: pick it, or skip it.');
+      play('needs_price');
+      return;
+    }
+    if (!manual && t?.art) v.held = t.art;
+    say('err', lastDark.current
+      ? `Couldn't read this card in time: it's too dark. Set it aside, or ${lightTip()} and press Scan card.`
+      : "Couldn't read this card in time: set it aside and add it on the computer.");
+    play('error');
   }
 
   /**
@@ -979,6 +1083,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     markActive();
     if (manualWaiting.current || reading) return;
     trace('scan-card-press');
+    const pressedAt = Date.now();   // its 3 s count from here, the wait for an auto look included (decision 549)
     const run = ++readRun.current;
     manualWaiting.current = true;   // auto scan holds off till Scan card is done: nothing interrupts it
     const bar = createProgress();
@@ -996,7 +1101,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       while (busy.current && readRun.current === run) await sleep(40);
       bar.finish('wait');
       if (readRun.current !== run) return;
-      await scanFrame({ manual: true, progress: bar });
+      await scanFrame({ manual: true, progress: bar, pressedAt });
     } finally {
       // Stopped meanwhile: Stop has put the screen right, and a new press may be under way.
       if (readRun.current === run) {
@@ -1028,6 +1133,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   async function readTitleNow() {
     if (manualWaiting.current || reading || !camera.on) return;
     trace('title-press');
+    const pressedAt = Date.now();   // its 3 s, as Scan card's (decision 549)
     const run = ++readRun.current;
     manualWaiting.current = true;
     const bar = createProgress();
@@ -1069,7 +1175,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       say('muted', 'Reading the title…');
       bar.start('older');
       const listMark = lock ? findListMark(frame, lock.card, defaultCreateCanvas).mark : null;
-      const old = await withTimeout(readOlderCard(frame, { card: lock?.card ?? null, listMark }), MANUAL_DEADLINE_MS);
+      const old = await withTimeout(readOlderCard(frame, { card: lock?.card ?? null, listMark }),
+        Math.max(LOOK_MIN_MS, CARD_MS - (Date.now() - pressedAt)));
       bar.finish('older');
       if (scanTicket.current !== ticket) return;
       if (old && !old.name) {
@@ -1125,6 +1232,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     v.held = null;
     v.pending = null;
     v.pendingOld = null;
+    cardTime.current = null;
     endReading();
     if (text) say('muted', text);
   }
@@ -1143,6 +1251,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     busy.current = false;
     manualWaiting.current = false;
     relockDue.current = false;
+    cardTime.current = null;
     resetOcr();
     endReading();
     trace('stop-camera');
@@ -1185,7 +1294,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       const name = names.find((n) => n.toLowerCase() === lower)
         ?? matchName(typed, names)?.name ?? guessName([typed], names)?.name ?? null;
       if (!name) return 'No card by that name: check the spelling.';
-      const old = await withTimeout(printingsFor(name, ask.frame, { texts: ask.texts, card: ask.card, listMark: ask.listMark }), MANUAL_DEADLINE_MS);
+      const old = await withTimeout(printingsFor(name, ask.frame, { texts: ask.texts, card: ask.card, listMark: ask.listMark }), NAME_MS);
       if (!old) return `Scryfall has no printing of ${name}.`;
       trace('name-typed', { typed, name, guessed: typed === ask.guess, count: old.cards.length });
       setNameAsk(null);
@@ -1222,6 +1331,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       if (key === lastSent.current) {
         v.held = art;
         v.pending = null;
+        cardTime.current = null;
         return;
       }
       if (!sure && v.pending !== key) {
@@ -1262,6 +1372,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     });
     lastSent.current = key;
     v.held = art;
+    cardTime.current = null;   // this card's done: the next one's 3 s start when it's laid (decision 549)
     setLocal(null);
     noteSent();
   }

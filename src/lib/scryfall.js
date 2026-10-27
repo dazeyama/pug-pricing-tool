@@ -27,15 +27,16 @@ let searchLine = Promise.resolve();
 /**
  * A /cards/search request, in its turn.
  * @param {string} url
- * @param {{ signal?: AbortSignal, via?: object }} [opts]  via: the transport (the bulk one for Import Collection)
+ * @param {{ signal?: AbortSignal, via?: object, timeoutMs?: number }} [opts]  via: the transport (the bulk
+ *   one for Import Collection); timeoutMs: the wait for an answer per try (the scanner's is shorter, decision 549)
  */
-function searchJson(url, { signal, via = transport } = {}) {
+function searchJson(url, { signal, via = transport, timeoutMs = SEARCH_ANSWER_MS } = {}) {
   const run = searchLine.then(async () => {
     if (signal?.aborted) return via.getJson(url, { signal });   // given up: rejects at once, no turn taken
     const wait = lastSearchAt + SEARCH_GAP_MS - Date.now();
     if (wait > 0) await sleep(wait);
     try {
-      return await via.getJson(url, { signal, timeoutMs: SEARCH_ANSWER_MS });
+      return await via.getJson(url, { signal, timeoutMs });
     } finally {
       lastSearchAt = Date.now();
     }
@@ -398,13 +399,15 @@ export function hasBackFace(card) {
  * Scryfall has no such card.
  * @param {string} set  set code, any case
  * @param {string} number  as printed: "125", "263s", "4★"
+ * @param {{ signal?: AbortSignal, timeoutMs?: number }} [opts]  the scanner's card time limit
+ *   (decision 549): its look's signal, and a shorter wait per try
  * @returns {Promise<object|null>}  a Scryfall card
  */
 const bySetNumberCache = memoryCache(DAY);
-export function cardBySetNumber(set, number) {
+export function cardBySetNumber(set, number, { signal, timeoutMs } = {}) {
   const code = String(set).toLowerCase();
   return bySetNumberCache.get(`${code}/${number}`,
-    () => transport.getJson(`${API}/cards/${encodeURIComponent(code)}/${encodeURIComponent(number)}`));
+    () => transport.getJson(`${API}/cards/${encodeURIComponent(code)}/${encodeURIComponent(number)}`, { signal, timeoutMs }));
 }
 
 const byIdCache = memoryCache(DAY / 4);
@@ -424,12 +427,14 @@ const quickCache = memoryCache(DAY / 4);
  * (src/scan/resolve.js), the same query asked again by the next look costs
  * nothing.
  * @param {string} q  a Scryfall query
+ * @param {{ signal?: AbortSignal, timeoutMs?: number }} [opts]  as cardBySetNumber's (decision 549):
+ *   a search given up before its turn takes none, so it doesn't hold the next card's back
  * @returns {Promise<object[]>}  Scryfall cards; none when nothing matched
  */
-export function searchQuick(q) {
+export function searchQuick(q, { signal, timeoutMs } = {}) {
   return quickCache.get(q, async () => {
     const params = new URLSearchParams({ q: `${q} game:paper`, unique: 'prints', order: 'set' });
-    const data = await searchJson(`${API}/cards/search?${params}`);
+    const data = await searchJson(`${API}/cards/search?${params}`, { signal, timeoutMs });
     return (data?.data ?? []).filter(keptLanguage);
   });
 }

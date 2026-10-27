@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { confirms, nameLikeness, readClues, resolveText, scoreCard } from '../src/scan/resolve.js';
+import {
+  CANDIDATES, confirms, likeliest, nameLikeness, readClues, resolveText, resolveThorough, scoreCard,
+} from '../src/scan/resolve.js';
 
 // Owner, 2026-10-16: the collector strip's text, every clue in it, and the card found by elimination.
 
@@ -190,4 +192,69 @@ test('a search that fails is not remembered', async () => {
   assert.equal(await resolveText('R 0113\nHOB EN MIKLOS LIGETI X', KNOWN, { search, lookup }), null);
   online = true;
   assert.equal((await resolveText('R 0113\nHOB EN MIKLOS LIGETI X', KNOWN, { search, lookup })).card.id, 'giant');
+});
+
+// A card's 3 s (decision 549): the likeliest cards, for the pick list when time is up.
+
+test('the likeliest: best first, the clearly wrong left out, three at most', () => {
+  const clues = readClues('R 0113\nHOB • EN ⟿ MIKLOS LIGETI', KNOWN);
+  const likely = likeliest([PONIES, NEIGHBOUR, GARRISON, GIANT, null, GIANT], clues);
+  assert.equal(likely[0].card.id, 'giant');
+  assert.ok(likely.some((r) => r.card.id === 'neighbour'), 'a number one look-alike away');
+  assert.ok(!likely.some((r) => ['ponies', 'garrison'].includes(r.card.id)), 'another number, rarity and artist');
+  assert.ok(likely.length <= CANDIDATES);
+  const many = Array.from({ length: 6 }, (_, i) => card(`g${i}`, 'hob', '113', 'rare', 'Miklós Ligeti'));
+  assert.equal(likeliest(many, clues).length, CANDIDATES);
+});
+
+test('two cards equally likely: neither taken, both offered, and again from memory', async () => {
+  const twins = [card('a', 'hob', '116', 'rare', 'Same Painter'), card('b', 'hob', '118', 'rare', 'Same Painter')];
+  const { search, lookup } = fakeSearch(twins);
+  let offered = null;
+  const text = 'R 0110\nHOB • EN ⟿ SAME PAINTER';
+  assert.equal(await resolveText(text, KNOWN, { search, lookup, onCandidates: (l) => { offered = l; } }), null);
+  assert.deepEqual(offered.map((r) => r.card.id).sort(), ['a', 'b']);
+  offered = null;
+  assert.equal(await resolveText(text, KNOWN, { search, lookup, onCandidates: (l) => { offered = l; } }), null);
+  assert.deepEqual(offered.map((r) => r.card.id).sort(), ['a', 'b'], 'the remembered answer offers them too');
+});
+
+test('a card taken is offered first too; a strip in another language offers none', async () => {
+  const { search, lookup } = fakeSearch(HOB);
+  let offered = null;
+  const found = await resolveText('R 0113\nHOB • EN ⟿ MIKLOS LIGETI Y', KNOWN, { search, lookup, onCandidates: (l) => { offered = l; } });
+  assert.equal(found.card.id, 'giant');
+  assert.equal(offered[0].card.id, 'giant');
+  await resolveText('R 0113\nHOB • DE ⟿ MIKLOS LIGETI Y', KNOWN, { search, lookup, onCandidates: (l) => { offered = l; } });
+  assert.deepEqual(offered, []);
+});
+
+test('Scan card\'s way offers the likeliest too', async () => {
+  const twins = [card('a', 'hob', '116', 'rare', 'Same Painter'), card('b', 'hob', '118', 'rare', 'Same Painter')];
+  const { search, lookup } = fakeSearch(twins);
+  let offered = null;
+  const found = await resolveThorough(['R 0110\nHOB EN SAME PAINTER'], KNOWN, { search, lookup, onCandidates: (l) => { offered = l; } });
+  assert.equal(found, null);
+  assert.deepEqual(offered.map((r) => r.card.id).sort(), ['a', 'b']);
+});
+
+test('the look\'s signal and short waits reach Scryfall; a look given up is not remembered', async () => {
+  const seen = [];
+  const search = async (q, opts) => {
+    seen.push(['search', opts?.timeoutMs, Boolean(opts?.signal)]);
+    if (opts?.signal?.aborted) throw new Error('aborted');
+    return [GIANT];
+  };
+  const lookup = async (set, number, opts) => {
+    seen.push(['lookup', opts?.timeoutMs, Boolean(opts?.signal)]);
+    if (opts?.signal?.aborted) throw new Error('aborted');
+    return null;   // not found directly: the searches are asked
+  };
+  const given = new AbortController();
+  given.abort();
+  const text = 'R 0113\nHOB EN MIKLOS LIGETI W';
+  assert.equal(await resolveText(text, KNOWN, { search, lookup, signal: given.signal }), null);
+  assert.ok(seen.every(([, ms, hasSignal]) => ms > 0 && ms <= 1500 && hasSignal), JSON.stringify(seen));
+  const live = new AbortController();
+  assert.equal((await resolveText(text, KNOWN, { search, lookup, signal: live.signal })).card.id, 'giant');
 });

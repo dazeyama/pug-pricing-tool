@@ -15,9 +15,10 @@ let generation = 0;
 const listeners = new Set();
 
 // A read on a phone takes 0.3 to 1 s (docs/SCAN_FUNCTION.md 11; 0.12 s on the laptop); one
-// taking 5 s is stuck (owner, 2026-10-18: "stuck on 'Reading...' … forever until a hard
-// refresh"), and the worker is started afresh.
-const READ_MS = 5_000;
+// taking longer is stuck (owner, 2026-10-18: "stuck on 'Reading...' … forever until a hard
+// refresh"), and the worker is started afresh. 1.5 s, inside a card's 3 s (decision 549; was 5 s):
+// a tighter limit would start the reader afresh on a slow phone's good reads, which costs more.
+const READ_MS = 1_500;
 // A fresh worker after this many reads (owner, 2026-10-18: "fix", to "The card reader is never
 // restarted"; decision 305): Tesseract's worker grows over a long session, so it's swapped between
 // reads, the new one loading at once so the next read hardly waits.
