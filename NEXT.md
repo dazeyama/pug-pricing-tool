@@ -10,6 +10,14 @@ marks each task done here when it's finished, with the exact file and function o
   `.claude/` only); the Secret Lair foils generator in the repo (544, Buy tab); the Changelog showing no price on a
   card with none (545, Records); SAVE EDIT keeping a priced card's price under Skip pricing (546, Buy tab); the
   matching audit page built and reverted the same day (547, no change in the app). No migrations. NEXT.md's notes.
+- **The scanner made fast, a 3 s limit per card** (the owner, 2026-10-26, after a demo at work that was too slow;
+  Phone scanner session): the analysis is done, from the dev run logs of 2026-10-18 to 10-20
+  (`C:\ClaudeProjects\temp\scan-run\`, re-measured with `node scanstats.mjs <log>` and `node gaps.mjs <log>`
+  there). Next: the owner decides what the phone does when 3 s run out, then the pieces one at a time (the cap and
+  tighter time limits in `src/scan/Scanner.jsx` `scanFrame`, `ocr.js` `READ_MS`; no Scryfall searches on auto scan
+  without a number read, `resolve.js` `resolveText`; quicker pacing, `REST_MS` and the settle check; older cards
+  straight to the title, one read; Scan card within 3 s; maybe a card index on the phone instead of Scryfall
+  calls). Nothing changed in the app yet.
 - **From the 2026-10-26 review of work mode, still open** (main session, decision 540; the rest fixed by 541): a
   fork's prod or delete approval relayed by message isn't the owner's consent to the harness, so it may stall on a
   prompt in its own chat; whether the UserPromptSubmit hook fires on a turn started by a message is untried;
