@@ -7,9 +7,6 @@ marks each task done here when it's finished, with the exact file and function o
 ## Open
 
 - **From the 2026-10-27 push's review (564–567), not acted on** (main session; none stopped the push):
-  - Phone scanner, 565: on auto scan the 3 s end inside a look and `timeUp` nulls `cardTime` in the same task
-    (`Scanner.jsx:682`, `:1148`), so the held value is the last tick's, "2.9" amber, not "3.0" red
-    (`CardTimer.jsx:32-37`); between looks it still holds red. Confirmed by reading, timing-dependent.
   - Phone scanner, 567: the 3 s "nothing likely" choice ranks by look before it opens (`Scanner.jsx:1207-1230`)
     with no 4 s cap and no signal: it waits on the shared fetch's full retry budget (about 56 s a page on a dead
     Scryfall, `transport.js:62-96`) and downloads every printing's picture first; older cards take the path too.
@@ -50,6 +47,11 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-27 (Phone scanner session): **The camera's timer holds the card's real time** (decision 568, the push
+  review's finding): `src/scan/Scanner.jsx` `cardEnd` keeps how the last card ended (its 3 s, or its time when
+  sent), `readCardClock` gives it, `CardTimer.jsx` holds it. Where to look: the phone, a card whose 3 s run out on
+  auto scan: the timer holds "3.0" red, never "2.9" amber; a card sent at 1.4 holds "1.4" amber. Untested on a
+  phone. No migration.
 - 2026-10-27: **Pushed without a bump** (the owner's ask, "quietly push no bump"), decisions 564–567, the
   v1.0.6-badscanner review's six findings fixed: a name's printings fetched once and ended by no one caller (564),
   the camera's timer showing tenths cut down (565), a modern card's printings ordered by how it looks (567),
