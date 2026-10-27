@@ -26,22 +26,32 @@ const PRINTING_PAGES = 4;
 const plainNumber = (n) => String(n ?? '').replace(/^0+(?=\d)/, '').toLowerCase();
 
 /**
- * A card's paper printings in English, oldest first (Scryfall gives them newest first). `signal`: the
- * scanner's look, its pages dropped when the card's time is up (decision 550).
+ * A card's paper printings in English, oldest first (Scryfall gives them newest first), fetched once a
+ * name and kept for the page's life (decision 557); a failed fetch isn't kept. `signal`: this caller's
+ * (a look's, decision 550): its wait is given up when the signal goes, the fetch itself is not. The
+ * fetch is shared by every caller, so no one caller's signal may end it (decision 564: a look given up at
+ * a card's 3 s aborted the fetch the 3 s choice was waiting on, and Which card? opened empty instead of
+ * the name's printings). `search`: Scryfall's (tests pass their own).
+ * @returns {Promise<object[]>}
  */
-export function printingsOf(name, signal = null) {
-  // Kept for the page's life (decision 557): the scanner fetches a name's printings in the background
-  // a look or two before the look that goes by the name, and that look takes them from here. A failed
-  // or given-up fetch isn't kept.
-  const hit = printingsKept.get(name);
-  if (hit) return hit;
-  const promise = scry.searchAll(`!"${name.replace(/"/g, '')}" game:paper`, { maxPages: PRINTING_PAGES, signal })
-    .then((cards) => cards.filter((c) => c.lang === 'en').reverse());
-  printingsKept.set(name, promise);
-  promise.catch(() => {
-    if (printingsKept.get(name) === promise) printingsKept.delete(name);
+export function printingsOf(name, signal = null, { search = scry.searchAll } = {}) {
+  let promise = printingsKept.get(name);
+  if (!promise) {
+    promise = search(`!"${name.replace(/"/g, '')}" game:paper`, { maxPages: PRINTING_PAGES })
+      .then((cards) => cards.filter((c) => c.lang === 'en').reverse());
+    const kept = promise;
+    printingsKept.set(name, kept);
+    kept.catch(() => {
+      if (printingsKept.get(name) === kept) printingsKept.delete(name);
+    });
+  }
+  if (!signal) return promise;
+  if (signal.aborted) return Promise.reject(new DOMException('Given up', 'AbortError'));
+  return new Promise((resolve, reject) => {
+    const giveUp = () => reject(new DOMException('Given up', 'AbortError'));
+    signal.addEventListener('abort', giveUp, { once: true });
+    promise.then(resolve, reject).finally(() => signal.removeEventListener('abort', giveUp));
   });
-  return promise;
 }
 const printingsKept = new Map();
 
