@@ -6,20 +6,22 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
-- **Unpushed** (main session): decision 541, work mode's three fixes (docs and `.claude/` only), and NEXT.md's
-  review notes.
+- **Unpushed** (main session): decisions 541–543: work mode's three fixes, CLAUDE.md trimmed and three sections
+  moved (docs and `.claude/` only), and NEXT.md's notes.
+- **Skip pricing's rough edges** (the owner, 2026-10-26: "I want to fix this soon"; from the v1.0.5-rainbow
+  review): SAVE EDIT on a priced card while Skip pricing is on clears its price with no warning
+  (`PricingScreen.jsx` ~615, as decision 514 says; Buy tab); an unpriced card's edit reads "$0.00" in the
+  Changelog (`collection_update_line` logs `unit_price` 0; only 0012's add logs none; Records, a migration).
 - **From the 2026-10-26 review of work mode, still open** (main session, decision 540; the rest fixed by 541): a
   fork's prod or delete approval relayed by message isn't the owner's consent to the harness, so it may stall on a
   prompt in its own chat; whether the UserPromptSubmit hook fires on a turn started by a message is untried;
   `/main`'s hub jobs don't list relaying questions.
 
-- **From the v1.0.5-rainbow review, not acted on** (main session): SAVE EDIT on a priced card while Skip pricing is
-  on clears its price with no warning (`PricingScreen.jsx` ~615, as decision 514 says); an unpriced card's edit
-  reads "$0.00" in the Changelog (`collection_update_line` logs `unit_price` 0; only 0012's add logs none); a
-  collection SKU `102426-1` has a single buy's `102426-<n>` form, so if CC's search matches part of a SKU, `-1` also
-  finds `-10` and up (unchecked against CC); the Secret Lair foils list's generator sits outside the repo
-  (`C:/ClaudeProjects/temp/sld-foils`, `src/lib/sldFoilProducts.js:12`); `OwnedCounter.jsx`'s header comment still
-  puts Apply in the verdict line (decision 521 moved it).
+- **From the v1.0.5-rainbow review, not acted on** (main session): the Secret Lair foils list's generator sits
+  outside the repo (`C:/ClaudeProjects/temp/sld-foils`, `src/lib/sldFoilProducts.js:12`; passed to the Buy tab
+  session 2026-10-26, "Go ahead and move it"); `OwnedCounter.jsx`'s header comment still puts Apply in the verdict
+  line (decision 521 moved it). The Skip pricing items: their own entry above. The collection SKU `-1` vs `-10`
+  search: closed, the owner checked it in CC.
 - **For a migration, when there's a reason to write one** (0014 or later):
   - F2, the backup's 8 s statement limit (decision 430): `backup_export` (one call for every table, 2 to 7.7 s on
     dev) can time out; the fix must keep one read at one instant, so it needs the database. The test run's Backup
@@ -38,6 +40,11 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-26: **Closed by the owner** (main session, from its brainstorm of what's missing): a collection SKU
+  `102426-1` in CC's search finds only itself, not `-10` and up (the owner checked it: "This worked"); Pokémon on
+  the phone scanner, and a third game (One Piece, Lorcana): "Never going to happen" (a memory note, decision 517);
+  a trimming pass on the process docs: done (542, 543). The brainstorm's other ideas aren't items until the owner
+  picks one.
 - 2026-10-26: **CLAUDE.md trimmed and three sections moved** (side session, the owner's ask; decisions 542, 543):
   20,268 → 14,170 bytes, 268 → 200 lines (30%). The wording pass kept every rule (merged bullets, dates dropped
   only beside a decision number); then the Database steps, CLI link, `internal` schema, gotchas and squash moved
