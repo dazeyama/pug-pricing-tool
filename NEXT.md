@@ -6,16 +6,10 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
-- **Unpushed** (main session): decisions 541–543: work mode's three fixes, CLAUDE.md trimmed and three sections
-  moved (docs and `.claude/` only), and NEXT.md's notes.
-- **Skip pricing's rough edges** (the owner, 2026-10-26: "I want to fix this soon"; from the v1.0.5-rainbow
-  review): SAVE EDIT on a priced card while Skip pricing is on clears its price with no warning
-  (`PricingScreen.jsx` ~615, as decision 514 says; Buy tab); an unpriced card's edit reads "$0.00" in the
-  Changelog (`collection_update_line` logs `unit_price` 0; only 0012's add logs none; the remove, strike, restore
-  and export rows too). No migration (the owner, 2026-10-26): the first by the owner's rule, "an unpriced card can
-  never be saved on top of an already priced one" (SAVE EDIT keeps the line's price fields unless a price was
-  typed; Buy tab); the second in the app, the Changelog hiding a row's price when it's exactly $0
-  (`ChangelogPage.jsx` ~452; Records), if the owner agrees.
+- **Unpushed** (main session): decisions 541–546: work mode's three fixes and CLAUDE.md trimmed (541–543, docs and
+  `.claude/` only); the Secret Lair foils generator in the repo (544, Buy tab); the Changelog showing no price on a
+  card with none (545, Records); SAVE EDIT keeping a priced card's price under Skip pricing (546, Buy tab). No
+  migrations. NEXT.md's notes.
 - **From the 2026-10-26 review of work mode, still open** (main session, decision 540; the rest fixed by 541): a
   fork's prod or delete approval relayed by message isn't the owner's consent to the harness, so it may stall on a
   prompt in its own chat; whether the UserPromptSubmit hook fires on a turn started by a message is untried;
