@@ -20,11 +20,11 @@ import { straightCutout } from './straighten.js';
 import { stripShowsFoil } from './foilMark.js';
 import { findListMark, listNumber } from './listMark.js';
 import { defaultCreateCanvas } from './recognition/canvasUtil.js';
-import { ocrWorker, onOcrStatus, resetOcr } from './ocr.js';
+import { ocrWorker, onOcrStatus, readTitleText, resetOcr } from './ocr.js';
 import { isTimeout, TimeoutError, withTimeout } from '../lib/timeout.js';
 import { uuid } from '../lib/uuid.js';
 import { isMuted, play, resetSounds, setMuted, unlockSounds } from './sounds.js';
-import { printingsFor, readOlderCard, titleAmong } from './older.js';
+import { printingsFor, readOlderCard, readTitleName, titleAmong } from './older.js';
 import { cardNamed, isFnmStrip, isPromoStrip, resolveFnm, resolvePromo } from './promo.js';
 import { trace } from './trace.js';
 import { guessName, matchName } from './nameMatch.js';
@@ -100,6 +100,9 @@ const STOPPABLE_AFTER_MS = 1_500;
 // Holding Scan card this long starts over: the reader started afresh, what auto scan held forgotten.
 const LONG_PRESS_MS = 700;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+/** A card of this name, a two-faced card by its front face too (decision 551). */
+const frontKey = (name) => String(name ?? '').split(' // ')[0].trim().toLowerCase();
+const sameName = (card, name) => Boolean(card && name) && frontKey(card.name) === frontKey(name);
 
 // The condition and finish for the next scans, kept for this tab (a reload keeps them).
 const CONDITION_KEY = 'pug.scan.condition';
@@ -241,7 +244,13 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   // (id → { card, score }). Null with no card being read.
   const cardTime = useRef(null);
   // An older card that could be several printings: { tier, name, cards } to pick from.
-  const [pick, setPick] = useState(null);
+  const [pick, setPickState] = useState(null);
+  // A list opened stops the card's 3 s (decision 551): they ran out between a tap on Branching Bolt
+  // and its send finishing on 2026-10-26, and the list opened again.
+  const setPick = (next) => {
+    if (next) cardTime.current = null;
+    setPickState(next);
+  };
   // Which card? (decision 311): a title no read could name, its name to type: { guess, frame, card,
   // listMark, texts, art }.
   const [nameAsk, setNameAsk] = useState(null);
@@ -560,6 +569,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         .catch((e) => console.warn('The card reader failed to load', e))
         .finally(() => setOcrLoading(false));
       setCodePattern().catch(() => {});
+      // The names and their letter-pair index, for the title read on every look (decision 551).
+      scry.loadNames().then((names) => matchName('', names)).catch(() => {});
     }
   }
 
@@ -703,11 +714,15 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     // The card this look reads, and the likeliest printings its reads find: Scan card's own; auto
     // scan's the card's (cardTime), kept across its looks.
     let cardRead = manual ? { at: pressedAt ?? lookAt, art: null, frame: null, foilSeen: undefined, tier: 1, cands: new Map() } : null;
-    const collect = (likely) => {
+    // Each kept with what vouches for it (decision 551): `printed`, its set code read as printed;
+    // `named`, one of the printings of the name the title read.
+    const collect = (likely, { named = false } = {}) => {
       if (!cardRead) return;
-      for (const { card: c, score } of likely ?? []) {
+      for (const { card: c, score, printed = false } of likely ?? []) {
         const had = cardRead.cands.get(c.id);
-        if (!had || had.score < score) cardRead.cands.set(c.id, { card: c, score });
+        if (!had || had.score < score) {
+          cardRead.cands.set(c.id, { card: c, score, printed: printed || Boolean(had?.printed), named: named || Boolean(had?.named) });
+        }
       }
     };
     const net = { signal: ask.signal, onCandidates: collect };
@@ -781,6 +796,13 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       let foilSeen;
       // The List's mark at the card's corner (listMark.js), when the view's locked.
       let listSeen = null;
+      // The title's name, being read beside the strip (decision 551): { name, how } or { name: null, guess }.
+      let nameRead = null;
+      const readName = (pic, onCard) => readTitleName(pic, { card: onCard, read: readTitleText })
+        .catch((e) => {
+          if (!ask.signal.aborted) console.warn('Reading the title failed', e);
+          return { name: null, guess: () => '' };
+        });
       if (lock) {
         // The settle check first, on the card's art alone (decision 550): a look that finds the card
         // still moving, or the card last sent still there, stops before the strip is cut out and set
@@ -856,6 +878,10 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           cardRead.foilSeen = foilSeen;
           cardRead.art ??= art;
         }
+        // The card's name, read from its title by the second reader while the first reads the strip
+        // (owner, 2026-10-26: "Can we always ALSO be scanning the name area so we don't have to do it
+        // as a second pass check?"; decision 551).
+        nameRead = readName(frame, lock.card);
         if (!manual && v.older) {
           // An older card: its title's read below, not the strip.
         } else {
@@ -886,6 +912,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         }
       } else {
         // Scan card before the view is locked: the whole picture, every block read.
+        nameRead = readName(frame, null);   // decision 551
         progress?.drop('strip');
         progress?.drop('card');
         const likely = blocks.slice(0, SCAN_CARD_BLOCKS);   // the likeliest first (decision 550)
@@ -937,53 +964,78 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         }
       }
 
-      // No modern collector line: an older card, by its title (and "123/350" from 1998 on). Scan
-      // card always tries it; auto scan in the older-card mode, one read (decision 550).
-      if (!found && (manual || (lock && v.older))) {
-        if (manual) say('muted', 'No set code at the bottom: reading the title…');
+      // The title's name, read beside the strip (decision 551). A strip sure of its card doesn't wait
+      // for it; otherwise it settles what the strip couldn't.
+      const stripSet = attempts.some((a) => readClues(a.text, known).sets.length || isPromoStrip(a.text));
+      const texts = attempts.map((a) => a.text);
+      let title = null;
+      if (nameRead && !(found && (found.sure || manual || found.foreign))) {
+        title = await nameRead;
+        if (stale()) return;
+        if (cardRead && title.name) cardRead.name = title.name;
+      }
+      // The strip unsure of its card (it waited for a second look), the name agreeing: sure on this look.
+      if (found && !found.foreign && !found.sure && sameName(found.card, title?.name)) {
+        found = { ...found, sure: true };
+        via = `${via}+name`;
+      }
+      // No card from the strip, but one of its likely ones has the name read: taken when its set code
+      // was read as printed and it's clearly ahead of any other of that name.
+      if (!found && title?.name && cardRead) {
+        const agree = [...cardRead.cands.values()].filter((c) => sameName(c.card, title.name)).sort((a, b) => b.score - a.score);
+        if (agree[0]?.printed && (agree.length === 1 || agree[0].score - agree[1].score >= 1.5)) {
+          found = { card: agree[0].card, tier: 1, sure: true };
+          via = 'strip+name';
+        }
+      }
+      // An older card: by its name's printings (and "123/350" from 1998 on), on this look (decision 550:
+      // one read). Auto scan once it's in the older-card mode (a blank strip with ink in the title at
+      // once, else three looks with no set code, each about 0.4 s now): a modern card's strip missed
+      // once (glare, a thumb) is read again rather than its printing picked by look among dozens.
+      // Scan card always ends here when the strip found nothing.
+      if (!found && title?.name && (manual || (!stripSet && v.older))) {
+        if (manual) say('muted', `${title.name}: finding its printing…`);
         progress?.plan('older', STEP_MS.older);
         progress?.start('older');
-        const read = await readOlderCard(frame, {
-          texts: attempts.map((a) => a.text), card: lock?.card ?? null, listMark: listSeen, signal: ask.signal,
+        const old = await printingsFor(title.name, frame, {
+          texts, card: lock?.card ?? null, listMark: listSeen, signal: ask.signal, read: readTitleText,
+          onPrintings: (cards, { tier }) => {
+            if (cardRead) cardRead.tier = tier;
+            collect(cards.map((c, i) => ({ card: c, score: 50 - i })), { named: true });
+          },
         });
         progress?.finish('older');
         if (stale()) return;
-        foilSeen = undefined;   // an older card, read by its title: no mark to go by
-        // No read could name it (decision 311): Scan card asks for the name at once; auto scan after
-        // UNREAD_AFTER such looks in a row on this card, instead of trying for ever.
-        if (read && !read.name) {
-          trace('title-unread', { manual, guess: read.guess, ms: Date.now() - lookAt });
-          v.unread = (v.unread ?? 0) + 1;
-          if (manual || v.unread >= UNREAD_AFTER) {
-            v.unread = 0;
-            v.pendingOld = null;
-            askName({ guess: read.guess, frame, card: lock?.card ?? null, listMark: listSeen, texts: attempts.map((a) => a.text), art, from: manual ? 'scan-card' : 'auto' });
-          }
-          return;
-        }
+        foilSeen = undefined;   // read by its title: no mark to go by
         v.unread = 0;
-        const old = read;
-        // Its printings, as the title read ranked them, are the likeliest now (decision 549): an older
-        // card's strip reads are guesswork.
         if (old && cardRead) {
-          cardRead.cands = new Map(old.cards.slice(0, CANDIDATES).map((c, i) => [c.id, { card: c, score: 100 - i }]));
           cardRead.tier = old.tier;
           cardRead.foilSeen = undefined;
+          collect(old.cards.map((c, i) => ({ card: c, score: 100 - i })), { named: true });
         }
-        // One read (decision 550; two looks had to agree before, a second title read of about 0.8 s):
-        // one printing, by its number and set size or clearly ahead by look, is sent on this look;
-        // several open the printing list. No printing of the name found: auto scan looks again.
-        if (!manual && !old) return;
-        v.pendingOld = null;
-        if (old?.cards.length === 1) {
+        if (!old) {
+          if (!manual) return;   // Scryfall has no printing of that name: looked at again
+        } else if (old.cards.length === 1) {
+          // One printing, by its number and set size or clearly ahead by look: sent on this look.
           found = { card: old.cards[0], tier: old.tier, sure: true };
-          via = `title-${old.how}-${old.tier === 2 ? 'number' : 'look'}`;
-        } else if (old) {
-          trace('pick-open', { via: `pick-title-${old.how}`, name: old.name, count: old.cards.length, manual });
-          setPick({ ...old, art, frame, via: `pick-title-${old.how}` });
+          via = `title-${title.how}-${old.tier === 2 ? 'number' : 'look'}`;
+        } else {
+          trace('pick-open', { via: `pick-title-${title.how}`, name: old.name, count: old.cards.length, manual });
+          setPick({ ...old, how: title.how, art, frame, via: `pick-title-${title.how}` });
           say('muted', `${old.name}: pick its printing.`);
           return;
         }
+      }
+      // No name either, and no set code on the strip (decision 311): Scan card asks for the name at once;
+      // auto scan after UNREAD_AFTER such looks in a row on this card, unless its 3 s run out first.
+      if (!found && title && !title.name && (manual || (!stripSet && v.older))) {
+        trace('title-unread', { manual, ms: Date.now() - lookAt });
+        v.unread = (v.unread ?? 0) + 1;
+        if (manual || v.unread >= UNREAD_AFTER) {
+          v.unread = 0;
+          askName({ guess: title.guess(), frame, card: lock?.card ?? null, listMark: listSeen, texts, art, from: manual ? 'scan-card' : 'auto' });
+        }
+        return;
       }
       if (stale()) return;
       if (!found) {
@@ -1064,7 +1116,13 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     const v = view.current;
     v.pending = null;
     v.pendingOld = null;
-    const top = [...(t?.cands.values() ?? [])].sort((a, b) => b.score - a.score).slice(0, CANDIDATES).map((c) => c.card);
+    // Which guesses it offers (decision 551; owner, 2026-10-26, after a strip read as flavour text offered
+    // Benalish Trapper, Ardent Soldier and Benalish Heralds): the title's name read, only that name's;
+    // else only cards whose set code was read as printed, not a look-alike's guess.
+    const all = [...(t?.cands.values() ?? [])];
+    const ofName = t?.name ? all.filter((c) => c.named || sameName(c.card, t.name)) : [];
+    const offered = ofName.length ? ofName : all.filter((c) => c.printed);
+    const top = offered.sort((a, b) => b.score - a.score).slice(0, CANDIDATES).map((c) => c.card);
     trace('time-up', {
       manual, count: top.length, ms: t ? Date.now() - t.at : null,
       cards: top.map((c) => `${c.name} ${String(c.set).toUpperCase()} ${c.collector_number}`),
@@ -1284,6 +1342,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   /** Which card? (decision 311): the box opened, the reader's closest name in it. */
   function askName(ask) {
     trace('name-ask', { from: ask.from ?? null, guess: ask.guess });
+    cardTime.current = null;   // the box stops the card's 3 s, as a list does (decision 551)
     setNameAsk(ask);
     say('warn', lastDark.current
       ? `Couldn't read the name: it's too dark (${lightTip()}). Type it below, or skip the card.`
@@ -1592,6 +1651,9 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
             onPick={(card) => {
               const { tier, art, foilSeen } = pick;
               trace('pick-chosen', { via: pick.via ?? 'pick', name: card.name, rank: pick.cards.findIndex((c) => c.id === card.id) });
+              // Held at once (decision 551): auto scan, back on as the list closes, doesn't read the
+              // card in the holder again while its send is out.
+              if (art) view.current.held = art;
               setPick(null);
               // A promo's strip showed its foil star or not (decision 313); an older card's has none.
               sendCard(card, { tier, manual: true, art: art ?? null, foilSeen, via: pick.via ?? 'pick' });

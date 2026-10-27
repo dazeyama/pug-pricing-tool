@@ -60,19 +60,23 @@ const SEARCH_MS = 1_500;
 const CANDIDATE_MIN = 3;
 /** The pick list at 3 s shows this many (decision 549). */
 export const CANDIDATES = 3;
+/** The likeliest kept for it, more than it shows: some are left out unless the title names them (decision 551). */
+export const CANDIDATES_KEPT = 12;
 
 /**
  * The likeliest cards of a pool, best first, each with its score (decision 549): the ones the
- * pick list at 3 s offers. Pure, for tests.
+ * pick list at 3 s offers. `printed`: the card's set code is one read as printed, not a look-alike's
+ * guess; the pick list takes the others only when the card's title names them (decision 551).
+ * Pure, for tests.
  * @param {Iterable<object>} cards  Scryfall cards
- * @returns {{ card: object, score: number }[]}
+ * @returns {{ card: object, score: number, printed: boolean }[]}
  */
 export function likeliest(cards, clues) {
   return [...new Map([...cards].filter(Boolean).map((c) => [c.id, c])).values()]
-    .map((card) => ({ card, score: scoreCard(card, clues) }))
+    .map((card) => ({ card, score: scoreCard(card, clues), printed: clues.setWeight?.[String(card.set).toUpperCase()] === 3 }))
     .filter((r) => r.score >= CANDIDATE_MIN)
     .sort((a, b) => b.score - a.score)
-    .slice(0, CANDIDATES);
+    .slice(0, CANDIDATES_KEPT);
 }
 
 const plainNumber = (n) => String(n).toLowerCase().replace(/^0+(?=\d)/, '');
@@ -453,8 +457,10 @@ export async function resolveText(text, known, {
   // Still no card clearly ahead: that set's cards of that rarity, and the artist's cards, in one search.
   // Auto scan only with a number read (decision 550): with none, the searches were the slow failed
   // reads of the run logs (1.4 to 2 s each, searches 550 ms apart), and another look, 0.1 s off,
-  // usually reads the number. Scan card still asks them.
-  if (!found && wider && (manual || clues.numbers.length)) {
+  // usually reads the number. And only with a set code read (decision 551): an older card's copyright
+  // line ("CM 92009 … Justin Sweet", 2026-10-26) read a number, and its artist's search took 2.3 s of
+  // its 3 s; its title names it instead. Scan card still asks them.
+  if (!found && wider && (manual || (clues.numbers.length && clues.sets.length))) {
     await ask(wider);
     found = pickBest(pool, clues, take);
   }
@@ -538,7 +544,9 @@ export async function resolveThorough(texts, known, {
     }
     return best;
   }).sort((a, b) => b.score - a.score);
-  onCandidates?.(ranked.filter((r) => r.score >= CANDIDATE_MIN).slice(0, CANDIDATES).map(({ card, score }) => ({ card, score })));
+  onCandidates?.(ranked.filter((r) => r.score >= CANDIDATE_MIN).slice(0, CANDIDATES_KEPT).map(({ card, score }) => ({
+    card, score, printed: plans.some((p) => p.clues.setWeight?.[String(card.set).toUpperCase()] === 3),
+  })));
   const [first, next] = ranked;
   if (!first || first.score < TAKE.manual.score) return null;
   if (next && first.score - next.score < TAKE.manual.lead) return null;

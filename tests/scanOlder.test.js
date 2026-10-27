@@ -73,3 +73,24 @@ test('Which card? (decision 311): a guess when nothing is clear, and names as ty
   // A typo, nothing starting with it: the closest names.
   assert.equal(nameSuggestions('hevens gat', names)[0], "Heaven's Gate");
 });
+
+test('among thousands of names: misreads still named, junk answered at once (decision 551)', () => {
+  // 30,000 made-up two-word names, about as many as Magic has, with the real ones among them.
+  const words = ['ancient', 'blazing', 'cursed', 'dread', 'ember', 'feral', 'gilded', 'hollow', 'iron', 'jade',
+    'keen', 'lunar', 'molten', 'noble', 'onyx', 'pale', 'quiet', 'raging', 'silent', 'thorn'];
+  const nouns = ['angel', 'bolt', 'crypt', 'dragon', 'elves', 'field', 'giant', 'hound', 'idol', 'jackal',
+    'knight', 'lich', 'mage', 'nexus', 'ogre', 'pact', 'quarry', 'rider', 'shade', 'tower'];
+  const names = [...NAMES];
+  for (let i = 0; names.length < 30_000; i++) {
+    names.push(`${words[i % 20]} ${nouns[Math.floor(i / 20) % 20]} ${i}`);
+  }
+  matchName('warm', names);   // the index, built once
+  const started = performance.now();
+  assert.equal(matchName('Shivan Dragorn', names)?.name, 'Shivan Dragon');
+  assert.equal(matchName('Serra Ange1', names)?.name, 'Serra Angel');
+  for (const junk of ['po ] 1 y . [3 OC tr Ww AES', 'Life’s circle has become inverted', 'CM 92009 Wisw Jp Gf HE Clout if']) {
+    assert.equal(matchName(junk, names), null, junk);
+  }
+  // Fuse over every name took over a second for each junk reading on the laptop (2026-10-26).
+  assert.ok(performance.now() - started < 1_000, `${Math.round(performance.now() - started)} ms`);
+});

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  CANDIDATES, confirms, likeliest, nameLikeness, readClues, resolveText, resolveThorough, scoreCard,
+  CANDIDATES, CANDIDATES_KEPT, confirms, likeliest, nameLikeness, readClues, resolveText, resolveThorough, scoreCard,
 } from '../src/scan/resolve.js';
 
 // Owner, 2026-10-16: the collector strip's text, every clue in it, and the card found by elimination.
@@ -153,6 +153,12 @@ test('the number unreadable on auto scan: no search, the next look reads again (
   assert.deepEqual(asked, []);
 });
 
+test('an older card\'s copyright line on auto scan: no artist search without a set code (decision 551)', async () => {
+  const { search, lookup, asked } = fakeSearch(HOB);
+  assert.equal(await resolveText('—> Justin Sweet\nCM 92009 Wisw Jp Gf HE Clout if', KNOWN, { search, lookup }), null);
+  assert.deepEqual(asked, []);
+});
+
 test('a number read as another card, the artist clearly not theirs: the card by the artist read', async () => {
   const shove = card('shove', 'blb', '145', 'uncommon', 'Zoltan Boros');
   const talent = card('talent', 'blb', '5', 'uncommon', 'Ovidio Cartagena');
@@ -170,7 +176,8 @@ test('one digit read: the card whose number ends in it, not one a digit away', a
   const fog = card('fog', 'xln', '177', 'common', 'Igor Kieryluk');
   const other = card('other', 'xln', '8', 'common', 'Igor Kieryluk');
   const { search, lookup } = fakeSearch([fog, other]);
-  assert.equal((await resolveText('C 7\nXLN EN IGOR KIERYLUK', KNOWN, { search, lookup })).card.id, 'fog');
+  // XLN a known set, as on the phone: auto scan searches only with a set code read (decision 551).
+  assert.equal((await resolveText('C 7\nXLN EN IGOR KIERYLUK', new Set([...KNOWN, 'XLN']), { search, lookup })).card.id, 'fog');
 });
 
 test('two cards equally likely: neither is taken', async () => {
@@ -208,9 +215,16 @@ test('the likeliest: best first, the clearly wrong left out, three at most', () 
   assert.equal(likely[0].card.id, 'giant');
   assert.ok(likely.some((r) => r.card.id === 'neighbour'), 'a number one look-alike away');
   assert.ok(!likely.some((r) => ['ponies', 'garrison'].includes(r.card.id)), 'another number, rarity and artist');
-  assert.ok(likely.length <= CANDIDATES);
-  const many = Array.from({ length: 6 }, (_, i) => card(`g${i}`, 'hob', '113', 'rare', 'Miklós Ligeti'));
-  assert.equal(likeliest(many, clues).length, CANDIDATES);
+  assert.ok(likely.length >= CANDIDATES - 1);
+  const many = Array.from({ length: 20 }, (_, i) => card(`g${i}`, 'hob', '113', 'rare', 'Miklós Ligeti'));
+  assert.equal(likeliest(many, clues).length, CANDIDATES_KEPT);
+});
+
+test('a candidate is marked printed only when its set code was read as printed (decision 551)', () => {
+  const clues = readClues('C 0071\nDMQ EN OLIVIER BERNARD', KNOWN);   // DMQ: DMU only as a look-alike's guess
+  const geyser = card('geyser', 'dmu', '71', 'common', 'Olivier Bernard');
+  assert.equal(likeliest([geyser], clues)[0].printed, false);
+  assert.equal(likeliest([GIANT], readClues('R 0113\nHOB • EN ⟿ MIKLOS LIGETI', KNOWN))[0].printed, true);
 });
 
 test('two cards equally likely: neither taken, both offered, and again from memory', async () => {

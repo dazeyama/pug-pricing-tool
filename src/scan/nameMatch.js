@@ -21,7 +21,27 @@ const CUT_UP_TO = 3;
 /** Letters, digits and single spaces, lower case: how an OCR'd title and a name are compared. */
 export const titleKey = (text) => nameKey(text).replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
 
-let built = null;   // { names, entries, byKey, fuse } for the last names list
+let built = null;   // { names, entries, byKey, pairs } for the last names list
+
+// Never freezing the phone (decision 551): Fuse over every name (35,137 on 2026-10-26) took 1.2 s on
+// the laptop for a reading that names nothing (a smudge, flavour text), several times that on a phone,
+// all of it on the page's one thread, so the screen froze and a card's 3 s couldn't run out. Each
+// reading is first narrowed to the names sharing enough of its letter pairs ("bo", "ol", "lt" …), the
+// likeliest KEEP of them, and only those are scored by Fuse, as before. A name a few misread letters
+// away still shares most of its pairs; a reading that names nothing shares too few with any.
+/** Of a reading's letter pairs, the share a name must have too: the strict match, and the loose guess's. */
+const PAIRS_STRICT = 0.4;
+const PAIRS_LOOSE = 0.2;
+/** The most names Fuse scores for one reading. */
+const KEEP = 300;
+
+/** A key's letter pairs, its ends marked by spaces, each once. */
+function pairsOf(key) {
+  const s = ` ${key} `;
+  const out = new Set();
+  for (let i = 0; i < s.length - 1; i++) out.add(s.slice(i, i + 2));
+  return [...out];
+}
 
 function indexFor(names) {
   if (built?.names === names) return built;
@@ -33,8 +53,33 @@ function indexFor(names) {
   }
   const byKey = new Map();
   for (const e of entries) if (!byKey.has(e.key)) byKey.set(e.key, e.name);
-  built = { names, entries, byKey, fuse: null };
+  // Each letter pair → the entries whose key has it.
+  const pairs = new Map();
+  entries.forEach((e, i) => {
+    for (const p of pairsOf(e.key)) {
+      if (!pairs.has(p)) pairs.set(p, []);
+      pairs.get(p).push(i);
+    }
+  });
+  built = { names, entries, byKey, pairs };
   return built;
+}
+
+/**
+ * Fuse's hits for a key among the names sharing at least `share` of its letter pairs (decision 551),
+ * best first: the same scores as Fuse over every name, for the names it keeps.
+ */
+function nearHits(index, key, { share, threshold, limit }) {
+  const mine = pairsOf(key);
+  const counts = new Uint16Array(index.entries.length);
+  for (const p of mine) for (const i of index.pairs.get(p) ?? []) counts[i] += 1;
+  const floor = Math.max(1, Math.ceil(mine.length * share));
+  const near = [];
+  for (let i = 0; i < counts.length; i++) if (counts[i] >= floor) near.push(i);
+  if (!near.length) return [];
+  near.sort((a, b) => counts[b] - counts[a]);
+  const subset = near.slice(0, KEEP).map((i) => index.entries[i]);
+  return new Fuse(subset, { keys: ['key'], includeScore: true, threshold, ignoreLocation: true }).search(key, { limit });
 }
 
 /** One reading of the title against every name: the clear match, or null. */
@@ -42,8 +87,7 @@ function matchKey(key, index) {
   if (key.replace(/ /g, '').length < 3) return null;
   const exact = index.byKey.get(key);
   if (exact) return { name: exact, score: 0 };
-  index.fuse ??= new Fuse(index.entries, { keys: ['key'], includeScore: true, threshold: 0.4, ignoreLocation: true });
-  const hits = index.fuse.search(key, { limit: 8 });
+  const hits = nearHits(index, key, { share: PAIRS_STRICT, threshold: 0.4, limit: 8 });
   const best = hits[0];
   if (!best || best.score > ACCEPT) return null;
   const next = hits.find((h) => h.item.name !== best.item.name);
@@ -89,15 +133,9 @@ export function matchName(text, names) {
   return null;
 }
 
-// Which card? (decision 311): a looser search for the box's first guess and the names as typed.
-let loose = null;
-function looseFuse(names) {
-  const index = indexFor(names);
-  if (loose?.index !== index) {
-    loose = { index, fuse: new Fuse(index.entries, { keys: ['key'], includeScore: true, threshold: 0.6, ignoreLocation: true }) };
-  }
-  return loose.fuse;
-}
+// Which card? (decision 311): a looser search for the box's first guess and the names as typed, over the
+// names sharing a fifth of the key's letter pairs (decision 551).
+const looseHits = (index, key, limit) => nearHits(index, key, { share: PAIRS_LOOSE, threshold: 0.6, limit });
 
 /**
  * The reader's closest name when none was clear (decision 311): the best
@@ -108,12 +146,12 @@ function looseFuse(names) {
  * @returns {{ name: string, score: number }|null}
  */
 export function guessName(texts, names) {
-  const fuse = looseFuse(names);
+  const index = indexFor(names);
   let best = null;
   for (const text of texts) {
     for (const key of titleKeys(text)) {
       if (key.replace(/ /g, '').length < 3) continue;
-      const [hit] = fuse.search(key, { limit: 1 });
+      const [hit] = looseHits(index, key, 1);
       if (hit && (!best || hit.score < best.score)) best = { name: hit.item.name, score: hit.score };
     }
   }
@@ -143,6 +181,6 @@ export function nameSuggestions(query, names, limit = 6) {
     if (e.key.includes(` ${key}`)) add(e.name);
   }
   // Nothing starts with it: a typo, so the loose search's closest names.
-  if (!out.length) for (const h of looseFuse(names).search(key, { limit })) add(h.item.name);
+  if (!out.length) for (const h of looseHits(index, key, limit)) add(h.item.name);
   return out;
 }

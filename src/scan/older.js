@@ -72,18 +72,32 @@ async function loadPicture(url, signal = null) {
  *   printing of the name found; cards: one (the printing to take), or the likely ones, best first;
  *   all: every printing of that name, oldest first (the pick list's View all)
  */
-export async function readOlderCard(frame, { texts = [], card = null, listMark = null, signal = null } = {}) {
+export async function readOlderCard(frame, { texts = [], card = null, listMark = null, signal = null, read = readText } = {}) {
+  const title = await readTitleName(frame, { card, read });
+  if (!title.name) return { name: null, guess: title.guess() };
+  const found = await printingsFor(title.name, frame, { texts, card, listMark, signal, read });
+  return found && { ...found, how: title.how };
+}
+
+/**
+ * Just the card's name, from its title (decision 551: read on every look, beside the collector
+ * strip, by the second reader): the title where it's found on the card (decision 308), each likely
+ * place as one line till one names a card; then the best as a block (it copes with a stray mark
+ * better).
+ * @param {{ card?: object, read?: (canvas: object, mode: string) => Promise<string> }} [opts]
+ *   read: which reader (ocr.js readText, or readTitleText beside the strip's)
+ * @returns {Promise<{ name: string, how: string }|{ name: null, guess: () => string }>}  how: which
+ *   read named it (the run log): the usual line, the white letters, or the block; guess: the reader's
+ *   closest name for the Which card? box (decision 311), worked out only when it's asked for
+ */
+export async function readTitleName(frame, { card = null, read = readText } = {}) {
   const names = await scry.loadNames();
-  // The title where it's found on the card (decision 308), each likely place as one line till one
-  // names a card; then the best as a block (it copes with a stray mark better).
-  const reads = { line: (c) => readText(c, PSM_LINE), block: (c) => readText(c, PSM_BLOCK) };
+  const reads = { line: (c) => read(c, PSM_LINE), block: (c) => read(c, PSM_BLOCK) };
   const readings = [];
   const how = {};
   const match = matchName(await findTitle(frame, reads, defaultCreateCanvas, (t) => matchName(t, names), { card, readings, how }), names);
-  if (!match) return { name: null, guess: guessName(readings, names)?.name ?? '' };
-  const found = await printingsFor(match.name, frame, { texts, card, listMark, signal });
-  // Which read named it (the run log): the usual line, the white letters, or the block.
-  return found && { ...found, how: how.how ?? 'line' };
+  if (!match) return { name: null, guess: () => guessName(readings, names)?.name ?? '' };
+  return { name: match.name, how: how.how ?? 'line' };
 }
 
 /**
@@ -92,8 +106,8 @@ export async function readOlderCard(frame, { texts = [], card = null, listMark =
  * @param {(text: string, cards: object[]) => object|null} named  promo.js cardNamed
  * @returns {Promise<object|null>}  the card, or null when no reading named one
  */
-export async function titleAmong(frame, cards, named, { card = null } = {}) {
-  const reads = { line: (c) => readText(c, PSM_LINE), block: (c) => readText(c, PSM_BLOCK) };
+export async function titleAmong(frame, cards, named, { card = null, read = readText } = {}) {
+  const reads = { line: (c) => read(c, PSM_LINE), block: (c) => read(c, PSM_BLOCK) };
   let picked = null;
   const text = await findTitle(frame, reads, defaultCreateCanvas, (t) => (picked = named(t, cards)), { card });
   return picked ?? named(text, cards);
@@ -105,15 +119,20 @@ export async function titleAmong(frame, cards, named, { card = null } = {}) {
  * else ranked by how the card looks, best first. With no picture to go by
  * (`frame` null: the name typed over a printing list that had no frame,
  * decision 420), every printing, oldest first, to pick by the set symbol.
+ * `onPrintings`: told the likely printings as soon as they're known, unranked (decision 551), so
+ * the pick list at a card's 3 s has them even while their pictures are still being compared.
+ * `read`: which card reader (ocr.js).
  * @returns {Promise<{ tier: 2|3, name: string, number: string|null, cards: object[], all: object[] }|null>}
  *   null: Scryfall has no printing of that name
  */
-export async function printingsFor(name, frame, { texts = [], card = null, listMark = null, signal = null } = {}) {
+export async function printingsFor(name, frame, {
+  texts = [], card = null, listMark = null, signal = null, read = readText, onPrintings = null,
+} = {}) {
   const match = { name };
   const bottoms = [...texts];
   let old = bottoms.map(parseOldNumber).find(Boolean) ?? null;
   if (!old && frame) {
-    bottoms.push(await readBottom(frame, (c) => readText(c, PSM_BLOCK), defaultCreateCanvas, { card }));
+    bottoms.push(await readBottom(frame, (c) => read(c, PSM_BLOCK), defaultCreateCanvas, { card }));
     old = parseOldNumber(bottoms.at(-1));
   }
   const printings = await printingsOf(match.name, signal);
@@ -137,6 +156,15 @@ export async function printingsFor(name, frame, { texts = [], card = null, listM
   const tier = hits.length ? 2 : 3;
   const number = hits.length ? old.number : null;
   const year = bottoms.map(parseCopyrightYear).find(Boolean) ?? null;
+  // Unranked: those with the number read, or of the copyright line's year (or the one before).
+  const thatYear = year
+    ? printings.filter((c) => {
+      const y = Number((c.released_at ?? '').slice(0, 4));
+      return y === year || y === year - 1;
+    })
+    : [];
+  const likely = hits.length ? hits : thatYear.length ? thatYear : printings;
+  onPrintings?.(likely.slice(0, PICK_MAX), { tier });
   // Every printing ranked by how the card looks; one clearly ahead is taken.
   if (frame) try {
     const { ranked, winner } = await rankPrintings(frame, card ?? guideRect(frame.width, frame.height), printings, {
@@ -153,15 +181,7 @@ export async function printingsFor(name, frame, { texts = [], card = null, listM
     if (winner) return { tier, name: match.name, number, cards: [winner], all: printings };
     return { tier, name: match.name, number, cards: ranked.slice(0, PICK_MAX).map((r) => r.card), all: printings };
   } catch (e) {
-    console.warn('Ranking the printings by look failed', e);
+    if (!signal?.aborted) console.warn('Ranking the printings by look failed', e);
   }
-  // Unranked: those with the number read, or of the copyright line's year (or the one before).
-  const thatYear = year
-    ? printings.filter((c) => {
-      const y = Number((c.released_at ?? '').slice(0, 4));
-      return y === year || y === year - 1;
-    })
-    : [];
-  const likely = hits.length ? hits : thatYear.length ? thatYear : printings;
   return { tier, name: match.name, number, cards: likely.slice(0, PICK_MAX), all: printings };
 }
