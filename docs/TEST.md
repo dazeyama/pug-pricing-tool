@@ -441,9 +441,10 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       3 s shows its name's printings to pick from. A white-bordered one, or a black-bordered one whose strip shows
       its copyright line (Goblin Electromancer, Guardian of Vitu-Ghazi): read by its title from the first look,
       not after three, and no "Still reading" first.
-- [ ] **The 3 s on the camera** (decision 558): lay a card: a small "3.0" counts down in the camera's top right,
-      amber under 1.0, gone when the card goes in or its list opens; Scan card counts from the press; an empty
-      holder shows none.
+- [ ] **The card's time on the camera** (decisions 558, 559): lay a card: a small number counts up from 0.0 in the
+      camera's top right; when the card goes in (or its list opens) it stops there, bold and amber, and stays
+      till the next card starts it from 0.0; Scan card counts from the press; a card taken out before it's read
+      stops it too.
 - [ ] **The waits cut** (decision 550): auto scan's first look comes as soon as the camera shows a picture; lay
       modern cards one after another: each is read as soon as it stops moving, about 0.2 s after; one with its
       number covered isn't searched for, and once uncovered is read on the next look. Scan card on a hard card

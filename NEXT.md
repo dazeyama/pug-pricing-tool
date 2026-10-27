@@ -49,6 +49,11 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-27 (Phone scanner session): **The camera's timer counts up and holds the card's time** (decision 559,
+  the owner's ask, amends 558): `src/scan/CardTimer.jsx` counts up in tenths, then holds the last time bold and
+  amber (`.scan-card-timer.done`) till the next card; `Scanner.jsx` `readCardClock`, and an empty holder ends a
+  card's time (`cardTime` cleared). Where to look: the phone, lay a card: 0.0 counting up, then the card's time
+  held in bold amber after it goes in. Untested on a phone. No migration.
 - 2026-10-27 (Phone scanner session): **The card's 3 s on the camera** (decision 558, the owner's ask):
   `src/scan/CardTimer.jsx` counts down in tenths in the camera's top right while a card's 3 s run (auto scan's
   `cardTime`, Scan card's and Title's `pressClock`), amber in the last second; `src/styles/scan.css`
