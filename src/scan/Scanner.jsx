@@ -262,8 +262,6 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const sinceLock = useRef(0);
   const relockDue = useRef(false);
   const relockTries = useRef(0);
-  // The art of the card a failed strip last asked a re-crop for (decision 317): one ask a card.
-  const lineRelockArt = useRef(null);
   // The last time anything new was in the holder or a button was pressed (decision 304).
   const lastActive = useRef(Date.now());
   // Dark looks in a row (decision 306), and whether the last picture was too dark.
@@ -600,20 +598,6 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       trace('tall-stack', { cards: stackCount.current });
       setTallStack(true);
     }
-  }
-
-  /**
-   * A strip that named no set, not an older card's: the view found again (decision 317), once a card:
-   * as the stack grows the card comes closer and the lock's outline, and the strip's zone with it,
-   * drift off it. Two looks to find it, then on as before. Not on an older card's strip (a copyright
-   * line, a blank one; decisions 557, 562): its place was found, it has no set code.
-   */
-  function askRecrop(art) {
-    if (!lockRef.current || (lineRelockArt.current && artDistance(lineRelockArt.current, art) < ART_CHANGED)) return;
-    lineRelockArt.current = art;
-    relockDue.current = true;
-    relockTries.current = RELOCK_TRIES - 2;
-    trace('relock-asked', { why: 'no set code' });
   }
 
   /** Reset view: unlocked, and the next card found locks it again. */
@@ -963,8 +947,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       if (!found && !stripSet && cardRead) cardRead.noSet = (cardRead.noSet ?? 0) + 1;
       const olderLook = !stripSet && (blankStrip || Boolean(year) || (cardRead?.noSet ?? 0) >= NO_SET_LOOKS);
       v.olderLook = olderLook;   // the view found again by the card's edges alone (decision 312)
-      // A strip that named no set and isn't an older card's: its place looked for again, once a card (decision 317).
-      if (!manual && !found && !stripSet && !olderLook && attempts.length) askRecrop(art);
+      // A strip that named no set is no longer re-cropped by itself (owner, 2026-10-27: "Remove this, reset
+      // view can be a manual step"; decision 563, retiring 317): Reset view does it.
       let title = null;
       if (nameRead && !(found && (found.sure || manual || found.foreign))) {
         title = await nameRead;
