@@ -43,7 +43,10 @@ migration isn't pushed before prod has it.
    --confirm zvxquzcfffmxwizonxuo --compare <that dev run>`: every fingerprint the same. The CLI stays linked to dev.
 
 No session ends with dev ahead of prod: if prod can't take it, the handoff's first line and NEXT.md's first Open
-item say so. A migration on dev only may be amended in place; never once prod has it (decision 450).
+item say so. A migration on dev only may be amended in place rather than given a new number; never once prod has it
+(decision 450). To amend: apply the changed functions or data lines to dev by hand from the file, so dev matches
+what prod will get; have pug-reviewer review the change; run the full test run; say in the handoff that the
+migration changed after dev had it.
 
 ## The `internal` schema
 

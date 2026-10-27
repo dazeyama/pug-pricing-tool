@@ -30,7 +30,7 @@ once, and what one leaves half-done is in the others' checks.
   in the header.
 - **Git: one index for all.** Stage by path and commit in the same call (`git add <path>… && git commit …`); never
   `-A`, `.`, `-u` or `commit -a` (a sweep takes another session's edits, and files left staged go out in whoever
-  commits next); never `--amend` (the last commit may be another session's). Never stash, reset, `checkout --`,
+  commits next; check `git show --stat HEAD` after); never `--amend` (the last commit may be another session's). Never stash, reset, `checkout --`,
   `restore` or `clean` (decision 532): the folder's uncommitted edits may be another session's half-done change, and
   those throw them away with no trace. Undo your own edit with Edit; see a file as committed with `git show
   HEAD:<path>`. A shared doc may also hold another session's edit; committing it with yours is fine, said in the
