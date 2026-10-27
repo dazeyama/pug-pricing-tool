@@ -388,14 +388,14 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       count over.
 - [ ] **Reset view** lets go of the card and the next card locks it again; Stop leaves the view alone.
 - [ ] **The List:** a List card (planeswalker mark at its bottom-left) goes in as its List printing.
-- [ ] **Older card titles** (decisions 308, 309): Courser of Kruphix, a 4th Edition card and a Mercadian Masques card
-      (white title): **Title** shows the name level and whole in the info box and opens the right printings, also
-      with the card a little high or low.
+- [ ] **Older card titles** (decisions 308, 309, 562): Courser of Kruphix, a 4th Edition card and a Mercadian Masques
+      card (white title): the title's box shows the name level and whole, and auto scan sends it or opens the right
+      printings, also with the card a little high or low.
 - [ ] **An older card's printing:** a 2005 card goes in by its "123/350" or opens its printings; a 1995 card opens its
       printings to pick by set symbol; **View all** lists every printing.
-- [ ] **Which card is it?** (decision 311): Heaven's Gate (Legends), or any unreadable title: Title opens the box with a
-      guess; × clears it; "heav" lists Heaven's Gate; tapping it opens its printings; auto scan opens the box by itself
-      after a few looks; Skip this card sets the card aside for good.
+- [ ] **Which card is it?** (decisions 311, 561, 562): Heaven's Gate (Legends), or any unreadable title: auto scan
+      opens the box with a guess at 3 s, Scan card at once; × clears it; "heav" lists Heaven's Gate; tapping it opens
+      its printings; Skip this card sets the card aside for good.
 - [ ] **FNM promos** (decision 327): Renegade Rallier ("009/012 P / FNM") goes in as F17 9, foil (`fnm-artist`); a
       2015 or 2017 FNM promo numbered 1 goes in by its title (`fnm-title`), or the Which FNM promo? list opens.
 - [ ] **PRM promos** (decision 313): Etali, Primal Storm ("100/196 P / PRM ★ EN") opens "Which Etali, Primal Storm? A
@@ -457,8 +457,11 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
 - [ ] **The title's box** (decisions 552, 553, 555): camera on, a card locked: above the camera, the card's name
       alone, black on white, filling the box's height from its left edge, short names too (no mana cost or rules),
       follows each new card; under the camera,
-      always the set code and number strip, an older card's too. Title still reads the title and opens its
-      printings.
+      always the set code and number strip, an older card's too, its whole width (no Title / Number button,
+      decision 562).
+- [ ] **The name scored on the strip** (decision 562): a modern card with its number covered but its set code and
+      title showing goes in by its name (no pick list, no wait); a 2005 card goes in by its "123/350" on the first
+      look its title reads; a card whose name has one printing goes in on its name alone.
 - [ ] **A sheet takes the boxes' room** (decision 554): a printing list (Branching Bolt) reaches from the finish
       buttons to the last scan's strip, both boxes hidden, each printing's set name readable; the same for a price
       to answer and Which card?. Closed: both boxes back, with their pictures.

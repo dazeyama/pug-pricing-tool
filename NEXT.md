@@ -49,6 +49,18 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-27 (Phone scanner session): **The name's printings scored on the strip; the older-card mode and Title /
+  Number retired** (decision 562, the owner's pick of all three): `src/scan/resolve.js` `bestOfName` scores the
+  name's printings (`older.js` `printingsOf`, kept) on the strip's clues and an older card's "123/350"; one clearly
+  ahead is sent, modern or older, with no strip search. `Scanner.jsx`: the card's age from each look's strip
+  (`olderLook`: set code, copyright year, blank strip with ink, or `NO_SET_LOOKS` looks with no set code on one
+  card); the strip read on every look; `askRecrop` for decision 317's re-crop; `noLineAgain`, `leaveOlder`,
+  `titleMode`, `readTitleNow`, `backToNumber` and the button gone (`.scan-cutout-mode` in `scan.css`). Tests in
+  `tests/scanResolve.test.js`; TEST.md section 10's Title cases rewritten. Where to look: the phone, auto scan: a
+  modern card with its number covered goes in by name and set code; Goblin Electromancer and a 1995 card go in or
+  open their printings; no Title / Number button, the strip box's whole width showing. Untested on a phone. Left in
+  `older.js`: `readOlderCard`, now used by nothing in the app. Help: Scanning from a phone's Title / Number
+  description is out of date. No migration.
 - 2026-10-27 (Phone scanner session): **3 s with nothing likely: a choice, not a retry** (decision 561, the
   owner's call, undoes 556's retry): `src/scan/Scanner.jsx` `timeUp` opens the read name's printings in the
   printing list (`printingsFor`, auto scan held off by `finding` while they come), else Which card? with the
