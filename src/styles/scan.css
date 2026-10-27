@@ -168,6 +168,10 @@ html[data-scan] .toast { max-width: none; }
 .scan-cutout.scan-title-box { height: 48px; }
 /* Title / Number: what the info box shows, at its right end (owner, 2026-10-16). */
 .scan-cutout-wrap { position: relative; flex: none; }
+/* A sheet open over the camera (decision 554): the two boxes out of the way, the sheet in their room; the
+   canvases keep their pictures for when it closes. */
+.scan-title-box.covered,
+.scan-cutout-wrap.covered { display: none; }
 .scan-cutout-mode {
   position: absolute;
   right: 6px;

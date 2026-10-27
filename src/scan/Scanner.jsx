@@ -386,6 +386,10 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const blocked = blockedText(session);
   const needs = [...scans].reverse().find((s) => s.status === 'needs_price') ?? null;
   const latest = scans[0] ?? null;
+  // A sheet over the camera (a price to answer, a printing to pick, a name to type) takes the title's and
+  // the strip's boxes' room too (owner, 2026-10-26: the pick list "is not tall enough anymore to see enough
+  // information to choose accurately"; decision 554). Nothing is read while one's open.
+  const sheetOpen = Boolean(needs || pick || nameAsk);
   // What's open now, for a read that started earlier (Scan card waits for an auto look, which may
   // have opened a sheet meanwhile; decision 356).
   const openNow = useRef({});
@@ -648,7 +652,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
    * title into the box above it (decision 552).
    */
   function showCutout(src, el = cutoutRef.current) {
-    if (!el || !src) return;
+    // A box hidden under a sheet (decision 554) has no size: drawn now, it would lose its picture.
+    if (!el || !src || !el.clientWidth) return;
     const dpr = window.devicePixelRatio || 1;
     const w = Math.max(1, Math.round(el.clientWidth * dpr));
     const h = Math.max(1, Math.round(el.clientHeight * dpr));
@@ -1623,7 +1628,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           like the one we have below the camera, above the camera, always focused on the name"; decision
           552): what the second reader reads on every look. There while the camera's on. */}
       {camera.on && (
-        <canvas ref={titleRef} className="scan-cutout scan-title-box" aria-label="The card's title, enlarged" />
+        <canvas ref={titleRef} className={`scan-cutout scan-title-box${sheetOpen ? ' covered' : ''}`} aria-label="The card's title, enlarged" />
       )}
 
       {/* The camera takes the space that's left; notices and sheets lie over it. */}
@@ -1719,7 +1724,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           the camera (decision 552). Title / Number reads the title, or goes back to the strip's set code
           and number. There while the camera's on, locked or not. */}
       {camera.on && (
-        <div className="scan-cutout-wrap">
+        <div className={`scan-cutout-wrap${sheetOpen ? ' covered' : ''}`}>
           <canvas
             ref={cutoutRef}
             className={`scan-cutout${blurry ? ' blurry' : ''}`}
