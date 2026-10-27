@@ -19,9 +19,12 @@ marks each task done here when it's finished, with the exact file and function o
 - **The scanner made fast, a 3 s limit per card** (the owner, 2026-10-26, after a demo at work that was too slow;
   Phone scanner session): the analysis is done, from the dev run logs of 2026-10-18 to 10-20
   (`C:\ClaudeProjects\temp\scan-run\`, re-measured with `node scanstats.mjs <log>` and `node gaps.mjs <log>`
-  there). Every item of the analysis is built (decisions 549 and 550, Done below), and the name read on every
-  look by a second reader (551, after the owner's first try), for the owner to try together on the phone. Left: maybe a card index on the phone instead of Scryfall calls (a new mechanism, the owner's
-  call); after a try on the phone, re-measure with the dev run log (`trace.js` writes it on the LAN link).
+  there). Built and committed, decisions 549–563 (Done below), Help brought up to date. **Not tried on a phone
+  yet, none of it: try it on dev's LAN link before a push** (the scanner's core changed: a second card reader,
+  the name scored on the strip, the older-card mode and Title / Number gone, the 3 s choice); the second
+  reader's memory on an iPhone is the one real unknown. Left: after that try, re-measure with the dev run log
+  (`trace.js` writes it on the LAN link); maybe a card index on the phone instead of Scryfall calls (a new
+  mechanism, the owner's call).
 - **From the 2026-10-26 review of work mode, still open** (main session, decision 540; the rest fixed by 541): a
   fork's prod or delete approval relayed by message isn't the owner's consent to the harness, so it may stall on a
   prompt in its own chat; whether the UserPromptSubmit hook fires on a turn started by a message is untried;
@@ -49,6 +52,11 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-27 (Phone scanner session): **Help: Scanning from a phone brought up to date** (the owner's ask, for
+  decisions 549–563): `README.md`, Scanning from a phone: the two readers, the name box, the timer, 3 s a card and
+  the choice it ends in, Scan card's 3 s, Stop after 1.5 s, the slow-connection line, older cards with no button
+  (the Title / Number lines gone), Which card? at 3 s. `src/scan/older.js` `readOlderCard` removed (nothing used
+  it). Where to look: the Help page Scanning from a phone. No migration.
 - 2026-10-27 (Phone scanner session): **No re-crop by itself on a strip that names no set** (decision 563, the
   owner's call): `src/scan/Scanner.jsx` `askRecrop` and `lineRelockArt` removed; Reset view is the manual step;
   the re-crop every 20 cards (312) and the strip zone following the stack (`straighten.js`) stay. Where to look:
