@@ -6,10 +6,10 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
-- **Unpushed** (main session): decisions 541–546: work mode's three fixes and CLAUDE.md trimmed (541–543, docs and
+- **Unpushed** (main session): decisions 541–547: work mode's three fixes and CLAUDE.md trimmed (541–543, docs and
   `.claude/` only); the Secret Lair foils generator in the repo (544, Buy tab); the Changelog showing no price on a
-  card with none (545, Records); SAVE EDIT keeping a priced card's price under Skip pricing (546, Buy tab). No
-  migrations. NEXT.md's notes.
+  card with none (545, Records); SAVE EDIT keeping a priced card's price under Skip pricing (546, Buy tab); the
+  matching audit page built and reverted the same day (547, no change in the app). No migrations. NEXT.md's notes.
 - **From the 2026-10-26 review of work mode, still open** (main session, decision 540; the rest fixed by 541): a
   fork's prod or delete approval relayed by message isn't the owner's consent to the harness, so it may stall on a
   prompt in its own chat; whether the UserPromptSubmit hook fires on a turn started by a message is untried;
@@ -37,6 +37,14 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-26 (main session): **The CC matching audit page, built and reverted the same day** (decision 547; the
+  owner: "That was a dead end. I want to go back to the commit before any work began on the repo in regards to the
+  audit page."): the seven commits 238e459–1774c4d (the page as that day's decisions 547–549, and their NEXT.md
+  entries) reverted by bc2a3ab, the tree 5e28569's again; lint, 531 tests and the build pass. `src/lib/auditCc.js`,
+  `src/lib/devDb.js`, `src/pages/export/audit/`, `src/styles/auditcc.css` and `tests/auditCc.test.js` are gone;
+  `ChooseRow.jsx`, `App.jsx` and `main.jsx` are as before. The data file and the count stay outside the repo
+  (`C:\ClaudeProjects\temp\pug-matching\`). Where to look: nothing to QA; `#/audit-cc` is no longer a route. No
+  migration.
 - 2026-10-26 (Buy tab session): **SAVE EDIT never saves an unpriced card over a priced one** (decision 546; the
   owner's ask through the main session: "What if we just made it so that an unpriced card can never be saved ontop of
   an already priced one?"): while Skip pricing is on, SAVE EDIT on a line that has a price keeps its price fields as
