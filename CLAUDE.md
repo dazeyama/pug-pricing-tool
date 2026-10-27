@@ -153,52 +153,24 @@ so I can QA it myself. The checks before each commit still run every time (Check
 
 ## Database
 
-Dev is `psucrzljraxeootwnltf`: localhost and the phone scanner's LAN link (`.env.development`), with the store's
-data from before launch as the test copy. Prod is `zvxquzcfffmxwizonxuo`, the live site's project since
-v1.0.0-launch (2026-10-19).
+Dev is `psucrzljraxeootwnltf` (localhost and the phone scanner's LAN link, `.env.development`; the store's data
+from before launch as the test copy). Prod is `zvxquzcfffmxwizonxuo`, the live site's project since v1.0.0-launch.
+**Before any migration work, read `docs/DATABASE.md`** (decision 543): the six steps (review, rehearsal, push,
+snapshot, test run, prod the same sitting), the CLI's link and the `--project-ref` flag, the `internal` schema, the
+gotchas and the squash.
 
 - **Prod holds the store's data and nothing else, ever** (decision 380): no test rows, users, files or scans, and no
-  counter moved by a test. The database test run, the smoke test, scans, imports and every other try-out run on dev
-  only. On prod the only checks are read-only: `migration list`, `node scripts/db-test-run.mjs --structure-only`
-  (the fingerprints; nothing run or written) and the live check. Whatever must be checked on prod is checked by
-  looking, never by making something there.
-- **Dev and prod stay on the same migrations at all times** (decision 381). A batch isn't done until it's on both,
-  in one sitting: the steps below on dev, then prod (step 6). The prod push has my standing go; the one thing to
-  pick is the moment (the store not using the app). No session ends with dev ahead of prod: if prod can't take it,
-  the handoff's first line and NEXT.md's first Open item say so. App code that needs a migration isn't pushed before
-  prod has it.
-- **Changes are new migration files** (0002 and up). The migrations written for one piece of work go through the
-  steps together: one review of all of them, one rehearsal in order, applied in order, one snapshot, one test run
-  (owner, 2026-10-19).
-  1. **Review before applying:** prod is the live store, so a migration applied there changes it at once. Hand the
-     file, with its app code and test-run checks, to **pug-reviewer**. A confirmed finding that would break the site
-     or its data: fix it first (my call if unsure); report the rest with the handoff.
-  2. **Rehearse** inside `begin; … rollback;` (`npx supabase db query --linked -f`). A rollback doesn't undo a
-     counter: `setval` and `nextval` on a sequence stay changed. Rehearse a copy with those lines taken out, and
-     check the counter (`select last_value, is_called from buys_number_seq`) before and after.
-  3. `npx supabase db push --linked`.
-  4. `node scripts/db-snapshot.mjs`; commit `supabase/current/` with it.
-  5. `node scripts/db-test-run.mjs --save <a fresh dev run, outside the repo>`: "All passed".
-  6. **Prod, the same sitting:** `npx supabase db push --linked --project-ref zvxquzcfffmxwizonxuo`, then
-     `node scripts/db-test-run.mjs --structure-only --project-ref zvxquzcfffmxwizonxuo --confirm zvxquzcfffmxwizonxuo
-     --compare <that dev run>`: every fingerprint the same.
-- **The CLI stays linked to dev** (`supabase/.temp/project-ref`). Anything aimed at prod names it: `--linked
-  --project-ref zvxquzcfffmxwizonxuo` for `migration list`, `db push` and `db query` (the flag overrides the link for
-  that one command; the function deploys take `--project-ref` alone); no password was asked for it (decision 377).
-  `db push` and `--project-ref` have no guard: the ref typed in the command is the check, so read it before Enter.
-- **The `internal` schema** (migration 0040) holds helpers only the database's own functions call; the API doesn't
-  serve it. A function that calls one must `set search_path = public, internal` (security-definer:
-  `public, internal, pg_temp`); a plain `= public` can't find them.
-- **Gotchas:** a function whose `returns table` changes needs `drop function` first, and a drop loses its grants, so
-  grant it to `authenticated` again (0063's pattern). `db query` runs one transaction only when the file itself has
-  `begin;` and `rollback;`.
-- **The squash** (decision 332) is done: `0001_baseline.sql` stands in for the old 0001–0084 (now in
-  `supabase/migrations-archive/`), 0002 is the Changelog lock, prod started empty, localhost always uses dev. Its
-  runbook is retired: `git show 681c5c6:SQUASH.md`.
+  counter moved by a test. Every try-out runs on dev; on prod only the read-only checks (`docs/DATABASE.md`), and
+  whatever must be checked there is checked by looking, never by making something.
+- **Dev and prod stay on the same migrations at all times** (decision 381): a batch isn't done until it's on both,
+  in one sitting (the prod push has my standing go; pick the moment), and app code that needs a migration isn't
+  pushed before prod has it. No session ends with dev ahead of prod: if prod can't take it, the handoff's first
+  line and NEXT.md's first Open item say so.
 
 ## Where things are
 
-- `docs/TEST.md`: the smoke test, one pass, tab by tab; a pass reports its findings when it ends. `docs/SETUP.md`:
+- `docs/DATABASE.md`: the two projects, a migration step by step, the `internal` schema, the gotchas, the squash.
+  `docs/TEST.md`: the smoke test, one pass, tab by tab; a pass reports its findings when it ends. `docs/SETUP.md`:
   running, deploying, and the phone scanner's LAN link. `docs/SCAN_LEARNINGS.md`: what the first attempt at auto
   scanning taught us (rolled back 2026-10-16).
 - `.claude/agents/pug-reviewer.md`: the standard review. When I ask for a review, hand it to this agent (read-only;
