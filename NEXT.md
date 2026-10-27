@@ -46,6 +46,13 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-26 (Phone scanner session): **The title's box shows the name alone** (decision 553, the owner's ask with
+  a screenshot): `src/scan/titles.js` `nameSpan` and `nameCutout` cut the name out of the title band for the box
+  above the camera (the reader still reads the whole band); tests in `tests/scanTitleFind.test.js`; on the owner's
+  screenshot it cuts out "Auger Spree" alone (`C:\ClaudeProjects\temp\scan-run\name-crop-check.mjs`). Where to
+  look: the phone, a card locked: the name fills the box's height, no mana cost or rules beside it; a card whose
+  name isn't found shows the whole bar as before. Untested on a phone. Picked by me, reversible: a word gap up to
+  half the band's height, a little room round the name. No migration.
 - 2026-10-26 (Phone scanner session): **The title's box above the camera** (decision 552, the owner's ask):
   `src/scan/Scanner.jsx` `titleRef`, drawn by `showCutout` on every settled look and on Title's press;
   `src/styles/scan.css` `.scan-title-box`, 48 px tall. The box under the camera now always shows the strip (it showed
