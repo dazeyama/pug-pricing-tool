@@ -452,6 +452,9 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       black on white, filling the box's height (no mana cost or rules), follows each new card; under the camera,
       always the set code and number strip, an older card's too. Title still reads the title and opens its
       printings.
+- [ ] **A sheet takes the boxes' room** (decision 554): a printing list (Branching Bolt) reaches from the finish
+      buttons to the last scan's strip, both boxes hidden, each printing's set name readable; the same for a price
+      to answer and Which card?. Closed: both boxes back, with their pictures.
 
 ## 11. Collections tab: collections
 

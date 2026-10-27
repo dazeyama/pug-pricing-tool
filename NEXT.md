@@ -48,6 +48,13 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-26 (Phone scanner session): **A sheet takes the two boxes' room** (decision 554, the owner's ask with a
+  screenshot): `src/scan/Scanner.jsx` `sheetOpen` hides the title's box and the strip's box (`.covered`,
+  `src/styles/scan.css`) while the printing list, a price to answer or Which card? is open, so the sheet fills
+  their room; `showCutout` leaves a hidden box's picture alone. Where to look: the phone, a printing list (an older
+  card with several printings): the list reaches from the finish buttons down to the last scan's strip, each
+  printing's set name in full; close it: both boxes back with their pictures. Untested and not measured on a
+  phone. No migration.
 - 2026-10-26 (Phone scanner session): **The title's box shows the name alone** (decision 553, the owner's ask with
   a screenshot): `src/scan/titles.js` `nameSpan` and `nameCutout` cut the name out of the title band for the box
   above the camera (the reader still reads the whole band); tests in `tests/scanTitleFind.test.js`; on the owner's
