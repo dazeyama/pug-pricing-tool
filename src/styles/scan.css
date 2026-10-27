@@ -164,6 +164,8 @@ html[data-scan] .toast { max-width: none; }
   border-radius: 8px;
   background: #fff;
 }
+/* The card's title above the camera (decision 552): a title band is long and low, so a lower box than the strip's. */
+.scan-cutout.scan-title-box { height: 48px; }
 /* Title / Number: what the info box shows, at its right end (owner, 2026-10-16). */
 .scan-cutout-wrap { position: relative; flex: none; }
 .scan-cutout-mode {

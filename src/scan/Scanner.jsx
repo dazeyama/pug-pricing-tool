@@ -229,6 +229,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const [seenCard, setSeenCard] = useState(null);
   // The enlarged collector corner, under the card.
   const cutoutRef = useRef(null);
+  // The card's title, enlarged, above the camera (decision 552): what the second reader reads.
+  const titleRef = useRef(null);
   // Focus: whether the strip's blurry (its border turns amber), blurry looks in a row, the last refocus.
   const [blurry, setBlurry] = useState(false);
   const blurryLooks = useRef(0);
@@ -641,9 +643,11 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     setSeenCard(null);
   }
 
-  /** The enlarged, cleaned collector corner, drawn into the strip under the card. */
-  function showCutout(src) {
-    const el = cutoutRef.current;
+  /**
+   * The enlarged, cleaned collector corner, drawn into the box under the card; or, `el` titleRef, the
+   * title into the box above it (decision 552).
+   */
+  function showCutout(src, el = cutoutRef.current) {
     if (!el || !src) return;
     const dpr = window.devicePixelRatio || 1;
     const w = Math.max(1, Math.round(el.clientWidth * dpr));
@@ -832,14 +836,15 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         const strip = straightCutout(frame, lock, defaultCreateCanvas);
         const cut = strip.canvas;
         listSeen = findListMark(frame, lock.card, defaultCreateCanvas).mark;
-        // The info box: the bottom strip, or an older card's title.
-        showCutout(v.older ? titleCutout(frame, lock.card, defaultCreateCanvas) : cut);
+        // The two boxes (decision 552): the bottom strip under the camera, the title above it, every
+        // settled look, older card or not (the title box took over the older-card mode's).
+        const titleCut = titleCutout(frame, lock.card, defaultCreateCanvas);
+        showCutout(cut);
+        showCutout(titleCut, titleRef.current);
         const outOfFocus = strip.sharpness > 0 && strip.sharpness < BLUR_BELOW;
         setBlurry(outOfFocus);
         // Nothing in the strip: the holder empty, or a white-bordered older card (ink in its title).
-        const inked = !manual && strip.sharpness === 0
-          ? inkShare(titleCutout(frame, lock.card, defaultCreateCanvas)) > TITLE_INK
-          : true;
+        const inked = !manual && strip.sharpness === 0 ? inkShare(titleCut) > TITLE_INK : true;
         if (!manual && inked) {
           // A card in the holder, settled (decision 549): its 3 s start now, or go on from its first
           // look; another card's art, and they start afresh. Up, and the phone asks (timeUp).
@@ -1241,7 +1246,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       v.lineArt = art;
       v.pendingOld = null;
       setTitleMode(true);
-      if (lock) showCutout(titleCutout(frame, lock.card, defaultCreateCanvas));
+      if (lock) showCutout(titleCutout(frame, lock.card, defaultCreateCanvas), titleRef.current);   // decision 552
       say('muted', 'Reading the title…');
       bar.start('older');
       const listMark = lock ? findListMark(frame, lock.card, defaultCreateCanvas).mark : null;
@@ -1614,6 +1619,13 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         </div>
       </div>
 
+      {/* The card's title, enlarged and cleaned, above the camera (owner, 2026-10-26: "another viewport
+          like the one we have below the camera, above the camera, always focused on the name"; decision
+          552): what the second reader reads on every look. There while the camera's on. */}
+      {camera.on && (
+        <canvas ref={titleRef} className="scan-cutout scan-title-box" aria-label="The card's title, enlarged" />
+      )}
+
       {/* The camera takes the space that's left; notices and sheets lie over it. */}
       <div className="scan-middle" ref={middle}>
         <div className={`scan-stage${camera.on ? ' live' : ''}`} onClick={tapPicture}>
@@ -1703,14 +1715,15 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       )}
 
       {/* The collector corner, enlarged and cleaned, for the person scanning (owner, 2026-10-16). */}
-      {/* The info box: the collector strip or an older card's title, enlarged; Title / Number
-          switches it (owner, 2026-10-16). There while the camera's on, locked or not. */}
+      {/* The info box: the collector strip, enlarged (owner, 2026-10-16); the title has its own box above
+          the camera (decision 552). Title / Number reads the title, or goes back to the strip's set code
+          and number. There while the camera's on, locked or not. */}
       {camera.on && (
         <div className="scan-cutout-wrap">
           <canvas
             ref={cutoutRef}
             className={`scan-cutout${blurry ? ' blurry' : ''}`}
-            aria-label={titleMode ? "The card's title, enlarged" : blurry ? 'The set code and number, enlarged: out of focus' : 'The set code and number, enlarged'}
+            aria-label={blurry ? 'The set code and number, enlarged: out of focus' : 'The set code and number, enlarged'}
           />
           <button
             type="button"
