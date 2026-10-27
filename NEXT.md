@@ -10,9 +10,6 @@ marks each task done here when it's finished, with the exact file and function o
   once and ended by no one caller (564) and the camera's timer showing tenths cut down, not rounded (565), with
   TEST.md's Never stuck case and spec rows 557 and 561 put right (Phone scanner, untested on the phone); a kept
   price's line taking the JustTCG card the edit names (566, Buy tab, untested in the app). No migrations.
-- **From the v1.0.6-badscanner review, not acted on** (main session, 2026-10-27; none stopped the push):
-  - Phone scanner: a modern card read by name only, with no strip clue, scores every printing 0, so the 3 s list
-    and View all show its three oldest printings (`Scanner.jsx:990`, `:1138`). Design-level.
 - **From the 2026-10-26 review of work mode, still open** (main session, decision 540; the rest fixed by 541): a
   fork's prod or delete approval relayed by message isn't the owner's consent to the harness, so it may stall on a
   prompt in its own chat; whether the UserPromptSubmit hook fires on a turn started by a message is untried;
@@ -52,6 +49,16 @@ marks each task done here when it's finished, with the exact file and function o
   versions, SAVE EDIT: the price stays; turn Skip pricing off and REPRICE?: the line is priced as the new product;
   click it again and the edit opens on the new product. Untested in the app.
 
+- 2026-10-27 (Phone scanner session): **A modern card's printings ordered by how it looks** (decision 567, the
+  review's finding, the owner's pick: "by how the card looks … even if it's slower"): `src/scan/Scanner.jsx`
+  ranks a modern card's printings by look in the background once the strip's clues don't settle it
+  (`printingsFor` with `older: false`, `bottom: false`, its new `byLook`); the 3 s choice waits up to 4 s more for
+  that order (`LOOK_WAIT_MS`, `offerChoice`), the list opens in it, View all shows every printing in it
+  (`PickPrintingSheet.jsx` `allNote`); Scan card ranks a card that isn't plainly older as modern. Nothing is sent
+  on a modern card's look alone. Where to look: the phone, a modern card with its bottom line covered (a
+  much-reprinted one, Lightning Bolt): at 3 s "…: ordering its printings by look…", then the list with the
+  matching printing first; View all "the likeliest by look first". Untested on a phone; the look ranking
+  downloads each printing's picture, so a card with many printings may take the full 4 s. No migration.
 - 2026-10-27 (Phone scanner session): **The review's doc findings** (the owner's pass-on): `docs/TEST.md` Never
   stuck now expects the printing list or Which card? (561); spec rows 557 and 561 say 562 took the background
   printings fetch out (the look with a name fetches them itself). Docs only.
