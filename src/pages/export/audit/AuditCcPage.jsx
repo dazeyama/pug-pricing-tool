@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Modal from '../../../components/Modal.jsx';
 import {
-  cardLabel, declineRule, emptyPicks, groupUnits, inferRules, isDataFile, isPicksFile, nextStep, picksFileName,
+  cardLabel, declineRule, emptyPicks, groupUnits, handPicks, inferRules, isDataFile, isPicksFile, moreExamples, nextStep, picksFileName,
   productHasToken, progress, recordPick, recordSetChoice, settleGroup, skipUnit, undoLast,
 } from '../../../lib/auditCc.js';
 import { lineText } from '../../../lib/lineFormat.js';
@@ -84,12 +84,10 @@ export default function AuditCcPage() {
   const current = selected ?? (step?.phase === 'none' ? null : leaderIndex);
   const done = picks ? progress(groups, picks) : null;
 
-  // The rule a group's example picks imply, when the group reaches its rule step.
-  const rules = useMemo(() => {
-    if (step?.phase !== 'rule') return [];
-    const examples = step.group.examples.map((key) => ({ key, productId: picks.picks[key]?.product_id ?? null }));
-    return inferRules(step.group, examples, byKey);
-  }, [step, picks, byKey]);
+  // The rules a group's hand picks imply (decision 549: None and searched picks count; a rule fitting most of them
+  // is offered with the ones it gets wrong), when the group reaches its rule step.
+  const rules = useMemo(() => (step?.phase === 'rule' ? inferRules(step.group, picks, byKey) : []), [step, picks, byKey]);
+  const picksMade = step?.phase === 'rule' ? handPicks(step.group, picks).length : 0;
 
   /** Every change to the picks is kept in this browser at once. */
   const update = (next) => {
@@ -104,16 +102,21 @@ export default function AuditCcPage() {
   const undo = () => picks?.history.length && update(undoLast(picks));
   const applyRule = () => rules[ruleChoice] && update(settleGroup(picks, step.group, rules[ruleChoice], byKey));
   const decline = () => step?.group && update(declineRule(picks, step.group));
+  const more = () => step?.canMore && update(moreExamples(picks, step.group));
 
   // The keys: numbers select a row, Enter confirms, N none, S skip, Backspace undoes; on the rule step Y / Enter
-  // applies, N declines, 1–3 pick an alternative.
+  // applies, N declines, M shows 3 more examples, 1–3 pick an alternative.
   useEffect(() => {
     if (!step || screen !== 'cards' || clearing) return undefined;
     const onKey = (e) => {
       const tag = e.target?.tagName;
       if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || e.ctrlKey || e.metaKey || e.altKey) return;
       if (step.phase === 'rule') {
-        if (e.key === 'Enter' || e.key === 'y' || e.key === 'Y') { e.preventDefault(); if (rules.length) applyRule(); else decline(); } else if (e.key === 'n' || e.key === 'N') decline();
+        if (e.key === 'Enter' || e.key === 'y' || e.key === 'Y') {
+          e.preventDefault();
+          if (rules.length) applyRule(); else if (step.canMore && e.key === 'Enter') more(); else decline();
+        } else if (e.key === 'n' || e.key === 'N') decline();
+        else if (e.key === 'm' || e.key === 'M') more();
         else if (/^[1-3]$/.test(e.key) && rules[Number(e.key) - 1]) setRuleChoice(Number(e.key) - 1);
         else if (e.key === 'Backspace') { e.preventDefault(); undo(); }
         return;
@@ -270,10 +273,15 @@ export default function AuditCcPage() {
                 <h2>“{step.group.display}”</h2>
                 <p className="acc-facts">{n(step.group.units.length)} units in this group · the examples you picked:</p>
                 <ul>
-                  {step.group.examples.map((key) => {
+                  {step.examples.map((key) => {
                     const u = byKey.get(key);
                     const p = picks.picks[key];
-                    return <li key={key}>{cardLabel(u)} → <strong>{p?.product_id ? p.product_name : p ? 'none' : 'skipped'}</strong></li>;
+                    return (
+                      <li key={key}>
+                        {cardLabel(u)} → <strong>{p?.product_id ? p.product_name : p ? 'None' : 'skipped'}</strong>
+                        {p?.found && <span className="acc-dim"> (found by search)</span>}
+                      </li>
+                    );
                   })}
                 </ul>
               </div>
@@ -338,29 +346,52 @@ export default function AuditCcPage() {
                 {rules.length ? (
                   <>
                     {rules.map((r, i) => (
-                      <div key={`${r.type}:${r.fact ?? r.kind}`} className={`acc-rule-opt${i === ruleChoice ? ' on' : ''}`} onClick={() => setRuleChoice(i)}>
+                      <div key={`${r.type}:${r.fact ?? r.kind ?? ''}:${r.yes ?? r.outcome ?? ''}:${r.no ?? ''}`} className={`acc-rule-opt${i === ruleChoice ? ' on' : ''}`} onClick={() => setRuleChoice(i)}>
                         <kbd>{i + 1}</kbd>
                         <div>
                           <p className="acc-sentence">{r.sentence}</p>
-                          <p className="acc-dim">Settles {n(r.settles)} of the group's {n(step.group.units.length)} units; {n(r.leaves)} stay for card by card.</p>
+                          <p className="acc-dim">
+                            <strong className={r.fits === r.of ? 'acc-fit-all' : 'acc-fit-some'}>Fits {n(r.fits)} of your {n(r.of)} picks</strong>
+                            {' · '}settles {n(r.settles)} of the group's {n(step.group.units.length)} units
+                            {r.settlesNone ? ` (${n(r.settlesNone)} as None)` : ''}; {n(r.leaves)} stay for card by card.
+                          </p>
                         </div>
                       </div>
                     ))}
+                    {rules[ruleChoice].misses.length > 0 && (
+                      <>
+                        <p className="acc-facts acc-miss-head">The picks it gets wrong (yours stay as you picked them):</p>
+                        <ul className="acc-sample acc-misses">
+                          {rules[ruleChoice].misses.map((m) => (
+                            <li key={m.key}>{m.card}: you picked <strong>{m.picked}</strong>, the rule says <strong>{m.rule}</strong></li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
                     <p className="acc-facts">A sample of what the chosen rule does:</p>
                     <ul className="acc-sample">
                       {rules[ruleChoice].sample.map((s) => <li key={s.key}>{s.card} → <strong>{s.product}</strong></li>)}
                     </ul>
                     <div className="acc-cat-buttons">
                       <button type="button" className="btn primary" onClick={applyRule}>Apply it (Y / Enter)</button>
+                      {step.canMore && <button type="button" className="btn" onClick={more}>Show me 3 more (M)</button>}
                       <button type="button" className="btn" onClick={decline}>No rule, pick by hand (N)</button>
                       <button type="button" className="btn ghost" onClick={undo}>Back a pick (Backspace)</button>
                     </div>
                   </>
                 ) : (
                   <>
-                    <p className="acc-sentence">No single Scryfall fact explains these picks, so this group is picked card by card.</p>
+                    <p className="acc-sentence">
+                      {picksMade
+                        ? `No rule fits most of your ${n(picksMade)} picks.`
+                        : 'No picks to learn from: the examples were skipped.'}
+                      {step.canMore ? ' Three more examples may show one.' : ' This group is picked card by card.'}
+                    </p>
                     <div className="acc-cat-buttons">
-                      <button type="button" className="btn primary" onClick={decline}>Pick by hand (Enter)</button>
+                      {step.canMore && <button type="button" className="btn primary" onClick={more}>Show me 3 more (M / Enter)</button>}
+                      <button type="button" className={`btn${step.canMore ? '' : ' primary'}`} onClick={decline}>
+                        Pick by hand ({step.canMore ? 'N' : 'N / Enter'})
+                      </button>
                       <button type="button" className="btn ghost" onClick={undo}>Back a pick (Backspace)</button>
                     </div>
                   </>

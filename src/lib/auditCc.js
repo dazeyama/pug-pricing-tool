@@ -95,9 +95,22 @@ export function groupUnits(units) {
   const order = { word: 0, lookalike: 1, none: 2 };
   list.sort((a, b) => order[a.kind] - order[b.kind] || b.units.length - a.units.length || a.id.localeCompare(b.id));
   const byKey = new Map(units.map((u) => [u.key, u]));
-  for (const g of list) g.examples = g.kind === 'word' ? pickExamples(g, byKey) : [];
+  // The examples a word group shows, in order: the first EXAMPLES, then EXAMPLES more each time "Show me 3 more" is
+  // pressed (decision 549), up to MAX_EXAMPLES.
+  for (const g of list) {
+    g.examplePool = g.kind === 'word' ? pickExamples(g, byKey, MAX_EXAMPLES) : [];
+    g.examples = g.examplePool.slice(0, EXAMPLES);
+  }
   return list;
 }
+
+/** Examples a word group shows first, and how many "Show me 3 more" adds each time. */
+export const EXAMPLES = 3;
+/** The most examples a group can show. */
+export const MAX_EXAMPLES = 30;
+
+/** The examples a group shows now: the first three, and three more for each press of "Show me 3 more". */
+export const examplesOf = (group, picks) => group.examplePool.slice(0, EXAMPLES * (1 + (picks.groups[group.id]?.more ?? 0)));
 
 /** The label of a unit's card, as the page shows it. */
 export const cardLabel = (u) => `${u.name} (${String(u.set).toUpperCase()}) ${u.collector_number}${u.finish === 'foil' ? ' · foil' : u.finish === 'etched' ? ' · etched' : ''}`;
@@ -105,7 +118,7 @@ export const cardLabel = (u) => `${u.name} (${String(u.set).toUpperCase()}) ${u.
 /**
  * The group's example cards, up to `n`: one from each of its biggest clusters of look (whether the leader carries
  * the word, the frame, the border, the frame effects, the promo types), so the picks tell the facts apart; in
- * stock first within a cluster.
+ * stock first within a cluster; then round again, the next card of each cluster.
  */
 export function pickExamples(group, byKey, n = 3) {
   const clusters = new Map();
@@ -117,18 +130,13 @@ export function pickExamples(group, byKey, n = 3) {
     if (!clusters.has(sig)) clusters.set(sig, []);
     clusters.get(sig).push(u);
   }
-  const ordered = [...clusters.values()].sort((a, b) => b.length - a.length);
   const byStock = (a, b) => Number(Boolean(b.anyStock)) - Number(Boolean(a.anyStock)) || a.name.localeCompare(b.name);
+  const ordered = [...clusters.values()].sort((a, b) => b.length - a.length).map((c) => [...c].sort(byStock));
   const out = [];
-  for (const c of ordered) {
-    if (out.length >= n) break;
-    out.push([...c].sort(byStock)[0].key);
-  }
-  for (const c of ordered) {
-    if (out.length >= n) break;
-    for (const u of [...c].sort(byStock)) {
+  for (let round = 0; out.length < n && ordered.some((c) => c.length > round); round += 1) {
+    for (const c of ordered) {
       if (out.length >= n) break;
-      if (!out.includes(u.key)) out.push(u.key);
+      if (c[round]) out.push(c[round].key);
     }
   }
   return out;
@@ -193,88 +201,161 @@ export function tokenEquals(product, kind, unit) {
 
 // ---------------------------------------------------------------- rules
 
+// What a rule gives a card (decision 549): the product carrying the group's word, the product without it, the
+// product whose word is the card's own value (an equality rule's), or None (can't upload).
+const OUTCOMES = ['word', 'plain', 'none'];
+const OUTCOME_WORDS = { word: 'the product carrying the word', plain: 'the product without it', none: 'None (can\'t upload)', value: 'the product whose word is the card\'s own' };
+/** How a picks file's pick reads: a product, or None. */
+const NONE = Object.freeze({ productId: null });
+
+const factCache = new WeakMap();
+/** The keys of the card's facts, worked out once per unit. */
+function factKeys(unit) {
+  if (!factCache.has(unit)) factCache.set(unit, new Set(cardFacts(unit).map((f) => f.key)));
+  return factCache.get(unit);
+}
+
+/** One outcome for one card: `{ productId }` (null for None), or null when the card's products don't settle it. */
+function resolve(outcome, rule, unit) {
+  if (outcome === 'none') return NONE;
+  const pool = poolOf(unit);
+  let want;
+  if (outcome === 'word') want = pool.filter((p) => productHasToken(p, rule.token, unit));
+  else if (outcome === 'plain') want = pool.filter((p) => !productHasToken(p, rule.token, unit));
+  else want = pool.filter((p) => tokenEquals(p, rule.kind, unit));
+  return want.length === 1 ? { productId: want[0].id } : null;
+}
+
 /**
- * What a rule says of one unit: the product it settles on, or null when the rule leaves two or more (or none).
- *  - `fact`: a card with the fact takes the product carrying the word, one without takes the product without it;
+ * What a rule says of one unit: `{ productId }` (a product's id, or null for None), or null when the rule can't
+ * settle it (two or more products fit, or none does).
+ *  - `fact`: a card with the fact takes `yes`, one without takes `no` (each 'word', 'plain' or 'none');
+ *  - `all`: every card takes `outcome`;
  *  - `equals`: the product whose word is the card's own value (its lights, its letter, its number, its artist) is
- *    ours; a card with no such value takes the product without the word.
+ *    ours; a card with no such value takes `no`.
  */
 export function applyRule(rule, unit) {
-  const pool = poolOf(unit);
-  if (!pool.length) return null;
-  let want;
-  if (rule.type === 'fact') {
-    const has = cardFacts(unit).some((f) => f.key === rule.fact);
-    want = pool.filter((p) => productHasToken(p, rule.token, unit) === has);
-  } else {
-    const hasValue = cardValues(unit).some((v) => v.kind === rule.kind);
-    want = hasValue ? pool.filter((p) => tokenEquals(p, rule.kind, unit)) : pool.filter((p) => !productHasToken(p, rule.token, unit));
-  }
-  return want.length === 1 ? want[0].id : null;
+  if (rule.type === 'fact') return resolve(factKeys(unit).has(rule.fact) ? rule.yes : rule.no, rule, unit);
+  if (rule.type === 'all') return resolve(rule.outcome, rule, unit);
+  const hasValue = cardValues(unit).some((v) => v.kind === rule.kind);
+  return resolve(hasValue ? 'value' : rule.no, rule, unit);
 }
 
 /** The rule in one sentence. */
 export function ruleSentence(rule) {
   const word = Object.values(TOKENS).includes(rule.token) ? rule.display ?? rule.token : `"${rule.display ?? rule.token}"`;
   if (rule.type === 'fact') {
-    return `${word} in a Crystal Commerce name means ${rule.label}: a card with that takes the product carrying the word, one without takes the product without it.`;
+    return `${word} in a Crystal Commerce name: when ${rule.label}, it takes ${OUTCOME_WORDS[rule.yes]}; otherwise ${OUTCOME_WORDS[rule.no]}.`;
   }
+  if (rule.type === 'all') return `Every card in the ${word} group takes ${OUTCOME_WORDS[rule.outcome]}.`;
   const value = { lights: 'the card\'s attraction lights', letter: 'the letter of the card\'s number', number: 'the card\'s collector number', artist: 'the card\'s artist' }[rule.kind];
-  return `${word} in a Crystal Commerce name is ${value}: the product whose word is the card's own is ours.`;
+  return `${word} in a Crystal Commerce name is ${value}: the product whose word is the card's own is ours; a card without one takes ${OUTCOME_WORDS[rule.no]}.`;
 }
 
+/** What a unit's answer is called: its product's name, or None. */
+const answerName = (unit, productId, fallback = null) => (productId == null ? 'None'
+  : unit.products.find((p) => p.id === productId)?.name ?? fallback ?? productId);
+
 /** A rule with what it does to the group: how many units it settles, a sample of them, how many it leaves. */
-export function measureRule(rule, group, byKey, sample = 8) {
+export function measureRule(rule, group, byKey, sample = 10) {
   const settled = [];
   let withFact = 0;
   for (const key of group.units) {
     const u = byKey.get(key);
-    if (rule.type === 'fact' && cardFacts(u).some((f) => f.key === rule.fact)) withFact += 1;
-    const id = applyRule(rule, u);
-    if (id) settled.push({ key, card: cardLabel(u), product: u.products.find((p) => p.id === id)?.name ?? id });
+    if (rule.type === 'fact' && factKeys(u).has(rule.fact)) withFact += 1;
+    const res = applyRule(rule, u);
+    if (res) settled.push({ key, card: cardLabel(u), product: answerName(u, res.productId) });
   }
   const varies = rule.type === 'equals' || (withFact > 0 && withFact < group.units.length);
-  return { ...rule, sentence: ruleSentence(rule), settles: settled.length, leaves: group.units.length - settled.length, sample: settled.slice(0, sample), varies, settledKeys: settled.map((s) => s.key) };
+  // A sample with both kinds of answer when the rule gives both: the first few of each.
+  const nones = settled.filter((s) => s.product === 'None');
+  const products = settled.filter((s) => s.product !== 'None');
+  const half = Math.ceil(sample / 2);
+  const picked = [...products.slice(0, nones.length ? half : sample), ...nones.slice(0, products.length ? half : sample)];
+  return {
+    ...rule, sentence: ruleSentence(rule), settles: settled.length, leaves: group.units.length - settled.length,
+    settlesNone: nones.length, sample: picked.slice(0, sample), varies, settledKeys: settled.map((s) => s.key),
+  };
 }
 
+/** A group's hand picks (made card by card, not by a rule), in the order they were made: the rule step's evidence. */
+export function handPicks(group, picks) {
+  return group.units.filter((key) => picks.picks[key] && !picks.picks[key].rule)
+    .map((key) => ({ key, ...picks.picks[key] }))
+    .sort((a, b) => String(a.at).localeCompare(String(b.at)));
+}
+
+/** The share of the hand picks a rule must agree with to be offered. */
+export const FIT_SHARE = 0.6;
+
 /**
- * The rules a group's example picks imply, best first (none when the picks agree on nothing).
+ * The rules a group's hand picks imply, best first (none when no rule agrees with most of them). Every pick counts:
+ * a product (a candidate, or one found by the search, which no rule can give, so a miss), and None. A rule is
+ * offered when it agrees with at least 60% of them (`FIT_SHARE`), with how many it fits and the picks it gets wrong.
  * @param {object} group
- * @param {{ key: string, productId: string|null }[]} picks  the examples' picks; a null (none) says nothing
+ * @param {object} picks  the picks file
  * @param {Map<string, object>} byKey
- * @returns {object[]}  measureRule's shape, at most three
+ * @returns {object[]}  measureRule's shape plus `fits`, `of` and `misses`, at most three
  */
 export function inferRules(group, picks, byKey) {
-  const rows = picks.filter((p) => p.productId).map((p) => {
-    const unit = byKey.get(p.key);
-    const product = unit.products.find((x) => x.id === p.productId) ?? null;
-    return { unit, product, has: product ? productHasToken(product, group.token, unit) : false };
-  }).filter((r) => r.product);
-  if (!rows.length) return [];
-  const out = [];
+  const evidence = handPicks(group, picks).map((p) => ({ ...p, unit: byKey.get(p.key) })).filter((p) => p.unit);
+  if (!evidence.length) return [];
   const display = group.display;
-  // An equality rule: every pick carrying the word carries the card's own value, and no pick without the word
-  // passed over a product that did.
-  const withWord = rows.filter((r) => r.has);
+  const base = { token: group.token, display };
+  const candidates = [];
+  for (const outcome of OUTCOMES) candidates.push({ ...base, type: 'all', outcome, rank: 0 });
   for (const kind of ['lights', 'letter', 'artist', 'number']) {
     if (TOKEN_OF_KIND[kind] !== group.token) continue;
-    const fits = withWord.length > 0 && withWord.every((r) => tokenEquals(r.product, kind, r.unit))
-      && rows.filter((r) => !r.has).every((r) => !poolOf(r.unit).some((p) => tokenEquals(p, kind, r.unit)));
-    if (fits) out.push(measureRule({ type: 'equals', token: group.token, display, kind }, group, byKey));
+    for (const no of ['plain', 'none']) candidates.push({ ...base, type: 'equals', kind, no, rank: 0 });
   }
-  // A fact rule: a fact every example card has exactly when its pick carries the word. The facts come from the
-  // whole group, so a fact none of the examples has (their picks all without the word) counts too.
-  const all = new Map();
-  for (const key of group.units) for (const f of cardFacts(byKey.get(key))) if (!all.has(f.key)) all.set(f.key, f);
-  const factSets = rows.map((r) => new Set(cardFacts(r.unit).map((f) => f.key)));
-  for (const [key, f] of all) {
-    if (rows.every((r, i) => factSets[i].has(key) === r.has)) {
-      out.push(measureRule({ type: 'fact', token: group.token, display, fact: key, label: f.label, rank: f.rank }, group, byKey));
+  // The facts of the group's cards. A fact the picks split (some cards have it, some don't) is tried with every
+  // pair of outcomes; one every picked card has, or none has, only with the side the picks don't test set the
+  // natural way (the word with the fact, the plain product without), so an untested side isn't a guess.
+  const facts = new Map();
+  for (const key of group.units) for (const f of cardFacts(byKey.get(key))) if (!facts.has(f.key)) facts.set(f.key, f);
+  for (const [key, f] of facts) {
+    const have = evidence.filter((p) => factKeys(p.unit).has(key)).length;
+    for (const yes of OUTCOMES) {
+      for (const no of OUTCOMES) {
+        if (yes === no) continue;
+        if (have === 0 && yes !== 'word') continue;
+        if (have === evidence.length && no !== 'plain') continue;
+        candidates.push({ ...base, type: 'fact', fact: key, label: f.label, rank: f.rank, yes, no });
+      }
     }
   }
-  // Best first: what settles most; then the facts that tell the group's cards apart; then the plainer facts.
-  out.sort((a, b) => b.settles - a.settles || Number(b.varies) - Number(a.varies) || (a.rank ?? 0) - (b.rank ?? 0) || a.sentence.localeCompare(b.sentence));
-  return out.filter((r) => r.settles > 0).slice(0, 3);
+  const scored = [];
+  for (const rule of candidates) {
+    const misses = [];
+    let fits = 0;
+    for (const p of evidence) {
+      const res = applyRule(rule, p.unit);
+      if (res && res.productId === (p.product_id ?? null)) fits += 1;
+      else {
+        misses.push({
+          key: p.key, card: cardLabel(p.unit), picked: answerName(p.unit, p.product_id ?? null, p.product_name),
+          rule: res ? answerName(p.unit, res.productId) : 'can\'t tell',
+        });
+      }
+    }
+    if (fits && fits >= Math.ceil(FIT_SHARE * evidence.length)) scored.push({ rule, fits, misses });
+  }
+  // Best first: what fits most picks; then what settles most of the group; then the facts that tell its cards
+  // apart; then a rule read the natural way round (with the fact, the product carrying the word); then the plainer
+  // facts.
+  const measured = scored.sort((a, b) => b.fits - a.fits).slice(0, 40)
+    .map((s) => ({ ...measureRule(s.rule, group, byKey), fits: s.fits, of: evidence.length, misses: s.misses }))
+    .filter((r) => r.settles > 0);
+  measured.sort((a, b) => b.fits - a.fits || b.settles - a.settles || Number(b.varies) - Number(a.varies)
+    || Number(b.yes === 'word') - Number(a.yes === 'word') || (a.rank ?? 0) - (b.rank ?? 0) || a.sentence.localeCompare(b.sentence));
+  // One rule per sentence's meaning: two facts that settle the same cards the same way are one choice.
+  const seen = new Set();
+  return measured.filter((r) => {
+    const sig = `${r.fits}|${r.settledKeys.join(',')}|${r.sample.map((s) => s.product).join(',')}`;
+    if (seen.has(sig)) return false;
+    seen.add(sig);
+    return true;
+  }).slice(0, 3);
 }
 
 // ---------------------------------------------------------------- the picks file
@@ -335,25 +416,40 @@ export function skipUnit(picks, key) {
 
 /** A group's rule step done: the rule applied to what it settles, or declined (card by card instead). */
 export function settleGroup(picks, group, rule, byKey, { at = new Date().toISOString() } = {}) {
-  const id = `${group.token}:${rule.type === 'fact' ? rule.fact : rule.kind}`;
+  const how = rule.type === 'fact' ? `${rule.fact}:${rule.yes}/${rule.no}` : rule.type === 'all' ? `all:${rule.outcome}` : `${rule.kind}:${rule.no}`;
+  const id = `${group.token}:${how}`;
   let next = { ...picks, rules: [...picks.rules.filter((r) => r.id !== id), {
     id, token: group.token, display: group.display, type: rule.type, fact: rule.fact ?? null, label: rule.label ?? null, kind: rule.kind ?? null,
-    sentence: rule.sentence, settled: rule.settledKeys.length, confirmed: at,
-  }], groups: { ...picks.groups, [group.id]: { rule: 'applied', ruleId: id, at } } };
-  const befores = {};
+    yes: rule.yes ?? null, no: rule.no ?? null, outcome: rule.outcome ?? null,
+    sentence: rule.sentence, settled: rule.settledKeys.length, settledNone: rule.settlesNone ?? 0,
+    fits: rule.fits ?? null, of: rule.of ?? null, confirmed: at,
+  }], groups: { ...picks.groups, [group.id]: { ...picks.groups[group.id], rule: 'applied', ruleId: id, at } } };
+  const keys = [];
   for (const key of rule.settledKeys) {
-    if (next.picks[key]) continue;   // a pick made by hand stays
+    if (next.picks[key]) continue;   // a pick made by hand stays, even one the rule gets wrong
     const unit = byKey.get(key);
-    befores[key] = null;
-    next = { ...next, picks: { ...next.picks, [key]: recordPick(next, unit, applyRule(rule, unit), { rule: id, at }).picks[key] } };
+    const res = applyRule(rule, unit);
+    if (!res) continue;
+    keys.push(key);
+    next = { ...next, picks: { ...next.picks, [key]: recordPick(next, unit, res.productId, { rule: id, at }).picks[key] } };
   }
-  return push(next, { type: 'rule', group: group.id, ruleId: id, keys: Object.keys(befores) });
+  return push(next, { type: 'rule', group: group.id, ruleId: id, keys, before: picks.groups[group.id] ?? null });
 }
+
+/** "Show me 3 more" at a group's rule step: three more of its examples to pick before the rule is worked out. */
+export function moreExamples(picks, group) {
+  const state = picks.groups[group.id] ?? {};
+  const next = { ...picks, groups: { ...picks.groups, [group.id]: { ...state, more: (state.more ?? 0) + 1 } } };
+  return push(next, { type: 'more', group: group.id });
+}
+
+/** Can a group show more examples than it does? */
+export const canShowMore = (group, picks) => examplesOf(group, picks).length < group.examplePool.length;
 
 /** A group's rule step declined: its units are picked card by card. */
 export function declineRule(picks, group, { at = new Date().toISOString() } = {}) {
-  const next = { ...picks, groups: { ...picks.groups, [group.id]: { rule: 'declined', at } } };
-  return push(next, { type: 'decline', group: group.id });
+  const next = { ...picks, groups: { ...picks.groups, [group.id]: { ...picks.groups[group.id], rule: 'declined', at } } };
+  return push(next, { type: 'decline', group: group.id, before: picks.groups[group.id] ?? null });
 }
 
 /** A category audit answer: a set and promo kind → a category (what a `cc_set_map` row holds), or none. */
@@ -378,16 +474,23 @@ export function undoLast(picks) {
     if (skipped[entry.key] > 1) skipped[entry.key] -= 1; else delete skipped[entry.key];
     return { ...picks, skipped, history };
   }
+  // A group's state before a rule or a decline is put back (its "Show me 3 more" presses with it).
+  const groupBack = () => {
+    const groups = { ...picks.groups };
+    if (entry.before) groups[entry.group] = entry.before; else delete groups[entry.group];
+    return groups;
+  };
   if (entry.type === 'rule') {
     const next = { ...picks.picks };
     for (const key of entry.keys) delete next[key];
-    const groups = { ...picks.groups };
-    delete groups[entry.group];
-    return { ...picks, picks: next, rules: picks.rules.filter((r) => r.id !== entry.ruleId), groups, history };
+    return { ...picks, picks: next, rules: picks.rules.filter((r) => r.id !== entry.ruleId), groups: groupBack(), history };
   }
-  if (entry.type === 'decline') {
+  if (entry.type === 'decline') return { ...picks, groups: groupBack(), history };
+  if (entry.type === 'more') {
     const groups = { ...picks.groups };
-    delete groups[entry.group];
+    const state = { ...groups[entry.group] };
+    if (state.more > 1) state.more -= 1; else delete state.more;
+    if (Object.keys(state).length) groups[entry.group] = state; else delete groups[entry.group];
     return { ...picks, groups, history };
   }
   if (entry.type === 'setChoice') {
@@ -413,10 +516,11 @@ export function nextStep(groups, byKey, picks) {
     const state = picks.groups[g.id];
     if (state?.rule) continue;
     // A skipped example is left for the card-by-card pass; the rule is inferred from the picks made.
-    const example = g.examples.find((k) => fresh(k));
+    const shown = examplesOf(g, picks);
+    const example = shown.find((k) => fresh(k));
     const at = { groupIndex: i + 1, groupCount: words.length };
-    if (example) return { phase: 'example', group: g, key: example, exampleIndex: g.examples.indexOf(example) + 1, exampleCount: g.examples.length, ...at };
-    return { phase: 'rule', group: g, ...at };
+    if (example) return { phase: 'example', group: g, key: example, exampleIndex: shown.indexOf(example) + 1, exampleCount: shown.length, ...at };
+    return { phase: 'rule', group: g, examples: shown, canMore: canShowMore(g, picks), ...at };
   }
   const byHand = groups.filter((g) => g.kind !== 'none').flatMap((g) => g.units.filter(open).map((key) => ({ g, key })));
   const stock = (key) => Number(Boolean(byKey.get(key).anyStock));

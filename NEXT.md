@@ -43,6 +43,14 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-26 (Export session): **The audit's rules: None, most of the picks, and Show me 3 more** (decision 549, the
+  owner's ask): `src/lib/auditCc.js` (`applyRule` answers a product or None; `inferRules` counts every hand pick in
+  the group, None and searched picks included, and offers a rule fitting 60% or more with its misses;
+  `moreExamples`, `examplesOf`, `canShowMore`), the rule step in `AuditCcPage.jsx`, tested in `tests/auditCc.test.js`.
+  Where to look: `#/audit-cc` → a group's rule step: each rule reads "Fits n of your m picks" (green all, amber
+  most) and lists the picks it gets wrong; a rule can say "otherwise None (can't upload)" and its sample shows None
+  rows; "Show me 3 more (M)" brings three more examples of the group, then the rule step again; with no rule, Enter
+  shows more. A group already settled or declined keeps its answers. Untested in the browser. No migration.
 - 2026-10-26 (Export session): **The audit's picker is the export dialog's Needs a choice, with its search**
   (decision 548, the owner's ask): `AuditCcPage.jsx` draws the right side with `ChooseRow` (the candidates as radio
   rows, None of these, Find another CC product…), the audit's chips through ChooseRow's new optional `tagOf` (the
