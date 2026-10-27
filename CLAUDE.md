@@ -171,13 +171,8 @@ gotchas and the squash.
 
 - Live: **v1.0.5-rainbow** (2026-10-25, decisions through 526), then pushes without a bump, the last on 2026-10-26
   (decisions through 540), on prod: the GitHub Actions variables point there.
-- Prod and dev both have migrations 0001–0013, and stay equal (decision 381): 0002 the Changelog lock and 0003 the
-  counter grant (2026-10-19); 0004 the review leftovers (2026-10-20); 0005 pulled bulk, 0006 settings logged, 0007
-  the inventory cleared in batches (on prod 2026-10-21); 0008 owned copies and Bulk pulled from exports from the
-  start (decisions 448–449), 0009 the rounding steps (478), 0010 staff picks only remembered (486) (on prod
-  2026-10-23); 0011 the collection SKU numbers (511), 0012 projects that skip pricing (513), 0013
-  `master_inventory_abort` retired (515) (on prod 2026-10-24, the structure-only compare the same). The next
-  migration is 0014.
+- Prod and dev both have migrations 0001–0013 and stay equal (decision 381; the last on prod 2026-10-24, the
+  structure-only compare the same). What each did: the spec's decisions and the files' names. The next is 0014.
 - The release history is the spec's decisions and `git tag`; what's open is NEXT.md.
 
 ## Coding Conventions
