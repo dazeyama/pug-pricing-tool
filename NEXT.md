@@ -46,6 +46,13 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-26 (Phone scanner session): **The title's box above the camera** (decision 552, the owner's ask):
+  `src/scan/Scanner.jsx` `titleRef`, drawn by `showCutout` on every settled look and on Title's press;
+  `src/styles/scan.css` `.scan-title-box`, 48 px tall. The box under the camera now always shows the strip (it showed
+  the title in the older-card mode). Where to look: the phone, camera on, a card locked: the title band, black on
+  white, above the camera, the strip below; the camera a little shorter. Untested on a phone and not measured
+  there. Picked by me, reversible: 48 px (the strip's box is 64 px), the strip always below. No migration. Help:
+  Scanning from a phone's screen description is out of date.
 - 2026-10-26 (Phone scanner session): **The name read on every look, by a second card reader** (decision 551, the
   owner's ask after trying 549–550; that night's run log in `C:\ClaudeProjects\temp\scan-run\scan-log.jsonl`):
   `src/scan/ocr.js` two readers (`readTitleText` beside `readText`); `nameMatch.js` `nearHits` narrows each

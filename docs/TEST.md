@@ -448,6 +448,9 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       as fast as before. A card whose strip reads flavour text offers only cards of the name read at 3 s, or the
       set-aside message, never cards of other names. Pick from a list: it opens once, not again. A title the
       reader can't name never freezes the phone (Stop answers at once).
+- [ ] **The title's box** (decision 552): camera on, a card locked: above the camera, the card's title band,
+      black on white, follows each new card; under the camera, always the set code and number strip, an older
+      card's too. Title still reads the title and opens its printings.
 
 ## 11. Collections tab: collections
 
