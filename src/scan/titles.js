@@ -202,6 +202,78 @@ export function titleCutout(frame, card, createCanvas) {
   return band(frame, card, titleAt(titleTops(frame, card, createCanvas)[0]), BAND_HEIGHT.title, createCanvas);
 }
 
+/**
+ * Where the card's name is in a title band (owner, 2026-10-26: "Make the name one crop in closer so the
+ * name is larger and actually fills the box"; decision 553): for the box above the camera only, the
+ * reader still reads the whole band. The band's columns with letter strokes in its middle rows, runs of
+ * them joined across word gaps; the name is the first such run from the left at least as wide as the
+ * band is high and dense like letters, not a thin rule (the mana cost is to its right, a stray mark at
+ * the band's edge narrower). Then its rows, leaving out a rule that runs the run's whole width. Pure, for
+ * tests.
+ * @param {ArrayLike<number>} ink  1 for ink, 0 for paper, row by row
+ * @returns {{ x0: number, x1: number, y0: number, y1: number }|null}  inclusive; null: no name found
+ */
+export function nameSpan(ink, w, h) {
+  const top = Math.floor(h * 0.15);
+  const bottom = Math.ceil(h * 0.85);
+  const rows = Math.max(1, bottom - top);
+  const col = new Array(w).fill(0);
+  for (let y = top; y < bottom; y++) for (let x = 0; x < w; x++) col[x] += ink[y * w + x];
+  // Runs of inked columns, joined across gaps narrower than half the band's height (a word gap).
+  const runs = [];
+  const gapMax = h * 0.5;
+  let run = null;
+  for (let x = 0; x < w; x++) {
+    if (col[x] < 2) continue;
+    if (run && x - run.x1 - 1 <= gapMax) run.x1 = x;
+    else runs.push(run = { x0: x, x1: x });
+  }
+  const name = runs.find((r) => {
+    const width = r.x1 - r.x0 + 1;
+    if (width < h) return false;
+    let sum = 0;
+    for (let x = r.x0; x <= r.x1; x++) sum += col[x];
+    return sum / width / rows >= 0.1;   // letters, not a thin rule (a few rows deep)
+  });
+  if (!name) return null;
+  const width = name.x1 - name.x0 + 1;
+  let y0 = -1;
+  let y1 = -1;
+  for (let y = 0; y < h; y++) {
+    let n = 0;
+    for (let x = name.x0; x <= name.x1; x++) n += ink[y * w + x];
+    if (n >= width * 0.02 && n <= width * 0.7) {
+      if (y0 < 0) y0 = y;
+      y1 = y;
+    }
+  }
+  return y0 < 0 ? null : { x0: name.x0, x1: name.x1, y0, y1 };
+}
+
+/**
+ * The name cut out of a title band (titleCutout's), a little room around it, for the box above the
+ * camera (decision 553); the whole band when no name is found in it.
+ */
+export function nameCutout(bandCanvas, createCanvas) {
+  const { width: w, height: h } = bandCanvas;
+  const { data } = bandCanvas.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, w, h);
+  const ink = new Uint8Array(w * h);
+  for (let k = 0; k < ink.length; k++) ink[k] = data[4 * k] < 128 ? 1 : 0;
+  const span = nameSpan(ink, w, h);
+  if (!span) return bandCanvas;
+  const pad = Math.round((span.y1 - span.y0 + 1) * 0.15);
+  const x0 = Math.max(0, span.x0 - pad);
+  const y0 = Math.max(0, span.y0 - pad);
+  const cw = Math.min(w, span.x1 + pad + 1) - x0;
+  const ch = Math.min(h, span.y1 + pad + 1) - y0;
+  const out = createCanvas(cw, ch);
+  const ctx = out.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, cw, ch);
+  ctx.drawImage(bandCanvas, x0, y0, cw, ch, 0, 0, cw, ch);
+  return out;
+}
+
 /** The share of a black-on-white canvas that's ink: next to none, the band's blank. */
 export function inkShare(canvas) {
   const { data } = canvas.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, canvas.width, canvas.height);

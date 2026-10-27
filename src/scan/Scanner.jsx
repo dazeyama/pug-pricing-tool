@@ -29,7 +29,7 @@ import { cardNamed, isFnmStrip, isPromoStrip, resolveFnm, resolvePromo } from '.
 import { trace } from './trace.js';
 import { guessName, matchName } from './nameMatch.js';
 import { isDark, lightIn } from './light.js';
-import { inkShare, titleCutout } from './titles.js';
+import { inkShare, nameCutout, titleCutout } from './titles.js';
 import NeedsPriceSheet from './NeedsPriceSheet.jsx';
 import PickPrintingSheet from './PickPrintingSheet.jsx';
 import NameSheet from './NameSheet.jsx';
@@ -840,7 +840,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         // settled look, older card or not (the title box took over the older-card mode's).
         const titleCut = titleCutout(frame, lock.card, defaultCreateCanvas);
         showCutout(cut);
-        showCutout(titleCut, titleRef.current);
+        showCutout(nameCutout(titleCut, defaultCreateCanvas), titleRef.current);   // the name alone (decision 553)
         const outOfFocus = strip.sharpness > 0 && strip.sharpness < BLUR_BELOW;
         setBlurry(outOfFocus);
         // Nothing in the strip: the holder empty, or a white-bordered older card (ink in its title).
@@ -1246,7 +1246,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       v.lineArt = art;
       v.pendingOld = null;
       setTitleMode(true);
-      if (lock) showCutout(titleCutout(frame, lock.card, defaultCreateCanvas), titleRef.current);   // decision 552
+      if (lock) showCutout(nameCutout(titleCutout(frame, lock.card, defaultCreateCanvas), defaultCreateCanvas), titleRef.current);   // decisions 552, 553
       say('muted', 'Reading the title…');
       bar.start('older');
       const listMark = lock ? findListMark(frame, lock.card, defaultCreateCanvas).mark : null;

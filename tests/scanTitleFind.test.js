@@ -1,6 +1,43 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { rowEdges, textBands } from '../src/scan/titles.js';
+import { nameSpan, rowEdges, textBands } from '../src/scan/titles.js';
+
+// The name alone in the box above the camera (decision 553), on a band like Auger Spree's of 2026-10-26:
+// a stray mark at its left edge, the name, the bar's rule under it, a rule to its right, the mana cost.
+function augerBand() {
+  const w = 600;
+  const h = 72;
+  const ink = new Uint8Array(w * h);
+  const fill = (x0, x1, y0, y1) => {
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) ink[y * w + x] = 1;
+  };
+  fill(22, 24, 10, 60);                                       // "|(", the bar's edge, next to the name
+  for (let x = 40; x <= 300; x += 9) fill(x, x + 2, 20, 52);  // the name's letter strokes
+  for (let x = 40; x <= 290; x += 18) fill(x, x + 8, 20, 21); // and some crossbars
+  fill(30, 320, 60, 61);                                      // the rule under the name
+  fill(370, 520, 40, 41);                                     // a rule to its right
+  fill(560, 572, 26, 54);                                     // the mana cost, "1"
+  return { ink, w, h };
+}
+
+test('the name alone: not the rules or the mana cost (decision 553)', () => {
+  const { ink, w, h } = augerBand();
+  const span = nameSpan(ink, w, h);
+  assert.ok(span, 'a name found');
+  assert.ok(span.x0 >= 20 && span.x0 <= 40, `x0 ${span.x0}`);
+  assert.ok(span.x1 >= 300 && span.x1 < 330, `x1 ${span.x1}`);
+  assert.ok(span.y0 >= 10 && span.y0 <= 20, `y0 ${span.y0}`);
+  assert.ok(span.y1 >= 52 && span.y1 < 60, `y1 ${span.y1}: not the rule under it`);
+});
+
+test('a band with only rules, or a blank one: no name', () => {
+  const w = 300;
+  const h = 72;
+  const ink = new Uint8Array(w * h);
+  for (let x = 10; x < 290; x++) ink[40 * w + x] = 1;
+  assert.equal(nameSpan(ink, w, h), null);
+  assert.equal(nameSpan(new Uint8Array(w * h), w, h), null);
+});
 
 // Finding an older card's title (owner, 2026-10-18; decision 308).
 
