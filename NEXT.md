@@ -16,15 +16,6 @@ marks each task done here when it's finished, with the exact file and function o
   scan keeping on when its 3 s find nothing (556) (Phone scanner; `src/scan/`, `src/styles/scan.css`,
   `src/lib/scryfall.js` with its defaults unchanged); two memory notes folded into CLAUDE.md and `docs/DATABASE.md`
   (e368ed4). No migrations. NEXT.md's notes.
-- **The scanner made fast, a 3 s limit per card** (the owner, 2026-10-26, after a demo at work that was too slow;
-  Phone scanner session): the analysis is done, from the dev run logs of 2026-10-18 to 10-20
-  (`C:\ClaudeProjects\temp\scan-run\`, re-measured with `node scanstats.mjs <log>` and `node gaps.mjs <log>`
-  there). Built and committed, decisions 549–563 (Done below), Help brought up to date. **Not tried on a phone
-  yet, none of it: try it on dev's LAN link before a push** (the scanner's core changed: a second card reader,
-  the name scored on the strip, the older-card mode and Title / Number gone, the 3 s choice); the second
-  reader's memory on an iPhone is the one real unknown. Left: after that try, re-measure with the dev run log
-  (`trace.js` writes it on the LAN link); maybe a card index on the phone instead of Scryfall calls (a new
-  mechanism, the owner's call).
 - **From the 2026-10-26 review of work mode, still open** (main session, decision 540; the rest fixed by 541): a
   fork's prod or delete approval relayed by message isn't the owner's consent to the harness, so it may stall on a
   prompt in its own chat; whether the UserPromptSubmit hook fires on a turn started by a message is untried;
@@ -52,6 +43,11 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-27 (Phone scanner session): **The scanner made fast, closed: the owner tested** (the owner: "I've been
+  testing this whole time, testing is looking good. Close as done."): decisions 549–563 and Help, below, tried
+  on the phone over dev's LAN link as they landed. The analysis and its scripts stay in
+  `C:\ClaudeProjects\temp\scan-run\` (`scanstats.mjs`, `gaps.mjs`, `compare-match.mjs`). Not taken up: a card
+  index on the phone instead of Scryfall calls (the owner's call, if ever).
 - 2026-10-27 (Phone scanner session): **Help: Scanning from a phone brought up to date** (the owner's ask, for
   decisions 549–563): `README.md`, Scanning from a phone: the two readers, the name box, the timer, 3 s a card and
   the choice it ends in, Scan card's 3 s, Stop after 1.5 s, the slow-connection line, older cards with no button
