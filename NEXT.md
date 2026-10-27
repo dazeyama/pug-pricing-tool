@@ -6,6 +6,10 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
+- **Unpushed** (main session): decisions 564–566, the v1.0.6-badscanner review's fixes: a name's printings fetched
+  once and ended by no one caller (564) and the camera's timer showing tenths cut down, not rounded (565), with
+  TEST.md's Never stuck case and spec rows 557 and 561 put right (Phone scanner, untested on the phone); a kept
+  price's line taking the JustTCG card the edit names (566, Buy tab, untested in the app). No migrations.
 - **From the v1.0.6-badscanner review, not acted on** (main session, 2026-10-27; none stopped the push):
   - Phone scanner: a modern card read by name only, with no strip clue, scores every printing 0, so the 3 s list
     and View all show its three oldest printings (`Scanner.jsx:990`, `:1138`). Design-level.
