@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
 import {
   CATEGORIES, DAY_ACTIONS, MONTH_ACTIONS, DEFAULT_CATEGORIES, GONE, MADE, MILESTONES, actionsFor, categoryOf, dayHeading, entryDay, headlineOf,
-  entryWhen, foldEvents, foldedSummary, panelView, targetOf,
+  entryWhen, foldEvents, foldedSummary, panelView, rowPrice, targetOf,
 } from '../lib/changelog.js';
 import { storeDay } from '../lib/calendar.js';
 import { formatMoney } from '../lib/money.js';
@@ -449,7 +449,7 @@ function Entry({ view, side, targets, game, onFunnel }) {
                   <span className={`ch-mark ${l.sign === '+' ? 'add' : 'rem'}`}>{l.sign === '+' ? '+' : '−'}</span>
                   {/* A card struck (owner, 2026-10-16): crossed out, as on its list. */}
                   <span className={`tl-card${l.struck ? ' is-struck' : ''}`}>{l.text}</span>
-                  {l.unit_price != null && <span className="tl-price">{formatMoney(l.unit_price)}</span>}
+                  {rowPrice(l) != null && <span className="tl-price">{formatMoney(rowPrice(l))}</span>}
                 </div>
               ))}
               {view.fields.map((f, i) => (

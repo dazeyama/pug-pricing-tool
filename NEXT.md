@@ -43,6 +43,14 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-26 (Records session): **The Changelog shows no price on a card with none** (decision 545; the owner's ask
+  through the main session, "I don't want to do a migration for this"): a card row whose price is exactly $0 shows
+  none after its text (`rowPrice`, `src/lib/changelog.js`, tested in `tests/changelog.test.js`;
+  `ChangelogPage.jsx`), so an unpriced card's edit, removal, strike, restore and export rows no longer read "$0.00"
+  (only its add logged none, 0012). Trade-off accepted: a card priced $0 by hand shows no price there too. The
+  totals are untouched. TEST.md case in section 17. No migration. Where to look: Changelog → Collections, the entries
+  of a card edited, removed, struck or restored on a Skip-pricing project: no price after the card's text; a priced
+  card's rows keep theirs. Untested in the app.
 - 2026-10-26 (Buy tab session): **The Secret Lair foils generator in the repo** (decision 544; the owner's ask through
   the main session, "Go ahead and move it"): `scripts/sld-foils.mjs` is the temp folder's rainbow.mjs and
   write-sld.mjs as one script (the second only formatted the first's output, so there's no map file between them):

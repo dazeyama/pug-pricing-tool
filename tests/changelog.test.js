@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  HEADLINES, actionsFor, categoryOf, dayHeading, entryWhen, foldEvents, foldedSummary, panelView, headlineOf,
+  HEADLINES, actionsFor, categoryOf, dayHeading, entryWhen, foldEvents, foldedSummary, panelView, headlineOf, rowPrice,
 } from '../src/lib/changelog.js';
 
 let seq = 1000;
@@ -144,4 +144,18 @@ test("a folded run counts bulk apart: rows with bulk_per are bulk, a placeholder
     ev({ at: min(2), action: 'collection_cards_removed', added: 0, removed: 0, lines: bulk.map((l) => ({ ...l, sign: '-' })) }),
   ])[0]);
   assert.equal(foldedSummary(gone), '200 bulk removed.');
+});
+
+// A card with no price (decision 545): its rows after the add log the stored $0, which read "$0.00".
+test("a row's price: none when the line has none or is at $0; the totals still count the row", () => {
+  assert.equal(rowPrice({ unit_price: 2 }), 2);
+  assert.equal(rowPrice({ unit_price: 0.5 }), 0.5);
+  assert.equal(rowPrice({ unit_price: 0 }), null);
+  assert.equal(rowPrice({ unit_price: '0' }), null);
+  assert.equal(rowPrice({ unit_price: null }), null);
+  assert.equal(rowPrice({}), null);
+  const unpriced = [{ sign: '+', qty: 3, game: 'mtg', unit_price: 0, text: '3 Sol Ring (CMR) 472' }];
+  const v = panelView({ events: [ev({ at: min(0), lines: unpriced, added: 3 }), ev({ at: min(2) })] });
+  assert.equal(v.rows.length, 2);
+  assert.equal(v.totals.market, 2);
 });

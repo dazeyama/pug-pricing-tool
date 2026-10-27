@@ -235,6 +235,19 @@ export function panelView(panel) {
 }
 
 /**
+ * The price a card row shows after its text (spec 12.2): the line's price per
+ * card, or none. A card with no price (decision 513) is stored at $0, and only
+ * its add logs none (migration 0012): an edit, a removal, a strike, a restore
+ * or an export logs the stored $0, which read "$0.00". So a price of exactly 0
+ * is no price here (decision 545), and a card priced $0 by hand shows none
+ * either. The totals aren't touched: 0 × quantity adds nothing.
+ */
+export const rowPrice = (line) => {
+  const price = line?.unit_price;
+  return price == null || Number(price) === 0 ? null : Number(price);
+};
+
+/**
  * What a folded run adds up to: "7 cards added.", "2 cards + 100 bulk
  * removed." A run is all adds or all removes (foldEvents).
  * @param {ReturnType<typeof panelView>} view

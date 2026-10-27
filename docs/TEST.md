@@ -743,6 +743,9 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
       (Buys); Cards imported (Collections); Buy exported, Buy export undone, Export undone, the rejection with its
       reason, Collection repriced, the calls (Actions).
 - [ ] A card a phone scanned ends "· 📱 scanned on <phone>".
+- [ ] **No "$0.00" on a card with no price** (decision 545; dev): on `SMOKE Project` with **⚡ Skip pricing: on**, add a
+      card, then edit it (SAVE EDIT), strike it and restore it: in Collections, none of those entries' rows shows a
+      price after the card's text; a priced card's rows keep their price per card.
 - [ ] Names link to their day page or collection; deleted ones aren't links; ‹ Newer / Older › page through 20 at a time.
 
 ## 18. Across the app
