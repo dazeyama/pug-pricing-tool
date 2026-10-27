@@ -1119,8 +1119,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
    * A card's 3 s up (owner, 2026-10-26: "show the top 3 candidates as a pick list on the phone, one
    * tap to choose, or set the card aside"; decision 549): the likeliest printings its reads found,
    * best first, three at most, to pick from (a tap sends it; Skip this card sets it aside). With
-   * none found, the phone says to set it aside, and the card isn't read again till another is laid.
-   * Scan card ending with no card clearly ahead comes here too.
+   * none found, auto scan keeps trying (decision 556); Scan card says to set it aside. Scan card
+   * ending with no card clearly ahead comes here too.
    * @param {{ at: number, art: Float32Array|null, frame: HTMLCanvasElement|null, foilSeen?: boolean,
    *   tier: number, cands: Map<string, { card: object, score: number }> }} t
    */
@@ -1151,7 +1151,14 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       play('needs_price');
       return;
     }
-    if (!manual && t?.art) v.held = t.art;
+    if (!manual) {
+      // Nothing found on auto scan: it keeps trying, a fresh 3 s from the next look (owner, 2026-10-27:
+      // "I'm getting this error sometimes but then when I hit scan card button it recognizes it
+      // immediately. I think instead of this error it should just keep retrying"; decision 556). The card
+      // isn't held, and no error sound; the older-card mode found so far stays.
+      say('muted', lastDark.current ? `Still reading this card: ${lightTip()}.` : 'Still reading this card…');
+      return;
+    }
     say('err', lastDark.current
       ? `Couldn't read this card in time: it's too dark. Set it aside, or ${lightTip()} and press Scan card.`
       : "Couldn't read this card in time: set it aside and add it on the computer.");
