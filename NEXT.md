@@ -6,10 +6,12 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
-- **Unpushed** (main session): decisions 541–547: work mode's three fixes and CLAUDE.md trimmed (541–543, docs and
+- **Unpushed** (main session): decisions 541–549: work mode's three fixes and CLAUDE.md trimmed (541–543, docs and
   `.claude/` only); the Secret Lair foils generator in the repo (544, Buy tab); the Changelog showing no price on a
   card with none (545, Records); SAVE EDIT keeping a priced card's price under Skip pricing (546, Buy tab); the
-  matching audit page built and reverted the same day (547, no change in the app). No migrations. NEXT.md's notes.
+  matching audit page built and reverted the same day (547, no change in the app); the affected-tests hook removed
+  (548, `.claude/` and CLAUDE.md only); the scanner's 3 s a card, then a pick list or set aside (549, Phone scanner;
+  `src/scan/`, `src/lib/scryfall.js` with its defaults unchanged). No migrations. NEXT.md's notes.
 - **The scanner made fast, a 3 s limit per card** (the owner, 2026-10-26, after a demo at work that was too slow;
   Phone scanner session): the analysis is done, from the dev run logs of 2026-10-18 to 10-20
   (`C:\ClaudeProjects\temp\scan-run\`, re-measured with `node scanstats.mjs <log>` and `node gaps.mjs <log>`
