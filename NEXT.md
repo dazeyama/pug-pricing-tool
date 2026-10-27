@@ -49,6 +49,11 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-27 (Phone scanner session): **The camera's timer red from 2.1 s** (decision 560, the owner's ask):
+  `src/scan/CardTimer.jsx` and `.scan-card-timer.late` (`--bad`): red while counting from 2.1, held red and bold
+  when the 3 s ran out; a card done sooner stays amber. Where to look: the phone, a slow card: red from 2.1, red at
+  3.0 when its list opens or it retries. Untested on a phone. Picked by me: a card done between 2.1 and 3.0 is held
+  amber, not red. No migration.
 - 2026-10-27 (Phone scanner session): **The camera's timer counts up and holds the card's time** (decision 559,
   the owner's ask, amends 558): `src/scan/CardTimer.jsx` counts up in tenths, then holds the last time bold and
   amber (`.scan-card-timer.done`) till the next card; `Scanner.jsx` `readCardClock`, and an empty holder ends a
