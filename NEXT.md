@@ -16,12 +16,6 @@ marks each task done here when it's finished, with the exact file and function o
   `src/lib/auditCc.js` `emptyPicks`) and the confirmed rules into `ccMatch.js`'s families with decision rows and
   tests; the 2026-10-24 "won't fix" on promo-type families reopened by the count (Planeswalker Deck Exclusive 199,
   Theme Deck Exclusive 166 units); then the page goes.
-  - *Paused 2026-10-26 on the owner's word (Export session):* the page is whole and committed (`c96fefe`), nothing
-    half-written, nothing uncommitted of the Export session's. Files: `src/lib/devDb.js`, `src/lib/auditCc.js`,
-    `src/pages/export/audit/` (`AuditCcPage.jsx`, `AuditCategories.jsx`, `auditDb.js`), `src/styles/auditcc.css`,
-    `tests/auditCc.test.js`, the route in `App.jsx`. Works (by lint, 539 tests and the build; untested in the
-    browser): the dev-only route, the picker and its keys, the word groups and rule step, the category screen, the
-    picks JSON. Next: the owner tries it on dev and collects the picks; then the import above. Waiting for the word.
 - **From the 2026-10-26 review of work mode, still open** (main session, decision 540; the rest fixed by 541): a
   fork's prod or delete approval relayed by message isn't the owner's consent to the harness, so it may stall on a
   prompt in its own chat; whether the UserPromptSubmit hook fires on a turn started by a message is untried;
