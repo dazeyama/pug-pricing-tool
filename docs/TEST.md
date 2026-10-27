@@ -430,12 +430,13 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
 - [ ] **Let me type it** (decision 420): on a "Which …?" printing list, Let me type it (left of Skip this card) opens
       the name box empty, "Which card is it? Type its name."; type a name and Find printings: that name's printings
       list; pick one: it goes in. Skip from the box sets the card aside as before.
-- [ ] **3 s a card** (decision 549, Phone scanner session): auto scan on, time each modern card from laying it to
-      its chime: never past about 3 s. A card that doesn't read (half out of the holder, or a thumb over its bottom
-      line) opens "Which card? Not sure: match the picture." with up to three printings, best first, or, with none
-      read at all, "Couldn't read this card in time: set it aside and add it on the computer." and the error sound,
-      and the card isn't read again till the next one's laid. Pick one: it goes in as Scan card's would; Skip this
-      card: nothing goes in. Scan card on a card it can't make sure of shows the same list, not "Couldn't read".
+- [ ] **3 s a card** (decisions 549, 556, Phone scanner session): auto scan on, time each modern card from laying
+      it to its chime: never past about 3 s. A card that doesn't read (half out of the holder, or a thumb over its
+      bottom line) opens "Which card? Not sure: match the picture." with up to three printings, best first, or,
+      with none read at all, "Still reading this card…", no error sound, and it keeps trying: uncover it and it
+      goes in. Pick one: it goes in as Scan card's would; Skip this card: nothing goes in. Scan card on a card it
+      can't make sure of shows the same list, not "Couldn't read"; with nothing at all, "Couldn't read this card in
+      time…".
 - [ ] **3 s, older cards** (decisions 549, 550): a pre-2014 card on auto scan either goes in, or within about 3 s
       shows its name's printings to pick from. A white-bordered one: the info box moves to its title on the first
       look, not after three.

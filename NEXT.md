@@ -48,6 +48,12 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-27 (Phone scanner session): **Auto scan keeps trying when its 3 s find nothing** (decision 556, the
+  owner's ask with a screenshot): `src/scan/Scanner.jsx` `timeUp` on auto scan, with nothing found, says "Still
+  reading this card…" (no error sound, the card not held) and the next look starts a fresh 3 s; the pick list at
+  3 s and Scan card's message are unchanged. Where to look: the phone, auto scan, a pre-2014 card like Goblin
+  Electromancer: no "Couldn't read this card in time", it goes in or opens its list on a later try. Untested on a
+  phone. No migration.
 - 2026-10-26 (Phone scanner session): **The name at the title box's left edge** (decision 555, the owner's ask):
   `src/scan/Scanner.jsx` `showCutout` draws the title box's name from its left edge; the strip's box stays centred.
   Where to look: the phone, a short name (Opt) and a long one: both start at the box's left, the short one leaving
