@@ -5,13 +5,14 @@
 // product 643683, beside "Fabricate (2090)", 643682, and JustTCG follows it. Scryfall marks only some of them
 // (`rainbowfoil`), so the pairs come from TCGplayer: the card's own product (Scryfall's tcgplayer_id) → the
 // "(… Foil)" product of the same name and number in its group, for the foil finish's JustTCG lookup
-// (lib/prices.js), as a surge foil's is (surgeProducts.js, decision 316).
-// Generated 2026-10-24 from TCGplayer's catalogue via tcgcsv.com (the Secret Lair groups: 644 Rainbow Foil,
-// 20 Galaxy Foil, 5 Pool Party Foil, 4 Step-and-Compleat Foil; Foil Etched left out, it's an etched printing's
-// own product already, and none with two foil siblings): they cover 533 of Scryfall's 605 SLD cards in both
-// finishes with no foil price. A new drop needs this run again (C:/ClaudeProjects/temp/sld-foils: node rainbow.mjs,
-// then node write-sld.mjs).
+// (lib/prices.js), as a surge foil's is (surgeProducts.js, decision 316). Foil Etched is left out (an etched
+// printing has its own product already), and so is a plain product with two foil siblings. A new drop needs the
+// table built again: `node scripts/sld-foils.mjs` (decision 544) rewrites the Generated paragraph and the table
+// under it, nothing else.
 
+// Generated 2026-10-26 by scripts/sld-foils.mjs from TCGplayer's catalogue via tcgcsv.com: 673 pairs (644 Rainbow
+// Foil, 20 Galaxy Foil, 5 Pool Party Foil, 4 Step-and-Compleat Foil), covering 533 of Scryfall's 605 SLD cards in
+// both finishes with no foil price.
 export const SLD_FOIL_PRODUCTS = {
   '475996': '495256',
   '476913': '495116',

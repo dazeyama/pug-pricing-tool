@@ -44,6 +44,20 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-26 (Buy tab session): **The Secret Lair foils generator in the repo** (decision 544; the owner's ask through
+  the main session, "Go ahead and move it"): `scripts/sld-foils.mjs` is the temp folder's rainbow.mjs and
+  write-sld.mjs as one script (the second only formatted the first's output, so there's no map file between them):
+  it reads TCGplayer's Secret Lair groups from tcgcsv.com, pairs each plain product with its "(… Foil)" sibling,
+  checks the pairs against Scryfall, and rewrites only the Generated paragraph and `SLD_FOIL_PRODUCTS` in
+  `src/lib/sldFoilProducts.js` (`patchModule` stops unless it finds exactly that part; the old writer templated the
+  whole module, functions included, so an edit to them would have been lost at the next run). The module's header
+  points at the script. Tests in `tests/sldFoils.test.js`: the pairing, the paragraph, the patch, and that the
+  module on disk has the part the script looks for. Run once after the move: the same 673 pairs and 533 of 605
+  covered as on 2026-10-24, so only the module's header changed ("Generated 2026-10-26"); 226 foil products with no
+  plain sibling (Halo Foils and the like) stay unpaired, as before. Where to look: `node scripts/sld-foils.mjs`
+  prints each group's pairs and the Scryfall coverage, then "Wrote src/lib/sldFoilProducts.js"; the app is
+  unchanged. Left: the temp copy `C:\ClaudeProjects\temp\sld-foils` stays (the owner's to delete); no TEST.md case
+  (a dev script, nothing staff see). No migration.
 - 2026-10-26: **Closed by the owner** (main session, from its brainstorm of what's missing): a collection SKU
   `102426-1` in CC's search finds only itself, not `-10` and up (the owner checked it: "This worked"); Pokémon on
   the phone scanner, and a third game (One Piece, Lorcana): "Never going to happen" (a memory note, decision 517);
