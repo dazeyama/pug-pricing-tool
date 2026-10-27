@@ -229,6 +229,24 @@ html[data-scan] .toast { max-width: none; }
   font-size: 13px;
   text-align: center;
 }
+/* A card's 3 s counting down, top right of the camera (decision 558): clear, but quiet; warm in its last second. */
+.scan-card-timer {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
+  min-width: 3.2em;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, .45);
+  color: rgba(255, 255, 255, .82);
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  pointer-events: none;
+}
+.scan-card-timer.low { color: #ffc46b; }
 /* Scan card across the top; Auto?, Reset view, the light and Stop in a row under it. */
 .scan-actions { flex: none; display: flex; flex-direction: column; gap: 8px; }
 .scan-actions-row { display: flex; gap: 8px; }

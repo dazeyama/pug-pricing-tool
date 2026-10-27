@@ -33,6 +33,7 @@ import { inkShare, nameCutout, olderStripYear, titleCutout } from './titles.js';
 import NeedsPriceSheet from './NeedsPriceSheet.jsx';
 import PickPrintingSheet from './PickPrintingSheet.jsx';
 import NameSheet from './NameSheet.jsx';
+import CardTimer from './CardTimer.jsx';
 
 // Auto scan (docs/SCAN_FUNCTION.md 6.3): the rest between one look at the
 // camera and the next, and the wait before the first. 0.1 s (decision 550; was 0.3 s): a new card is
@@ -245,6 +246,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   // cands }, from its first settled look; `cands` the likeliest printings its reads found
   // (id → { card, score }). Null with no card being read.
   const cardTime = useRef(null);
+  // When Scan card or Title was pressed, while its read runs: its 3 s, for the timer (decision 558).
+  const pressClock = useRef(null);
   // An older card that could be several printings: { tier, name, cards } to pick from.
   const [pick, setPickState] = useState(null);
   // A list opened stops the card's 3 s (decision 551): they ran out between a tap on Branching Bolt
@@ -1203,6 +1206,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     if (manualWaiting.current || reading) return;
     trace('scan-card-press');
     const pressedAt = Date.now();   // its 3 s count from here, the wait for an auto look included (decision 549)
+    pressClock.current = pressedAt;
     const run = ++readRun.current;
     manualWaiting.current = true;   // auto scan holds off till Scan card is done: nothing interrupts it
     const bar = createProgress();
@@ -1234,6 +1238,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
 
   /** The press is over: Scan card and its label as they were. */
   function endReading() {
+    pressClock.current = null;
     setProgress(null);
     setReading(false);
     setStoppable(false);
@@ -1253,6 +1258,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     if (manualWaiting.current || reading || !camera.on) return;
     trace('title-press');
     const pressedAt = Date.now();   // its 3 s, as Scan card's (decision 549)
+    pressClock.current = pressedAt;
     const run = ++readRun.current;
     manualWaiting.current = true;
     const bar = createProgress();
@@ -1692,6 +1698,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
               <p>Lay a card in the holder. The view locks onto the first card it finds; Reset view finds it again.</p>
             </div>
           )}
+          {camera.on && <CardTimer startedAt={() => pressClock.current ?? cardTime.current?.at ?? null} total={CARD_MS} />}
           {ocrLoading && <div className="scan-stage-note">Loading the card reader (first scan only)…</div>}
           {plusAt > 0 && <div key={plusAt} className="scan-plus-flash" aria-hidden="true">+1</div>}
         </div>
