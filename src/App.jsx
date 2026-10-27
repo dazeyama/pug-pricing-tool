@@ -1,5 +1,7 @@
+import { Suspense, lazy } from 'react';
 import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
 import { missingConfig } from './lib/supabase.js';
+import { onDevDatabase } from './lib/devDb.js';
 import { SessionProvider, useSession } from './state/session.jsx';
 import { DeviceProvider, useDevice } from './state/device.jsx';
 import { ConnectionProvider } from './state/connection.jsx';
@@ -27,6 +29,10 @@ import ChangelogPage from './pages/ChangelogPage.jsx';
 import HelpPage from './pages/HelpPage.jsx';
 import ScanApp from './scan/ScanApp.jsx';
 import { isPhone } from './lib/mobile.js';
+
+// The Crystal Commerce matching audit (decision 547): a temporary secret page, dev only, in its own chunk so the
+// live site's bundle doesn't carry it.
+const AuditCcPage = lazy(() => import('./pages/export/audit/AuditCcPage.jsx'));
 
 /**
  * Header, then the current tab. The tab's panel is keyed by tab so it fades in
@@ -75,6 +81,11 @@ function AuthGate() {
               <Routes>
                 {/* The scanner, outside the desktop layout: on a phone, and #/scan anywhere. */}
                 <Route path="/scan" element={<ScanApp />} />
+                {/* #/audit-cc, the matching audit (decision 547): only on the dev server on dev's database; anywhere
+                    else the address falls through to Home like any unknown one. */}
+                {onDevDatabase() && (
+                  <Route path="/audit-cc" element={<Suspense fallback={null}><AuditCcPage /></Suspense>} />
+                )}
                 {phone ? <Route path="*" element={<Navigate to="/scan" replace />} /> : (
                 <Route element={<Layout />}>
                   <Route path="/home" element={<HomePage />} />

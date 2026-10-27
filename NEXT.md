@@ -10,13 +10,12 @@ marks each task done here when it's finished, with the exact file and function o
   `.claude/` only); the Secret Lair foils generator in the repo (544, Buy tab); the Changelog showing no price on a
   card with none (545, Records); SAVE EDIT keeping a priced card's price under Skip pricing (546, Buy tab). No
   migrations. NEXT.md's notes.
-- **The strategic CC matching audit** (the owner, 2026-10-26; Export session building): a temporary secret page,
-  dev only, that fills the screen with a picker over the whole inventory's Needs a choice units (4,597, counted
-  2026-10-26 in `C:\ClaudeProjects\temp\pug-matching\counts.md`): word groups first, three picks teach a rule the
-  page applies to the group; picks and rules collected as a JSON file, nothing written by the page. Then, as later
-  tasks: the import of the picks into dev and prod (`cc_product_links`, `cc_set_map`) and the rules into
-  `ccMatch.js`'s families with decision rows; the 2026-10-24 "won't fix" on promo-type families reopened by the
-  count (Planeswalker Deck Exclusive 199, Theme Deck Exclusive 166 units).
+- **The strategic CC matching audit, after the page** (the owner, 2026-10-26; Export session): the page is built
+  (decision 547, Done below); the owner collects the picks on dev. Then, as later tasks: the import of the picks
+  into dev and prod (picks → `cc_product_links` staff rows, set choices → `cc_set_map`; the JSON's shape is
+  `src/lib/auditCc.js` `emptyPicks`) and the confirmed rules into `ccMatch.js`'s families with decision rows and
+  tests; the 2026-10-24 "won't fix" on promo-type families reopened by the count (Planeswalker Deck Exclusive 199,
+  Theme Deck Exclusive 166 units); then the page goes.
 - **From the 2026-10-26 review of work mode, still open** (main session, decision 540; the rest fixed by 541): a
   fork's prod or delete approval relayed by message isn't the owner's consent to the harness, so it may stall on a
   prompt in its own chat; whether the UserPromptSubmit hook fires on a turn started by a message is untried;
@@ -44,6 +43,22 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-26 (Export session): **The Crystal Commerce matching audit page, `#/audit-cc`** (decision 547, the owner's
+  ask through the main session): a temporary secret page, dev only (`src/lib/devDb.js` `onDevDatabase`, the DEV
+  watermark's check; `App.jsx` adds the route only then, in its own chunk; `main.jsx` uses the same check), the
+  whole screen a picker (`src/pages/export/audit/AuditCcPage.jsx`, `AuditCategories.jsx`, `auditDb.js` for
+  IndexedDB; `src/lib/auditCc.js` the word groups, the example cards, the rule inference, the order of work and the
+  picks file, tested in `tests/auditCc.test.js`; `src/styles/auditcc.css`). The data: `C:\ClaudeProjects\temp\
+  pug-matching\inventory\audit-cc-data.json` (4,597 units, 11 MB, from `inventory-sweep.mjs` there; the
+  measurement is `counts.md` in `C:\ClaudeProjects\temp\pug-matching\`). Where to look: `npm run dev`, sign in on
+  localhost, `#/audit-cc` → Load data… → that file (the browser keeps it) → the first group ("Modern Frame", 577
+  units) shows an example card with its candidates: 1–9 select, Enter confirms, N none, S skip, Backspace undoes;
+  after its three examples the rule sentence with what it settles and a sample, Y or Enter applies, N declines,
+  1–3 an alternative; Categories (top right) for the 57 categories no set reaches and the 40 sets with no category,
+  Enter taking the guess; Download picks saves the JSON, Load picks… resumes, Start over… forgets (asks first).
+  Untested in the browser (lint, 539 tests and the build pass; the live site's bundle carries neither the page nor
+  dev's ref, checked in `dist/`); the rule inference checked on hand-made 30A and Unfinity units only. No
+  migration; the page writes to no database. Picked in a bespoke tool: the group tokens, the keys, the layout.
 - 2026-10-26 (Buy tab session): **SAVE EDIT never saves an unpriced card over a priced one** (decision 546; the
   owner's ask through the main session: "What if we just made it so that an unpriced card can never be saved ontop of
   an already priced one?"): while Skip pricing is on, SAVE EDIT on a line that has a price keeps its price fields as

@@ -5,6 +5,7 @@ import App from './App.jsx';
 import { watchUiZoom } from './lib/uiScale.js';
 import { watchScanMode } from './lib/mobile.js';
 import { explainStaleBuild } from './lib/staleBuild.js';
+import { onDevDatabase } from './lib/devDb.js';
 
 import './styles/tokens.css';
 import './styles/base.css';
@@ -29,8 +30,8 @@ watchScanMode();
 // as before, in words that say to reload (lib/staleBuild.js).
 window.addEventListener('vite:preloadError', (e) => explainStaleBuild(e.payload));
 // Localhost on dev wears a faint DEV watermark, so it can't be taken for the live site (decision 382; base.css).
-// Written as import.meta.env.DEV itself: a build replaces it with false and drops the line, dev's ref with it.
-if (import.meta.env.DEV && import.meta.env.VITE_SUPABASE_URL?.startsWith('https://psucrzljraxeootwnltf.')) {
+// The check (lib/devDb.js) is written so a build drops it, dev's ref with it.
+if (onDevDatabase()) {
   document.documentElement.classList.add('dev-db');
 }
 
