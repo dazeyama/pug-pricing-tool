@@ -7,11 +7,6 @@ marks each task done here when it's finished, with the exact file and function o
 ## Open
 
 - **From the v1.0.6-badscanner review, not acted on** (main session, 2026-10-27; none stopped the push):
-  - Phone scanner: `printingsOf` (`older.js:32-40`) hands every caller the cached in-flight promise, bound to the
-    first caller's signal; when a look's fetch (`Scanner.jsx:983`) is still out at 3.0, `timeUp`'s
-    `printingsFor` gets that promise, the look's `finally` aborts it (`:1105`), and Which card? opens empty
-    instead of the name's printings (decision 561). Plausible, timing-dependent; no test of `printingsOf` with a
-    signal.
   - Phone scanner: a modern card read by name only, with no strip clue, scores every printing 0, so the 3 s list
     and View all show its three oldest printings (`Scanner.jsx:990`, `:1138`). Design-level.
   - Phone scanner: `CardTimer.jsx:36-40` rounds 2.95–2.99 s to "3.0" and holds it red; 560 says amber before 3.0.
@@ -47,6 +42,12 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-27 (Phone scanner session): **A name's printings fetched once, ended by no one caller** (decision 564,
+  the v1.0.6-badscanner review's finding, passed on by the owner): `src/scan/older.js` `printingsOf` shares one
+  fetch with no caller's signal; each caller's signal gives up only its own wait. Tests in
+  `tests/scanPrintings.test.js`. Where to look: the phone, an older card whose name reads but whose printings are
+  slow to come (a busy connection): at 3 s its printings list opens, not an empty Which card?. Untested on a phone
+  (timing-dependent). No migration.
 - 2026-10-27: **Pushed as v1.0.6-badscanner** (the owner's ask), decisions 541–563, 68 commits since the 2026-10-26
   push: the scanner made fast (3 s a card with the timer on the camera, the name read on every look by a second
   reader, the title's box above the camera, a choice at 3 s, the older-card mode and Title / Number retired, no
