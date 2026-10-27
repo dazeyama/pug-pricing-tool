@@ -7,8 +7,6 @@ marks each task done here when it's finished, with the exact file and function o
 ## Open
 
 - **From the 2026-10-27 push's review (564–567), not acted on** (main session; none stopped the push):
-  - Phone scanner: a stale printing list can open after ■ Stop or a Scan card press during that wait
-    (`:1154-1158`, `:1211-1216` guard only on `openNow`). Plausible.
   - Phone scanner, docs: no TEST.md case for 565 or 567; `docs/TEST.md:399` and `PickPrintingSheet.jsx:13-14`
     still say oldest first; spec row 567's "nothing is sent on a modern card's look alone" doesn't hold for Scan
     card (`Scanner.jsx:1034-1056`, `older: false`); row 557's file list still names the background fetch.
@@ -39,6 +37,11 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-27 (Phone scanner session): **No 3 s choice after Stop or a Scan card press** (decision 571, the push
+  review's finding): `src/scan/Scanner.jsx` `timeUp` notes its `readRun`; the waits drop their list or Which card?
+  when it has moved on; `stopReading` and `abortCamera` free auto scan at once. Where to look: the phone, a card
+  whose 3 s run out while its printings are being ordered, ■ Stop straight away: no list opens after. Untested on
+  a phone. No migration.
 - 2026-10-27 (Phone scanner session): **The name-only 3 s choice in 4 s at most** (decision 570, the push review's
   finding): `src/scan/Scanner.jsx` `offerChoice` gives its `printingsFor` a signal ended at `LOOK_WAIT_MS`; past
   it the printings come unranked, or Which card? opens when they didn't come. Where to look: the phone with the
