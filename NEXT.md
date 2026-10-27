@@ -11,10 +11,6 @@ marks each task done here when it's finished, with the exact file and function o
     with no 4 s cap and no signal: it waits on the shared fetch's full retry budget (about 56 s a page on a dead
     Scryfall, `transport.js:62-96`) and downloads every printing's picture first; older cards take the path too.
     Row 567's "4 s more at most" holds only on the `t.looking` branch (`:1151-1160`).
-  - Phone scanner, 567: the background ranking (`Scanner.jsx:1007-1020`) has no signal, so ■ Stop, the card's send
-    or its removal don't end it; it keeps downloading and ranking into the dead `t.cands`. Its `.then`
-    (`:1012-1016`) overwrites candidates with look 1's clue scores, bypassing `collect`'s keep-the-higher rule
-    (`:697`). From 564: the shared fetch now fetches all its pages whatever happens.
   - Phone scanner: a stale printing list can open after ■ Stop or a Scan card press during that wait
     (`:1154-1158`, `:1211-1216` guard only on `openNow`). Plausible.
   - Phone scanner, docs: no TEST.md case for 565 or 567; `docs/TEST.md:399` and `PickPrintingSheet.jsx:13-14`
@@ -47,6 +43,13 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-27 (Phone scanner session): **A card's ranking by look ends with the card** (decision 569, the push
+  review's finding): `src/scan/Scanner.jsx` gives each card's ranking a signal (`t.stop`), ended by
+  `dropCardTime` wherever the card is let go (sent, taken away, another laid, Stop, the camera stopped, a list or
+  Which card? opened) and once its 3 s choice is made; the look's order kept as `t.lookBonus`, a tie-break in the
+  3 s list, so a later higher clue score still counts. Left as is: the name's printings, once asked for, are
+  fetched to the end (564, kept for the page). Where to look: the phone, a modern card with its bottom covered,
+  ■ Stop at once: no list opens after; the dev run log stays quiet. Untested on a phone. No migration.
 - 2026-10-27 (Phone scanner session): **The camera's timer holds the card's real time** (decision 568, the push
   review's finding): `src/scan/Scanner.jsx` `cardEnd` keeps how the last card ended (its 3 s, or its time when
   sent), `readCardClock` gives it, `CardTimer.jsx` holds it. Where to look: the phone, a card whose 3 s run out on
