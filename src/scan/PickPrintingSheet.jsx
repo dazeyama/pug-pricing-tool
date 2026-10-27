@@ -7,12 +7,14 @@ import { cardImage } from '../lib/scryfall.js';
 const FIRST = 3;
 
 /**
- * An older card that could be several printings (docs/SCAN_FUNCTION.md 6.2,
- * tier 3; tier 2 when its number and set size fit more than one): the
- * likely printings, oldest first, to pick from by the set symbol on the card
- * in hand; View all shows every printing of that name, oldest to newest
- * (owner, 2026-10-16: "doesn't offer enough options, there needs to be a
- * "view all" button"). Skip sends nothing. Let me type it (owner,
+ * A card that could be several printings (docs/SCAN_FUNCTION.md 6.2, tier 3;
+ * tier 2 when its number and set size fit more than one; the 3 s choice,
+ * decision 561): the likely printings, best first (by how the card looks when
+ * that was worked out, else oldest first), to pick from by the set symbol on
+ * the card in hand; View all shows every printing of that name, oldest to
+ * newest, or by look for a modern card (`allNote`, decision 567) (owner,
+ * 2026-10-16: "doesn't offer enough options, there needs to be a "view all"
+ * button"). Skip sends nothing. Let me type it (owner,
  * 2026-10-21; decision 420): the reader named the wrong card, so the name
  * box opens instead, empty, and the typed name's printings are listed.
  * @param {{ pick: { name: string, cards: object[], all?: object[] }, onPick: (card: object) => void,

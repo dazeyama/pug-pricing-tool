@@ -6,10 +6,6 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
-- **From the 2026-10-27 push's review (564–567), not acted on** (main session; none stopped the push):
-  - Phone scanner, docs: no TEST.md case for 565 or 567; `docs/TEST.md:399` and `PickPrintingSheet.jsx:13-14`
-    still say oldest first; spec row 567's "nothing is sent on a modern card's look alone" doesn't hold for Scan
-    card (`Scanner.jsx:1034-1056`, `older: false`); row 557's file list still names the background fetch.
 - **From the 2026-10-26 review of work mode, still open** (main session, decision 540; the rest fixed by 541): a
   fork's prod or delete approval relayed by message isn't the owner's consent to the harness, so it may stall on a
   prompt in its own chat; whether the UserPromptSubmit hook fires on a turn started by a message is untried;
@@ -37,6 +33,12 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-27 (Phone scanner session): **The push review's doc findings** (the owner's pass-on): `docs/TEST.md`
+  section 10, two cases, "The timer's tenths" (565, 568) and "A modern card's printings by look" (567, 569–571);
+  `PickPrintingSheet.jsx`'s header says best first, by look where worked out; spec row 567 says Scan card still
+  takes a printing clearly ahead by look (the "nothing sent on look alone" is auto scan's: amended, not changed;
+  making Scan card list instead is the owner's call); row 557's file list marks what 562 removed. TEST.md's
+  "older card's printing" case left as is: View all is still oldest to newest for an older card. Docs only.
 - 2026-10-27 (Phone scanner session): **No 3 s choice after Stop or a Scan card press** (decision 571, the push
   review's finding): `src/scan/Scanner.jsx` `timeUp` notes its `readRun`; the waits drop their list or Which card?
   when it has moved on; `stopReading` and `abortCamera` free auto scan at once. Where to look: the phone, a card
