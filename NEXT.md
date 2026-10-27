@@ -49,6 +49,15 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-27 (Phone scanner session): **Older cards by name as soon as auto scan can tell** (decision 557, the
+  owner's pick of three ideas): `src/scan/titles.js` `olderStripYear` (a copyright year before 2015, read loosely;
+  the 14 of 479 failed strips in the logs that have one are all older cards) makes `noLineAgain` go to the
+  older-card mode at once and skip the re-crop (`copyright`); `Scanner.jsx` keeps a name read before that mode
+  (`cardRead.name`, used by the look that goes by name when its own read misses) and fetches its printings in the
+  background (`printingsFor` with no frame), `older.js` `printingsOf` keeping them for the page's life. Tests in
+  `tests/scanOlder.test.js`. Where to look: the phone, auto scan, Goblin Electromancer and Guardian of Vitu-Ghazi:
+  each goes in, or opens its printings, inside 3 s, no "Still reading" first; modern cards as before. Untested on
+  a phone. No migration.
 - 2026-10-27 (Phone scanner session): **Auto scan keeps trying when its 3 s find nothing** (decision 556, the
   owner's ask with a screenshot): `src/scan/Scanner.jsx` `timeUp` on auto scan, with nothing found, says "Still
   reading this card…" (no error sound, the card not held) and the next look starts a fresh 3 s; the pick list at
