@@ -92,6 +92,8 @@ const LOOK_MIN_MS = 500;
 const NAME_MS = 10_000;
 // At a card's 3 s, how much longer the choice waits for its printings' order by look (decision 567), at most.
 const LOOK_WAIT_MS = 4_000;
+// A modern card's list by look (decision 572) shows this many before View all, as an older card's does.
+const PICK_LOOK_MAX = 12;
 // Reading… can be tapped to stop once it's run this long (inside a card's 3 s, decision 549; was 3 s).
 const STOPPABLE_AFTER_MS = 1_500;
 // Holding Scan card this long starts over: the reader started afresh, what auto scan held forgotten.
@@ -1065,6 +1067,21 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           cardRead.tier = old.tier;
           cardRead.foilSeen = undefined;
           collect(old.cards.map((c, i) => ({ card: c, score: 100 - i })), { named: true });
+        }
+        // A modern card's printing picked by look alone isn't sent, not even by Scan card (owner, 2026-10-27,
+        // "yes" to "Scan card could open the list instead of sending a modern card's look winner, so the
+        // 'never on looks alone' rule would hold for both"; decision 572): the list opens, best look first.
+        // One fixed by its number and set size (tier 2) still goes in.
+        const lookOnly = old && !olderLook && old.tier !== 2 && old.cards.length === 1 && (old.byLook?.length ?? 0) > 1;
+        if (lookOnly) {
+          const byLook = old.byLook;
+          trace('pick-open', { via: `pick-title-${how}-look`, name: old.name, count: byLook.length, manual });
+          setPick({
+            ...old, how, cards: byLook.slice(0, PICK_LOOK_MAX), all: byLook, art, frame, via: `pick-title-${how}-look`,
+            allNote: `All ${byLook.length} printings, the likeliest by look first.`,
+          });
+          say('muted', `${old.name}: pick its printing.`);
+          return;
         }
         if (!old) {
           if (!manual) return;   // Scryfall has no printing of that name: looked at again
