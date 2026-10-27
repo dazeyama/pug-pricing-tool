@@ -6,10 +6,6 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
-- **Unpushed** (main session): decisions 568–571, the 2026-10-27 push review's scanner fixes: the camera's timer
-  holding the card's real time (568), a card's ranking by look ending with the card (569), the name-only 3 s choice
-  in 4 s at most (570), no 3 s choice after Stop or a Scan card press (571), with TEST.md's two new cases, the spec
-  rows and the pick sheet's comment put right (Phone scanner, untested on the phone). No migrations.
 - **From the 2026-10-26 review of work mode, still open** (main session, decision 540; the rest fixed by 541): a
   fork's prod or delete approval relayed by message isn't the owner's consent to the harness, so it may stall on a
   prompt in its own chat; whether the UserPromptSubmit hook fires on a turn started by a message is untried;
@@ -37,6 +33,12 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-27: **Pushed without a bump, no review** (the owner's ask, "push no bump, no review"), decisions
+  568–572, the 2026-10-27 push review's scanner fixes: the camera's timer holding the card's real time (568), a
+  card's ranking by look ending with the card (569), the name-only 3 s choice in 4 s at most (570), no 3 s choice
+  after Stop or a Scan card press (571), Scan card listing a modern card's printing picked by look instead of
+  sending it (572), with TEST.md's two new cases, the spec rows and the pick sheet's comment put right (Phone
+  scanner, untested on the phone). No migrations: prod and dev stay at 0013.
 - 2026-10-27 (Phone scanner session): **Scan card lists a modern card's printing picked by look** (decision 572,
   the owner's "yes"): `src/scan/Scanner.jsx`, on the name path, a modern card whose printing would be a look
   winner opens the printing list instead, best look first (`PICK_LOOK_MAX` 12, View all by look); a printing
