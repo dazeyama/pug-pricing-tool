@@ -73,6 +73,21 @@ export function unpricedCardId(candidate, version) {
   return candidate.source === 'justtcg' && candidate.justtcgId != null ? String(candidate.justtcgId) : null;
 }
 
+/**
+ * A Pokémon line's JustTCG ids while Skip pricing is on: the card the edit names (unpricedCardId: a TCGplayer-only
+ * card or version's own product) wins over a kept price's (decision 566), and the kept variant goes with it, since
+ * it was the old card's. Otherwise the line's fields stand. Without this, an edit to a sibling product or another
+ * card kept the old card's id, and REPRICE? (which finds a TCGplayer-only line by that id) priced the old card.
+ * @param {{ justtcg_card_id?: string|null, justtcg_variant_id?: string|null }} fields  the line's fields so far
+ * @param {string|null} own  unpricedCardId's answer for the edit's card and version
+ * @returns {{ justtcg_card_id: string|null, justtcg_variant_id: string|null }}
+ */
+export function skippedJusttcgIds(fields, own) {
+  const kept = { justtcg_card_id: fields.justtcg_card_id ?? null, justtcg_variant_id: fields.justtcg_variant_id ?? null };
+  if (own == null || own === kept.justtcg_card_id) return kept;
+  return { justtcg_card_id: own, justtcg_variant_id: null };
+}
+
 /** The price a line is said to be at (the phone's strip, decision 514): none for a card with no price. */
 export const priceOf = (line) => (isUnpriced(line) ? null : line?.unit_price ?? null);
 

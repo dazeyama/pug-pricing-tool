@@ -9,9 +9,6 @@ marks each task done here when it's finished, with the exact file and function o
 - **From the v1.0.6-badscanner review, not acted on** (main session, 2026-10-27; none stopped the push):
   - Phone scanner: a modern card read by name only, with no strip clue, scores every printing 0, so the 3 s list
     and View all show its three oldest printings (`Scanner.jsx:990`, `:1138`). Design-level.
-  - Buy tab: a TCGplayer-only Pokémon card whose version is changed under Skip pricing keeps the old
-    `justtcg_card_id` (`unpriced.js:44`, `buyLine.js:141`) and REPRICE? prices the old version
-    (`todaysPrices.js:137-144`); Magic and TCGdex lines are put right. Narrow, plausible.
 - **From the 2026-10-26 review of work mode, still open** (main session, decision 540; the rest fixed by 541): a
   fork's prod or delete approval relayed by message isn't the owner's consent to the harness, so it may stall on a
   prompt in its own chat; whether the UserPromptSubmit hook fires on a turn started by a message is untried;
@@ -38,6 +35,18 @@ marks each task done here when it's finished, with the exact file and function o
 - **Known limit, left as is:** how long a copies-we-own count takes on the live site isn't measured.
 
 ## Done
+
+- 2026-10-27 (Buy tab session): **A kept price's line takes the JustTCG card the edit names** (decision 566; the
+  v1.0.6-badscanner review's finding, the owner's ask through the main session): with Skip pricing on, SAVE EDIT on a
+  priced TCGplayer-only Pokémon card kept the old card's `justtcg_card_id` (decision 546) when the edit chose a
+  sibling product or another card, so REPRICE? priced the old card. Now the id the edit's card or version names wins,
+  the old variant id dropped with it (`skippedJusttcgIds`, `src/lib/unpriced.js`, used by `buildLine`'s Pokémon
+  branch in `buyLine.js`; tested in `tests/unpriced.test.js`). The same card in another finish keeps its id (its
+  versions share it), and TCGdex cards on their own versions and Magic are unchanged. TEST.md case in section 7. No
+  migration. Where to look: a project with a priced TCGplayer-only Pokémon card (no TCGdex record, e.g. a
+  "(Cosmos Holo)" product found only on TCGplayer), Skip pricing on, click the line, pick a sibling product in the
+  versions, SAVE EDIT: the price stays; turn Skip pricing off and REPRICE?: the line is priced as the new product;
+  click it again and the edit opens on the new product. Untested in the app.
 
 - 2026-10-27 (Phone scanner session): **The review's doc findings** (the owner's pass-on): `docs/TEST.md` Never
   stuck now expects the printing list or Which card? (561); spec rows 557 and 561 say 562 took the background

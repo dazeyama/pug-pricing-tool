@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  isUnpriced, keptPriceFields, noneShowPrice, priceOf, showsNoPrice, skipPricingFields, unpricedCardId, unpricedCards,
-  unpricedFields,
+  isUnpriced, keptPriceFields, noneShowPrice, priceOf, showsNoPrice, skippedJusttcgIds, skipPricingFields, unpricedCardId,
+  unpricedCards, unpricedFields,
 } from '../src/lib/unpriced.js';
 import { candidateKeyOf } from '../src/lib/candidateKey.js';
 import { rateTotals } from '../src/lib/rates.js';
@@ -97,6 +97,27 @@ test("an unpriced TCGplayer-only Pokémon card keeps its own JustTCG card id; ot
   // The line's key then finds the card again (SAVE EDIT), where it was "pokemon:en:jt:null".
   assert.equal(candidateKeyOf({ game: 'pokemon', lang: 'en', tcgdex_id: null, justtcg_card_id: unpricedCardId(known, null) }),
     'pokemon:en:jt:pokemon-jp-x-1');
+});
+
+// Decision 566: a kept price (546) on a TCGplayer-only Pokémon card edited to another product keeps the new card's id.
+test("an edit's own JustTCG card wins over a kept price's, so REPRICE? prices the card the line now is", () => {
+  const kept = keptPriceFields({
+    price_source: 'justtcg', unit_price: 4, priced_at: 't', justtcg_card_id: 'pokemon-old', justtcg_variant_id: 'old-nm',
+  });
+  // A sibling product chosen in the edit (a TCGplayer-only version with its own JustTCG card).
+  const sibling = unpricedCardId({ game: 'pokemon', source: 'justtcg', justtcgId: 'pokemon-old' },
+    { tcgplayerOnly: true, justtcgId: 'pokemon-new' });
+  assert.deepEqual(skippedJusttcgIds(kept, sibling), { justtcg_card_id: 'pokemon-new', justtcg_variant_id: null });
+  // The same card in another finish: its versions share the card's id, so the kept ids stand.
+  assert.deepEqual(skippedJusttcgIds(kept, 'pokemon-old'), { justtcg_card_id: 'pokemon-old', justtcg_variant_id: 'old-nm' });
+  // A TCGdex card on its own version, or Magic: the edit names none, the kept ids stand.
+  assert.deepEqual(skippedJusttcgIds(kept, null), { justtcg_card_id: 'pokemon-old', justtcg_variant_id: 'old-nm' });
+  // A card going in unpriced (new, or an unpriced one edited): its own id, as decision 526 has it.
+  assert.deepEqual(skippedJusttcgIds(unpricedFields(), 'pokemon-x'), { justtcg_card_id: 'pokemon-x', justtcg_variant_id: null });
+  assert.deepEqual(skippedJusttcgIds({}, null), { justtcg_card_id: null, justtcg_variant_id: null });
+  // The line's key then finds the new card on the next SAVE EDIT.
+  assert.equal(candidateKeyOf({ game: 'pokemon', lang: 'en', tcgdex_id: null, justtcg_card_id: sibling }),
+    'pokemon:en:jt:pokemon-new');
 });
 
 test('the price a line is said to be at: none for a card with no price', () => {

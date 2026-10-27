@@ -284,6 +284,10 @@ what happens. The findings are reported when the pass ends.
       it keeps its price, not **—**, and **Not priced** doesn't grow. Again with its condition changed: the price
       stays the old condition's (REPRICE? puts it right once the switch is off). Type a manual price (Alt+M) in the
       edit: it goes in at that price. Click an unpriced line and SAVE EDIT: still **—**.
+- [ ] **A kept price's line takes the product the edit picks** (decision 566; dev): on `SMOKE Project` with Skip
+      pricing off, add a TCGplayer-only Pokémon card (no TCGdex record); turn **⚡ Skip pricing: on**; click its line,
+      pick a sibling product in its versions, SAVE EDIT: the price stays. Turn Skip pricing off, REPRICE?: the line is
+      priced as the new product, and clicking it opens the edit on that product.
 
 ## 8. Buy tab: the buy list and CONFIRM BUY
 
