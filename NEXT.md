@@ -6,8 +6,6 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
-- **Unpushed** (main session): decision 573, the Pokémon sticker sheet's printer offset removed
-  (`src/lib/stickerPdf.js`); the push is next, on the owner's ask.
 - **From the 2026-10-26 review of work mode, still open** (main session, decision 540; the rest fixed by 541): a
   fork's prod or delete approval relayed by message isn't the owner's consent to the harness, so it may stall on a
   prompt in its own chat; whether the UserPromptSubmit hook fires on a turn started by a message is untried;
@@ -35,6 +33,9 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-27: **Pushed without a bump, no review** (the owner's ask, "Push without a review"), decision 573, the
+  Pokémon sticker sheet's printer offset removed (main session, untested on paper). No migrations: prod and dev
+  stay at 0013.
 - 2026-10-27 (main session): **The Pokémon sticker sheet's printer offset removed** (decision 573; the owner:
   "remove the offset we calibrated for my person[al] printer from the print pokemon stickers sheet"):
   `PRINTER_OFFSET` in `src/lib/stickerPdf.js` is `{ dx: 0, dy: 0 }`, so the stickers print at the grid's place
