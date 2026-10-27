@@ -248,6 +248,9 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const cardTime = useRef(null);
   // When Scan card or Title was pressed, while its read runs: its 3 s, for the timer (decision 558).
   const pressClock = useRef(null);
+  // A card's 3 s up with a name but no likely printing: its printings being found for the list, auto scan
+  // holding off meanwhile (decision 561).
+  const finding = useRef(false);
   // When the card being read began, for the timer: Scan card's press, else auto scan's card (decision 559).
   const readCardClock = useCallback(() => pressClock.current ?? cardTime.current?.at ?? null, []);
   // An older card that could be several printings: { tier, name, cards } to pick from.
@@ -1001,6 +1004,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         title = await nameRead;
         if (stale()) return;
         if (cardRead && title.name) cardRead.name = title.name;
+        // A title no read could name: its closest name, for Which card? at 3 s (decision 561).
+        else if (cardRead && title.guess) cardRead.guess = title.guess;
       }
       // This look's name, or one an earlier look at this card read (decision 557: before, a name read
       // before the older-card mode was thrown away, and the look that went by name could miss it).
@@ -1156,8 +1161,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
    * A card's 3 s up (owner, 2026-10-26: "show the top 3 candidates as a pick list on the phone, one
    * tap to choose, or set the card aside"; decision 549): the likeliest printings its reads found,
    * best first, three at most, to pick from (a tap sends it; Skip this card sets it aside). With
-   * none found, auto scan keeps trying (decision 556); Scan card says to set it aside. Scan card
-   * ending with no card clearly ahead comes here too.
+   * none, the name read's printings, or Which card? (decision 561). Scan card ending with no card
+   * clearly ahead comes here too.
    * @param {{ at: number, art: Float32Array|null, frame: HTMLCanvasElement|null, foilSeen?: boolean,
    *   tier: number, cands: Map<string, { card: object, score: number }> }} t
    */
@@ -1188,18 +1193,40 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       play('needs_price');
       return;
     }
-    if (!manual) {
-      // Nothing found on auto scan: it keeps trying, a fresh 3 s from the next look (owner, 2026-10-27:
-      // "I'm getting this error sometimes but then when I hit scan card button it recognizes it
-      // immediately. I think instead of this error it should just keep retrying"; decision 556). The card
-      // isn't held, and no error sound; the older-card mode found so far stays.
-      say('muted', lastDark.current ? `Still reading this card: ${lightTip()}.` : 'Still reading this card…');
+    // Nothing likely: still a choice to make, with the best there is (owner, 2026-10-27: "auto retry was a
+    // bad decision, instead in this situation push the user into pick a card with all the best info we
+    // have"; decision 561, undoing 556's retry). A name read: its printings in the list (usually fetched
+    // already, decision 557), auto scan held off while they come. No name: Which card?, its closest guess
+    // in the box. Scan card's time running out the same.
+    const typeIt = () => askName({
+      guess: t?.guess?.() ?? '', frame: t?.frame ?? null, card: lockRef.current?.card ?? null, listMark: null,
+      texts: [], art: t?.art ?? null, from: 'time',
+    });
+    if (!t?.name) {
+      typeIt();
       return;
     }
-    say('err', lastDark.current
-      ? `Couldn't read this card in time: it's too dark. Set it aside, or ${lightTip()} and press Scan card.`
-      : "Couldn't read this card in time: set it aside and add it on the computer.");
-    play('error');
+    const { name } = t;
+    finding.current = true;
+    say('muted', `${name}: finding its printings…`);
+    printingsFor(name, null, {})
+      .then((old) => {
+        if (openNow.current.pick || openNow.current.nameAsk || openNow.current.needs) return;
+        if (!old?.cards.length) {
+          typeIt();
+          return;
+        }
+        trace('pick-open', { via: 'pick-time-name', name: old.name, count: old.cards.length, manual });
+        setPick({ ...old, art: t.art, frame: t.frame, hint: 'Not sure: match the picture.', via: 'pick-time-name' });
+        say('muted', `${old.name}: pick its printing.`);
+        play('needs_price');
+      })
+      .catch(() => {
+        if (!openNow.current.pick && !openNow.current.nameAsk) typeIt();
+      })
+      .finally(() => {
+        finding.current = false;
+      });
   }
 
   /**
@@ -1579,7 +1606,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     let timer;
     const look = async () => {
       if (!alive) return;
-      if (!auto.current.paused && !manualWaiting.current && !busy.current && document.visibilityState === 'visible') {
+      if (!auto.current.paused && !finding.current && !manualWaiting.current && !busy.current && document.visibilityState === 'visible') {
         await auto.current.scanFrame({ manual: false });
       }
       const idle = Date.now() - lastActive.current > IDLE_AFTER_MS;
