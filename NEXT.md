@@ -49,6 +49,11 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-27 (Phone scanner session): **No re-crop by itself on a strip that names no set** (decision 563, the
+  owner's call): `src/scan/Scanner.jsx` `askRecrop` and `lineRelockArt` removed; Reset view is the manual step;
+  the re-crop every 20 cards (312) and the strip zone following the stack (`straighten.js`) stay. Where to look:
+  the phone, a modern card with its bottom covered: no "relock-asked" in the dev run log, the view stays put till
+  Reset view. Untested on a phone. No migration.
 - 2026-10-27 (Phone scanner session): **The name's printings scored on the strip; the older-card mode and Title /
   Number retired** (decision 562, the owner's pick of all three): `src/scan/resolve.js` `bestOfName` scores the
   name's printings (`older.js` `printingsOf`, kept) on the strip's clues and an older card's "123/350"; one clearly
