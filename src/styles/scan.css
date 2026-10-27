@@ -166,21 +166,11 @@ html[data-scan] .toast { max-width: none; }
 }
 /* The card's title above the camera (decision 552): a title band is long and low, so a lower box than the strip's. */
 .scan-cutout.scan-title-box { height: 48px; }
-/* Title / Number: what the info box shows, at its right end (owner, 2026-10-16). */
 .scan-cutout-wrap { position: relative; flex: none; }
 /* A sheet open over the camera (decision 554): the two boxes out of the way, the sheet in their room; the
    canvases keep their pictures for when it closes. */
 .scan-title-box.covered,
 .scan-cutout-wrap.covered { display: none; }
-.scan-cutout-mode {
-  position: absolute;
-  right: 6px;
-  top: 50%;
-  transform: translateY(-50%);
-  min-height: 34px;
-  padding: 0 12px;
-  font-weight: 700;
-}
 /* Out of focus: auto scan doesn't read it (Scanner.jsx BLUR_BELOW). */
 .scan-cutout.blurry { border: 3px solid var(--warn); }
 .scan-stage:not(.live) .scan-video { visibility: hidden; }

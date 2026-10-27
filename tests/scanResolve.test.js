@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  CANDIDATES, CANDIDATES_KEPT, confirms, likeliest, nameLikeness, readClues, resolveText, resolveThorough, scoreCard,
+  bestOfName, CANDIDATES, CANDIDATES_KEPT, confirms, likeliest, nameLikeness, readClues, resolveText, resolveThorough, scoreCard,
 } from '../src/scan/resolve.js';
 
 // Owner, 2026-10-16: the collector strip's text, every clue in it, and the card found by elimination.
@@ -277,4 +277,33 @@ test('the look\'s signal and short waits reach Scryfall; a look given up is not 
   assert.ok(seen.every(([, ms, hasSignal]) => ms > 0 && ms <= 1500 && hasSignal), JSON.stringify(seen));
   const live = new AbortController();
   assert.equal((await resolveText(text, KNOWN, { search, lookup, signal: live.signal })).card.id, 'giant');
+});
+
+// The name's printings scored on the strip's clues (decision 562).
+
+test('the name read, the set code read, the number not: the printing in that set', () => {
+  const printings = [
+    card('m21', 'm21', '150', 'common', 'Christopher Rush'),
+    card('2x2', '2x2', '117', 'uncommon', 'Christopher Moeller'),
+    card('dmu', 'dmu', '999', 'common', 'Someone Else'),
+  ];
+  const { card: taken, ranked } = bestOfName(printings, ['C 0l9\nM21 • EN ⟿ CHRISTOPHER RUSH'], KNOWN);
+  assert.equal(taken?.id, 'm21');
+  assert.equal(ranked[0].printed, true);
+});
+
+test('an older card\'s "123/350": the printing with that number', () => {
+  const printings = [
+    card('old', 'hob', '123', 'rare', 'Svetlin Velinov'),
+    card('reprint', 'dmu', '45', 'rare', 'Svetlin Velinov'),
+  ];
+  assert.equal(bestOfName(printings, ['Illus. Svetlin Velinov\nTM & © 2012 Wizards 123/350'], KNOWN).card?.id, 'old');
+});
+
+test('one printing: taken whatever the strip read; two the clues can\'t tell apart: neither', () => {
+  assert.equal(bestOfName([card('only', 'hob', '7', 'rare', 'A Painter')], [''], KNOWN).card?.id, 'only');
+  const twins = [card('a', 'hob', '7', 'rare', 'Same Painter'), card('b', 'dmu', '8', 'rare', 'Same Painter')];
+  const { card: taken, ranked } = bestOfName(twins, ['n Lo.'], KNOWN);
+  assert.equal(taken, null);
+  assert.equal(ranked.length, 2);
 });

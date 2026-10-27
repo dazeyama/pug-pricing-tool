@@ -23,6 +23,7 @@
 import * as scry from '../lib/scryfall.js';
 import { parseCollectorNumber } from './recognition/parsing.js';
 import { STEP_MS } from './progress.js';
+import { parseOldNumber } from './titles.js';
 
 /** Language codes printed after the set code. */
 const LANGS = new Set(['EN', 'DE', 'FR', 'ES', 'IT', 'PT', 'JP', 'JA', 'KO', 'RU', 'ZH', 'CS', 'CT', 'PH']);
@@ -377,6 +378,44 @@ export function isSure(card, clues, top) {
     && plainNumber(card.collector_number) === clues.numbers[0]
     && Boolean(clues.rarity) && card.rarity === clues.rarity
     && nameLetters(clues.artist).length >= 6 && nameLikeness(clues.artist, card.artist) >= 0.75;
+}
+
+/** A printing of the name read is taken at this score or more, this far ahead of the next (decision 562). */
+const NAME_TAKE = { score: 3, lead: 1.5 };
+
+/**
+ * Which printing of the card's name the strip's clues point at (owner, 2026-10-27: "score the name's
+ * printings against the strip's clues"; decision 562): every printing of the name the title read,
+ * scored on what each strip reading holds (set code and its look-alikes, number, rarity, the artist's
+ * name; an older card's "123/350"), by the reading it fits best. One printing, or one clearly ahead:
+ * taken. A modern card whose number was misread but its set code read, and an older card's number,
+ * come out here without a Scryfall search. Pure, for tests.
+ * @param {object[]} printings  the name's printings (older.js printingsOf)
+ * @param {string[]} texts  the strip's readings
+ * @param {Set<string>} known  every set code, upper case
+ * @returns {{ card: object|null, ranked: { card: object, score: number, printed: boolean }[] }}
+ *   card: the one taken, or null; ranked: all of them, best first
+ */
+export function bestOfName(printings, texts, known, { pattern = null } = {}) {
+  const clues = texts.filter((t) => String(t ?? '').trim()).map((t) => planFor(t, known, pattern).clues);
+  // An older card's "123/350": its number counts as read exactly, whatever else the line held (its
+  // copyright year comes first and is taken for the number otherwise).
+  const old = texts.map(parseOldNumber).find(Boolean) ?? null;
+  const ranked = printings.map((card) => {
+    let score = 0;
+    let printed = false;
+    for (const [i, c] of clues.entries()) {
+      const s = scoreCard(card, c);
+      if (i === 0 || s > score) score = s;
+      if (c.setWeight?.[String(card.set).toUpperCase()] === 3) printed = true;
+    }
+    if (old && String(card.collector_number).replace(/^0+(?=\d)/, '') === old.number) score += 3;
+    return { card, score, printed };
+  }).sort((a, b) => b.score - a.score);
+  if (ranked.length === 1) return { card: ranked[0].card, ranked };
+  const [best, next] = ranked;
+  const ahead = best && best.score >= NAME_TAKE.score && (!next || best.score - next.score >= NAME_TAKE.lead);
+  return { card: ahead ? best.card : null, ranked };
 }
 
 /** A card in another language refused ({ foreign }), except a Japanese-only printing the app knows. */

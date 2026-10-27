@@ -10,7 +10,7 @@ import { useScans } from './useScans.js';
 import { useCamera } from './camera.js';
 import { insetTo, onScreen, showPart } from './guide.js';
 import { locate, paperSetCodes, readCollectorLine, readPrepared, setCodePattern } from './read.js';
-import { CANDIDATES, readClues, resolveReadings, resolveThorough } from './resolve.js';
+import { bestOfName, CANDIDATES, CANDIDATES_KEPT, readClues, resolveReadings, resolveThorough } from './resolve.js';
 import { STEP_MS, createProgress } from './progress.js';
 import { findCard } from './cardEdges.js';
 import {
@@ -24,12 +24,12 @@ import { ocrWorker, onOcrStatus, readTitleText, resetOcr } from './ocr.js';
 import { isTimeout, TimeoutError, withTimeout } from '../lib/timeout.js';
 import { uuid } from '../lib/uuid.js';
 import { isMuted, play, resetSounds, setMuted, unlockSounds } from './sounds.js';
-import { printingsFor, readOlderCard, readTitleName, titleAmong } from './older.js';
+import { printingsFor, printingsOf, readTitleName, titleAmong } from './older.js';
 import { cardNamed, isFnmStrip, isPromoStrip, resolveFnm, resolvePromo } from './promo.js';
 import { trace } from './trace.js';
 import { guessName, matchName } from './nameMatch.js';
 import { isDark, lightIn } from './light.js';
-import { inkShare, nameCutout, olderStripYear, titleCutout } from './titles.js';
+import { inkShare, nameCutout, olderStripYear, parseOldNumber, titleCutout } from './titles.js';
 import NeedsPriceSheet from './NeedsPriceSheet.jsx';
 import PickPrintingSheet from './PickPrintingSheet.jsx';
 import NameSheet from './NameSheet.jsx';
@@ -50,15 +50,12 @@ const DARK_AFTER = 4;
 const CONFIRM_MS = 50;
 // The first look as soon as the camera's on (decision 550; was 0.8 s): a look with no picture yet does nothing.
 const FIRST_LOOK_MS = 0;
-// Older cards (tiers 2 and 3, 6.2) are read by their title. Auto scan
-// takes a card for an older one after this many looks in a row with no set
-// code at its bottom (owner, 2026-10-16: "When it's detected that it's
-// changing very rapidly like this shift to 2014 mode and focus the info box
-// on the card name instead, resetting to the normal bottom position upon
-// the next card"); then it reads the title once (decision 550): one printing
-// is sent, several open the printing list. A blank strip with ink in the title
-// is an older card at once (decision 550), with no looks to count.
-const OLDER_AFTER = 3;
+// Older cards (tiers 2 and 3, 6.2) go by their title's name, read on every look (decision 551). A strip
+// with no set code read on this many looks at one card makes it an older one, its printings picked by
+// how it looks when the strip's clues don't settle them; a copyright year before 2015 or a blank strip
+// with ink in the title does at once (decisions 550, 557). The older-card mode that counted these across
+// looks, with its Title / Number switch, is retired (decision 562).
+const NO_SET_LOOKS = 3;
 // Scan card reads at most this many blocks found on the card, besides its strip (decision 550; was every one
 // found, three at most): each read is about 0.3 s, and the card has 3 s.
 const SCAN_CARD_BLOCKS = 2;
@@ -72,9 +69,6 @@ const RELOCK_EVERY = 20;
 // the holder, again each this many more if it's hidden.
 const TALL_STACK = 100;
 const RELOCK_TRIES = 10;
-// Which card? (decision 311): this many title reads in a row naming nothing, on the same card, and
-// auto scan stops trying and asks for the name.
-const UNREAD_AFTER = 3;
 // A blank strip with this much ink in the title band is a card (a white-bordered older one), not an empty holder.
 const TITLE_INK = 0.02;
 // Focus (owner, 2026-10-16): a collector strip under this sharpness
@@ -238,9 +232,7 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   const lastRefocus = useRef(0);
   // Auto scan: `held`, the art of the card last sent (nothing's read while it's
   // still there); `pending`, the printing the last look read, for the next to agree with;
-  // the older-card mode: `noLine`, looks in a row with no set code at the bottom (`lineArt`, the
-  // card's art when they began), `older`, read by its title now, `pendingOld`, what the last
-  // title read gave (the name, and the printing if one was clearly ahead), for the next to agree with.
+  // `olderLook`, whether the last look's strip was an older card's (decision 562), for the re-crop.
   const view = useRef({ held: null, pending: null });
   // The card in the holder's 3 s on auto scan (decision 549): { at, art, frame, foilSeen, tier,
   // cands }, from its first settled look; `cands` the likeliest printings its reads found
@@ -264,9 +256,6 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   // Which card? (decision 311): a title no read could name, its name to type: { guess, frame, card,
   // listMark, texts, art }.
   const [nameAsk, setNameAsk] = useState(null);
-  // The info box on the card's title (the older-card mode, by itself or by Title), for the
-  // Title / Number button's label.
-  const [titleMode, setTitleMode] = useState(false);
   const { offline } = useConnection();
   const busy = useRef(false);
   // Cards sent with this lock, whether it's due to be found again, and the looks spent trying (decision 312).
@@ -594,7 +583,6 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     setLockState(next);
     view.current = { held: null, pending: null };
     cardTime.current = null;
-    setTitleMode(false);
     sinceLock.current = 0;
     relockDue.current = false;
     relockTries.current = 0;
@@ -615,39 +603,17 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   }
 
   /**
-   * One more look with no set code at the bottom; enough of them, and it's read as an older card.
-   * `now`: a blank strip with ink in the title (decision 550), or a copyright line's year before 2015
-   * (decision 557), an older card at once. `copyright`: the strip is a copyright line, not looked for again.
+   * A strip that named no set, not an older card's: the view found again (decision 317), once a card:
+   * as the stack grows the card comes closer and the lock's outline, and the strip's zone with it,
+   * drift off it. Two looks to find it, then on as before. Not on an older card's strip (a copyright
+   * line, a blank one; decisions 557, 562): its place was found, it has no set code.
    */
-  function noLineAgain(v, art, { now = false, copyright = false } = {}) {
-    v.noLine = (v.noLine ?? 0) + 1;
-    v.lineArt ??= art;
-    // A card whose strip names no set: the view found again first (decision 317), once a card, before
-    // it's taken for an older one: as the stack grows the card comes closer and the lock's outline,
-    // and the strip's zone with it, drift off it. Two looks to find it, then on as before. Not on a
-    // copyright line (decision 557): the strip was found, it's an older card's.
-    if (!copyright && v.noLine === 1 && lockRef.current && (!lineRelockArt.current || artDistance(lineRelockArt.current, art) >= ART_CHANGED)) {
-      lineRelockArt.current = art;
-      relockDue.current = true;
-      relockTries.current = RELOCK_TRIES - 2;
-      trace('relock-asked', { why: 'no set code' });
-    }
-    if (!v.older && (now || v.noLine >= OLDER_AFTER)) {
-      v.older = true;
-      setTitleMode(true);
-      trace('older-mode');
-      say('muted', 'An older card: reading its title…');
-    }
-  }
-
-  /** Back to the bottom strip: a card with a set code, or the next card. */
-  function leaveOlder(v) {
-    v.unread = 0;
-    v.noLine = 0;
-    v.lineArt = null;
-    v.older = false;
-    v.pendingOld = null;
-    setTitleMode(false);
+  function askRecrop(art) {
+    if (!lockRef.current || (lineRelockArt.current && artDistance(lineRelockArt.current, art) < ART_CHANGED)) return;
+    lineRelockArt.current = art;
+    relockDue.current = true;
+    relockTries.current = RELOCK_TRIES - 2;
+    trace('relock-asked', { why: 'no set code' });
   }
 
   /** Reset view: unlocked, and the next card found locks it again. */
@@ -779,14 +745,13 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         // Locked again only on a card whose collector line is where a card's is, as the first lock
         // (decision 314: an outline round the holder's floor, an empty holder's, isn't a card); an
         // older card, with no line, by its edges alone in the older-card mode.
-        const next = !card ? null : anchored ? makeLock(card, anchor, frame) : view.current.older ? lockOnCard(card, frame) : null;
+        const next = !card ? null : anchored ? makeLock(card, anchor, frame) : view.current.olderLook ? lockOnCard(card, frame) : null;
         if (next) {
           trace('relock', { anchor: anchored, tries: relockTries.current });
-          const kept = { held: view.current.held, lastArt: view.current.lastArt, older: view.current.older };
+          const kept = { held: view.current.held, lastArt: view.current.lastArt, olderLook: view.current.olderLook };
           lock = next;
           setLock(lock);
           Object.assign(view.current, kept);
-          if (kept.older) setTitleMode(true);
         } else if (++relockTries.current >= RELOCK_TRIES) {
           relockDue.current = false;
           relockTries.current = 0;
@@ -818,6 +783,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
       let foilSeen;
       // The List's mark at the card's corner (listMark.js), when the view's locked.
       let listSeen = null;
+      // A blank strip with ink in the title, on auto scan: a white-bordered older card (decision 562).
+      let blankStrip = false;
       // The title's name, being read beside the strip (decision 551): { name, how } or { name: null, guess }.
       let nameRead = null;
       const readName = (pic, onCard) => readTitleName(pic, { card: onCard, read: readTitleText })
@@ -836,8 +803,6 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         if (!v.lastArt || moving) markActive();
         v.lastArt = art;
         v.moving = moving;
-        // Another card in: back to its bottom strip (the older mode was the last card's).
-        if (v.lineArt && artDistance(v.lineArt, art) >= ART_CHANGED) leaveOlder(v);
         // Still moving (owner, 2026-10-18: "the first read is happening slightly too early when waiting
         // for blur to clear after motion … there's 1 wasted early read often that is then, redone";
         // decision 322: 62 of 134 strip reads in the run had a failed read 0.6 s before): auto scan
@@ -848,7 +813,6 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           if (artDistance(v.held, art) < ART_CHANGED) return;
           v.held = null;
           v.pending = null;
-          leaveOlder(v);
         }
         // This card's collector line, found in its zone and set level (owner, 2026-10-16).
         const strip = straightCutout(frame, lock, defaultCreateCanvas);
@@ -879,12 +843,13 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         }
         // The holder empty: a card taken away before its time ran out is done with (decision 559: its timer
         // would count on over the empty holder).
-        if (!manual && !inked) cardTime.current = null;
-        if (!manual && strip.sharpness === 0 && !v.older) {
-          // Ink in the title over a blank strip: an older card, read by its title on this look (decision 550).
-          if (inked) noLineAgain(v, art, { now: true });
-          if (!v.older) return;
+        if (!manual && !inked) {
+          cardTime.current = null;
+          return;
         }
+        // A blank strip with ink in the title: a white-bordered older card (decision 550), its title read
+        // and no strip (decision 562).
+        blankStrip = !manual && strip.sharpness === 0;
         if (!manual && outOfFocus) {
           // Out of focus: not read (a misread is likelier than a read). Several looks in a row,
           // the camera opened afresh so the phone's autofocus starts over (owner, 2026-10-16).
@@ -908,9 +873,9 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         // (owner, 2026-10-26: "Can we always ALSO be scanning the name area so we don't have to do it
         // as a second pass check?"; decision 551).
         nameRead = readName(frame, lock.card);
-        if (!manual && v.older) {
-          // An older card: its title's read below, not the strip.
-        } else {
+        // The strip read on every look (decision 562: the older-card mode skipped it, and an older card's
+        // "123/350" and copyright year with it); a blank one has nothing to read.
+        if (!blankStrip) {
           progress?.start('strip');
           attempts = await readPrepared(cut, pattern);
           progress?.finish('strip');
@@ -927,19 +892,10 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           attempts = [...attempts, ...more];
           found = await resolveThorough(attempts.map((a) => a.text), known, { pattern, progress, ...net });
           via = 'scan-card';
-        } else if (!v.older) {
+        } else if (attempts.length) {
           // What the strip names, the quick way first (resolve.js; owner, 2026-10-16).
           found = await resolveReadings(attempts, known, { pattern, ...net });
           via = found?.quick ? 'strip-quick' : 'strip-search';
-          if (found) leaveOlder(v);
-          // No set code read at the bottom: once more towards the older-card mode.
-          // A promo's PRM counts as a set read (decision 313): it's no older card.
-          else if (!attempts.some((a) => readClues(a.text, known).sets.length || isPromoStrip(a.text))) {
-            // A copyright line's year before 2015 (decision 557): an older card at once, as Scan card goes
-            // straight to the name; and its strip's place isn't looked for again (no set code to find).
-            const year = attempts.map((a) => olderStripYear(a.text)).find(Boolean) ?? null;
-            noLineAgain(v, art, { now: Boolean(year), copyright: Boolean(year) });
-          }
         }
       } else {
         // Scan card before the view is locked: the whole picture, every block read.
@@ -997,8 +953,18 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
 
       // The title's name, read beside the strip (decision 551). A strip sure of its card doesn't wait
       // for it; otherwise it settles what the strip couldn't.
+      // What the strip says of the card's age, for this look only (decision 562: the older-card mode, a
+      // state kept across looks, retired): a set code read (a modern card; a promo's PRM counts,
+      // decision 313); a copyright year before 2015 (decision 557) or a blank strip with ink in its title
+      // (an older card); or neither (a misread, glare, a thumb), till NO_SET_LOOKS of those on one card.
       const stripSet = attempts.some((a) => readClues(a.text, known).sets.length || isPromoStrip(a.text));
       const texts = attempts.map((a) => a.text);
+      const year = stripSet ? null : texts.map(olderStripYear).find(Boolean) ?? null;
+      if (!found && !stripSet && cardRead) cardRead.noSet = (cardRead.noSet ?? 0) + 1;
+      const olderLook = !stripSet && (blankStrip || Boolean(year) || (cardRead?.noSet ?? 0) >= NO_SET_LOOKS);
+      v.olderLook = olderLook;   // the view found again by the card's edges alone (decision 312)
+      // A strip that named no set and isn't an older card's: its place looked for again, once a card (decision 317).
+      if (!manual && !found && !stripSet && !olderLook && attempts.length) askRecrop(art);
       let title = null;
       if (nameRead && !(found && (found.sure || manual || found.foreign))) {
         title = await nameRead;
@@ -1007,26 +973,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         // A title no read could name: its closest name, for Which card? at 3 s (decision 561).
         else if (cardRead && title.guess) cardRead.guess = title.guess;
       }
-      // This look's name, or one an earlier look at this card read (decision 557: before, a name read
-      // before the older-card mode was thrown away, and the look that went by name could miss it).
+      // This look's name, or one an earlier look at this card read (decision 557).
       const name = title?.name ?? cardRead?.name ?? null;
-      // A name with no set code on the strip, not gone by yet (a few looks before the older-card mode):
-      // its printings fetched now, in the background, once a card (decision 557), so the pick list at
-      // 3 s has them and the look that goes by name finds them waiting (older.js keeps them).
-      if (!found && name && !stripSet && !manual && !v.older && cardRead && cardRead.fetched !== name) {
-        const t = cardRead;
-        t.fetched = name;
-        printingsFor(name, null, { texts }).then((old) => {
-          if (!old) return;
-          t.tier = old.tier;
-          for (const [i, c] of old.cards.entries()) {
-            const had = t.cands.get(c.id);
-            if (!had || had.score < 50 - i) t.cands.set(c.id, { card: c, score: 50 - i, printed: Boolean(had?.printed), named: true });
-          }
-        }).catch(() => {
-          if (t.fetched === name) t.fetched = null;   // tried again on a later look
-        });
-      }
       // The strip unsure of its card (it waited for a second look), the name agreeing: sure on this look.
       if (found && !found.foreign && !found.sure && sameName(found.card, title?.name)) {
         found = { ...found, sure: true };
@@ -1041,12 +989,33 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           via = 'strip+name';
         }
       }
-      // An older card: by its name's printings (and "123/350" from 1998 on), on this look (decision 550:
-      // one read). Auto scan once it's in the older-card mode (a blank strip with ink in the title at
-      // once, else three looks with no set code, each about 0.4 s now): a modern card's strip missed
-      // once (glare, a thumb) is read again rather than its printing picked by look among dozens.
-      // Scan card always ends here when the strip found nothing.
-      if (!found && name && (manual || (!stripSet && v.older))) {
+      // The name's printings scored on everything the strip read (owner, 2026-10-27: "score the name's
+      // printings against the strip's clues"; decision 562): set code and look-alikes, number, rarity,
+      // artist, an older card's "123/350". One printing, or one clearly ahead: taken, modern or older, with
+      // no Scryfall search (the printings come once a name, kept for the page's life, older.js).
+      if (!found && name) {
+        let printings = [];
+        try {
+          printings = await printingsOf(name, ask.signal);
+        } catch {
+          // given up at the card's 3 s, or Scryfall unreachable: the strip and the look again
+        }
+        if (stale()) return;
+        if (printings.length) {
+          const best = bestOfName(printings, texts, known, { pattern });
+          collect(best.ranked.slice(0, CANDIDATES_KEPT), { named: true });
+          if (best.card) {
+            found = { card: best.card, tier: olderLook ? (texts.some(parseOldNumber) ? 2 : 3) : undefined, sure: true };
+            via = olderLook ? 'name+strip-older' : 'name+strip';
+            if (olderLook) foilSeen = undefined;   // an older card's strip has no foil star to go by
+          }
+        }
+      }
+      // An older card the clues didn't settle: its printings by how the card looks (and "123/350" from 1998
+      // on), on this look; one is sent, several open the printing list. A modern card's strip missed once
+      // (glare, a thumb) is read again rather than its printing picked by look among dozens. Scan card
+      // always ends here when nothing else found the card.
+      if (!found && name && (manual || olderLook)) {
         // Which read named it, for the run log; "kept": an earlier look's (decision 557).
         const how = title?.name ? title.how : 'kept';
         if (manual) say('muted', `${name}: finding its printing…`);
@@ -1062,7 +1031,6 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
         progress?.finish('older');
         if (stale()) return;
         foilSeen = undefined;   // read by its title: no mark to go by
-        v.unread = 0;
         if (old && cardRead) {
           cardRead.tier = old.tier;
           cardRead.foilSeen = undefined;
@@ -1081,16 +1049,14 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
           return;
         }
       }
-      // No name either, and no set code on the strip (decision 311): Scan card asks for the name at once;
-      // auto scan after UNREAD_AFTER such looks in a row on this card, unless its 3 s run out first.
-      if (!found && title && !name && (manual || (!stripSet && v.older))) {
+      // No name read, nothing found: Scan card goes to its choice at once (decision 561: its likely cards,
+      // else Which card?); auto scan looks again till the card's 3 s do the same.
+      if (!found && title && !name) {
         trace('title-unread', { manual, ms: Date.now() - lookAt });
-        v.unread = (v.unread ?? 0) + 1;
-        if (manual || v.unread >= UNREAD_AFTER) {
-          v.unread = 0;
-          askName({ guess: title.guess(), frame, card: lock?.card ?? null, listMark: listSeen, texts, art, from: manual ? 'scan-card' : 'auto' });
+        if (manual) {
+          timeUp(cardRead, { manual });
+          return;
         }
-        return;
       }
       if (stale()) return;
       if (!found) {
@@ -1170,7 +1136,6 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     if (cardTime.current === t) cardTime.current = null;
     const v = view.current;
     v.pending = null;
-    v.pendingOld = null;
     // Which guesses it offers (decision 551; owner, 2026-10-26, after a strip read as flavour text offered
     // Benalish Trapper, Ardent Soldier and Benalish Heralds): the title's name read, only that name's;
     // else only cards whose set code was read as printed, not a look-alike's guess.
@@ -1277,100 +1242,6 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
   }
 
   /**
-   * Title (owner, 2026-10-16: "Sometimes an older card will get stuck without
-   * it's name highlighted and doesn't respond to Scan Card … a way to force
-   * scan card on older pre-2014 cards to actually detect and highlight the
-   * name and name search open the card selection menu"): the view locked onto
-   * the card outlined if it isn't yet, the info box on its title, the title
-   * read and its name searched, and the printing menu opened, best match
-   * first, whatever the match (the person scanning confirms it). Waits for an
-   * auto look to end, as Scan card does; auto scan holds off meanwhile.
-   */
-  async function readTitleNow() {
-    if (manualWaiting.current || reading || !camera.on) return;
-    trace('title-press');
-    const pressedAt = Date.now();   // its 3 s, as Scan card's (decision 549)
-    pressClock.current = pressedAt;
-    const run = ++readRun.current;
-    manualWaiting.current = true;
-    const bar = createProgress();
-    if (busy.current) bar.plan('wait', STEP_MS.ocr);
-    bar.plan('older', STEP_MS.older);
-    setProgress(bar);
-    setStoppable(false);
-    setReading(true);
-    let ticket = null;
-    try {
-      bar.start('wait');
-      while (busy.current && readRun.current === run) await sleep(40);
-      bar.finish('wait');
-      if (readRun.current !== run) return;
-      busy.current = true;
-      ticket = ++scanTicket.current;
-      const frame = camera.capture();
-      if (!frame) return;
-      let lock = lockRef.current;
-      if (!lock) {
-        const card = findCard(frame, defaultCreateCanvas) ?? seenCard;
-        if (card) {
-          lock = lockOnCard(card, frame);
-          setLock(lock);
-          setSeenCard(null);
-        }
-      } else if (lock.frame.width !== frame.width || lock.frame.height !== frame.height) {
-        lock = rescaleLock(lock, frame);
-        lockRef.current = lock;
-        setLockState(lock);
-      }
-      const v = view.current;
-      const art = lock ? artPrint(frame, lock) : null;
-      v.older = true;
-      v.lineArt = art;
-      v.pendingOld = null;
-      setTitleMode(true);
-      if (lock) showCutout(nameCutout(titleCutout(frame, lock.card, defaultCreateCanvas), defaultCreateCanvas), titleRef.current);   // decisions 552, 553
-      say('muted', 'Reading the title…');
-      bar.start('older');
-      const listMark = lock ? findListMark(frame, lock.card, defaultCreateCanvas).mark : null;
-      const old = await withTimeout(readOlderCard(frame, { card: lock?.card ?? null, listMark }),
-        Math.max(LOOK_MIN_MS, CARD_MS - (Date.now() - pressedAt)));
-      bar.finish('older');
-      if (scanTicket.current !== ticket) return;
-      if (old && !old.name) {
-        // No read could name it (decision 311): its name to type.
-        askName({ guess: old.guess, frame, card: lock?.card ?? null, listMark, texts: [], art, from: 'title' });
-        return;
-      }
-      if (!old) {
-        say('err', "Couldn't read the title: straighten the card in the holder, then press Title again.");
-        play('error');
-        return;
-      }
-      trace('pick-open', { via: `pick-title-press-${old.how}`, name: old.name, count: old.cards.length, manual: true });
-      setPick({ ...old, art, frame, via: `pick-title-press-${old.how}` });
-      say('muted', `${old.name}: pick its printing.`);
-    } catch (e) {
-      if (readRun.current !== run || (ticket != null && scanTicket.current !== ticket)) return;
-      if (isTimeout(e)) {
-        scanTicket.current += 1;   // the read, if it ever ends, does nothing
-        say('err', 'Reading the title took too long: the connection may be slow. Press Title to try again.');
-      } else {
-        console.error('Reading the title failed', e);
-        say('err', `Couldn't read the title: ${e.message}`);
-      }
-      play('error');
-    } finally {
-      if (readRun.current === run) {
-        busy.current = false;
-        manualWaiting.current = false;
-        bar.complete();
-        await sleep(BAR_DONE_MS);
-        if (readRun.current === run) endReading();
-      }
-    }
-  }
-
-  /**
    * Stop (owner, 2026-10-18: "we need more things you can do to get it
    * unstuck"): Reading…, tapped once it's run a few seconds, gives up the read
    * under way; whatever it was waiting on, it does nothing more if it ever
@@ -1388,7 +1259,6 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     const v = view.current;
     v.held = null;
     v.pending = null;
-    v.pendingOld = null;
     cardTime.current = null;
     endReading();
     if (text) say('muted', text);
@@ -1462,12 +1332,6 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
     } catch (e) {
       return isTimeout(e) ? 'That took too long: the connection may be slow. Try again.' : `Couldn't find it: ${e.message}`;
     }
-  }
-
-  /** Number: the info box back on the bottom strip, read as a modern card's. */
-  function backToNumber() {
-    leaveOlder(view.current);
-    say('muted', 'Reading the set code and number at the bottom.');
   }
 
   /**
@@ -1799,8 +1663,8 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
 
       {/* The collector corner, enlarged and cleaned, for the person scanning (owner, 2026-10-16). */}
       {/* The info box: the collector strip, enlarged (owner, 2026-10-16); the title has its own box above
-          the camera (decision 552). Title / Number reads the title, or goes back to the strip's set code
-          and number. There while the camera's on, locked or not. */}
+          the camera (decision 552). The whole strip shows: the Title / Number button over its right end
+          is gone (decision 562). There while the camera's on, locked or not. */}
       {camera.on && (
         <div className={`scan-cutout-wrap${sheetOpen ? ' covered' : ''}`}>
           <canvas
@@ -1808,15 +1672,6 @@ export default function Scanner({ computerId, phoneId, onEnd }) {
             className={`scan-cutout${blurry ? ' blurry' : ''}`}
             aria-label={blurry ? 'The set code and number, enlarged: out of focus' : 'The set code and number, enlarged'}
           />
-          <button
-            type="button"
-            className="btn small scan-cutout-mode"
-            disabled={reading || Boolean(needs) || Boolean(pick) || Boolean(nameAsk)}
-            title={titleMode ? 'Read the set code and number at the bottom' : 'An older card: read its title and pick its printing'}
-            onClick={titleMode ? backToNumber : readTitleNow}
-          >
-            {titleMode ? 'Number' : 'Title'}
-          </button>
         </div>
       )}
 

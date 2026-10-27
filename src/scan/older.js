@@ -29,7 +29,7 @@ const plainNumber = (n) => String(n ?? '').replace(/^0+(?=\d)/, '').toLowerCase(
  * A card's paper printings in English, oldest first (Scryfall gives them newest first). `signal`: the
  * scanner's look, its pages dropped when the card's time is up (decision 550).
  */
-function printingsOf(name, signal = null) {
+export function printingsOf(name, signal = null) {
   // Kept for the page's life (decision 557): the scanner fetches a name's printings in the background
   // a look or two before the look that goes by the name, and that look takes them from here. A failed
   // or given-up fetch isn't kept.
