@@ -112,10 +112,9 @@ export default function BulkExportRatesPanel() {
       <div className="cardpanel-head"><strong>Export rates for bulk</strong></div>
       <div className="cardpanel-body">
         <p className="hint">
-          Which cards are bulk, by price: today’s market price on a print, the Sell Price on an
-          export. Print MTG and Print PKM show red and amber prices;
-          Export MTG csv (&gt;…) pulls every red and amber card to Bulk pulled from exports, and
-          Print MTG (&gt;…) leaves off the cards bought at a red or amber market price.
+          Which cards are bulk, by price. Print MTG and Print PKM show today’s red and amber prices;
+          Export MTG csv (&gt;…) pulls every card bought at a red or amber market price to Bulk pulled
+          from exports, and Print MTG (&gt;…) leaves them off.
         </p>
         <CutSlider value={shown} editing={Boolean(draft)} onChange={setDraft} />
         {/* The Key half the panel's width, the buttons bottom right beside it (owner, 2026-10-20): the

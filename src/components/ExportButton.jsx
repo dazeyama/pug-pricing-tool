@@ -134,7 +134,7 @@ export default function ExportButton({
         blocked: exportBlocked,
         saysWhy: true,
         title: over1
-          ? `The Crystal Commerce Mass Create file of the cards whose Sell Price is ${keptWords(cut)}; the ones at ${bulkWords(cut)} are pulled to Bulk pulled from exports`
+          ? `The Crystal Commerce Mass Create file of the cards bought at a market price of ${keptWords(cut)}; the ones bought at ${bulkWords(cut)} are pulled to Bulk pulled from exports`
           : exportTitle,
         onClick: () => (over1 == null ? onClick() : onClick(over1)),
       })),

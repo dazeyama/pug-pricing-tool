@@ -701,9 +701,14 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       greyed with no Pokémon cards or no connection; the file is `audit-pokemon-<day>-buy-order.pdf`.
 - [ ] **Export single buy (>$1.49)** (decisions 408, 416): a Magic buy's ⋯ → ◂ Export → Export single buy (>$1.49):
       its cards at $1.49 or under are pulled as on the day's export; Export single buy (all) exports them all.
-- [ ] **Export MTG csv (>$1.49) on a day** (decisions 406, 416): a past day with cards over and under the cut: the
-      file has only the ones whose Sell Price is $1.50 or more; the rest are Completed with an amber **Pulled** chip,
-      the day's line says "N pulled as bulk", and **Export MTG csv (all)** on another day exports everything as before.
+- [ ] **Export MTG csv (>$1.49) on a day** (decisions 406, 416, 576): a past day with cards over and under the cut:
+      the file has only the ones bought at a market price of $1.50 or more; the rest are Completed with an amber
+      **Pulled** chip, the day's line says "N pulled as bulk", and **Export MTG csv (all)** on another day exports
+      everything as before.
+- [ ] **The export pulls as the print leaves off** (decision 576; Export session): a day with a card bought at $2
+      that's $1.20 today and one bought at $1.20 that's $2 today: Export MTG csv (>$1.49) keeps the first (in the
+      file at today's Sell Price) and pulls the second, its row reading "Bought at $1.20"; Print MTG (>$1.49) prints
+      the same cards the file has.
 
 ## 15. The export file
 

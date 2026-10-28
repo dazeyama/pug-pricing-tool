@@ -12,7 +12,7 @@ import {
   downloadMassCreate, exportLanded, forgetLink, linkKey, matchLines, saveExport, saveLink, saveSetMap, sellPrices,
 } from '../../lib/ccExport.js';
 import { uuid } from '../../lib/uuid.js';
-import { bulkWords, isBulkPrice } from '../../lib/bulkCut.js';
+import { boughtAt, boughtPrice, bulkWords, isBulkPrice } from '../../lib/bulkCut.js';
 import { SECOND_LOOK_MS, pause } from '../../lib/timeout.js';
 import { linkToSave } from '../../lib/ccMatch.js';
 import ChooseRow from './ChooseRow.jsx';
@@ -41,9 +41,9 @@ const FOLD_MS = 300;   // export.css .xd-fold's transition
  *   its status, as the dialog says it ("Processing")
  * @param {boolean} [p.pullOut]  can't-upload cards must be pulled from the batch (false: Can't upload
  *   cards itself, whose cards are already out of it; spec 9.3)
- * @param {boolean} [p.over1]  Export MTG csv (>…) (decision 406): a card whose worked-out Sell Price is
- *   up to the Export rates for bulk' amber (decision 416) stays out of the file, pulled from the batch and
- *   copied to Bulk pulled from exports
+ * @param {boolean} [p.over1]  Export MTG csv (>…) (decision 406): a card bought at a market price up to the
+ *   Export rates for bulk' amber (decision 416; its worked-out Sell Price when none was recorded, decision 576)
+ *   stays out of the file, pulled from the batch and copied to Bulk pulled from exports
  * @param {() => void} p.onClose
  */
 export default function ExportDialog({
@@ -146,7 +146,8 @@ export default function ExportDialog({
 
   /** Where a line stands now: matched (with its product), choose, cant, or under1 (pulled, decision 406). */
   const stateOf = (r) => {
-    if (over1 && isBulkPrice(sells.get(r.line.id)?.price ?? Infinity, cut)) return { group: 'under1' };
+    // By the market price it was bought at, as Print MTG (>…) is (decisions 575, 576).
+    if (over1 && isBulkPrice(boughtPrice(r.line, sells.get(r.line.id)?.price ?? null) ?? Infinity, cut)) return { group: 'under1' };
     const pick = picks.get(r.line.id);
     if (pick?.product) return { group: 'matched', product: pick.product, by: 'staff' };
     if (pick?.none) return { group: 'cant', reason: 'none' };
@@ -154,6 +155,11 @@ export default function ExportDialog({
     if (r.status === 'auto') return { group: 'matched', product: r.product, by: r.via };
     if (r.status === 'choose') return { group: 'choose' };
     return { group: 'cant', reason: 'nothing' };
+  };
+  /** What a pulled card was cut on (decision 576): the market price it was bought at, else its Sell Price. */
+  const pulledAt = (r) => {
+    const at = boughtAt(r.line);
+    return at != null ? `Bought at ${formatMoney(at)}` : `Sell ${formatMoney(sells.get(r.line.id)?.price)}`;
   };
   /** A line's Sell Price: typed by staff in Change, else worked out (export spec 5). */
   const sellOf = (id) => {
@@ -681,7 +687,7 @@ export default function ExportDialog({
                   <div key={r.line.id} className="xd-row">
                     {lineLabel(r)}
                     <span className="xd-reason pulled-text">
-                      Sell {formatMoney(sells.get(r.line.id)?.price)}: left out of the file, copied to Bulk pulled from exports
+                      {pulledAt(r)}: left out of the file, copied to Bulk pulled from exports
                     </span>
                   </div>
                 ))}
@@ -761,7 +767,7 @@ export default function ExportDialog({
                     <ul>
                       {groups.under1.map((r) => (
                         <li key={r.line.id}>
-                          {lineTextWithCondition(r.line)} <span className="pulled-text">Sell {formatMoney(sells.get(r.line.id)?.price)}</span>
+                          {lineTextWithCondition(r.line)} <span className="pulled-text">{pulledAt(r)}</span>
                           {' '}<span className="xd-where">{whereOf.get(r.line.id)}</span>
                         </li>
                       ))}
