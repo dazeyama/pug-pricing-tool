@@ -6,9 +6,6 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
-- **Unpushed** (main session): decisions 574–576 (Export session: a Secret Lair card always a choice; Print MTG,
-  Print buy, Export MTG csv and Export single buy (>$1.49) by the market price bought at), ef76b1e, 68d3884 and
-  e05b538, plus the records. No migration.
 - **From the 2026-10-26 review of work mode, still open** (main session, decision 540; the rest fixed by 541): a
   fork's prod or delete approval relayed by message isn't the owner's consent to the harness, so it may stall on a
   prompt in its own chat; whether the UserPromptSubmit hook fires on a turn started by a message is untried;
@@ -36,6 +33,16 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-28: **Pushed without a bump** (the owner's ask, "Push no bump, with the review"), decisions 574–576, the
+  Export session's three: a Secret Lair card always a choice (574), Print MTG and Print buy (>$1.49) by the market
+  price bought at (575), Export MTG csv and Export single buy (>$1.49) the same (576), with their TEST.md cases
+  (the header at 297). All three untested in the app. No migrations: prod and dev stay at 0013. The review (no
+  stop) found: Help's "Print MTG", "The export dialog" and "Export rates for bulk" sections still say the cut is by
+  today's price or Sell Price, out of date (README is edited on the owner's ask); a manual-priced card is cut by
+  its looked-up market price, not the price typed (plausible: `boughtAt` in `src/lib/bulkCut.js` reads
+  `market_price`, which `buyLine.js` keeps as the ladder's price); after a collection's REPRICE? the cut is on
+  the repriced figure (`reprice.js` overwrites `market_price`); TEST.md's "Export single buy (>$1.49)" case
+  still cites 408 and 416 only.
 - 2026-10-28 (Export session): **Export MTG csv (>$1.49) by the market price bought at too** (decision 576; the
   owner: "make Export MTG csv (>$1.49) pull by the market price bought at too, so the print and the export
   agree"): the (>…) export and Export single buy (>…) pull the cards bought at a market price up to the amber,
