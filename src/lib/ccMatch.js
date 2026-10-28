@@ -114,6 +114,15 @@ export function categoryFor({ set, parent = null, promo = '', categories, setMap
   return null;
 }
 
+/**
+ * Is a line always staff's choice (decision 574)? A Secret Lair card (the SLD set, or a category named Secret Lair)
+ * never matches by itself: "too difficult to be auto match" (owner, 2026-10-27). A remembered pick still applies.
+ * @param {{ code?: string }|null} set  the line's set
+ * @param {string|null} category  categoryFor's answer
+ */
+export const alwaysChoose = (set, category) => String(set?.code ?? '').toLowerCase() === 'sld'
+  || fold(category).includes('secretlair');
+
 // Categories the store keeps as one (owner, 2026-10-14): The List's cards
 // and Mystery Booster's are shelved together, so a card in either is filed
 // under either ("Eldrazi Monument (PLST) CMA-216" is in Mystery Booster).

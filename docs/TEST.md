@@ -726,6 +726,10 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
 - [ ] **An export with the connection gone** (decisions 362, 371): wifi off, press Export: it says it may have
       exported and to look at the page; wifi on, press Export again: it exports once, or, if the first went through,
       downloads that file. A retry never exports the same cards twice.
+- [ ] **A Secret Lair card is always a choice** (decision 574; Export session): export a day or collection with an
+      SLD card no one has picked before, one the app used to match by itself: it's in **Needs a choice**, its
+      likeliest product first. Pick it and export; on the next export of that printing and finish it matches by
+      itself. A card from any other set still matches by itself as before.
 
 ## 16. Settings tab
 

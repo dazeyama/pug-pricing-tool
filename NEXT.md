@@ -33,6 +33,13 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-27 (Export session): **A Secret Lair card is always a choice** (decision 574; the owner: "SLD or Secret
+  Lair category cards are too difficult to be auto match and I ALWAYS want them to go to "needs a choice""): a
+  Magic line in the SLD set, or in a CC category named Secret Lair, never matches by itself; a remembered pick still
+  applies. `alwaysChoose` in `src/lib/ccMatch.js`, used in `matchLines` (`src/lib/ccExport.js`), so the Price
+  screen's copies we own follow it too (an SLD card there asks for its match until one is picked). Where to look:
+  EXPORT on a day or collection with an SLD card never picked before: it's in Needs a choice, likeliest first; pick
+  it, and the next export matches it by itself. Untested in the app (unit test only). No migration.
 - 2026-10-27: **Pushed without a bump, no review** (the owner's ask, "Push without a review"), decision 573, the
   Pokémon sticker sheet's printer offset removed (main session, untested on paper). No migrations: prod and dev
   stay at 0013.

@@ -6,7 +6,8 @@ import { supabase } from './supabase.js';
 import { loadSets } from './scryfall.js';
 import { nameKey } from './normalize.js';
 import {
-  categoryFor, chooseProduct, evidenceTreatments, fold, frontFace, promoKind, searchCategories, usableLink,
+  alwaysChoose, categoryFor, chooseProduct, evidenceTreatments, fold, frontFace, promoKind, searchCategories,
+  usableLink,
 } from './ccMatch.js';
 import { scryfallCards, todaysPrices } from './todaysPrices.js';
 import { sellPriceFor } from './sellPrice.js';
@@ -150,8 +151,9 @@ export async function matchLines(lines, onStep, given = {}) {
       return { ...base, status: 'auto', product: linkedProduct, ranked: pick.ranked, expected: pick.expected, via: 'link', link };
     }
     // With no category, the candidates come from every category: staff decide (spec 7.3 step 5). A person's pick
-    // whose product left the inventory is theirs to make again, never the app's guess (decision 487).
-    const status = pick.status === 'auto' && (!where || link) ? 'choose' : pick.status;
+    // whose product left the inventory is theirs to make again, never the app's guess (decision 487). A Secret Lair
+    // card is always staff's to pick, until a pick is remembered (decision 574).
+    const status = pick.status === 'auto' && (!where || link || alwaysChoose(set, where.category)) ? 'choose' : pick.status;
     return {
       ...base,
       status,

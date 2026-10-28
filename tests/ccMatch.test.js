@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  categoryFor, chooseProduct, evidenceTreatments, expectedFoilKind, expectedName, extraWords, fold, promoKind, readVariant,
+  alwaysChoose, categoryFor, chooseProduct, evidenceTreatments, expectedFoilKind, expectedName, extraWords, fold, promoKind, readVariant,
   linkToSave, ruleGuesses, searchCategories, usableLink, wordFamilies,
 } from '../src/lib/ccMatch.js';
 import { parseProductName } from '../src/lib/ccNames.js';
@@ -242,6 +242,14 @@ test('what the evidence settles stays automatic', () => {
   // The fullest of nested words: plain ⊂ Showcase for a borderless showcase card.
   const beorn = ['Beorn - Showcase', 'Beorn'].map((n) => product(n, 'The Hobbit'));
   assert.equal(chooseProduct(line({ name: 'Beorn', treatments: ['borderless', 'showcase'] }), beorn).product.product_name, 'Beorn - Showcase');
+});
+
+test('a Secret Lair card is always a choice: the SLD set, or a Secret Lair category (decision 574)', () => {
+  assert.equal(alwaysChoose({ code: 'sld' }, 'Secret Lair Drop Series'), true);
+  assert.equal(alwaysChoose({ code: 'SLD' }, null), true);
+  assert.equal(alwaysChoose({ code: 'slu' }, 'Secret Lair: Ultimate Edition'), true);
+  assert.equal(alwaysChoose({ code: 'mom' }, 'March of the Machine'), false);
+  assert.equal(alwaysChoose(null, null), false);
 });
 
 test('only a person\'s pick is remembered, and only a person\'s pick is used', () => {
