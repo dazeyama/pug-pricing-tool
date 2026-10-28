@@ -6,8 +6,9 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
-- **Unpushed** (main session): decisions 574–575 (Export session: a Secret Lair card always a choice; Print MTG
-  and Print buy (>$1.49) by the market price bought at), ef76b1e and 68d3884, plus this record. No migration.
+- **Unpushed** (main session): decisions 574–576 (Export session: a Secret Lair card always a choice; Print MTG,
+  Print buy, Export MTG csv and Export single buy (>$1.49) by the market price bought at), ef76b1e, 68d3884 and
+  e05b538, plus the records. No migration.
 - **From the 2026-10-26 review of work mode, still open** (main session, decision 540; the rest fixed by 541): a
   fork's prod or delete approval relayed by message isn't the owner's consent to the harness, so it may stall on a
   prompt in its own chat; whether the UserPromptSubmit hook fires on a turn started by a message is untried;
