@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  DEFAULT_BULK_CUT, bandWords, bulkCutFrom, bulkWords, cutMoney, isBulkPrice, keptFileTag, keptTag, keptWords, priceTone,
+  DEFAULT_BULK_CUT, bandWords, boughtPrice, bulkCutFrom, bulkWords, cutMoney, isBulkPrice, keptFileTag, keptTag, keptWords, priceTone,
 } from '../src/lib/bulkCut.js';
 import { settingSummary } from '../src/lib/settingText.js';
 import { targetOf } from '../src/lib/changelog.js';
@@ -26,6 +26,15 @@ test('bands and the cut, edges included', () => {
   assert.equal(isBulkPrice(1.49), true);
   assert.equal(isBulkPrice(1.5), false);
   assert.equal(isBulkPrice(Infinity), false, 'no Sell Price: kept, as before');
+});
+
+test('Print MTG (>…) cuts on the market price bought at, today\'s only without one (decision 575)', () => {
+  assert.equal(boughtPrice({ market_price: 2.1 }, 1.2), 2.1, 'bought over the cut, cheaper today: printed');
+  assert.equal(boughtPrice({ market_price: '1.25' }, 3), 1.25, 'bought under the cut, dearer today: left off');
+  assert.equal(boughtPrice({ market_price: 0 }, 3), 0);
+  assert.equal(boughtPrice({ market_price: null }, 1.75), 1.75, 'no market price recorded: today\'s');
+  assert.equal(boughtPrice({}, null), null);
+  assert.equal(isBulkPrice(boughtPrice({ market_price: 2.1 }, 1.2)), false);
 });
 
 test('the words on buttons, titles, files and the printout key', () => {

@@ -115,7 +115,7 @@ export default function BulkExportRatesPanel() {
           Which cards are bulk, by price: today’s market price on a print, the Sell Price on an
           export. Print MTG and Print PKM show red and amber prices;
           Export MTG csv (&gt;…) pulls every red and amber card to Bulk pulled from exports, and
-          Print MTG (&gt;…) leaves them off.
+          Print MTG (&gt;…) leaves off the cards bought at a red or amber market price.
         </p>
         <CutSlider value={shown} editing={Boolean(draft)} onChange={setDraft} />
         {/* The Key half the panel's width, the buttons bottom right beside it (owner, 2026-10-20): the

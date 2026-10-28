@@ -33,6 +33,17 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-27 (Export session): **Print MTG (>$1.49) by the market price bought at** (decision 575; the owner: "it
+  would be more clear to workers if it was based on the market price we bought them for instead"): the (>…) cut on
+  Print MTG and Print buy goes by the line's `market_price` (the market price behind its buy price), not today's;
+  a line with none (Skip pricing) goes by today's. `boughtPrice` in `src/lib/bulkCut.js`, used in
+  `src/pages/export/useAuditPrint.js`. Hover texts follow in `ExportButton.jsx` and `day/BuyPanel.jsx`, and the
+  Settings → Export rates for bulk hint in `BulkExportRatesPanel.jsx` (outside my area, wording only). Where to
+  look: a day or collection with a card bought at a market price over $1.50 that's under it today, and one the
+  other way round: EXPORT ▾ → Print → Print MTG (>$1.49) prints the first (an amber row at today's price), not the
+  second; a buy's ⋯ → Print buy (>$1.49) the same. Unchanged, for the owner to say: each row's price and colour
+  are still today's, and Export MTG csv (>$1.49) still pulls by today's Sell Price, so a card can be on the print
+  and still pulled from the export (or the other way round). Untested in the app (unit test only). No migration.
 - 2026-10-27 (Export session): **A Secret Lair card is always a choice** (decision 574; the owner: "SLD or Secret
   Lair category cards are too difficult to be auto match and I ALWAYS want them to go to "needs a choice""): a
   Magic line in the SLD set, or in a CC category named Secret Lair, never matches by itself; a remembered pick still

@@ -533,7 +533,8 @@ function DayScreen({ game, day }) {
    * decision 427).
    */
   /**
-   * `over1`: Print MTG (>…) (decisions 405, 416), only the cards over the Export rates for bulk' amber today.
+   * `over1`: Print MTG (>…) (decisions 405, 416), only the cards bought over the Export rates for bulk' amber
+   * (decision 575).
    * `buyOrder`: Print MTG in buy order (decision 444), the buys in order, each one's cards as added.
    */
   function printDay(over1 = false, buyOrder = false) {

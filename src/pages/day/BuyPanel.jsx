@@ -208,7 +208,7 @@ export default function BuyPanel({
                   needsUser: false,
                   blocked: offline ? 'No connection' : printing ? 'Printing…' : lines.length ? null : 'No Magic cards in this buy',
                   title: over1
-                    ? `A PDF of this buy's Magic cards at ${keptWords(cut)} today, by Crystal Commerce category, with today's prices. Changes nothing.`
+                    ? `A PDF of this buy's Magic cards bought at a market price of ${keptWords(cut)}, by Crystal Commerce category, with today's prices. Changes nothing.`
                     : "A PDF of this buy's Magic cards by Crystal Commerce category, with today's prices, to check them by hand. Changes nothing.",
                   onClick: () => onPrint(buy, number, over1),
                 }))

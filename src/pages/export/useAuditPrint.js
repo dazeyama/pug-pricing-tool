@@ -9,7 +9,7 @@ import {
 import { sellPriceFor } from '../../lib/sellPrice.js';
 import { todaysPrices } from '../../lib/todaysPrices.js';
 import { useBulkCut, useSettings, useSettingsReady } from '../../state/settings.jsx';
-import { isBulkPrice, keptWords } from '../../lib/bulkCut.js';
+import { boughtPrice, isBulkPrice, keptWords } from '../../lib/bulkCut.js';
 import { deliver, openPrintTab, setStep } from './printTab.js';
 
 const SYMBOL_PX = 64;   // drawn 17pt tall: sharp on paper
@@ -132,8 +132,8 @@ export function useAuditPrint() {
   const cut = useBulkCut();
   const [printing, setPrinting] = useState(false);
 
-  // `over1`: Print MTG (>…) (decision 405): only the cards whose market price today is over the Bulk
-  // export rates' amber (decision 416). `buyOrder`: Print MTG in buy order (decision 444): a row for
+  // `over1`: Print MTG (>…) (decision 405): only the cards whose market price when bought is over the Bulk
+  // export rates' amber (decision 416; bought, not today's, decision 575). `buyOrder`: Print MTG in buy order (decision 444): a row for
   // every card as it was added, no sections, so no categories to find.
   const print = useCallback(async ({
     lines, load, title, fileName, game = 'mtg', flagOf = null, over1 = false, buyOrder = false,
@@ -179,10 +179,11 @@ export function useAuditPrint() {
       const prices = new Map(chosen.map((l) => [l.id, sellPriceFor(l, { ...today.get(l.id), pct }).value]));
       const priceOf = (line) => prices.get(line.id) ?? null;
       if (over1) {
-        chosen = chosen.filter((l) => !isBulkPrice(priceOf(l) ?? 0, cut));
+        // By the market price each card was bought at (decision 575); the rows still show today's.
+        chosen = chosen.filter((l) => !isBulkPrice(boughtPrice(l, priceOf(l)) ?? 0, cut));
         if (!chosen.length) {
           tab?.close();
-          toast(`No Magic cards at ${keptWords(cut)} today: nothing to print.`, 'err');
+          toast(`No Magic cards bought at ${keptWords(cut)}: nothing to print.`, 'err');
           return;
         }
       }

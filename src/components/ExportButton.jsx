@@ -100,12 +100,12 @@ export default function ExportButton({
     {
       label: 'Print',
       items: [
-        // Print MTG (all) and (>…) (decision 405): every card, or the ones over the Export rates for
-        // bulk's amber today (decision 416).
+        // Print MTG (all) and (>…) (decision 405): every card, or the ones bought at a market price over the
+        // Export rates for bulk's amber (decisions 416, 575).
         ...(onPrint ? [false, true].map((over1) => printItem(
           `Print MTG (${over1 ? keptTag(cut) : 'all'})`,
           over1
-            ? `A PDF of these Magic cards at ${keptWords(cut)} today, by Crystal Commerce category, with today's prices. Changes nothing.`
+            ? `A PDF of these Magic cards bought at a market price of ${keptWords(cut)}, by Crystal Commerce category, with today's prices. Changes nothing.`
             : "A PDF of these Magic cards by Crystal Commerce category, with today's prices, to check them by hand. Changes nothing.",
           null,
           () => onPrint(over1),

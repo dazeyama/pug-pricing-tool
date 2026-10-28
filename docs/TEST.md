@@ -669,10 +669,11 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
 - [ ] **Prices on the printouts** (decision 404): a past Magic day, EXPORT ▾ → Print MTG (all): each row ends with
       today's price, red at 50¢ or under, amber from 51¢ to $1.49, plain from $1.50 (the Export rates for bulk,
       decision 416); the foot has the key with those amounts. Print PKM? on a Pokémon day the same.
-- [ ] **Print MTG (>$1.49)** (decisions 405, 416): the same day: only the rows at $1.50 or more; a day with none says
-      so and prints nothing.
-- [ ] **Print buy (>$1.49)** (decisions 409, 416): a Magic buy's ⋯ → ◂ Print → Print buy (>$1.49): only its cards at
-      $1.50 or more today, with their prices; Print buy (all) prints them all.
+- [ ] **Print MTG (>$1.49)** (decisions 405, 416, 575; Export session): the same day: only the cards bought at a
+      market price of $1.50 or more, each row still at today's price; a card bought at $2 that's $1.20 today is
+      printed (an amber row), one bought at $1.20 that's $2 today isn't. A day with none says so and prints nothing.
+- [ ] **Print buy (>$1.49)** (decisions 409, 416, 575): a Magic buy's ⋯ → ◂ Print → Print buy (>$1.49): only its
+      cards bought at a market price of $1.50 or more, with today's prices; Print buy (all) prints them all.
 - [ ] **A buy's ⋯ in groups** (decisions 422, 425): a Magic buy's ⋯ reads Mark as completed, ◂ Print, ◂ Export,
       ◂ Convert, Edit in project view, Delete buy…; pointing at ◂ Print opens its two items to the left of the menu,
       pointing at ◂ Export swaps to its items, a click on a group opens it and a second click leaves it open

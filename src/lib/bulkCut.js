@@ -1,6 +1,7 @@
 // Export rates for bulk (decision 416): the two prices that sort a card as bulk, set in Settings. Red up
 // to the first (true bulk), amber up to the second (a $1 card); every card up to the second is the
-// bulk that Export MTG csv (>…) pulls and Print MTG (>…) leaves off. Pure: the setting comes in.
+// bulk that Export MTG csv (>…) pulls (by the Sell Price) and Print MTG (>…) leaves off (by the market price
+// it was bought at, decision 575). Pure: the setting comes in.
 
 /** The slider's ends: a cut is a whole number of cents between them. */
 export const CUT_MIN = 0.01;
@@ -42,6 +43,19 @@ export function priceTone(price, cut = DEFAULT_BULK_CUT) {
 /** Bulk to pull from an export or leave off a print: up to amber, red included. */
 export function isBulkPrice(price, cut = DEFAULT_BULK_CUT) {
   return cents(price) <= cents(cut.amber);
+}
+
+/**
+ * The price Print MTG (>…) cuts on (decision 575): the market price the card was bought at (the line's
+ * market_price, refreshed by a collection's REPRICE?), not today's; a line with none recorded (Skip pricing)
+ * goes by today's price, as before.
+ * @param {{ market_price?: number|string|null }} line
+ * @param {number|null} today  today's price for the line, before the Sell Price's steps and floor
+ * @returns {number|null}
+ */
+export function boughtPrice(line, today) {
+  const at = line?.market_price;
+  return at != null && Number.isFinite(Number(at)) ? Number(at) : today;
 }
 
 /** A cut as people say it: "50¢", "$1", "$1.49". */
