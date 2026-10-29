@@ -6,6 +6,8 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
+- **Unpushed** (main session): Help's (>$1.49) wording brought up to date (`README.md`), with its entry below. No
+  migration.
 - **From the 2026-10-26 review of work mode, still open** (main session, decision 540; the rest fixed by 541): a
   fork's prod or delete approval relayed by message isn't the owner's consent to the harness, so it may stall on a
   prompt in its own chat; whether the UserPromptSubmit hook fires on a turn started by a message is untried;
@@ -33,6 +35,11 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-10-28 (main session): **Help: the (>$1.49) cut by the market price bought at** (the owner's "Yes, update
+  Help", on the push review's finding): `README.md`'s Print MTG?, Review (the Pulled group), Bulk pulled from
+  exports and Export rates for bulk now say every (>…) button cuts by the card's market price when it was bought,
+  a card with none recorded by today's or its Sell Price, and that the rows and colours are still today's. Where
+  to look: Help, those four sections. No migration. Unpushed.
 - 2026-10-28: **Pushed without a bump** (the owner's ask, "Push no bump, with the review"), decisions 574–576, the
   Export session's three: a Secret Lair card always a choice (574), Print MTG and Print buy (>$1.49) by the market
   price bought at (575), Export MTG csv and Export single buy (>$1.49) the same (576), with their TEST.md cases

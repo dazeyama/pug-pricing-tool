@@ -1210,8 +1210,8 @@ Crystal Commerce product.
 ### Bulk pulled from exports
 
 Bulk pulled from exports is the other **System** collection. It's always there, empty until a card is
-pulled. **Export MTG csv (>$1.49)** leaves the cards at or under the amount out of the file and copies
-them here. Each is marked **Pulled** on its
+pulled. **Export MTG csv (>$1.49)** leaves the cards at or under the amount (by the market price they
+were bought at) out of the file and copies them here. Each is marked **Pulled** on its
 own list and says where it came from. They're the bulk that goes elsewhere.
 
 - It's always **Completed**, and the header search never shows its cards.
@@ -1369,9 +1369,11 @@ nothing.
   dot or under (50¢ by default), **amber** and bold up to the amber dot ($1.49), and plain above. The
   dots are set in **Settings → Export rates for bulk**. A card bought at a manual price shows the
   higher of that and today's.
-- **Print MTG (all)** prints every card. **Print MTG (>$1.49)** prints only the cards over the amber
-  dot by today's price, and says so in its title and file name. With none over it, it says so and
-  prints nothing. A buy's **Print buy (all)** and **(>$1.49)** are the same for one buy.
+- **Print MTG (all)** prints every card. **Print MTG (>$1.49)** prints only the cards whose market
+  price when they were bought (the price the buy was priced from, not today's) is over the amber dot,
+  and says so in its title and file name; each row still shows today's price. A card with no bought
+  price recorded goes by today's. With none over it, it says so and prints nothing. A buy's
+  **Print buy (all)** and **(>$1.49)** are the same for one buy.
 - **Print MTG in buy order** prints the same cards as Print MTG (all), with the same rows, but in the
   order they went on the buy list: nothing merged or sorted, and no category bands. On a day the buys
   come in the order they were confirmed. The title and file name say *in buy order*. A buy's Print buy
@@ -1518,9 +1520,10 @@ remembered: it's found again at each export.
 
 The cards fall into three groups, four on an **Export MTG csv (>$1.49)**.
 
-**Pulled**, on a (>…) export only. These are the cards whose Sell Price is at or under the amber dot
-of **Settings → Export rates for bulk**. They're bulk, left out of the file. Each shows its Sell
-Price. There's nothing to decide.
+**Pulled**, on a (>…) export only. These are the cards bought at a market price at or under the amber
+dot of **Settings → Export rates for bulk** (the price the buy was priced from, not today's; a card
+with none recorded goes by its Sell Price). They're bulk, left out of the file. Each shows what it
+was bought at. There's nothing to decide.
 
 **Needs a choice.** More than one product could fit. For each card the worker picks one:
 
@@ -1956,11 +1959,12 @@ second (a $1 card, **$1.49** by default), and plain above. The **Key** box says 
 with a worker picked, frees the dots. Drag one, or move it 1¢ with the arrow keys, 10¢ with Shift.
 **SAVE** keeps it, and the Changelog records it. **CANCEL** puts it back.
 
-The amber dot is the cut every **(>…)** button uses. **Export MTG csv (>$1.49)** and **Export single
-buy (>$1.49)** pull the cards at or under it, by their Sell Price, to Bulk pulled from exports.
-**Print MTG (>$1.49)** and **Print buy (>$1.49)** leave them off, by today's market price. The
-buttons, titles and file names say the amount. The printouts colour prices red and amber by the
-same two dots. A card already pulled stays pulled when the dots move.
+The amber dot is the cut every **(>…)** button uses, against each card's market price when it was
+bought (the price its buy was priced from, not today's; a card with none recorded goes by today's).
+**Export MTG csv (>$1.49)** and **Export single buy (>$1.49)** pull the cards at or under it to Bulk
+pulled from exports. **Print MTG (>$1.49)** and **Print buy (>$1.49)** leave them off. The buttons,
+titles and file names say the amount. The printouts colour prices red and amber by the same two
+dots, at today's price. A card already pulled stays pulled when the dots move.
 
 ### Export sell floor
 
