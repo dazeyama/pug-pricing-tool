@@ -14,8 +14,10 @@ marks each task done here when it's finished, with the exact file and function o
   12 or later, as dev's is, since the 60 s rests on PostgREST applying a function's own limit (the fingerprints
   read the setting, not how the API uses it). The app code needs nothing from 0014, so a push of the app doesn't
   wait on it.
-- **Unpushed** (main session): Help's (>$1.49) wording brought up to date (`README.md`), with its entry below. No
-  migration.
+- **Unpushed** (main session): Help's (>$1.49) wording brought up to date (`README.md`, f071452); the backup fix
+  (decision 577, 19048b3 and 0ee436c: migration 0014's file and comments in `timedFetch.js` and `backup.js`, the
+  app needing nothing from it) and the records. The push waits on the owner's word ("wait for my confirmation to
+  apply to prod or push live").
 - **From the 2026-10-26 review of work mode, still open** (main session, decision 540; the rest fixed by 541): a
   fork's prod or delete approval relayed by message isn't the owner's consent to the harness, so it may stall on a
   prompt in its own chat; whether the UserPromptSubmit hook fires on a turn started by a message is untried;
