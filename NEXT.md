@@ -6,6 +6,14 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
+- **Dev is ahead of prod: migration 0014 is on dev only** (Records session, decision 577; decision 381): it waits for
+  the owner's word to go to prod ("wait for my confirmation to apply to prod or push live"). Then, in one sitting,
+  `docs/DATABASE.md` step 6: `npx supabase db push --linked --project-ref zvxquzcfffmxwizonxuo`, and the
+  structure-only compare against `C:/ClaudeProjects/temp/pug-dbrun-0014.json` (the dev run of 2026-11-07, all 643
+  passed). Before it, worth a look on the dashboard (Project Settings → Infrastructure): prod's PostgREST version is
+  12 or later, as dev's is, since the 60 s rests on PostgREST applying a function's own limit (the fingerprints
+  read the setting, not how the API uses it). The app code needs nothing from 0014, so a push of the app doesn't
+  wait on it.
 - **Unpushed** (main session): Help's (>$1.49) wording brought up to date (`README.md`), with its entry below. No
   migration.
 - **From the 2026-10-26 review of work mode, still open** (main session, decision 540; the rest fixed by 541): a
@@ -17,10 +25,11 @@ marks each task done here when it's finished, with the exact file and function o
   Apply in the verdict line (decision 521 moved it). The rest: the Skip pricing items have their own entry above;
   the Secret Lair foils generator is in the repo (decision 544, Buy tab, `89cae2b`); the collection SKU `-1` vs
   `-10` search is closed, the owner checked it in CC.
-- **For a migration, when there's a reason to write one** (0014 or later):
-  - F2, the backup's 8 s statement limit (decision 430): `backup_export` (one call for every table, 2 to 7.7 s on
-    dev) can time out; the fix must keep one read at one instant, so it needs the database. The test run's Backup
-    pass hit it once (`restore_backup`, `staff_users`) and passed on the retry.
+- **The backup fix's leftovers** (Records session, decision 577's review, not acted on): a restore whose answer is
+  lost reads "The restore failed, and nothing was changed" though it may have gone through, and Restore again
+  restores the same file twice (`backupIO.js` `restoreBackup`, `dbMessage`'s fallback; a restore may now run up to
+  60 s, so the window is wider); the test run's Backup pass can still hit 8 s once in a while, since a function's
+  own limit applies only to the app's calls, not to `db query`.
 - **Matching leftovers (decisions 484–487):**
   - The two wrong exported lines' stamps on prod stay unless that day's file must be downloaded again
     (`git show 681c5c6:MATCHING.md`, item 3).
@@ -35,6 +44,20 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-11-07 (Records session): **Download backup no longer times out** (F2, decision 577; the owner's ask through the
+  main session, hitting it at work: "complete the work on this fix in entirety including the migration, apply to
+  dev"). Migration **0014, on dev only** (prod waits for the owner's word, first Open item): `backup_export` builds
+  the file as `json` (same rows, order and values, checked on dev; 0.5–0.7 s instead of 2.4–5.7 s, up to 9 s seen)
+  and carries its own `statement_timeout` of 60 s; `restore_backup` the same 60 s. Still one call, one read at one
+  instant (decision 430). Checked on dev through the API with throwaway functions (dropped): a call with its own
+  60 s ran 25 s and answered. Reviewed (pug-reviewer: nothing that breaks the site or data; its notes are in the
+  leftovers entry above and decision 577), rehearsed, pushed to dev, snapshot, test run all 643 passed (two new
+  checks in the Backup pass, `scripts/db-test-run.sql`). App: comments only (`timedFetch.js`, `backup.js`); both
+  calls were already on the 120 s list. TEST.md case in section 16. Where to look: localhost (dev) → Settings →
+  Backups → Download backup, three times: each file in a few seconds, never "canceling statement due to statement
+  timeout"; the file has format `pug-pricing-backup`, version 1, nine tables; Restore from backup… reads it as
+  before. Untested in the app; a restore through the app past 8 s not tried (the probe covers the mechanism);
+  prod's PostgREST version unchecked.
 - 2026-10-28 (main session): **Help: the (>$1.49) cut by the market price bought at** (the owner's "Yes, update
   Help", on the push review's finding): `README.md`'s Print MTG?, Review (the Pulled group), Bulk pulled from
   exports and Export rates for bulk now say every (>…) button cuts by the card's market price when it was bought,

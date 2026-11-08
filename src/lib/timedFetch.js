@@ -3,7 +3,10 @@
 // screen stayed "Saving…" and nothing could be pressed. Now it ends as a lost answer, which every
 // write already handles (CONFIRM BUY's read-back, the export's, a write's request id).
 
-/** A database call: the database itself stops a statement after 8 s. */
+/**
+ * A database call: the database itself stops a statement after 8 s, a backup's or a restore's after 60 s
+ * (decision 577, migration 0014: each carries its own limit, under LONG_LIMIT_MS below).
+ */
 export const DB_LIMIT_MS = 30_000;
 /** Uploads, downloads, the price function, and the calls that carry a whole backup or file. */
 export const LONG_LIMIT_MS = 120_000;

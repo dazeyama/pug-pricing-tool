@@ -7,7 +7,7 @@ import { fileStamp } from './time.js';
 export const FORMAT = 'pug-pricing-backup';
 export const VERSION = 1;
 /**
- * The tables a backup must hold (migration 0015, backup_export). Since decision 348 it also holds
+ * The tables a backup must hold (backup_export; the archived migration 0015, now 0014's, decision 577). Since decision 348 it also holds
  * cc_set_map, cc_product_links and import_links, which older files don't: those aren't required.
  */
 export const TABLES = ['staff_users', 'devices', 'buys', 'buy_lines', 'events', 'settings'];

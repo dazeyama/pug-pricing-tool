@@ -788,6 +788,11 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
 - [ ] **Backups:** Last backup updates after the download; **Restore from backup…** shows the file beside what's here;
       typing RESTORE and pressing Restore downloads `…-before-restore.json` and says to check it, without restoring
       (decision 348); then Cancel.
+- [ ] **Download backup doesn't time out** (decision 577, migration 0014; dev): Settings → Backups → Download backup,
+      three times in a row: each file downloads in a few seconds, never "Couldn't make the backup: canceling
+      statement due to statement timeout". Open one: format `pug-pricing-backup`, version 1, nine tables, no
+      `search_text` in the events. Restore from backup… with it reads it as before (its counts beside what's here);
+      then Cancel.
 - [ ] **This computer:** Sign out signs out only this computer; the footer shows the version and the data sources.
 - [ ] **Two fallback boxes quickly** (decision 394): type in Fallback LP, Tab, type in MP, Tab: both save, and LP
       keeps its new value.

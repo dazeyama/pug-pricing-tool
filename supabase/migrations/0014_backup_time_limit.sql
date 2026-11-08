@@ -10,8 +10,9 @@
 --    through jsonb, to leave out the Changelog's search copies. Its return type changes, so it's dropped and made
 --    again (its grants go with the drop and are given back below).
 -- 2. backup_export and restore_backup each carry their own limit of 60 s (`set statement_timeout`), which the API
---    applies to that call alone (checked on dev: a function with its own limit ran past its role's). 60 s is under
---    the 100 s the API waits for an answer and the app's 120 s for these two calls (timedFetch.js LONG_CALLS).
+--    applies to that call alone (checked on dev through the API: a call with its own 60 s ran 25 s and answered,
+--    past every role's 8 s and the gateway). 60 s is under the app's 120 s for these two calls (timedFetch.js
+--    LONG_CALLS).
 --    Every other call keeps the role's 8 s.
 
 drop function public.backup_export();

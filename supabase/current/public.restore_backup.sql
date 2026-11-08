@@ -3,6 +3,7 @@ CREATE OR REPLACE FUNCTION public.restore_backup(p_payload jsonb, p_file text, p
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO 'public', 'pg_temp'
+ SET statement_timeout TO '60s'
 AS $function$
 declare
   t jsonb := p_payload -> 'tables';

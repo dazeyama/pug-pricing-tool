@@ -3700,7 +3700,7 @@ begin
     and (v_counts ->> 'lines')::integer = (select count(*) from buy_lines)
     and (v_counts ->> 'events')::integer = (select count(*) from events)
     and (v_counts ->> 'users')::integer = (select count(*) from staff_users where active), v_counts::text);
-  v_payload := backup_export();
+  v_payload := backup_export()::jsonb;   -- json since 0014 (decision 577)
   perform pg_temp.ok(s, 'A backup has its nine tables, the learned matches too (0082), and nothing secret',
     (select array_agg(k order by k) from jsonb_object_keys(v_payload -> 'tables') k)
       = array['buy_lines', 'buys', 'cc_product_links', 'cc_set_map', 'devices', 'events', 'import_links',
@@ -3711,6 +3711,20 @@ begin
     jsonb_array_length(v_payload -> 'tables' -> 'buy_lines') = (v_counts ->> 'lines')::integer
     and jsonb_array_length(v_payload -> 'tables' -> 'events') = (v_counts ->> 'events')::integer
     and jsonb_array_length(v_payload -> 'tables' -> 'buys') = (select count(*) from buys));
+  -- F2 (decision 577, migration 0014): still one call, with its own 60 s instead of the role's 8 s.
+  perform pg_temp.ok(s, 'A backup and a restore each have 60 s, every other call the role''s 8 s (0014)',
+    (select proconfig from pg_proc where oid = 'public.backup_export()'::regprocedure) @> array['statement_timeout=60s']
+    and (select proconfig from pg_proc where oid = 'public.restore_backup(jsonb, text, uuid, uuid, text)'::regprocedure)
+        @> array['statement_timeout=60s']
+    and (select string_agg(p.proname, ', ' order by p.proname) from pg_proc p
+          where p.pronamespace in ('public'::regnamespace, 'internal'::regnamespace)
+            and exists (select 1 from unnest(p.proconfig) c where c like 'statement_timeout=%'))
+        = 'backup_export, restore_backup');
+  perform pg_temp.ok(s, '… the backup is json, made without the Changelog''s search copies, and signed out it''s refused',
+    pg_get_function_result('public.backup_export()'::regprocedure) = 'json'
+    and not exists (select 1 from jsonb_array_elements(v_payload -> 'tables' -> 'events') e
+                     where e ? 'search_text' or e ? 'search_digits')
+    and not has_function_privilege('anon', 'public.backup_export()', 'EXECUTE'));
   begin
     perform restore_backup(v_payload, 'dbtest-backup.json', u, a, 'restore');
     raise exception 'dbt_no_error';
