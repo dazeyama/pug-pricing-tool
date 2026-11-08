@@ -1523,7 +1523,7 @@ The cards fall into three groups, four on an **Export MTG csv (>$1.49)**.
 **Pulled**, on a (>…) export only. These are the cards bought at a market price at or under the amber
 dot of **Settings → Export rates for bulk** (the price the buy was priced from, not today's; a card
 with none recorded goes by its Sell Price). They're bulk, left out of the file. Each shows what it
-was bought at. There's nothing to decide.
+was bought at, or its Sell Price when none was recorded. There's nothing to decide.
 
 **Needs a choice.** More than one product could fit. For each card the worker picks one:
 
@@ -1960,7 +1960,8 @@ with a worker picked, frees the dots. Drag one, or move it 1¢ with the arrow ke
 **SAVE** keeps it, and the Changelog records it. **CANCEL** puts it back.
 
 The amber dot is the cut every **(>…)** button uses, against each card's market price when it was
-bought (the price its buy was priced from, not today's; a card with none recorded goes by today's).
+bought (the price its buy was priced from, not today's; a card with none recorded goes by today's on
+a printout and by its Sell Price on an export).
 **Export MTG csv (>$1.49)** and **Export single buy (>$1.49)** pull the cards at or under it to Bulk
 pulled from exports. **Print MTG (>$1.49)** and **Print buy (>$1.49)** leave them off. The buttons,
 titles and file names say the amount. The printouts colour prices red and amber by the same two
