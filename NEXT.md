@@ -6,18 +6,6 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
-- **Dev is ahead of prod: migration 0014 is on dev only** (Records session, decision 577; decision 381): it waits for
-  the owner's word to go to prod ("wait for my confirmation to apply to prod or push live"). Then, in one sitting,
-  `docs/DATABASE.md` step 6: `npx supabase db push --linked --project-ref zvxquzcfffmxwizonxuo`, and the
-  structure-only compare against `C:/ClaudeProjects/temp/pug-dbrun-0014.json` (the dev run of 2026-11-07, all 643
-  passed). Before it, worth a look on the dashboard (Project Settings → Infrastructure): prod's PostgREST version is
-  12 or later, as dev's is, since the 60 s rests on PostgREST applying a function's own limit (the fingerprints
-  read the setting, not how the API uses it). The app code needs nothing from 0014, so a push of the app doesn't
-  wait on it.
-- **Unpushed** (main session): Help's (>$1.49) wording brought up to date (`README.md`, f071452); the backup fix
-  (decision 577, 19048b3 and 0ee436c: migration 0014's file and comments in `timedFetch.js` and `backup.js`, the
-  app needing nothing from it) and the records. The push waits on the owner's word ("wait for my confirmation to
-  apply to prod or push live").
 - **From the 2026-10-26 review of work mode, still open** (main session, decision 540; the rest fixed by 541): a
   fork's prod or delete approval relayed by message isn't the owner's consent to the harness, so it may stall on a
   prompt in its own chat; whether the UserPromptSubmit hook fires on a turn started by a message is untried;
@@ -46,6 +34,13 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-11-07: **Migration 0014 on prod, and pushed without a bump** (the owner's ask, "Push to prod and apply the
+  migration now. Update the live pages site asap."): 0014 (the backup's 60 s, decision 577, Records) pushed to prod
+  during the store's day on the owner's word, the structure-only compare against the dev run
+  (`C:/ClaudeProjects/temp/pug-dbrun-0014.json`) the same; prod and dev equal at 0014. The site: decision 577's
+  comments and Help's (>$1.49) wording (main session). Untested in the app on prod: the owner's Download backup is
+  the check. Prod's PostgREST version (12 or later, which the 60 s rests on) wasn't looked at on the dashboard; if a
+  backup still times out there, that's the first thing to check.
 - 2026-11-07 (Records session): **Download backup no longer times out** (F2, decision 577; the owner's ask through the
   main session, hitting it at work: "complete the work on this fix in entirety including the migration, apply to
   dev"). Migration **0014, on dev only** (prod waits for the owner's word, first Open item): `backup_export` builds

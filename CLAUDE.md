@@ -167,14 +167,12 @@ gotchas and the squash.
   d158ee3:<path>` for the first five, `git show 681c5c6:<path>` for the next three, `git show
   a8fb952:scripts/db-baseline.mjs` for the generator.
 
-## Where it stands (2026-10-28)
+## Where it stands (2026-11-07)
 
 - Live: **v1.0.6-badscanner** (2026-10-27, decisions through 563), then pushes without a bump, the last on
-  2026-10-28 with decisions through 576, on prod: the GitHub Actions variables point there.
-- Dev has migrations 0001–0014, prod 0001–0013: **0014 (the backup's 60 s, decision 577) is on dev only**, waiting
-  for the owner's word to go to prod (NEXT.md's first Open item; decision 381). The app needs nothing from it. The
-  last on prod was 0013, 2026-10-24, the structure-only compare the same. What each did: the spec's decisions and
-  the files' names. The next is 0015.
+  2026-11-07 with decisions through 577, on prod: the GitHub Actions variables point there.
+- Prod and dev both have migrations 0001–0014 and stay equal (decision 381; the last on prod 2026-11-07, the
+  structure-only compare the same). What each did: the spec's decisions and the files' names. The next is 0015.
 - The release history is the spec's decisions and `git tag`; what's open is NEXT.md.
 
 ## Coding Conventions
