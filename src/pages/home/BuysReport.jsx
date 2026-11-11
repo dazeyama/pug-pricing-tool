@@ -39,12 +39,14 @@ function useReportBuys(from, to) {
         .select('id, kind, number, customer_name, project, paid_at, paid_price, paid_method, cash_location, '
           + 'buy_lines(game, quantity, bulk_kind, struck_at)', { count: 'exact' })
         .in('status', ['confirmed', 'paid', 'completed'])
+        // Not projects (the owner, 2026-11-11: "Leave projects out"), even one that kept a buy's payment.
+        .eq('project', false)
         .not('paid_price', 'is', null)
         .gte('paid_at', start)
         .lt('paid_at', end)
         .order('paid_at').order('id').range(a, b)),
       supabase.from('buys').select('paid_at').in('status', ['confirmed', 'paid', 'completed'])
-        .not('paid_price', 'is', null).not('paid_at', 'is', null)
+        .eq('project', false).not('paid_price', 'is', null).not('paid_at', 'is', null)
         .order('paid_at').limit(1).maybeSingle(),
     ]);
     const error = buys.error ?? first.error;

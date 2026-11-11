@@ -109,10 +109,12 @@ function HomeScreen({ today }) {
   // The cash taken from the Till today, for closing (owner, 2026-11-10; decision 584): every payment with the
   // Till as its cash location paid today, walk-ins, overnight buys and projects made buys alike ("Yes, all Till
   // cash"). Going back to Processing or Priced clears the location, and a deleted buy is gone, so neither counts.
+  // Projects are left out, as in the Buys report (the owner, 2026-11-11: "Leave projects out"), so the two agree.
   const till = useLiveTable('buys', () => supabase
     .from('buys')
     .select('id, paid_price')
     .eq('cash_location', 'till')
+    .eq('project', false)
     .gte('paid_at', from.toISOString())
     .lt('paid_at', to.toISOString()));
   const open = useLiveTable('buys', () => supabase

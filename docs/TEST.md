@@ -100,7 +100,8 @@ what happens. The findings are reported when the pass ends.
       days (Mon, Wed) ticked, Mondays and Wednesdays are missing from the graph and the legend says how many were
       left off, while the totals and the day rows still have them; unticked, they're back.
 - [ ] **The totals and the days** (decision 585): Paid out, Cash, Credit, Buys, Cards, From the Till and From the
-      Backroom add up the range, an overnight buy marked Paid/Ours on a day counting on that day; a line above them names
+      Backroom add up the range, an overnight buy marked Paid/Ours on a day counting on that day and a project never
+      (dev's $1,000,000 credit on Oct 20, held by the project "daisy's new cards", isn't there); a line above them names
       the span before ("the 7 days just before (Oct 28 to Nov 3, 2026)") and each tile says "$… before" with ▲ or ▼,
       except where those days go back before the first buy on record. The rows are newest first, a day with no buys
       greyed, and the Total row matches the tiles. **No scrollbar** on Last 7 days at the store's screen; on This month
