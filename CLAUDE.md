@@ -170,7 +170,7 @@ gotchas and the squash.
 ## Where it stands (2026-11-11)
 
 - Live: **v1.0.6-badscanner** (2026-10-27, decisions through 563), then pushes without a bump, the last on
-  2026-11-11 with decisions through 586, on prod: the GitHub Actions variables point there.
+  2026-11-11 with decisions through 587, on prod: the GitHub Actions variables point there.
 - Prod and dev both have migrations 0001–0016 and stay equal (decision 381; the last on prod 2026-11-11, the
   structure-only compare the same). What each did: the spec's decisions and the files' names. The next is 0017.
 - The release history is the spec's decisions and `git tag`; what's open is NEXT.md.

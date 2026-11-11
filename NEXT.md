@@ -6,10 +6,6 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
-- **Unpushed** (main session): a failed load of the Buys report keeps Home up and says why (Records session,
-  decision 587, fd538a3, from the 2026-11-11 push review; the owner: "Yes, fix it"). No migration. It waits for the
-  owner's word to push; until then the live site has the report without it.
-
 - **Dev holds 55 simulated walk-in buys, and the owner is keeping them** ("I'm going to keep them.", 2026-11-11;
   main session; made for testing the Buys report on the owner's ask: "Can
   you create simulated data for the last 14 days based on the read only probe of prod for the mockup and create
@@ -32,6 +28,10 @@ marks each task done here when it's finished, with the exact file and function o
   `SHEET`, `tests/stickerPdf.test.js` with it, and a decision row.
 
 ## Done
+
+- 2026-11-11: **Pushed without a bump, no review** (main session; the owner: "quick push no review"): a failed
+  load of the Buys report keeps Home up and says why (decision 587, fd538a3, Records session) and the records
+  with it. No migrations (prod and dev both 0001–0016, the next is 0017), no Edge Function changes.
 
 - 2026-11-11 (Records session): **A failed load of the Buys report keeps Home up** (decision 587, from the push
   review; the owner: "Yes, fix it"; no migration; not pushed).
