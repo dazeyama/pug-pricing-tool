@@ -25,14 +25,20 @@ marks each task done here when it's finished, with the exact file and function o
      line as added (count, name, set and number, finish, condition), the foot with the card count and the cash
      and credit offers as the screen has them, the title "Buy in progress, not confirmed" with the date and time
      (a buy has no number before CONFIRM BUY), the list's own prices (no price fetch, no Crystal Commerce
-     matching), nothing saved or logged. Still to settle: one sheet or two (offer / check sheet with tick boxes);
-     where the name comes from (it's only typed at CONFIRM BUY, `ConfirmBuyModal.jsx`: a line to write on, or
-     asked at the print); and that per-card amounts won't add up to the offer, which is rounded down once on the
-     total (`internal.lines_totals`).
+     matching), nothing saved or logged. Settled after: one button and one sheet for both uses, tick boxes and
+     all ("Single button on layout, it's ok if it looks a little complex"); the name is a blank "Customer: ____"
+     line to write on, since it's only typed at CONFIRM BUY ("Blank is good"); per-card amounts print as they
+     are and the offer as the screen has it, with no subtotal or note about the rounding ("Don't worry or call
+     attention to the rounding discrepancy"). Ready to build when the owner gives it out; the proposed parts above
+     (the button's place, the rows, the title) were not objected to but not confirmed one by one.
   2. **The sticker sheet is still misaligned:** "Fixing the sticker sheet. It's still misaligned." (Export and
      printouts; `src/lib/stickerPdf.js`: `PRINTER_OFFSET` has been zero since decision 573, so what's off now is the
-     grid as decision 281 set it, `SHEET`, or the printer's scaling. To start: which printer, printed at 100%, and
-     which way and how far the stickers are off at the sheet's first and last rows.)
+     grid as decision 281 set it, `SHEET`, or the printer's scaling. Worth knowing: only the pitch, 1 in x 1/2 in,
+     came from a scan of the sheet; the grid's place, 0.29 in and 0.49 in, was fitted to test prints from the
+     owner's own printer, so removing the offset didn't take that printer out of the numbers; and decision 281
+     notes the far columns leaning 0.05 in right, which is scale, not offset. To start: which printer, printed at
+     100%, which way and how far the stickers are off at the sheet's first and last stickers, and whether it's
+     the same on every sheet. Being designed with the owner, 2026-11-10.)
   3. **A copy button for record keeping:** "Adding a copy button to the buy confirmed pop up and single buy menus
      that copies the name and number information to the clipboard in a specific way to assist in record keeping.
      More details when we work on it." (Buy tab's `BuyDoneModal.jsx`; the single buy's menu is Records'. The
