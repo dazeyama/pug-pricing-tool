@@ -6,6 +6,24 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
+- **Unpushed** (main session): this NEXT.md entry only (the Buy 82 look, below); no code.
+
+- **Buy 82 (2026-11-10): the price that changed after two cards came off and went back on; looked into, nothing
+  changed yet** (main session; the owner asked for the records only, no code). What prod's records show (read-only:
+  `buys`, `buy_lines`, `events`, `internal.done_requests`, `price_cache`; copies in
+  `C:/ClaudeProjects/temp/buy82-records/`, outside the repo): 21 cards went on (cash $88), then two came off
+  (4:24:56 and 4:25:00 pm), and the two lines that are gone are the first card added (Team Magma's Rhydon) and the
+  sixth (added 4:12:51 pm, 18 s after the buy's only lookup then, Pikachu EX XY174; at LP $26.00 it makes the $88
+  and the $70 to the cent). The first Mr. Mime (the second card added) never came off. Rhydon and a Mr. Mime were
+  added back (twice: on, off, on again), so the buy was confirmed with Mr. Mime twice and no Pikachu EX: $83.50,
+  paid $90. The arithmetic is the app's own (`internal.lines_totals`), so the price didn't move by itself; what
+  isn't in the records is why the sixth line came off rather than Mr. Mime (the × removes by the row's own id,
+  `BuyList.jsx` `startRemove` → `RemoveModal` → `useDraft.js` `remove`; a draft's edits aren't in the Changelog, and
+  the list's sort is the screen's only). Two things that would have made it visible, for the owner to decide on,
+  not built: the second Mr. Mime didn't join the first as ×2 because it came by another search (number "06", no
+  TCGdex id; `internal.same_card`), and a draft's removes and adds leave no record once the request ids go after a
+  day.
+
 - **From the 2026-10-26 review of work mode, still open** (main session, decision 540; the rest fixed by 541): a
   fork's prod or delete approval relayed by message isn't the owner's consent to the harness, so it may stall on a
   prompt in its own chat; whether the UserPromptSubmit hook fires on a turn started by a message is untried;
