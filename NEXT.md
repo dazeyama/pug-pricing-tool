@@ -18,8 +18,12 @@ marks each task done here when it's finished, with the exact file and function o
   prod has 0016:** `main` already reads its columns and tables (the Collections tab's list selects
   `buys.cash_location`, Settings reads `stale_files`), so those break on a site without it.
 
-- **Unpushed** (main session): NEXT.md's Buy 82 entry and the four ideas below (no code); the Buy tab session's
-  one TCGplayer product is one line (decision 578, migration 0015 on dev only: 69b9fc8, a053635, 38b2e6b).
+- **Unpushed** (main session; everything since 94ccd17, none of it on prod or the live site): one TCGplayer
+  product is one line (decision 578, migration 0015); the three-part patch, all three sessions' parts committed
+  2026-11-10: 🖨 Print a walk-in in progress (579), the cash location, who paid and Copy for the buys sheet (580,
+  583), the stale cards file, the stale cut and stale in Copies we own (580, 581, 582), on migration 0016; and
+  NEXT.md's Buy 82 look and the designs. All untested in the app. Both migrations are on dev only: prod first,
+  then the site (the two items above).
 
 - **The three-part patch: the plan, given out 2026-11-10 on the owner's "Yes, start"** (main session; the owner: "Shelve the
   sticker sheets for later, but I want to begin work on all 3 of these designs now at once. Let's make a plan of
