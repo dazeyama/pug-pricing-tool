@@ -18,6 +18,17 @@ marks each task done here when it's finished, with the exact file and function o
   prod has 0016:** `main` already reads its columns and tables (the Collections tab's list selects
   `buys.cash_location`, Settings reads `stale_files`), so those break on a site without it.
 
+- **Dev holds 55 simulated walk-in buys, for testing the Buys report** (main session, 2026-11-11; the owner: "Can
+  you create simulated data for the last 14 days based on the read only probe of prod for the mockup and create
+  that data on the dev database for testing?"). Buys 47 to 101 on dev, paid 2026-10-29 to 2026-11-10: each day has
+  prod's count of buys, cash and credit totals and cards for that day (the probe's sums; $1,440 cash, $1,745
+  credit, 852 cards), and everything else is invented: the split into buys, the times, the staff, "Sim Customer NN",
+  cards named "Simulated card" in set SIM (marked Completed, so no day shows as due and no export takes them) and
+  the cash location (Till $1,215, Backroom $225). Their notes start "SIMULATED for the Buys report". No Changelog
+  entries. To remove them: `C:/ClaudeProjects/temp/buys-report-sim/sim-delete.sql` on dev (`npx supabase db query
+  --linked -f`), one delete by that note; the generator and the insert are beside it. Dev's buy numbers stay past
+  101 after that. Nothing on prod.
+
 - **Unpushed** (main session; everything since 94ccd17, none of it on prod or the live site): one TCGplayer
   product is one line (decision 578, migration 0015); the three-part patch, all three sessions' parts committed
   2026-11-10: 🖨 Print a walk-in in progress (579), the cash location, who paid and Copy for the buys sheet (580,
