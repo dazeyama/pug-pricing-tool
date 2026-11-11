@@ -59,9 +59,10 @@ marks each task done here when it's finished, with the exact file and function o
      `confirmed_by` and `paid_at`, but who paid an overnight buy is only in the Changelog, so that needs storing
      too); "the two locations are Till and Backroom, but there's also an NA used on credit buys logs"; and an
      overnight buy gets it too: "put it in the menu on the overnight buy selection page per line on paid ones"
-     (the Collections tab's list, a paid row's ⋯). Assumed, not confirmed: a cash buy must pick Till or Backroom,
-     a credit buy copies NA by itself. Asked, unanswered: whether an overnight buy's fifth cell carries the ID's
-     last four digits the app keeps (`id_last4`) or stays blank.
+     (the Collections tab's list, a paid row's ⋯). A cash buy must pick Till or Backroom before it's confirmed,
+     and a credit buy copies NA by itself ("yes"); the fifth cell carries the ID's last four digits when the buy
+     has them (`id_last4`), else it's blank ("use id if it exists"); the migration for the cash location and for
+     who paid an overnight buy is accepted ("fair enough"). Ready to build when the owner gives it out.
   4. **A "stale card" tracker, to look into first:** "Investigating if there's a way to create a 'stale card'
      tracker for cards that haven't sold in a long time." (An investigation, not a build.) A first look
      (2026-11-10): the app has no sales data. It knows when each card was bought and exported (`buy_lines`:
