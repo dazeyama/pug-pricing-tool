@@ -1,9 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  DEFAULT_OWNED, adjustRate, ccRowText, finishWord, isLowEnd, ownedAdjust, ownedCounts, ownedCut, ownedFrom, ownedRates,
-  ownedReason, ownedRows,
-  signedPct,
+  DEFAULT_OWNED, DEFAULT_STALE, adjustRate, ccRowText, finishWord, isLowEnd, ownedAdjust, ownedCounts, ownedCut, ownedFrom,
+  ownedRates, ownedReason, ownedRows, signedPct, staleFrom,
 } from '../src/lib/ownedRates.js';
 
 // Owner, 2026-10-22 (decision 448): 5% per copy of the card over 2, as a percent of the rate, up to 50%.
@@ -37,7 +36,10 @@ test('a rate changed as a percent of itself, kept to the cent of a percent, neve
 test('bonuses for a first copy, stacked with the cut', () => {
   const counts = (printing, card, sure = true) => ({ printing, card, printingSure: sure, cardSure: sure });
   assert.deepEqual(ownedAdjust(counts(0, 0)),
-    { bonus: 10, cut: 0, net: 10, firstPrinting: true, firstCard: true, over: 0, lowEndNoBonus: false, cfg: DEFAULT_OWNED });
+    {
+      bonus: 10, cut: 0, stale: false, staleCut: 0, staleDays: null, net: 10, firstPrinting: true, firstCard: true, over: 0,
+      lowEndNoBonus: false, cfg: DEFAULT_OWNED,
+    });
   assert.equal(ownedAdjust(counts(0, 1)).net, 5);   // the first of this printing only
   assert.equal(ownedAdjust(counts(1, 2)).net, 0);   // neither
   const both = ownedAdjust(counts(0, 4));            // first printing, 2 copies of the card over 2
@@ -208,4 +210,57 @@ test("the setting's numbers are the ones the rate uses", () => {
   const noFirst = ownedFrom({ first_printing: 0, first_card: 0 });
   const none = ownedAdjust(counts(0, 0), { cfg: noFirst, lowEnd: true });
   assert.equal(none.firstPrinting || none.firstCard || none.lowEndNoBonus, false);
+});
+
+// Owner, 2026-11-10 (decision 582): a stale card's rate goes down by the stale setting's percent, in the one
+// pill with the cut and the bonuses, on top of the copies cut's "at most" ("Have them be separate.").
+test('stale: the exact printing only, its own cut on top of the copies cut, said in the box', () => {
+  const raw = (o) => ({
+    cc_printing: 1, cc_card: 2, inventory_at: 'x', cc_match: { product_id: 'p', category: 'Alpha', name: 'Mox' }, ...o,
+  });
+  const file = (days) => ({ days, uploaded_at: '2026-11-10T00:00:00Z' });
+  const stale = ownedCounts(raw({ stale_ids: ['q', 'p'], stale_file: file(180) }));
+  assert.deepEqual(stale.stale, { days: 180 });
+  // Only the matched product, so only a printing whose product is known: another of the card's isn't it.
+  assert.equal(ownedCounts(raw({ stale_ids: ['q'], stale_file: file(180) })).stale, null);
+  assert.equal(ownedCounts(raw({ stale_ids: ['p'], stale_file: file(180), cc_match: null })).stale, null);
+  assert.equal(ownedCounts(raw({ stale_ids: 'p' })).stale, null);
+  assert.equal(ownedCounts(raw({ stale_file: null })).stale, null);
+  assert.equal(ownedCounts(raw({ stale_ids: ['p'], stale_file: null })).stale.days, null);
+
+  const a = ownedAdjust(stale);
+  assert.equal(a.staleCut, 10);
+  assert.equal(a.net, -10);
+  assert.equal(ownedReason(a), 'Stale: no sale in 180 days (−10%)');
+  assert.deepEqual(ownedRates({ cash: 40, credit: 60 }, a), { cash: 36, credit: 54, net: -10, adjust: a });
+  // The setting's percent; 0 is no stale cut, but the box still says it's stale.
+  assert.equal(ownedAdjust(stale, { stale: staleFrom({ pct: 20 }) }).net, -20);
+  const off = ownedAdjust(stale, { stale: staleFrom({ pct: 0 }) });
+  assert.equal(off.net, 0);
+  assert.equal(off.stale, true);
+  assert.equal(ownedReason(off), 'Stale: no sale in 180 days');
+  assert.equal(ownedReason(ownedAdjust(ownedCounts(raw({ stale_ids: ['p'] })))), 'Stale: no sale in the stale file’s window (−10%)');
+
+  // Outside the cap: 20 copies is the copies cut's 50% at most, and stale's 10% on top.
+  const many = ownedAdjust(ownedCounts(raw({ cc_card: 20, stale_ids: ['p'], stale_file: file(90) })));
+  assert.equal(many.cut, 50);
+  assert.equal(many.net, -60);
+  assert.equal(ownedReason(many), '18 copies over 2, at 5% each, 50% at most;\nStale: no sale in 90 days (−10%)');
+  // With a first-copy bonus: they add up, and can cancel out.
+  const first = ownedAdjust(ownedCounts(raw({ cc_printing: 0, cc_card: 1, stale_ids: ['p'], stale_file: file(180) })),
+    { stale: staleFrom({ pct: 5 }) });
+  assert.equal(first.net, 0);
+  assert.equal(ownedReason(first), 'First of this printing (+5%);\nStale: no sale in 180 days (−5%): they cancel out');
+  // A count the inventory couldn't make changes nothing, stale or not.
+  assert.equal(ownedAdjust(ownedCounts(raw({ cc_printing: null, stale_ids: ['p'], cc_match: null }))).net, 0);
+});
+
+test('the stale setting: read over the defaults, a percent from 0 to 100', () => {
+  assert.deepEqual(staleFrom(null), DEFAULT_STALE);
+  assert.equal(staleFrom({ pct: 20 }).pct, 20);
+  assert.equal(staleFrom({ pct: 0 }).pct, 0);
+  assert.equal(staleFrom({ pct: 120 }).pct, 10);
+  assert.equal(staleFrom({ pct: -5 }).pct, 10);
+  assert.equal(staleFrom({ pct: '' }).pct, 10);
+  assert.equal(staleFrom({ pct: 'x' }).pct, 10);
 });

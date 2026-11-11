@@ -57,12 +57,32 @@ export function ownedFrom(value) {
   };
 }
 
+/** The emoji a stale card shows on the counter and its chip (owner, 2026-11-10: "Show an emoji on stale cards clearly"). */
+export const STALE_EMOJI = '🕸️';
+
+/**
+ * Settings → the stale multiplier, as shipped (owner, 2026-11-10; decision 582): off the card's rate, in
+ * percent of it, for a card whose Crystal Commerce product is in the uploaded stale file (one tier, "For now").
+ * The file's window (180 days unless changed) is its upload's, and comes back with `owned_copies`' answer.
+ */
+export const DEFAULT_STALE = Object.freeze({ pct: 10 });
+
+/**
+ * The stale setting as saved, checked over the defaults: the percent a number from 0 to 100 (0 is no cut). Pure.
+ * @returns {typeof DEFAULT_STALE}
+ */
+export function staleFrom(value) {
+  const v = value && typeof value === 'object' ? value : {};
+  const n = Number(v.pct);
+  return { pct: v.pct != null && v.pct !== '' && Number.isFinite(n) && n >= 0 && n <= 100 ? n : DEFAULT_STALE.pct };
+}
+
 /**
  * `owned_copies`' answer as the counter shows it: each count is the inventory's plus ours not in it yet.
  * A count is unsure when the inventory couldn't count its share (no inventory, an inventory uploaded before
  * 0008, or, for the printing, no clear CC product): what's shown is then only what could be counted.
  * @param {object|null} raw  { cc_printing, cc_card, ours_printing, ours_card, inventory_at, cc_match,
- *   cc_match_failed }
+ *   cc_match_failed, stale_file: { days, uploaded_at }|null, stale_ids: string[] }
  * The lists say which printings those are (the owner: "it has to show specifically, which printings we own"):
  * the inventory's products by category and name, ours by set, number and finish, most first. `cc.match` is
  * the product the printing matched (owned.js), with copies or not; null when none clearly is it (decision 499).
@@ -99,8 +119,16 @@ export function ownedCounts(raw) {
     cc,
     ours,
     inventoryAt: raw?.inventory_at ?? null,
+    // The exact printing's product is stale (decision 582): among `owned_copies`' `stale_ids` (in the
+    // uploaded file with copies, not exported by us within its window), with the file's days. Only for a
+    // printing whose product is known ("For now, just exact printings").
+    stale: isStale(raw, match) ? { days: Number(raw.stale_file?.days) > 0 ? Number(raw.stale_file.days) : null } : null,
   };
 }
+
+/** The matched product is among the answer's stale ones. */
+const isStale = (raw, match) => Boolean(match?.product_id) && Array.isArray(raw?.stale_ids)
+  && raw.stale_ids.some((id) => String(id) === String(match.product_id));
 
 /**
  * An inventory product as the list of printings says it: its category, then what sets it apart from the
@@ -170,9 +198,15 @@ export function ownedReason(adjust, { lowEndWhy = '', finish = null } = {}) {
     const capped = adjust.over * cfg.step > cfg.cap ? `, ${cfg.cap}% at most` : '';
     parts.push(`${adjust.over} ${adjust.over === 1 ? 'copy' : 'copies'} over ${cfg.free}, at ${cfg.step}% each${capped}`);
   }
+  // Stale, on top of the cut and apart from its "at most" (owner, 2026-11-10: "Have them be separate.").
+  // Said whenever it's stale, the cut only when Settings has one.
+  if (adjust.stale) {
+    const days = adjust.staleDays ? `${adjust.staleDays} days` : 'the stale file’s window';
+    parts.push(`stale: no sale in ${days}${adjust.staleCut > 0 ? ` (${signedPct(-adjust.staleCut)})` : ''}`);
+  }
   if (adjust.lowEndNoBonus) parts.push(`no first-copy bonus on a low-end card${lowEndWhy ? ` (${lowEndWhy})` : ''}`);
   if (!parts.length) parts.push(`we have this printing, and ${cfg.free} or fewer of the card`);
-  if (adjust.bonus > 0 && adjust.cut > 0 && adjust.net === 0) parts[parts.length - 1] += ': they cancel out';
+  if (adjust.bonus > 0 && adjust.cut + (adjust.staleCut ?? 0) > 0 && adjust.net === 0) parts[parts.length - 1] += ': they cancel out';
   // One line each (owner, 2026-10-24; decision 522): "First of this printing (+5%);" over "4 copies over 2, …".
   return parts.map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(';\n');
 }
@@ -197,15 +231,18 @@ export function ownedCut(cardCount, cfg = DEFAULT_OWNED) {
  * rates"; decision 458); the cut still applies. `lowEndNoBonus` says a bonus was left out for that.
  * The numbers, and whether a low-end card gets the bonuses, are Settings → Copies we own's (decision 474): `cfg`
  * (ownedFrom's), which comes back with the answer so its explanation says the same numbers.
+ * A stale card (decision 582) loses the stale setting's percent as well: one more cut, on top of the copies
+ * cut and outside its "at most", so the two together can pass it (owner, 2026-11-10: "Have them be separate.").
  * @param {ReturnType<typeof ownedCounts>|null} counts
- * @param {{ lowEnd?: boolean, cfg?: typeof DEFAULT_OWNED }} [o]  lowEnd: the card's rate is the low-end one
- *   (lineRate's why 'low')
- * @returns {{ bonus: number, cut: number, net: number, firstPrinting: boolean, firstCard: boolean, over: number,
- *   lowEndNoBonus: boolean, cfg: typeof DEFAULT_OWNED }}
+ * @param {{ lowEnd?: boolean, cfg?: typeof DEFAULT_OWNED, stale?: typeof DEFAULT_STALE }} [o]  lowEnd: the card's
+ *   rate is the low-end one (lineRate's why 'low'); stale: staleFrom's
+ * @returns {{ bonus: number, cut: number, stale: boolean, staleCut: number, staleDays: number|null, net: number,
+ *   firstPrinting: boolean, firstCard: boolean, over: number, lowEndNoBonus: boolean, cfg: typeof DEFAULT_OWNED }}
  */
-export function ownedAdjust(counts, { lowEnd = false, cfg = DEFAULT_OWNED } = {}) {
+export function ownedAdjust(counts, { lowEnd = false, cfg = DEFAULT_OWNED, stale = DEFAULT_STALE } = {}) {
   const none = {
-    bonus: 0, cut: 0, net: 0, firstPrinting: false, firstCard: false, over: 0, lowEndNoBonus: false, cfg,
+    bonus: 0, cut: 0, stale: false, staleCut: 0, staleDays: null, net: 0, firstPrinting: false, firstCard: false, over: 0,
+    lowEndNoBonus: false, cfg,
   };
   // Counts the inventory couldn't make change nothing: no bonus, no cut (decision 467).
   if (!counts || counts.known === false) return none;
@@ -218,8 +255,10 @@ export function ownedAdjust(counts, { lowEnd = false, cfg = DEFAULT_OWNED } = {}
   const firstPrinting = firstPrintingCount && !noBonus && cfg.first_printing > 0;
   const bonus = (firstPrinting ? cfg.first_printing : 0) + (firstCard ? cfg.first_card : 0);
   const cut = ownedCut(counts.card, cfg);
+  const staleCut = counts.stale ? stale.pct : 0;
   return {
-    bonus, cut, net: bonus - cut, firstPrinting, firstCard, over: Math.max(0, counts.card - cfg.free),
+    bonus, cut, stale: Boolean(counts.stale), staleCut, staleDays: counts.stale?.days ?? null, net: bonus - cut - staleCut,
+    firstPrinting, firstCard, over: Math.max(0, counts.card - cfg.free),
     lowEndNoBonus: noBonus && firstPrintingCount && (cfg.first_printing > 0 || cfg.first_card > 0),
     cfg,
   };

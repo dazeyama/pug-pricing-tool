@@ -59,6 +59,13 @@
 }
 /* A cut to suggest: a faint warm tint on All printings; applied, a faint green one. */
 .owned-boxes.hot .owned-box.card { --owned: var(--warn); }
+/* A stale printing (decision 582): its emoji on This printing's corner, the box tinted warm. */
+.owned-boxes.stale .owned-box.printing { --owned: var(--warn); }
+.owned-stale {
+  position: absolute; top: -9px; right: -7px;
+  font-size: 17px; line-height: 1;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .6));
+}
 /* Counts the inventory can't make for this printing: n/a, faded (decision 467). */
 /* No change on pointing (decision 471: it flashed). */
 .owned-boxes.unknown { opacity: .45; }

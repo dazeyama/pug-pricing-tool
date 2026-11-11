@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  DEFAULT_OWNED, ownedReason, ownedRows, signedPct,
+  DEFAULT_OWNED, STALE_EMOJI, ownedReason, ownedRows, signedPct,
 } from '../../lib/ownedRates.js';
 import { useDismiss } from '../../lib/useDismiss.js';
 import InkStamp from './InkStamp.jsx';
@@ -123,7 +123,11 @@ export default function OwnedCounter({
   // Under the boxes: a green chip for the bonus, a red one for the cut, side by side when both apply
   // (owner, 2026-10-23; decision 457); ✓ on each once the rate is on.
   const mark = applied ? '✓ ' : '';
-  const chips = adjust && (adjust.bonus > 0 || adjust.cut > 0) ? (
+  // Stale (owner, 2026-11-10: "Show an emoji on stale cards clearly"; decision 582): its product hasn't
+  // sold in the stale file's window. The emoji on the boxes whatever the setting's cut.
+  const stale = Boolean(adjust?.stale);
+  const staleTitle = stale ? `Stale: no sale in ${adjust.staleDays ? `${adjust.staleDays} days` : 'the stale file’s window'}` : '';
+  const chips = adjust && (adjust.bonus > 0 || adjust.cut > 0 || adjust.staleCut > 0) ? (
     <div className="owned-chips">
       {adjust.bonus > 0 && (
         <span className={`owned-tag bonus${applied ? ' on' : ''}`} title={adjust.firstCard ? 'First of this card' : 'First of this printing'}>
@@ -133,6 +137,12 @@ export default function OwnedCounter({
       {adjust.cut > 0 && (
         <span className={`owned-tag cut${applied ? ' on' : ''}`} title={`${copies(adjust.over)} of the card over ${cfg.free}`}>
           {mark}−{adjust.cut}% owned
+        </span>
+      )}
+      {/* A stale card's own cut, beside the copies cut and apart from its "at most" (decision 582). */}
+      {adjust.staleCut > 0 && (
+        <span className={`owned-tag cut${applied ? ' on' : ''}`} title={staleTitle}>
+          {mark}{STALE_EMOJI} −{adjust.staleCut}% stale
         </span>
       )}
     </div>
@@ -208,7 +218,7 @@ export default function OwnedCounter({
       {autoBox}
       <button
         type="button"
-        className={`owned-boxes${adjust?.cut > 0 ? ' hot' : ''}${applied ? ' applied' : ''}${pinned ? ' on' : ''}${unknown ? ' unknown' : ''}`}
+        className={`owned-boxes${adjust?.cut > 0 ? ' hot' : ''}${stale ? ' stale' : ''}${applied ? ' applied' : ''}${pinned ? ' on' : ''}${unknown ? ' unknown' : ''}`}
         aria-expanded={open}
         aria-label={ready && !unknown ? `We own ${copies(c.printing)} of this printing and ${copies(c.card)} of this card`
           : 'Copies we own'}
@@ -233,6 +243,7 @@ export default function OwnedCounter({
         <span className="owned-box printing">
           <span className="owned-label">This printing</span>
           <b className="owned-num">{num(c?.printing)}</b>
+          {stale && <span className="owned-stale" role="img" aria-label={staleTitle} title={staleTitle}>{STALE_EMOJI}</span>}
         </span>
         <span className="owned-box card">
           <span className="owned-label">All printings</span>

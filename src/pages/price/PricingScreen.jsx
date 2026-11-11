@@ -38,7 +38,9 @@ import ScanChip from './ScanChip.jsx';
 import OwnedCounter from './OwnedCounter.jsx';
 import MatchCardDialog from './MatchCardDialog.jsx';
 import { useOwnedCopies } from './useOwnedCopies.js';
-import { isLowEnd, ownedAdjust, ownedFrom, ownedRates, signedPct } from '../../lib/ownedRates.js';
+import {
+  isLowEnd, ownedAdjust, ownedFrom, ownedRates, signedPct, staleFrom,
+} from '../../lib/ownedRates.js';
 import { candidateKeyOf, editQuery, nameQuery, pinFirst } from '../../lib/candidateKey.js';
 
 const BACKGROUND = { '--stage-bg': `url(${import.meta.env.BASE_URL}background.webp)` };
@@ -182,6 +184,8 @@ export default function PricingScreen({
   });
   // Settings → Copies we own (decision 474): the counter on or off, and the numbers it works with.
   const ownedCfg = ownedFrom(settingValues.owned_copies);
+  // Settings → the stale multiplier (decision 582): a stale card's cut, on top of the copies cut.
+  const staleCfg = staleFrom(settingValues.stale_cards);
 
   // ---- The list (spec 8.8–8.9): the walk-in draft or a collection ----
   const { current: user, pulse } = useStaff();
@@ -702,11 +706,13 @@ export default function PricingScreen({
   // The bonuses for a first copy and the cut for copies over the free ones, stacked (decision 457); none for a
   // low-end card unless Settings says so (decision 458); the numbers Settings → Copies we own's (decision 474).
   const adjust = owned.status === 'ok' && !bulk
-    ? ownedAdjust(owned.counts, { lowEnd: isLowEnd(quoteRate), cfg: ownedCfg }) : null;
+    ? ownedAdjust(owned.counts, { lowEnd: isLowEnd(quoteRate), cfg: ownedCfg, stale: staleCfg }) : null;
   const suggested = adjust ? ownedRates(quoteRate, adjust) : null;
   const applied = suggested && !applyBlocked && (autoOn || appliedKey === owned.key) ? suggested : null;
   const shownRate = applied ?? quoteRate;
-  const appliedWhy = applied ? `${signedPct(applied.net)} for the copies we own` : null;
+  // Stale (decision 582) is named too, its cut being in the same pill.
+  const appliedWhy = applied
+    ? `${signedPct(applied.net)} for the copies we own${applied.adjust?.staleCut > 0 ? ' and stale' : ''}` : null;
   // With Auto apply rates on, a Magic card waits for its count (a moment) so it goes on at the right rate.
   if (!addBlocked && autoOn && !editing && magic && owned.status === 'loading') addBlocked = 'Counting the copies we own';
 

@@ -19,7 +19,9 @@ import { isTimeout, withTimeout } from '../../lib/timeout.js';
 import { createStayAwake } from '../../lib/stayAwake.js';
 import { lineRate } from '../../lib/rates.js';
 import { ownedCopies } from '../../lib/owned.js';
-import { isLowEnd, ownedAdjust, ownedCounts, ownedFrom, ownedRates } from '../../lib/ownedRates.js';
+import {
+  isLowEnd, ownedAdjust, ownedCounts, ownedFrom, ownedRates, staleFrom,
+} from '../../lib/ownedRates.js';
 import { priceOf } from '../../lib/unpriced.js';
 
 // Cards from the paired phone (docs/SCAN_FUNCTION.md 8.3). Each scan the
@@ -85,6 +87,7 @@ export function useScanReceiver({ deviceId, label, session, target, list, roundU
   latest.current = {
     list, user: staff.current, touch: staff.touch, roundUp, autoRates, onAdded, label, pct: values.fallback_pct_mtg, reachedLimit,
     ownedCfg: ownedFrom(values.owned_copies),   // Settings → Copies we own (decision 474)
+    staleCfg: staleFrom(values.stale_cards),    // Settings → the stale multiplier (decision 582)
     phone: session?.phone_label ?? 'the phone', settingsLoaded,
   };
   const running = useRef(false);
@@ -217,9 +220,12 @@ export function useScanReceiver({ deviceId, label, session, target, list, roundU
     if (now.autoRates && now.ownedCfg.on) {
       try {
         const counts = ownedCounts(await withTimeout(ownedCopies(candidate, finish), OWNED_MS));
-        // The first-copy bonuses (none for a low-end card, decision 458) and the cut, stacked (decision 457).
+        // The first-copy bonuses (none for a low-end card, decision 458) and the cut, stacked (decision 457),
+        // and a stale card's cut on top (decision 582).
         const rate = lineRate(line, now.autoRates);
-        const own = ownedRates(rate, ownedAdjust(counts, { lowEnd: isLowEnd(rate), cfg: now.ownedCfg }));
+        const own = ownedRates(rate, ownedAdjust(counts, {
+          lowEnd: isLowEnd(rate), cfg: now.ownedCfg, stale: now.staleCfg,
+        }));
         if (own) {
           line.custom_cash_pct = own.cash;
           line.custom_credit_pct = own.credit;
