@@ -355,7 +355,8 @@ what happens. The findings are reported when the pass ends.
       unchanged. Greyed with no cards; not on a collection's list.
 - [ ] **CONFIRM BUY's cash location and BUY COMPLETE's Copy** (decision 583, migration 0016; dev; Buy tab session):
       CONFIRM BUY, pick Cash: Till and Backroom chips appear; Confirm without one says "Choose Till or Backroom.".
-      Pick Till, confirm; on BUY COMPLETE press **Copy 📋**: a toast says it's copied and the dialog stays; paste into
+      Pick Backroom: a darker green than Till picked. Pick Till, confirm; on BUY COMPLETE press **Copy Details 📋**: a
+      toast says it's copied and the dialog stays; paste into
       a sheet's first cell: ten cells, your name, today as 11/10/2026, the customer, (555) 555-0100 style phone, an
       empty cell, Cash, your name, today, $90.00 style amount, Till. A credit buy: no chips, and the last cell NA.
       The buy's ⋯ on its day page copies the same row.

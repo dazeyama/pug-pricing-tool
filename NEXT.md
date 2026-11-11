@@ -295,7 +295,8 @@ marks each task done here when it's finished, with the exact file and function o
   - **The cash location at CONFIRM BUY and Copy on BUY COMPLETE** (583): `src/components/CashLocation.jsx` (also
     for Records' Paid/Ours), `ConfirmBuyModal.jsx` (`cashLocation` prop; Records can turn it on for Convert to buy,
     `project_to_buy`'s `p_cash_location`), `PricePage.jsx`, `useDraft.js` `confirm` (`p_cash_location`),
-    `confirmReadBack.js` (the lost answer checks it), `BuyDoneModal.jsx` (**Copy 📋**, Records' `copyBuyRow`).
+    `confirmReadBack.js` (the lost answer checks it), `BuyDoneModal.jsx` (**Copy Details 📋**, Records' `copyBuyRow`). From the owner's QA (2026-11-10):
+    Backroom picked is a darker green (`buylist.css`, `--pal-green`) and the button is Copy Details; untested.
     Where to look: TEST.md section 8, "CONFIRM BUY's cash location and BUY COMPLETE's Copy".
   - **Commits:** 87c2573 (582); c7a85b6 (the chooser and the dialog's option) and d161579 (CONFIRM BUY's
     `p_cash_location`, the read-back, Copy), after 0016 went on dev. Also wired for Export: the 🖨 print button

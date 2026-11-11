@@ -18,7 +18,7 @@ export default function CashLocation({ location, onChoose }) {
           type="button"
           role="radio"
           aria-checked={location === value}
-          className={`pay-choice cash${location === value ? ' on' : ''}`}
+          className={`pay-choice cash ${value}${location === value ? ' on' : ''}`}
           onClick={() => onChoose(value)}
         >
           {label}

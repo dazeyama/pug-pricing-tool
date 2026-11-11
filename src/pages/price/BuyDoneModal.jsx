@@ -17,7 +17,7 @@ import { COPY_TITLE, copyBuyRow } from '../../lib/buyCopy.js';
  * **No thanks**; × and Esc are No thanks too.
  * `lines` are the buy's lines as they were confirmed (the draft's rows).
  *
- * **Copy** (owner, 2026-11-10; decision 583): the buy's row for the store's Google Sheet of buys, each field in its
+ * **Copy Details** (owner, 2026-11-10; decision 583; renamed from Copy in QA): the buy's row for the store's Google Sheet of buys, each field in its
  * own cell (lib/buyCopy.js, the same row as a single buy's ⋯ copies). A walk-in is taken and paid by whoever
  * confirmed it, then; it has no ID. The dialog stays open, so the printouts are still offered.
  */
@@ -79,7 +79,7 @@ export default function BuyDoneModal({
               {printing ? 'Printing… 🖨' : 'Print PKM? 🖨'}
             </button>
           )}
-          <button type="button" className="btn" title={COPY_TITLE} onClick={copy}>Copy 📋</button>
+          <button type="button" className="btn" title={COPY_TITLE} onClick={copy}>Copy Details 📋</button>
           <button type="button" className="btn ghost" onClick={onClose}>No thanks</button>
         </>
       )}
