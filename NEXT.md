@@ -17,7 +17,18 @@ marks each task done here when it's finished, with the exact file and function o
 - **Four ideas from the owner, 2026-11-10, to design together and leave open for now** (main session; nothing
   designed or built, each needs its design talk with the owner first):
   1. **Print an in-progress walk-in buy:** "A way to print in-progress walk-in buys." (Buy tab; the printout
-     itself is Export and printouts'.)
+     itself is Export and printouts'.) Designed so far with the owner (2026-11-10), not built, no decision row
+     yet: walk-ins only ("Feature for walk ins only"); for the customer as an offer sheet and for staff as a
+     check sheet ("both of those situations are likely and should be supported"); each card shows what we'd pay
+     ("Our rates. What we'd pay."), cash and credit; it carries the customer's name and a "Quote only, not a
+     receipt" line ("Yes to both"). Proposed and unanswered: a Print button on the Buy tab's list, one row per
+     line as added (count, name, set and number, finish, condition), the foot with the card count and the cash
+     and credit offers as the screen has them, the title "Buy in progress, not confirmed" with the date and time
+     (a buy has no number before CONFIRM BUY), the list's own prices (no price fetch, no Crystal Commerce
+     matching), nothing saved or logged. Still to settle: one sheet or two (offer / check sheet with tick boxes);
+     where the name comes from (it's only typed at CONFIRM BUY, `ConfirmBuyModal.jsx`: a line to write on, or
+     asked at the print); and that per-card amounts won't add up to the offer, which is rounded down once on the
+     total (`internal.lines_totals`).
   2. **The sticker sheet is still misaligned:** "Fixing the sticker sheet. It's still misaligned." (Export and
      printouts; `src/lib/stickerPdf.js`: `PRINTER_OFFSET` has been zero since decision 573, so what's off now is the
      grid as decision 281 set it, `SHEET`, or the printer's scaling. To start: which printer, printed at 100%, and
