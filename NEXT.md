@@ -33,6 +33,10 @@ marks each task done here when it's finished, with the exact file and function o
     button from "Copy" to "Copy Details"" (a buy's ⋯: above Print ▸; the paid overnight row's too); "On the "Stale
     cut" panel, display a button "View Stale Cards" button, that displays a scrollable subpanel list of all the
     cards marked stale."; and the sell-price floor's place in migration 0016 (amended in place, dev only).
+    Then, the same day: "Also on the Home page. On the TODAY panel: … We now also need a "cash taken from the til
+    today" stat, that's super important for closing." (`HomePage.jsx`, the Today card, from `cash_location`;
+    asked of the owner by the main session, unanswered: whether it counts overnight buys paid from the Till today
+    as well as walk-ins, which is how Records was told to build it meanwhile).
   - *Export:* "The "Stale cards file" panel is too wordy and too long, it has a scrollbar by default, measure it
     better and size to fit, with less words. ALSO add a input for the sell price 35 mirroring the days, to make
     is so that files with different floors can be used."
