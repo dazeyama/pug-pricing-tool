@@ -239,9 +239,10 @@ marks each task done here when it's finished, with the exact file and function o
     `project_to_buy`'s `p_cash_location`), `PricePage.jsx`, `useDraft.js` `confirm` (`p_cash_location`),
     `confirmReadBack.js` (the lost answer checks it), `BuyDoneModal.jsx` (**Copy 📋**, Records' `copyBuyRow`).
     Where to look: TEST.md section 8, "CONFIRM BUY's cash location and BUY COMPLETE's Copy".
-  - **Not committed yet, on purpose:** the 583 files wait for 0016 on dev (`confirm_buy` would refuse the new
-    parameter, and the read-back selects `cash_location`) and for Records to commit `copyBuyRow` and `COPY_TITLE`
-    in `src/lib/buyCopy.js`; I commit them on Records' word.
+  - **Commits:** 87c2573 (582); c7a85b6 (the chooser and the dialog's option) and d161579 (CONFIRM BUY's
+    `p_cash_location`, the read-back, Copy), after 0016 went on dev. Also wired for Export: the 🖨 print button
+    in `PricePage.jsx` (b5de53e, decision 579). Copy builds its row from what CONFIRM BUY sent, not a read-back
+    (`confirm_buy` sets the confirmer, payer and both times together), so it matches the buy's ⋯ Copy.
 
 - 2026-11-10 (Export session): **Settings → Stale cards file** (decision 581; the three-part patch, part 2; its
   tables and `stale_file_load` are Records' migration 0016, decision 580): `src/pages/settings/StaleFilePanel.jsx`
