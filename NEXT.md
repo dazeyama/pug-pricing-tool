@@ -36,13 +36,9 @@ marks each task done here when it's finished, with the exact file and function o
   583), the stale cards file, the stale cut and stale in Copies we own (580, 581, 582), on migration 0016; and
   the owner's first QA round on it and Home's cash from the Till (584); the Buys report from Home's Today card (585;
   new dependencies `recharts` 3.10.1 and `react-is` 19.3.0); NEXT.md's Buy 82 look and the designs. The
-  owner's QA on dev passed (2026-11-11). Both migrations are on dev only: prod first,
+  owner's QA on dev passed (2026-11-11). After it: a card taken off the buy list says which in bold red (586,
+  untested) and Help brought up to date (`README.md`). Both migrations are on dev only: prod first,
   then the site (the two items above).
-
-- **A toast when a card comes off the buy list** (given to the Buy tab session 2026-11-11; the owner, on Buy 82's
-  finding that a removed card leaves no trace: "Do remove cards toast? They should. And it should be clear, bold,
-  red text."). They didn't: `BuyList.jsx` `startRemove` → `RemoveModal` → `useDraft.js` `remove` says nothing
-  after. The toast names the card. It goes out with this push.
 
 - **The sticker sheet, shelved until the owner sends new measurements** (main session; the owner, 2026-11-10: "The
   sheet of stickers was measured all wrong and we need a new grid template once I get new measurements in."; then
@@ -54,6 +50,16 @@ marks each task done here when it's finished, with the exact file and function o
   `SHEET`, `tests/stickerPdf.test.js` with it, and a decision row.
 
 ## Done
+
+- 2026-11-11 (main session): **Help brought up to date for this patch** (the owner: "Let's do this help update
+  now before the push, in the Unslop output style as always."). `README.md`, eleven places: Home → Today (From the
+  Till, the card opens the report) and a new **Buys report** section; the Buy tab's ADD CARD (one TCGplayer product
+  is one line), Copies we own (**Stale cards**), The buy list (🖨 Print, and the bold red message after a remove,
+  decision 586), CONFIRM BUY (Till or Backroom), BUY COMPLETE and a new **Copy Details** section (the ten cells);
+  the Collections tab's tables (a paid overnight buy's ⋯), Mark as Paid/Ours and Convert to buy… (Till or
+  Backroom); a buy's ⋯ menu (Copy Details); and Settings' new **Stale cards file** and **Stale cut** sections.
+  Written from the screens' own words and the sessions' Done entries, not read in the app's Help tab. No
+  migration.
 
 - 2026-11-11 (Buy tab session): **A card taken off the buy list says which, in bold red** (decision 586; no
   migration; untested in the app, the unit test only): `src/lib/lineFormat.js` `removedText`, `BuyList.jsx`
