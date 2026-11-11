@@ -6,18 +6,6 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
-- **Dev is ahead of prod: migration 0015 is on dev only** (Buy tab session, 2026-11-10; decision 578): the prod push
-  waits for the owner's word (`npx supabase db push --linked --project-ref zvxquzcfffmxwizonxuo`, then the
-  structure-only compare against `C:/Users/Daisy/AppData/Local/Temp/claude/8622948e51b61e0c/024d6d6e-fc86-4763-9a1b-3034e8336749/scratchpad/dev-run-0015.json`
-  or a fresh dev run). The owner agreed to 578's narrowing (2026-11-10), so 0015 goes as it is.
-
-- **Dev is ahead of prod: migration 0016 is on dev only** (Records session, 2026-11-10; decision 580, the three-part
-  patch's one migration): it goes to prod with 0015 in one sitting, on the owner's word only (`npx supabase db push
-  --linked --project-ref zvxquzcfffmxwizonxuo` takes both, then the structure-only compare against
-  `C:/ClaudeProjects/temp/pug-dbrun-0016.json`, the dev run with 0015 and 0016). **The site can't be pushed before
-  prod has 0016:** `main` already reads its columns and tables (the Collections tab's list selects
-  `buys.cash_location`, Settings reads `stale_files`), so those break on a site without it.
-
 - **Dev holds 55 simulated walk-in buys, and the owner is keeping them** ("I'm going to keep them.", 2026-11-11;
   main session; made for testing the Buys report on the owner's ask: "Can
   you create simulated data for the last 14 days based on the read only probe of prod for the mockup and create
@@ -30,16 +18,6 @@ marks each task done here when it's finished, with the exact file and function o
   --linked -f`), one delete by that note; the generator and the insert are beside it. Dev's buy numbers stay past
   101 after that. Nothing on prod.
 
-- **Unpushed** (main session; everything since 94ccd17, none of it on prod or the live site): one TCGplayer
-  product is one line (decision 578, migration 0015); the three-part patch, all three sessions' parts committed
-  2026-11-10: 🖨 Print a walk-in in progress (579), the cash location, who paid and Copy for the buys sheet (580,
-  583), the stale cards file, the stale cut and stale in Copies we own (580, 581, 582), on migration 0016; and
-  the owner's first QA round on it and Home's cash from the Till (584); the Buys report from Home's Today card (585;
-  new dependencies `recharts` 3.10.1 and `react-is` 19.3.0); NEXT.md's Buy 82 look and the designs. The
-  owner's QA on dev passed (2026-11-11). After it: a card taken off the buy list says which in bold red (586,
-  untested) and Help brought up to date (`README.md`). Both migrations are on dev only: prod first,
-  then the site (the two items above).
-
 - **The sticker sheet, shelved until the owner sends new measurements** (main session; the owner, 2026-11-10: "The
   sheet of stickers was measured all wrong and we need a new grid template once I get new measurements in."; then
   "Shelve the sticker sheets for later"). `src/lib/stickerPdf.js`: `PRINTER_OFFSET` is zero (decision 573), but
@@ -50,6 +28,29 @@ marks each task done here when it's finished, with the exact file and function o
   `SHEET`, `tests/stickerPdf.test.js` with it, and a decision row.
 
 ## Done
+
+- 2026-11-11: **Migrations 0015 and 0016 on prod, and pushed without a bump** (main session; the owner: "Push it
+  all now to the prod pages live site, including all the migrations are a go, the store is closed."). Prod first
+  (`db push`, both in one sitting; then the structure-only compare against a fresh read of dev the same hour,
+  `C:/ClaudeProjects/temp/pug-dbstruct-dev-2026-11-11.json`, all nine fingerprints the same, since 0016 had been
+  amended on dev after its first run), then the site. What went out, decisions 578 to 586: one TCGplayer product is
+  one line (0015); 🖨 Print a walk-in
+  in progress; the cash location, who paid and Copy Details for the buys sheet; the stale cards file, the stale
+  cut, View Stale Cards and stale in Copies we own (0016); Home's From the Till and the Buys report (new
+  dependencies `recharts` 3.10.1 and `react-is` 19.3.0, loaded only with the report); a card taken off the buy
+  list says which in bold red; and Help. No Edge Function changes. The owner's QA was on dev; decision 586 and the
+  Help text weren't tried by anyone. Prod and dev both have 0001–0016; the next is 0017. On prod a buy from
+  before today has no cash location and no payer kept, and no stale file is uploaded there yet, so no card is
+  stale on the live site until the owner uploads one (Settings → Stale cards file). **The review** (pug-reviewer,
+  the whole range and this record): nothing that stops a push. Not acted on, for the owner to pick from: the Buys
+  report is the app's first lazy-loaded screen and nothing catches a failed load, so a click on the Today card
+  with the connection down, or in a tab left open across a later push, may blank the page until a reload
+  (plausible, `HomePage.jsx`); a computer not reloaded after this push confirms cash buys with no location, so
+  they miss From the Till and Copy Details' last cell; a walk-in paid from the Till and made a project the same
+  day leaves From the Till and the report (decision 585's "Leave projects out"; Help's From the Till row doesn't
+  say so); Convert to overnight buy where the buy keeps its payment makes a $0 overnight buy that carries the
+  Till location, so "N payments today" and the report's Buys count read one high, the dollars right; and Copy
+  Details on an overnight buy made by Convert gives the conversion's date as the date taken (`buyCopy.js`).
 
 - 2026-11-11 (main session): **Help brought up to date for this patch** (the owner: "Let's do this help update
   now before the push, in the Unslop output style as always."). `README.md`, eleven places: Home → Today (From the
