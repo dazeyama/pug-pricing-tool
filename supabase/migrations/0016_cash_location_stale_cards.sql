@@ -460,6 +460,216 @@ $function$;
 revoke all on function public.project_to_buy(uuid, uuid, uuid, text, text, numeric, text, text, numeric, numeric, integer, jsonb, text) from public, anon;
 grant execute on function public.project_to_buy(uuid, uuid, uuid, text, text, numeric, text, text, numeric, numeric, integer, jsonb, text) to authenticated, service_role;
 
+-- Convert to overnight buy and Convert to project copy the payment onto what they make: the cash location and who
+-- paid go with it, so the copied row still has them (the buy is deleted when nothing stays on it). Same parameters.
+CREATE OR REPLACE FUNCTION public.buy_to_collection(p_buy_id uuid, p_user uuid, p_device uuid, p_expected_version integer DEFAULT NULL::integer, p_line_texts jsonb DEFAULT '{}'::jsonb)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SET search_path TO 'public', 'internal'
+AS $function$
+declare
+  b        buys;
+  p        buys;
+  v_name   text;
+  v_target text;
+  v_games  text[];
+  v_lines  jsonb;
+  v_struck jsonb;
+  v_gone   integer;
+  v_keep   boolean;
+  v_done   text[];
+begin
+  if p_user is null then
+    raise exception 'no_user';
+  end if;
+  select * into b from buys where id = p_buy_id and kind = 'walk_in' and status = 'confirmed' for update;
+  if b.id is null then
+    raise exception 'buy_gone';
+  end if;
+  v_name := btrim(regexp_replace(coalesce(b.customer_name, ''), '\s+', ' ', 'g'));
+  if char_length(v_name) not between 1 and 80 then
+    raise exception 'bad_name';
+  end if;
+  -- A game with Completed cards stays whole on the buy: its bulk, placeholders and struck cards too (decision 393).
+  v_done := array(select distinct game from buy_lines where buy_id = b.id and completed_at is not null);
+  if not exists (select 1 from buy_lines where buy_id = b.id and completed_at is null and struck_at is null
+                   and not (game = any(v_done))) then
+    raise exception 'buy_completed';
+  end if;
+  v_keep := exists (select 1 from buy_lines where buy_id = b.id and completed_at is not null);
+  if p_expected_version is not null and b.version <> p_expected_version then
+    raise exception 'stale_version';
+  end if;
+
+  v_target := buy_target_name(b.id);
+  select array_agg(g order by g = 'pokemon', g)
+    into v_games
+    from (select distinct game as g from buy_lines where buy_id = b.id and completed_at is null and struck_at is null
+                   and not (game = any(v_done))) t;
+  select jsonb_agg(jsonb_build_object(
+           'qty', quantity, 'game', game, 'unit_price', unit_price,
+           'text', coalesce(p_line_texts ->> id::text, quantity || ' ' || name))
+         order by game = 'pokemon', position)
+    into v_lines
+    from buy_lines where buy_id = b.id and struck_at is null and completed_at is null and not (game = any(v_done));
+  -- Struck cards stay out of the collection, crossed out in its entry.
+  select jsonb_agg(jsonb_build_object(
+           'sign', '-', 'struck', true, 'qty', quantity, 'game', game, 'unit_price', unit_price,
+           'text', coalesce(p_line_texts ->> id::text, quantity || ' ' || name))
+         order by game = 'pokemon', position), sum(quantity)
+    into v_struck, v_gone
+    from buy_lines where buy_id = b.id and struck_at is not null and completed_at is null and not (game = any(v_done));
+
+  -- The buy's customer, phone, notes, payment and rates; its user as the maker.
+  insert into buys (kind, status, project, customer_name, phone, id_last4, notes, paid_at,
+                    cash_pct, credit_pct, custom_cash_pct, custom_credit_pct,
+                    paid_price, paid_method, cash_location, paid_by, created_by, last_edited_by)
+  values ('collection', 'paid', false, v_name, b.phone, '1312', coalesce(b.notes, ''), coalesce(b.confirmed_at, now()),
+          b.cash_pct, b.credit_pct, b.custom_cash_pct, b.custom_credit_pct,
+          -- Paid once: while the buy stays it keeps the payment, $0 here (decision 341).
+          case when v_keep and b.paid_method is not null then 0 else b.paid_price end, b.paid_method,
+          b.cash_location, b.paid_by,   -- where the cash went and who paid (decision 580)
+          coalesce(b.confirmed_by, p_user), p_user)
+  returning * into p;
+  -- The buy kept the payment: remembered, for Mark Paid/Ours again (decision 397).
+  if v_keep and b.paid_method is not null then
+    update buys set kept_buy_id = b.id where id = p.id returning * into p;
+  end if;
+
+  -- The cards keep the rates CONFIRM BUY saved on them.
+  update buy_lines set buy_id = p.id where buy_id = b.id and struck_at is null and completed_at is null and not (game = any(v_done));
+
+  perform collection_event(p, p_user, p_device, 'buy_converted_collection', coalesce(v_games, '{}'),
+    (internal.line_counts(array(select l from buy_lines l where l.buy_id = p.id))).cards, 0,
+    internal.lines_totals(p, array(select l from buy_lines l where l.buy_id = p.id)),
+    (select coalesce(jsonb_agg(x || jsonb_build_object('sign', '+')), '[]'::jsonb) from jsonb_array_elements(v_lines) x)
+      || coalesce(v_struck, '[]'::jsonb),
+    jsonb_build_array(jsonb_build_object('field', 'name', 'before', null, 'after', v_name),
+                      jsonb_build_object('field', 'last 4 ID', 'before', null, 'after', '1312')),
+    sentence(format('Collection started from %s: %s', v_target, v_name)
+             || case when v_gone > 0
+                     then '; ' || internal.lines_count_text(array(select l from buy_lines l
+                                                                  where l.buy_id = b.id and l.struck_at is not null and l.completed_at is null
+                                                                    and not (l.game = any(v_done))),
+                                                            'struck') || case when v_keep then ' stay on the buy' else ' left out' end
+                     else '' end
+             || case when v_keep then '; its Completed cards stay on the buy' else '' end));
+
+  if v_keep then
+    update buys set version = version + 1, updated_at = now(), last_edited_by = p_user where id = b.id;
+  else
+    delete from buys where id = b.id;
+  end if;
+  return p.id;
+end;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.buy_to_project(p_buy_id uuid, p_name text, p_user uuid, p_device uuid, p_expected_version integer DEFAULT NULL::integer, p_line_texts jsonb DEFAULT '{}'::jsonb)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SET search_path TO 'public', 'internal'
+AS $function$
+declare
+  v_name   text := btrim(regexp_replace(coalesce(p_name, ''), '\s+', ' ', 'g'));
+  b        buys;
+  p        buys;
+  v_target text;
+  v_games  text[];
+  v_count  integer;
+  v_market numeric;
+  v_lines  jsonb;
+  v_struck jsonb;
+  v_gone   integer;
+  v_keep   boolean;
+  v_done   text[];
+begin
+  if p_user is null then
+    raise exception 'no_user';
+  end if;
+  if char_length(v_name) not between 1 and 80 then
+    raise exception 'bad_name';
+  end if;
+  select * into b from buys where id = p_buy_id and kind = 'walk_in' and status = 'confirmed' for update;
+  if b.id is null then
+    raise exception 'buy_gone';
+  end if;
+  -- Completed cards are skipped, not a refusal (owner, 2026-10-18; decision 296):
+  -- the live cards move; with Completed cards left, the buy stays on its day.
+  -- A game with Completed cards stays whole on the buy: its bulk, placeholders and struck cards too (decision 393).
+  v_done := array(select distinct game from buy_lines where buy_id = b.id and completed_at is not null);
+  if not exists (select 1 from buy_lines where buy_id = b.id and completed_at is null and struck_at is null
+                   and not (game = any(v_done))) then
+    raise exception 'buy_completed';
+  end if;
+  v_keep := exists (select 1 from buy_lines where buy_id = b.id and completed_at is not null);
+  if p_expected_version is not null and b.version <> p_expected_version then
+    raise exception 'stale_version';
+  end if;
+
+  v_target := buy_target_name(b.id);
+  select array_agg(g order by g = 'pokemon', g), sum(q), sum(m)
+    into v_games, v_count, v_market
+    from (select game as g, sum(quantity) filter (where struck_at is null) as q,
+                 sum(unit_price * quantity) filter (where struck_at is null) as m
+            from buy_lines where buy_id = b.id and completed_at is null and not (game = any(v_done)) group by game) t;
+  select jsonb_agg(jsonb_build_object(
+           'qty', quantity, 'game', game, 'unit_price', unit_price,
+           'text', coalesce(p_line_texts ->> id::text, quantity || ' ' || name))
+         order by game = 'pokemon', position)
+    into v_lines
+    from buy_lines where buy_id = b.id and struck_at is null and completed_at is null and not (game = any(v_done));
+  -- Struck cards stay out of the project, crossed out in its entry.
+  select jsonb_agg(jsonb_build_object(
+           'sign', '-', 'struck', true, 'qty', quantity, 'game', game, 'unit_price', unit_price,
+           'text', coalesce(p_line_texts ->> id::text, quantity || ' ' || name))
+         order by game = 'pokemon', position), sum(quantity)
+    into v_struck, v_gone
+    from buy_lines where buy_id = b.id and struck_at is not null and completed_at is null and not (game = any(v_done));
+
+  -- The buy's phone, and its user as the project's maker: the Cash buys file
+  -- names who bought it (owner, 2026-10-02).
+  insert into buys (kind, status, project, customer_name, phone, notes, paid_at,
+                    cash_pct, credit_pct, paid_price, paid_method, cash_location, paid_by, created_by, last_edited_by)
+  values ('collection', 'paid', true, v_name, b.phone, coalesce(b.notes, ''), coalesce(b.confirmed_at, now()),
+          null, null,
+          -- Paid once: while the buy stays it keeps the payment, $0 here (decision 341).
+          case when v_keep and b.paid_method is not null then 0 else b.paid_price end, b.paid_method,
+          b.cash_location, b.paid_by,   -- where the cash went and who paid (decision 580)
+          coalesce(b.confirmed_by, p_user), p_user)
+  returning * into p;
+  -- The buy kept the payment: remembered, for Mark Paid/Ours again (decision 397).
+  if v_keep and b.paid_method is not null then
+    update buys set kept_buy_id = b.id where id = p.id returning * into p;
+  end if;
+
+  update buy_lines set buy_id = p.id where buy_id = b.id and struck_at is null and completed_at is null and not (game = any(v_done));
+  -- Projects are the store's own cards: no rates (owner, 2026-10-15).
+  update buy_lines set custom_cash_pct = null, custom_credit_pct = null, cash_pct = null, credit_pct = null where buy_id = p.id;
+
+  -- One entry: the cards added to the new project (owner, 2026-10-02).
+  perform collection_event(p, p_user, p_device, 'buy_converted', coalesce(v_games, '{}'),
+    (internal.line_counts(array(select l from buy_lines l where l.buy_id = p.id))).cards, 0, internal.lines_totals(p, array(select l from buy_lines l where l.buy_id = p.id)),
+    (select coalesce(jsonb_agg(x || jsonb_build_object('sign', '+')), '[]'::jsonb) from jsonb_array_elements(v_lines) x)
+      || coalesce(v_struck, '[]'::jsonb),
+    jsonb_build_array(jsonb_build_object('field', 'name', 'before', null, 'after', v_name)),
+    sentence(format('Project started from %s: %s', v_target, v_name)
+             || case when v_gone > 0
+                     then '; ' || internal.lines_count_text(array(select l from buy_lines l
+                                                                  where l.buy_id = b.id and l.struck_at is not null and l.completed_at is null
+                                                                    and not (l.game = any(v_done))),
+                                                            'struck') || case when v_keep then ' stay on the buy' else ' left out' end
+                     else '' end
+             || case when v_keep then '; its Completed cards stay on the buy' else '' end));
+
+  if v_keep then
+    update buys set version = version + 1, updated_at = now(), last_edited_by = p_user where id = b.id;
+  else
+    delete from buys where id = b.id;
+  end if;
+  return p.id;
+end;
+$function$;
+
 -- 2. The stale cards ---------------------------------------------------------------------------------------
 
 -- The file uploaded now, one row (its key is always true).
@@ -511,13 +721,14 @@ begin
     raise exception 'bad_batch';
   end if;
   perform pg_advisory_xact_lock(hashtext('stale_files'));
-  delete from stale_products;
+  -- `where true`: the API may refuse a delete with no where (pg-safeupdate).
+  delete from stale_products where true;
   insert into stale_products (product_id, product_name, total_qty)
   select distinct on (btrim(r.product_id)) btrim(r.product_id), r.product_name, r.total_qty
     from jsonb_to_recordset(p_rows) as r(product_id text, product_name text, total_qty integer)
    where nullif(btrim(r.product_id), '') is not null and r.product_name is not null
    order by btrim(r.product_id);
-  delete from stale_files;
+  delete from stale_files where true;
   insert into stale_files (original_filename, days, products, in_stock, uploaded_by)
   values (coalesce(nullif(btrim(p_filename), ''), 'stale cards file'), p_days,
           (select count(*) from stale_products), (select count(*) from stale_products where total_qty > 0), p_user)
