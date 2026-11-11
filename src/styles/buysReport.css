@@ -18,8 +18,13 @@
 .br-check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
 .br-check input { width: 15px; height: 15px; margin: 0; accent-color: var(--accent); }
 
-/* Custom: a month to pick the first and the last day from. */
-.br-cal { align-self: flex-start; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel-2); }
+/* Custom: a month to pick the first and the last day from, dropped down over the report from its chip. */
+.br-custom { position: relative; }
+.br-cal {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 5;
+  padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel-2);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .55);
+}
 .br-cal-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; font-size: 13.5px; }
 .br-cal-grid { display: grid; grid-template-columns: repeat(7, 34px); gap: 2px; }
 .br-cal-wd { text-align: center; font-size: 11.5px; color: var(--muted); padding: 2px 0; }

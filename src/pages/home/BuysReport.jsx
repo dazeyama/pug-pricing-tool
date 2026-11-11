@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useDismiss } from '../../lib/useDismiss.js';
 import {
   Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
@@ -70,10 +71,10 @@ function RangeCalendar({ from, to, today, onPick }) {
   const pick = (day) => {
     if (!start) {
       setStart(day);
-      onPick(day, day);
+      onPick(day, day, false);
     } else {
       setStart(null);
-      onPick(day < start ? day : start, day < start ? start : day);
+      onPick(day < start ? day : start, day < start ? start : day, true);
     }
   };
   return (
@@ -159,6 +160,9 @@ export default function BuysReport({ onClose }) {
   });
   const [view, setView] = useState('line');
   const [hideClosed, setHideClosed] = useState(true);
+  const [picking, setPicking] = useState(false);   // the custom range's calendar, dropped down
+  const customRef = useRef(null);
+  useDismiss(() => setPicking(false), { ref: customRef, when: picking, escape: false });
   const live = useReportBuys(range.from, range.to);
 
   const rows = useMemo(() => dailyRows(live.data?.buys ?? [], range.from, range.to), [live.data, range]);
@@ -211,9 +215,30 @@ export default function BuysReport({ onClose }) {
               {p.label}
             </button>
           ))}
-          <button type="button" className={`br-chip${preset === 'custom' ? ' on' : ''}`} onClick={() => setPreset('custom')}>
-            Custom…
-          </button>
+          {/* Custom: the calendar drops down over the report, so the graph and the rows keep their room (the owner,
+              2026-11-11: it "squashed the data"); it closes once the last day is picked, or on a click outside. */}
+          <span className="br-custom" ref={customRef}>
+            <button
+              type="button"
+              className={`br-chip${preset === 'custom' ? ' on' : ''}`}
+              aria-expanded={picking}
+              onClick={() => setPicking((p) => !p)}
+            >
+              {preset === 'custom' ? `Custom: ${rangeText(range.from, range.to)}` : 'Custom…'}
+            </button>
+            {picking && (
+              <RangeCalendar
+                from={range.from}
+                to={range.to}
+                today={today}
+                onPick={(from, to, done) => {
+                  setPreset('custom');
+                  setRange({ from, to });
+                  if (done) setPicking(false);
+                }}
+              />
+            )}
+          </span>
         </div>
         <label className="br-check">
           <input type="checkbox" checked={hideClosed} onChange={(e) => setHideClosed(e.target.checked)} />
@@ -224,10 +249,6 @@ export default function BuysReport({ onClose }) {
           <button type="button" className={`br-chip${view === 'bar' ? ' on' : ''}`} onClick={() => setView('bar')}>Bars</button>
         </div>
       </div>
-
-      {preset === 'custom' && (
-        <RangeCalendar from={range.from} to={range.to} today={today} onPick={(from, to) => setRange({ from, to })} />
-      )}
 
       {live.error && !live.data ? (
         <p className="hint br-fail">Couldn&apos;t read the buys: {live.error.message}. Trying again…</p>

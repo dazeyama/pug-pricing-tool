@@ -328,7 +328,9 @@ marks each task done here when it's finished, with the exact file and function o
         total that stay put.
       - At zoom 1 on a screen 860 px high, Last 7 days fits whole (the window 756 px), and This month scrolls only
         its rows. At the pane's zoom 0.8 it's 768 CSS px.
-    - The calendar's look.
+    - Custom's calendar drops down from its chip over the graph and closes once the last day is picked. The owner
+      asked for that (2026-11-11), because sitting in the report it "squashed the data". The chip then reads
+      "Custom: Nov 1 to Nov 4, 2026". It was measured on dev: the graph keeps its 231 px with it open.
     - How long a long range takes to read.
     - Dark is the only theme it was styled for: it uses the app's tokens.
 

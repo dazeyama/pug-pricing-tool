@@ -105,9 +105,10 @@ what happens. The findings are reported when the pass ends.
       except where those days go back before the first buy on record. The rows are newest first, a day with no buys
       greyed, and the Total row matches the tiles. **No scrollbar** on Last 7 days at the store's screen; on This month
       only the day rows scroll, their header and total staying put.
-- [ ] **Custom…** (decision 585): a month calendar; click a first day, then a last day (either order), and the range
-      is those days, shaded; ‹ › change the month, no day after today can be picked. A range of a month or more
-      still draws.
+- [ ] **Custom…** (decision 585): a month calendar drops down from the chip over the graph, which keeps its size;
+      click a first day, then a last day (either order): it closes, the chip reads "Custom: Nov 1 to Nov 4, 2026"
+      and the range is those days. ‹ › change the month, no day after today can be picked; a click outside closes
+      it unpicked. A range of a month or more still draws.
 
 ## 5. Buy tab: searching
 
