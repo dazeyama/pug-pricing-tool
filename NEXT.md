@@ -46,8 +46,18 @@ marks each task done here when it's finished, with the exact file and function o
      (a test page and typed corrections in Settings) wasn't taken up; not built.
   3. **A copy button for record keeping:** "Adding a copy button to the buy confirmed pop up and single buy menus
      that copies the name and number information to the clipboard in a specific way to assist in record keeping.
-     More details when we work on it." (Buy tab's `BuyDoneModal.jsx`; the single buy's menu is Records'. The
-     format is the owner's to give.)
+     More details when we work on it." (Buy tab's `BuyDoneModal.jsx`; the single buy's menu is Records'.)
+     Designed so far with the owner (2026-11-10), not built: it's for the store's Google Sheet of buys, so the
+     fields are tab-separated and each lands in its own cell ("make them paste into unique cells"). One row, as
+     the owner's example has it (customer details left out here): worker, date as 11/10/2026, customer name,
+     phone as (555) 555-0100, an empty cell, Cash or Credit, worker again, date again, the amount paid as $90.00,
+     and "a new attribute, 'cash location' that we need to create" (the example's reads "Till"). The cash
+     location is new stored data: a column on `buys`, so a migration, a decision row and a place to pick it
+     (CONFIRM BUY's dialog, and Paid/Ours for an overnight buy). Still to settle: what the empty fifth cell is;
+     what the two worker-and-date pairs are (who took the buy and when, then who paid and when? the database
+     keeps `confirmed_by` and `paid_at`, but who paid an overnight buy is only in the Changelog); the cash
+     locations to pick from, whether one is required, and what a credit buy copies there; which buys get the
+     button (walk-ins, overnight buys once paid).
   4. **A "stale card" tracker, to look into first:** "Investigating if there's a way to create a 'stale card'
      tracker for cards that haven't sold in a long time." (An investigation, not a build: what the app can know about a
      card selling; the Crystal Commerce inventory file is the likely source, unchecked.)
