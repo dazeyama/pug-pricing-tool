@@ -108,6 +108,17 @@ marks each task done here when it's finished, with the exact file and function o
     no payer kept, so their copied rows leave those cells empty (the payer could be filled from the Changelog; not
     planned). One migration means the three parts reach prod together.
 
+- **Home's Today card opens trends: being designed with the owner, to start once the three-part patch is done**
+  (main session, 2026-11-10; the owner: "I'd like to design a feature for clicking on the Today panel on the Home
+  page to get a subpanel with a calendar and graphs of the trend of buy numbers over a week, etc. Let's design this
+  and mark it as an open to start on once we're done here."). Not built, no decision row. What's there to build
+  on: the Today card (`HomePage.jsx`: today's walk-ins, Paid out in cash and credit, and the Till stat of decision
+  584), the Calendar tab's month grids (`CalendarPage.jsx`, `buys_in_range`), and no chart library among the
+  dependencies. Proposed, unanswered: a panel over Home with a small calendar to pick the week and bar charts a
+  day of buys, paid out (cash and credit), cash from the Till, and cards by game, with the week's totals beside
+  the week before; drawn by the app itself rather than a new chart package. Asked: which numbers matter; one
+  week only or other spans too; what the calendar is for; walk-ins only or overnight buys as well.
+
 - **Four ideas from the owner, 2026-11-10: three designed and in the plan above, the sticker sheet shelved** (main session; nothing
   built; the designs, with the owner's answers quoted; the sticker sheet "for later", when the measurements come):
   1. **Print an in-progress walk-in buy:** "A way to print in-progress walk-in buys." (Buy tab; the printout
