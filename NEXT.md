@@ -25,6 +25,18 @@ marks each task done here when it's finished, with the exact file and function o
   NEXT.md's Buy 82 look and the designs. All untested in the app. Both migrations are on dev only: prod first,
   then the site (the two items above).
 
+- **The three-part patch: the owner's first QA round, given out 2026-11-10** (main session; each session marks
+  its own done in its Done entry):
+  - *Buy tab:* "backroom needs to be a darker green color when selected" (`CashLocation.jsx`); BUY COMPLETE's
+    button renamed with the menus' (the main session's reading of the rename as the button's name everywhere).
+  - *Records:* "the copy button needs to be 1 higher on the list so it doesn't get in the way, also rename the
+    button from "Copy" to "Copy Details"" (a buy's ⋯: above Print ▸; the paid overnight row's too); "On the "Stale
+    cut" panel, display a button "View Stale Cards" button, that displays a scrollable subpanel list of all the
+    cards marked stale."; and the sell-price floor's place in migration 0016 (amended in place, dev only).
+  - *Export:* "The "Stale cards file" panel is too wordy and too long, it has a scrollbar by default, measure it
+    better and size to fit, with less words. ALSO add a input for the sell price 35 mirroring the days, to make
+    is so that files with different floors can be used."
+
 - **The three-part patch: the plan, given out 2026-11-10 on the owner's "Yes, start"** (main session; the owner: "Shelve the
   sticker sheets for later, but I want to begin work on all 3 of these designs now at once. Let's make a plan of
   action AND I want that plan to include creating only a single combined migration for this 3 part patch."). The
