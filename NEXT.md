@@ -53,14 +53,23 @@ marks each task done here when it's finished, with the exact file and function o
      phone as (555) 555-0100, an empty cell, Cash or Credit, worker again, date again, the amount paid as $90.00,
      and "a new attribute, 'cash location' that we need to create" (the example's reads "Till"). The cash
      location is new stored data: a column on `buys`, so a migration, a decision row and a place to pick it
-     (CONFIRM BUY's dialog, and Paid/Ours for an overnight buy). Still to settle: what the empty fifth cell is;
-     what the two worker-and-date pairs are (who took the buy and when, then who paid and when? the database
-     keeps `confirmed_by` and `paid_at`, but who paid an overnight buy is only in the Changelog); the cash
-     locations to pick from, whether one is required, and what a credit buy copies there; which buys get the
-     button (walk-ins, overnight buys once paid).
+     (CONFIRM BUY's dialog, and Paid/Ours for an overnight buy). Settled after: the fifth cell is the customer's
+     ID number, "blank for all walk in buys though, so yes, make sure to account for it"; the first worker and
+     date are who took the buy and when, the second who paid it and when ("exactly correct"; the database keeps
+     `confirmed_by` and `paid_at`, but who paid an overnight buy is only in the Changelog, so that needs storing
+     too); "the two locations are Till and Backroom, but there's also an NA used on credit buys logs"; and an
+     overnight buy gets it too: "put it in the menu on the overnight buy selection page per line on paid ones"
+     (the Collections tab's list, a paid row's ⋯). Assumed, not confirmed: a cash buy must pick Till or Backroom,
+     a credit buy copies NA by itself. Asked, unanswered: whether an overnight buy's fifth cell carries the ID's
+     last four digits the app keeps (`id_last4`) or stays blank.
   4. **A "stale card" tracker, to look into first:** "Investigating if there's a way to create a 'stale card'
-     tracker for cards that haven't sold in a long time." (An investigation, not a build: what the app can know about a
-     card selling; the Crystal Commerce inventory file is the likely source, unchecked.)
+     tracker for cards that haven't sold in a long time." (An investigation, not a build.) A first look
+     (2026-11-10): the app has no sales data. It knows when each card was bought and exported (`buy_lines`:
+     `cc_exported_at`, `cc_product_id`), and the current Crystal Commerce inventory file's products with their
+     Total Qty (`cc_products`, `lib/owned.js`); an older file is pruned when a new one goes up
+     (`master_inventory_prune`), so no count is kept over time. Ways in, for the owner to pick from: keep each
+     upload's counts and call a product stale when its count hasn't dropped in N days (our own exports
+     subtracted); or import a sales or last-sold report from Crystal Commerce, if it has one (the owner to say).
 
 - **Buy 82 (2026-11-10): the price that changed after two cards came off and went back on; looked into, nothing
   changed yet** (main session; the owner asked for the records only, no code). What prod's records show (read-only:
