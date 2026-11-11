@@ -331,8 +331,10 @@ marks each task done here when it's finished, with the exact file and function o
   from $35** beside the days (sent as `p_min_price`, shown on the current file's line), each row's Sell Price sent
   for View Stale Cards, the current file in two lines, the button "Upload file". Where to look: Settings → Stale
   cards file: no scrollbar; change either box and the how-to's line follows; upload with 90 and $20: the line
-  reads "no sale in 90 days, $20.00 and up". **Not yet measured in the browser** (the preview was signed out and
-  the store password is the owner's): the panel's fit at the store's window size is still to check.
+  reads "no sale in 90 days, $20.00 and up". Measured on dev (the panel's body is 287 px inside the Settings
+  panels' one height, 332): with no file, 114 px used at 1920×1080; with a current file's two lines (laid in for
+  the measure, nothing uploaded), about 132 px at 1200×650 (the laptops' 80%); no scrollbar either way, with room
+  for an error banner. The height stays the Settings panels' own, matching Records' Stale cut panel beside it.
 - 2026-11-10 (Export session): **🖨 Print a walk-in in progress** (decision 579; the three-part patch, part 1):
   `src/lib/quotePrint.js` (`quoteRow`, `quoteSheet`: the rows and the foot, pure), `src/lib/quotePdf.js` (the
   sheet), `src/pages/export/QuotePrintButton.jsx` (the button; the PDF library loads on the click). The button
