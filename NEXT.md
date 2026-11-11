@@ -22,7 +22,8 @@ marks each task done here when it's finished, with the exact file and function o
   product is one line (decision 578, migration 0015); the three-part patch, all three sessions' parts committed
   2026-11-10: 🖨 Print a walk-in in progress (579), the cash location, who paid and Copy for the buys sheet (580,
   583), the stale cards file, the stale cut and stale in Copies we own (580, 581, 582), on migration 0016; and
-  the owner's first QA round on it and Home's cash from the Till (584); NEXT.md's Buy 82 look and the designs. The
+  the owner's first QA round on it and Home's cash from the Till (584); the Buys report from Home's Today card (585;
+  new dependencies `recharts` 3.10.1 and `react-is` 19.3.0); NEXT.md's Buy 82 look and the designs. The
   owner has tried parts on dev; the QA round's fixes are untested. Both migrations are on dev only: prod first,
   then the site (the two items above).
 
