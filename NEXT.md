@@ -284,6 +284,28 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-11-10 (Records session): **The owner's QA on Records' part, and Home's cash from the Till** (decisions 580
+  amended and 584; 0016 amended in place on dev, decision 450, so prod still gets it whole; untested in the app, the
+  dev test run passed 671 checks).
+  - **Copy Details** (renamed from Copy) is first on a buy's ⋯ after Mark as completed, above Print ▸. It's also
+    first on a paid overnight buy's ⋯ in the Overnight buys table. Its rollover is now short: "Copy this buy as a
+    row for the buys sheet" (`buyCopy.js` `COPY_TITLE`, BUY COMPLETE's too).
+  - **Settings → Stale cut → View Stale Cards**: the list inside the panel, with its count, window and floor. The
+    list scrolls under the count line, and the panel keeps its height. Hide Stale Cards goes back. The list is
+    `stale_cards()`: the cards the Price screen marks 🕸️, so only products in the current inventory. On dev, upload
+    the stale file again first: the one there from before the amendment has no sell prices.
+  - **0016's amendment:** `stale_files.min_price` (0 to 9999, 35 unless changed, put last so a fresh apply matches
+    dev's order), `stale_products.sell_price`, `stale_file_load`'s `p_min_price` and its Changelog's "$35 and up",
+    and `stale_cards()`. Reviewed by pug-reviewer; its points fixed: the range matched to the box, the list matched
+    to the 🕸️, the race on Hide, and the list's own scroll.
+  - **Home → Today → From the Till** (decision 584; "Yes, all Till cash"): a third stat, the cash paid from the Till
+    today (walk-ins, overnight buys marked Paid/Ours, projects made buys; by `paid_at`) and its count. The card's
+    stats are three across (`home.css` `.home-stats.three`). **Not measured:** dev's sign-in needs the store
+    password, so the card's width wasn't checked in the browser. Check the three amounts don't wrap at the store's
+    width (TEST.md 4).
+  - **The test run:** its Backup and restore checks were four full restores in one statement. That went over the
+    time limit twice today as dev's data grew, so they're now three statements (`scripts/db-test-run.sql`).
+
 - 2026-11-10 (Records session): **The three-part patch, Records' part: migration 0016, Copy, the cash location at
   Paid/Ours, the stale cut** (decision 580; **0016 on dev only**, prod with 0015 on the owner's word, the first Open
   items). Untested in the app; the unit tests and the dev test run only (667 checks passed, 18 new).
