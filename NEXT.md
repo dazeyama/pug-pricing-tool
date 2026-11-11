@@ -88,6 +88,15 @@ marks each task done here when it's finished, with the exact file and function o
      into stock, and whether in-store sales count is still unknown. So the tracker needs when a product came
      into stock (the app knows it only for what it exported since 2026-10-19: `cc_exported_at`) and a floor on
      price or copies to be worth reading. Nothing built; the owner's file stayed in Downloads.
+     The owner's floor (2026-11-10): a second export, "the products are of type Magic Singles, … under the
+     Magic: The Gathering Singles category, the product's sell price is greater than or equal to $35.00, … less
+     than or equal to $9,999.00," ("high end cards only"; a card never stocked has a $0.00 price, so the price
+     filter leaves those out without a stock filter). The file: 503 products, 217 in stock (259 copies, about
+     $18,400 at sell price), 286 at Total Qty 0, so "in stock" still has to come from its Total Qty column. It
+     shares no product with the sold-in-180-days export, though 278 of that export's products are $35 and up
+     (Rhystic Study, Demonic Tutor in stock among them): so this search most likely still had a not-sold filter
+     on it (its description ends on a comma); the owner to confirm. If so, the tracker's input is this one file,
+     and its 217 in-stock rows are the list; recent arrivals still to be left out (`cc_exported_at`).
 
 - **Buy 82 (2026-11-10): the price that changed after two cards came off and went back on; looked into, nothing
   changed yet** (main session; the owner asked for the records only, no code). What prod's records show (read-only:
