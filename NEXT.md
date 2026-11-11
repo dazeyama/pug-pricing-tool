@@ -78,15 +78,16 @@ marks each task done here when it's finished, with the exact file and function o
       - `p_rows` is `[{product_id, product_name, total_qty, sell_price}]`, the CSV's Product ID, Product Name,
         Total Qty and Sell Price, up to 20,000 rows. `sell_price` is a number, and may be left out;
       - `p_days` is 1 to 3650, the window the file was made with (the upload panel's days box, 180 unless changed);
-      - `p_min_price` is 0 to 99999, the search's sell price floor (its box, 35 unless changed), else
+      - `p_min_price` is 0 to 9999, the search's sell price floor (its box, 35 unless changed), else
         `bad_min_price` (amended in 2026-11-10, the owner: "add a input for the sell price 35 mirroring the days");
       - a Changelog entry, action `stale_file_uploaded`, is under `p_user`. It ends "…, no sale in 180 days, $35 and
         up."
       The days and the floor live with the file, not in a setting: they describe that file.
     - `stale_cards() returns jsonb`: every stale card as `owned_copies` judges it (Total Qty over 0, past the
       recent-export guard), `[{product_id, product_name, category, total_qty, sell_price}]` by name, and `[]` with no
-      file. `category` comes from the current inventory file, null when the product isn't in it. This is for Settings
-      → Stale cut → View Stale Cards.
+      file. Only products in the current inventory file are listed, as the Price screen marks a printing through
+      the product it matched there; `category` comes from that file. This is for Settings → Stale cut → View Stale
+      Cards.
     - `owned_copies` keeps its parameters. Its answer adds `stale_file`: null when no file is up, else `{days,
       uploaded_at}`. It also adds `stale_ids`: the product ids among the card's products, and `p_product_id`'s,
       that are stale. A product is stale when it's in the file with Total Qty over 0 and no line of ours with that
@@ -342,7 +343,7 @@ marks each task done here when it's finished, with the exact file and function o
   from $35** beside the days (sent as `p_min_price`, shown on the current file's line), each row's Sell Price sent
   for View Stale Cards, the current file in two lines, the button "Upload file". Where to look: Settings → Stale
   cards file: no scrollbar; change either box and the how-to's line follows; upload with 90 and $20: the line
-  reads "no sale in 90 days, $20.00 and up". Measured on dev (the panel's body is 287 px inside the Settings
+  reads "no sale in 90 days, $20 and up". Measured on dev (the panel's body is 287 px inside the Settings
   panels' one height, 332): with no file, 114 px used at 1920×1080; with a current file's two lines (laid in for
   the measure, nothing uploaded), about 132 px at 1200×650 (the laptops' 80%); no scrollbar either way, with room
   for an error banner. The height stays the Settings panels' own, matching Records' Stale cut panel beside it.

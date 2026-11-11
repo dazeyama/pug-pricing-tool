@@ -9,7 +9,7 @@ import {
 } from '../../lib/staleFile.js';
 import { formatMoney } from '../../lib/money.js';
 
-/** The current file's price floor, as its line ends: ", $35.00 and up"; nothing for a file saved without one. */
+/** The current file's price floor, as its line ends: ", $35 and up" (", $12.50 and up"); nothing for a file saved without one. */
 const currentFloor = (file) => (file.min_price != null ? `, ${formatMoney(Number(file.min_price))} and up` : '');
 import { withLoading } from '../../lib/loading.js';
 import { formatDateTime } from '../../lib/time.js';

@@ -86,6 +86,11 @@ what happens. The findings are reported when the pass ends.
       cards", "PKM 3 cards + 100 bulk"), "No cards yet" when empty; the same on the Collections tab, not cut off on
       the table's last row.
 - [ ] A project's oldest price turns amber after 14 days.
+- [ ] **From the Till** (decision 584, migration 0016; Records session): Today shows three stats, Buys, Paid out
+      and **From the Till**. Confirm a $5 cash buy from the Till and a $3 one from the Backroom, and mark an
+      overnight buy Paid/Ours for $10 cash from the Till: From the Till reads $15, "2 payments today", while Paid
+      out counts only the walk-ins ($8 cash). Unlock the overnight buy back to Processing: $5. A credit buy and the
+      Backroom one never count. The three stats fit the card with no wrapped amounts at the store's width.
 
 ## 5. Buy tab: searching
 
@@ -580,11 +585,12 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       Till and Backroom chips show under Cash and Credit, and Mark Paid/Ours stays grey until one is picked; Credit
       hides them. Paid in cash from the Backroom: the Changelog's entry reads "paid: $… cash, Backroom". Unlocked
       back to Processing and paid again, the dialog asks afresh.
-- [ ] **Copy on a paid overnight buy** (decision 580; Records session): the Overnight buys table, a Paid/Ours (or
-      Completed) row's ⋯ → **Copy**, then paste into a spreadsheet's first cell: ten cells across: who started it,
+- [ ] **Copy Details on a paid overnight buy** (decision 580; Records session): the Overnight buys table, a Paid/Ours
+      (or Completed) row's ⋯ → **Copy Details**, first, above Print overnight buy; paste into a spreadsheet's first
+      cell: ten cells across: who started it,
       the date it was started (11/10/2026), the name, the phone as (555) 555-0100, the Last 4 ID, Cash or Credit,
       who marked it Paid/Ours, that date, the amount as $90.00, and Till, Backroom or NA (credit). Processing,
-      Priced and Rejected rows and projects have no Copy. One paid before 0016 leaves who paid and the location
+      Priced and Rejected rows and projects have no Copy Details. One paid before 0016 leaves who paid and the location
       empty.
 
 ## 12. Collections tab: projects
@@ -611,8 +617,8 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       words that say **Ours**, as its chip does, never Paid/Ours; a greyed Convert to buy… gives its reason the same
       way.
 - [ ] **Convert to buy asks Till or Backroom** (decision 580; Records session): a project's Convert to buy…, Cash:
-      Till and Backroom show as at CONFIRM BUY, and Convert to buy says to choose one; the new buy's ⋯ → Copy ends
-      in that location.
+      Till and Backroom show as at CONFIRM BUY, and Convert to buy says to choose one; the new buy's ⋯ → Copy Details
+      ends in that location.
 
 ## 13. Collections tab: Import Collection
 
@@ -748,8 +754,9 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       that's $1.20 today and one bought at $1.20 that's $2 today: Export MTG csv (>$1.49) keeps the first (in the
       file at today's Sell Price) and pulls the second, its row reading "Bought at $1.20"; Print MTG (>$1.49) prints
       the same cards the file has.
-- [ ] **Copy on a buy's ⋯** (decision 580, migration 0016; Records session): a buy confirmed today, Cash, Till: its
-      ⋯ → **Copy** (between Print ▸ and Export ▸, with no user picked too): the toast says Buy N was copied; pasted
+- [ ] **Copy Details on a buy's ⋯** (decision 580, migration 0016; Records session): a buy confirmed today, Cash,
+      Till: its ⋯ → **Copy Details** (above Print ▸, right after Mark as completed, with no user picked too): the
+      toast says Buy N was copied; pasted
       into a spreadsheet's first cell, ten cells across: who confirmed it, the date as 11/10/2026, the name, the
       phone as (555) 555-0100, an empty cell (a walk-in has no ID), Cash, the same worker, the same date, the paid
       amount as $90.00, Till. A credit buy ends in NA; a buy from before 0016 leaves the location empty.
@@ -849,14 +856,20 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
       9999, in the past 180 days"; change a box and the line changes). Upload the owner's stale search CSV with
       "No sale in 180 days" and "Sell price from $35": the toast says 503 products, 217 stale cards in stock (the
       2026-11-10 file); the panel turns green, its two lines read the file, when, who, and "217 stale in stock of
-      503: no sale in 180 days, $35.00 and up"; the Changelog (Settings) has the upload, "…, $35 and up". With 90
-      and $20 in the boxes, the next upload reads "no sale in 90 days, $20.00 and up". Refused, with the current file
+      503: no sale in 180 days, $35 and up"; the Changelog (Settings) has the upload, "…, $35 and up". With 90
+      and $20 in the boxes, the next upload reads "no sale in 90 days, $20 and up"; with $12.50, "$12.50 and up". Refused, with the current file
       kept: the Master Crystal Inventory's 40 MB file ("too big" or "looks like the whole inventory"), a CSV without
       Total Qty, a .xlsx, the days at 0 or blank, the price blank or 10000, no user picked.
 - [ ] **Stale cut** (decision 580; Records session): the Stale cut panel beside Stale cards file shows −10% and
       "Credit 60% on a stale card is 54%"; 20, Tab: the toast says −20% saved, the example reads 48%, and the
       Changelog (Settings) has "Stale cut: lower for a stale card 10% → 20%"; 0 says stale cards keep their rate; 101
       or −5 is refused with the saved value put back. Another computer's Settings follows the change.
+- [ ] **View Stale Cards** (decision 580, 0016 amended; Records session): the Stale cut panel's **View Stale Cards**
+      shows, in the panel, "N stale cards in stock (M copies): no sale in 180 days, $35 and up" and, under it, a
+      list that scrolls on its own: each card's name, its category from the inventory, ×copies and the sell price, by
+      name. It's the cards the box marks 🕸️: a card the app exported in the window, or one not in the current
+      inventory, isn't in it. Hide Stale Cards clicked while it's reading stays closed. **Hide Stale Cards** goes back to
+      the cut; the panel keeps its height beside Stale cards file. With no file, it says none is uploaded.
 
 ## 17. Changelog tab
 
