@@ -118,7 +118,18 @@ marks each task done here when it's finished, with the exact file and function o
   dependencies. Proposed, unanswered: a panel over Home with a small calendar to pick the week and bar charts a
   day of buys, paid out (cash and credit), cash from the Till, and cards by game, with the week's totals beside
   the week before; drawn by the app itself rather than a new chart package. Asked: which numbers matter; one
-  week only or other spans too; what the calendar is for; walk-ins only or overnight buys as well.
+  week only or other spans too; what the calendar is for; walk-ins only or overnight buys as well. **The owner's
+  direction, which replaces that proposal:** "I want it modeled after the Square Sales Report page, I want you
+  to be able to pick any range of dates and get a trend graph for cash and credit (separately) for that range.
+  … Default range is last 7 days." Square's page, from its help centre (squareup.com/help, articles 5530 and
+  5381; no screenshot seen): a date selector at the top with presets and a calendar for a custom range, a graph
+  of the chosen metric over the range as a line or as bars, in hours, days, weeks or months, a comparison with
+  the period before, a summary table under it, and print or export. Proposed from that, unanswered: the range
+  picker with presets and any two dates, last 7 days to start; one graph with a cash line and a credit line (or
+  two graphs), by day, by week on a long range; under it the range's totals (buys, cards, paid out, cash,
+  credit, from the Till, from the Backroom) beside the period before; every paid buy by the day it was paid, as
+  the Till stat counts; read by the app with no migration; and a chart package to ask about (Recharts, which
+  would ship to the site, loaded only when the panel opens) against drawing the graph ourselves.
 
 - **Four ideas from the owner, 2026-11-10: three designed and in the plan above, the sticker sheet shelved** (main session; nothing
   built; the designs, with the owner's answers quoted; the sticker sheet "for later", when the measurements come):
