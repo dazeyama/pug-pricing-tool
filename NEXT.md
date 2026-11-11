@@ -100,8 +100,20 @@ marks each task done here when it's finished, with the exact file and function o
      "In-Store Only" box, unticked, so the filter looks to count every sale unless narrowed, and a "Total
      quantity is between" filter. So the tracker's input is this one export (Inventory, that search, Export
      Search to CSV), and its in-stock rows are the list (217 on 2026-11-10); recent arrivals still to be left
-     out (`cc_exported_at`). Still to design with the owner: where it lives in the app and what staff do with the
-     list.
+     out (`cc_exported_at`). **What it's for, from the owner (2026-11-10), which replaces the list idea:** "The
+     goal is to mark down the buy price for already currently stale cards. EG: if someone adds a 'stale' card
+     to a walk-in buy, they'll be warned and offered a chance to apply a negative multiplier (set in settings)".
+     No page of its own: "This lives in the settings tab, a place to upload the master file from CC (with an
+     explanation on how to create it.) AND another panel besides it, that allows us to set base multipliers like
+     -10% or -20% to stale cards. All other info on stale/not stale lives in the Copies we own widget area, that
+     rollover should report the stale status, and it should display the mult there with the others, and apply
+     like the others. Show an emoji on stale cards clearly. etc". So it rides on Copies we own (decisions 448,
+     474, 518; `lib/ownedRates.js`, `OwnedCounter.jsx`, `OwnedCopiesPanel.jsx`, `lib/owned.js` `matchPrinting`):
+     a card is stale when the Crystal Commerce product its printing matches is in the uploaded file with Total
+     Qty over 0; the box gets a reason line and the change joins the cut and the bonuses in the one pill, Apply
+     and Auto apply rates? as they are. Needs a migration (the file's products kept, as `cc_products` are).
+     Asked, unanswered: one multiplier or several and what picks between them; whether the stale cut sits inside
+     the cut's "at most"; this printing only or any printing of the card.
 
 - **Buy 82 (2026-11-10): the price that changed after two cards came off and went back on; looked into, nothing
   changed yet** (main session; the owner asked for the records only, no code). What prod's records show (read-only:
