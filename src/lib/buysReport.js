@@ -102,5 +102,31 @@ export function totalOf(rows) {
   return { ...t, cash: cents(t.cash), credit: cents(t.credit), till: cents(t.till), backroom: cents(t.backroom) };
 }
 
+/**
+ * A day's buys, as its row opens to list them (the owner, 2026-11-11: "Can the buys in the day log be clickable so
+ * you can see them?"): the latest paid first, each with what it is and where it opens. A walk-in opens on its day
+ * page, in Magic's when it has a Magic card, else Pokémon's; an overnight buy or a project, on its own screen.
+ * @returns {{ id: string, what: string, customer: string, method: string, paid: number, location: string|null,
+ *   path: string, focus: boolean }[]}
+ */
+export function buysOn(buys, day) {
+  return buys.filter((b) => b.day === day)
+    .sort((a, b) => (a.paid_at < b.paid_at ? 1 : a.paid_at > b.paid_at ? -1 : 0))
+    .map((b) => {
+      const walkIn = b.kind === 'walk_in';
+      const game = (b.buy_lines ?? []).some((l) => l.game === 'mtg') || !(b.buy_lines ?? []).length ? 'mtg' : 'pokemon';
+      return {
+        id: b.id,
+        what: walkIn ? `Buy ${b.number ?? ''}`.trim() : b.project ? 'Project' : 'Overnight buy',
+        customer: b.customer_name ?? '',
+        method: b.paid_method,
+        paid: Number(b.paid_price) || 0,
+        location: b.paid_method === 'cash' ? b.cash_location ?? null : null,
+        path: walkIn ? `/calendar/${game}/${b.day}` : `/collections/${b.id}`,
+        focus: walkIn,
+      };
+    });
+}
+
 /** The graph's days: the closed ones left off when asked (the totals and the day rows still count them). */
 export const graphRows = (rows, hideClosed) => (hideClosed ? rows.filter((r) => !isClosedDay(r.day)) : rows);

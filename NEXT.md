@@ -331,6 +331,14 @@ marks each task done here when it's finished, with the exact file and function o
     - Custom's calendar drops down from its chip over the graph and closes once the last day is picked. The owner
       asked for that (2026-11-11), because sitting in the report it "squashed the data". The chip then reads
       "Custom: Nov 1 to Nov 4, 2026". It was measured on dev: the graph keeps its 231 px with it open.
+    - **A day's buys** (the owner, 2026-11-11: "Can the buys in the day log be clickable so you can see them?"): a
+      day row with buys opens to list them (`buysOn`). A walk-in opens on its day page, flashed as from the header
+      search; an overnight buy or a project opens its own screen. Tried on dev: Nov 10's Buy 46 opened its day
+      page, flashed.
+    - **Asked about by the owner:** dev's $1,000,000 credit on Oct 20 is test data. Buy 44 was confirmed with that
+      typed as paid, then made a project ("daisy's new cards") with Convert to project, which moved the payment onto
+      the project and deleted the buy. The report counts it on the day it was paid, and the project shows "Ours",
+      not the amount.
     - How long a long range takes to read.
     - Dark is the only theme it was styled for: it uses the app's tokens.
 

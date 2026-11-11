@@ -105,6 +105,10 @@ what happens. The findings are reported when the pass ends.
       except where those days go back before the first buy on record. The rows are newest first, a day with no buys
       greyed, and the Total row matches the tiles. **No scrollbar** on Last 7 days at the store's screen; on This month
       only the day rows scroll, their header and total staying put.
+- [ ] **A day's buys** (decision 585; Records session): a day with buys has ▸ and opens on a click (or Enter) to
+      list them under it, latest first: "Buy N · customer" with the amount under Cash or Credit (and Till or
+      Backroom), or "Overnight buy" or "Project". Clicking Buy N closes the report and opens its day page with
+      the buy flashed; an overnight buy or a project opens its own screen. A click on the day again folds it.
 - [ ] **Custom…** (decision 585): a month calendar drops down from the chip over the graph, which keeps its size;
       click a first day, then a last day (either order): it closes, the chip reads "Custom: Nov 1 to Nov 4, 2026"
       and the range is those days. ‹ › change the month, no day after today can be picked; a click outside closes

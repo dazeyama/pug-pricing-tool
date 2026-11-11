@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  dailyRows, daysIn, graphRows, isClosedDay, longDay, presets, rangeText, shiftDay, spanBefore, totalOf,
+  buysOn, dailyRows, daysIn, graphRows, isClosedDay, longDay, presets, rangeText, shiftDay, spanBefore, totalOf,
 } from '../src/lib/buysReport.js';
 
 test('days: shifted across a month and a year, and listed both ends in', () => {
@@ -52,6 +52,25 @@ test('valued bulk isn\'t counted as cards, as on Home', () => {
   const rows = dailyRows([{ day: '2026-11-04', paid_price: 5, paid_method: 'cash',
     buy_lines: [{ quantity: 2 }, { quantity: 100, bulk_kind: 'mtg_100_common', unit_price: 1 }] }], '2026-11-04', '2026-11-04');
   assert.equal(rows[0].cards, 2);
+});
+
+test('a day\'s buys: the latest first, each opening where it lives', () => {
+  const buys = [
+    { id: 'w1', day: '2026-11-04', paid_at: '2026-11-04T18:00:00Z', kind: 'walk_in', number: 44, customer_name: 'A',
+      paid_method: 'cash', paid_price: '5.00', cash_location: 'till', buy_lines: [{ game: 'pokemon' }] },
+    { id: 'p1', day: '2026-11-04', paid_at: '2026-11-04T20:00:00Z', kind: 'collection', project: true,
+      customer_name: 'B', paid_method: 'credit', paid_price: 1000000, cash_location: null, buy_lines: [{ game: 'mtg' }] },
+    { id: 'w2', day: '2026-11-05', paid_at: '2026-11-05T18:00:00Z', kind: 'walk_in', number: 45, paid_method: 'cash',
+      paid_price: 1, buy_lines: [{ game: 'pokemon' }, { game: 'mtg' }] },
+  ];
+  assert.deepEqual(buysOn(buys, '2026-11-04'), [
+    { id: 'p1', what: 'Project', customer: 'B', method: 'credit', paid: 1000000, location: null,
+      path: '/collections/p1', focus: false },
+    { id: 'w1', what: 'Buy 44', customer: 'A', method: 'cash', paid: 5, location: 'till',
+      path: '/calendar/pokemon/2026-11-04', focus: true },
+  ]);
+  assert.equal(buysOn(buys, '2026-11-05')[0].path, '/calendar/mtg/2026-11-05');
+  assert.deepEqual(buysOn(buys, '2026-11-06'), []);
 });
 
 test('hiding closed days leaves them off the graph only', () => {

@@ -67,4 +67,14 @@
 .br-days tfoot td { position: sticky; bottom: 0; background: var(--panel); border-top: 1px solid var(--border); }
 .br-days th:first-child, .br-days td:first-child { text-align: left; }
 .br-days tr.none td { color: var(--muted); }
+/* A day with buys opens to list them; each opens where it lives. */
+.br-days tr.br-day { cursor: pointer; }
+.br-days tr.br-day:hover td, .br-days tr.br-day.open td { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.br-days tr.br-day:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.br-caret { display: inline-block; width: 14px; color: var(--muted); }
+.br-days tr.br-buy td { padding-top: 3px; padding-bottom: 3px; font-size: 13px; background: var(--panel-2); }
+.br-days tr.br-buy td:first-child { padding-left: 28px; }
+.br-buy-link { padding: 0; border: 0; background: none; font: inherit; font-weight: 700; color: var(--accent); cursor: pointer; }
+.br-buy-link:hover { text-decoration: underline; }
+.br-buy-who, .br-buy-loc { color: var(--muted); font-size: 12px; }
 .br-days tfoot td { font-weight: 800; border-bottom: 0; }

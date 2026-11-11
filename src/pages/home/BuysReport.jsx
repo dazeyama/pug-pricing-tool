@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useDismiss } from '../../lib/useDismiss.js';
 import {
   Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
@@ -10,7 +11,7 @@ import { useLiveTable } from '../../lib/useLiveTable.js';
 import { dayRange, monthGrid, monthTitle, shiftMonth, storeDay } from '../../lib/calendar.js';
 import { formatMoney } from '../../lib/money.js';
 import {
-  DEFAULT_PRESET, dailyRows, graphRows, longDay, presets, rangeText, shortDay, spanBefore, totalOf,
+  DEFAULT_PRESET, buysOn, dailyRows, graphRows, longDay, presets, rangeText, shortDay, spanBefore, totalOf,
 } from '../../lib/buysReport.js';
 import '../../styles/buysReport.css';
 
@@ -35,7 +36,8 @@ function useReportBuys(from, to) {
     const end = dayRange(to).to.toISOString();
     const [buys, first] = await Promise.all([
       allPages((a, b) => supabase.from('buys')
-        .select('id, paid_at, paid_price, paid_method, cash_location, buy_lines(quantity, bulk_kind, struck_at)', { count: 'exact' })
+        .select('id, kind, number, customer_name, project, paid_at, paid_price, paid_method, cash_location, '
+          + 'buy_lines(game, quantity, bulk_kind, struck_at)', { count: 'exact' })
         .in('status', ['confirmed', 'paid', 'completed'])
         .not('paid_price', 'is', null)
         .gte('paid_at', start)
@@ -161,6 +163,8 @@ export default function BuysReport({ onClose }) {
   const [view, setView] = useState('line');
   const [hideClosed, setHideClosed] = useState(true);
   const [picking, setPicking] = useState(false);   // the custom range's calendar, dropped down
+  const [openDay, setOpenDay] = useState(null);    // the day row opened to list its buys
+  const navigate = useNavigate();
   const customRef = useRef(null);
   useDismiss(() => setPicking(false), { ref: customRef, when: picking, escape: false });
   const live = useReportBuys(range.from, range.to);
@@ -313,14 +317,55 @@ export default function BuysReport({ onClose }) {
             </thead>
             <tbody>
               {rows.slice().reverse().map((r) => (
-                <tr key={r.day} className={r.buys ? '' : 'none'}>
-                  <td>{longDay(r.day)}</td>
-                  <td>{r.buys}</td>
-                  <td>{r.cards}</td>
-                  <td className={r.cash ? 'is-cash' : ''}>{formatMoney(r.cash)}</td>
-                  <td className={r.credit ? 'is-credit' : ''}>{formatMoney(r.credit)}</td>
-                  <td>{formatMoney(r.cash + r.credit)}</td>
-                </tr>
+                <Fragment key={r.day}>
+                  {/* A day with buys opens to list them (the owner, 2026-11-11). */}
+                  <tr
+                    className={`${r.buys ? 'br-day' : 'none'}${openDay === r.day ? ' open' : ''}`}
+                    {...(r.buys ? {
+                      tabIndex: 0,
+                      'aria-expanded': openDay === r.day,
+                      title: openDay === r.day ? 'Hide this day\'s buys' : 'Show this day\'s buys',
+                      onClick: () => setOpenDay(openDay === r.day ? null : r.day),
+                      onKeyDown: (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setOpenDay(openDay === r.day ? null : r.day);
+                        }
+                      },
+                    } : {})}
+                  >
+                    <td>{r.buys ? <span className="br-caret" aria-hidden="true">{openDay === r.day ? '▾' : '▸'}</span> : null}{longDay(r.day)}</td>
+                    <td>{r.buys}</td>
+                    <td>{r.cards}</td>
+                    <td className={r.cash ? 'is-cash' : ''}>{formatMoney(r.cash)}</td>
+                    <td className={r.credit ? 'is-credit' : ''}>{formatMoney(r.credit)}</td>
+                    <td>{formatMoney(r.cash + r.credit)}</td>
+                  </tr>
+                  {openDay === r.day && buysOn(live.data?.buys ?? [], r.day).map((b) => (
+                    <tr key={b.id} className="br-buy">
+                      <td colSpan={3}>
+                        <button
+                          type="button"
+                          className="br-buy-link"
+                          title={b.focus ? 'Open its day page, at this buy' : 'Open it'}
+                          onClick={() => {
+                            onClose();
+                            navigate(b.path, b.focus ? { state: { focus: { buyId: b.id, lineIds: [] } } } : undefined);
+                          }}
+                        >
+                          {b.what}
+                        </button>
+                        {b.customer && <span className="br-buy-who"> · {b.customer}</span>}
+                      </td>
+                      <td className={b.method === 'cash' ? 'is-cash' : ''}>
+                        {b.method === 'cash' ? formatMoney(b.paid) : ''}
+                        {b.location && <span className="br-buy-loc"> {b.location === 'till' ? 'Till' : 'Backroom'}</span>}
+                      </td>
+                      <td className={b.method === 'credit' ? 'is-credit' : ''}>{b.method === 'credit' ? formatMoney(b.paid) : ''}</td>
+                      <td />
+                    </tr>
+                  ))}
+                </Fragment>
               ))}
             </tbody>
             <tfoot>
