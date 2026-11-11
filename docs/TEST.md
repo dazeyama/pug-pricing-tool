@@ -301,6 +301,10 @@ what happens. The findings are reported when the pass ends.
 - [ ] A basic land's line still edits (its exact search); a Japanese Pokémon line keeps its number search.
 - [ ] **SAVE EDIT finds every kind of line:** Magic, TCGdex Pokémon (`Charizard 4/102 BS`), Japanese, a TCGplayer-only
       version, bulk (`BULK pkm`) and a placeholder (its name back).
+- [ ] **One TCGplayer product is one line** (decision 578, migration 0015; dev): add Mr. Mime 6/64 from Jungle,
+      holo, picked through its TCGdex card; then search `mr mime 6` and add the same card where it comes as a JustTCG
+      find (number "06"), at the same condition and price: one line, ×2, keeping the first one's number. In another
+      condition, or with a manual price, it's its own line.
 - [ ] Hovering a line shows its picture; × removes it after asking, and with several copies asks how many.
 - [ ] **mimp mode** (decisions 293, 323): 🌼 lit to start, ADD CARD clears the card area; 🦇 keeps the search and the
       card with Qty back to 1; kept from buy to buy, 🌼 again when the screen opens; SAVE EDIT always clears.

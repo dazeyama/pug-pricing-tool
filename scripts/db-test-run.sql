@@ -3076,6 +3076,37 @@ begin
                || '{"tcgplayer_id": "900001"}', u, true);
   perform pg_temp.ok(s, '… the same one twice is one line', v_other = v_line);
 
+  -- 578 (0015): one TCGplayer product of one name is one card when one line has no id to tell them apart (Buy 82's
+  -- Mr. Mime, picked through TCGdex and found without it).
+  v_line := draft_add_line(a, pg_temp.line('Dbtest Mime', 'TPC', '6', 1, 13.00, 'pokemon')
+              || '{"tcgplayer_id": "900003", "rarity": "Rare"}', u, true);
+  v_other := draft_add_line(a, (pg_temp.line('Dbtest Mime', 'TPC', '06', 1, 13.00, 'pokemon') - 'tcgdex_id')
+               || '{"tcgplayer_id": "900003", "rarity": "Holo Rare"}', u, true);
+  perform pg_temp.ok(s, 'A card picked through TCGdex and the same TCGplayer product found without it are one line (0015)',
+    v_other = v_line
+    and (select quantity = 2 and tcgdex_id is not null and collector_number = '6' from buy_lines where id = v_line));
+  v_other := draft_add_line(a, (pg_temp.line('Dbtest Mime', 'TPC', '06', 1, 13.00, 'pokemon', null, 'LP') - 'tcgdex_id')
+               || '{"tcgplayer_id": "900003"}', u, true);
+  perform pg_temp.ok(s, '… in another condition it''s its own line', v_other <> v_line);
+  v_other := draft_add_line(a, (pg_temp.line('Dbtest Mime', 'TPC', '06', 1, 12.00, 'pokemon') - 'tcgdex_id')
+               || '{"tcgplayer_id": "900003"}', u, true);
+  perform pg_temp.ok(s, '… and at another price', v_other <> v_line);
+  -- Two TCGdex cards TCGdex links to one product (the Trainer Kit's Great Ball and Lightning Energy) stay two.
+  v_other := draft_add_line(a, pg_temp.line('Dbtest Mime', 'TPD', '7', 1, 13.00, 'pokemon')
+               || '{"tcgplayer_id": "900003"}', u, true);
+  perform pg_temp.ok(s, '… but two TCGdex cards on one product stay two lines', v_other <> v_line);
+  v_other := draft_add_line(a, (pg_temp.line('Dbtest Energy', 'TPC', '6', 1, 13.00, 'pokemon') - 'tcgdex_id')
+               || '{"tcgplayer_id": "900003"}', u, true);
+  perform pg_temp.ok(s, '… and so does a card of another name on that product', v_other <> v_line);
+  -- SAVE EDIT folds by it too: a line edited to that card at that price joins it.
+  v_b := draft_add_line(a, (pg_temp.line('Dbtest Mime', 'TPC', '06', 1, 12.00, 'pokemon', null, 'MP') - 'tcgdex_id')
+           || '{"tcgplayer_id": "900003"}', u, true);
+  v_other := draft_update_line(v_b, (pg_temp.line('Dbtest Mime', 'TPC', '06', 1, 13.00, 'pokemon') - 'tcgdex_id')
+               || '{"tcgplayer_id": "900003"}', u);
+  perform pg_temp.ok(s, '… and SAVE EDIT folds a line edited to that card into it',
+    v_other = v_line and not exists (select 1 from buy_lines where id = v_b)
+    and (select quantity = 3 from buy_lines where id = v_line));
+
   -- 353: a walk-in's Completed side is locked, its bulk too.
   v_b := pg_temp.buy(a, u, 'DBTEST Locked Side', '5550100018', array[
     pg_temp.line('Dbtest Bolt', 'DBT', '001', 1, 1.00), pg_temp.bulk('mtg_100_common', 10, 1.50)]);
