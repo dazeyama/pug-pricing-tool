@@ -112,8 +112,15 @@ marks each task done here when it's finished, with the exact file and function o
      a card is stale when the Crystal Commerce product its printing matches is in the uploaded file with Total
      Qty over 0; the box gets a reason line and the change joins the cut and the bonuses in the one pill, Apply
      and Auto apply rates? as they are. Needs a migration (the file's products kept, as `cc_products` are).
-     Asked, unanswered: one multiplier or several and what picks between them; whether the stale cut sits inside
-     the cut's "at most"; this printing only or any printing of the card.
+     Settled after: the design as laid out ("yes": the upload panel with how to make the file, its date and its
+     count; the multiplier panel beside it; an emoji on the counter; a line in the box such as "Stale: no sale
+     in 180 days (−10%)"; Magic only, on walk-ins and open overnight buys); a card the app exported within the
+     window isn't called stale ("yes"); one multiplier ("For now, 1 tier of stale cards at 180 days BUT if the
+     file is made with a different window like 90, would it use that naturally? That would be useful."); "For
+     now, just exact printings." On the window: which cards are stale follows whatever search made the file, but
+     the file doesn't say its window (no column for it), so the box's wording and the recent-export guard need
+     the number from somewhere: proposed, a days box in the upload panel, 180 unless changed; not yet agreed.
+     Unanswered: whether the stale cut sits inside the cut's "at most" (proposed: inside it).
 
 - **Buy 82 (2026-11-10): the price that changed after two cards came off and went back on; looked into, nothing
   changed yet** (main session; the owner asked for the records only, no code). What prod's records show (read-only:
