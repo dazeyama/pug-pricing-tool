@@ -95,8 +95,13 @@ marks each task done here when it's finished, with the exact file and function o
      $18,400 at sell price), 286 at Total Qty 0, so "in stock" still has to come from its Total Qty column. It
      shares no product with the sold-in-180-days export, though 278 of that export's products are $35 and up
      (Rhystic Study, Demonic Tutor in stock among them): so this search most likely still had a not-sold filter
-     on it (its description ends on a comma); the owner to confirm. If so, the tracker's input is this one file,
-     and its 217 in-stock rows are the list; recent arrivals still to be left out (`cc_exported_at`).
+     on it (its description ends on a comma). Confirmed by the owner with a screenshot of the search: Sell price
+     is between 35 and 9999, and "In the past 180 days (=) equal to 0 quantity sold"; the form also has an
+     "In-Store Only" box, unticked, so the filter looks to count every sale unless narrowed, and a "Total
+     quantity is between" filter. So the tracker's input is this one export (Inventory, that search, Export
+     Search to CSV), and its in-stock rows are the list (217 on 2026-11-10); recent arrivals still to be left
+     out (`cc_exported_at`). Still to design with the owner: where it lives in the app and what staff do with the
+     list.
 
 - **Buy 82 (2026-11-10): the price that changed after two cards came off and went back on; looked into, nothing
   changed yet** (main session; the owner asked for the records only, no code). What prod's records show (read-only:
