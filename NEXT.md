@@ -29,6 +29,36 @@ marks each task done here when it's finished, with the exact file and function o
   - **Step 1, the contract:** Records writes the names first (columns, each function's parameters and what it
     returns, the `stale_cards` setting's keys) as a short list in this entry, so Buy tab and Export build against
     it; then the migration, pug-reviewer, the rehearsal, dev, the snapshot, the test run (`docs/DATABASE.md`).
+    **The contract** (Records session, 2026-11-10; the migration is 0016, on no project yet; a change goes to
+    Records by message):
+    - `buys.cash_location` text: `'till'`, `'backroom'` or null. A credit buy always has null: the database refuses
+      a location unless `paid_method = 'cash'`. A cash buy with none is allowed (older buys, and the live site
+      between the prod push and the site push); the app requires the pick. The copy row shows Till, Backroom, NA
+      for credit, and an empty cell for a cash buy with none.
+    - `buys.paid_by` uuid (→ `staff_users`): who took the payment. `confirm_buy` and `project_to_buy` set it to
+      their `p_user`, and Mark Paid/Ours sets it to its own. Going back to Processing or Priced clears it and the
+      location, along with the payment. Completed and its reopen keep both.
+    - `confirm_buy(…, p_cash_location text default null)`, `collection_set_status(…, p_cash_location text default
+      null)` (read only when marking Paid/Ours from Processing or Priced) and `project_to_buy(…, p_cash_location
+      text default null)`. Each takes `'till'` or `'backroom'`. On a credit payment it's stored null, whatever is
+      sent. Anything else raises `bad_cash_location`. The other parameters and the answers are unchanged.
+    - The stale file: `stale_files` (one row, the current upload: `original_filename`, `days`, `products`,
+      `in_stock`, `uploaded_by`, `uploaded_at`) and `stale_products` (`product_id` key, `product_name`,
+      `total_qty`). Both are readable by the signed-in role, which can't write them.
+      `stale_file_load(p_filename text, p_days integer, p_rows jsonb, p_user uuid) returns jsonb`
+      `{uploaded_at, products, in_stock}` replaces the file whole, in one call:
+      - `p_rows` is `[{product_id, product_name, total_qty}]`, the CSV's Product ID, Product Name and Total Qty,
+        up to 20,000 rows;
+      - `p_days` is 1 to 3650, the window the file was made with (the upload panel's days box, 180 unless changed);
+      - a Changelog entry, action `stale_file_uploaded`, is under `p_user`.
+      The days live with the file, not in a setting: they describe that file.
+    - `owned_copies` keeps its parameters. Its answer adds `stale_file`: null when no file is up, else `{days,
+      uploaded_at}`. It also adds `stale_ids`: the product ids among the card's products, and `p_product_id`'s,
+      that are stale. A product is stale when it's in the file with Total Qty over 0 and no line of ours with that
+      `cc_product_id` was exported since `uploaded_at` − `days` (the recent-export guard). The printing is stale when
+      `stale_ids` holds its matched product (`cc_match.product_id`), since the first call goes without one.
+    - The setting `stale_cards`: `{"pct": 10}`, the stale cut in percent of the card's rate, 10 when the key isn't
+      there and 0 for off. It's separate from the copies cut's "at most", and goes on top of it.
   - **Step 2, side by side:** *Export and printouts:* the in-progress walk-in printout whole (the sheet and its
     button on the Buy tab's list; no migration), and the stale file's upload panel in Settings with how to make
     the file and the days box (it's the inventory upload's twin). *Records:* the copy row's builder (one pure
