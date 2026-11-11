@@ -130,7 +130,14 @@ marks each task done here when it's finished, with the exact file and function o
   two graphs), by day, by week on a long range; under it the range's totals (buys, cards, paid out, cash,
   credit, from the Till, from the Backroom) beside the period before; every paid buy by the day it was paid, as
   the Till stat counts; read by the app with no migration; and a chart package to ask about (Recharts, which
-  would ship to the site, loaded only when the panel opens) against drawing the graph ourselves.
+  would ship to the site, loaded only when the panel opens) against drawing the graph ourselves. Answered
+  (2026-11-10): "2 lines on 1 graph"; and the package is a yes: "let's use the package, recharts sounds good.
+  Grab this and use it to make me a mockup of what this panel could look like, using read only real data from
+  last 14 days on prod." The mockup is a private page, https://claude.ai/artifact/9Ug6ybJnAtErRxafooX3H7 (Recharts
+  2.12.7 from a CDN; 28 days of prod's daily totals by the day paid, one read-only SELECT, sums only; its source
+  is outside the repo): presets and a custom range, a Line / Bars switch, cash and credit on one graph, the
+  range's totals beside the same span before, a row a day. `recharts` isn't in `package.json` yet: it goes in
+  with the build. Waiting on the owner's reaction to the mockup; the rest of the proposal is unconfirmed.
 
 - **Four ideas from the owner, 2026-11-10: three designed and in the plan above, the sticker sheet shelved** (main session; nothing
   built; the designs, with the owner's answers quoted; the sticker sheet "for later", when the measurements come):
