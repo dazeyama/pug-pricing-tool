@@ -70,7 +70,15 @@ marks each task done here when it's finished, with the exact file and function o
      Total Qty (`cc_products`, `lib/owned.js`); an older file is pruned when a new one goes up
      (`master_inventory_prune`), so no count is kept over time. Ways in, for the owner to pick from: keep each
      upload's counts and call a product stale when its count hasn't dropped in N days (our own exports
-     subtracted); or import a sales or last-sold report from Crystal Commerce, if it has one (the owner to say).
+     subtracted); or import a sales or last-sold report from Crystal Commerce, if it has one. Looked up for the
+     owner (2026-11-10, Crystal Commerce's help centre, articles of 2018 to 2020, nothing tried in the store's
+     admin): it has one. Inventory tab, the last filter, "In the past [days] days [> < =] [n] qty [bought or
+     sold]": days 180, =, 0, sold lists what hasn't sold in 180 days
+     (help.crystalcommerce.com/en/articles/3627487); a search on Inventory > Products exports to CSV, the file
+     under Notifications > Generated Reports. Not confirmed by the articles: that the export keeps this filter,
+     that it combines with "total qty between" (in stock only), that in-store sales count, and how far back it
+     goes; the owner to try it. If it works, the app's part could be small: read that CSV and add what Crystal
+     Commerce doesn't know (when we bought each card and what we paid, by `cc_product_id`), or nothing at all.
 
 - **Buy 82 (2026-11-10): the price that changed after two cards came off and went back on; looked into, nothing
   changed yet** (main session; the owner asked for the records only, no code). What prod's records show (read-only:
