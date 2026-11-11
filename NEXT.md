@@ -14,8 +14,37 @@ marks each task done here when it's finished, with the exact file and function o
 - **Unpushed** (main session): NEXT.md's Buy 82 entry and the four ideas below (no code); the Buy tab session's
   one TCGplayer product is one line (decision 578, migration 0015 on dev only: 69b9fc8, a053635, 38b2e6b).
 
-- **Four ideas from the owner, 2026-11-10, to design together and leave open for now** (main session; nothing
-  designed or built, each needs its design talk with the owner first):
+- **The three-part patch: a plan, waiting for the owner's go** (main session, 2026-11-10; the owner: "Shelve the
+  sticker sheets for later, but I want to begin work on all 3 of these designs now at once. Let's make a plan of
+  action AND I want that plan to include creating only a single combined migration for this 3 part patch."). The
+  designs are items 1, 3 and 4 of the entry below; nothing is given out yet.
+  - **One migration, one writer:** the next number on disk (0016 while 0015 is the last), written by the Records
+    session alone, holding the copy button's part (`buys`: the cash location and who paid; `confirm_buy` and
+    `collection_set_status` take and keep them) and the stale cards' part (the uploaded file's products, its load,
+    and stale in `owned_copies`' answer or beside it, the recent-export guard included). It must leave the live
+    site working between the prod push and the site push: every new parameter has a default and the database
+    doesn't refuse a cash buy with no location (the app requires it). `backup_columns` reads `buys`' columns by
+    itself; the stale file isn't backed up, as the inventory isn't. On dev only it may be amended in place
+    (decision 450), by Records alone, on a message from the session that needs the change.
+  - **Step 1, the contract:** Records writes the names first (columns, each function's parameters and what it
+    returns, the `stale_cards` setting's keys) as a short list in this entry, so Buy tab and Export build against
+    it; then the migration, pug-reviewer, the rehearsal, dev, the snapshot, the test run (`docs/DATABASE.md`).
+  - **Step 2, side by side:** *Export and printouts:* the in-progress walk-in printout whole (the sheet and its
+    button on the Buy tab's list; no migration), and the stale file's upload panel in Settings with how to make
+    the file and the days box (it's the inventory upload's twin). *Records:* the copy row's builder (one pure
+    function, tested), Copy on a single buy's ⋯ and on a paid row of the overnight buys list, the cash location on
+    Paid/Ours, and the stale multiplier's panel in Settings. *Buy tab:* the cash location on CONFIRM BUY and Copy
+    on BUY COMPLETE (Records' builder), and stale in Copies we own: the emoji, the box's line, the change in the
+    pill, Apply, Auto apply rates?, a phone's scans. *Phone scanner:* nothing, unless Buy tab finds a scan needs it.
+  - **Step 3:** each session's decision row (its number from disk), TEST.md cases and Done entry; the main
+    session's QA table; the owner's QA on dev; then, on the owner's word, 0015 and the new migration to prod in one
+    sitting and the site after, with the review.
+  - **To know going in:** a buy confirmed before this has no cash location and an overnight buy paid before it has
+    no payer kept, so their copied rows leave those cells empty (the payer could be filled from the Changelog; not
+    planned). One migration means the three parts reach prod together.
+
+- **Four ideas from the owner, 2026-11-10: three designed and in the plan above, the sticker sheet shelved** (main session; nothing
+  built; the designs, with the owner's answers quoted; the sticker sheet "for later", when the measurements come):
   1. **Print an in-progress walk-in buy:** "A way to print in-progress walk-in buys." (Buy tab; the printout
      itself is Export and printouts'.) Designed so far with the owner (2026-11-10), not built, no decision row
      yet: walk-ins only ("Feature for walk ins only"); for the customer as an offer sheet and for staff as a
