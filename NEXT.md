@@ -36,6 +36,23 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-11-11 (Records session): **A failed load of the Buys report keeps Home up** (decision 587, from the push
+  review; the owner: "Yes, fix it"; no migration; not pushed).
+  - **What changed:** the Today card's click loads the report itself (`HomePage.jsx` `openReport`, no more
+    `React.lazy`). A load that fails gives a toast (`lib/buysReport.js` `reportLoadError`, tested) and Home stays.
+    The next click tries again.
+  - **Where to look:** Home → turn the connection off → click Today. A red toast says "No connection: the Buys
+    report couldn't load…". Back online, the click opens it. TEST.md 4.
+  - **Tried on dev:**
+    - The setup: a build of the app pointed at dev's database (prod's ref checked absent), served on localhost by a
+      temporary launch entry. The entry and the builds were removed after.
+    - With the report's file deleted, a click toasted "The Buys report couldn't load. The app was updated since
+      this page was opened: reload the page (F5) and try again", and Home stayed. A second click toasted again.
+    - The site was then replaced by a newer build, as a push does. The old page's click toasted the same, and after
+      F5 the report opened and drew.
+    - The no-connection wording wasn't seen: the dev server's file came from the browser's cache when the server
+      was stopped. It's covered by the unit test.
+
 - 2026-11-11: **Migrations 0015 and 0016 on prod, and pushed without a bump** (main session; the owner: "Push it
   all now to the prod pages live site, including all the migrations are a go, the store is closed."). Prod first
   (`db push`, both in one sitting; then the structure-only compare against a fresh read of dev the same hour,

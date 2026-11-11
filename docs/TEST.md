@@ -95,6 +95,10 @@ what happens. The findings are reported when the pass ends.
       hand and the head's "Buys report →" underlined; a click (or Tab to it, Enter) opens "Buys report · Nov 4 to Nov
       10, 2026" on Last 7 days, the graph a moment after; Close or Esc shuts it. Today, Last 14 days and This month
       each change the header, the graph, the totals and the rows.
+- [ ] **The report failing to load keeps Home** (decision 587; Records session): with the connection off (or in a
+      tab opened before a push), click Today: Home stays as it is and a red toast says the Buys report couldn't load,
+      "No connection … Try again once it's back" (or "The app was updated … reload the page (F5)"); clicking again
+      tries again. Back online (or after F5), the click opens it.
 - [ ] **The graph** (decision 585): a green cash line and a blue credit line, a point a day, never below $0;
       hovering a day says its cash, credit, buys and cards. Bars shows the same as pairs of bars. With Hide closed
       days (Mon, Wed) ticked, Mondays and Wednesdays are missing from the graph and the legend says how many were

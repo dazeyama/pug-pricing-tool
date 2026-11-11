@@ -4,6 +4,17 @@
 // buys marked Paid/Ours and projects made buys, as Home's From the Till does (decision 584). Pure, for the tests.
 
 import { isValuedBulk } from './bulk.js';
+import { STALE_BUILD, isStaleBuild } from './staleBuild.js';
+
+/**
+ * Why the report didn't open, in the toast's words (decision 587): no connection, a page older than the site
+ * (decision 507's words, which main.jsx may already have put on the error), or anything else, which a reload fixes.
+ */
+export function reportLoadError(error, offline) {
+  if (offline) return "No connection: the Buys report couldn't load. Try again once it's back.";
+  if (isStaleBuild(error) || error?.message === STALE_BUILD) return `The Buys report couldn't load. ${STALE_BUILD}`;
+  return "The Buys report couldn't load: reload the page (F5) and try again.";
+}
 
 const WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];

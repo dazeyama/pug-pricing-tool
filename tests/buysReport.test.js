@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  buysOn, dailyRows, daysIn, graphRows, isClosedDay, longDay, presets, rangeText, shiftDay, spanBefore, totalOf,
+  buysOn, dailyRows, daysIn, graphRows, reportLoadError, isClosedDay, longDay, presets, rangeText, shiftDay, spanBefore, totalOf,
 } from '../src/lib/buysReport.js';
 
 test('days: shifted across a month and a year, and listed both ends in', () => {
@@ -71,6 +71,15 @@ test('a day\'s buys: the latest first, each opening where it lives', () => {
   ]);
   assert.equal(buysOn(buys, '2026-11-05')[0].path, '/calendar/mtg/2026-11-05');
   assert.deepEqual(buysOn(buys, '2026-11-06'), []);
+});
+
+test('a failed load says what to do: wait for the connection, or reload (decision 587)', () => {
+  assert.match(reportLoadError(new Error('Failed to fetch dynamically imported module: x.js'), true), /^No connection/);
+  assert.equal(reportLoadError(new Error('Failed to fetch dynamically imported module: x.js'), false),
+    "The Buys report couldn't load. The app was updated since this page was opened: reload the page (F5) and try again.");
+  assert.equal(reportLoadError(new Error('The app was updated since this page was opened: reload the page (F5) and try again.'), false),
+    "The Buys report couldn't load. The app was updated since this page was opened: reload the page (F5) and try again.");
+  assert.equal(reportLoadError(new Error('boom'), false), "The Buys report couldn't load: reload the page (F5) and try again.");
 });
 
 test('hiding closed days leaves them off the graph only', () => {

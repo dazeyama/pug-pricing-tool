@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
 import { allPages } from '../lib/inChunks.js';
@@ -13,6 +13,9 @@ import CardCountsName from '../components/CardCountsName.jsx';
 import { colorVar } from '../lib/palette.js';
 import { formatInTimeZone } from 'date-fns-tz';
 import { useStaff } from '../state/staff.jsx';
+import { useToast } from '../components/Toast.jsx';
+import { useConnection } from '../state/connection.jsx';
+import { reportLoadError } from '../lib/buysReport.js';
 
 // Home (owner, 2026-10-01): the first tab, and where the logo goes. What
 // needs doing (days to export, Can't upload cards, collections and projects
@@ -22,8 +25,10 @@ import { useStaff } from '../state/staff.jsx';
 // centered, that never scrolls (owner, 2026-10-01): each list shows its first
 // few and "+N more" for the rest.
 
-// The Buys report (decision 585), opened from the Today card: loaded only then, with its graph package.
-const BuysReport = lazy(() => import('./home/BuysReport.jsx'));
+// The Buys report (decision 585), opened from the Today card: loaded only then, with its graph package. Loaded by the
+// click, not React.lazy, so a load that fails is caught there and said in a toast, and Home stays as it is (decision
+// 587): with nothing to catch it, a lazy part's failure in render takes the whole page down.
+const loadBuysReport = () => import('./home/BuysReport.jsx');
 
 const DAY_MS = 86_400_000;
 const STALE_PRICES_DAYS = 14;   // a project's oldest price this old is worth a REPRICE?
@@ -84,7 +89,24 @@ function HomeScreen({ today }) {
   const user = useStaff().current;
   const [daysRef, daysFit] = useRowsThatFit();
   const [eventsRef, eventsFit] = useRowsThatFit(EVENT_ROW_PX, 4);
-  const [report, setReport] = useState(false);   // the Buys report, open over Home
+  // The Buys report, open over Home: its component once loaded, else null.
+  const [Report, setReport] = useState(null);
+  const [opening, setOpening] = useState(false);
+  const toast = useToast();
+  const { offline } = useConnection();
+  async function openReport() {
+    if (opening) return;
+    setOpening(true);
+    try {
+      const { default: BuysReport } = await loadBuysReport();
+      setReport(() => BuysReport);
+    } catch (e) {
+      console.warn('The Buys report failed to load', e);
+      toast(reportLoadError(e, offline || !navigator.onLine), 'err');
+    } finally {
+      setOpening(false);
+    }
+  }
   const { from, to } = dayRange(today);
 
   // Magic cards in confirmed buys not exported yet (Pokémon can't be exported yet). Every page
@@ -231,11 +253,11 @@ function HomeScreen({ today }) {
           tabIndex={0}
           aria-label="Today: open the Buys report"
           title="Open the Buys report: cash and credit paid over any range of days"
-          onClick={() => setReport(true)}
+          onClick={openReport}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault();
-              setReport(true);
+              openReport();
             }
           }}
         >
@@ -259,11 +281,7 @@ function HomeScreen({ today }) {
             <span className="home-dot game-pokemon">Pokémon {byGame('pokemon')}</span>
           </div>
         </section>
-        {report && (
-          <Suspense fallback={null}>
-            <BuysReport onClose={() => setReport(false)} />
-          </Suspense>
-        )}
+        {Report && <Report onClose={() => setReport(null)} />}
         <section className="home-card home-quick">
           <div className="home-card-head"><h3>Quick actions</h3></div>
           <div className="home-actions" role="group" aria-label="Quick actions">
