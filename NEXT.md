@@ -119,8 +119,10 @@ marks each task done here when it's finished, with the exact file and function o
      file is made with a different window like 90, would it use that naturally? That would be useful."); "For
      now, just exact printings." On the window: which cards are stale follows whatever search made the file, but
      the file doesn't say its window (no column for it), so the box's wording and the recent-export guard need
-     the number from somewhere: proposed, a days box in the upload panel, 180 unless changed; not yet agreed.
-     Unanswered: whether the stale cut sits inside the cut's "at most" (proposed: inside it).
+     the number from somewhere: a days box in the upload panel, 180 unless changed ("yes"). The stale cut and
+     the copies cut's "at most" are separate ("Have them be separate."): the cap limits the copies cut alone and
+     the stale cut goes on top of it, so a card can pass the cap by the stale percentage. Ready to build when the
+     owner gives it out.
 
 - **Buy 82 (2026-11-10): the price that changed after two cards came off and went back on; looked into, nothing
   changed yet** (main session; the owner asked for the records only, no code). What prod's records show (read-only:
