@@ -95,7 +95,7 @@ export function matchCategory(result) {
  * never Borderless as well (decision 508; Phyrexia: All Will Be One's showcase
  * cards are borderless on Scryfall). The Price screen keeps both.
  */
-function printedTreatments(treatments) {
+export function printedTreatments(treatments) {
   const keys = treatments ?? [];
   return keys.includes('showcase') ? keys.filter((k) => k !== 'borderless') : keys;
 }

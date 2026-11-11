@@ -338,6 +338,13 @@ what happens. The findings are reported when the pass ends.
       the second (still empty), CANCEL: it shows the first tab's buy and says so, nothing is discarded.
 - [ ] **Settings not loaded** (decision 389): with Settings failing to load (block the request in the browser), a red
       bar with **Retry** shows; ADD CARD and CONFIRM BUY say "Settings haven't loaded yet…"; unblock, Retry: they work.
+- [ ] **🖨 Print a walk-in in progress** (decision 579; Export session): a walk-in with a few cards (a foil, an LP
+      card, two of one card, a card with its own rate, a bulk item): 🖨 Print in the list's heading opens a PDF
+      titled "Buy in progress, not confirmed" with today's date and time, "Quote only, not a receipt" and a blank
+      Customer line; a row per card as added, each with a tick box, count, name, set, number, finish, condition,
+      and Cash each and Credit each matching the Price screen's chips (the own-rate card at its rate); at the foot,
+      the card count and the Cash and Credit offers equal to the list's totals. Nothing in the Changelog; the buy
+      unchanged. Greyed with no cards; not on a collection's list.
 
 ## 9. Buy tab: bulk
 

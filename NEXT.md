@@ -226,6 +226,19 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-11-10 (Export session): **🖨 Print a walk-in in progress** (decision 579; the three-part patch, part 1):
+  `src/lib/quotePrint.js` (`quoteRow`, `quoteSheet`: the rows and the foot, pure), `src/lib/quotePdf.js` (the
+  sheet), `src/pages/export/QuotePrintButton.jsx` (the button; the PDF library loads on the click). The button
+  goes in the walk-in list's heading through `PricingScreen`'s `listBadge` prop, set in `src/pages/PricePage.jsx`
+  (one prop; no change to `PricingScreen.jsx` or `BuyList.jsx`). **Pending:** that one prop, asked of the Buy tab
+  session since PricePage.jsx had its uncommitted edits. Where to look: the Buy tab with a few walk-in cards →
+  🖨 Print beside "Buy list": a PDF titled "Buy in progress, not confirmed" with the date and time, "Quote only,
+  not a receipt", a blank Customer line, a row per card as added with Cash each and Credit each, and the foot's
+  card count and Cash and Credit offers equal to the list's totals; nothing saved or logged. Picked by me, for the
+  owner to reverse: the amounts are per card ("each", a bulk line per item), the rows go in the order added
+  whatever the screen's sort, and the button is in the list's heading rather than by CONFIRM BUY. Untested in
+  the app (unit tests only). No migration. `printedTreatments` in `src/lib/auditPrint.js` is now exported.
+
 - 2026-11-10 (Buy tab session): **One TCGplayer product is one line** (decision 578, migration 0015 on dev only;
   the owner's ask through the main session: "When any two products have the same tcgplayer ID they should collapse
   together", from Buy 82's two Mr. Mime lines). `internal.same_card`, the merge rule of ADD CARD, a phone's scan
