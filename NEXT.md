@@ -14,10 +14,10 @@ marks each task done here when it's finished, with the exact file and function o
 - **Unpushed** (main session): NEXT.md's Buy 82 entry and the four ideas below (no code); the Buy tab session's
   one TCGplayer product is one line (decision 578, migration 0015 on dev only: 69b9fc8, a053635, 38b2e6b).
 
-- **The three-part patch: a plan, waiting for the owner's go** (main session, 2026-11-10; the owner: "Shelve the
+- **The three-part patch: the plan, given out 2026-11-10 on the owner's "Yes, start"** (main session; the owner: "Shelve the
   sticker sheets for later, but I want to begin work on all 3 of these designs now at once. Let's make a plan of
   action AND I want that plan to include creating only a single combined migration for this 3 part patch."). The
-  designs are items 1, 3 and 4 of the entry below; nothing is given out yet.
+  designs are items 1, 3 and 4 of the entry below. Records, Buy tab and Export each have their part by message.
   - **One migration, one writer:** the next number on disk (0016 while 0015 is the last), written by the Records
     session alone, holding the copy button's part (`buys`: the cash location and who paid; `confirm_buy` and
     `collection_set_status` take and keep them) and the stale cards' part (the uploaded file's products, its load,
