@@ -5,6 +5,7 @@ import PricingScreen from './price/PricingScreen.jsx';
 import WalkInButtons from './price/WalkInButtons.jsx';
 import ConfirmBuyModal from './price/ConfirmBuyModal.jsx';
 import BuyDoneModal from './price/BuyDoneModal.jsx';
+import QuotePrintButton from './export/QuotePrintButton.jsx';
 import { useDraft } from './price/useDraft.js';
 import { lineText } from '../lib/lineFormat.js';
 import { tiersFrom } from '../lib/rates.js';
@@ -144,6 +145,8 @@ export default function PricePage() {
       rates={rates}
       master={master}
       listTitle="Buy list"
+      // 🖨 Print the walk-in in progress, beside the list's title (decision 579).
+      listBadge={<QuotePrintButton lines={draft.lines} rates={rates} waiting={settingsLoaded ? null : SETTINGS_WAIT} />}
       ratesTitle="Rates for this buy"
       // A phone can scan into this computer's buy (docs/SCAN_FUNCTION.md).
       scanTarget={SCAN_TARGET}
