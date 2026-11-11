@@ -30,6 +30,23 @@ export function sheetLocation(method, location) {
   return '';
 }
 
+/** What a Copy item's tooltip says it copies. */
+export const COPY_TITLE = 'Copy this buy for the buys sheet, each in its own cell: worker, date, customer, phone, '
+  + 'ID, Cash or Credit, who paid, date paid, amount, cash location. Changes nothing.';
+
+/**
+ * Copies the buy's row to the clipboard, and says so: the toast's text and kind.
+ * @returns {Promise<[string, 'ok'|'err']>}
+ */
+export async function copyBuyRow(buy, staffName, what = 'this buy') {
+  try {
+    await navigator.clipboard.writeText(buyCopyRow(buy, staffName));
+    return [`Copied ${what} for the buys sheet: paste it into the first cell of a row.`, 'ok'];
+  } catch {
+    return ["Couldn't copy to the clipboard. Keep this window in front, then try again.", 'err'];
+  }
+}
+
 /** A cell's text: a tab or a line break would split it, so each becomes a space. */
 const cell = (value) => String(value ?? '').replace(/[\t\r\n]+/g, ' ').trim();
 

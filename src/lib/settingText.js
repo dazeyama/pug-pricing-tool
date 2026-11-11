@@ -55,6 +55,10 @@ export function settingSummary(key, before, after) {
     // Copies we own (decision 474).
     name = 'Copies we own';
     parts = OWNED_PARTS.map(([field, label, show]) => part(label, before?.[field], after?.[field], show));
+  } else if (key === 'stale_cards') {
+    // The stale cut (decision 580).
+    name = 'Stale cut';
+    parts = [part('lower for a stale card', before?.pct, after?.pct, pct)];
   } else {
     parts = [part('', before, after, (v) => JSON.stringify(v ?? null))];
   }

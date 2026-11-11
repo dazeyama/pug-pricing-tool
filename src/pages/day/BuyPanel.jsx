@@ -19,6 +19,8 @@ import { COMPLETED_LOCK, MARKED_LOCK, convertLines, markedByHand } from './dayRu
 import { PULLED_TIP } from '../collections/useCollection.js';
 import { useBulkCut } from '../../state/settings.jsx';
 import { bulkWords, keptTag, keptWords } from '../../lib/bulkCut.js';
+import { COPY_TITLE, copyBuyRow } from '../../lib/buyCopy.js';
+import { useToast } from '../../components/Toast.jsx';
 
 // A buy on a day page (spec 10.2): its panel, with its cards, totals, chips and ⋯ (FABLE_REPORT C2).
 
@@ -107,6 +109,7 @@ export default function BuyPanel({
 }) {
   const [preview, setPreview] = useState(null);   // { src, top, left } while a line is hovered
   const cut = useBulkCut();
+  const toast = useToast();
   const hidePreview = useCallback(() => setPreview(null), []);
   const panel = useRef(null);
   const table = useRef(null);
@@ -227,6 +230,13 @@ export default function BuyPanel({
                   title: "Price-tag stickers for this buy's Pokémon cards at today's sell prices, a sticker a copy, for the store's 160-sticker sheets. Changes nothing.",
                   onClick: () => onPrintStickers(buy, number),
                 }],
+            },
+            // Copy (decision 580): the buy as a row of the store's buys sheet. Changes nothing.
+            {
+              label: 'Copy',
+              needsUser: false,
+              title: COPY_TITLE,
+              onClick: async () => toast(...await copyBuyRow(buy, (id) => byId(id)?.name, `Buy ${number}`)),
             },
             // Export single buy (owner, 2026-10-09): Magic only, like EXPORT, but any day, today's too.
             // (all) and (>…) as the day's EXPORT (decision 408): (>…) pulls the bulk cards (decision 416).

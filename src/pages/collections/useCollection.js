@@ -71,6 +71,7 @@ const MESSAGES = {
   offer_needed: 'Set an offer to mark it Priced.',
   paid_price_needed: 'Set the final purchase price to mark it Paid/Ours.',
   paid_method_needed: 'Choose Cash or Credit to mark it Paid/Ours.',
+  bad_cash_location: 'Choose Till or Backroom.',
   complete_from_paid: 'Mark it Paid/Ours first: Completed comes after.',
   project_status: 'A project is only ever Paid/Ours or Completed.',
   // Undo export… (owner, 2026-10-18; decision 298).
@@ -300,6 +301,8 @@ export function useCollection(id, { deviceId, onLockLost }) {
       p_paid_price: deal.paidPrice ?? null,
       p_paid_method: deal.paidMethod ?? null,
       p_reason: deal.reason ?? null,
+      // Till or Backroom on a cash Paid/Ours (decision 580); sent only then, so other changes call it as before.
+      ...(deal.cashLocation ? { p_cash_location: deal.cashLocation } : {}),
     }, "Couldn't change the status");
     return r.ok;
   }, [id, run, mine]);
@@ -366,6 +369,8 @@ export function useCollection(id, { deviceId, onLockLost }) {
         p_credit_pct: rates.credit,
         p_expected_version: version.current,
         p_line_texts: Object.fromEntries(state.lines.map((l) => [l.id, lineText(l)])),
+        // Till or Backroom on cash, as CONFIRM BUY (decision 580).
+        ...(deal.cashLocation ? { p_cash_location: deal.cashLocation } : {}),
       });
       if (error) {
         if (!errorCode(error)) console.error('project_to_buy failed', error);

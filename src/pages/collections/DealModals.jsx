@@ -4,6 +4,7 @@ import OwnRateAlert from '../../components/OwnRateAlert.jsx';
 import { formatMoney, parseMoney } from '../../lib/money.js';
 import { creditOfferForLines, listRates, rateTotals } from '../../lib/rates.js';
 import CustomRateMark from '../../components/CustomRateMark.jsx';
+import CashLocation from '../../components/CashLocation.jsx';
 
 // The deal (owner, 2026-09-29): prices are simple maths, but the price is
 // agreed between two people. Marking a collection Priced records the offer
@@ -134,10 +135,12 @@ export function OfferModal({ lines, rates, current, busy, onSave, onClose }) {
 export function PaidModal({ lines, rates, offer, busy, keptBuy = null, onSave, onReject, onClose }) {
   const [text, setText] = useState(keptBuy != null ? '0' : '');
   const [method, setMethod] = useState(null);
+  // Where the cash went (decision 580): Till or Backroom, asked of cash only; credit has none.
+  const [location, setLocation] = useState(null);
   const price = parseMoney(text);
-  const ready = price != null && method != null && !busy;
+  const ready = price != null && method != null && (method !== 'cash' || location != null) && !busy;
   const save = () => {
-    if (ready) onSave({ price, method });
+    if (ready) onSave({ price, method, cashLocation: method === 'cash' ? location : null });
   };
   return (
     <Modal
@@ -168,6 +171,7 @@ export function PaidModal({ lines, rates, offer, busy, keptBuy = null, onSave, o
         </p>
       )}
       <PayMethod method={method} onChoose={setMethod} />
+      {method === 'cash' && <CashLocation location={location} onChoose={setLocation} />}
       <MoneyInput label="Set a final purchase price" value={text} onChange={setText} onEnter={save} autoFocus />
       {keptBuy != null && (
         <p className="hint">The payment is on Buy {keptBuy}, which kept it: $0 here counts it once.</p>

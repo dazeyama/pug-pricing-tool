@@ -36,6 +36,8 @@ export function ConvertToBuyModal({ buy, lines, rates, user, busy, onConvert, on
       busyLabel="Converting…"
       // The buy it makes is confirmed here: it can be flagged, as at CONFIRM BUY (owner, 2026-10-14).
       flagOption
+      // Till or Backroom on a cash buy, as at CONFIRM BUY (decision 580).
+      cashLocation
       onClose={onClose}
       onConfirm={onConvert}
     />

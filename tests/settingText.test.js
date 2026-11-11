@@ -21,3 +21,8 @@ test('a first save shows the default as gone before, and an unchanged save says 
   assert.equal(settingSummary('credit_pct', null, 66.68), 'Master Buy Percentages: Credit — → 66.68%.');
   assert.equal(settingSummary('cash_pct', 35, 35), 'Master Buy Percentages: saved, nothing changed.');
 });
+
+test('the stale cut (decision 580)', () => {
+  assert.equal(settingSummary('stale_cards', { pct: 10 }, { pct: 20 }), 'Stale cut: lower for a stale card 10% → 20%.');
+  assert.equal(settingSummary('stale_cards', null, { pct: 10 }), 'Stale cut: lower for a stale card — → 10%.');
+});

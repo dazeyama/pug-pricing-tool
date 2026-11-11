@@ -25,6 +25,7 @@ import { useStaff } from '../state/staff.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { useAuditPrint } from './export/useAuditPrint.js';
 import { fileSafe } from '../lib/massCreate.js';
+import { COPY_TITLE, copyBuyRow } from '../lib/buyCopy.js';
 
 const NOTE_CHIP_HEIGHT = 160;   // a note's chip, a few lines tall: fits above the * when it has this much room
 const STALE_MS = 60_000;   // a lock without a heartbeat for 60s is stale (spec 9.6)
@@ -153,6 +154,8 @@ export default function CollectionsPage() {
     .from('buys')
     .select('id, customer_name, phone, status, notes, created_at, updated_at, last_edited_by, '
       + 'offer_cash, offer_credit, paid_price, paid_method, system_key, project, '
+      // For Copy (decision 580): who took it, its ID, who paid, when, where the cash went.
+      + 'kind, created_by, id_last4, paid_by, paid_at, cash_location, '
       // Its cards, counted by game for the name's chip (decision 276).
       + 'buy_lines(game, quantity, bulk_kind, struck_at)', { count: 'exact' })   // one request (decision 373)
     .eq('kind', 'collection')
@@ -209,6 +212,13 @@ export default function CollectionsPage() {
           fileName: `audit-${fileSafe(c.customer_name)}.pdf`,
         }),
       },
+      // Copy (decision 580), on a paid overnight buy: a row of the store's buys sheet. Changes nothing.
+      ...(!c.project && (c.status === 'paid' || c.status === 'completed') ? [{
+        label: 'Copy',
+        needsUser: false,
+        title: COPY_TITLE,
+        onClick: async () => toast(...await copyBuyRow(c, (id) => staff.byId(id)?.name, c.customer_name)),
+      }] : []),
       ...(c.project ? [{
         label: 'Convert to buy',
         blocked: busy ?? (c.status === 'completed' ? 'Completed: open it and reopen it (back to Paid/Ours) first' : null),

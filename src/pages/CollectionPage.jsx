@@ -608,8 +608,8 @@ function CollectionScreen({ id }) {
                 setAsking(null);
                 api.focusSearch();
               }}
-              onSave={async ({ price, method }) => {
-                if (await col.setStatus('paid', user?.id, master, { paidPrice: price, paidMethod: method })) {
+              onSave={async ({ price, method, cashLocation }) => {
+                if (await col.setStatus('paid', user?.id, master, { paidPrice: price, paidMethod: method, cashLocation })) {
                   setAsking(null);
                   api.focusSearch();
                 }
