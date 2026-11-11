@@ -59,11 +59,12 @@ begin
   -- The buy's customer, phone, notes, payment and rates; its user as the maker.
   insert into buys (kind, status, project, customer_name, phone, id_last4, notes, paid_at,
                     cash_pct, credit_pct, custom_cash_pct, custom_credit_pct,
-                    paid_price, paid_method, created_by, last_edited_by)
+                    paid_price, paid_method, cash_location, paid_by, created_by, last_edited_by)
   values ('collection', 'paid', false, v_name, b.phone, '1312', coalesce(b.notes, ''), coalesce(b.confirmed_at, now()),
           b.cash_pct, b.credit_pct, b.custom_cash_pct, b.custom_credit_pct,
           -- Paid once: while the buy stays it keeps the payment, $0 here (decision 341).
           case when v_keep and b.paid_method is not null then 0 else b.paid_price end, b.paid_method,
+          b.cash_location, b.paid_by,   -- where the cash went and who paid (decision 580)
           coalesce(b.confirmed_by, p_user), p_user)
   returning * into p;
   -- The buy kept the payment: remembered, for Mark Paid/Ours again (decision 397).

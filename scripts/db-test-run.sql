@@ -253,9 +253,11 @@ begin
   perform pg_temp.ok(s, 'Only the expected functions run with the owner''s rights',
     -- internal.request_begin / request_end (0004): the only way to the done requests, which the app can't read.
     -- internal.collection_sku (0011): the only way to the collections' numbers of the day.
+    -- public.stale_file_load (0016): the only way to write the stale cards file, which the app can only read.
     v = 'internal.collection_sku, internal.insert_event, internal.remember_customer, internal.request_begin, '
         || 'internal.request_end, public.cc_products_load, '
-        || 'public.master_inventory_finish, public.master_inventory_prune, public.restore_backup', v);
+        || 'public.master_inventory_finish, public.master_inventory_prune, public.restore_backup, '
+        || 'public.stale_file_load', v);
   -- Unused since decision 414; an unfinished upload is cleared by master_inventory_prune (0013).
   perform pg_temp.ok(s, 'master_inventory_abort is retired (0013)',
     not exists (select 1 from pg_proc where proname = 'master_inventory_abort'));
@@ -3692,6 +3694,143 @@ begin
                        '[]', array[l1, l2], '[]', u, a);
   perform pg_temp.ok(s, 'A card with no price can go to Can''t upload cards (0012)',
     exists (select 1 from buy_lines where source_line_id = l2 and price_source = 'unpriced'));
+exception when others then
+  declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;
+  perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
+end $$;
+
+-- =================================== Cash location and stale cards (0016)
+-- Decision 580. Runs after Owned copies: the inventory it uploaded (DBTEST-Q1 to Q6) is still the current one.
+reset role;
+delete from stale_products;   -- dev may hold a file the owner uploaded: rolled back with the rest
+delete from stale_files;
+set local role authenticated;
+do $$
+declare
+  s text := 'Cash location and stale cards (0016)';
+  u uuid := pg_temp.id('u1');
+  a uuid := pg_temp.id('devA');
+  owned text[] := array['dbtest owned'];
+  b uuid;
+  c uuid;
+  p uuid;
+  l uuid;
+  v jsonb;
+begin
+  -- CONFIRM BUY.
+  b := draft_for_device(a, u);
+  perform draft_add_line(a, pg_temp.line('Dbtest Till', 'DBC', '001', 1, 1.00), u, false);
+  begin
+    perform confirm_buy(b, u, 'DBTEST Till', '', 50, 65, null, 1, 'cash', '{}', '5550100051', p_cash_location => 'drawer');
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'CONFIRM BUY takes Till or Backroom only', sqlerrm, 'bad_cash_location');
+  end;
+  perform confirm_buy(b, u, 'DBTEST Till', '', 50, 65, null, 1, 'cash', '{}', '5550100051', p_cash_location => ' Till ');
+  perform pg_temp.ok(s, 'CONFIRM BUY keeps where the cash went and who paid',
+    (select cash_location = 'till' and paid_by = u from buys where id = b));
+  b := draft_for_device(a, u);
+  perform draft_add_line(a, pg_temp.line('Dbtest Till', 'DBC', '001', 1, 1.00), u, false);
+  perform confirm_buy(b, u, 'DBTEST Credit', '', 50, 65, null, 1, 'credit', '{}', '5550100052', p_cash_location => 'till');
+  perform pg_temp.ok(s, '… none on credit, whatever is sent',
+    (select cash_location is null and paid_by = u from buys where id = b));
+  begin
+    update buys set cash_location = 'till' where id = b;
+    raise exception 'dbt_no_error';
+  exception when others then
+    perform pg_temp.ok(s, 'The database refuses a location on a credit buy', sqlerrm like '%buys_cash_location_check%', sqlerrm);
+  end;
+  b := draft_for_device(a, u);
+  perform draft_add_line(a, pg_temp.line('Dbtest Till', 'DBC', '001', 1, 1.00), u, false);
+  perform confirm_buy(b, u, 'DBTEST None', '', 50, 65, null, 1, 'cash', '{}', '5550100053');
+  perform pg_temp.ok(s, 'A cash buy with none still confirms (the live site between pushes sends none)',
+    (select status = 'confirmed' and cash_location is null and paid_by = u from buys where id = b));
+  b := draft_for_device(a, u);
+  perform draft_add_line(a, pg_temp.line('Dbtest Till', 'DBC', '001', 1, 1.00), u, false);
+  perform confirm_buy(b, u, 'DBTEST Convert Till', '', 50, 65, null, 1, 'cash', '{}', '5550100055', p_cash_location => 'till');
+  c := buy_to_collection(b, u, a);
+  perform pg_temp.ok(s, 'Convert to overnight buy carries them with the payment',
+    (select paid_method = 'cash' and cash_location = 'till' and paid_by = u from buys where id = c));
+
+  -- Mark Paid/Ours, and back.
+  c := collection_create('DBTEST Backroom', null, '', u, a);
+  perform lock_acquire(c, a, u);
+  perform collection_add_line(c, pg_temp.line('Dbtest Till', 'DBC', '001', 1, 1.00), true, u, a, null, null);
+  perform collection_set_status(c, 'paid', u, a, null, null, null, p_paid_price => 12, p_paid_method => 'cash',
+                                p_cash_location => 'Backroom');
+  perform pg_temp.ok(s, 'Paid/Ours keeps where the cash went and who paid, in the Changelog',
+    (select cash_location = 'backroom' and paid_by = u from buys where id = c)
+    and exists (select 1 from events where target_id = c and action = 'collection_status_changed'
+                  and fields @> '[{"field": "paid", "after": "$12 cash, Backroom"}]'),
+    (select fields::text from events where target_id = c and action = 'collection_status_changed' order by seq desc limit 1));
+  perform collection_set_status(c, 'completed', u, a, null, null, null);
+  perform collection_set_status(c, 'paid', u, a, null, null, null);
+  perform pg_temp.ok(s, '… Completed and back keep them',
+    (select status = 'paid' and cash_location = 'backroom' and paid_by = u from buys where id = c));
+  perform collection_set_status(c, 'processing', u, a, null, null, null);
+  perform pg_temp.ok(s, '… back to Processing clears them with the payment',
+    (select cash_location is null and paid_by is null and paid_method is null from buys where id = c));
+
+  -- A project made a buy.
+  p := project_create('DBTEST Project Till', '', u, a);
+  perform lock_acquire(p, a, u);
+  perform collection_add_line(p, pg_temp.line('Dbtest Till', 'DBC', '001', 1, 1.00), true, u, a, null, null);
+  v := project_to_buy(p, u, a, 'DBTEST Project Buyer', '5550100054', 2, 'cash', '', 50, 65, p_cash_location => 'till');
+  perform pg_temp.ok(s, 'A project made a buy keeps them too',
+    (select cash_location = 'till' and paid_by = u from buys where id = (v ->> 'id')::uuid));
+
+  -- The stale file.
+  perform pg_temp.ok(s, 'The app can upload a stale file and read it, never write it directly',
+    has_function_privilege('authenticated', 'public.stale_file_load(text, integer, jsonb, uuid)', 'EXECUTE')
+    and not has_function_privilege('anon', 'public.stale_file_load(text, integer, jsonb, uuid)', 'EXECUTE')
+    and has_table_privilege('authenticated', 'public.stale_products', 'SELECT')
+    and not has_table_privilege('authenticated', 'public.stale_products', 'INSERT')
+    and not has_table_privilege('authenticated', 'public.stale_files', 'DELETE')
+    and not has_table_privilege('anon', 'public.stale_products', 'SELECT'));
+  v := owned_copies(null, owned, 'dbtest owned', null, null);
+  perform pg_temp.ok(s, 'No file: owned_copies says so, nothing stale',
+    v -> 'stale_file' = 'null'::jsonb and v -> 'stale_ids' = '[]'::jsonb, v::text);
+  begin
+    perform stale_file_load('stale.csv', 0, '[]', u);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'The window is 1 to 3650 days', sqlerrm, 'bad_days');
+  end;
+  begin
+    perform stale_file_load('stale.csv', 180, '{}', u);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'The rows are a list', sqlerrm, 'bad_batch');
+  end;
+  perform stale_file_load('first.csv', 90, '[{"product_id": "DBTEST-OLD", "product_name": "Dbtest Old", "total_qty": 1}]', u);
+  v := stale_file_load(' stale.csv ', 180, '[
+    {"product_id": "DBTEST-Q1", "product_name": "Dbtest Owned", "total_qty": 3},
+    {"product_id": "DBTEST-Q2", "product_name": "Dbtest Owned - Foil", "total_qty": 0},
+    {"product_id": "DBTEST-Q3", "product_name": "Dbtest Owned", "total_qty": 2},
+    {"product_id": "DBTEST-Q3", "product_name": "Dbtest Owned", "total_qty": 2},
+    {"product_id": "DBTEST-QX", "product_name": "Dbtest Other", "total_qty": 4},
+    {"product_id": " ", "product_name": "Dbtest Blank", "total_qty": 4}]', u);
+  perform pg_temp.ok(s, 'An upload replaces the file whole, once each product, and answers its counts',
+    (v ->> 'products')::int = 4 and (v ->> 'in_stock')::int = 3 and v ? 'uploaded_at'
+    and (select count(*) from stale_files) = 1
+    and (select original_filename = 'stale.csv' and days = 180 and products = 4 and in_stock = 3 and uploaded_by = u
+           from stale_files)
+    and not exists (select 1 from stale_products where product_id = 'DBTEST-OLD'), v::text);
+  perform pg_temp.ok(s, '… in the Changelog',
+    exists (select 1 from events where action = 'stale_file_uploaded'
+              and summary = 'Stale cards file uploaded: stale.csv, 4 products, 3 in stock, no sale in 180 days.'));
+
+  -- Q1 was exported just now by Owned copies' checks: in stock in the file, but not stale (the recent-export
+  -- guard). Q3 exported 400 days ago, before the window: still stale.
+  p := collection_create('DBTEST Old Export', null, '', u, a);
+  perform lock_acquire(p, a, u);
+  l := collection_add_line(p, pg_temp.line('Dbtest Till', 'DBC', '002', 1, 1.00), true, u, a, null, null);
+  update buy_lines set cc_product_id = 'DBTEST-Q3', cc_exported_at = now() - interval '400 days' where id = l;
+  v := owned_copies(null, owned, 'dbtest owned', null, null);
+  perform pg_temp.ok(s, 'owned_copies names the card''s stale products: in stock, not exported in the window',
+    exists (select 1 from buy_lines where cc_product_id = 'DBTEST-Q1' and cc_exported_at > now() - interval '1 day')
+    and v -> 'stale_ids' = '["DBTEST-Q3"]'::jsonb and (v -> 'stale_file' ->> 'days')::int = 180
+    and v -> 'stale_file' ? 'uploaded_at', v::text);
+  v := owned_copies('DBTEST-QX', array['dbtest none'], 'dbtest none', null, null);
+  perform pg_temp.ok(s, '… and the printing''s own product, of another name',
+    v -> 'stale_ids' = '["DBTEST-QX"]'::jsonb, v::text);
 exception when others then
   declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;
   perform pg_temp.crashed(s, sqlerrm, v_ctx); end;

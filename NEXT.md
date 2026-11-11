@@ -11,6 +11,13 @@ marks each task done here when it's finished, with the exact file and function o
   structure-only compare against `C:/Users/Daisy/AppData/Local/Temp/claude/8622948e51b61e0c/024d6d6e-fc86-4763-9a1b-3034e8336749/scratchpad/dev-run-0015.json`
   or a fresh dev run). The owner agreed to 578's narrowing (2026-11-10), so 0015 goes as it is.
 
+- **Dev is ahead of prod: migration 0016 is on dev only** (Records session, 2026-11-10; decision 580, the three-part
+  patch's one migration): it goes to prod with 0015 in one sitting, on the owner's word only (`npx supabase db push
+  --linked --project-ref zvxquzcfffmxwizonxuo` takes both, then the structure-only compare against
+  `C:/ClaudeProjects/temp/pug-dbrun-0016.json`, the dev run with 0015 and 0016). **The site can't be pushed before
+  prod has 0016:** `main` already reads its columns and tables (the Collections tab's list selects
+  `buys.cash_location`, Settings reads `stale_files`), so those break on a site without it.
+
 - **Unpushed** (main session): NEXT.md's Buy 82 entry and the four ideas below (no code); the Buy tab session's
   one TCGplayer product is one line (decision 578, migration 0015 on dev only: 69b9fc8, a053635, 38b2e6b).
 
@@ -37,7 +44,8 @@ marks each task done here when it's finished, with the exact file and function o
       for credit, and an empty cell for a cash buy with none.
     - `buys.paid_by` uuid (→ `staff_users`): who took the payment. `confirm_buy` and `project_to_buy` set it to
       their `p_user`, and Mark Paid/Ours sets it to its own. Going back to Processing or Priced clears it and the
-      location, along with the payment. Completed and its reopen keep both.
+      location, along with the payment. Completed and its reopen keep both. Convert to overnight buy and Convert to
+      project carry both onto what they make (added after the review).
     - `confirm_buy(…, p_cash_location text default null)`, `collection_set_status(…, p_cash_location text default
       null)` (read only when marking Paid/Ours from Processing or Priced) and `project_to_buy(…, p_cash_location
       text default null)`. Each takes `'till'` or `'backroom'`. On a credit payment it's stored null, whatever is
@@ -225,6 +233,40 @@ marks each task done here when it's finished, with the exact file and function o
 - **Known limit, left as is:** how long a copies-we-own count takes on the live site isn't measured.
 
 ## Done
+
+- 2026-11-10 (Records session): **The three-part patch, Records' part: migration 0016, Copy, the cash location at
+  Paid/Ours, the stale cut** (decision 580; **0016 on dev only**, prod with 0015 on the owner's word, the first Open
+  items). Untested in the app; the unit tests and the dev test run only (667 checks passed, 18 new).
+  - **Migration 0016** (`supabase/migrations/0016_cash_location_stale_cards.sql`): the contract in the plan's
+    entry above, with what the review added. Convert to overnight buy and Convert to project carry the cash
+    location and who paid, and the stale deletes have a `where`, in case the API refuses one without. It changed
+    after its first review and before dev had it; that change itself wasn't reviewed again, but the rehearsal and
+    the full test run were done after it. The test run's new section is "Cash location and stale cards (0016)"
+    (`scripts/db-test-run.sql`).
+  - **Where to look:**
+    - A buy on a day page, ⋯ → **Copy** (after Print ▸), then paste into a spreadsheet's first cell: ten cells.
+    - The Collections tab's Overnight buys, a Paid/Ours or Completed row's ⋯ → **Copy**.
+    - An overnight buy's **Mark as Paid/Ours**, Cash: Till and Backroom chips, and the button waits for one.
+    - A project's **Convert to buy…**, Cash: the same.
+    - **Settings → Stale cut**, beside Stale cards file: one percentage, 10 unless changed.
+    - The cases are TEST.md 11, 12, 14 and 16 (Records session).
+  - **The files:** `src/lib/buyCopy.js` (`buyCopyRow`, `copyBuyRow`, `COPY_TITLE`; `tests/buyCopy.test.js`),
+    `src/pages/day/BuyPanel.jsx`, `src/pages/CollectionsPage.jsx` (`menu`, the list's select),
+    `src/pages/collections/DealModals.jsx` (`PaidModal`), `CollectionModals.jsx` (`ConvertToBuyModal`),
+    `useCollection.js` (`setStatus`, `toBuy`, `bad_cash_location`), `src/pages/settings/StaleCutPanel.jsx`,
+    `SettingsPage.jsx`, `src/lib/settingText.js` and `changelog.js` (the stale cut in the Changelog).
+  - **Untested:**
+    - The clipboard in a real browser, and the paste into the store's Google Sheet.
+    - The panel's layout beside the upload panel.
+    - Whether an upload through the app gets past the API, which the test run can't reach: it runs as the database's
+      owner.
+  - **Known, left as is:**
+    - A wrong Till or Backroom pick is changed only by unlocking back to Processing and paying again; CONFIRM BUY's
+      can't be changed at all (`buy_save_edits` doesn't write it).
+    - CONFIRM BUY's and Convert to buy's Changelog sentences don't name the location; Paid/Ours's does.
+    - Older buys copy with who paid and the location empty.
+    - For about a minute, a commit of mine imported the Buy tab's `CashLocation.jsx` before it was committed, so
+      HEAD didn't build; the Buy tab committed the file.
 
 - 2026-11-10 (Buy tab session): **The three-part patch, the Buy tab's part** (decisions 582 and 583; the database
   is Records' migration 0016, decision 580; untested in the app, the unit tests only).

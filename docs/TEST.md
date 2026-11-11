@@ -575,6 +575,16 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       live site, once 0008 is on it: look, don't pull one), the Collections tab's System table shows it empty
       beside Can't upload cards, grey Completed; opening it shows no cards, and EXPORT has nothing to send. On dev,
       restoring a backup made before it existed brings it back, empty.
+- [ ] **Till or Backroom at Paid/Ours** (decision 580, migration 0016; Records session): Mark as Paid/Ours, Cash:
+      Till and Backroom chips show under Cash and Credit, and Mark Paid/Ours stays grey until one is picked; Credit
+      hides them. Paid in cash from the Backroom: the Changelog's entry reads "paid: $… cash, Backroom". Unlocked
+      back to Processing and paid again, the dialog asks afresh.
+- [ ] **Copy on a paid overnight buy** (decision 580; Records session): the Overnight buys table, a Paid/Ours (or
+      Completed) row's ⋯ → **Copy**, then paste into a spreadsheet's first cell: ten cells across: who started it,
+      the date it was started (11/10/2026), the name, the phone as (555) 555-0100, the Last 4 ID, Cash or Credit,
+      who marked it Paid/Ours, that date, the amount as $90.00, and Till, Backroom or NA (credit). Processing,
+      Priced and Rejected rows and projects have no Copy. One paid before 0016 leaves who paid and the location
+      empty.
 
 ## 12. Collections tab: projects
 
@@ -599,6 +609,9 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
 - [ ] **Ours on a project** (decision 427): Export MTG csv (all) on a project asks "Mark this project Completed?" in
       words that say **Ours**, as its chip does, never Paid/Ours; a greyed Convert to buy… gives its reason the same
       way.
+- [ ] **Convert to buy asks Till or Backroom** (decision 580; Records session): a project's Convert to buy…, Cash:
+      Till and Backroom show as at CONFIRM BUY, and Convert to buy says to choose one; the new buy's ⋯ → Copy ends
+      in that location.
 
 ## 13. Collections tab: Import Collection
 
@@ -734,6 +747,11 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       that's $1.20 today and one bought at $1.20 that's $2 today: Export MTG csv (>$1.49) keeps the first (in the
       file at today's Sell Price) and pulls the second, its row reading "Bought at $1.20"; Print MTG (>$1.49) prints
       the same cards the file has.
+- [ ] **Copy on a buy's ⋯** (decision 580, migration 0016; Records session): a buy confirmed today, Cash, Till: its
+      ⋯ → **Copy** (between Print ▸ and Export ▸, with no user picked too): the toast says Buy N was copied; pasted
+      into a spreadsheet's first cell, ten cells across: who confirmed it, the date as 11/10/2026, the name, the
+      phone as (555) 555-0100, an empty cell (a walk-in has no ID), Cash, the same worker, the same date, the paid
+      amount as $90.00, Till. A credit buy ends in NA; a buy from before 0016 leaves the location empty.
 
 ## 15. The export file
 
@@ -832,6 +850,10 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
       days"; the Changelog (Settings) has "Stale cards file uploaded". With 90 in the box, the next upload reads
       "no sale in 90 days". Refused, with the current file kept: the Master Crystal Inventory's 40 MB file ("too big"
       or "looks like the whole inventory"), a CSV without Total Qty, a .xlsx, the box at 0 or blank, no user picked.
+- [ ] **Stale cut** (decision 580; Records session): the Stale cut panel beside Stale cards file shows −10% and
+      "Credit 60% on a stale card is 54%"; 20, Tab: the toast says −20% saved, the example reads 48%, and the
+      Changelog (Settings) has "Stale cut: lower for a stale card 10% → 20%"; 0 says stale cards keep their rate; 101
+      or −5 is refused with the saved value put back. Another computer's Settings follows the change.
 
 ## 17. Changelog tab
 

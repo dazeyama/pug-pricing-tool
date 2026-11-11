@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION public.confirm_buy(p_buy_id uuid, p_user uuid, p_customer_name text, p_notes text, p_cash_pct numeric, p_credit_pct numeric, p_expected_version integer, p_paid_price numeric, p_paid_method text, p_line_texts jsonb DEFAULT '{}'::jsonb, p_phone text DEFAULT NULL::text)
+CREATE OR REPLACE FUNCTION public.confirm_buy(p_buy_id uuid, p_user uuid, p_customer_name text, p_notes text, p_cash_pct numeric, p_credit_pct numeric, p_expected_version integer, p_paid_price numeric, p_paid_method text, p_line_texts jsonb DEFAULT '{}'::jsonb, p_phone text DEFAULT NULL::text, p_cash_location text DEFAULT NULL::text)
  RETURNS jsonb
  LANGUAGE plpgsql
  SET search_path TO 'public', 'internal'
@@ -18,6 +18,7 @@ declare
   v_from     text;
   v_lines    jsonb;
   v_user     staff_users;
+  v_location text;
 begin
   -- Name, phone and the price paid are all required (owner, 2026-09-30).
   if v_customer is null then
@@ -39,6 +40,8 @@ begin
   if p_paid_method is null or p_paid_method not in ('cash', 'credit') then
     raise exception 'paid_method_needed';
   end if;
+  -- Where the cash went, Till or Backroom; none on credit (decision 580). The app requires it on cash.
+  v_location := internal.cash_location(p_cash_location, p_paid_method);
 
   select * into b from buys where id = p_buy_id for update;
   if b.id is null or b.status <> 'draft' then
@@ -68,6 +71,7 @@ begin
          customer_name = v_customer, phone = v_phone, notes = coalesce(btrim(p_notes), ''),
          cash_pct = v_cash, credit_pct = v_credit,
          paid_price = p_paid_price, paid_method = p_paid_method, paid_at = now(),
+         cash_location = v_location, paid_by = p_user,
          version = version + 1, updated_at = now(), last_edited_by = p_user
    where id = p_buy_id
   returning * into b;

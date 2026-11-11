@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION public.project_to_buy(p_buy_id uuid, p_user uuid, p_device uuid, p_customer_name text, p_phone text, p_paid_price numeric, p_paid_method text, p_notes text, p_cash_pct numeric, p_credit_pct numeric, p_expected_version integer DEFAULT NULL::integer, p_line_texts jsonb DEFAULT '{}'::jsonb)
+CREATE OR REPLACE FUNCTION public.project_to_buy(p_buy_id uuid, p_user uuid, p_device uuid, p_customer_name text, p_phone text, p_paid_price numeric, p_paid_method text, p_notes text, p_cash_pct numeric, p_credit_pct numeric, p_expected_version integer DEFAULT NULL::integer, p_line_texts jsonb DEFAULT '{}'::jsonb, p_cash_location text DEFAULT NULL::text)
  RETURNS jsonb
  LANGUAGE plpgsql
  SET search_path TO 'public', 'internal'
@@ -17,6 +17,7 @@ declare
   v_target   text;
   v_lines    jsonb;
   v_user     staff_users;
+  v_location text;
 begin
   if p_user is null then
     raise exception 'no_user';
@@ -40,6 +41,8 @@ begin
   if p_paid_method is null or p_paid_method not in ('cash', 'credit') then
     raise exception 'paid_method_needed';
   end if;
+  -- As CONFIRM BUY (decision 580).
+  v_location := internal.cash_location(p_cash_location, p_paid_method);
 
   select * into p from buys where id = p_buy_id and kind = 'collection' and project for update;
   if p.id is null then
@@ -78,12 +81,12 @@ begin
   -- The default rates the screen showed: a project has none of its own (owner, 2026-10-15).
   -- A new buy, with the next number ever (0071).
   insert into buys (kind, status, number, customer_name, phone, notes, draft_device_id,
-                    confirmed_at, confirmed_by, paid_at, paid_price, paid_method,
+                    confirmed_at, confirmed_by, paid_at, paid_price, paid_method, cash_location, paid_by,
                     cash_pct, credit_pct, custom_cash_pct, custom_credit_pct,
                     created_by, last_edited_by)
   values ('walk_in', 'confirmed', internal.next_buy_number(),   -- the highest + 1 (decision 349)
           v_customer, v_phone, coalesce(btrim(p_notes), ''), p_device,
-          now(), p_user, now(), p_paid_price, p_paid_method,
+          now(), p_user, now(), p_paid_price, p_paid_method, v_location, p_user,
           p_cash_pct, p_credit_pct,
           null, null,
           p_user, p_user)

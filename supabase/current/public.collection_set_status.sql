@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION public.collection_set_status(p_buy_id uuid, p_status text, p_user uuid, p_device uuid, p_cash_pct numeric, p_credit_pct numeric, p_expected_version integer, p_offer_cash numeric DEFAULT NULL::numeric, p_offer_credit numeric DEFAULT NULL::numeric, p_paid_price numeric DEFAULT NULL::numeric, p_paid_method text DEFAULT NULL::text, p_reason text DEFAULT NULL::text)
+CREATE OR REPLACE FUNCTION public.collection_set_status(p_buy_id uuid, p_status text, p_user uuid, p_device uuid, p_cash_pct numeric, p_credit_pct numeric, p_expected_version integer, p_offer_cash numeric DEFAULT NULL::numeric, p_offer_credit numeric DEFAULT NULL::numeric, p_paid_price numeric DEFAULT NULL::numeric, p_paid_method text DEFAULT NULL::text, p_reason text DEFAULT NULL::text, p_cash_location text DEFAULT NULL::text)
  RETURNS void
  LANGUAGE plpgsql
  SET search_path TO 'public', 'internal'
@@ -119,6 +119,8 @@ begin
     end if;
     update buys
        set status = 'paid', paid_at = now(), completed_at = null,
+           -- Where the cash went and who paid (decision 580).
+           cash_location = internal.cash_location(p_cash_location, p_paid_method), paid_by = p_user,
            cash_pct = v_cash, credit_pct = v_credit,
            paid_price = p_paid_price, paid_method = p_paid_method,
            version = version + 1, updated_at = now(), last_edited_by = p_user
@@ -126,7 +128,8 @@ begin
     returning * into b;
     perform internal.fix_line_rates(b);
     v_rows := v_rows || jsonb_build_object('field', 'paid', 'before', null,
-      'after', money_text(p_paid_price) || ' ' || p_paid_method);
+      'after', money_text(p_paid_price) || ' ' || p_paid_method
+               || coalesce(', ' || initcap(b.cash_location), ''));
     v_totals := internal.lines_totals(b, array(select l from buy_lines l where l.buy_id = b.id));
     v_summary := format('Marked Paid/Ours: paid %s in %s, locked.', money_text(p_paid_price), p_paid_method);
 
@@ -149,6 +152,7 @@ begin
     update buys
        set status = p_status, paid_at = null, completed_at = null,
            cash_pct = null, credit_pct = null, paid_price = null, paid_method = null,
+           cash_location = null, paid_by = null,
            version = version + 1, updated_at = now(), last_edited_by = p_user
      where id = p_buy_id
     returning * into b;

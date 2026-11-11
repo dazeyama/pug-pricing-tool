@@ -63,11 +63,12 @@ begin
   -- The buy's phone, and its user as the project's maker: the Cash buys file
   -- names who bought it (owner, 2026-10-02).
   insert into buys (kind, status, project, customer_name, phone, notes, paid_at,
-                    cash_pct, credit_pct, paid_price, paid_method, created_by, last_edited_by)
+                    cash_pct, credit_pct, paid_price, paid_method, cash_location, paid_by, created_by, last_edited_by)
   values ('collection', 'paid', true, v_name, b.phone, coalesce(b.notes, ''), coalesce(b.confirmed_at, now()),
           null, null,
           -- Paid once: while the buy stays it keeps the payment, $0 here (decision 341).
           case when v_keep and b.paid_method is not null then 0 else b.paid_price end, b.paid_method,
+          b.cash_location, b.paid_by,   -- where the cash went and who paid (decision 580)
           coalesce(b.confirmed_by, p_user), p_user)
   returning * into p;
   -- The buy kept the payment: remembered, for Mark Paid/Ours again (decision 397).

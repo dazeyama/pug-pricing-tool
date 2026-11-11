@@ -15,6 +15,20 @@ AS $function$
      where p.product_id = p_product_id
         or (p.base_key = any(coalesce(p_base_keys, '{}')) and p.category not like 'Art Series%')
   ),
+  -- The stale file (decision 580): its products in stock, of the card's or the printing's own, less any we exported
+  -- since its window began (a card just put in stock hasn't had time to sell).
+  sf as (
+    select uploaded_at, days from stale_files limit 1
+  ),
+  stale as (
+    select s.product_id
+      from stale_products s cross join sf
+     where s.total_qty > 0
+       and (s.product_id in (select product_id from card_products) or s.product_id = p_product_id)
+       and not exists (select 1 from buy_lines l
+                        where l.cc_product_id = s.product_id
+                          and l.cc_exported_at >= sf.uploaded_at - make_interval(days => sf.days))
+  ),
   cc as (
     select count(*) as products, count(p.total_qty) as counted, sum(greatest(p.total_qty, 0)) as qty
       from card_products p
@@ -59,7 +73,9 @@ AS $function$
                                  sum(o.quantity) as qty
                             from ours o
                            group by o.scryfall_id, o.set_code, o.collector_number, o.finish) x),
-    'inventory_at', (select f.uploaded_at from f))
+    'inventory_at', (select f.uploaded_at from f),
+    'stale_file', (select jsonb_build_object('days', sf.days, 'uploaded_at', sf.uploaded_at) from sf),
+    'stale_ids', (select coalesce(jsonb_agg(s.product_id order by s.product_id), '[]'::jsonb) from stale s))
 $function$;
 
 -- Granted: {postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}
