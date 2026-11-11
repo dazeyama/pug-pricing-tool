@@ -11,6 +11,7 @@ import ThisComputerPanel from './settings/ThisComputerPanel.jsx';
 import BackupsPanel from './settings/BackupsPanel.jsx';
 import CcMatchingPanel from './settings/CcMatchingPanel.jsx';
 import OwnedCopiesPanel from './settings/OwnedCopiesPanel.jsx';
+import StaleFilePanel from './settings/StaleFilePanel.jsx';
 import { formatDate } from '../lib/time.js';
 
 /* global __APP_VERSION__, __BUILD_DATE__ */
@@ -57,6 +58,8 @@ export default function SettingsPage() {
         <SellFloorPanel />
         <OwnedCopiesPanel />
         <CcMatchingPanel />
+        {/* The stale cards file (decision 581), on the left; the stale cut's panel goes beside it. */}
+        <StaleFilePanel />
         <BackupsPanel />
         <footer className="settings-footer">
           {/* Where everything comes from, one line each (owner, 2026-09-29). */}

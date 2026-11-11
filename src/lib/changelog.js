@@ -61,7 +61,9 @@ export const CATEGORIES = [
       // 📞 on a Priced collection (owner, 2026-10-02).
       'collection_called',
       // Settings changes (decision 412): a setting saved, the inventory uploaded, the JustTCG key, a match forgotten.
-      'setting_changed', 'inventory_uploaded', 'justtcg_key_saved', 'justtcg_key_removed', 'cc_match_forgotten'],
+      'setting_changed', 'inventory_uploaded', 'justtcg_key_saved', 'justtcg_key_removed', 'cc_match_forgotten',
+      // The stale cards file uploaded (decisions 580, 581).
+      'stale_file_uploaded'],
   },
 ];
 /** Milestones are always shown (a backup restore, Phase 10). */
@@ -120,6 +122,7 @@ export const HEADLINES = {
   backup_restored: 'Backup restored',
   setting_changed: 'Setting changed',
   inventory_uploaded: 'Master Crystal Inventory uploaded',
+  stale_file_uploaded: 'Stale cards file uploaded',
   justtcg_key_saved: 'JustTCG key saved',
   justtcg_key_removed: 'JustTCG key deleted',
   cc_match_forgotten: 'Remembered match forgotten',

@@ -226,6 +226,18 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-11-10 (Export session): **Settings → Stale cards file** (decision 581; the three-part patch, part 2; its
+  tables and `stale_file_load` are Records' migration 0016, decision 580): `src/pages/settings/StaleFilePanel.jsx`
+  (the panel: what it's for, How to make the file, the days box, the upload, the current file),
+  `src/lib/staleFile.js` (`staleFromText`, `readStaleCsv`: the checks and rows; `loadStaleFile`,
+  `currentStaleFile`). Outside my area, small: the panel in `src/pages/SettingsPage.jsx` after Crystal Commerce
+  matching (on the left; Records' stale cut panel goes right after it, beside it), its CSS in
+  `src/styles/settings.css`, and the Changelog's name for `stale_file_uploaded` in `src/lib/changelog.js`. The
+  owner's sample (Downloads, read where it is) reads as 503 products, 217 in stock, 259 copies. Where to look
+  (needs 0016 on dev): Settings → Stale cards file: upload the stale search CSV with "No sale in 180 days": the
+  toast and the panel say 503 products and 217 stale cards in stock; the Changelog (Settings) has the upload; the
+  Master Crystal Inventory's file is refused. Untested in the app (unit tests and the sample read only). No
+  migration of mine.
 - 2026-11-10 (Export session): **🖨 Print a walk-in in progress** (decision 579; the three-part patch, part 1):
   `src/lib/quotePrint.js` (`quoteRow`, `quoteSheet`: the rows and the foot, pure), `src/lib/quotePdf.js` (the
   sheet), `src/pages/export/QuotePrintButton.jsx` (the button; the PDF library loads on the click). The button
