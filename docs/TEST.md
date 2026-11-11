@@ -288,6 +288,14 @@ what happens. The findings are reported when the pass ends.
       pricing off, add a TCGplayer-only Pokémon card (no TCGdex record); turn **⚡ Skip pricing: on**; click its line,
       pick a sibling product in its versions, SAVE EDIT: the price stays. Turn Skip pricing off, REPRICE?: the line is
       priced as the new product, and clicking it opens the edit on that product.
+- [ ] **A stale card in Copies we own** (decision 582, migration 0016; dev; Buy tab session): with a stale file
+      uploaded (Settings, 180 days) that has a Magic product in stock we haven't exported lately, pick that exact
+      printing: 🕸️ on This printing's corner, its box warm; a "−10% stale" chip; the box says "Stale: no sale in 180
+      days (−10%)" on its own line and the pill adds it to the rest (a card we own 4 of and stale: −20%). Apply: the
+      card goes on at that rate and the applied line says "for the copies we own and stale". Another printing of
+      the same card: no 🕸️. A card we own 20 of and stale: −60% (the copies cut's 50% at most, plus 10%). Settings'
+      stale cut at 0: 🕸️ and "Stale: no sale in 180 days" still, no percent, no chip. With Auto apply rates? on, add
+      it and scan it from the phone: both go on at the stale rate.
 
 ## 8. Buy tab: the buy list and CONFIRM BUY
 
@@ -345,6 +353,12 @@ what happens. The findings are reported when the pass ends.
       and Cash each and Credit each matching the Price screen's chips (the own-rate card at its rate); at the foot,
       the card count and the Cash and Credit offers equal to the list's totals. Nothing in the Changelog; the buy
       unchanged. Greyed with no cards; not on a collection's list.
+- [ ] **CONFIRM BUY's cash location and BUY COMPLETE's Copy** (decision 583, migration 0016; dev; Buy tab session):
+      CONFIRM BUY, pick Cash: Till and Backroom chips appear; Confirm without one says "Choose Till or Backroom.".
+      Pick Till, confirm; on BUY COMPLETE press **Copy 📋**: a toast says it's copied and the dialog stays; paste into
+      a sheet's first cell: ten cells, your name, today as 11/10/2026, the customer, (555) 555-0100 style phone, an
+      empty cell, Cash, your name, today, $90.00 style amount, Till. A credit buy: no chips, and the last cell NA.
+      The buy's ⋯ on its day page copies the same row.
 
 ## 9. Buy tab: bulk
 

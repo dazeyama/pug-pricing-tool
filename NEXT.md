@@ -226,6 +226,23 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-11-10 (Buy tab session): **The three-part patch, the Buy tab's part** (decisions 582 and 583; the database
+  is Records' migration 0016, decision 580; untested in the app, the unit tests only).
+  - **Stale in Copies we own** (582, committed): `src/lib/ownedRates.js` (`staleFrom`, `DEFAULT_STALE`,
+    `STALE_EMOJI`; `ownedCounts`' `stale` from `stale_ids` and `stale_file`; `ownedAdjust`'s `stale`, `staleCut`,
+    `staleDays`; `ownedReason`'s line), `OwnedCounter.jsx` (🕸️ on This printing, the "−10% stale" chip),
+    `PricingScreen.jsx` (`staleCfg`, the applied line), `useScanReceiver.js` (scans). Where to look: the Buy tab, a
+    stale Magic printing (TEST.md section 7, "A stale card in Copies we own"): 🕸️, the chip, the box's
+    "Stale: no sale in 180 days (−10%)", the pill. The multiplier's panel is Records' and reads `staleFrom`.
+  - **The cash location at CONFIRM BUY and Copy on BUY COMPLETE** (583): `src/components/CashLocation.jsx` (also
+    for Records' Paid/Ours), `ConfirmBuyModal.jsx` (`cashLocation` prop; Records can turn it on for Convert to buy,
+    `project_to_buy`'s `p_cash_location`), `PricePage.jsx`, `useDraft.js` `confirm` (`p_cash_location`),
+    `confirmReadBack.js` (the lost answer checks it), `BuyDoneModal.jsx` (**Copy 📋**, Records' `copyBuyRow`).
+    Where to look: TEST.md section 8, "CONFIRM BUY's cash location and BUY COMPLETE's Copy".
+  - **Not committed yet, on purpose:** the 583 files wait for 0016 on dev (`confirm_buy` would refuse the new
+    parameter, and the read-back selects `cash_location`) and for Records to commit `copyBuyRow` and `COPY_TITLE`
+    in `src/lib/buyCopy.js`; I commit them on Records' word.
+
 - 2026-11-10 (Export session): **Settings → Stale cards file** (decision 581; the three-part patch, part 2; its
   tables and `stale_file_load` are Records' migration 0016, decision 580): `src/pages/settings/StaleFilePanel.jsx`
   (the panel: what it's for, How to make the file, the days box, the upload, the current file),
