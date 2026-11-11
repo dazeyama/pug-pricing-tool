@@ -12,7 +12,7 @@ marks each task done here when it's finished, with the exact file and function o
   or a fresh dev run). The owner agreed to 578's narrowing (2026-11-10), so 0015 goes as it is.
 
 - **Unpushed** (main session): NEXT.md's Buy 82 entry and the four ideas below (no code); the Buy tab session's
-  one TCGplayer product is one line (decision 578, migration 0015 on dev only: 69b9fc8, a053635).
+  one TCGplayer product is one line (decision 578, migration 0015 on dev only: 69b9fc8, a053635, 38b2e6b).
 
 - **Four ideas from the owner, 2026-11-10, to design together and leave open for now** (main session; nothing
   designed or built, each needs its design talk with the owner first):
