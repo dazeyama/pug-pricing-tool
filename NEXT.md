@@ -322,8 +322,12 @@ marks each task done here when it's finished, with the exact file and function o
     - The box starts ticked.
     - The span before is compared only when all of it is on record.
   - **Untested and not measured:**
-    - The report's size, the graph's height (280 px) and the window's width (up to 1000 px) weren't measured: dev's
-      sign-in needs the store password.
+    - The fit was measured on dev (2026-11-11, the owner signed in), after the owner asked for no scrollbar.
+      - The graph is 200 px high, there's one "before" line above the tiles, and the rows are tighter.
+      - The window itself never scrolls; a range longer than fits scrolls its day rows alone, under a header and a
+        total that stay put.
+      - At zoom 1 on a screen 860 px high, Last 7 days fits whole (the window 756 px), and This month scrolls only
+        its rows. At the pane's zoom 0.8 it's 768 CSS px.
     - The calendar's look.
     - How long a long range takes to read.
     - Dark is the only theme it was styled for: it uses the app's tokens.

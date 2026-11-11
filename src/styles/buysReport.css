@@ -1,6 +1,10 @@
 /* ---- The Buys report (decision 585): over Home, from its Today card; the mockup's look on the app's tokens ---- */
-.buys-report .modal-box.wide { width: min(1000px, calc(94vw / var(--ui-zoom))); max-height: calc(90vh / var(--ui-zoom)); }
-.buys-report .modal-body { display: flex; flex-direction: column; gap: 14px; overflow-y: auto; }
+.buys-report .modal-box.wide { width: min(1000px, calc(94vw / var(--ui-zoom))); max-height: calc(92vh / var(--ui-zoom)); }
+/* No scrollbar on the window (the owner, 2026-11-11): everything keeps its size but the day rows, which scroll on
+   their own when the range has more days than the room left. */
+.buys-report .modal-body { display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0; overflow: hidden; }
+.buys-report .modal-body > * { flex: none; }
+.buys-report .modal-body > .br-days-wrap { flex: 0 1 auto; min-height: 0; overflow-y: auto; }
 
 .br-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
 .br-group { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
@@ -30,8 +34,9 @@
 .br-cal-hint { margin: 6px 0 0; }
 
 .br-fail { margin: 0; padding: 30px 4px; }
-.br-chart { min-width: 0; padding: 12px 8px 4px 0; border-radius: 8px; background: var(--panel-2); }
-.br-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; padding: 0 0 6px 60px; font-size: 13px; }
+.br-chart { min-width: 0; padding: 8px 8px 2px 0; border-radius: 8px; background: var(--panel-2); }
+.br-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; padding: 0 0 4px 60px; font-size: 13px; }
+.buys-report .br-compare { margin: 0 0 -4px; }
 .br-key { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; }
 .br-key i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; background: currentColor; }
 .br-left-off { margin-left: auto; padding-right: 10px; color: var(--muted); }
@@ -42,16 +47,19 @@
 .br-tip b { color: var(--muted); font-size: 12.5px; font-weight: 600; }
 
 .br-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 8px; }
-.br-tile { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 8px 10px; border-radius: 8px; background: var(--panel-2); }
-.br-tile-label { color: var(--muted); font-size: 12.5px; }
+.br-tile { display: flex; flex-direction: column; gap: 1px; min-width: 0; padding: 6px 10px; border-radius: 8px; background: var(--panel-2); }
+.br-tile-label { color: var(--muted); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .br-tile strong { font-size: 20px; font-weight: 800; line-height: 1.2; font-variant-numeric: tabular-nums; }
-.br-was { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.br-was { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .br-up { color: var(--good); }
 .br-down { color: var(--bad); }
 
 .br-days { width: 100%; border-collapse: collapse; font-size: 13.5px; font-variant-numeric: tabular-nums; }
-.br-days th, .br-days td { padding: 6px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--border); }
+.br-days th, .br-days td { padding: 4px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--border); }
 .br-days th { color: var(--muted); font-size: 12.5px; font-weight: 600; }
+/* The heads and the total stay in view while a long range's rows scroll under them. */
+.br-days thead th { position: sticky; top: 0; background: var(--panel); }
+.br-days tfoot td { position: sticky; bottom: 0; background: var(--panel); border-top: 1px solid var(--border); }
 .br-days th:first-child, .br-days td:first-child { text-align: left; }
 .br-days tr.none td { color: var(--muted); }
 .br-days tfoot td { font-weight: 800; border-bottom: 0; }

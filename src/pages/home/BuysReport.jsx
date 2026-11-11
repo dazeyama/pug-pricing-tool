@@ -128,7 +128,10 @@ function Tip({ active, payload }) {
   );
 }
 
-/** One of the range's totals, beside the same span before when all of it is on record. */
+/**
+ * One of the range's totals, beside the same span before when all of it is on record: one line, "▲ $0 before",
+ * as the line above the tiles says which span that is (so the panel fits with no scrollbar, the owner).
+ */
 function Tile({ label, tone, value, before, money, span }) {
   const show = (n) => (money ? formatMoney(n) : n.toLocaleString());
   const diff = before == null ? 0 : value - before;
@@ -137,9 +140,9 @@ function Tile({ label, tone, value, before, money, span }) {
       <span className={`br-tile-label${tone ? ` is-${tone}` : ''}`}>{label}</span>
       <strong>{show(value)}</strong>
       {before != null && (
-        <span className="br-was">
+        <span className="br-was" title={`${show(before)} the ${span} before`}>
           <span className={diff > 0 ? 'br-up' : diff < 0 ? 'br-down' : ''}>{diff > 0 ? '▲ ' : diff < 0 ? '▼ ' : ''}</span>
-          {show(before)} the {span} before
+          {show(before)} before
         </span>
       )}
     </div>
@@ -242,7 +245,9 @@ export default function BuysReport({ onClose }) {
                 </span>
               )}
             </div>
-            <ResponsiveContainer width="100%" height={280}>
+            {/* 200 px: with the tiles and a week's rows, the window fits a 900 px-high screen at zoom 1 with no
+                scrollbar (measured on dev, the owner's ask). */}
+            <ResponsiveContainer width="100%" height={200}>
               {view === 'line' ? (
                 <LineChart data={graphed} margin={margin}>
                   {parts}
@@ -262,6 +267,11 @@ export default function BuysReport({ onClose }) {
             </ResponsiveContainer>
           </div>
 
+          {beforeTotal && (
+            <p className="hint br-compare">
+              Totals for the range; “before” is the {span} just before ({rangeText(before.from, before.to)}).
+            </p>
+          )}
           <div className="br-tiles">
             <Tile label="Paid out" value={total.cash + total.credit} before={beforeTotal && beforeTotal.cash + beforeTotal.credit} money span={span} />
             <Tile label="Cash" tone="cash" value={total.cash} before={beforeTotal?.cash} money span={span} />
@@ -272,6 +282,8 @@ export default function BuysReport({ onClose }) {
             <Tile label="From the Backroom" tone="cash" value={total.backroom} before={beforeTotal?.backroom} money span={span} />
           </div>
 
+          {/* The window never scrolls: a range longer than fits scrolls its day rows alone. */}
+          <div className="br-days-wrap">
           <table className="br-days">
             <thead>
               <tr>
@@ -301,6 +313,7 @@ export default function BuysReport({ onClose }) {
               </tr>
             </tfoot>
           </table>
+          </div>
         </>
       )}
     </Modal>
