@@ -79,6 +79,15 @@ marks each task done here when it's finished, with the exact file and function o
      that it combines with "total qty between" (in stock only), that in-store sales count, and how far back it
      goes; the owner to try it. If it works, the app's part could be small: read that CSV and add what Crystal
      Commerce doesn't know (when we bought each card and what we paid, by `cc_product_id`), or nothing at all.
+     The owner tried it the other way round (2026-11-10): "Inventory CSV export: Where the product has been sold
+     greater than or equal to 1 time in the past 180 days", and the export keeps the filter: 5,099 products, in
+     the Master Crystal Inventory file's own 22 columns (Product ID, Total Qty, Sell Price, CC ID…), one row a
+     product, with no count sold and no last-sold date. Against the current inventory file on prod (2026-11-08,
+     read-only): 8,790 products in stock, 1,435 of them in the export, so 7,355 in stock with no sale in 180
+     days (84%). That share is too high to be a to-do list as it stands: it counts cards that only just went
+     into stock, and whether in-store sales count is still unknown. So the tracker needs when a product came
+     into stock (the app knows it only for what it exported since 2026-10-19: `cc_exported_at`) and a floor on
+     price or copies to be worth reading. Nothing built; the owner's file stayed in Downloads.
 
 - **Buy 82 (2026-11-10): the price that changed after two cards came off and went back on; looked into, nothing
   changed yet** (main session; the owner asked for the records only, no code). What prod's records show (read-only:
