@@ -137,7 +137,11 @@ marks each task done here when it's finished, with the exact file and function o
   2.12.7 from a CDN; 28 days of prod's daily totals by the day paid, one read-only SELECT, sums only; its source
   is outside the repo): presets and a custom range, a Line / Bars switch, cash and credit on one graph, the
   range's totals beside the same span before, a row a day. `recharts` isn't in `package.json` yet: it goes in
-  with the build. Waiting on the owner's reaction to the mockup; the rest of the proposal is unconfirmed.
+  with the build. Then the owner: "Add a way to optionally hide Mondays and Wednesdays from the graph (those are days
+  we're closed on and create spikes always)": in the mockup as a tick box, Hide closed days (Mon, Wed), ticked as it
+  opens; it leaves those days off the graph only, and the totals and the day rows still count them (the main
+  session's reading; whether it starts ticked, and where the closed days are set, unasked). Waiting on the owner's
+  reaction to the mockup; the rest of the proposal is unconfirmed.
 
 - **Four ideas from the owner, 2026-11-10: three designed and in the plan above, the sticker sheet shelved** (main session; nothing
   built; the designs, with the owner's answers quoted; the sticker sheet "for later", when the measurements come):
