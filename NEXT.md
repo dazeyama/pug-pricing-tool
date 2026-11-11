@@ -35,8 +35,8 @@ marks each task done here when it's finished, with the exact file and function o
     cards marked stale."; and the sell-price floor's place in migration 0016 (amended in place, dev only).
     Then, the same day: "Also on the Home page. On the TODAY panel: … We now also need a "cash taken from the til
     today" stat, that's super important for closing." (`HomePage.jsx`, the Today card, from `cash_location`;
-    asked of the owner by the main session, unanswered: whether it counts overnight buys paid from the Till today
-    as well as walk-ins, which is how Records was told to build it meanwhile).
+    asked whether it counts overnight buys paid from the Till today as well as walk-ins, the owner: "Yes, all
+    Till cash").
   - *Export:* "The "Stale cards file" panel is too wordy and too long, it has a scrollbar by default, measure it
     better and size to fit, with less words. ALSO add a input for the sell price 35 mirroring the days, to make
     is so that files with different floors can be used."
