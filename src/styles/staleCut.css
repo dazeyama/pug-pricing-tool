@@ -1,26 +1,7 @@
-/* ---- Settings → Stale cut (decision 580): View Stale Cards' list, inside the panel ---- */
-.stale-cut-head { justify-content: space-between; padding-top: 6px; padding-bottom: 6px; }
-/* While listing, the body doesn't scroll: the count stays, and the list scrolls in the room left. */
-.settings-panel .cardpanel-body.stale-listing { display: flex; flex-direction: column; overflow: hidden; }
-.stale-list-note { margin: 0 0 8px; flex: none; }
-.stale-list {
-  flex: 1;
-  min-height: 0;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  overflow-y: auto;
-}
-.stale-list-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto 72px;
-  align-items: baseline;
-  gap: 10px;
-  padding: 5px 10px;
-  font-size: 13px;
-  border-bottom: 1px solid var(--border);
-}
-.stale-list-row:last-child { border-bottom: 0; }
-.stale-list-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.stale-list-cat { margin-left: 8px; font-size: 12px; color: var(--muted); }
-.stale-list-qty { color: var(--muted); font-variant-numeric: tabular-nums; }
-.stale-list-price { text-align: right; font-variant-numeric: tabular-nums; }
+/* ---- Settings → Stale cut (decision 580) ---- */
+.stale-cut { display: flex; flex-direction: column; gap: 10px; }
+.stale-cut .hint { margin: 0; }
+.stale-view { align-self: flex-start; }
+/* View Stale Cards' window: the remembered products' list (export.css .ccm-*), with copies and a price. */
+.ccm-list .stale-qty { font-variant-numeric: tabular-nums; }
+.ccm-list .stale-price { min-width: 64px; text-align: right; font-variant-numeric: tabular-nums; }

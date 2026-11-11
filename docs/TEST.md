@@ -864,12 +864,13 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
       "Credit 60% on a stale card is 54%"; 20, Tab: the toast says −20% saved, the example reads 48%, and the
       Changelog (Settings) has "Stale cut: lower for a stale card 10% → 20%"; 0 says stale cards keep their rate; 101
       or −5 is refused with the saved value put back. Another computer's Settings follows the change.
-- [ ] **View Stale Cards** (decision 580, 0016 amended; Records session): the Stale cut panel's **View Stale Cards**
-      shows, in the panel, "N stale cards in stock (M copies): no sale in 180 days, $35 and up" and, under it, a
-      list that scrolls on its own: each card's name, its category from the inventory, ×copies and the sell price, by
-      name. It's the cards the box marks 🕸️: a card the app exported in the window, or one not in the current
-      inventory, isn't in it. Hide Stale Cards clicked while it's reading stays closed. **Hide Stale Cards** goes back to
-      the cut; the panel keeps its height beside Stale cards file. With no file, it says none is uploaded.
+- [ ] **View Stale Cards** (decision 580, 0016 amended; Records session): the Stale cut panel has a highlighted
+      **View Stale Cards…** button under its box, and the panel stays as it is when it's clicked. It opens a window
+      like Browse remembered products: "🕸️ Stale cards", a Find by product name box, "N stale cards in stock (M
+      copies): no sale in 180 days, $35 and up", and the list by name: each card's name, its category, ×copies and
+      the sell price. Typing narrows it ("Found: N"); Close or Esc shuts it. It's the cards the box marks 🕸️: a card
+      the app exported in the window, or one not in the current inventory, isn't in it. With no file it says none is
+      uploaded; with no connection the button is greyed.
 
 ## 17. Changelog tab
 

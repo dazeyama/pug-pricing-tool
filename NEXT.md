@@ -291,9 +291,11 @@ marks each task done here when it's finished, with the exact file and function o
   - **Copy Details** (renamed from Copy) is first on a buy's ⋯ after Mark as completed, above Print ▸. It's also
     first on a paid overnight buy's ⋯ in the Overnight buys table. Its rollover is now short: "Copy this buy as a
     row for the buys sheet" (`buyCopy.js` `COPY_TITLE`, BUY COMPLETE's too).
-  - **Settings → Stale cut → View Stale Cards**: the list inside the panel, with its count, window and floor. The
-    list scrolls under the count line, and the panel keeps its height. Hide Stale Cards goes back. The list is
-    `stale_cards()`: the cards the Price screen marks 🕸️, so only products in the current inventory. On dev, upload
+  - **Settings → Stale cut → View Stale Cards…**: a highlighted button under the box. It opens a window like Browse
+    remembered products, with a search by name, the count, the window and the floor, and the list. The first build
+    swapped the panel's body for the list, which the owner corrected. The list is `stale_cards()`: the cards the
+    Price screen marks 🕸️, so only products in the current inventory. Whether the panel's text and button fit its
+    height without a scrollbar isn't measured (dev's sign-in). On dev, upload
     the stale file again first: the one there from before the amendment has no sell prices.
   - **0016's amendment:** `stale_files.min_price` (0 to 9999, 35 unless changed, put last so a fresh apply matches
     dev's order), `stale_products.sell_price`, `stale_file_load`'s `p_min_price` and its Changelog's "$35 and up",

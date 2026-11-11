@@ -1,9 +1,11 @@
-import { useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSettings } from '../../state/settings.jsx';
 import { useStaff } from '../../state/staff.jsx';
 import { useConnection } from '../../state/connection.jsx';
 import { supabase } from '../../lib/supabase.js';
 import { formatMoney, formatMoneyCents } from '../../lib/money.js';
+import { nameKey } from '../../lib/normalize.js';
+import Modal from '../../components/Modal.jsx';
 import { useSettingField } from './useSettingField.js';
 import { STALE_EMOJI, adjustRate, staleFrom } from '../../lib/ownedRates.js';
 import '../../styles/staleCut.css';
@@ -22,36 +24,80 @@ async function readStaleCards() {
 }
 
 /**
- * View Stale Cards (the owner, 2026-11-10: "a scrollable subpanel list of all the cards marked stale"): in the
- * panel itself, so it keeps its height beside the file's panel. Read when opened.
+ * View Stale Cards (the owner, 2026-11-10): "a subpanel like "Browse remembered products" … that lists all the
+ * cards currently tagged as stale", in a window of its own as that one is (CcMatchingPanel's ProductsModal):
+ * searched by name, read when it opens. Read only.
  */
-function StaleList({ list }) {
-  if (list.error) return <p className="hint stale-list-note">Couldn&apos;t read the stale cards: {list.error}</p>;
-  if (!list.cards) return <p className="hint stale-list-note">Reading the stale cards…</p>;
-  if (!list.file) return <p className="hint stale-list-note">No stale cards file is uploaded yet.</p>;
-  const copies = list.cards.reduce((n, c) => n + (Number(c.total_qty) || 0), 0);
+function StaleCardsModal({ onClose }) {
+  const [read, setRead] = useState(null);   // { cards, file } or { error }
+  const [text, setText] = useState('');
+  useEffect(() => {
+    let alive = true;
+    readStaleCards()
+      .then((r) => alive && setRead(r))
+      .catch((e) => alive && setRead({ error: e.message }));
+    return () => {
+      alive = false;
+    };
+  }, []);
+  const shown = useMemo(() => {
+    const q = nameKey(text);
+    const cards = read?.cards ?? [];
+    return q ? cards.filter((c) => nameKey(c.product_name).includes(q)) : cards;
+  }, [read, text]);
+  const copies = (read?.cards ?? []).reduce((n, c) => n + (Number(c.total_qty) || 0), 0);
+
   return (
-    <>
-      <p className="hint stale-list-note">
-        {list.cards.length} stale {list.cards.length === 1 ? 'card' : 'cards'} in stock ({copies}{' '}
-        {copies === 1 ? 'copy' : 'copies'}): no sale in {list.file.days} days, {formatMoney(list.file.min_price)} and
-        up, as the Price screen marks them. Cards the app exported in that window aren&apos;t here.
-      </p>
-      {list.cards.length > 0 && (
-        <div className="stale-list" role="list" aria-label="Stale cards">
-          {list.cards.map((c) => (
-            <div key={c.product_id} className="stale-list-row" role="listitem">
-              <span className="stale-list-name">
-                {c.product_name}
-                {c.category && <span className="stale-list-cat">{c.category}</span>}
-              </span>
-              <span className="stale-list-qty">×{c.total_qty}</span>
-              <span className="stale-list-price">{c.sell_price != null ? formatMoneyCents(c.sell_price) : ''}</span>
-            </div>
-          ))}
-        </div>
+    <Modal
+      wide
+      className="ccm-modal"
+      title={`${STALE_EMOJI} Stale cards`}
+      onClose={onClose}
+      footer={<button type="button" className="btn primary" onClick={onClose}>Close</button>}
+    >
+      <input
+        type="search"
+        className="ccm-search"
+        placeholder="Find by product name…"
+        aria-label="Find a stale card by name"
+        autoFocus
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+      />
+      {read == null ? (
+        <p className="hint">Loading…</p>
+      ) : read.error ? (
+        <p className="hint">Couldn&apos;t read the stale cards: {read.error}</p>
+      ) : !read.file ? (
+        <p className="hint">No stale cards file is uploaded yet: Settings → Stale cards file.</p>
+      ) : (
+        <>
+          <p className="hint ccm-caption">
+            {read.cards.length.toLocaleString()} stale {read.cards.length === 1 ? 'card' : 'cards'} in stock
+            ({copies.toLocaleString()} {copies === 1 ? 'copy' : 'copies'}): no sale in {read.file.days} days,
+            {' '}{formatMoney(read.file.min_price)} and up. The cards the Price screen marks {STALE_EMOJI}; ones the
+            app exported in that window aren&apos;t here.
+            {text.trim() ? ` Found: ${shown.length.toLocaleString()}.` : ''}
+          </p>
+          {!shown.length ? (
+            <p className="hint">{text.trim() ? 'Nothing found.' : 'None.'}</p>
+          ) : (
+            <ul className="ccm-list">
+              {shown.map((c) => (
+                <li key={c.product_id}>
+                  <span className="ccm-what">
+                    {c.product_name}
+                    {c.category && <span className="ccm-note"> · {c.category}</span>}
+                  </span>
+                  <span className="ccm-who stale-qty">×{c.total_qty}</span>
+                  <span className="ccm-who stale-price">{c.sell_price != null ? formatMoneyCents(c.sell_price) : ''}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
       )}
-    </>
+    </Modal>
   );
 }
 
@@ -59,13 +105,12 @@ function StaleList({ list }) {
 // file's panel. The owner: "another panel besides it, that allows us to set base multipliers like -10% or -20% to
 // stale cards". It's off the card's rate, as Copies we own's cut is, and on top of it: the copies cut's "at most"
 // limits that cut alone ("Have them be separate."). Saved like every setting, live on every computer, in the
-// Changelog. View Stale Cards lists the cards it applies to.
+// Changelog. View Stale Cards opens the list of the cards it applies to.
 export default function StaleCutPanel() {
   const { values, save } = useSettings();
   const { current } = useStaff();
   const { offline } = useConnection();
-  const [list, setList] = useState(null);   // null: closed; { cards, file, error } while open
-  const reading = useRef(0);   // the read in flight: a later open or a Hide makes its answer stale
+  const [viewing, setViewing] = useState(false);
   const cfg = staleFrom(values.stale_cards);
   const box = useSettingField({
     stored: cfg.pct,
@@ -74,62 +119,41 @@ export default function StaleCutPanel() {
     saved: (next) => (next > 0 ? `Stale cut saved: −${next}%.` : 'Stale cut saved: none, stale cards keep their rate.'),
   });
 
-  async function open() {
-    const mine = ++reading.current;
-    setList({ cards: null, file: null, error: null });
-    let next;
-    try {
-      next = { ...await readStaleCards(), error: null };
-    } catch (e) {
-      next = { cards: [], file: null, error: e.message };
-    }
-    if (reading.current === mine) setList(next);   // not if Hide was clicked meanwhile
-  }
-  function hide() {
-    reading.current += 1;
-    setList(null);
-  }
-
   return (
     <section className="cardpanel settings-panel">
-      <div className="cardpanel-head stale-cut-head">
-        <strong>Stale cut</strong>
+      <div className="cardpanel-head"><strong>Stale cut</strong></div>
+      <div className="cardpanel-body stale-cut">
+        <p className="hint">
+          A Magic card whose exact printing is in the stale cards file, in stock, shows {STALE_EMOJI} on the Price
+          screen&apos;s Copies we own, and its suggested rate is this much lower, on walk-in buys and open overnight
+          buys. It&apos;s a percent of the card&apos;s rate, on top of Copies we own&apos;s cut: that cut&apos;s
+          &quot;At most&quot; doesn&apos;t limit this one. Applied as Copies we own&apos;s are: Apply, or Auto apply
+          rates?. 0 turns it off.
+        </p>
+        <label className="owned-set-row">
+          <span className="owned-set-label">Lower for a stale card</span>
+          <span className="pct-input fb-box owned-set-box">
+            <span className="pct-sign owned-set-pre">−</span>
+            <input type="number" min="0" max="100" step="0.01" aria-label="Lower for a stale card" {...box} />
+            <span className="pct-sign owned-set-unit">%</span>
+          </span>
+        </label>
+        <p className="hint owned-set-example">
+          {cfg.pct > 0
+            ? `With this: Credit 60% on a stale card is ${adjustRate(60, -cfg.pct)}%.`
+            : 'Off: stale cards show the emoji and keep their rate.'}
+        </p>
         <button
           type="button"
-          className="btn ghost small"
-          disabled={offline && !list}
-          title={list ? 'Back to the stale cut' : 'List every card marked stale: in the stale cards file, in stock, not exported by the app in its window. Changes nothing.'}
-          onClick={() => (list ? hide() : open())}
+          className="btn primary stale-view"
+          disabled={offline}
+          title={offline ? 'No connection' : 'List every card tagged stale. Changes nothing.'}
+          onClick={() => setViewing(true)}
         >
-          {list ? 'Hide Stale Cards' : 'View Stale Cards'}
+          View Stale Cards…
         </button>
       </div>
-      <div className={`cardpanel-body${list ? ' stale-listing' : ''}`}>
-        {list ? <StaleList list={list} /> : (
-          <>
-            <p className="hint">
-              A Magic card whose exact printing is in the stale cards file, in stock, shows {STALE_EMOJI} on the
-              Price screen&apos;s Copies we own, and its suggested rate is this much lower, on walk-in buys and open
-              overnight buys. It&apos;s a percent of the card&apos;s rate, on top of Copies we own&apos;s cut: that
-              cut&apos;s &quot;At most&quot; doesn&apos;t limit this one. Applied as Copies we own&apos;s are:
-              Apply, or Auto apply rates?. 0 turns it off.
-            </p>
-            <label className="owned-set-row">
-              <span className="owned-set-label">Lower for a stale card</span>
-              <span className="pct-input fb-box owned-set-box">
-                <span className="pct-sign owned-set-pre">−</span>
-                <input type="number" min="0" max="100" step="0.01" aria-label="Lower for a stale card" {...box} />
-                <span className="pct-sign owned-set-unit">%</span>
-              </span>
-            </label>
-            <p className="hint owned-set-example">
-              {cfg.pct > 0
-                ? `With this: Credit 60% on a stale card is ${adjustRate(60, -cfg.pct)}%.`
-                : 'Off: stale cards show the emoji and keep their rate.'}
-            </p>
-          </>
-        )}
-      </div>
+      {viewing && <StaleCardsModal onClose={() => setViewing(false)} />}
     </section>
   );
 }
