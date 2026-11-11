@@ -18,7 +18,8 @@ marks each task done here when it's finished, with the exact file and function o
   prod has 0016:** `main` already reads its columns and tables (the Collections tab's list selects
   `buys.cash_location`, Settings reads `stale_files`), so those break on a site without it.
 
-- **Dev holds 55 simulated walk-in buys, for testing the Buys report** (main session, 2026-11-11; the owner: "Can
+- **Dev holds 55 simulated walk-in buys, and the owner is keeping them** ("I'm going to keep them.", 2026-11-11;
+  main session; made for testing the Buys report on the owner's ask: "Can
   you create simulated data for the last 14 days based on the read only probe of prod for the mockup and create
   that data on the dev database for testing?"). Buys 47 to 101 on dev, paid 2026-10-29 to 2026-11-10: each day has
   prod's count of buys, cash and credit totals and cards for that day (the probe's sums; $1,440 cash, $1,745
@@ -35,283 +36,48 @@ marks each task done here when it's finished, with the exact file and function o
   583), the stale cards file, the stale cut and stale in Copies we own (580, 581, 582), on migration 0016; and
   the owner's first QA round on it and Home's cash from the Till (584); the Buys report from Home's Today card (585;
   new dependencies `recharts` 3.10.1 and `react-is` 19.3.0); NEXT.md's Buy 82 look and the designs. The
-  owner has tried parts on dev; the QA round's fixes are untested. Both migrations are on dev only: prod first,
+  owner's QA on dev passed (2026-11-11). Both migrations are on dev only: prod first,
   then the site (the two items above).
 
-- **The three-part patch: the owner's first QA round, given out 2026-11-10** (main session; each session marks
-  its own done in its Done entry):
-  - *Buy tab:* "backroom needs to be a darker green color when selected" (`CashLocation.jsx`); BUY COMPLETE's
-    button renamed with the menus' (the main session's reading of the rename as the button's name everywhere).
-  - *Records:* "the copy button needs to be 1 higher on the list so it doesn't get in the way, also rename the
-    button from "Copy" to "Copy Details"" (a buy's ⋯: above Print ▸; the paid overnight row's too); "On the "Stale
-    cut" panel, display a button "View Stale Cards" button, that displays a scrollable subpanel list of all the
-    cards marked stale."; and the sell-price floor's place in migration 0016 (amended in place, dev only).
-    Then, the same day: "Also on the Home page. On the TODAY panel: … We now also need a "cash taken from the til
-    today" stat, that's super important for closing." (`HomePage.jsx`, the Today card, from `cash_location`;
-    asked whether it counts overnight buys paid from the Till today as well as walk-ins, the owner: "Yes, all
-    Till cash").
-  - *Export:* "The "Stale cards file" panel is too wordy and too long, it has a scrollbar by default, measure it
-    better and size to fit, with less words. ALSO add a input for the sell price 35 mirroring the days, to make
-    is so that files with different floors can be used."
+- **A toast when a card comes off the buy list** (given to the Buy tab session 2026-11-11; the owner, on Buy 82's
+  finding that a removed card leaves no trace: "Do remove cards toast? They should. And it should be clear, bold,
+  red text."). They didn't: `BuyList.jsx` `startRemove` → `RemoveModal` → `useDraft.js` `remove` says nothing
+  after. The toast names the card. It goes out with this push.
 
-- **The three-part patch: the plan, given out 2026-11-10 on the owner's "Yes, start"** (main session; the owner: "Shelve the
-  sticker sheets for later, but I want to begin work on all 3 of these designs now at once. Let's make a plan of
-  action AND I want that plan to include creating only a single combined migration for this 3 part patch."). The
-  designs are items 1, 3 and 4 of the entry below. Records, Buy tab and Export each have their part by message.
-  - **One migration, one writer:** the next number on disk (0016 while 0015 is the last), written by the Records
-    session alone, holding the copy button's part (`buys`: the cash location and who paid; `confirm_buy` and
-    `collection_set_status` take and keep them) and the stale cards' part (the uploaded file's products, its load,
-    and stale in `owned_copies`' answer or beside it, the recent-export guard included). It must leave the live
-    site working between the prod push and the site push: every new parameter has a default and the database
-    doesn't refuse a cash buy with no location (the app requires it). `backup_columns` reads `buys`' columns by
-    itself; the stale file isn't backed up, as the inventory isn't. On dev only it may be amended in place
-    (decision 450), by Records alone, on a message from the session that needs the change.
-  - **Step 1, the contract:** Records writes the names first (columns, each function's parameters and what it
-    returns, the `stale_cards` setting's keys) as a short list in this entry, so Buy tab and Export build against
-    it; then the migration, pug-reviewer, the rehearsal, dev, the snapshot, the test run (`docs/DATABASE.md`).
-    **The contract** (Records session, 2026-11-10; the migration is 0016, on no project yet; a change goes to
-    Records by message):
-    - `buys.cash_location` text: `'till'`, `'backroom'` or null. A credit buy always has null: the database refuses
-      a location unless `paid_method = 'cash'`. A cash buy with none is allowed (older buys, and the live site
-      between the prod push and the site push); the app requires the pick. The copy row shows Till, Backroom, NA
-      for credit, and an empty cell for a cash buy with none.
-    - `buys.paid_by` uuid (→ `staff_users`): who took the payment. `confirm_buy` and `project_to_buy` set it to
-      their `p_user`, and Mark Paid/Ours sets it to its own. Going back to Processing or Priced clears it and the
-      location, along with the payment. Completed and its reopen keep both. Convert to overnight buy and Convert to
-      project carry both onto what they make (added after the review).
-    - `confirm_buy(…, p_cash_location text default null)`, `collection_set_status(…, p_cash_location text default
-      null)` (read only when marking Paid/Ours from Processing or Priced) and `project_to_buy(…, p_cash_location
-      text default null)`. Each takes `'till'` or `'backroom'`. On a credit payment it's stored null, whatever is
-      sent. Anything else raises `bad_cash_location`. The other parameters and the answers are unchanged.
-    - The stale file: `stale_files` (one row, the current upload: `original_filename`, `days`, `products`,
-      `in_stock`, `uploaded_by`, `uploaded_at`, `min_price`) and `stale_products` (`product_id` key, `product_name`,
-      `total_qty`, `sell_price`). Both are readable by the signed-in role, which can't write them.
-      `stale_file_load(p_filename text, p_days integer, p_rows jsonb, p_user uuid, p_min_price numeric default 35)
-      returns jsonb` `{uploaded_at, products, in_stock}` replaces the file whole, in one call:
-      - `p_rows` is `[{product_id, product_name, total_qty, sell_price}]`, the CSV's Product ID, Product Name,
-        Total Qty and Sell Price, up to 20,000 rows. `sell_price` is a number, and may be left out;
-      - `p_days` is 1 to 3650, the window the file was made with (the upload panel's days box, 180 unless changed);
-      - `p_min_price` is 0 to 9999, the search's sell price floor (its box, 35 unless changed), else
-        `bad_min_price` (amended in 2026-11-10, the owner: "add a input for the sell price 35 mirroring the days");
-      - a Changelog entry, action `stale_file_uploaded`, is under `p_user`. It ends "…, no sale in 180 days, $35 and
-        up."
-      The days and the floor live with the file, not in a setting: they describe that file.
-    - `stale_cards() returns jsonb`: every stale card as `owned_copies` judges it (Total Qty over 0, past the
-      recent-export guard), `[{product_id, product_name, category, total_qty, sell_price}]` by name, and `[]` with no
-      file. Only products in the current inventory file are listed, as the Price screen marks a printing through
-      the product it matched there; `category` comes from that file. This is for Settings → Stale cut → View Stale
-      Cards.
-    - `owned_copies` keeps its parameters. Its answer adds `stale_file`: null when no file is up, else `{days,
-      uploaded_at}`. It also adds `stale_ids`: the product ids among the card's products, and `p_product_id`'s,
-      that are stale. A product is stale when it's in the file with Total Qty over 0 and no line of ours with that
-      `cc_product_id` was exported since `uploaded_at` − `days` (the recent-export guard). The printing is stale when
-      `stale_ids` holds its matched product (`cc_match.product_id`), since the first call goes without one.
-    - The setting `stale_cards`: `{"pct": 10}`, the stale cut in percent of the card's rate, 10 when the key isn't
-      there and 0 for off. It's separate from the copies cut's "at most", and goes on top of it.
-  - **Step 2, side by side:** *Export and printouts:* the in-progress walk-in printout whole (the sheet and its
-    button on the Buy tab's list; no migration), and the stale file's upload panel in Settings with how to make
-    the file and the days box (it's the inventory upload's twin). *Records:* the copy row's builder (one pure
-    function, tested), Copy on a single buy's ⋯ and on a paid row of the overnight buys list, the cash location on
-    Paid/Ours, and the stale multiplier's panel in Settings. *Buy tab:* the cash location on CONFIRM BUY and Copy
-    on BUY COMPLETE (Records' builder), and stale in Copies we own: the emoji, the box's line, the change in the
-    pill, Apply, Auto apply rates?, a phone's scans. *Phone scanner:* nothing, unless Buy tab finds a scan needs it.
-  - **Step 3:** each session's decision row (its number from disk), TEST.md cases and Done entry; the main
-    session's QA table; the owner's QA on dev; then, on the owner's word, 0015 and the new migration to prod in one
-    sitting and the site after, with the review.
-  - **To know going in:** a buy confirmed before this has no cash location and an overnight buy paid before it has
-    no payer kept, so their copied rows leave those cells empty (the payer could be filled from the Changelog; not
-    planned). One migration means the three parts reach prod together.
-
-- **Home's Today card opens trends: designed with the owner, and given to Records to build 2026-11-10 ("Build the mockup for real, it's great.")**
-  **Built by the Records session (decision 585), waiting for the owner's QA: see its Done entry.**
-  (main session, 2026-11-10; the owner: "I'd like to design a feature for clicking on the Today panel on the Home
-  page to get a subpanel with a calendar and graphs of the trend of buy numbers over a week, etc. Let's design this
-  and mark it as an open to start on once we're done here."). Not built, no decision row. What's there to build
-  on: the Today card (`HomePage.jsx`: today's walk-ins, Paid out in cash and credit, and the Till stat of decision
-  584), the Calendar tab's month grids (`CalendarPage.jsx`, `buys_in_range`), and no chart library among the
-  dependencies. Proposed, unanswered: a panel over Home with a small calendar to pick the week and bar charts a
-  day of buys, paid out (cash and credit), cash from the Till, and cards by game, with the week's totals beside
-  the week before; drawn by the app itself rather than a new chart package. Asked: which numbers matter; one
-  week only or other spans too; what the calendar is for; walk-ins only or overnight buys as well. **The owner's
-  direction, which replaces that proposal:** "I want it modeled after the Square Sales Report page, I want you
-  to be able to pick any range of dates and get a trend graph for cash and credit (separately) for that range.
-  … Default range is last 7 days." Square's page, from its help centre (squareup.com/help, articles 5530 and
-  5381; no screenshot seen): a date selector at the top with presets and a calendar for a custom range, a graph
-  of the chosen metric over the range as a line or as bars, in hours, days, weeks or months, a comparison with
-  the period before, a summary table under it, and print or export. Proposed from that, unanswered: the range
-  picker with presets and any two dates, last 7 days to start; one graph with a cash line and a credit line (or
-  two graphs), by day, by week on a long range; under it the range's totals (buys, cards, paid out, cash,
-  credit, from the Till, from the Backroom) beside the period before; every paid buy by the day it was paid, as
-  the Till stat counts; read by the app with no migration; and a chart package to ask about (Recharts, which
-  would ship to the site, loaded only when the panel opens) against drawing the graph ourselves. Answered
-  (2026-11-10): "2 lines on 1 graph"; and the package is a yes: "let's use the package, recharts sounds good.
-  Grab this and use it to make me a mockup of what this panel could look like, using read only real data from
-  last 14 days on prod." The mockup is a private page, https://claude.ai/artifact/9Ug6ybJnAtErRxafooX3H7 (Recharts
-  2.12.7 from a CDN; 28 days of prod's daily totals by the day paid, one read-only SELECT, sums only; its source
-  is outside the repo): presets and a custom range, a Line / Bars switch, cash and credit on one graph, the
-  range's totals beside the same span before, a row a day. `recharts` isn't in `package.json` yet: it goes in
-  with the build. Then the owner: "Add a way to optionally hide Mondays and Wednesdays from the graph (those are days
-  we're closed on and create spikes always)": in the mockup as a tick box, Hide closed days (Mon, Wed), ticked as it
-  opens; it leaves those days off the graph only, and the totals and the day rows still count them (the main
-  session's reading; whether it starts ticked, and where the closed days are set, unasked). Then: "Build the mockup
-  for real, it's great." Records builds it as the mockup has it, opening on the last 7 days and with a calendar for
-  Custom, as the owner's words have them; the mockup's source is in the main session's scratchpad, outside the repo.
-  Was: waiting on the owner's
-  reaction to the mockup; the rest of the proposal is unconfirmed.
-
-- **Four ideas from the owner, 2026-11-10: three designed and in the plan above, the sticker sheet shelved** (main session; nothing
-  built; the designs, with the owner's answers quoted; the sticker sheet "for later", when the measurements come):
-  1. **Print an in-progress walk-in buy:** "A way to print in-progress walk-in buys." (Buy tab; the printout
-     itself is Export and printouts'.) Designed so far with the owner (2026-11-10), not built, no decision row
-     yet: walk-ins only ("Feature for walk ins only"); for the customer as an offer sheet and for staff as a
-     check sheet ("both of those situations are likely and should be supported"); each card shows what we'd pay
-     ("Our rates. What we'd pay."), cash and credit; it carries the customer's name and a "Quote only, not a
-     receipt" line ("Yes to both"). Proposed and unanswered: a Print button on the Buy tab's list, one row per
-     line as added (count, name, set and number, finish, condition), the foot with the card count and the cash
-     and credit offers as the screen has them, the title "Buy in progress, not confirmed" with the date and time
-     (a buy has no number before CONFIRM BUY), the list's own prices (no price fetch, no Crystal Commerce
-     matching), nothing saved or logged. Settled after: one button and one sheet for both uses, tick boxes and
-     all ("Single button on layout, it's ok if it looks a little complex"); the name is a blank "Customer: ____"
-     line to write on, since it's only typed at CONFIRM BUY ("Blank is good"); per-card amounts print as they
-     are and the offer as the screen has it, with no subtotal or note about the rounding ("Don't worry or call
-     attention to the rounding discrepancy"). Ready to build when the owner gives it out; the proposed parts above
-     (the button's place, the rows, the title) were not objected to but not confirmed one by one.
-  2. **The sticker sheet is still misaligned:** "Fixing the sticker sheet. It's still misaligned." (Export and
-     printouts; `src/lib/stickerPdf.js`: `PRINTER_OFFSET` has been zero since decision 573, so what's off now is the
-     grid as decision 281 set it, `SHEET`, or the printer's scaling. Worth knowing: only the pitch, 1 in x 1/2 in,
-     came from a scan of the sheet; the grid's place, 0.29 in and 0.49 in, was fitted to test prints from the
-     owner's own printer, so removing the offset didn't take that printer out of the numbers; and decision 281
-     notes the far columns leaning 0.05 in right, which is scale, not offset. To start: which printer, printed at
-     100%, which way and how far the stickers are off at the sheet's first and last stickers, and whether it's
-     the same on every sheet.) **Waits for the owner's new measurements** (2026-11-10: "The sheet of stickers was
-     measured all wrong and we need a new grid template once I get new measurements in."): then a new grid in
-     `SHEET` (the page, columns and rows, a sticker's width and height, the first sticker's left and top edge from
-     the page's edges, and the step from one sticker to the next each way, best taken across the whole row and
-     column), `tests/stickerPdf.test.js` with it, and a decision row. The alignment setting proposed beside it
-     (a test page and typed corrections in Settings) wasn't taken up; not built.
-  3. **A copy button for record keeping:** "Adding a copy button to the buy confirmed pop up and single buy menus
-     that copies the name and number information to the clipboard in a specific way to assist in record keeping.
-     More details when we work on it." (Buy tab's `BuyDoneModal.jsx`; the single buy's menu is Records'.)
-     Designed so far with the owner (2026-11-10), not built: it's for the store's Google Sheet of buys, so the
-     fields are tab-separated and each lands in its own cell ("make them paste into unique cells"). One row, as
-     the owner's example has it (customer details left out here): worker, date as 11/10/2026, customer name,
-     phone as (555) 555-0100, an empty cell, Cash or Credit, worker again, date again, the amount paid as $90.00,
-     and "a new attribute, 'cash location' that we need to create" (the example's reads "Till"). The cash
-     location is new stored data: a column on `buys`, so a migration, a decision row and a place to pick it
-     (CONFIRM BUY's dialog, and Paid/Ours for an overnight buy). Settled after: the fifth cell is the customer's
-     ID number, "blank for all walk in buys though, so yes, make sure to account for it"; the first worker and
-     date are who took the buy and when, the second who paid it and when ("exactly correct"; the database keeps
-     `confirmed_by` and `paid_at`, but who paid an overnight buy is only in the Changelog, so that needs storing
-     too); "the two locations are Till and Backroom, but there's also an NA used on credit buys logs"; and an
-     overnight buy gets it too: "put it in the menu on the overnight buy selection page per line on paid ones"
-     (the Collections tab's list, a paid row's ⋯). A cash buy must pick Till or Backroom before it's confirmed,
-     and a credit buy copies NA by itself ("yes"); the fifth cell carries the ID's last four digits when the buy
-     has them (`id_last4`), else it's blank ("use id if it exists"); the migration for the cash location and for
-     who paid an overnight buy is accepted ("fair enough"). Ready to build when the owner gives it out.
-  4. **A "stale card" tracker, to look into first:** "Investigating if there's a way to create a 'stale card'
-     tracker for cards that haven't sold in a long time." (An investigation, not a build.) A first look
-     (2026-11-10): the app has no sales data. It knows when each card was bought and exported (`buy_lines`:
-     `cc_exported_at`, `cc_product_id`), and the current Crystal Commerce inventory file's products with their
-     Total Qty (`cc_products`, `lib/owned.js`); an older file is pruned when a new one goes up
-     (`master_inventory_prune`), so no count is kept over time. Ways in, for the owner to pick from: keep each
-     upload's counts and call a product stale when its count hasn't dropped in N days (our own exports
-     subtracted); or import a sales or last-sold report from Crystal Commerce, if it has one. Looked up for the
-     owner (2026-11-10, Crystal Commerce's help centre, articles of 2018 to 2020, nothing tried in the store's
-     admin): it has one. Inventory tab, the last filter, "In the past [days] days [> < =] [n] qty [bought or
-     sold]": days 180, =, 0, sold lists what hasn't sold in 180 days
-     (help.crystalcommerce.com/en/articles/3627487); a search on Inventory > Products exports to CSV, the file
-     under Notifications > Generated Reports. Not confirmed by the articles: that the export keeps this filter,
-     that it combines with "total qty between" (in stock only), that in-store sales count, and how far back it
-     goes; the owner to try it. If it works, the app's part could be small: read that CSV and add what Crystal
-     Commerce doesn't know (when we bought each card and what we paid, by `cc_product_id`), or nothing at all.
-     The owner tried it the other way round (2026-11-10): "Inventory CSV export: Where the product has been sold
-     greater than or equal to 1 time in the past 180 days", and the export keeps the filter: 5,099 products, in
-     the Master Crystal Inventory file's own 22 columns (Product ID, Total Qty, Sell Price, CC ID…), one row a
-     product, with no count sold and no last-sold date. Against the current inventory file on prod (2026-11-08,
-     read-only): 8,790 products in stock, 1,435 of them in the export, so 7,355 in stock with no sale in 180
-     days (84%). That share is too high to be a to-do list as it stands: it counts cards that only just went
-     into stock, and whether in-store sales count is still unknown. So the tracker needs when a product came
-     into stock (the app knows it only for what it exported since 2026-10-19: `cc_exported_at`) and a floor on
-     price or copies to be worth reading. Nothing built; the owner's file stayed in Downloads.
-     The owner's floor (2026-11-10): a second export, "the products are of type Magic Singles, … under the
-     Magic: The Gathering Singles category, the product's sell price is greater than or equal to $35.00, … less
-     than or equal to $9,999.00," ("high end cards only"; a card never stocked has a $0.00 price, so the price
-     filter leaves those out without a stock filter). The file: 503 products, 217 in stock (259 copies, about
-     $18,400 at sell price), 286 at Total Qty 0, so "in stock" still has to come from its Total Qty column. It
-     shares no product with the sold-in-180-days export, though 278 of that export's products are $35 and up
-     (Rhystic Study, Demonic Tutor in stock among them): so this search most likely still had a not-sold filter
-     on it (its description ends on a comma). Confirmed by the owner with a screenshot of the search: Sell price
-     is between 35 and 9999, and "In the past 180 days (=) equal to 0 quantity sold"; the form also has an
-     "In-Store Only" box, unticked, so the filter looks to count every sale unless narrowed, and a "Total
-     quantity is between" filter. So the tracker's input is this one export (Inventory, that search, Export
-     Search to CSV), and its in-stock rows are the list (217 on 2026-11-10); recent arrivals still to be left
-     out (`cc_exported_at`). **What it's for, from the owner (2026-11-10), which replaces the list idea:** "The
-     goal is to mark down the buy price for already currently stale cards. EG: if someone adds a 'stale' card
-     to a walk-in buy, they'll be warned and offered a chance to apply a negative multiplier (set in settings)".
-     No page of its own: "This lives in the settings tab, a place to upload the master file from CC (with an
-     explanation on how to create it.) AND another panel besides it, that allows us to set base multipliers like
-     -10% or -20% to stale cards. All other info on stale/not stale lives in the Copies we own widget area, that
-     rollover should report the stale status, and it should display the mult there with the others, and apply
-     like the others. Show an emoji on stale cards clearly. etc". So it rides on Copies we own (decisions 448,
-     474, 518; `lib/ownedRates.js`, `OwnedCounter.jsx`, `OwnedCopiesPanel.jsx`, `lib/owned.js` `matchPrinting`):
-     a card is stale when the Crystal Commerce product its printing matches is in the uploaded file with Total
-     Qty over 0; the box gets a reason line and the change joins the cut and the bonuses in the one pill, Apply
-     and Auto apply rates? as they are. Needs a migration (the file's products kept, as `cc_products` are).
-     Settled after: the design as laid out ("yes": the upload panel with how to make the file, its date and its
-     count; the multiplier panel beside it; an emoji on the counter; a line in the box such as "Stale: no sale
-     in 180 days (−10%)"; Magic only, on walk-ins and open overnight buys); a card the app exported within the
-     window isn't called stale ("yes"); one multiplier ("For now, 1 tier of stale cards at 180 days BUT if the
-     file is made with a different window like 90, would it use that naturally? That would be useful."); "For
-     now, just exact printings." On the window: which cards are stale follows whatever search made the file, but
-     the file doesn't say its window (no column for it), so the box's wording and the recent-export guard need
-     the number from somewhere: a days box in the upload panel, 180 unless changed ("yes"). The stale cut and
-     the copies cut's "at most" are separate ("Have them be separate."): the cap limits the copies cut alone and
-     the stale cut goes on top of it, so a card can pass the cap by the stale percentage. Ready to build when the
-     owner gives it out.
-
-- **Buy 82 (2026-11-10): the price that changed after two cards came off and went back on; looked into, nothing
-  changed yet** (main session; the owner asked for the records only, no code). What prod's records show (read-only:
-  `buys`, `buy_lines`, `events`, `internal.done_requests`, `price_cache`; copies in
-  `C:/ClaudeProjects/temp/buy82-records/`, outside the repo): 21 cards went on (cash $88), then two came off
-  (4:24:56 and 4:25:00 pm), and the two lines that are gone are the first card added (Team Magma's Rhydon) and the
-  sixth (added 4:12:51 pm, 18 s after the buy's only lookup then, Pikachu EX XY174; at LP $26.00 it makes the $88
-  and the $70 to the cent). The first Mr. Mime (the second card added) never came off. Rhydon and a Mr. Mime were
-  added back (twice: on, off, on again), so the buy was confirmed with Mr. Mime twice and no Pikachu EX: $83.50,
-  paid $90. The arithmetic is the app's own (`internal.lines_totals`), so the price didn't move by itself; what
-  isn't in the records is why the sixth line came off rather than Mr. Mime (the × removes by the row's own id,
-  `BuyList.jsx` `startRemove` → `RemoveModal` → `useDraft.js` `remove`; a draft's edits aren't in the Changelog, and
-  the list's sort is the screen's only). Still for the owner to decide on, not built: a draft's removes and adds
-  leave no record once the request ids go after a day. (The second Mr. Mime not joining the first as ×2 is fixed
-  on dev: decision 578, Buy tab session.)
-
-- **From the 2026-10-26 review of work mode, still open** (main session, decision 540; the rest fixed by 541): a
-  fork's prod or delete approval relayed by message isn't the owner's consent to the harness, so it may stall on a
-  prompt in its own chat; whether the UserPromptSubmit hook fires on a turn started by a message is untried;
-  `/main`'s hub jobs don't list relaying questions.
-
-- **From the v1.0.5-rainbow review, not acted on** (main session): `OwnedCounter.jsx`'s header comment still puts
-  Apply in the verdict line (decision 521 moved it). The rest: the Skip pricing items have their own entry above;
-  the Secret Lair foils generator is in the repo (decision 544, Buy tab, `89cae2b`); the collection SKU `-1` vs
-  `-10` search is closed, the owner checked it in CC.
-- **The backup fix's leftovers** (Records session, decision 577's review, not acted on): a restore whose answer is
-  lost reads "The restore failed, and nothing was changed" though it may have gone through, and Restore again
-  restores the same file twice (`backupIO.js` `restoreBackup`, `dbMessage`'s fallback; a restore may now run up to
-  60 s, so the window is wider); the test run's Backup pass can still hit 8 s once in a while, since a function's
-  own limit applies only to the app's calls, not to `db query`.
-- **Matching leftovers (decisions 484–487):**
-  - The two wrong exported lines' stamps on prod stay unless that day's file must be downloaded again
-    (`git show 681c5c6:MATCHING.md`, item 3).
-  - From 0010's review: the test-run check of an `auto` sent over a staff row is done (decision 515, Export
-    session). ("Retro Schematic": done, decision 516.)
-- **The owner's part of the smoke test** (`docs/TEST.md`, dev only): section 10 (the phone), the two-computer and
-  network-off cases, and section 19.
-- **Copies we own: ×0 vs ×1 on this printing's row** (the owner's, Buy tab; decision 520's "none" was rolled back,
-  it took too much room): tell ×0 from ×1 on that row in a way that takes no more room (`OwnedCounter.jsx`, the
-  rows' render).
-- **Known limit, left as is:** how long a copies-we-own count takes on the live site isn't measured.
+- **The sticker sheet, shelved until the owner sends new measurements** (main session; the owner, 2026-11-10: "The
+  sheet of stickers was measured all wrong and we need a new grid template once I get new measurements in."; then
+  "Shelve the sticker sheets for later"). `src/lib/stickerPdf.js`: `PRINTER_OFFSET` is zero (decision 573), but
+  only the pitch, 1 in x 1/2 in, came from a scan; the grid's place, 0.29 in and 0.49 in, was fitted to prints
+  from the owner's own printer (decision 281). To measure: the sheet's width and height, the stickers across and
+  down, one sticker's width and height, the first sticker's left and top edge from the sheet's edges, and the
+  whole span across a row and down a column; the pack's brand and product number if it has one. Then a new
+  `SHEET`, `tests/stickerPdf.test.js` with it, and a decision row.
 
 ## Done
 
+- 2026-11-11 (Buy tab session): **A card taken off the buy list says which, in bold red** (decision 586; no
+  migration; untested in the app, the unit test only): `src/lib/lineFormat.js` `removedText`, `BuyList.jsx`
+  (RemoveModal's `onRemove` toasts once the remove or strike went through), `Toast.jsx` and `panels.css` (the
+  new `removed` kind; the others unchanged). Where to look: the Buy tab, × a card on the walk-in's list: "Removed:
+  1 … (2 left on the list)" in bold red; a Paid/Ours overnight buy's list says "Struck: …" and then "Removed for
+  good: …" (TEST.md section 8, "A card taken off says which"). Left as they were, not asked for: the phone's Undo,
+  and the removes on day pages and the Collections tab (Records').
+
+- 2026-11-11 (main session): **The owner's close-out before the push.** QA of the whole patch on dev: "It's
+  testing well for me on dev, closed." `react-is`, which came with `recharts`: "Sure, no worries here, seems fine."
+  The simulated buys on dev: "I'm going to keep them." The choices recorded as reversible (the closed days fixed
+  as Monday and Wednesday, the Hide closed days box starting ticked, the printout's per-card amounts and its
+  button's place): "All good. closed." And the older leftovers: "clean up and close all stale tasks like this,
+  none of this matters to me anymore", so these left Open unfixed: the 2026-10-26 work-mode review's notes (a
+  relayed approval may stall on a fork's own prompt; the hook on a message-started turn; `/main`'s hub jobs not
+  listing relayed questions); `OwnedCounter.jsx`'s header comment still putting Apply in the verdict line; the
+  backup fix's leftovers (a restore whose answer is lost says it failed; the test run's Backup pass near its
+  limit); the matching leftovers (two wrong exported lines' stamps on prod); the owner's part of the smoke test
+  (section 10, the two-computer and network-off cases, section 19); ×0 against ×1 on Copies we own's row; and how
+  long a copies-we-own count takes on the live site. Also out of Open, as built: the three-part patch's plan and
+  contract, the owner's first QA round, the Buys report's design and the four ideas' designs (decisions 578 to
+  585 and the entries below hold what was built), and Buy 82's look (its two findings became decision 578 and
+  the remove toast, Open). Their full text as it stood: `git show 3b7d480:NEXT.md`.
 - 2026-11-10 (Records session): **The Buys report, from Home's Today card** (decision 585; no migration; untested in
   the app, only its maths in `tests/buysReport.test.js`).
   - **Where to look:** Home → click anywhere on the Today card ("Buys report →" in its head). It opens on Last 7

@@ -381,6 +381,10 @@ what happens. The findings are reported when the pass ends.
       and Cash each and Credit each matching the Price screen's chips (the own-rate card at its rate); at the foot,
       the card count and the Cash and Credit offers equal to the list's totals. Nothing in the Changelog; the buy
       unchanged. Greyed with no cards; not on a collection's list.
+- [ ] **A card taken off says which** (decision 586; dev; Buy tab session): a walk-in with 3 of an LP card and 1 of
+      another; × the first, take 1: a toast in bold red reads "Removed: 1 … [LP] (2 left on the list)"; × it again,
+      take all: "Removed: 2 … [LP]". On a Paid/Ours overnight buy's list, × a card: "Struck: …"; × the struck card:
+      "Removed for good: …". On a project's list the same as the walk-in. The other toasts look as before.
 - [ ] **CONFIRM BUY's cash location and BUY COMPLETE's Copy** (decision 583, migration 0016; dev; Buy tab session):
       CONFIRM BUY, pick Cash: Till and Backroom chips appear; Confirm without one says "Choose Till or Backroom.".
       Pick Backroom: a darker green than Till picked. Pick Till, confirm; on BUY COMPLETE press **Copy Details 📋**: a

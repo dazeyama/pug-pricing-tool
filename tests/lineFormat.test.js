@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { lineTags, lineText, lineTextWithCondition } from '../src/lib/lineFormat.js';
+import { lineTags, lineText, lineTextWithCondition, removedText } from '../src/lib/lineFormat.js';
 
 const line = (over) => ({
   quantity: 1, name: 'Sol Ring', set_code: 'CMR', collector_number: '472', finish: 'nonfoil',
@@ -74,4 +74,13 @@ test('with its condition: NM in brackets, other tags after it', () => {
     name: 'ピカチュウ', name_en: 'Pikachu', set_code: 'SV2a', collector_number: '025', finish: 'reverse',
     lang: 'ja', condition: 'MP', treatments: ['pokeball-pattern'],
   })), '1 Pikachu (SV2a) 025 *RH* [MP, JP, Poké Ball]');
+});
+
+// Owner, 2026-11-11 (decision 586): a card taken off a list says which, and how many.
+test('what came off a list: the card, how many, how many are left', () => {
+  const fab = line({ quantity: 3, name: 'Fabricate', set_code: 'SLD', collector_number: '123', condition: 'LP' });
+  assert.equal(removedText(fab, 3), 'Removed: 3 Fabricate (SLD) 123 [LP]');
+  assert.equal(removedText(fab, 1), 'Removed: 1 Fabricate (SLD) 123 [LP] (2 left on the list)');
+  assert.equal(removedText(fab, 2, 'strike'), 'Struck: 2 Fabricate (SLD) 123 [LP] (1 left on the list)');
+  assert.equal(removedText(line({ quantity: 1 }), 1, 'struck'), 'Removed for good: 1 Sol Ring (CMR) 472');
 });

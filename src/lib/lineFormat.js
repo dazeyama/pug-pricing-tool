@@ -68,6 +68,20 @@ export function lineText(line, quantity = line.quantity) {
 }
 
 /**
+ * What came off a list, for its toast (owner, 2026-11-11; decision 586): the card as the list shows it, with how
+ * many came off, and how many are left when it was some of several. "Removed: 2 Fabricate (SLD) 123";
+ * "Struck: 1 Pikachu (SV2a) 025 [LP] (2 left on the list)".
+ * @param {Parameters<typeof lineText>[0]} line  the line before it changed
+ * @param {number} qty  how many came off
+ * @param {'remove'|'strike'|'struck'} [mode]  RemoveModal's: a remove, a strike, or a struck card removed for good
+ */
+export function removedText(line, qty, mode = 'remove') {
+  const verb = { strike: 'Struck', struck: 'Removed for good' }[mode] ?? 'Removed';
+  const left = Number(line.quantity) - Number(qty);
+  return `${verb}: ${lineText(line, qty)}${left > 0 ? ` (${left} left on the list)` : ''}`;
+}
+
+/**
  * The line with its condition always in the brackets, NM too, first:
  * "1 Fabricate (SLD) 123 [NM]", "2 Pikachu (SV2a) 025 [LP, JP]". The header
  * search's results show cards this way (owner, 2026-09-30).

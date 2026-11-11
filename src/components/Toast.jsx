@@ -1,7 +1,8 @@
 import { createContext, useCallback, useContext, useState } from 'react';
 
 // CM's toast: slides up in the bottom-right corner, stays 3.5s, fades out.
-// kind is '' | 'ok' | 'err' | 'warn' (the coloured left edge).
+// kind is '' | 'ok' | 'err' | 'warn' (the coloured left edge), or 'removed': a card taken off a list, in bold
+// red text (owner, 2026-11-11: "it should be clear, bold, red text"; decision 586).
 
 const ToastContext = createContext(() => {});
 let nextId = 1;
@@ -36,7 +37,7 @@ export function ToastProvider({ children }) {
   );
 }
 
-/** @returns {(message: string, kind?: ''|'ok'|'err'|'warn') => void} */
+/** @returns {(message: string, kind?: ''|'ok'|'err'|'warn'|'removed') => void} */
 export function useToast() {
   return useContext(ToastContext);
 }

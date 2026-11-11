@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import LinePreview, { previewFor } from '../../components/LinePreview.jsx';
-import { lineText } from '../../lib/lineFormat.js';
+import { lineText, removedText } from '../../lib/lineFormat.js';
 import { formatMoney } from '../../lib/money.js';
 import {
   hasOwnRate, lineRate, mixedRateLines, otherRate, rateTotals, whyText,
@@ -798,8 +798,10 @@ export default function BuyList({
           onRemove={async (line, qty) => {
             const { mode } = removing;
             setRemoving(null);
-            if (mode === 'strike') await onStrike(line, qty);
-            else await onRemove(line, qty);
+            const done = mode === 'strike' ? await onStrike(line, qty) : await onRemove(line, qty);
+            // Which card came off, and how many, in bold red (owner, 2026-11-11; decision 586): on Buy 82 a card
+            // went that wasn't the one meant, and nothing said which. Only once it's done; a failure says so itself.
+            if (done === true) toast(removedText(line, qty, mode), 'removed');
             onDone();
           }}
         />
