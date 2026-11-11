@@ -6,7 +6,30 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
-- **Unpushed** (main session): this NEXT.md entry only (the Buy 82 look, below); no code.
+- **Dev is ahead of prod: migration 0015 is on dev only** (Buy tab session, 2026-11-10; decision 578): the prod push
+  waits for the owner's word (`npx supabase db push --linked --project-ref zvxquzcfffmxwizonxuo`, then the
+  structure-only compare against `C:/Users/Daisy/AppData/Local/Temp/claude/8622948e51b61e0c/024d6d6e-fc86-4763-9a1b-3034e8336749/scratchpad/dev-run-0015.json`
+  or a fresh dev run), and on the owner's yes to the narrowing in 578's Done entry below (if the owner wants
+  "any two products" literally, 0015 is amended in place first, as it isn't on prod).
+
+- **Unpushed** (main session): NEXT.md's Buy 82 entry and the four ideas below (no code); the Buy tab session's
+  migration 0015 (decision 578, 69b9fc8), in progress and on no project yet.
+
+- **Four ideas from the owner, 2026-11-10, to design together and leave open for now** (main session; nothing
+  designed or built, each needs its design talk with the owner first):
+  1. **Print an in-progress walk-in buy:** "A way to print in-progress walk-in buys." (Buy tab; the printout
+     itself is Export and printouts'.)
+  2. **The sticker sheet is still misaligned:** "Fixing the sticker sheet. It's still misaligned." (Export and
+     printouts; `src/lib/stickerPdf.js`: `PRINTER_OFFSET` has been zero since decision 573, so what's off now is the
+     grid as decision 281 set it, `SHEET`, or the printer's scaling. To start: which printer, printed at 100%, and
+     which way and how far the stickers are off at the sheet's first and last rows.)
+  3. **A copy button for record keeping:** "Adding a copy button to the buy confirmed pop up and single buy menus
+     that copies the name and number information to the clipboard in a specific way to assist in record keeping.
+     More details when we work on it." (Buy tab's `BuyDoneModal.jsx`; the single buy's menu is Records'. The
+     format is the owner's to give.)
+  4. **A "stale card" tracker, to look into first:** "Investigating if there's a way to create a 'stale card'
+     tracker for cards that haven't sold in a long time." (An investigation, not a build: what the app can know about a
+     card selling; the Crystal Commerce inventory file is the likely source, unchecked.)
 
 - **Buy 82 (2026-11-10): the price that changed after two cards came off and went back on; looked into, nothing
   changed yet** (main session; the owner asked for the records only, no code). What prod's records show (read-only:
@@ -19,10 +42,9 @@ marks each task done here when it's finished, with the exact file and function o
   paid $90. The arithmetic is the app's own (`internal.lines_totals`), so the price didn't move by itself; what
   isn't in the records is why the sixth line came off rather than Mr. Mime (the × removes by the row's own id,
   `BuyList.jsx` `startRemove` → `RemoveModal` → `useDraft.js` `remove`; a draft's edits aren't in the Changelog, and
-  the list's sort is the screen's only). Two things that would have made it visible, for the owner to decide on,
-  not built: the second Mr. Mime didn't join the first as ×2 because it came by another search (number "06", no
-  TCGdex id; `internal.same_card`), and a draft's removes and adds leave no record once the request ids go after a
-  day.
+  the list's sort is the screen's only). Still for the owner to decide on, not built: a draft's removes and adds
+  leave no record once the request ids go after a day. (The second Mr. Mime not joining the first as ×2 is fixed
+  on dev: decision 578, Buy tab session.)
 
 - **From the 2026-10-26 review of work mode, still open** (main session, decision 540; the rest fixed by 541): a
   fork's prod or delete approval relayed by message isn't the owner's consent to the harness, so it may stall on a
@@ -51,6 +73,26 @@ marks each task done here when it's finished, with the exact file and function o
 - **Known limit, left as is:** how long a copies-we-own count takes on the live site isn't measured.
 
 ## Done
+
+- 2026-11-10 (Buy tab session): **One TCGplayer product is one line** (decision 578, migration 0015 on dev only;
+  the owner's ask through the main session: "When any two products have the same tcgplayer ID they should collapse
+  together", from Buy 82's two Mr. Mime lines). `internal.same_card`, the merge rule of ADD CARD, a phone's scan
+  and SAVE EDIT's fold on walk-ins, overnight buys and projects (`draft_add_line`, `draft_update_line`,
+  `collection_add_line`, `collection_update_line`): two lines with the same TCGplayer product and name are one card
+  when one has no Scryfall or TCGdex id to tell them apart, whatever their set and number. Condition, finish, 1st
+  edition, treatments, price and its source, bulk kind, own rates and export stamps still keep copies apart; strike
+  and restore twins (`internal.same_line`) and lines already on a list are unchanged; the merged line keeps the
+  first line's details. *Narrower than the owner's words, pending their yes:* two cards that each have their own
+  TCGdex (or Scryfall) id, different ones, stay two even on one product, since TCGdex links some different cards
+  to one product (the Trainer Kit's Great Ball and Lightning Energy; `printings.js` `WRONG_PRODUCTS` fixes only
+  some) and merging them would export one card as the other; the name check keeps such a card from joining a find
+  of the product's own card. Known limits: a stamped or Cosmos version found both ways can name its treatment
+  differently and stays two lines; a name TCGdex and TCGplayer spell differently ("Impostor Professor Oak") stays
+  two. Reviewed by pug-reviewer twice (the narrowing came from the first), rehearsed, on dev, snapshot, test run
+  all passed (649 checks; 6 new under "578 (0015)" in `scripts/db-test-run.sql`). TEST.md case in section 8. Where
+  to look (dev, a walk-in): add Mr. Mime 6/64 Jungle holo picked through its TCGdex card, then `mr mime 6` and the
+  same card as a JustTCG find (number "06") at the same condition and price: one line, ×2, number "6"; in another
+  condition, or with a manual price, its own line. Untested in the app. Prod waits (first Open item).
 
 - 2026-11-07: **Migration 0014 on prod, and pushed without a bump** (the owner's ask, "Push to prod and apply the
   migration now. Update the live pages site asap."): 0014 (the backup's 60 s, decision 577, Records) pushed to prod
