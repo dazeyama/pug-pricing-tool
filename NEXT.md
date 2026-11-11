@@ -67,15 +67,22 @@ marks each task done here when it's finished, with the exact file and function o
       text default null)`. Each takes `'till'` or `'backroom'`. On a credit payment it's stored null, whatever is
       sent. Anything else raises `bad_cash_location`. The other parameters and the answers are unchanged.
     - The stale file: `stale_files` (one row, the current upload: `original_filename`, `days`, `products`,
-      `in_stock`, `uploaded_by`, `uploaded_at`) and `stale_products` (`product_id` key, `product_name`,
-      `total_qty`). Both are readable by the signed-in role, which can't write them.
-      `stale_file_load(p_filename text, p_days integer, p_rows jsonb, p_user uuid) returns jsonb`
-      `{uploaded_at, products, in_stock}` replaces the file whole, in one call:
-      - `p_rows` is `[{product_id, product_name, total_qty}]`, the CSV's Product ID, Product Name and Total Qty,
-        up to 20,000 rows;
+      `in_stock`, `uploaded_by`, `uploaded_at`, `min_price`) and `stale_products` (`product_id` key, `product_name`,
+      `total_qty`, `sell_price`). Both are readable by the signed-in role, which can't write them.
+      `stale_file_load(p_filename text, p_days integer, p_rows jsonb, p_user uuid, p_min_price numeric default 35)
+      returns jsonb` `{uploaded_at, products, in_stock}` replaces the file whole, in one call:
+      - `p_rows` is `[{product_id, product_name, total_qty, sell_price}]`, the CSV's Product ID, Product Name,
+        Total Qty and Sell Price, up to 20,000 rows. `sell_price` is a number, and may be left out;
       - `p_days` is 1 to 3650, the window the file was made with (the upload panel's days box, 180 unless changed);
-      - a Changelog entry, action `stale_file_uploaded`, is under `p_user`.
-      The days live with the file, not in a setting: they describe that file.
+      - `p_min_price` is 0 to 99999, the search's sell price floor (its box, 35 unless changed), else
+        `bad_min_price` (amended in 2026-11-10, the owner: "add a input for the sell price 35 mirroring the days");
+      - a Changelog entry, action `stale_file_uploaded`, is under `p_user`. It ends "…, no sale in 180 days, $35 and
+        up."
+      The days and the floor live with the file, not in a setting: they describe that file.
+    - `stale_cards() returns jsonb`: every stale card as `owned_copies` judges it (Total Qty over 0, past the
+      recent-export guard), `[{product_id, product_name, category, total_qty, sell_price}]` by name, and `[]` with no
+      file. `category` comes from the current inventory file, null when the product isn't in it. This is for Settings
+      → Stale cut → View Stale Cards.
     - `owned_copies` keeps its parameters. Its answer adds `stale_file`: null when no file is up, else `{days,
       uploaded_at}`. It also adds `stale_ids`: the product ids among the card's products, and `p_product_id`'s,
       that are stale. A product is stale when it's in the file with Total Qty over 0 and no line of ours with that
@@ -315,6 +322,13 @@ marks each task done here when it's finished, with the exact file and function o
   toast and the panel say 503 products and 217 stale cards in stock; the Changelog (Settings) has the upload; the
   Master Crystal Inventory's file is refused. Untested in the app (unit tests and the sample read only). No
   migration of mine.
+  **Amended after the owner's QA** (decision 581 amended; "too wordy and too long… ALSO add a input for the sell
+  price 35 mirroring the days"): one line of explanation, a two-line how-to that follows the boxes, **Sell price
+  from $35** beside the days (sent as `p_min_price`, shown on the current file's line), each row's Sell Price sent
+  for View Stale Cards, the current file in two lines, the button "Upload file". Where to look: Settings → Stale
+  cards file: no scrollbar; change either box and the how-to's line follows; upload with 90 and $20: the line
+  reads "no sale in 90 days, $20.00 and up". **Not yet measured in the browser** (the preview was signed out and
+  the store password is the owner's): the panel's fit at the store's window size is still to check.
 - 2026-11-10 (Export session): **🖨 Print a walk-in in progress** (decision 579; the three-part patch, part 1):
   `src/lib/quotePrint.js` (`quoteRow`, `quoteSheet`: the rows and the foot, pure), `src/lib/quotePdf.js` (the
   sheet), `src/pages/export/QuotePrintButton.jsx` (the button; the PDF library loads on the click). The button

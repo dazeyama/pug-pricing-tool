@@ -14,6 +14,8 @@ export const STALE_COLUMNS = ['Product ID', 'Product Name', 'Total Qty'];
 export const MAX_STALE_ROWS = 20000;
 /** The window, in days, when the box isn't changed (the owner's search: "In the past 180 days"). */
 export const DEFAULT_STALE_DAYS = 180;
+/** The search's lowest Sell price when the box isn't changed (the owner's: "Sell price is between 35 and 9999"). */
+export const DEFAULT_STALE_PRICE = 35;
 /** The CSV as picked: the search's file is small (503 products, 137 KB); the whole inventory is 40 MB and more. */
 const MAX_BYTES = 20 * 1024 * 1024;
 
@@ -31,13 +33,32 @@ export function parseDays(text) {
   return n >= 1 && n <= 3650 ? n : null;
 }
 
+/** A row's Sell Price cell as dollars ("65.00", "$1,250.00"), or null when it isn't one. */
+function sellPrice(cell) {
+  const s = String(cell ?? '').replace(/[$,]/g, '').trim();
+  return /^\d{1,7}(\.\d{1,2})?$/.test(s) ? Number(s) : null;
+}
+
+/**
+ * The Sell price box's text as the search's lowest Sell price: dollars from 0 to 9999 with up to 2 decimals, else
+ * null.
+ * @param {string|number} text
+ * @returns {number|null}
+ */
+export function parseStalePrice(text) {
+  const s = String(text ?? '').trim().replace(/^\$/, '');
+  if (!/^\d{1,4}(\.\d{1,2})?$/.test(s)) return null;
+  return Number(s);
+}
+
 /**
  * The file's text, read and checked: its products as `stale_file_load` takes them (the first of a repeated
  * Product ID kept), how many, and how many are in stock (Total Qty over 0). Throws an Error with the panel's words
  * when it isn't the stale search's export.
  * @param {string} text  the CSV
  * @param {string} name  the file's name, for the messages
- * @returns {{ rows: { product_id: string, product_name: string, total_qty: number|null }[], products: number,
+ * @returns {{ rows: { product_id: string, product_name: string, total_qty: number|null, sell_price: number|null }[],
+ *   products: number,
  *   inStock: number }}
  */
 export function staleFromText(text, name) {
@@ -60,7 +81,9 @@ export function staleFromText(text, name) {
     const productName = String(row['Product Name'] ?? '').trim();
     if (!id || !productName || seen.has(id)) continue;
     seen.add(id);
-    rows.push({ product_id: id, product_name: productName, total_qty: totalQty(row['Total Qty']) });
+    rows.push({
+      product_id: id, product_name: productName, total_qty: totalQty(row['Total Qty']), sell_price: sellPrice(row['Sell Price']),
+    });
   }
   if (!rows.length) throw new Error(`"${name}" has a header row but no products.`);
   if (rows.length > MAX_STALE_ROWS) {
@@ -94,18 +117,20 @@ export async function readStaleCsv(file) {
 const LOAD_ERRORS = {
   no_user: 'Pick a user first, then choose the file again.',
   bad_days: 'The days must be a whole number from 1 to 3650.',
+  bad_min_price: 'The Sell price must be from 0 to 9999, with up to 2 decimals.',
   bad_batch: `The file has too many products (the limit is ${MAX_STALE_ROWS.toLocaleString()}).`,
 };
 
 /**
  * Save a read file as the current one, replacing the one before (`stale_file_load`; the Changelog has it under
  * the user).
- * @param {{ filename: string, days: number, rows: object[], userId: string }} p
+ * @param {{ filename: string, days: number, minPrice: number, rows: object[], userId: string }} p
+ *   minPrice: the search's lowest Sell price (the box, $35 unless changed), kept with the file as its days are
  * @returns {Promise<{ uploaded_at: string, products: number, in_stock: number }>}
  */
-export async function loadStaleFile({ filename, days, rows, userId }) {
+export async function loadStaleFile({ filename, days, minPrice, rows, userId }) {
   const { data, error } = await supabase.rpc('stale_file_load', {
-    p_filename: filename, p_days: days, p_rows: rows, p_user: userId,
+    p_filename: filename, p_days: days, p_rows: rows, p_user: userId, p_min_price: minPrice,
   });
   if (error) {
     const known = Object.keys(LOAD_ERRORS).find((code) => error.message?.includes(code));
@@ -116,7 +141,7 @@ export async function loadStaleFile({ filename, days, rows, userId }) {
 
 /**
  * The current file's row, or null when none is up.
- * @returns {Promise<{ original_filename: string, days: number, products: number, in_stock: number,
+ * @returns {Promise<{ original_filename: string, days: number, min_price: number, products: number, in_stock: number,
  *   uploaded_by: string|null, uploaded_at: string }|null>}
  */
 export async function currentStaleFile() {

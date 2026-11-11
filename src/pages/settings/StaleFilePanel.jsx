@@ -5,8 +5,12 @@ import { useToast } from '../../components/Toast.jsx';
 import GuardButton from '../../components/GuardButton.jsx';
 import UserTag from '../../components/UserTag.jsx';
 import {
-  DEFAULT_STALE_DAYS, currentStaleFile, loadStaleFile, parseDays, readStaleCsv,
+  DEFAULT_STALE_DAYS, DEFAULT_STALE_PRICE, currentStaleFile, loadStaleFile, parseDays, parseStalePrice, readStaleCsv,
 } from '../../lib/staleFile.js';
+import { formatMoney } from '../../lib/money.js';
+
+/** The current file's price floor, as its line ends: ", $35.00 and up"; nothing for a file saved without one. */
+const currentFloor = (file) => (file.min_price != null ? `, ${formatMoney(Number(file.min_price))} and up` : '');
 import { withLoading } from '../../lib/loading.js';
 import { formatDateTime } from '../../lib/time.js';
 
@@ -27,6 +31,8 @@ export default function StaleFilePanel() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const span = parseDays(days);   // the window the file was made with, or null while the box is wrong
+  const [price, setPrice] = useState(String(DEFAULT_STALE_PRICE));
+  const floor = parseStalePrice(price);   // the search's lowest Sell price, or null while the box is wrong
 
   const reload = useCallback(async () => {
     try {
@@ -43,6 +49,10 @@ export default function StaleFilePanel() {
   function pick() {
     if (span == null) {
       setError('The days must be a whole number from 1 to 3650.');
+      return;
+    }
+    if (floor == null) {
+      setError('The Sell price must be from 0 to 9999, with up to 2 decimals.');
       return;
     }
     picker.current?.click();
@@ -63,7 +73,7 @@ export default function StaleFilePanel() {
     try {
       const read = await readStaleCsv(file);
       const saved = await withLoading(() => loadStaleFile({
-        filename: file.name, days: span, rows: read.rows, userId: staff.current.id,
+        filename: file.name, days: span, minPrice: floor, rows: read.rows, userId: staff.current.id,
       }));
       await reload();
       toast(`Uploaded ${file.name}: ${saved.products.toLocaleString()} products, `
@@ -82,25 +92,18 @@ export default function StaleFilePanel() {
     <section className={`cardpanel settings-panel stale-panel${state}`}>
       <div className="cardpanel-head"><strong>Stale cards file</strong></div>
       <div className="cardpanel-body">
-        <p className="hint">
-          Crystal Commerce&apos;s list of the cards that haven&apos;t sold in a while. A card in it that&apos;s in
-          stock is stale: Copies we own on the Buy tab marks it and lowers what we pay for it. Uploading a new file
-          replaces the one before.
-        </p>
-        <details className="stale-how" open={loaded && !current}>
-          <summary>How to make the file</summary>
-          <ol>
-            <li>In Crystal Commerce, open the <strong>Inventory</strong> tab.</li>
-            <li>Product type <strong>Magic Singles</strong>, under the <strong>Magic: The Gathering Singles</strong> category.</li>
-            <li><strong>Sell price is between</strong> 35 and 9999.</li>
-            <li><strong>In the past</strong> 180 <strong>days</strong> (=) <strong>equal to</strong> 0 quantity <strong>sold</strong>.</li>
-            <li><strong>Export Search to CSV</strong>. The file is under <strong>Notifications → Generated Reports</strong>.</li>
-          </ol>
-          <p className="hint">Made with another number of days than 180? Put that number in the box below before uploading.</p>
-        </details>
+        <p className="hint">Cards with no sale lately, from Crystal Commerce. In stock, they&apos;re stale on the Buy tab.</p>
+        {/* The search as the boxes below describe it (decision 581): its days and its price floor. */}
+        <ol className="stale-how">
+          <li>
+            <strong>Inventory</strong>: Magic Singles, Sell price between {floor ?? '…'} and 9999, in the past {span ?? '…'} days
+            (=) 0 sold.
+          </li>
+          <li><strong>Export Search to CSV</strong>, then find it in Notifications → Generated Reports.</li>
+        </ol>
 
         <div className="stale-upload">
-          <label className="stale-days">
+          <label className="stale-box">
             <span>No sale in</span>
             <input
               type="number"
@@ -115,13 +118,27 @@ export default function StaleFilePanel() {
             />
             <span>days</span>
           </label>
+          <label className="stale-box">
+            <span>Sell price from $</span>
+            <input
+              type="number"
+              min="0"
+              max="9999"
+              step="0.01"
+              value={price}
+              disabled={busy}
+              aria-label="The search's lowest Sell price"
+              aria-invalid={floor == null || undefined}
+              onChange={(e) => setPrice(e.target.value)}
+            />
+          </label>
           <GuardButton
             className={`btn primary${busy ? ' busy' : ''}`}
             disabled={offline || busy}
             title={offline ? 'No connection' : undefined}
             onClick={pick}
           >
-            Upload stale cards file
+            Upload file
           </GuardButton>
           <input ref={picker} type="file" accept=".csv" hidden onChange={onPicked} />
         </div>
@@ -129,22 +146,20 @@ export default function StaleFilePanel() {
         {error && <div className="banner err inv-error">{error}</div>}
         {readError && <div className="banner err inv-error">{readError}</div>}
 
+        {/* The current file in two lines: which, when and who; then what it holds and how it was made. */}
         {current && (
-          <dl className="inv-current">
-            <dt>Current file</dt>
-            <dd><strong>{current.original_filename}</strong></dd>
-            <dt>Uploaded</dt>
-            <dd>{formatDateTime(current.uploaded_at)}</dd>
-            <dt>By</dt>
-            <dd><UserTag user={staff.byId(current.uploaded_by)} /></dd>
-            <dt>Stale cards</dt>
-            <dd>
-              <strong>{current.in_stock.toLocaleString()}</strong> in stock, no sale in {current.days} days
-              <span className="inv-products">{current.products.toLocaleString()} products in the file</span>
-            </dd>
-          </dl>
+          <div className="stale-current">
+            <div>
+              <strong>{current.original_filename}</strong> · {formatDateTime(current.uploaded_at)} ·{' '}
+              <UserTag user={staff.byId(current.uploaded_by)} />
+            </div>
+            <div>
+              <strong>{current.in_stock.toLocaleString()} stale</strong> in stock of {current.products.toLocaleString()}:
+              no sale in {current.days} days{currentFloor(current)}
+            </div>
+          </div>
         )}
-        {loaded && !current && !readError && <p className="muted-text">No file uploaded yet: no card is marked stale.</p>}
+        {loaded && !current && !readError && <p className="muted-text">No file yet: no card is stale.</p>}
       </div>
     </section>
   );

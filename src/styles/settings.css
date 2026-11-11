@@ -41,16 +41,15 @@
 .inv-progress { margin: 10px 0 0; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .inv-products { margin-left: 10px; font-size: 12px; color: var(--muted); }
 
-/* Stale cards file (decision 581): how to make it, the days box beside the upload. */
-.stale-how { margin: 0 0 12px; font-size: 13px; }
-.stale-how summary { cursor: pointer; color: var(--muted); }
-.stale-how summary:hover { color: var(--text); }
-.stale-how ol { margin: 8px 0 6px; padding-left: 20px; }
+/* Stale cards file (decision 581): how to make it in two lines, the days and price boxes beside the upload, the
+   current file in two lines. */
+.stale-how { margin: 0 0 12px; padding-left: 20px; font-size: 13px; }
 .stale-how li { margin: 2px 0; }
-.stale-upload { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
-.stale-days { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
-.stale-days input { width: 72px; }
-.stale-days input[aria-invalid] { border-color: var(--bad); }
+.stale-upload { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.stale-box { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+.stale-box input { width: 72px; }
+.stale-box input[aria-invalid] { border-color: var(--bad); }
+.stale-current { margin: 12px 0 0; display: grid; gap: 4px; font-size: 13px; }
 
 .inv-current {
   display: grid;

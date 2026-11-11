@@ -844,13 +844,15 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
       dialog says the set choices stay as they are, in words ending "… are empty" (decision 427); then Cancel.
 - [ ] **Set choices past the first page** (decision 390): Settings → Crystal Commerce matching lists every set
       choice (only checkable with over 1,000; otherwise it lists them all, newest first).
-- [ ] **Stale cards file** (decision 581; Export session; needs migration 0016 on dev): Settings → Stale cards file,
-      with no file up: "How to make the file" is open and lists the Crystal Commerce steps; "No sale in 180 days".
-      Upload the owner's stale search CSV: the toast says its products and stale cards in stock (503 and 217 for
-      the 2026-11-10 file), the panel turns green and shows the file, when, who, and "217 in stock, no sale in 180
-      days"; the Changelog (Settings) has "Stale cards file uploaded". With 90 in the box, the next upload reads
-      "no sale in 90 days". Refused, with the current file kept: the Master Crystal Inventory's 40 MB file ("too big"
-      or "looks like the whole inventory"), a CSV without Total Qty, a .xlsx, the box at 0 or blank, no user picked.
+- [ ] **Stale cards file** (decision 581; Export session; needs migration 0016 on dev): Settings → Stale cards file
+      has no scrollbar, with or without a file up. Its two how-to lines follow the boxes ("Sell price between 35 and
+      9999, in the past 180 days"; change a box and the line changes). Upload the owner's stale search CSV with
+      "No sale in 180 days" and "Sell price from $35": the toast says 503 products, 217 stale cards in stock (the
+      2026-11-10 file); the panel turns green, its two lines read the file, when, who, and "217 stale in stock of
+      503: no sale in 180 days, $35.00 and up"; the Changelog (Settings) has the upload, "…, $35 and up". With 90
+      and $20 in the boxes, the next upload reads "no sale in 90 days, $20.00 and up". Refused, with the current file
+      kept: the Master Crystal Inventory's 40 MB file ("too big" or "looks like the whole inventory"), a CSV without
+      Total Qty, a .xlsx, the days at 0 or blank, the price blank or 10000, no user picked.
 - [ ] **Stale cut** (decision 580; Records session): the Stale cut panel beside Stale cards file shows −10% and
       "Credit 60% on a stale card is 54%"; 20, Tab: the toast says −20% saved, the example reads 48%, and the
       Changelog (Settings) has "Stale cut: lower for a stale card 10% → 20%"; 0 says stale cards keep their rate; 101
