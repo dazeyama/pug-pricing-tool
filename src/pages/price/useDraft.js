@@ -195,7 +195,8 @@ export function useDraft(deviceId) {
    *   lines: object[], sent: object, flagCondition: boolean }|null>}
    */
   const confirm = useCallback(async ({
-    userId, customerName, phone, notes, paidPrice, paidMethod, cashPct, creditPct, lineTexts, flagCondition = false,
+    userId, customerName, phone, notes, paidPrice, paidMethod, cashLocation = null, cashPct, creditPct, lineTexts,
+    flagCondition = false,
   }) => {
     // The last press lost its answer and couldn't tell, and its draft has gone from this screen
     // since (decision 367): this press finds out what happened to it, busy meanwhile (decision 374).
@@ -233,7 +234,8 @@ export function useDraft(deviceId) {
       return null;
     }
     const attempt = {
-      buyId: state.buy.id, userId, lines: state.lines, sent: { customerName, phone, notes, paidPrice, paidMethod },
+      buyId: state.buy.id, userId, lines: state.lines,
+      sent: { customerName, phone, notes, paidPrice, paidMethod, cashLocation },
       flagCondition: Boolean(flagCondition),
     };
     // No answer, or a retry refused because the first one saved: the buy, read back, says whether
@@ -274,6 +276,8 @@ export function useDraft(deviceId) {
       p_expected_version: state.buy.version,
       p_paid_price: paidPrice,
       p_paid_method: paidMethod,
+      // Till or Backroom (decision 583; migration 0016); null on credit, which the database stores as none.
+      p_cash_location: paidMethod === 'cash' ? cashLocation : null,
       p_line_texts: lineTexts,
     }, "Couldn't confirm the buy", recover);
     if (r.ok) {
@@ -295,7 +299,7 @@ export function useDraft(deviceId) {
 /** The buy, read back for CONFIRM BUY's lost answer (readBack); throws when it can't be read. */
 async function readBuy(buyId) {
   const { data, error } = await supabase.from('buys')
-    .select('status, number, confirmed_by, customer_name, phone, notes, paid_price, paid_method, buy_lines(id, game, quantity)')
+    .select('status, number, confirmed_by, customer_name, phone, notes, paid_price, paid_method, cash_location, buy_lines(id, game, quantity)')
     .eq('id', buyId).maybeSingle();
   if (error) throw error;
   return data;

@@ -87,7 +87,7 @@ export default function PricePage() {
   }, [draftEmpty, answerLost]);
 
   /** CONFIRM BUY's dialog confirmed (spec 8.10). */
-  async function confirmBuy({ customerName, phone, notes, paidPrice, paidMethod, flagCondition }) {
+  async function confirmBuy({ customerName, phone, notes, paidPrice, paidMethod, cashLocation, flagCondition }) {
     if (!user) {
       pulse();
       return;
@@ -99,6 +99,7 @@ export default function PricePage() {
       notes,
       paidPrice,
       paidMethod,
+      cashLocation,   // Till or Backroom, a cash buy's (decision 583)
       // The rates it was priced at, custom ones included: kept on the buy (owner, 2026-10-16; 0061).
       cashPct: rates.cash,
       creditPct: rates.credit,
@@ -126,6 +127,8 @@ export default function PricePage() {
       flagged.includes("couldn't") ? 'warn' : 'ok');
     setCompleted({
       number: done.number, games: done.games, lines, customer: sent.customerName, paid: sent.paidPrice, method: sent.paidMethod,
+      // For Copy, the buys sheet's row (decision 583): who confirmed it and paid, and when (about now).
+      phone: sent.phone, cashLocation: sent.cashLocation ?? null, confirmedBy: user, confirmedAt: new Date().toISOString(),
       flagged: wantsFlag && !flagged.includes("couldn't"),
     });
     // The next buy may be someone else's: they pick themselves (owner, 2026-10-11).
@@ -171,6 +174,7 @@ export default function PricePage() {
               busy={draft.busy}
               onConfirm={confirmBuy}
               flagOption
+              cashLocation
               onClose={() => {
                 setConfirming(false);
                 focusSearch();

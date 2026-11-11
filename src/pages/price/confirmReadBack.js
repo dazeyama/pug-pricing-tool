@@ -12,9 +12,10 @@ const sameCards = (saved, sent) => saved.length === sent.length
 
 /**
  * @param {object|null} row  the buy: status, number, confirmed_by, customer_name, phone, notes,
- *   paid_price, paid_method, buy_lines (id, game, quantity); null if it's gone
+ *   paid_price, paid_method, cash_location, buy_lines (id, game, quantity); null if it's gone
  * @param {{ userId: string, sent: { customerName: string, phone: string, notes: string,
- *   paidPrice: number, paidMethod: string }, lines: { id: string, quantity: number }[] }} attempt
+ *   paidPrice: number, paidMethod: string, cashLocation?: string|null },
+ *   lines: { id: string, quantity: number }[] }} attempt
  * @returns {{ state: 'mine', result: { number: number, games: string[], target_name: null } }
  *   | { state: 'draft' } | { state: 'other' }}
  *   mine: this tab's confirm went through; draft: it didn't; other: the buy was finished another way
@@ -29,6 +30,8 @@ export function readBack(row, attempt) {
     && trimmed(row.notes) === trimmed(sent.notes)
     && Number(row.paid_price) === Number(sent.paidPrice)
     && row.paid_method === sent.paidMethod
+    // Till or Backroom, a cash buy's (decision 583); none on credit.
+    && (row.cash_location ?? null) === (sent.paidMethod === 'cash' ? sent.cashLocation ?? null : null)
     && sameCards(row.buy_lines ?? [], attempt.lines);
   if (!same) return { state: 'other' };
   // Magic before Pokémon, as confirm_buy lists the games.

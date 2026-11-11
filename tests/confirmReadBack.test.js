@@ -22,6 +22,16 @@ test("this tab's confirm, as the buy keeps it: Magic before Pokémon", () => {
   assert.equal(readBack(row(), { ...attempt, sent: { ...attempt.sent, phone: '1 (503) 555-1234' } }).state, 'mine');
 });
 
+// Decision 583: a cash buy's Till or Backroom is part of what this tab sent; a credit buy keeps none.
+test('the cash location: the same one, or none on credit', () => {
+  const till = { ...attempt, sent: { ...attempt.sent, cashLocation: 'till' } };
+  assert.equal(readBack(row({ cash_location: 'till' }), till).state, 'mine');
+  assert.equal(readBack(row({ cash_location: 'backroom' }), till).state, 'other');
+  assert.equal(readBack(row({ cash_location: null }), till).state, 'other');
+  const credit = { ...attempt, sent: { ...attempt.sent, paidMethod: 'credit', cashLocation: 'till' } };
+  assert.equal(readBack(row({ paid_method: 'credit', cash_location: null }), credit).state, 'mine');
+});
+
 test('still a draft: it was not confirmed', () => {
   assert.deepEqual(readBack(row({ status: 'draft', number: null }), attempt), { state: 'draft' });
 });

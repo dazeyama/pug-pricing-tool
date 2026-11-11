@@ -6,6 +6,7 @@ import { GAME_NAMES } from '../../lib/games.js';
 import { cardCounts, countText } from '../../lib/bulk.js';
 import { formatMoney } from '../../lib/money.js';
 import { dayDate, storeDay } from '../../lib/calendar.js';
+import { COPY_TITLE, copyBuyRow } from '../../lib/buyCopy.js';
 
 /**
  * BUY COMPLETE (owner, 2026-10-17; decision 292): the dialog after CONFIRM
@@ -15,8 +16,15 @@ import { dayDate, storeDay } from '../../lib/calendar.js';
  * for the games the buy has (either closes the dialog as it starts the printout), and
  * **No thanks**; × and Esc are No thanks too.
  * `lines` are the buy's lines as they were confirmed (the draft's rows).
+ *
+ * **Copy** (owner, 2026-11-10; decision 583): the buy's row for the store's Google Sheet of buys, each field in its
+ * own cell (lib/buyCopy.js, the same row as a single buy's ⋯ copies). A walk-in is taken and paid by whoever
+ * confirmed it, then; it has no ID. The dialog stays open, so the printouts are still offered.
  */
-export default function BuyDoneModal({ number, games, lines, customer, paid, method, flagged, onClose }) {
+export default function BuyDoneModal({
+  number, games, lines, customer, paid, method, flagged, phone = null, cashLocation = null, confirmedBy = null,
+  confirmedAt = null, onClose,
+}) {
   const { print, printing } = useAuditPrint();
   const { offline } = useConnection();
   const toast = useToast();
@@ -44,6 +52,16 @@ export default function BuyDoneModal({ number, games, lines, customer, paid, met
     onClose();
   }
 
+  async function copy() {
+    const buy = {
+      kind: 'walk_in', confirmed_by: confirmedBy?.id ?? null, confirmed_at: confirmedAt, customer_name: customer,
+      phone, id_last4: null, paid_method: method, paid_by: confirmedBy?.id ?? null, paid_at: confirmedAt,
+      paid_price: paid, cash_location: cashLocation,
+    };
+    const [text, kind] = await copyBuyRow(buy, (id) => (id === confirmedBy?.id ? confirmedBy.name : ''), `Buy ${number}`);
+    toast(text, kind);
+  }
+
   return (
     <Modal
       title="BUY COMPLETE"
@@ -61,6 +79,7 @@ export default function BuyDoneModal({ number, games, lines, customer, paid, met
               {printing ? 'Printing… 🖨' : 'Print PKM? 🖨'}
             </button>
           )}
+          <button type="button" className="btn" title={COPY_TITLE} onClick={copy}>Copy 📋</button>
           <button type="button" className="btn ghost" onClick={onClose}>No thanks</button>
         </>
       )}
