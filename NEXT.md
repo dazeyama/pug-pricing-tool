@@ -38,7 +38,12 @@ marks each task done here when it's finished, with the exact file and function o
      owner's own printer, so removing the offset didn't take that printer out of the numbers; and decision 281
      notes the far columns leaning 0.05 in right, which is scale, not offset. To start: which printer, printed at
      100%, which way and how far the stickers are off at the sheet's first and last stickers, and whether it's
-     the same on every sheet. Being designed with the owner, 2026-11-10.)
+     the same on every sheet.) **Waits for the owner's new measurements** (2026-11-10: "The sheet of stickers was
+     measured all wrong and we need a new grid template once I get new measurements in."): then a new grid in
+     `SHEET` (the page, columns and rows, a sticker's width and height, the first sticker's left and top edge from
+     the page's edges, and the step from one sticker to the next each way, best taken across the whole row and
+     column), `tests/stickerPdf.test.js` with it, and a decision row. The alignment setting proposed beside it
+     (a test page and typed corrections in Settings) wasn't taken up; not built.
   3. **A copy button for record keeping:** "Adding a copy button to the buy confirmed pop up and single buy menus
      that copies the name and number information to the clipboard in a specific way to assist in record keeping.
      More details when we work on it." (Buy tab's `BuyDoneModal.jsx`; the single buy's menu is Records'. The
