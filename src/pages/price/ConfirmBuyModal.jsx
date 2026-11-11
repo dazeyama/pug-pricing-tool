@@ -9,6 +9,7 @@ import { cardCounts, countText } from '../../lib/bulk.js';
 import CustomRateMark from '../../components/CustomRateMark.jsx';
 import { PHONE_ERROR, formatPhone, phoneDigits, validPhone } from '../../lib/phone.js';
 import { MoneyInput, PayMethod } from '../collections/DealModals.jsx';
+import CashLocation from '../../components/CashLocation.jsx';
 
 /**
  * CONFIRM BUY's dialog (spec 8.10): the count and totals (custom rates
@@ -32,14 +33,20 @@ import { MoneyInput, PayMethod } from '../collections/DealModals.jsx';
  * The totals are each card at its own rate (docs/TEAM_FEEDBACK.md 4.4), from
  * `lines`; cards with their own rate (Set Rate) are listed above them with
  * what they change (4.5).
+ *
+ * `cashLocation` (CONFIRM BUY; owner, 2026-11-10; decision 583): a cash
+ * buy picks Till or Backroom before it can be confirmed (`cashLocation` in
+ * onConfirm, null for credit). Required here, not by the database, so the
+ * live site's older code still confirms once the migration is on.
  */
 export default function ConfirmBuyModal({
   lines, rates, user, busy, onConfirm, onClose,
   // Cards and bulk counted apart (docs/TEAM_FEEDBACK.md 5.5): "Confirm buy — 42 cards + 1,000 bulk".
   title = `Confirm buy — ${countText(cardCounts(lines))}`, intro = null, initial = {},
-  confirmLabel = 'Confirm buy', busyLabel = 'Confirming…', flagOption = false,
+  confirmLabel = 'Confirm buy', busyLabel = 'Confirming…', flagOption = false, cashLocation = false,
 }) {
   const [flag, setFlag] = useState(false);
+  const [location, setLocation] = useState(initial.cashLocation ?? null);
   const [customer, setCustomer] = useState(initial.customer ?? '');
   const [notes, setNotes] = useState(initial.notes ?? '');
   const [phone, setPhone] = useState(initial.phone ? formatPhone(initial.phone) : '');
@@ -53,6 +60,7 @@ export default function ConfirmBuyModal({
     name: !customer.trim() ? "Enter the customer's name." : null,
     phone: !phone.trim() ? 'Enter a phone number.' : !validPhone(phone) ? PHONE_ERROR : null,
     method: !method ? 'Choose Cash or Credit.' : null,
+    location: cashLocation && method === 'cash' && !location ? 'Choose Till or Backroom.' : null,
     price: price == null ? 'Enter the purchase price.' : null,
   };
   const missing = Object.values(problems).filter(Boolean);
@@ -64,6 +72,7 @@ export default function ConfirmBuyModal({
     onConfirm({
       customerName: customer.trim(), phone: phoneDigits(phone), notes, paidPrice: price, paidMethod: method,
       flagCondition: flagOption && flag,
+      ...(cashLocation ? { cashLocation: method === 'cash' ? location : null } : {}),
     });
   };
   const totals = rateTotals(lines, rates);
@@ -144,9 +153,12 @@ export default function ConfirmBuyModal({
       <div className="confirm-field confirm-paid">
         <span>Purchase price</span>
         <PayMethod method={method} onChoose={setMethod} />
+        {/* A cash buy: where the money came from (decision 583). */}
+        {cashLocation && method === 'cash' && <CashLocation location={location} onChoose={setLocation} />}
         <MoneyInput label="Paid" value={priceText} onChange={setPriceText} onEnter={submit} />
         {show('method') && <span className="field-error">{problems.method}</span>}
-        {!show('method') && show('price') && <span className="field-error">{problems.price}</span>}
+        {!show('method') && show('location') && <span className="field-error">{problems.location}</span>}
+        {!show('method') && !show('location') && show('price') && <span className="field-error">{problems.price}</span>}
       </div>
       <label className="confirm-field">
         <span>Notes <em>(optional)</em></span>

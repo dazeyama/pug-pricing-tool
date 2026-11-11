@@ -385,6 +385,8 @@
 .confirm-paid .pay-method { margin: 0 0 8px; }
 .confirm-paid .deal-field { margin-bottom: 0; }
 .confirm-paid .deal-field > span:first-child { display: none; }
+/* A cash buy's Till or Backroom (decision 583): smaller chips under Cash and Credit. */
+.cash-location .pay-choice { padding: 6px 10px; font-size: 13px; }
 .confirm-user { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
 
 /* Short windows (1366×768 laptops): tighter spacing; the card and thumbnails
