@@ -91,6 +91,21 @@ what happens. The findings are reported when the pass ends.
       overnight buy Paid/Ours for $10 cash from the Till: From the Till reads $15, "2 payments today", while Paid
       out counts only the walk-ins ($8 cash). Unlock the overnight buy back to Processing: $5. A credit buy and the
       Backroom one never count. The three stats fit the card with no wrapped amounts at the store's width.
+- [ ] **The Buys report opens from Today** (decision 585; Records session): pointing at the Today card shows a
+      hand and the head's "Buys report →" underlined; a click (or Tab to it, Enter) opens "Buys report · Nov 4 to Nov
+      10, 2026" on Last 7 days, the graph a moment after; Close or Esc shuts it. Today, Last 14 days and This month
+      each change the header, the graph, the totals and the rows.
+- [ ] **The graph** (decision 585): a green cash line and a blue credit line, a point a day, never below $0;
+      hovering a day says its cash, credit, buys and cards. Bars shows the same as pairs of bars. With Hide closed
+      days (Mon, Wed) ticked, Mondays and Wednesdays are missing from the graph and the legend says how many were
+      left off, while the totals and the day rows still have them; unticked, they're back.
+- [ ] **The totals and the days** (decision 585): Paid out, Cash, Credit, Buys, Cards, From the Till and From the
+      Backroom add up the range, an overnight buy marked Paid/Ours on a day counting on that day; each says "$… the 7
+      days before" with ▲ or ▼, except where those days go back before the first buy on record. The rows are newest
+      first, a day with no buys greyed, and the Total row matches the tiles.
+- [ ] **Custom…** (decision 585): a month calendar; click a first day, then a last day (either order), and the range
+      is those days, shaded; ‹ › change the month, no day after today can be picked. A range of a month or more
+      still draws.
 
 ## 5. Buy tab: searching
 

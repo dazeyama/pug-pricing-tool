@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
 import { allPages } from '../lib/inChunks.js';
@@ -21,6 +21,9 @@ import { useStaff } from '../state/staff.jsx';
 // JustTCG's daily allowance is running low. One panel, half the page wide and
 // centered, that never scrolls (owner, 2026-10-01): each list shows its first
 // few and "+N more" for the rest.
+
+// The Buys report (decision 585), opened from the Today card: loaded only then, with its graph package.
+const BuysReport = lazy(() => import('./home/BuysReport.jsx'));
 
 const DAY_MS = 86_400_000;
 const STALE_PRICES_DAYS = 14;   // a project's oldest price this old is worth a REPRICE?
@@ -81,6 +84,7 @@ function HomeScreen({ today }) {
   const user = useStaff().current;
   const [daysRef, daysFit] = useRowsThatFit();
   const [eventsRef, eventsFit] = useRowsThatFit(EVENT_ROW_PX, 4);
+  const [report, setReport] = useState(false);   // the Buys report, open over Home
   const { from, to } = dayRange(today);
 
   // Magic cards in confirmed buys not exported yet (Pokémon can't be exported yet). Every page
@@ -218,8 +222,22 @@ function HomeScreen({ today }) {
           cards its fifth tile) in the middle, then Days to export beside Recent activity, taking
           the spare height (owner, 2026-10-01). */}
       <div className="home-row home-first">
-        <section className="home-card">
-          <div className="home-card-head"><h3>Today</h3></div>
+        {/* The whole card opens the Buys report (the owner: "clicking on the Today panel … to get a subpanel"). */}
+        <section
+          className="home-card home-today"
+          role="button"
+          tabIndex={0}
+          aria-label="Today: open the Buys report"
+          title="Open the Buys report: cash and credit paid over any range of days"
+          onClick={() => setReport(true)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setReport(true);
+            }
+          }}
+        >
+          <div className="home-card-head"><h3>Today</h3><span className="home-link">Buys report →</span></div>
           <div className="home-stats three">
             <div className="home-stat"><span className="home-label">Buys</span><strong>{buys.length}</strong><span className="home-muted">{plural(cardsIn(todayCards), 'card')}</span></div>
             <div className="home-stat">
@@ -239,6 +257,11 @@ function HomeScreen({ today }) {
             <span className="home-dot game-pokemon">Pokémon {byGame('pokemon')}</span>
           </div>
         </section>
+        {report && (
+          <Suspense fallback={null}>
+            <BuysReport onClose={() => setReport(false)} />
+          </Suspense>
+        )}
         <section className="home-card home-quick">
           <div className="home-card-head"><h3>Quick actions</h3></div>
           <div className="home-actions" role="group" aria-label="Quick actions">

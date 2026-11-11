@@ -1,0 +1,57 @@
+/* ---- The Buys report (decision 585): over Home, from its Today card; the mockup's look on the app's tokens ---- */
+.buys-report .modal-box.wide { width: min(1000px, calc(94vw / var(--ui-zoom))); max-height: calc(90vh / var(--ui-zoom)); }
+.buys-report .modal-body { display: flex; flex-direction: column; gap: 14px; overflow-y: auto; }
+
+.br-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.br-group { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.br-view { margin-left: auto; }
+.br-chip {
+  font: inherit; font-size: 13px; color: var(--text); background: var(--panel-2);
+  border: 1px solid var(--border); border-radius: 999px; padding: 5px 12px; cursor: pointer;
+}
+.br-chip:hover { border-color: var(--accent); }
+.br-chip.on { background: color-mix(in srgb, var(--accent) 22%, var(--panel-2)); border-color: var(--accent); font-weight: 700; }
+.br-check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
+.br-check input { width: 15px; height: 15px; margin: 0; accent-color: var(--accent); }
+
+/* Custom: a month to pick the first and the last day from. */
+.br-cal { align-self: flex-start; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel-2); }
+.br-cal-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; font-size: 13.5px; }
+.br-cal-grid { display: grid; grid-template-columns: repeat(7, 34px); gap: 2px; }
+.br-cal-wd { text-align: center; font-size: 11.5px; color: var(--muted); padding: 2px 0; }
+.br-cal-day {
+  font: inherit; font-size: 13px; height: 30px; border: 0; border-radius: 6px; cursor: pointer;
+  color: var(--text); background: transparent; font-variant-numeric: tabular-nums;
+}
+.br-cal-day:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.br-cal-day.in { background: color-mix(in srgb, var(--accent) 20%, transparent); }
+.br-cal-day.end { background: var(--accent); color: #fff; font-weight: 700; }
+.br-cal-day:disabled { color: color-mix(in srgb, var(--muted) 45%, transparent); cursor: default; }
+.br-cal-hint { margin: 6px 0 0; }
+
+.br-fail { margin: 0; padding: 30px 4px; }
+.br-chart { min-width: 0; padding: 12px 8px 4px 0; border-radius: 8px; background: var(--panel-2); }
+.br-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; padding: 0 0 6px 60px; font-size: 13px; }
+.br-key { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; }
+.br-key i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; background: currentColor; }
+.br-left-off { margin-left: auto; padding-right: 10px; color: var(--muted); }
+.br-tip {
+  display: flex; flex-direction: column; gap: 3px; padding: 8px 10px; font-size: 13px;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+}
+.br-tip b { color: var(--muted); font-size: 12.5px; font-weight: 600; }
+
+.br-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 8px; }
+.br-tile { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 8px 10px; border-radius: 8px; background: var(--panel-2); }
+.br-tile-label { color: var(--muted); font-size: 12.5px; }
+.br-tile strong { font-size: 20px; font-weight: 800; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.br-was { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.br-up { color: var(--good); }
+.br-down { color: var(--bad); }
+
+.br-days { width: 100%; border-collapse: collapse; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+.br-days th, .br-days td { padding: 6px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--border); }
+.br-days th { color: var(--muted); font-size: 12.5px; font-weight: 600; }
+.br-days th:first-child, .br-days td:first-child { text-align: left; }
+.br-days tr.none td { color: var(--muted); }
+.br-days tfoot td { font-weight: 800; border-bottom: 0; }

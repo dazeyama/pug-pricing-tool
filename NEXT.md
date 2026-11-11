@@ -111,6 +111,7 @@ marks each task done here when it's finished, with the exact file and function o
     planned). One migration means the three parts reach prod together.
 
 - **Home's Today card opens trends: designed with the owner, and given to Records to build 2026-11-10 ("Build the mockup for real, it's great.")**
+  **Built by the Records session (decision 585), waiting for the owner's QA: see its Done entry.**
   (main session, 2026-11-10; the owner: "I'd like to design a feature for clicking on the Today panel on the Home
   page to get a subpanel with a calendar and graphs of the trend of buy numbers over a week, etc. Let's design this
   and mark it as an open to start on once we're done here."). Not built, no decision row. What's there to build
@@ -298,6 +299,33 @@ marks each task done here when it's finished, with the exact file and function o
 - **Known limit, left as is:** how long a copies-we-own count takes on the live site isn't measured.
 
 ## Done
+
+- 2026-11-10 (Records session): **The Buys report, from Home's Today card** (decision 585; no migration; untested in
+  the app, only its maths in `tests/buysReport.test.js`).
+  - **Where to look:** Home → click anywhere on the Today card ("Buys report →" in its head). It opens on Last 7
+    days. Try Today, Last 14 days, This month, and Custom… (click a first and a last day in its month). Then Line /
+    Bars, and untick Hide closed days (Mon, Wed). Under the graph are the seven totals beside the span before, then
+    a row a day. The cases are TEST.md 4.
+  - **The files:**
+    - `src/pages/home/BuysReport.jsx`, loaded only when it opens (its own chunk, about 113 kB gzipped).
+    - `src/lib/buysReport.js`, the maths.
+    - `src/styles/buysReport.css`.
+    - `HomePage.jsx`: the card is a button, and the report is lazy-loaded.
+    - `home.css`: `.home-today`.
+  - **New dependencies:** `recharts` 3.10.1 and its peer `react-is` 19.3.0, both pinned (the owner: "let's use the
+    package, recharts sounds good"). Both ship to the site.
+  - **The numbers:** every paid buy by the store's day of `paid_at`, as From the Till counts. It's read a page at a
+    time, and read again when a buy changes.
+  - **The main session's choices, which can be reversed:**
+    - The closed days are fixed as Monday and Wednesday, with no setting; a setting is the alternative.
+    - The box starts ticked.
+    - The span before is compared only when all of it is on record.
+  - **Untested and not measured:**
+    - The report's size, the graph's height (280 px) and the window's width (up to 1000 px) weren't measured: dev's
+      sign-in needs the store password.
+    - The calendar's look.
+    - How long a long range takes to read.
+    - Dark is the only theme it was styled for: it uses the app's tokens.
 
 - 2026-11-10 (Records session): **The owner's QA on Records' part, and Home's cash from the Till** (decisions 580
   amended and 584; 0016 amended in place on dev, decision 450, so prod still gets it whole; untested in the app, the
