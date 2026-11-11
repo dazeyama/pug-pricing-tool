@@ -9,11 +9,10 @@ marks each task done here when it's finished, with the exact file and function o
 - **Dev is ahead of prod: migration 0015 is on dev only** (Buy tab session, 2026-11-10; decision 578): the prod push
   waits for the owner's word (`npx supabase db push --linked --project-ref zvxquzcfffmxwizonxuo`, then the
   structure-only compare against `C:/Users/Daisy/AppData/Local/Temp/claude/8622948e51b61e0c/024d6d6e-fc86-4763-9a1b-3034e8336749/scratchpad/dev-run-0015.json`
-  or a fresh dev run), and on the owner's yes to the narrowing in 578's Done entry below (if the owner wants
-  "any two products" literally, 0015 is amended in place first, as it isn't on prod).
+  or a fresh dev run). The owner agreed to 578's narrowing (2026-11-10), so 0015 goes as it is.
 
 - **Unpushed** (main session): NEXT.md's Buy 82 entry and the four ideas below (no code); the Buy tab session's
-  migration 0015 (decision 578, 69b9fc8), in progress and on no project yet.
+  one TCGplayer product is one line (decision 578, migration 0015 on dev only: 69b9fc8, a053635).
 
 - **Four ideas from the owner, 2026-11-10, to design together and leave open for now** (main session; nothing
   designed or built, each needs its design talk with the owner first):
@@ -82,7 +81,8 @@ marks each task done here when it's finished, with the exact file and function o
   when one has no Scryfall or TCGdex id to tell them apart, whatever their set and number. Condition, finish, 1st
   edition, treatments, price and its source, bulk kind, own rates and export stamps still keep copies apart; strike
   and restore twins (`internal.same_line`) and lines already on a list are unchanged; the merged line keeps the
-  first line's details. *Narrower than the owner's words, pending their yes:* two cards that each have their own
+  first line's details. *Narrower than the owner's words, and the owner agreed ("I'm ok with that design, it seems logical and
+  sound. Proceed."):* two cards that each have their own
   TCGdex (or Scryfall) id, different ones, stay two even on one product, since TCGdex links some different cards
   to one product (the Trainer Kit's Great Ball and Lightning Energy; `printings.js` `WRONG_PRODUCTS` fixes only
   some) and merging them would export one card as the other; the name check keeps such a card from joining a find
