@@ -359,7 +359,37 @@ The background band takes the current worker's colour.
 |---|---|
 | **Buys** | Walk-in buys confirmed today, and how many cards. |
 | **Paid out** | What those buys paid in all, split into cash and credit. |
+| **From the Till** | Cash paid out of the Till today, and how many payments. It counts walk-in buys, overnight buys marked Paid/Ours today, and projects made into buys today. Backroom cash isn't counted. |
 | **Magic / Pokémon** | Cards bought today in each game. |
+
+Clicking anywhere on the card opens the **Buys report**.
+
+### Buys report
+
+The Buys report shows what the store paid over any range of days. It opens on the last 7 days. It
+changes nothing.
+
+| | |
+|---|---|
+| **Today**, **Last 7 days**, **Last 14 days**, **This month** | Set the range. |
+| **Custom…** | Opens a calendar over the graph. The worker clicks the first day, then the last, and the calendar closes. The chip then reads *Custom: Nov 1 to Nov 4, 2026*. |
+| **Hide closed days (Mon, Wed)** | Ticked to start. It leaves Mondays and Wednesdays off the graph, and the graph says how many days it left off. The totals and the day rows still count them. |
+| **Line** and **Bars** | Switch the graph between lines and bars. |
+
+The graph has one point for each day. **Cash paid** is green and **Credit paid** is blue. Pointing at a
+day shows its cash, its credit, and how many buys and cards.
+
+Seven totals sit under the graph: **Paid out**, **Cash**, **Credit**, **Buys**, **Cards**, **From the
+Till** and **From the Backroom**. Each one also shows the same number of days just before the range,
+with ▲ when the range is higher and ▼ when it's lower. A line above them names those earlier days.
+The comparison shows only when the app has records for all of them.
+
+Below the totals, each day has a row, newest first, and the last row is the total. A long range scrolls
+its rows and nothing else. Clicking a day that has buys lists them. A walk-in buy opens its day page at
+that buy. An overnight buy opens its own page.
+
+A paid buy counts on the day the store paid it. That covers walk-in buys and overnight buys marked
+Paid/Ours. Projects don't count.
 
 ### Quick actions
 
@@ -624,7 +654,9 @@ lists the reasons. Clicking keeps the list open. The reasons:
 
 ADD CARD needs a picked worker, a selected card, a price and a connection. Hovering it says what's missing.
 Adding the same printing, finish, condition and price again raises that line's quantity instead of
-adding a new line.
+adding a new line. The same goes for one card found two different ways. When two search results are the
+same TCGplayer product with the same name, the app treats them as one card, and the line keeps the
+details of the first one added.
 
 ### Copies we own
 
@@ -675,6 +707,21 @@ cards exported since that upload. Placeholders don't count.
 
 Under the boxes, a **green chip** shows a bonus (*+10% first*) and a **red chip** the cut (*−10%
 owned*). A ✓ marks them once the rate is applied.
+
+**Stale cards.** A printing is stale when Crystal Commerce has it in stock and hasn't sold a copy in
+the window of the [Stale cards file](#stale-cards-file), 180 days to start. A stale printing shows 🕸️
+on **This printing**. The box adds a line, *Stale: no sale in 180 days (−10%)*, and a red chip
+reads *−10% stale*.
+
+- The stale cut comes off the card's rate along with the rest. A stale card the store has 4 of reads
+  **−20%**.
+- **At most** in Settings doesn't limit it. A stale card the store has 20 of reads **−60%**, which is
+  the 50% limit plus 10%.
+- Only the exact printing counts. Another printing of the same card doesn't show 🕸️ because of it.
+- A card the app exported to Crystal Commerce inside the window isn't stale yet.
+- With **Settings → Stale cut** at 0, the 🕸️ and the line still show. There's no percent and no chip.
+- Apply and Auto apply rates? treat it like the other changes. A paired phone's cards get it too.
+  Hovering the applied amounts says *for the copies we own and stale*.
 
 **Apply.** Whenever there's a rate to suggest, a button under the chips applies it: **Apply −10%**.
 Once clicked it reads **✓ −10% applied**, and a second click takes the rate off. The stamp in the box
@@ -736,7 +783,21 @@ once they're in. Each screen starts on Added.
 | **Click a line** | Loads the card back to edit it. Until the edit ends, the suggestions show every printing of its name, even after another search, with the card being edited first and selected. The button reads **SAVE EDIT** and saves over the line. **CANCEL** or **Esc** leaves the line as it was. An edited card takes today's price. |
 | **Right-click a card** | **Set Rate** opens beside the card, for its own Cash % and Credit %. **Maintain ratio** keeps Credit at twice Cash. A red box warns when Cash is above Credit. **Clear Rate** takes the card's rate off. A card with its own rate is tinted, with a ✎ tag. |
 | **Right-click bulk** | **Set value** gives the line its own price per item, and shows what it pays as the worker types. **Back to $1.50** (or **Clear value**) goes back to the value in Settings. |
-| **×** | Removes the card, after asking. With several copies, it asks how many. **Remove all N** takes every copy. |
+| **×** | Removes the card, after asking. With several copies, it asks how many. **Remove all N** takes every copy. A message in bold red then names the card that came off, and how many are left: *Removed: 1 Fabricate (SLD) 123 [LP] (2 left on the list)*. On a Paid/Ours list it reads *Struck: …*, and *Removed for good: …* when a struck card goes. |
+
+**🖨 Print** sits in the heading of a walk-in buy's list. It makes a PDF of the buy as it stands, titled
+*Buy in progress, not confirmed*, with the date and time. The worker can hand it to the customer as an
+offer, or check the cards against it.
+
+- The sheet says *Quote only, not a receipt*, and has a blank **Customer** line to write on.
+- Each card is one row, in the order added whatever the list's sort. A row has a tick box, the count,
+  the name, the set and number, the finish and the condition.
+- Each row ends with what the store pays for one copy in **Cash** and in **Credit**. A card with its
+  own rate uses that rate. A bulk line shows the amount for one item.
+- The foot has the card count and the Cash and Credit offers. They match the list's totals.
+
+Printing saves nothing, and the Changelog doesn't record it. The button is greyed out while the list is
+empty. An overnight buy's list and a project's list don't have it.
 
 ### Totals and rates
 
@@ -781,6 +842,7 @@ The buy's day page shows the same Cash and Credit as the confirm window, with a 
 | **Customer name** | Required. Past customers are suggested as the worker types. |
 | **Phone number** | Required. Ten digits. Formatted as the worker types. |
 | **Purchase price** | Required. **Cash** or **Credit**, then the amount actually paid. Nothing is filled in for them. |
+| **Till** or **Backroom** | Cash only, and required. It records where the cash came from. Without one, Confirm buy says *Choose Till or Backroom.* A credit buy doesn't ask. Once the buy is confirmed, the pick can't be changed. |
 | **Notes** | Optional. |
 | **🚩 Flag check for condition** | Optional. Flags the buy on its day page to have its cards' condition checked before export. |
 
@@ -811,6 +873,38 @@ flagged.
 and close the window. See [Print MTG?](#print-mtg-the-audit-printout). The window offers only the
 games the buy has. **No thanks**, **×** or <kbd>Esc</kbd> close it. Later, the same printouts are in
 the buy's ⋯ menu on its day page.
+
+**Copy Details 📋** copies the buy for the store's buys sheet. The window stays open, so the worker can
+copy and then print. See [Copy Details](#copy-details).
+
+### Copy Details
+
+Copy Details puts one row on the clipboard, with a tab between its cells. The worker clicks the first
+cell of an empty row in the buys sheet and pastes. Each value lands in its own cell. A message says
+*Copied Buy 42 for the buys sheet: paste it into the first cell of a row.*
+
+The row has ten cells, in this order:
+
+1. The worker who took the buy.
+2. The date they took it, as *11/10/2026*.
+3. The customer's name.
+4. The phone number, as *(555) 555-0100*.
+5. The Last 4 ID. A walk-in buy has none, so the cell is empty.
+6. *Cash* or *Credit*.
+7. The worker who paid.
+8. The date it was paid.
+9. The amount paid, as *$90.00*.
+10. *Till* or *Backroom* for cash, and *NA* for credit.
+
+On a walk-in buy, the same worker and date fill both pairs. On an overnight buy, the first pair is who
+started it and when, and the second is who marked it Paid/Ours and when.
+
+A buy paid before the app kept these leaves the worker who paid and the cash location empty.
+
+The button is in three places: BUY COMPLETE, [a buy's ⋯ menu](#a-buys--menu) on its day page, and the
+⋯ menu of a Paid/Ours or Completed overnight buy in the Collections tab. It works with no worker
+picked. It changes nothing. If the browser refuses the clipboard, a message says to keep the window in
+front and try again.
 
 ### Bulk
 
@@ -934,6 +1028,9 @@ Clicking a row opens it. Notes aren't a column: they're on the collection's own 
 
 A row open on another computer says so: *"✎ open on Front Counter (Clio)"*.
 
+The **⋯** menu of a Paid/Ours or Completed overnight buy starts with **Copy Details**. See
+[Copy Details](#copy-details).
+
 ### + Overnight buy
 
 | | |
@@ -1006,7 +1103,9 @@ cash offer. The app works the credit offer out from it, at this collection's rat
 **Save offer** records both.
 
 **Mark as Paid/Ours →** opens **Mark as Paid/Ours**. It shows the totals and the offer. The worker picks
-**Cash** or **Credit** and types the price actually paid. **Mark Paid/Ours** locks the collection.
+**Cash** or **Credit** and types the price actually paid. With **Cash** they also pick **Till** or
+**Backroom**, and **Mark Paid/Ours** stays grey until they do. **Mark Paid/Ours** locks the collection.
+To change a wrong pick, unlock the collection back to Processing and mark it Paid/Ours again.
 **Mark as Rejected?** switches to the Reject window instead. On a project or overnight buy made by
 **Convert** from a buy that stayed on its day, the price starts at **$0**, with the words *The payment
 is on Buy N, which kept it: $0 here counts it once*. The worker can still type another amount.
@@ -1171,7 +1270,8 @@ Convert to buy… is for projects only, in the ⋯ menu. It turns the project in
 page. It's the way back from a buy's **Convert to project**.
 
 It asks what **CONFIRM BUY** asks: **Customer name**, **Phone number**, **Purchase price** (Cash or
-Credit, and what was paid) and **Notes**. All but Notes are required. The name suggests past
+Credit, and what was paid) and **Notes**. All but Notes are required. With Cash it asks **Till** or
+**Backroom** as well. The name suggests past
 customers. What the project already has is filled in. A project made from a buy kept its phone and
 notes, and its name is the customer's. It kept the price paid too when the whole buy moved. When
 Completed cards kept the buy on its day, the payment stayed with that buy and the project starts at
@@ -1332,6 +1432,7 @@ on the list, crossed out, as a record that it went elsewhere, straight into the 
 | **✅ Condition checked** | Flagged buys only, first in the menu. Takes the 🚩 flag off. |
 | **Mark as completed** | Completes this game's cards in this buy without exporting them. They're locked, and left out of the search and the day's export. On a Magic buy they're **struck** as well, because a Magic buy Completed instead of exported means its cards went somewhere else. On a Pokémon buy it's Complete day… for one buy, without the Sell Prices. |
 | **Mark Paid/Ours again** | Undoes Mark as completed, and restores the cards it struck. On an exported buy it reads **Mark Paid/Ours again…** and undoes this buy's export only. Magic cards struck by Mark as completed stay Completed. Some of this game's cards may still be Completed by hand while the buy isn't, after its export is undone, say. Then the menu has both Mark as completed and Mark Paid/Ours again, which brings those cards back. |
+| **Copy Details** | Copies the buy as one row for the store's buys sheet. It works with no worker picked, and it changes nothing. See [Copy Details](#copy-details). |
 | **◂ Print** | A group. Pointing at it, or clicking it, opens its items to the left of the menu. They open to the right only when there's no room on the left, and the arrow moves there too. **Print buy (all)** and **Print buy (>$1.49)** make the audit printout of this buy's Magic cards by Crystal Commerce category, every card or only the ones over the amount in Settings → Export rates for bulk. On a Pokémon buy the group holds **Print buy**, its cards by set, and **Print stickers**, price-tag stickers. See [Print PKM Stickers?](#print-pkm-stickers). |
 | **◂ Export** | Magic only. **Export single buy (all)** and **Export single buy (>$1.49)** export just this buy, on any day, today included. (>$1.49) pulls the bulk to Bulk pulled from exports. The rest of the day stays as it is. Its Custom SKU is the day's with the buy's number after a dash, *101626-42*, shown on the buy. Once the buy has its own file, **Download its file again** is here too. It downloads the same file, and nothing changes. |
 | **◂ Convert** | **Convert to project** and **Convert to overnight buy**, below. |
@@ -1997,6 +2098,49 @@ at once.
 A line under the switches works the numbers through: *With these: 4 copies of a card, 10% lower; 12 or
 more, 50% lower; a card we've never had, 10% higher; a new printing of one we have, 5% higher.* A
 bonus set to 0 is no bonus.
+
+### Stale cards file
+
+The stale cards file tells the app which cards haven't sold lately. It comes from a search in Crystal
+Commerce. A card in the file that's still in stock is stale on the Buy tab, and shows 🕸️ there. See
+[Copies we own](#copies-we-own).
+
+To make the file in Crystal Commerce:
+
+1. On **Inventory**, search for Magic Singles with **Sell price is between** 35 and 9999, and
+   **In the past** 180 days **(=) equal to** 0 quantity **sold**.
+2. Press **Export Search to CSV**. The file is then under Notifications → Generated Reports.
+
+| | |
+|---|---|
+| **No sale in … days** | The number of days the search used. 180 to start. |
+| **Sell price from $** | The lowest Sell price the search used. 35 to start. |
+| **Upload file** | Replaces the current file. It needs a picked worker and a connection. |
+
+The file doesn't say which numbers made it. So the two boxes must match the search before the worker
+uploads, and the steps on the panel follow the boxes. A file made with 90 days works the same way: set
+the box to 90, then upload.
+
+After an upload, the panel shows the file's name, when it went up and who uploaded it. Under that it
+says what the file holds: *217 stale in stock of 503: no sale in 180 days, $35 and up*. The Changelog
+records each upload.
+
+The panel refuses the whole Master Crystal Inventory file, a CSV with no Total Qty column, and a file
+that isn't a CSV. The current file stays when it does.
+
+### Stale cut
+
+| | |
+|---|---|
+| **Lower for a stale card** | −10% to start. The percent comes off a stale card's rate, on top of the cut for copies the store owns. At 0, a stale card still shows 🕸️ and keeps its rate. |
+| **View Stale Cards…** | Opens the list of every card the Buy tab marks 🕸️, with how many are in stock and the Sell price. Search by name. It changes nothing. |
+
+A line under the box works an example: *With this: Credit 60% on a stale card is 54%.* The box saves
+when the worker leaves it, and the Changelog records the change.
+
+The list's first line gives the count, the window and the price floor. It leaves out a card the app
+exported to Crystal Commerce inside the window, because that card hasn't had its time on the shelf
+yet. Uploading a new Stale cards file changes the list at once.
 
 ### Crystal Commerce matching
 
