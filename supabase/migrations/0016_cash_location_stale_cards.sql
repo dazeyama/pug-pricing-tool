@@ -12,7 +12,8 @@
 -- 2. The stale cards: Crystal Commerce's export of the products with no sale in a window (180 days, the search
 --    on Inventory), uploaded in Settings. Kept whole, one file at a time, in stale_files and stale_products; written
 --    only by stale_file_load, in one call. owned_copies answers which of the card's products are stale, with the
---    recent-export guard: a product we exported since the window began isn't, as it hasn't had time to sell. The
+--    recent-export guard: a product we exported since the window began isn't, as it hasn't had time to sell, and
+--    stale_cards lists them all the same way (View Stale Cards, amended in while on dev only). The
 --    file isn't in a backup, as the inventory isn't (backup_export names its tables; backup_columns reads buys'
 --    columns by itself, so a backup carries the two new ones).
 
@@ -672,7 +673,8 @@ $function$;
 
 -- 2. The stale cards ---------------------------------------------------------------------------------------
 
--- The file uploaded now, one row (its key is always true).
+-- The file uploaded now, one row (its key is always true). Its window and its price floor are the search's that
+-- made it, which the file doesn't say: typed at the upload (180 days and $35 unless changed).
 create table public.stale_files (
   id                boolean primary key default true check (id),
   original_filename text not null,
@@ -680,13 +682,15 @@ create table public.stale_files (
   products          integer not null,
   in_stock          integer not null,
   uploaded_by       uuid references staff_users(id),
-  uploaded_at       timestamptz not null default now()
+  uploaded_at       timestamptz not null default now(),
+  min_price         numeric(10,2) not null default 35 check (min_price between 0 and 9999)
 );
 -- Its products, as the file has them.
 create table public.stale_products (
   product_id   text primary key,
   product_name text not null,
-  total_qty    integer
+  total_qty    integer,
+  sell_price   numeric(10,2)
 );
 alter table public.stale_files enable row level security;
 alter table public.stale_products enable row level security;
@@ -703,8 +707,10 @@ grant all on table public.stale_products to service_role;
 create index buy_lines_cc_exported on public.buy_lines (cc_product_id, cc_exported_at) where cc_exported_at is not null;
 
 -- The upload: the file replaces the one before, whole, in one call, so a card is never judged on half a file.
--- p_rows: [{product_id, product_name, total_qty}], the CSV's Product ID, Product Name and Total Qty.
-create function public.stale_file_load(p_filename text, p_days integer, p_rows jsonb, p_user uuid)
+-- p_rows: [{product_id, product_name, total_qty, sell_price}], the CSV's Product ID, Product Name, Total Qty and
+-- Sell Price (a number; sell_price may be left out). p_min_price: the search's "sell price at least".
+create function public.stale_file_load(p_filename text, p_days integer, p_rows jsonb, p_user uuid,
+                                       p_min_price numeric default 35)
 returns jsonb
 language plpgsql
 security definer
@@ -717,30 +723,57 @@ begin
   -- A user, always (decision 412): the upload is in the Changelog under their name.
   if p_user is null then raise exception 'no_user'; end if;
   if p_days is null or p_days not between 1 and 3650 then raise exception 'bad_days'; end if;
+  if p_min_price is null or p_min_price not between 0 and 9999 then raise exception 'bad_min_price'; end if;
   if jsonb_typeof(p_rows) is distinct from 'array' or jsonb_array_length(p_rows) > 20000 then
     raise exception 'bad_batch';
   end if;
   perform pg_advisory_xact_lock(hashtext('stale_files'));
   -- `where true`: the API may refuse a delete with no where (pg-safeupdate).
   delete from stale_products where true;
-  insert into stale_products (product_id, product_name, total_qty)
-  select distinct on (btrim(r.product_id)) btrim(r.product_id), r.product_name, r.total_qty
-    from jsonb_to_recordset(p_rows) as r(product_id text, product_name text, total_qty integer)
+  insert into stale_products (product_id, product_name, total_qty, sell_price)
+  select distinct on (btrim(r.product_id)) btrim(r.product_id), r.product_name, r.total_qty, r.sell_price
+    from jsonb_to_recordset(p_rows) as r(product_id text, product_name text, total_qty integer, sell_price numeric)
    where nullif(btrim(r.product_id), '') is not null and r.product_name is not null
    order by btrim(r.product_id);
   delete from stale_files where true;
-  insert into stale_files (original_filename, days, products, in_stock, uploaded_by)
-  values (coalesce(nullif(btrim(p_filename), ''), 'stale cards file'), p_days,
+  insert into stale_files (original_filename, days, min_price, products, in_stock, uploaded_by)
+  values (coalesce(nullif(btrim(p_filename), ''), 'stale cards file'), p_days, p_min_price,
           (select count(*) from stale_products), (select count(*) from stale_products where total_qty > 0), p_user)
   returning * into f;
   perform internal.settings_event(p_user, null, 'stale_file_uploaded', 'Stale cards file', '[]'::jsonb,
-    format('Stale cards file uploaded: %s, %s products, %s in stock, no sale in %s days.',
-           f.original_filename, f.products, f.in_stock, f.days));
+    format('Stale cards file uploaded: %s, %s products, %s in stock, no sale in %s days, %s and up.',
+           f.original_filename, f.products, f.in_stock, f.days, money_text(f.min_price)));
   return jsonb_build_object('uploaded_at', f.uploaded_at, 'products', f.products, 'in_stock', f.in_stock);
 end;
 $$;
-revoke all on function public.stale_file_load(text, integer, jsonb, uuid) from public, anon;
-grant execute on function public.stale_file_load(text, integer, jsonb, uuid) to authenticated, service_role;
+revoke all on function public.stale_file_load(text, integer, jsonb, uuid, numeric) from public, anon;
+grant execute on function public.stale_file_load(text, integer, jsonb, uuid, numeric) to authenticated, service_role;
+
+-- Settings → Stale cut → View Stale Cards (the owner, 2026-11-10): every card the box would call stale, as
+-- owned_copies' stale_ids judges it: in the file with Total Qty over 0, none exported by the app since the window
+-- began; and in the current inventory, as the Price screen marks a printing only through the product it matched
+-- there (decision 582). With its category from there. In one answer (a file can pass the API's 1,000 rows); [] with
+-- no file.
+create function public.stale_cards()
+returns jsonb
+language sql
+stable
+set search_path = public, internal
+as $$
+  select coalesce(jsonb_agg(jsonb_build_object(
+           'product_id', s.product_id, 'product_name', s.product_name, 'category', p.category,
+           'total_qty', s.total_qty, 'sell_price', s.sell_price)
+         order by s.product_name, p.category, s.product_id), '[]'::jsonb)
+    from stale_products s
+   cross join stale_files sf
+    join cc_products p on p.file_id = cc_current_file() and p.product_id = s.product_id
+   where s.total_qty > 0
+     and not exists (select 1 from buy_lines l
+                      where l.cc_product_id = s.product_id
+                        and l.cc_exported_at >= sf.uploaded_at - make_interval(days => sf.days))
+$$;
+revoke all on function public.stale_cards() from public, anon;
+grant execute on function public.stale_cards() to authenticated, service_role;
 
 -- Which of the card's products are stale, beside its counts (decision 580). Same parameters, two more keys.
 CREATE OR REPLACE FUNCTION public.owned_copies(p_product_id text, p_base_keys text[], p_name_key text, p_scryfall_id text, p_finish text)

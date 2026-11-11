@@ -3780,15 +3780,27 @@ begin
 
   -- The stale file.
   perform pg_temp.ok(s, 'The app can upload a stale file and read it, never write it directly',
-    has_function_privilege('authenticated', 'public.stale_file_load(text, integer, jsonb, uuid)', 'EXECUTE')
-    and not has_function_privilege('anon', 'public.stale_file_load(text, integer, jsonb, uuid)', 'EXECUTE')
+    has_function_privilege('authenticated', 'public.stale_file_load(text, integer, jsonb, uuid, numeric)', 'EXECUTE')
+    and not has_function_privilege('anon', 'public.stale_file_load(text, integer, jsonb, uuid, numeric)', 'EXECUTE')
+    and has_function_privilege('authenticated', 'public.stale_cards()', 'EXECUTE')
+    and not has_function_privilege('anon', 'public.stale_cards()', 'EXECUTE')
     and has_table_privilege('authenticated', 'public.stale_products', 'SELECT')
     and not has_table_privilege('authenticated', 'public.stale_products', 'INSERT')
     and not has_table_privilege('authenticated', 'public.stale_files', 'DELETE')
     and not has_table_privilege('anon', 'public.stale_products', 'SELECT'));
   v := owned_copies(null, owned, 'dbtest owned', null, null);
-  perform pg_temp.ok(s, 'No file: owned_copies says so, nothing stale',
-    v -> 'stale_file' = 'null'::jsonb and v -> 'stale_ids' = '[]'::jsonb, v::text);
+  perform pg_temp.ok(s, 'No file: owned_copies says so, nothing stale, and View Stale Cards lists none',
+    v -> 'stale_file' = 'null'::jsonb and v -> 'stale_ids' = '[]'::jsonb and stale_cards() = '[]'::jsonb, v::text);
+  begin
+    perform stale_file_load('stale.csv', 180, '[]', u, -1);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'The price floor is 0 to 9999, as the box says', sqlerrm, 'bad_min_price');
+  end;
+  begin
+    perform stale_file_load('stale.csv', 180, '[]', u, 10000);
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, '… not 10000', sqlerrm, 'bad_min_price');
+  end;
   begin
     perform stale_file_load('stale.csv', 0, '[]', u);
     raise exception 'dbt_no_error';
@@ -3800,22 +3812,27 @@ begin
   exception when others then perform pg_temp.err(s, 'The rows are a list', sqlerrm, 'bad_batch');
   end;
   perform stale_file_load('first.csv', 90, '[{"product_id": "DBTEST-OLD", "product_name": "Dbtest Old", "total_qty": 1}]', u);
+  perform pg_temp.ok(s, 'The price floor is $35 unless sent',
+    (select min_price = 35 and days = 90 from stale_files));
   v := stale_file_load(' stale.csv ', 180, '[
-    {"product_id": "DBTEST-Q1", "product_name": "Dbtest Owned", "total_qty": 3},
+    {"product_id": "DBTEST-Q1", "product_name": "Dbtest Owned", "total_qty": 3, "sell_price": 60},
     {"product_id": "DBTEST-Q2", "product_name": "Dbtest Owned - Foil", "total_qty": 0},
-    {"product_id": "DBTEST-Q3", "product_name": "Dbtest Owned", "total_qty": 2},
-    {"product_id": "DBTEST-Q3", "product_name": "Dbtest Owned", "total_qty": 2},
+    {"product_id": "DBTEST-Q3", "product_name": "Dbtest Owned", "total_qty": 2, "sell_price": 52.5},
+    {"product_id": "DBTEST-Q3", "product_name": "Dbtest Owned", "total_qty": 2, "sell_price": 52.5},
     {"product_id": "DBTEST-QX", "product_name": "Dbtest Other", "total_qty": 4},
-    {"product_id": " ", "product_name": "Dbtest Blank", "total_qty": 4}]', u);
+    {"product_id": " ", "product_name": "Dbtest Blank", "total_qty": 4}]', u, 50);
   perform pg_temp.ok(s, 'An upload replaces the file whole, once each product, and answers its counts',
     (v ->> 'products')::int = 4 and (v ->> 'in_stock')::int = 3 and v ? 'uploaded_at'
     and (select count(*) from stale_files) = 1
-    and (select original_filename = 'stale.csv' and days = 180 and products = 4 and in_stock = 3 and uploaded_by = u
-           from stale_files)
+    and (select original_filename = 'stale.csv' and days = 180 and min_price = 50 and products = 4 and in_stock = 3
+                and uploaded_by = u from stale_files)
+    and (select sell_price = 52.5 from stale_products where product_id = 'DBTEST-Q3')
+    and (select sell_price is null from stale_products where product_id = 'DBTEST-QX')
     and not exists (select 1 from stale_products where product_id = 'DBTEST-OLD'), v::text);
   perform pg_temp.ok(s, '… in the Changelog',
     exists (select 1 from events where action = 'stale_file_uploaded'
-              and summary = 'Stale cards file uploaded: stale.csv, 4 products, 3 in stock, no sale in 180 days.'));
+              and summary = 'Stale cards file uploaded: stale.csv, 4 products, 3 in stock, no sale in 180 days, $50 and up.'),
+    (select summary from events where action = 'stale_file_uploaded' order by seq desc limit 1));
 
   -- Q1 was exported just now by Owned copies' checks: in stock in the file, but not stale (the recent-export
   -- guard). Q3 exported 400 days ago, before the window: still stale.
@@ -3831,6 +3848,11 @@ begin
   v := owned_copies('DBTEST-QX', array['dbtest none'], 'dbtest none', null, null);
   perform pg_temp.ok(s, '… and the printing''s own product, of another name',
     v -> 'stale_ids' = '["DBTEST-QX"]'::jsonb, v::text);
+  v := stale_cards();
+  -- QX isn't in the current inventory, so no printing matches it there and the Price screen never marks it.
+  perform pg_temp.ok(s, 'View Stale Cards lists the cards the Price screen can mark, with the inventory''s category',
+    v = '[{"product_id": "DBTEST-Q3", "product_name": "Dbtest Owned", "category": "DBTEST Promos", "total_qty": 2,
+           "sell_price": 52.50}]'::jsonb, v::text);
 exception when others then
   declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;
   perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
@@ -3851,6 +3873,10 @@ set local role authenticated;
 -- The restore resets the Changelog's numbering; it's set back after.
 reset role;
 select pg_temp.put('events_seq_before_restore', (select last_value::text from events_seq_seq));
+-- The backup and its counts, kept between the three blocks below: each block is one statement under the test's
+-- time limit, and four full restores in one went over it once dev's data grew (2026-11-10, decision 580).
+create temp table dbt_backup (payload jsonb, counts jsonb);
+grant all on dbt_backup to public;
 set local role authenticated;
 
 do $$
@@ -3860,7 +3886,6 @@ declare
   a uuid := pg_temp.id('devA');
   v_counts jsonb;
   v_payload jsonb;
-  v_after uuid;
   v_res jsonb;
 begin
   v_counts := backup_counts();
@@ -3927,6 +3952,21 @@ begin
     (v_res ->> 'lines') = (v_counts ->> 'lines') and not exists (select 1 from buys where project));
   perform pg_temp.ok(s, '… and leaves the learned matches as they are',
     exists (select 1 from cc_set_map where scryfall_set = 'dbt' and category = 'DBTEST Set'));
+  insert into pg_temp.dbt_backup values (v_payload, v_counts);
+exception when others then
+  declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;
+  perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
+end $$;
+
+do $$
+declare
+  s text := 'Backup';
+  u uuid := pg_temp.id('u1');
+  a uuid := pg_temp.id('devA');
+  v_payload jsonb := (select payload from pg_temp.dbt_backup);
+  v_res jsonb;
+begin
+  if v_payload is null then return; end if;   -- the block above crashed, and said so
   -- A file whose list of them is there but empty leaves them as they are too (0004).
   v_res := restore_backup(jsonb_set(v_payload, '{tables,cc_set_map}', '[]'), 'dbtest-empty-matches.json', u, a, 'RESTORE');
   perform pg_temp.ok(s, 'An empty list of set choices in the file leaves the ones here (0004)',
@@ -3942,7 +3982,22 @@ begin
            'dbtest-auto-matches.json', u, a, 'RESTORE');
   perform pg_temp.ok(s, 'A backup with the app''s own old matches restores them (0010 kept the check)',
     exists (select 1 from cc_product_links where scryfall_id = 'dbtest-dbt-001' and finish = 'etched' and source = 'auto'));
+exception when others then
+  declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;
+  perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
+end $$;
 
+do $$
+declare
+  s text := 'Backup';
+  u uuid := pg_temp.id('u1');
+  a uuid := pg_temp.id('devA');
+  v_payload jsonb := (select payload from pg_temp.dbt_backup);
+  v_counts jsonb := (select counts from pg_temp.dbt_backup);
+  v_after uuid;
+  v_res jsonb;
+begin
+  if v_payload is null then return; end if;
   -- Something made after the backup, for the restore to undo.
   v_after := collection_create('DBTEST After Backup', null, '', u, a);
   delete from cc_set_map where scryfall_set = 'dbt';

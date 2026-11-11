@@ -199,6 +199,14 @@ export default function BuyPanel({
               title: `Unlock this buy's ${GAME_NAMES[game]} cards marked Completed by hand: back in the header search and this day's export`,
               onClick: () => onComplete(buy, number, false),
             }] : []),
+            // Copy Details (decision 580): the buy as a row of the store's buys sheet. Changes nothing. Above
+            // Print ▸, out of the way (the owner, 2026-11-10: "1 higher on the list so it doesn't get in the way").
+            {
+              label: 'Copy Details',
+              needsUser: false,
+              title: COPY_TITLE,
+              onClick: async () => toast(...await copyBuyRow(buy, (id) => byId(id)?.name, `Buy ${number}`)),
+            },
             // Print ▸, Export ▸, Convert ▸ (owner, 2026-10-21; decision 422): the eight lines they were
             // in three groups, each opening beside the menu (MenuItems.jsx).
             {
@@ -230,13 +238,6 @@ export default function BuyPanel({
                   title: "Price-tag stickers for this buy's Pokémon cards at today's sell prices, a sticker a copy, for the store's 160-sticker sheets. Changes nothing.",
                   onClick: () => onPrintStickers(buy, number),
                 }],
-            },
-            // Copy (decision 580): the buy as a row of the store's buys sheet. Changes nothing.
-            {
-              label: 'Copy',
-              needsUser: false,
-              title: COPY_TITLE,
-              onClick: async () => toast(...await copyBuyRow(buy, (id) => byId(id)?.name, `Buy ${number}`)),
             },
             // Export single buy (owner, 2026-10-09): Magic only, like EXPORT, but any day, today's too.
             // (all) and (>…) as the day's EXPORT (decision 408): (>…) pulls the bulk cards (decision 416).

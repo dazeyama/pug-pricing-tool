@@ -102,6 +102,15 @@ function HomeScreen({ today }) {
     .eq('status', 'confirmed')
     .gte('confirmed_at', from.toISOString())
     .lt('confirmed_at', to.toISOString()));
+  // The cash taken from the Till today, for closing (owner, 2026-11-10; decision 584): every payment with the
+  // Till as its cash location paid today, walk-ins, overnight buys and projects made buys alike ("Yes, all Till
+  // cash"). Going back to Processing or Priced clears the location, and a deleted buy is gone, so neither counts.
+  const till = useLiveTable('buys', () => supabase
+    .from('buys')
+    .select('id, paid_price')
+    .eq('cash_location', 'till')
+    .gte('paid_at', from.toISOString())
+    .lt('paid_at', to.toISOString()));
   const open = useLiveTable('buys', () => supabase
     .from('buys')
     .select('id, customer_name, status, project, system_key, updated_at, buy_lines(game, quantity, unit_price, cc_sell_price, priced_at, created_at, bulk_kind, struck_at)')
@@ -185,6 +194,8 @@ function HomeScreen({ today }) {
   const cash = paid('cash');
   const credit = paid('credit');
   const byGame = (game) => cardsIn(todayCards.filter((l) => l.game === game));
+  const tillBuys = till.data ?? [];
+  const tillCash = tillBuys.reduce((s, b) => s + Number(b.paid_price ?? 0), 0);
 
   const u = usage.data;
   const usageHigh = u?.daily_limit && u.daily_used >= u.daily_limit * USAGE_WARN;
@@ -209,12 +220,18 @@ function HomeScreen({ today }) {
       <div className="home-row home-first">
         <section className="home-card">
           <div className="home-card-head"><h3>Today</h3></div>
-          <div className="home-stats two">
+          <div className="home-stats three">
             <div className="home-stat"><span className="home-label">Buys</span><strong>{buys.length}</strong><span className="home-muted">{plural(cardsIn(todayCards), 'card')}</span></div>
             <div className="home-stat">
               <span className="home-label">Paid out</span>
               <strong>{formatMoney(cash + credit)}</strong>
               <span className="home-muted"><span className="is-cash">{formatMoney(cash)} cash</span> · <span className="is-credit">{formatMoney(credit)} credit</span></span>
+            </div>
+            {/* The Till's cash, for closing (decision 584): overnight buys and projects made buys too. */}
+            <div className="home-stat" title="Cash paid out of the Till today: walk-in buys, overnight buys marked Paid/Ours, and projects made into buys. Backroom cash isn't counted.">
+              <span className="home-label">From the Till</span>
+              <strong className="is-cash">{formatMoney(tillCash)}</strong>
+              <span className="home-muted">{plural(tillBuys.length, 'payment')} today</span>
             </div>
           </div>
           <div className="home-games">

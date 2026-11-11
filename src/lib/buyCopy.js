@@ -31,8 +31,7 @@ export function sheetLocation(method, location) {
 }
 
 /** What a Copy item's tooltip says it copies. */
-export const COPY_TITLE = 'Copy this buy for the buys sheet, each in its own cell: worker, date, customer, phone, '
-  + 'ID, Cash or Credit, who paid, date paid, amount, cash location. Changes nothing.';
+export const COPY_TITLE = 'Copy this buy as a row for the buys sheet';
 
 /**
  * Copies the buy's row to the clipboard, and says so: the toast's text and kind.

@@ -193,6 +193,14 @@ export default function CollectionsPage() {
     const busy = offline ? 'No connection' : elsewhere ? `${elsewhere} is editing it: open it and take over first` : null;
     const what = c.project ? 'project' : 'overnight buy';
     return [
+      // Copy Details (decision 580), on a paid overnight buy: a row of the store's buys sheet. Changes nothing.
+      // First, above Print, as on a buy's ⋯.
+      ...(!c.project && (c.status === 'paid' || c.status === 'completed') ? [{
+        label: 'Copy Details',
+        needsUser: false,
+        title: COPY_TITLE,
+        onClick: async () => toast(...await copyBuyRow(c, (id) => staff.byId(id)?.name, c.customer_name)),
+      }] : []),
       // Print (owner, 2026-10-14; docs/TEAM_FEEDBACK.md 3), as on its screen: its cards
       // fetched once the printout's tab is open. Reading only, so another computer editing it doesn't matter.
       // In any status, as on its screen (team feedback, 2026-10-16: printing "should always" be allowed).
@@ -212,13 +220,6 @@ export default function CollectionsPage() {
           fileName: `audit-${fileSafe(c.customer_name)}.pdf`,
         }),
       },
-      // Copy (decision 580), on a paid overnight buy: a row of the store's buys sheet. Changes nothing.
-      ...(!c.project && (c.status === 'paid' || c.status === 'completed') ? [{
-        label: 'Copy',
-        needsUser: false,
-        title: COPY_TITLE,
-        onClick: async () => toast(...await copyBuyRow(c, (id) => staff.byId(id)?.name, c.customer_name)),
-      }] : []),
       ...(c.project ? [{
         label: 'Convert to buy',
         blocked: busy ?? (c.status === 'completed' ? 'Completed: open it and reopen it (back to Paid/Ours) first' : null),

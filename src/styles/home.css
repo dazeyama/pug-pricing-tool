@@ -137,6 +137,8 @@
 .home-actions .btn { padding: 8px 6px; font-size: 13px; font-weight: 700; line-height: 1.25; }
 .home-stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
 .home-stats.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+/* Today's three: Buys, Paid out, From the Till (decision 584). */
+.home-stats.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .home-stat { display: flex; flex-direction: column; gap: 1px; padding: 7px 10px; border-radius: 8px; background: var(--panel-2); }
 .home-stat strong { font-size: 20px; font-weight: 800; line-height: 1.2; }
 /* Can't upload cards (owner, 2026-10-09): a tile like the others, in the
