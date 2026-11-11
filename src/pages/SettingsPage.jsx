@@ -58,10 +58,11 @@ export default function SettingsPage() {
         <BulkExportRatesPanel />
         <SellFloorPanel />
         <OwnedCopiesPanel />
-        <CcMatchingPanel />
-        {/* The stale cards file (decision 581), on the left; the stale cut's panel goes beside it. */}
+        {/* The stale cards file (decision 581), on the left; the stale cut's panel goes beside it. Above
+            Crystal Commerce matching (the owner, 2026-11-10). */}
         <StaleFilePanel />
         <StaleCutPanel />
+        <CcMatchingPanel />
         <BackupsPanel />
         <footer className="settings-footer">
           {/* Where everything comes from, one line each (owner, 2026-09-29). */}
