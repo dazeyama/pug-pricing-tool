@@ -6,6 +6,13 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
+- **A failed load of the Buys report must not blank the page** (given to the Records session 2026-11-11; from the
+  push review, plausible and not reproduced; the owner, asked whether to fix it next: "Yes, fix it"). The report
+  is the app's first `React.lazy` (`HomePage.jsx`) and nothing catches a failed load, so a click on the Today
+  card with the connection down, or in a tab left open across a later push, may unmount the app until a reload.
+  Wanted: Home stays, and a message says the report couldn't load and to reload the page. No migration. Not pushed
+  until the owner says.
+
 - **Dev holds 55 simulated walk-in buys, and the owner is keeping them** ("I'm going to keep them.", 2026-11-11;
   main session; made for testing the Buys report on the owner's ask: "Can
   you create simulated data for the last 14 days based on the read only probe of prod for the mockup and create
