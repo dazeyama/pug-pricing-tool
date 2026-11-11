@@ -8,6 +8,7 @@ import {
   DEFAULT_STALE_DAYS, DEFAULT_STALE_PRICE, currentStaleFile, loadStaleFile, parseDays, parseStalePrice, readStaleCsv,
 } from '../../lib/staleFile.js';
 import { formatMoney } from '../../lib/money.js';
+import { STALE_EMOJI } from '../../lib/ownedRates.js';
 
 /** The current file's price floor, as its line ends: ", $35 and up" (", $12.50 and up"); nothing for a file saved without one. */
 const currentFloor = (file) => (file.min_price != null ? `, ${formatMoney(Number(file.min_price))} and up` : '');
@@ -90,7 +91,8 @@ export default function StaleFilePanel() {
 
   return (
     <section className={`cardpanel settings-panel stale-panel${state}`}>
-      <div className="cardpanel-head"><strong>Stale cards file</strong></div>
+      {/* The Price screen's stale emoji, so the two are seen as one (the owner, 2026-11-10). */}
+      <div className="cardpanel-head"><strong>{STALE_EMOJI} Stale cards file</strong></div>
       <div className="cardpanel-body">
         <p className="hint">Cards with no sale lately, from Crystal Commerce. In stock, they&apos;re stale on the Buy tab.</p>
         {/* The search as the boxes below describe it (decision 581): its days and its price floor. */}

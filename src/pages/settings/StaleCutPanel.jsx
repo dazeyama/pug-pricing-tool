@@ -121,7 +121,8 @@ export default function StaleCutPanel() {
 
   return (
     <section className="cardpanel settings-panel">
-      <div className="cardpanel-head"><strong>Stale cut</strong></div>
+      {/* The Price screen's stale emoji, so the two are seen as one (the owner, 2026-11-10). */}
+      <div className="cardpanel-head"><strong>{STALE_EMOJI} Stale cut</strong></div>
       <div className="cardpanel-body stale-cut">
         <p className="hint">
           A Magic card whose exact printing is in the stale cards file, in stock, shows {STALE_EMOJI} on the Price
