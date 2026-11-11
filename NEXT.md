@@ -110,7 +110,7 @@ marks each task done here when it's finished, with the exact file and function o
     no payer kept, so their copied rows leave those cells empty (the payer could be filled from the Changelog; not
     planned). One migration means the three parts reach prod together.
 
-- **Home's Today card opens trends: being designed with the owner, to start once the three-part patch is done**
+- **Home's Today card opens trends: designed with the owner, and given to Records to build 2026-11-10 ("Build the mockup for real, it's great.")**
   (main session, 2026-11-10; the owner: "I'd like to design a feature for clicking on the Today panel on the Home
   page to get a subpanel with a calendar and graphs of the trend of buy numbers over a week, etc. Let's design this
   and mark it as an open to start on once we're done here."). Not built, no decision row. What's there to build
@@ -140,7 +140,10 @@ marks each task done here when it's finished, with the exact file and function o
   with the build. Then the owner: "Add a way to optionally hide Mondays and Wednesdays from the graph (those are days
   we're closed on and create spikes always)": in the mockup as a tick box, Hide closed days (Mon, Wed), ticked as it
   opens; it leaves those days off the graph only, and the totals and the day rows still count them (the main
-  session's reading; whether it starts ticked, and where the closed days are set, unasked). Waiting on the owner's
+  session's reading; whether it starts ticked, and where the closed days are set, unasked). Then: "Build the mockup
+  for real, it's great." Records builds it as the mockup has it, opening on the last 7 days and with a calendar for
+  Custom, as the owner's words have them; the mockup's source is in the main session's scratchpad, outside the repo.
+  Was: waiting on the owner's
   reaction to the mockup; the rest of the proposal is unconfirmed.
 
 - **Four ideas from the owner, 2026-11-10: three designed and in the plan above, the sticker sheet shelved** (main session; nothing
