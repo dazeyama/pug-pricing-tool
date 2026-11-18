@@ -809,9 +809,13 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
       Crystal Commerce matching): an export with a card today's matcher leaves in Needs a choice but whose TCGplayer
       product names one CC product (a promo pack card, a Prerelease Cards promo, a card whose set has another name
       at CC): it's in **Matched** with a **via TCGplayer** tag; Change lists that product first, marked detected.
-      Export, then export the same printing again: it's matched the same way, not "remembered". A card today's
-      matcher already matches shows no tag and the same product as before. A Secret Lair card still goes to Needs
-      a choice. With the catalog empty, every card is as before.
+      Export, then export the same printing again: it's matched the same way, not "remembered". A card the name
+      alone already matches to the same product shows no tag. A Secret Lair card still goes to Needs a choice. With
+      the catalog empty, every card is as before.
+- [ ] **The route first** (decision 594; Export session): an export with a Duskmourn Twitching Doll 417 foil and a
+      Tarkir: Dragonstorm Qarsi Revenant 426 foil: each is Matched to its "- Buy-a-Box Promo" product, tagged via
+      TCGplayer; Avatar: The Last Airbender's Fated Firepower 341 goes to "Fated Firepower - Borderless" (foil:
+      "- Foil - Borderless"). A product staff picked and remembered still wins over the route.
 - [ ] **The route's name rules** (decision 593; Export session; the catalog fetched): an export with an Unfinity
       attraction ("Kiddie Coaster", 2-5-6), a Commander Legends theme-deck card (Avenger of Zendikar 422), an FNM
       promo (Wall of Roots, foil), a foil-only Arena promo (Pillage) and an Ikoria Godzilla card (Void Beckoner 373):

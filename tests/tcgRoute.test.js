@@ -152,6 +152,15 @@ test('4d: "Flavor Name - Card Name" finds CC\'s product of the same two names, n
   assert.equal(route({ finish: 'foil' }, { name }, [plain]).status, 'none');
 });
 
+test('a single product read another way: Fated Firepower (Showcase) is CC\'s Borderless (decision 594)', () => {
+  const ff = ['Fated Firepower - Showcase', 'Fated Firepower - Foil - Showcase', 'Fated Firepower - Borderless',
+    'Fated Firepower - Foil - Borderless'].map((n) => product(n, 'Duskmourn: House of Horror'));
+  assert.equal(route({}, { product_id: 648705, name: 'Fated Firepower (Showcase)' }, ff).product, ff[2]);
+  assert.equal(route({ finish: 'foil' }, { product_id: 648705, name: 'Fated Firepower (Showcase)' }, ff).product, ff[3]);
+  // Another product of the same name isn't caught.
+  assert.equal(route({}, { product_id: 1, name: 'Fated Firepower (Showcase)' }, ff).product, ff[0]);
+});
+
 test('the set table in the code: by group id, the owner-checked rows', () => {
   const rows = Object.values(TCG_SET_TABLE);
   assert.ok(rows.length > 450);

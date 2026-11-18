@@ -60,6 +60,23 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-11-18 (Export session): **The TCGplayer route first** (decision 594; no migration; not pushed; on top of
+  phases 3 and 4, which still wait for the owner's QA on dev).
+  - **What:** `src/lib/ccExport.js` `matchLines`: remembered staff picks, then the route, then today's matcher where
+    the route has no single answer; never the route for a pick that's staff's (a remembered one whose product left
+    the inventory, decision 487; Secret Lair by its set or the route's category, 574). The catalog read
+    (`readTcgProducts`) runs beside the sets and cards, and the route's candidates go in the matcher's own
+    `cc_candidates` call (keys `route:<line id>`), so the Price screen's copies we own pays no extra round trip.
+    `routeGaps` is gone. The special case: `src/lib/tcgOverrides.js`, TCGplayer product 648705 (Fated Firepower
+    (Showcase)) read as "Borderless", applied in `tcgRoute.js` `routeProduct`.
+  - **Picked by me, for the owner to reverse:** the export dialog's **via TCGplayer** tag now shows only where the
+    route's product differs from what the card's name alone gave, or the name gave none (`routeOnly`); a match both
+    agree on has no tag, as before.
+  - **Checked** with `C:/ClaudeProjects/temp/cc-tcgcsv/check-routefirst.mjs`: exported lines 1,488 of 1,495 right
+    (1,478 kept, the 10 fixes; Twitching Doll and Qarsi Revenant now the Buy-a-Box products, as the owner says;
+    Fated Firepower as uploaded); every printing 93.7%, prod's buy lines 98.0%, as before.
+  - **Where to look (dev, the catalog fetched):** TEST.md's "The route first". Untested in the app.
+
 - 2026-11-18 (Export session): **Decision 588's phase 4: the route's name rules** (decision 593; no migration; not
   pushed; built on phase 3, which still waits for the owner's QA on dev).
   - **What:** four rules in `src/lib/tcgRoute.js`, a commit each: 4a `ccRecord`'s bracket words and set codes

@@ -100,7 +100,8 @@ export async function matchLines(lines, onStep, given = {}) {
     return { links, productById: new Map((linkedProducts ?? []).map((p) => [p.product_id, p])) };
   })();
   remembered.catch(() => {});   // awaited below; this only keeps an early failure from going unhandled
-  const [sets, cards] = await Promise.all([loadSets(), given.cards ?? scryfallCards(ids)]);
+  // Each line's TCGplayer product, for the route (decision 594), read beside the sets and the cards.
+  const [sets, cards, tcgById] = await Promise.all([loadSets(), given.cards ?? scryfallCards(ids), readTcgProducts(lines)]);
 
   // Where each line's set lives, and what to ask the database for.
   const prepared = lines.map((line) => {
@@ -114,11 +115,17 @@ export async function matchLines(lines, onStep, given = {}) {
     // The List and Mystery Booster are one at the store: both are searched (ccMatch.js).
     const also = searchCategories(where?.category ?? null, categories).slice(1);
     const baseKeys = baseKeysFor(line, flavor);
-    return { line, set, promo, card, flavor, where, also, baseKeys };
+    const tcg = tcgById.get(Number(line.tcgplayer_id)) ?? null;
+    return { line, set, promo, card, flavor, where, also, baseKeys, tcg };
   });
-  // One want per category searched; their rows come back under the line's key together.
-  const wants = prepared.flatMap((p) => [p.where?.category ?? null, ...p.also]
-    .map((category) => ({ key: p.line.id, category, base_keys: p.baseKeys })));
+  // One want per category searched; their rows come back under the line's key together. The route's own, by
+  // TCGplayer's name in every category, in the same call under "route:" and the line's id.
+  const wants = [
+    ...prepared.flatMap((p) => [p.where?.category ?? null, ...p.also]
+      .map((category) => ({ key: p.line.id, category, base_keys: p.baseKeys }))),
+    ...prepared.filter((p) => p.tcg)
+      .map((p) => ({ key: `route:${p.line.id}`, category: null, base_keys: routeBaseKeys(p.tcg) })),
+  ];
   onStep?.('Finding their Crystal Commerce products…');
   // Page by page: a big export's candidates run past the API's row limit (decision 346).
   const [{ data: candRows, error: candError }, { links, productById }] = await Promise.all([
@@ -135,7 +142,8 @@ export async function matchLines(lines, onStep, given = {}) {
     byKey.get(row.key).push(row);
   }
 
-  const results = prepared.map(({ line, set, promo, card, flavor, where, also }) => {
+  const categoryNamed = (name) => categories.get(fold(name)) ?? null;
+  const results = prepared.map(({ line, set, promo, card, flavor, where, also, tcg }) => {
     const link = links.get(linkKey(line)) ?? null;
     const linkedProduct = link ? productById.get(link.product_id) ?? null : null;
     const candidates = byKey.get(line.id) ?? [];
@@ -156,6 +164,24 @@ export async function matchLines(lines, onStep, given = {}) {
     // whose product left the inventory is theirs to make again, never the app's guess (decision 487). A Secret Lair
     // card is always staff's to pick, until a pick is remembered (decision 574).
     const status = pick.status === 'auto' && (!where || link || alwaysChoose(set, where.category)) ? 'choose' : pick.status;
+    // The TCGplayer route first (decision 594; tcgRoute.js), never for a pick that's staff's to make (487, 574):
+    // its one product wins; with no single answer, today's matcher's stands. A route match is made again at each
+    // export, never remembered (decision 486).
+    if (tcg && !link && !alwaysChoose(set, where?.category ?? null)) {
+      const a = routeProduct({
+        // Its Scryfall card's finishes: a foil-only printing may take a promo's product named without "Foil" (4c).
+        line: { ...line, finishes: card?.finishes ?? null },
+        tcg, candidates: byKey.get(`route:${line.id}`) ?? [], table: TCG_SET_TABLE, categoryNamed,
+      });
+      if (a.status === 'auto' && !alwaysChoose(null, a.product.category)) {
+        // Listed first among its candidates, so Change offers it as the app's own match.
+        const ranked = pick.ranked.some((x) => x.product.product_id === a.product.product_id)
+          ? pick.ranked : [{ product: a.product, score: 1000, reasons: ['tcgplayer'] }, ...pick.ranked];
+        // Where today's matcher had no product or another one, the dialog says the route found it.
+        const routeOnly = !(status === 'auto' && pick.product?.product_id === a.product.product_id);
+        return { ...base, status: 'auto', product: a.product, ranked, expected: pick.expected, via: 'route', routeOnly };
+      }
+    }
     return {
       ...base,
       status,
@@ -166,70 +192,26 @@ export async function matchLines(lines, onStep, given = {}) {
       wasLinked: link && !linkedProduct ? link : null,
     };
   });
-  return { results: await routeGaps(results, categories, onStep), cards };
+  return { results, cards };
 }
 
 /**
- * The TCGplayer route (tcgRoute.js; decision 590's order): for each line today's matcher left as Needs a choice,
- * with no category or with no candidates, its TCGplayer product's CC product, when the route has exactly one.
- * Never for a line staff must pick themselves: a remembered pick whose product left the inventory (decision 487) or a
- * Secret Lair card (decision 574), whichever category the route lands in. A route match is via 'route', made again
- * at each export and never remembered (decision 486: only staff's picks are). A failure to read the catalog or the
- * candidates leaves every line as today's matcher left it.
- * @param {object[]} results  matchLines' results
- * @param {Map<string, string>} categories  folded category → the category exactly
- * @param {(text: string) => void} [onStep]
+ * The lines' TCGplayer products (`tcg_products`, their set's name beside each), by product id, for the route
+ * (decision 594). A failure to read the catalog leaves an empty map: every line is matched as before the route.
+ * @param {object[]} lines
+ * @returns {Promise<Map<number, object>>}
  */
-async function routeGaps(results, categories, onStep) {
-  const gaps = results.filter((r) => r.status !== 'auto' && !r.wasLinked && !alwaysChoose(r.set, r.category)
-    && /^\d+$/.test(String(r.line.tcgplayer_id ?? '')));
-  if (!gaps.length) return results;
+async function readTcgProducts(lines) {
+  const ids = [...new Set(lines.map((l) => String(l.tcgplayer_id ?? '')).filter((s) => /^\d+$/.test(s)).map(Number))];
+  if (!ids.length) return new Map();
   try {
-    onStep?.("Checking the rest against TCGplayer's catalog…");
-    const ids = [...new Set(gaps.map((r) => Number(r.line.tcgplayer_id)))];
-    const { data: tcgRows, error: tcgError } = await inChunks((part) => supabase.from('tcg_products')
+    const { data, error } = await inChunks((part) => supabase.from('tcg_products')
       .select('product_id, group_id, name, number, tcg_groups(name)').in('product_id', part), ids);
-    fail(tcgError, "Couldn't read TCGplayer's catalog");
-    const tcgById = new Map((tcgRows ?? []).map((t) => [t.product_id, { ...t, group_name: t.tcg_groups?.name ?? null }]));
-    const routed = gaps.filter((r) => tcgById.has(Number(r.line.tcgplayer_id)));
-    if (!routed.length) return results;
-    // Their candidates by TCGplayer's own name, in every category: the set table says which one is theirs.
-    const wants = routed.map((r) => ({
-      key: r.line.id, category: null, base_keys: routeBaseKeys(tcgById.get(Number(r.line.tcgplayer_id))),
-    }));
-    const { data: candRows, error: candError } = await allPages((from, to) => supabase
-      .rpc('cc_candidates', { p_wants: wants })
-      .order('key').order('category').order('product_id')
-      .range(from, to));
-    fail(candError, "Couldn't read the inventory's products");
-    const byKey = new Map();
-    for (const row of candRows ?? []) {
-      if (!byKey.has(row.key)) byKey.set(row.key, []);
-      byKey.get(row.key).push(row);
-    }
-    const categoryNamed = (name) => categories.get(fold(name)) ?? null;
-    const answers = new Map();
-    for (const r of routed) {
-      const answer = routeProduct({
-        // Its Scryfall card's finishes: a foil-only printing may take a promo's product named without "Foil" (4c).
-        line: { ...r.line, finishes: r.card?.finishes ?? null },
-        tcg: tcgById.get(Number(r.line.tcgplayer_id)), candidates: byKey.get(r.line.id) ?? [],
-        table: TCG_SET_TABLE, categoryNamed,
-      });
-      if (answer.status === 'auto' && !alwaysChoose(null, answer.product.category)) answers.set(r.line.id, answer);
-    }
-    if (!answers.size) return results;
-    return results.map((r) => {
-      const a = answers.get(r.line.id);
-      if (!a) return r;
-      // Listed first among its candidates, so Change offers it as the app's own match.
-      const ranked = r.ranked.some((x) => x.product.product_id === a.product.product_id)
-        ? r.ranked : [{ product: a.product, score: 1000, reasons: ['tcgplayer'] }, ...r.ranked];
-      return { ...r, status: 'auto', product: a.product, ranked, via: 'route' };
-    });
+    fail(error, "Couldn't read TCGplayer's catalog");
+    return new Map((data ?? []).map((t) => [t.product_id, { ...t, group_name: t.tcg_groups?.name ?? null }]));
   } catch (e) {
-    console.warn("The TCGplayer route didn't run: the lines stay as today's matcher left them", e);
-    return results;
+    console.warn("TCGplayer's catalog couldn't be read: the cards are matched as before the route", e);
+    return new Map();
   }
 }
 

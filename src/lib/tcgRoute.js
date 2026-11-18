@@ -1,15 +1,17 @@
-// The TCGplayer route to a Crystal Commerce product (decision 588, phase 3; decision 590's order: it answers only
-// where today's matcher, ccMatch.js, leaves a line as Needs a choice, with no category, or with no candidates).
+// The TCGplayer route to a Crystal Commerce product (decision 588, phase 3; since decision 594 it goes first, after
+// a remembered staff pick, with today's matcher, ccMatch.js, answering where it has no single answer).
 // A line's TCGplayer id (Scryfall's, buyLine.js) → TCGplayer's own product (`tcg_products`: its name, number and
 // set) → the CC category the set table gives that set (tcgSetTable.js, owner-checked, decision 591) → the CC
 // products of TCGplayer's name in that category, kept where finish, number and tags agree. One product left is the
-// answer; anything else is no answer, and the line stays as today's matcher left it.
+// answer; anything else is no answer, and today's matcher answers the line. The name rules of phase 4 are
+// decision 593's; a single product read another way, tcgOverrides.js.
 // The same steps as the measuring script (C:/ClaudeProjects/temp/cc-tcgcsv/measure.mjs `route`), with the set
 // table in place of its vote and decision 590's two fixes: a numbered CC product whose tags match isn't dropped
 // when TCGplayer's name has no number; and a "lone" pick (one product left after the tags disagreed) is no answer.
 // Pure: the catalog product, the set table and the candidates come in, so the measuring scripts run this code too.
 
 import { nameKey } from './normalize.js';
+import { TCG_PRODUCT_OVERRIDES } from './tcgOverrides.js';
 
 /** Folded for comparing words: lower case, accents off, letters and digits only. */
 const fold = (s) => String(s ?? '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
@@ -179,6 +181,9 @@ export function routeProduct({ line, tcg, candidates, table, categoryNamed }) {
   if (!place.carried) return { status: 'none', why: place.category === null && table[tcg.group_id] ? 'set not carried' : 'set not placed' };
   const finish = line.finish;
   const t = parseTp(tcg.name);
+  // A single product the owner reads another way (tcgOverrides.js, decision 594): its tags in place of TCGplayer's.
+  const override = TCG_PRODUCT_OVERRIDES[tcg.product_id];
+  if (override) t.tags = [...override.tags];
   const front = (r) => String(r.product.base_key ?? '').split(' // ')[0];
   let all = (candidates ?? []).map(ccRecord).filter((r) => front(r) === t.base);
   // Phase 4d: nothing of TCGplayer's whole name, which is "Flavor Name - Card Name": CC's products of the flavor name

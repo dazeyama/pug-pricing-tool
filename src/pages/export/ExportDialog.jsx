@@ -663,9 +663,13 @@ export default function ExportDialog({
                         {s.product.product_name}
                         <span className="xd-cat">{s.product.category}</span>
                         {s.by === 'link' && <span className="xd-tag" title="Remembered from before">remembered</span>}
-                        {/* Found through TCGplayer's catalog (decision 590), not remembered: matched again each export. */}
-                        {s.by === 'route' && (
-                          <span className="xd-tag" title="Found through TCGplayer's catalog, by the card's TCGplayer product">
+                        {/* The route goes first (decision 594), so most matches are its: the tag only where it found
+                            a product the card's name alone gave no single answer for, or another one. */}
+                        {s.by === 'route' && r.routeOnly && (
+                          <span
+                            className="xd-tag"
+                            title="Found through TCGplayer's catalog, by the card's TCGplayer product: the card's name alone didn't settle it"
+                          >
                             via TCGplayer
                           </span>
                         )}
