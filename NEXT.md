@@ -23,7 +23,9 @@ marks each task done here when it's finished, with the exact file and function o
   **Phase 0 done** (main session, 2026-11-18; results in decision 588): on dev's real buy lines, 96.2% today →
   98.6% with the route first. Scripts: `phase0.mjs` (the buy lines, `buy-lines.json` pulled from dev) and
   `measure.mjs` (all printings, now with the List / Mystery Booster shelf rule) in `C:/ClaudeProjects/temp/cc-tcgcsv/`.
-  Next here: phase 2's draft set table.
+  Next here: phase 2's draft set table. **Phase 3's order settled** (decision 590): today's matcher first, the
+  route only where it leaves Needs a choice, no category or none; measured on prod's data, read-only (`*-prod.mjs`,
+  `prod/`), 96.6% → 98.0% on prod's real buy lines, and prod's 1,499 exported lines are the check each phase runs.
 
 - **Dev holds 55 simulated walk-in buys, and the owner is keeping them** ("I'm going to keep them.", 2026-11-11;
   main session; made for testing the Buys report on the owner's ask: "Can
