@@ -61,9 +61,15 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-11-18 (main session): **Third push of the day, no bump, no review** (the owner: "Push to live. No
+  review."). What went out: decision 598 (e792791, its Done entry 7fcf67a, below) and the tcgcatalog note
+  (0b922bc). No migrations (prod and dev both 0001–0017), no Edge Function changes. Lint, 607 tests and the build
+  clean before the push. Left open from 598: whether NM cards with a manual or Change price should also go in at
+  today's NM (asked, not answered).
+
 - 2026-11-18 (Export session): **Decision 598: the Mass Create file sets NM at today's Near Mint price, no reverse
   math** (the owner: "always fetch and use accurate current NM prices for all conditions in place of doing the
-  reverse math"; no migration; not pushed). A product with only worse-condition cards in the file gets its
+  reverse math"; no migration; pushed with the third 2026-11-18 push). A product with only worse-condition cards in the file gets its
   0-quantity NM row at the printing's NM price from the export's own fresh fetch, rounded up, at least the Export
   sell floor, where it was that card's Sell Price ÷ its Master Fallback Percentage. **Quota: nothing extra**:
   JustTCG gives every condition in the one lookup per card the export already makes (100 cards a request).
