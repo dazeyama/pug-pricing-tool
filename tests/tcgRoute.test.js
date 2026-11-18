@@ -108,7 +108,8 @@ test('4a: CC\'s bracket words are tags; set codes count only when both names car
 
 test('4b: a plain TCGplayer name takes CC\'s one product whose extra words are all promo words, never a treatment', () => {
   const fnm = [product('Wall of Roots - Foil FNM 2008', 'Duskmourn: House of Horror')];
-  assert.equal(route({ finish: 'foil' }, { name: 'Wall of Roots' }, fnm).product, fnm[0]);
+  const fnmTable = { ...TABLE, 70: ['FNM Promos', 'Duskmourn: House of Horror', null, null] };
+  assert.equal(routeProduct({ line: { finish: 'foil' }, tcg: { group_id: 70, name: 'Wall of Roots' }, candidates: fnm, table: fnmTable, categoryNamed }).product, fnm[0]);
   const deck = [product('Avenger of Zendikar - Theme Deck Exclusive', 'Duskmourn: House of Horror')];
   assert.equal(route({}, { name: 'Avenger of Zendikar' }, deck).product, deck[0]);
   // Two promo products: no answer.
@@ -117,6 +118,27 @@ test('4b: a plain TCGplayer name takes CC\'s one product whose extra words are a
   // A treatment is never a promo word.
   const manga = [product('Fear of Missing Out - Borderless Manga', 'Duskmourn: House of Horror')];
   assert.equal(route({}, { name: 'Fear of Missing Out' }, manga).status, 'none');
+});
+
+test('4c: a foil-only printing takes a promo\'s product named without "Foil", in a promo category only', () => {
+  const promoTable = { ...TABLE, 50: ['Arena Promos', 'Unique & Misc. Promos', null, null] };
+  const r = (line, tcg, c) => routeProduct({ line, tcg: { group_id: 50, group_name: 'Arena Promos', ...tcg }, candidates: c, table: promoTable, categoryNamed });
+  const pillage = [product('Pillage - Arena 2000', 'Unique & Misc. Promos')];
+  assert.equal(r({ finish: 'foil', finishes: ['foil'] }, { name: 'Pillage' }, pillage).product, pillage[0]);
+  // Not when the printing comes in non-foil too, nor without its finishes.
+  assert.equal(r({ finish: 'foil', finishes: ['nonfoil', 'foil'] }, { name: 'Pillage' }, pillage).status, 'none');
+  assert.equal(r({ finish: 'foil' }, { name: 'Pillage' }, pillage).status, 'none');
+  // Not in a set's own category.
+  const plain = [product('Overlord of the Hauntwoods', 'Duskmourn: House of Horror')];
+  assert.equal(route({ finish: 'foil', finishes: ['foil'] }, { name: 'Overlord of the Hauntwoods' }, plain).status, 'none');
+});
+
+test('a promo naming another program isn\'t the card\'s (4b, 4c)', () => {
+  const t = { ...TABLE, 60: ['Champs Promos', 'Unique & Misc. Promos', null, null], 61: ['Grand Prix Promos', 'Unique & Misc. Promos', null, null] };
+  const gp = [product('Mutavault - Grand Prix Promo', 'Unique & Misc. Promos')];
+  const r = (group, name) => routeProduct({ line: { finish: 'foil', finishes: ['foil'] }, tcg: { group_id: group, group_name: name, name: 'Mutavault' }, candidates: gp, table: t, categoryNamed });
+  assert.equal(r(60, 'Champs Promos').status, 'none');
+  assert.equal(r(61, 'Grand Prix Promos').product, gp[0]);
 });
 
 test('the set table in the code: by group id, the owner-checked rows', () => {

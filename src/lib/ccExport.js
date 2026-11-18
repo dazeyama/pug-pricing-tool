@@ -211,7 +211,9 @@ async function routeGaps(results, categories, onStep) {
     const answers = new Map();
     for (const r of routed) {
       const answer = routeProduct({
-        line: r.line, tcg: tcgById.get(Number(r.line.tcgplayer_id)), candidates: byKey.get(r.line.id) ?? [],
+        // Its Scryfall card's finishes: a foil-only printing may take a promo's product named without "Foil" (4c).
+        line: { ...r.line, finishes: r.card?.finishes ?? null },
+        tcg: tcgById.get(Number(r.line.tcgplayer_id)), candidates: byKey.get(r.line.id) ?? [],
         table: TCG_SET_TABLE, categoryNamed,
       });
       if (answer.status === 'auto' && !alwaysChoose(null, answer.product.category)) answers.set(r.line.id, answer);

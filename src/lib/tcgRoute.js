@@ -97,6 +97,34 @@ const PROMO_WORDS = new Set(`promo promos promotional exclusive deck decks theme
   sdcc convention edition holiday gift kit pack card season worlds world grand prix pro tour qualifier`
   .split(/\s+/).filter(Boolean));
 const isPromoWord = (w) => PROMO_WORDS.has(w) || /^(19|20)\d\d$/.test(w);
+// A promo's words that name the program it came from, and the TCGplayer sets of that program: a CC product naming
+// one fits only a card from those sets ("Mutavault - Grand Prix Promo" isn't TCGplayer's Champs Promos Mutavault).
+const PROGRAMS = [
+  [/\bgrand prix\b/, /grand prix/i],
+  [/\bfnm\b|\bfriday night\b/, /fnm/i],
+  [/\barena\b/, /arena/i],
+  [/\bjudge\b|\bdci\b/, /judge/i],
+  [/\bpro tour\b/, /pro tour/i],
+  [/\bchamps\b/, /champs/i],
+  [/\bgame day\b|\bstore championships?\b/, /game day|store championship/i],
+  [/\bprerelease\b|\blaunch\b|\brelease\b/, /prerelease|launch|release|hero/i],
+  [/\bplayer rewards\b/, /player rewards/i],
+  [/\bwpn\b|\bgateway\b/, /wpn|gateway/i],
+  [/\bopen house\b/, /open house/i],
+  [/\bworlds?\b|\bworld championship\b/, /world/i],
+];
+/** Do a promo product's words fit the TCGplayer set the card is from? */
+const programFits = (words, groupName) => {
+  const text = words.join(' ');
+  return PROGRAMS.every(([said, sets]) => !said.test(text) || sets.test(String(groupName ?? '')));
+};
+
+/** Phase 4c: a printing Scryfall makes in foil only (the line carries its Scryfall card's finishes). */
+const foilOnly = (line) => Array.isArray(line.finishes) && line.finishes.length > 0
+  && line.finishes.every((f) => f === 'foil');
+/** Phase 4c: a CC category of promos, where a foil-only card's product often lacks the foil word. */
+const isPromoCategory = (c) => /promo|arena|judge|reward|championship|game day|fnm/i.test(String(c ?? ''))
+  && !/^Promo Pack:/i.test(String(c));
 
 /** Set codes tell printings apart only when both names carry one: then they must be the same (phase 4a). */
 const codesOk = (a, b) => !a.length || !b.length || sameTags(a, b);
@@ -171,6 +199,16 @@ export function routeProduct({ line, tcg, candidates, table, categoryNamed }) {
       cat = SHELF[cat];
     }
   }
+  // Phase 4c: CC names many a foil-only promo without "Foil" ("Pillage - Arena 2000", "- Game Day Promo"). A
+  // printing Scryfall makes in foil only, with no foil product of that name in a promo category, takes the
+  // products there without the foil word. Not a promo pack's category: its non-foil and foil are two products.
+  if (!recs.length && finish === 'foil' && foilOnly(line) && isPromoCategory(place.category)) {
+    const plain = all.filter((r) => r.product.category === place.category && r.foil == null);
+    if (plain.length) {
+      recs = plain;
+      cat = place.category;
+    }
+  }
   if (!recs.length) return { status: 'none', why: 'no product of that name and finish', category: cat };
   const want = (r) => codesOk(r.codes, t.codes)
     && (sameTags(r.tags, t.tags) || (place.extra && sameTags(r.tags, [...t.tags, place.extra])));
@@ -195,7 +233,9 @@ export function routeProduct({ line, tcg, candidates, table, categoryNamed }) {
   // FNM 2008", "- Theme Deck Exclusive", "- Store Championship Promo"). A treatment word is never one (the lone-pick
   // mistake of decision 590).
   if (!exact.length && !t.tags.length) {
-    const promo = recs.filter((r) => r.words.length && r.words.every(isPromoWord) && codesOk(r.codes, t.codes));
+    const group = tcg.group_name ?? table[tcg.group_id]?.[0] ?? null;
+    const promo = recs.filter((r) => r.words.length && r.words.every(isPromoWord) && codesOk(r.codes, t.codes)
+      && programFits(r.words, group));
     if (promo.length === 1) return { status: 'auto', product: promo[0].product, category: cat, rule: '4b' };
   }
   // Several alike, or none whose tags agree (a "lone" product left is often another printing: decision 590's
