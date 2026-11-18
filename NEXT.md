@@ -6,6 +6,12 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
+- **Crystal Commerce matching through TCGplayer ids, phases 0 to 5 (decision 588; main session, 2026-11-18).**
+  The owner: "Yes, as written". Phase 0 (measure on dev's buy lines) and phase 2's draft set table: the main
+  session, in `C:/ClaudeProjects/temp/cc-tcgcsv/`. Phase 1 (migration 0017's TCGplayer catalog table, the Edge
+  Function that fills it from tcgcsv at each master-file upload, the Settings → CC matching button): the Export and
+  printouts session. Phases 3 to 5 follow, one at a time, each measured with the same sweep before the next.
+
 - **Dev holds 55 simulated walk-in buys, and the owner is keeping them** ("I'm going to keep them.", 2026-11-11;
   main session; made for testing the Buys report on the owner's ask: "Can
   you create simulated data for the last 14 days based on the read only probe of prod for the mockup and create
