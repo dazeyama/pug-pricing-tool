@@ -266,7 +266,7 @@ export const TCG_SET_TABLE = {
   2598: ["Unsanctioned", "Unsanctioned", null, null],
   2599: ["Promo Pack: Theros Beyond Death", "Promo Pack: Theros Beyond Death", "promopack", null],
   2603: ["Ikoria: Lair of Behemoths", "Ikoria: Lair of Behemoths", null, null],
-  2632: ["Secret Lair Series", "Pre-Release Promos", "prereleasepromo", null],
+  2632: ["Secret Lair Series", "Secret Lair Drop Series", null, null],
   2633: ["Signature Spellbook: Chandra", "Signature Spellbook: Chandra", null, null],
   2634: ["Commander 2020", "Commander 2020", null, null],
   2642: ["Summer Magic", null, null, null],
