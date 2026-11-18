@@ -29,8 +29,9 @@ marks each task done here when it's finished, with the exact file and function o
   Borderless, and Twitching Doll and Qarsi Revenant, whose Scryfall TCGplayer id is TCGplayer's Buy-a-Box product),
   so by decision 590's rule the order stays matcher-first until those 3 are fixed. The owner switched anyway
   (decision 594: the two Buy-a-Box answers are right, Fated Firepower a special case), given to the Export session.
-  **Phase 5 closed** (decision 595): today's matcher guesses nothing for the not-carried sets. Left: the Export
-  session's decision 594 change and its check, the owner's QA on dev, then a push. The draft was (main session, 2026-11-18): `C:/ClaudeProjects/temp/cc-tcgcsv/prod/set-table-draft.md`
+  **Phase 5 closed** (decision 595): today's matcher guesses nothing for the not-carried sets. Decision 594 built and
+  checked. **Pushed as v1.0.7-matching (2026-11-18).** Left: the owner's QA on dev (refresh dev's catalog first), and
+  the release review's follow-ups in the push's Done entry. The draft was (main session, 2026-11-18): `C:/ClaudeProjects/temp/cc-tcgcsv/prod/set-table-draft.md`
   (18 to confirm, 58 not carried, 69 sure; made by `draft-sets.mjs` then `draft-final.mjs`, its picks in `MINE`).
   When the owner's answers are in, it becomes the table in the code (decision 588) for the Export session to wire
   in with phase 3. **Phase 3's order settled** (decision 590): today's matcher first, the
@@ -59,6 +60,18 @@ marks each task done here when it's finished, with the exact file and function o
   `SHEET`, `tests/stickerPdf.test.js` with it, and a decision row.
 
 ## Done
+
+- 2026-11-18: **Pushed as v1.0.7-matching** (main session; the owner: "push to live as v1.0.7-matching", after the
+  QA table): Crystal Commerce matching through TCGplayer ids (decisions 588–595: the TCGplayer catalog with
+  migration 0017 and the `tcgcatalog` function, both already on prod; the route, its name rules, the route first,
+  the Fated Firepower special case) and the printouts' NM-first order (596 Magic, 597 Pokémon). Untested in the
+  app: none of it was tried on dev before the push; the owner's QA is on dev (Settings → Crystal Commerce matching →
+  Refresh TCGplayer catalog there first), never by test exports on prod (decision 380). Prod's catalog is empty
+  until the next master-file upload or a press of Refresh there, and matching on the live site is as before until
+  it fills. The release review's findings that didn't stop the push are in the main session's report (the Help
+  sections on Crystal Commerce matching are now out of date; TEST.md:899 and `tcgCatalog.js:8` still say nothing
+  reads the catalog; the copies-we-own count waits on one more read; a 4c match can show in Change under "a
+  different finish or number"; "Secret Lair Series" maps to Pre-Release Promos).
 
 - 2026-11-18 (Export session): **Print PKM?: NM, then LP, MP, HP, DMG too** (decision 597; the owner: "yes, fix
   print pkm the same way"; no migration; not pushed). `src/lib/auditPrint.js` `byCard`: the condition first, then
