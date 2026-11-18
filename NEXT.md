@@ -6,15 +6,6 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
-- **Dev is ahead of prod: migration 0017 and the `tcgcatalog` Edge Function are on dev only** (Export session,
-  2026-11-18; decision 589). Both wait for the owner's word, asked through the main session, in one sitting
-  (decision 381): `npx supabase db push --linked --project-ref zvxquzcfffmxwizonxuo`, the structure-only compare
-  against `C:/Users/Daisy/AppData/Local/Temp/claude/8622948e51b61e0c/357e79bb-00c9-4c02-b4b4-ca9194ddb740/scratchpad/dev-run-0017.json`
-  (or a fresh dev run), then `npx supabase functions deploy tcgcatalog --project-ref zvxquzcfffmxwizonxuo --use-api
-  --no-verify-jwt`. The function must be on prod before the site goes out with this code, or each master-file
-  upload on the live site ends with the "catalog couldn't be refreshed" warning (the release skill deploys only
-  `prices` and `secrets`). `_shared/supabase.ts` changed (its header comment only): no redeploy of those two needed.
-
 - **Crystal Commerce matching through TCGplayer ids, phases 0 to 5 (decision 588; main session, 2026-11-18).**
   The owner: "Yes, as written". Phase 0 (measure on dev's buy lines) and phase 2's draft set table: the main
   session, in `C:/ClaudeProjects/temp/cc-tcgcsv/`. Phase 1 (migration 0017's TCGplayer catalog table, the Edge
@@ -53,8 +44,17 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-11-18, about 1 am, the store closed (Export session; the owner, through the main session: "Yes, push 0017
+  and tcgcatalog to prod now"): **migration 0017 and the `tcgcatalog` Edge Function on prod.** `db push` to prod
+  applied 0017 alone; the structure-only compare against dev's run: every fingerprint the same (134 functions, 25
+  tables); `tcgcatalog` deployed to prod (version 1, ACTIVE, JWT check off like `prices` and `secrets`, which weren't
+  redeployed: `_shared/supabase.ts` changed only its header comment). Prod and dev both have 0001–0017; the next is
+  0018. The function hasn't run on prod: the owner's first master-file upload or Settings → Crystal Commerce
+  matching → Refresh TCGplayer catalog fills prod's catalog (a few minutes the first time). The site code that calls
+  it isn't pushed yet; the release skill's function list still names only `prices` and `secrets` (main session's).
+
 - 2026-11-18 (Export session): **Decision 588's phase 1: TCGplayer's Magic catalog in the app** (decision 589;
-  migration 0017 on dev only, see Open; the `tcgcatalog` Edge Function deployed to dev only).
+  migration 0017 and the `tcgcatalog` Edge Function, on dev and, the same day, prod: the entry above).
   - **What:** `supabase/migrations/0017_tcgplayer_catalog.sql` (`tcg_groups`, `tcg_products`, `tcg_group_load`,
     `tcg_catalog_finish`); `supabase/functions/tcgcatalog/index.ts` (+ `config.toml`); `src/lib/tcgCatalog.js`
     (`refreshTcgCatalog`, `tcgCatalogStatus`, `catalogSummary`); `src/pages/settings/TcgCatalogRow.jsx`.
