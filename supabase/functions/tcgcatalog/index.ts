@@ -99,9 +99,16 @@ Deno.serve(async (req) => {
       .filter((g: Group) => Number.isInteger(g?.groupId) && typeof g?.name === 'string' && g.name.trim());
     if (!groups.length) throw new SourceError("tcgcsv.com's list of Magic sets came back empty");
 
-    const { data: stored, error: readError } = await db.from('tcg_groups').select('group_id, modified_on, fetched_at');
-    if (readError) throw readError;
-    const known = new Map((stored ?? []).map((r) => [r.group_id as number, r]));
+    // Page by page: the API stops at 1,000 rows, and a group past them would be fetched again on every call.
+    const stored: { group_id: number; modified_on: string | null; fetched_at: string }[] = [];
+    for (let from = 0; ; from += 1000) {
+      const { data, error: readError } = await db.from('tcg_groups').select('group_id, modified_on, fetched_at')
+        .order('group_id').range(from, from + 999);
+      if (readError) throw readError;
+      stored.push(...(data ?? []));
+      if (!data || data.length < 1000) break;
+    }
+    const known = new Map(stored.map((r) => [r.group_id, r]));
     const stale = groups.filter((g) => !skip.has(g.groupId) && isStale(g, known.get(g.groupId), started));
 
     let loaded = 0;

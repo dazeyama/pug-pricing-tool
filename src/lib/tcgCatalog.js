@@ -1,5 +1,6 @@
 import { supabase } from './supabase.js';
 import { callFunction } from './functions.js';
+import { allPages } from './inChunks.js';
 
 // TCGplayer's Magic catalog in the app (decision 588, phase 1; decision 589): the `tcgcatalog` Edge Function fetches it from
 // tcgcsv.com into `tcg_groups` and `tcg_products` (migration 0017), a batch of sets a call, and this calls it until
@@ -80,9 +81,10 @@ export function catalogSummary(rows) {
   return { groups: rows.length, products, checkedAt };
 }
 
-/** The stored catalog's summary (catalogSummary), read from `tcg_groups` (459 rows, under the API's 1,000). */
+/** The stored catalog's summary (catalogSummary), read from `tcg_groups` page by page (459 rows today; decision 346). */
 export async function tcgCatalogStatus() {
-  const { data, error } = await supabase.from('tcg_groups').select('group_id, products, checked_at');
+  const { data, error } = await allPages((from, to) => supabase.from('tcg_groups')
+    .select('group_id, products, checked_at').order('group_id').range(from, to));
   if (error) throw new Error(error.message);   // Settings says it "couldn't be read", with this
   return catalogSummary(data);
 }
