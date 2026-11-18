@@ -61,6 +61,29 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-11-18 (Export session): **Decision 598: the Mass Create file sets NM at today's Near Mint price, no reverse
+  math** (the owner: "always fetch and use accurate current NM prices for all conditions in place of doing the
+  reverse math"; no migration; not pushed). A product with only worse-condition cards in the file gets its
+  0-quantity NM row at the printing's NM price from the export's own fresh fetch, rounded up, at least the Export
+  sell floor, where it was that card's Sell Price ÷ its Master Fallback Percentage. **Quota: nothing extra**:
+  JustTCG gives every condition in the one lookup per card the export already makes (100 cards a request).
+  - Files: `src/lib/sellPrice.js` `sellPriceFor` (basis.nearMint, stamped with the card), `src/lib/massCreate.js`
+    `nearMintPrices` / `massCreateRows` (`nearMintPrice` and the `pct` argument gone), `ccExport.js`
+    `downloadMassCreate`, `ExportDialog.jsx` (gives its NM prices to every download, since `export_lines`' answer
+    has no basis; the "sets NM" hover), the `pct` argument dropped from DayPage's and CollectionPage's
+    file-again calls; `tests/export.test.js`, `tests/importMatch.test.js`; TEST.md's Mass Create case.
+  - My choices (work mode, reversible, in my area): **NM cards in the file still price NM by their own Sell
+    Price**, which is today's NM anyway unless it's a manual price above it or one typed in Change. **A price
+    typed in Change on a worse card** is now that card's Sell Price only: it no longer sets NM. **No NM price
+    today**: no NM row, so CC's own NM stands. **Download the same file again** on an export from before
+    today has no stamp, so its file again has no NM row for those products; the old math isn't kept for them.
+    The NM price follows the buy's Use Fallback / Use Cardmarket where it applies, as the Price screen's does.
+  - Where to look (dev): export a day with a Magic card in MP only, for example. The review row shows **sets NM
+    $X**, and $X should equal the Price screen's NM for that printing, rounded up. In the CSV, that product's
+    `0,…,Near Mint,…,$X` row comes first and the MP row's Sell Price is blank. A product with an NM copy: no
+    extra row. Then the day's ⋯ → download the same file again: the same NM row.
+  - Untested in the app: all of it. The tests cover the NM price on the ladder (JustTCG, fallback, floor, none),
+    the file's rows, and the NM prices handed over apart from the lines.
 - 2026-11-18 (Export session): **The v1.0.7 release review's follow-ups** (the owner: "Yes, fix them"; no
   migration; pushed with the second 2026-11-18 push). The `tcgcatalog` function's paging is on dev and prod (the
   main session deployed version 2 to prod before that push, a91b949).
