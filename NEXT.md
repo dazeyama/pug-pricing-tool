@@ -84,6 +84,11 @@ marks each task done here when it's finished, with the exact file and function o
   "Pillage - Arena 2000" first, marked detected; a Secret Lair: Ultimate Edition Pathway goes to Needs a choice;
   the Price screen's copies we own as quick as before on a card seen twice. Untested in the app.
 
+- 2026-11-18: **Pushed without a bump, no review** (main session; the owner: "Deploy to prod and push to live, no
+  bump, no review."): the v1.0.7 release review's five follow-ups (49fab2a, 55a3ace, 02009e5, fc23cf4, Export
+  session), and `tcgcatalog` deployed to prod first (version 2: its stored-sets read page by page). No migrations
+  (prod and dev both 0001–0017). Untested in the app, like the rest of the matching.
+
 - 2026-11-18: **Pushed as v1.0.7-matching** (main session; the owner: "push to live as v1.0.7-matching", after the
   QA table): Crystal Commerce matching through TCGplayer ids (decisions 588–595: the TCGplayer catalog with
   migration 0017 and the `tcgcatalog` function, both already on prod; the route, its name rules, the route first,
