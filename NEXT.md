@@ -22,7 +22,12 @@ marks each task done here when it's finished, with the exact file and function o
   first: it has never run on dev). **Phase 4 given to the Export session** (owner: "Start phase 4 too",
   2026-11-18), sized on today's gaps (`gaps4.mjs`, `prod/gaps4.json`): 4a CC's bracket words as tags (~1,000),
   4b promo words (~950), 4c promo finish (~370), 4d "Flavor Name - Card Name" (~70+); each committed alone and
-  checked with `check-phase3.mjs`. Then the main session re-runs the route-first order (decision 590). The draft was (main session, 2026-11-18): `C:/ClaudeProjects/temp/cc-tcgcsv/prod/set-table-draft.md`
+  checked with `check-phase3.mjs`. **Phase 4 done** (decision 593) **and checked** by the main session
+  (2026-11-18): every printing 92.4% → 93.7% matched by itself, prod's buy lines 97.3% → 98.0%, the exported lines
+  unchanged. **Route-first re-run** (`check-routefirst.mjs`, decision 590's revisit): on the 1,495 exported lines it
+  gets 1,487 right against today's order's 1,480 (fixes 10, breaks 3: Fated Firepower's Showcase for CC's
+  Borderless, and Twitching Doll and Qarsi Revenant, whose Scryfall TCGplayer id is TCGplayer's Buy-a-Box product),
+  so by decision 590's rule the order stays matcher-first until those 3 are fixed. Waits for the owner. The draft was (main session, 2026-11-18): `C:/ClaudeProjects/temp/cc-tcgcsv/prod/set-table-draft.md`
   (18 to confirm, 58 not carried, 69 sure; made by `draft-sets.mjs` then `draft-final.mjs`, its picks in `MINE`).
   When the owner's answers are in, it becomes the table in the code (decision 588) for the Export session to wire
   in with phase 3. **Phase 3's order settled** (decision 590): today's matcher first, the
