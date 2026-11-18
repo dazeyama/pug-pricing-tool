@@ -52,6 +52,24 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-11-18 (Export session): **Decision 588's phase 4: the route's name rules** (decision 593; no migration; not
+  pushed; built on phase 3, which still waits for the owner's QA on dev).
+  - **What:** four rules in `src/lib/tcgRoute.js`, a commit each: 4a `ccRecord`'s bracket words and set codes
+    (`codesOk`); 4b the promo-word answer (`PROMO_WORDS`, `programFits`); 4c the foil-only promo (`foilOnly`,
+    `isPromoCategory`; `src/lib/ccExport.js` `routeGaps` now passes the card's finishes); 4d `parseTp`'s
+    `flavor`. Tests in `tests/tcgRoute.test.js`.
+  - **Numbers** (prod's copies, today's matcher first): every printing 92.4% → 93.0% → 93.5% → 93.6% → 93.7%
+    matched by itself; prod's buy lines 97.3% → 98.0%; the 1,495 exported lines 1,480 right with nothing changed
+    after each rule (my copy of the main session's check, which passes the card's finishes: 4c needs them).
+  - **Doubtful, from looking at about 25 new answers a rule:** 4b/4c's "only product of that name" can still be
+    another promo of the same program in a catch-all category; the program check (added with 4c) stopped the one
+    seen (Champs Promos Mutavault → "Grand Prix Promo") and cost 3 answers, two probably right (Crucible of
+    Worlds' World Championship promo, Serra Angel's WPN 2024, both in TCGplayer's catch-all set). 4d also reads
+    "Commodore Guff (Display Commander) - Thick Stock" and "Island - Full Art (2)" as flavor names: their answers
+    looked right ("- Thick Stock - Foil Etched", "- Full Art - Foil DCI Judge Promo"), but the Judge lands'
+    numbers (2), (3), (5) aren't checked when CC's product has none.
+  - **Where to look (dev, the catalog fetched):** the TEST.md case "The route's name rules". Untested in the app.
+
 - 2026-11-18 (Export session): **Decision 588's phase 3: the TCGplayer route fills today's matcher's gaps**
   (decision 592; no migration; not pushed). **Passed the main session's check** (2026-11-18,
   `C:/ClaudeProjects/temp/cc-tcgcsv/check-phase3.mjs`, prod's copies): on the 1,495 exported lines nothing changed

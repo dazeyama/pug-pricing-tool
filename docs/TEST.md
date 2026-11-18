@@ -812,6 +812,12 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
       Export, then export the same printing again: it's matched the same way, not "remembered". A card today's
       matcher already matches shows no tag and the same product as before. A Secret Lair card still goes to Needs
       a choice. With the catalog empty, every card is as before.
+- [ ] **The route's name rules** (decision 593; Export session; the catalog fetched): an export with an Unfinity
+      attraction ("Kiddie Coaster", 2-5-6), a Commander Legends theme-deck card (Avenger of Zendikar 422), an FNM
+      promo (Wall of Roots, foil), a foil-only Arena promo (Pillage) and an Ikoria Godzilla card (Void Beckoner 373):
+      each is Matched, tagged via TCGplayer, to "Kiddie Coaster (2-5-6)", "- Theme Deck Exclusive", "- Foil FNM
+      2008", "Pillage - Arena 2000" and "Spacegodzilla, Death Corona - Void Beckoner"; the plain Ikoria Void
+      Beckoner still matches the plain product.
 - [ ] **A collection's number of the day** (decision 511): export two Paid/Ours collections (or a collection and a
       project) the same day: the Confirm step reads Custom SKU **102426-#** (today's date as every SKU writes it, no
       leading zero on the month), "# the day's next collection number"; the files' Custom SKU column reads `102426-1`
