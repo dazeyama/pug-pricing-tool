@@ -6,7 +6,7 @@ import {
 } from '../src/lib/importMatch.js';
 import { fold } from '../src/lib/ccMatch.js';
 import Papa from 'papaparse';
-import { massCreateCsv, massCreateRows } from '../src/lib/massCreate.js';
+import { massCreateCsv, massCreateRows, productKey } from '../src/lib/massCreate.js';
 
 const row = (productName, category, over = {}) => readRows([{
   'Add Qty': '1', 'Product Name': productName, Category: category, Condition: 'Near Mint', Language: 'English',
@@ -195,7 +195,8 @@ test('our own export read back: 0-quantity rows left out, worse conditions price
     exportLine('Sol Ring', 'Commander Masters', 'Lightly Played', 3.25),
     exportLine('Lightning Bolt', 'Fourth Edition', 'Lightly Played', 1.75),
     exportLine('Lightning Bolt', 'Fourth Edition', 'Heavily Played', 1.5),
-  ], MTG_PCT));
+    // Today's NM prices, as the export dialog gives them (decision 598).
+  ], new Map([[productKey('Lightning Bolt', 'Fourth Edition'), 2], [productKey('Tundra', 'Revised Edition'), 109]])));
   const rows = readRows(Papa.parse(csv, { header: true, skipEmptyLines: 'greedy' }).data, MTG_PCT);
   assert.deepEqual(rows.map((r) => [r.line, r.productName, r.condition, r.qty, r.price, r.priceFrom ?? null, r.problem]), [
     [2, 'Sol Ring', 'NM', 2, 3.5, null, null],

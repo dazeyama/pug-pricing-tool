@@ -4,7 +4,6 @@
 import Papa from 'papaparse';
 import { formatInTimeZone } from 'date-fns-tz';
 import { STORE_TZ } from './time.js';
-import { SELL_FLOOR, roundUpPrice } from './money.js';
 
 export const COLUMNS = ['Add Qty', 'Product Name', 'Category', 'Condition', 'Language', 'Sell Price', 'Custom SKU'];
 
@@ -17,39 +16,25 @@ export const CONDITION_WORDS = {
   NM: 'Near Mint', LP: 'Lightly Played', MP: 'Moderately Played', HP: 'Heavily Played', DMG: 'Damaged',
 };
 const CONDITION_ORDER = Object.values(CONDITION_WORDS);
-const CONDITION_CODES = Object.fromEntries(Object.entries(CONDITION_WORDS).map(([code, word]) => [word, code]));
 const NEAR_MINT = CONDITION_WORDS.NM;
 
 /** A product's key in the file: its name and category. */
 export const productKey = (name, category) => `${name}\u0000${category}`;
 
 /**
- * The Near Mint price a worse condition's Sell Price stands for (owner,
- * 2026-10-11): CC prices every condition from Near Mint, so a card added in
- * MP sets NM to its Sell Price ÷ MP's Master Fallback Percentage, rounded up
- * by the store's steps, at least $0.40. $87 at 80% → $108.75 → $109.
- * @returns {number|null}  null without a percentage to divide by
- */
-export function nearMintPrice(sell, conditionPct) {
-  const pct = Number(conditionPct);
-  if (sell == null || !(pct > 0)) return null;
-  return Math.max(SELL_FLOOR, roundUpPrice((Number(sell) * 100) / pct));
-}
-
-/**
  * The Near Mint prices the file sets with a 0-quantity row (owner,
- * 2026-10-11), by product (productKey): every product with worse-condition
- * cards and no Near Mint card in the file, priced from the best worse
- * condition there (LP before MP…), its highest Sell Price. A product with
- * Near Mint cards gets none: their own Sell Price sets NM. Each line's
- * percentage is the one stamped at its export (cc_sell_basis.conditionPct),
- * else `pct`'s.
+ * 2026-10-11; decision 598), by product (productKey): every product
+ * with worse-condition cards and no Near Mint card in the file, at the
+ * printing's Near Mint price fetched fresh at the export (sellPrice.js,
+ * stamped as cc_sell_basis.nearMint), the highest of its cards'. Crystal
+ * Commerce prices the worse conditions from it. A product with Near Mint
+ * cards gets none: their own Sell Price sets NM. A product with no NM price
+ * today (or exported before decision 598) gets none either: its cards
+ * go in at the NM price Crystal Commerce already has.
  * @param {object[]} lines  exported lines (cc_* stamps)
- * @param {Record<string, number>} pct  Master Fallback Percentages (Magic)
- * @returns {Map<string, { price: number, from: string, sell: number, pct: number,
- *   name: string, category: string, sku: string }>}
+ * @returns {Map<string, number>}  the NM price by product (productKey)
  */
-export function nearMintPrices(lines, pct) {
+export function nearMintPrices(lines) {
   const best = new Map();
   const withNearMint = new Set();
   for (const l of lines) {
@@ -59,25 +44,11 @@ export function nearMintPrices(lines, pct) {
       withNearMint.add(key);
       continue;
     }
-    const code = CONDITION_CODES[l.cc_condition] ?? null;
-    const rank = code ? CONDITION_ORDER.indexOf(l.cc_condition) : CONDITION_ORDER.length;
-    const sell = Number(l.cc_sell_price);
-    const was = best.get(key);
-    if (!was || rank < was.rank || (rank === was.rank && sell > was.sell)) {
-      best.set(key, { rank, code, sell, pct: l.cc_sell_basis?.conditionPct ?? pct?.[code], line: l });
-    }
+    const price = Number(l.cc_sell_basis?.nearMint);
+    if (price > 0 && !(best.get(key) >= price)) best.set(key, price);
   }
-  const out = new Map();
-  for (const [key, b] of best) {
-    if (withNearMint.has(key)) continue;
-    const price = nearMintPrice(b.sell, b.pct);
-    if (price == null) continue;
-    out.set(key, {
-      price, from: b.code, sell: b.sell, pct: Number(b.pct),
-      name: b.line.cc_product_name, category: b.line.cc_category, sku: b.line.cc_custom_sku ?? '',
-    });
-  }
-  return out;
+  for (const key of withNearMint) best.delete(key);
+  return best;
 }
 
 /**
@@ -121,14 +92,30 @@ export function confirmSku(target, fileOnly = false, when = new Date()) {
  * Only Near Mint rows carry a price (owner, 2026-10-11): CC works out every
  * other condition from NM, so worse-condition rows leave Sell Price blank
  * (adding cards without touching the price), and a product with no Near
- * Mint card gets a 0-quantity NM row priced from them (nearMintPrices).
+ * Mint card gets a 0-quantity NM row at today's NM price (nearMintPrices;
+ * decision 598).
  * @param {object[]} lines
- * @param {Record<string, number>} pct  Master Fallback Percentages (Magic)
+ * @param {Map<string, number>} [nearMint]  the NM prices by product, when the lines don't carry their
+ *   Sell Price basis (export_lines' answer: the export dialog gives its own); else read from it
  */
-export function massCreateRows(lines, pct) {
+export function massCreateRows(lines, nearMint = nearMintPrices(lines)) {
   const rows = new Map();
   for (const l of lines) {
     if (l.cc_status !== 'exported' || !l.cc_product_name) continue;
+    // A product the file sets NM for: its 0-quantity row, once, with the first such card's Custom SKU.
+    const nmKey = productKey(l.cc_product_name, l.cc_category);
+    const nm = l.cc_condition !== NEAR_MINT ? nearMint.get(nmKey) : null;
+    if (nm != null && !rows.has(`nm\u0000${nmKey}`)) {
+      rows.set(`nm\u0000${nmKey}`, {
+        'Add Qty': 0,
+        'Product Name': l.cc_product_name,
+        Category: l.cc_category,
+        Condition: NEAR_MINT,
+        Language: 'English',
+        'Sell Price': Number(nm).toFixed(2),
+        'Custom SKU': l.cc_custom_sku ?? '',
+      });
+    }
     const price = l.cc_condition === NEAR_MINT ? Number(l.cc_sell_price).toFixed(2) : '';
     const key = [l.cc_product_name, l.cc_category, l.cc_condition, price].join('\u0000');
     const row = rows.get(key);
@@ -144,17 +131,6 @@ export function massCreateRows(lines, pct) {
         'Custom SKU': l.cc_custom_sku ?? '',
       });
     }
-  }
-  for (const [key, nm] of nearMintPrices(lines, pct)) {
-    rows.set(`nm\u0000${key}`, {
-      'Add Qty': 0,
-      'Product Name': nm.name,
-      Category: nm.category,
-      Condition: NEAR_MINT,
-      Language: 'English',
-      'Sell Price': nm.price.toFixed(2),
-      'Custom SKU': nm.sku,
-    });
   }
   return [...rows.values()].sort((a, b) => a.Category.localeCompare(b.Category)
     || a['Product Name'].localeCompare(b['Product Name'])

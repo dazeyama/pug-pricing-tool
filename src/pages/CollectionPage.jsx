@@ -249,8 +249,7 @@ function CollectionScreen({ id }) {
         toast("Its exported cards went out from Can't upload cards or Bulk pulled from exports, so it has no file of its own to download again.", 'err');
         return;
       }
-      const rows = downloadMassCreate(own, `cc-mass-create-${fileSafe(buy.customer_name)}-${fileStamp(new Date(exportedAt))}.csv`,
-        values.fallback_pct_mtg);
+      const rows = downloadMassCreate(own, `cc-mass-create-${fileSafe(buy.customer_name)}-${fileStamp(new Date(exportedAt))}.csv`);
       const ownSkus = [...new Set(own.map((l) => l.cc_custom_sku).filter(Boolean))];
       toast(`Downloaded the same file again: ${rows} row${rows === 1 ? '' : 's'}, Custom SKU ${ownSkus.join(', ')}.`, 'ok');
       askComplete();   // a Paid/Ours one's file again asks too (decision 407)

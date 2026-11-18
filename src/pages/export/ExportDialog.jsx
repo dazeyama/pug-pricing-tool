@@ -352,10 +352,12 @@ export default function ExportDialog({
     cc_category: stateOf(r).product.category,
     cc_condition: CONDITION_WORDS[r.line.condition],
     cc_sell_price: sellOf(r.line.id)?.price,
+    cc_sell_basis: sellOf(r.line.id)?.basis,
   }));
-  const previewRows = () => massCreateRows(fileLines, pct);
-  // Worse-condition cards' products the file prices at Near Mint (owner, 2026-10-11).
-  const nearMint = exporting ? nearMintPrices(fileLines, pct) : new Map();
+  // Worse-condition cards' products the file prices at today's Near Mint (owner, 2026-10-11; decision
+  // 598). Given to every download here: the lines export_lines returns carry no Sell Price basis.
+  const nearMint = exporting ? nearMintPrices(fileLines) : new Map();
+  const previewRows = () => massCreateRows(fileLines, nearMint);
 
   async function save() {
     // Sell Prices from the store's Fallback Percentages, not the built-in ones (decision 389).
@@ -363,7 +365,7 @@ export default function ExportDialog({
     // The file only: downloaded as it would be, its Custom SKU today's; nothing saved, so no user needed.
     if (fileOnly) {
       const sku = customSkuFor(new Date());
-      const rows = toExport > 0 ? downloadMassCreate(fileLines.map((l) => ({ ...l, cc_custom_sku: sku })), fileName, pct) : 0;
+      const rows = toExport > 0 ? downloadMassCreate(fileLines.map((l) => ({ ...l, cc_custom_sku: sku })), fileName) : 0;
       onExported?.({ fileOnly: true, rows, cards: toExport, sku });
       return;
     }
@@ -380,8 +382,8 @@ export default function ExportDialog({
         line_id: r.line.id,
         product_id: s.product.product_id,
         sell_price: sell.price,
-        // The condition's percentage, so the same file comes out again later (massCreate.js).
-        sell_basis: { ...sell.basis, conditionPct: pct?.[r.line.condition] != null ? Number(pct[r.line.condition]) : null, exportId },
+        // Its basis carries today's NM price (nearMint), so the same file comes out again later (massCreate.js).
+        sell_basis: { ...sell.basis, exportId },
         link: linkToSave(s.by),
       };
     });
@@ -398,7 +400,7 @@ export default function ExportDialog({
         userId: staff.current.id,
         deviceId,
       });
-      const rows = result.cards > 0 ? downloadMassCreate(result.lines, fileName, pct) : 0;
+      const rows = result.cards > 0 ? downloadMassCreate(result.lines, fileName, nearMint) : 0;
       onExported?.({ ...result, rows });
     } catch (e) {
       if (e.code === 'stale_inventory') {
@@ -427,7 +429,7 @@ export default function ExportDialog({
           }
           if (landed) {
             const cards = landed.reduce((n, l) => n + l.quantity, 0);
-            const rows = cards > 0 ? downloadMassCreate(landed, fileName, pct) : 0;
+            const rows = cards > 0 ? downloadMassCreate(landed, fileName) : 0;
             onExported?.({
               cards, cant: cardsIn(groups.cant), pulled: cardsIn(groups.under1), sku: landed[0].cc_custom_sku, lines: landed, rows,
             });
@@ -481,13 +483,13 @@ export default function ExportDialog({
         Bought {formatMoney(r.line.unit_price)} → Sell <strong>{formatMoney(sell.price)}</strong>
         {sell.basis.used === 'at_buy' && <span className="xd-note">no price today</span>}
         {sell.basis.used === 'staff' && <span className="xd-note">set by hand</span>}
-        {nm && (
+        {nm != null && (
           <span
             className="xd-note"
-            title={`Crystal Commerce prices every condition from Near Mint: the file sets Near Mint to ${formatMoney(nm.price)} `
-              + `(${nm.from} Sell ${formatMoney(nm.sell)} ÷ ${nm.pct}%, rounded up) and adds this card with no price`}
+            title={`Crystal Commerce prices every condition from Near Mint: the file sets Near Mint to ${formatMoney(nm)} `
+              + '(today’s Near Mint price, rounded up) and adds this card with no price'}
           >
-            sets NM {formatMoney(nm.price)}
+            sets NM {formatMoney(nm)}
           </span>
         )}
       </span>

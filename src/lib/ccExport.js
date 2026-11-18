@@ -428,10 +428,11 @@ export async function restampTimes(lines) {
 
 /**
  * Hand the browser the Mass Create file (export spec 4.3).
- * @param {Record<string, number>} pct  Master Fallback Percentages (Magic): worse conditions' NM prices
+ * @param {Map<string, object>} [nearMint]  the NM rows (massCreate.js nearMintPrices), when the lines
+ *   don't carry their Sell Price basis; else read from it
  */
-export function downloadMassCreate(lines, name, pct) {
-  const rows = massCreateRows(lines, pct);
+export function downloadMassCreate(lines, name, nearMint) {
+  const rows = massCreateRows(lines, nearMint);
   const url = URL.createObjectURL(new Blob([massCreateCsv(rows)], { type: 'text/csv;charset=utf-8' }));
   const a = document.createElement('a');
   a.href = url;

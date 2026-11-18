@@ -804,9 +804,10 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
 - [ ] Conditions use the inventory's words: `Near Mint`, `Lightly Played`, `Moderately Played`, `Heavily Played`,
       `Damaged`.
 - [ ] Only Near Mint rows carry a price; every LP/MP/HP/DMG row's Sell Price is blank.
-- [ ] A card with only worse-condition copies gets a 0-quantity Near Mint row first, priced at the best condition's Sell
-      Price ÷ its percentage, rounded up (MP $87 at 80% → $109); a card with Near Mint copies gets no extra row.
-- [ ] The review screen shows **sets NM $X** on such a card, with the working on hover.
+- [ ] A card with only worse-condition copies gets a 0-quantity Near Mint row first, priced at the printing's Near Mint
+      price today, rounded up (the Price screen's NM for that card, not its own condition's price worked back;
+      decision 598); a card with Near Mint copies gets no extra row. (Export session)
+- [ ] The review screen shows **sets NM $X** on such a card; hovering says it's today's Near Mint price.
 - [ ] EXPORT on a day or collection already exported downloads the same file again; nothing changes.
 - [ ] A card that can't match goes to **Can't upload cards** and isn't in the file.
 - [ ] **Matched via TCGplayer** (decisions 590, 592; Export session; needs the TCGplayer catalog fetched, Settings →

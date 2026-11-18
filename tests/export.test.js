@@ -5,7 +5,7 @@ import { sellPriceFor } from '../src/lib/sellPrice.js';
 import { settingSummary } from '../src/lib/settingText.js';
 import { targetOf } from '../src/lib/changelog.js';
 import {
-  confirmSku, customSkuFor, customSkuForDay, fileSafe, massCreateCsv, massCreateRows, nearMintPrice, nearMintPrices, withoutRestamps,
+  confirmSku, customSkuFor, customSkuForDay, fileSafe, massCreateCsv, massCreateRows, nearMintPrices, withoutRestamps,
 } from '../src/lib/massCreate.js';
 
 // docs/EXPORT_FUNCTION.md 5.3: the buy steps, upward.
@@ -158,52 +158,59 @@ test("the same file again: every own export, not a Can't upload cards export's c
   assert.deepEqual(withoutRestamps(lines, new Set()).map((l) => l.id), [1, 2, 3]);
 });
 
-// Owner, 2026-10-11: CC prices every condition from Near Mint.
-const MTG_PCT = { NM: 100, LP: 90, MP: 80, HP: 70, DMG: 60 };
-
-test('a worse condition\'s Sell Price ÷ its percentage, rounded up, at least $0.40', () => {
-  assert.equal(nearMintPrice(87, 80), 109);        // $108.75
-  assert.equal(nearMintPrice(1.75, 90), 2);        // $1.94
-  assert.equal(nearMintPrice(1.5, 70), 2.25);      // $2.14
-  assert.equal(nearMintPrice(0.1, 60), 0.4);       // $0.17, floored
-  assert.equal(nearMintPrice(5, 0), null);
-  assert.equal(nearMintPrice(5, undefined), null);
+// Owner, 2026-10-11: CC prices every condition from Near Mint; decision 598: at today's NM price.
+test("the Sell Price basis carries the printing's NM price today, whatever the condition", () => {
+  const today = { market: { NM: 108.2, LP: 95, MP: 87, HP: 70, DMG: 50 }, fallback: null, cardmarketUsd: null, pct };
+  assert.equal(sellPriceFor(line({ condition: 'MP' }), today).basis.nearMint, 109);
+  assert.equal(sellPriceFor(line({}), today).basis.nearMint, 109);
+  // A manual price is the card's own: NM stays today's.
+  assert.equal(sellPriceFor(line({ condition: 'MP', price_source: 'manual', unit_price: 200 }), today).basis.nearMint, 109);
+  // No JustTCG NM: the ladder's NM (Scryfall's price here), as the Price screen shows it.
+  const noNm = { market: { LP: 1 }, fallback: { price: 1.3, source: 'scryfall' }, cardmarketUsd: null, pct };
+  assert.equal(sellPriceFor(line({ condition: 'LP' }), noNm).basis.nearMint, 1.5);
+  // Floored like the Sell Price; none at all with no price today.
+  assert.equal(sellPriceFor(line({ condition: 'DMG' }), { market: { NM: 0.1 }, fallback: null, pct }).basis.nearMint, 0.4);
+  assert.equal(sellPriceFor(line({ condition: 'LP' }), { market: {}, fallback: null, pct }).basis.nearMint, null);
 });
 
-test('only Near Mint carries a price: worse conditions add cards, a 0-quantity NM row sets the price', () => {
+test("only Near Mint carries a price: worse conditions add cards, a 0-quantity NM row sets today's NM", () => {
   const sku = { cc_custom_sku: '101126' };
+  const nm = (price) => ({ cc_sell_basis: { nearMint: price } });
   const rows = massCreateRows([
-    stamped({ ...sku, cc_product_name: 'Tundra', cc_category: 'Revised Edition', cc_condition: 'Moderately Played', cc_sell_price: 87 }),
-    stamped({ ...sku, cc_product_name: 'Sol Ring', cc_category: 'Commander Masters', cc_sell_price: 3.5, quantity: 2 }),
-    stamped({ ...sku, cc_product_name: 'Sol Ring', cc_category: 'Commander Masters', cc_condition: 'Lightly Played', cc_sell_price: 3.25 }),
-    stamped({ ...sku, cc_product_name: 'Lightning Bolt', cc_category: 'Fourth Edition', cc_condition: 'Heavily Played', cc_sell_price: 1.5 }),
-    stamped({ ...sku, cc_product_name: 'Lightning Bolt', cc_category: 'Fourth Edition', cc_condition: 'Lightly Played', cc_sell_price: 1.75 }),
-  ], MTG_PCT);
+    stamped({ ...sku, ...nm(109), cc_product_name: 'Tundra', cc_category: 'Revised Edition', cc_condition: 'Moderately Played', cc_sell_price: 87 }),
+    stamped({ ...sku, ...nm(3.5), cc_product_name: 'Sol Ring', cc_category: 'Commander Masters', cc_sell_price: 3.5, quantity: 2 }),
+    stamped({ ...sku, ...nm(3.75), cc_product_name: 'Sol Ring', cc_category: 'Commander Masters', cc_condition: 'Lightly Played', cc_sell_price: 3.25 }),
+    stamped({ ...sku, ...nm(2.25), cc_product_name: 'Lightning Bolt', cc_category: 'Fourth Edition', cc_condition: 'Heavily Played', cc_sell_price: 1.5 }),
+    stamped({ ...sku, ...nm(2), cc_product_name: 'Lightning Bolt', cc_category: 'Fourth Edition', cc_condition: 'Lightly Played', cc_sell_price: 1.75 }),
+    // Exported before decision 598, or no NM price today: no NM row, CC's own NM stands.
+    stamped({ ...sku, cc_product_name: 'Plateau', cc_category: 'Revised Edition', cc_condition: 'Damaged', cc_sell_price: 40 }),
+  ]);
   assert.equal(massCreateCsv(rows), [
     'Add Qty,Product Name,Category,Condition,Language,Sell Price,Custom SKU',
     // NM copies in the file: their own price sets NM, no extra row.
     '2,Sol Ring,Commander Masters,Near Mint,English,3.50,101126',
     '1,Sol Ring,Commander Masters,Lightly Played,English,,101126',
-    // Two worse conditions: the best one (LP) prices NM, $1.75 ÷ 90%.
-    '0,Lightning Bolt,Fourth Edition,Near Mint,English,2.00,101126',
+    // Two worse cards: the higher NM price today.
+    '0,Lightning Bolt,Fourth Edition,Near Mint,English,2.25,101126',
     '1,Lightning Bolt,Fourth Edition,Lightly Played,English,,101126',
     '1,Lightning Bolt,Fourth Edition,Heavily Played,English,,101126',
-    // $87 ÷ 80% = $108.75, rounded up.
+    '1,Plateau,Revised Edition,Damaged,English,,101126',
     '0,Tundra,Revised Edition,Near Mint,English,109.00,101126',
     '1,Tundra,Revised Edition,Moderately Played,English,,101126',
   ].join('\n'));
 });
 
-test('NM prices: the best condition\'s highest Sell Price; the percentage stamped at the export wins', () => {
-  const lp = { cc_condition: 'Lightly Played' };
-  const two = nearMintPrices([stamped({ ...lp, cc_sell_price: 1.75 }), stamped({ ...lp, cc_sell_price: 2 })], MTG_PCT);
-  assert.equal([...two.values()][0].price, 2.25);   // $2 ÷ 90% = $2.22
-  assert.equal([...two.values()][0].from, 'LP');
-  const kept = nearMintPrices([stamped({ ...lp, cc_sell_price: 2, cc_sell_basis: { conditionPct: 50 } })], MTG_PCT);
-  assert.equal([...kept.values()][0].price, 4);
-  // Can't-upload cards set nothing; nor does a card with no percentage to divide by.
-  assert.equal(nearMintPrices([stamped({ ...lp, cc_status: 'cant_upload' })], MTG_PCT).size, 0);
-  assert.equal(nearMintPrices([stamped(lp)], {}).size, 0);
+test("NM prices given apart (export_lines' answer has no basis): by product, with the lines' Custom SKU", () => {
+  const mp = { cc_condition: 'Moderately Played', cc_product_name: 'Tundra', cc_category: 'Revised Edition' };
+  const dialog = [stamped({ ...mp, cc_custom_sku: undefined, cc_sell_basis: { nearMint: 109 } })];
+  const prices = nearMintPrices(dialog);
+  assert.deepEqual([...prices.values()], [109]);
+  const rows = massCreateRows([stamped({ ...mp, cc_custom_sku: '111826' })], prices);
+  assert.deepEqual(rows.map((r) => [r['Add Qty'], r.Condition, r['Sell Price'], r['Custom SKU']]), [
+    [0, 'Near Mint', '109.00', '111826'], [1, 'Moderately Played', '', '111826'],
+  ]);
+  // Can't-upload cards set nothing.
+  assert.equal(nearMintPrices([stamped({ ...mp, cc_status: 'cant_upload', cc_sell_basis: { nearMint: 109 } })]).size, 0);
 });
 
 // A day page's export is stamped with the day exported (owner, 2026-10-17; 0071).

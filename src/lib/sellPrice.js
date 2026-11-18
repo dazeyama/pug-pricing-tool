@@ -24,7 +24,8 @@ import { SELL_FLOOR, roundUpPrice } from './money.js';
  * @param {Today} today
  * @returns {{ price: number, value: number, basis: object }}
  *   price: the Sell Price (rounded up by steps, at least the floor); value: the same price before
- *   that rounding and floor, for the Pokémon stickers' whole dollars (decision 384)
+ *   that rounding and floor, for the Pokémon stickers' whole dollars (decision 384); basis.nearMint: the
+ *   printing's Near Mint price today, rounded up, at least the floor (null with no NM price today)
  */
 export function sellPriceFor(line, today) {
   // The ladder as the Price screen builds it (spec 8.7), with today's data and
@@ -53,6 +54,11 @@ export function sellPriceFor(line, today) {
   // The Export sell floor (decision 417), from Settings; $0.40 without one.
   const floor = today.floor ?? SELL_FLOOR;
   const price = Math.max(floor, roundUpPrice(value) ?? floor);
+  // The printing's Near Mint price today, whatever the card's condition (decision 598): the Mass
+  // Create file sets NM with it for a product that has only worse-condition cards, and Crystal Commerce
+  // prices the other conditions from it. The same ladder, rounded up the same way, at least the floor.
+  const nmRaw = ladder.NM?.raw ?? null;
+  const nearMint = nmRaw != null ? Math.max(floor, roundUpPrice(nmRaw) ?? floor) : null;
   return {
     price,
     value,
@@ -66,6 +72,7 @@ export function sellPriceFor(line, today) {
       used,
       floored: price === floor && roundUpPrice(value) !== floor,
       floor,
+      nearMint,
       fetchedAt: today.fetchedAt ?? null,
     },
   };

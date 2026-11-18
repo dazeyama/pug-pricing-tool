@@ -498,7 +498,7 @@ function DayScreen({ game, day }) {
         : "These buys were marked Completed without being exported, so there's no file: mark them Paid/Ours again (⋯), then EXPORT.", 'err');
       return;
     }
-    const rows = downloadMassCreate(stamped.lines, fileName, settingValues.fallback_pct_mtg);
+    const rows = downloadMassCreate(stamped.lines, fileName);
     toast(`Downloaded the same file again: ${rows} row${rows === 1 ? '' : 's'}, Custom SKU ${stamped.skus.join(', ')}.`, 'ok');
   }
 
@@ -522,8 +522,7 @@ function DayScreen({ game, day }) {
       toast(`Buy ${number}'s exported cards went out from Can't upload cards or Bulk pulled from exports, so it has no file of its own to download again.`, 'err');
       return;
     }
-    const rows = downloadMassCreate(mineOnly, `cc-mass-create-${game === 'mtg' ? 'magic' : game}-${day}-buy-${number}.csv`,
-      settingValues.fallback_pct_mtg);
+    const rows = downloadMassCreate(mineOnly, `cc-mass-create-${game === 'mtg' ? 'magic' : game}-${day}-buy-${number}.csv`);
     toast(`Downloaded Buy ${number}'s file again: ${rows} row${rows === 1 ? '' : 's'}, Custom SKU ${own.join(', ')}.`, 'ok');
   }
 
