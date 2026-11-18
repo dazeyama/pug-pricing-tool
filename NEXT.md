@@ -62,9 +62,8 @@ marks each task done here when it's finished, with the exact file and function o
 ## Done
 
 - 2026-11-18 (Export session): **The v1.0.7 release review's follow-ups** (the owner: "Yes, fix them"; no
-  migration; not pushed). **The `tcgcatalog` function's paging is on dev only: its prod deploy waits for the owner**
-  (`npx supabase functions deploy tcgcatalog --project-ref zvxquzcfffmxwizonxuo --use-api --no-verify-jwt`; the
-  live function works as it is, its unpaged read only matters past 1,000 sets).
+  migration; pushed with the second 2026-11-18 push). The `tcgcatalog` function's paging is on dev and prod (the
+  main session deployed version 2 to prod before that push, a91b949).
   1. Stale text: `docs/TEST.md`'s TCGplayer catalog case and `src/lib/tcgCatalog.js`'s header.
   2. Copies we own's extra round trip: `src/lib/ccExport.js` `routeSide` reads the TCGplayer products, then the
      route's candidates, beside the matcher's reads (they used to wait on the catalog); `TCG_SEEN` keeps the
