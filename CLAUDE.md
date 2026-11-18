@@ -171,8 +171,9 @@ gotchas and the squash.
 
 - Live: **v1.0.6-badscanner** (2026-10-27, decisions through 563), then pushes without a bump, the last on
   2026-11-11 with decisions through 587, on prod: the GitHub Actions variables point there.
-- Prod and dev both have migrations 0001–0016 and stay equal (decision 381; the last on prod 2026-11-11, the
-  structure-only compare the same). What each did: the spec's decisions and the files' names. The next is 0017.
+- Prod and dev both have migrations 0001–0017 and stay equal (decision 381; the last on prod 2026-11-18, the
+  structure-only compare the same). What each did: the spec's decisions and the files' names. The next is 0018.
+  Edge Functions on both: `prices`, `secrets` and `tcgcatalog` (decision 589).
 - The release history is the spec's decisions and `git tag`; what's open is NEXT.md.
 
 ## Coding Conventions
