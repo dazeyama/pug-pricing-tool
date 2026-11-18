@@ -726,7 +726,9 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
 - [ ] **Flagged buys** (decision 301): a day with a 🚩 flagged buy prints a red CHECK CONDITION banner naming it on every
       page, on Print MTG?, its Print buy and a BUY COMPLETE printout; after ✅ Condition checked, no banner; the same on
       a Pokémon day's Print PKM?.
-- [ ] **Print PKM?** prints a Pokémon day by set and number.
+- [ ] **Print PKM?** prints a Pokémon day by set and number. Inside a set with NM and worse cards (decision 597;
+      Export session): every NM card first by number, then the line, then the LP cards by number, the MP, the HP and
+      the DMG, no condition on both sides of the line. The PKM stickers come out in the same order.
 - [ ] **Print PKM Stickers?** (decision 297) prints price-tag stickers on the 160-sticker sheet, then asks "Complete the
       day?"; Complete day… opens the usual step, Not yet closes; today, or a Completed day, doesn't ask.
 - [ ] **Sticker prices** (decision 384): every sticker is a whole dollar ("$3", never "$3.25"); a card worth $0.50

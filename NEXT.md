@@ -60,6 +60,13 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-11-18 (Export session): **Print PKM?: NM, then LP, MP, HP, DMG too** (decision 597; the owner: "yes, fix
+  print pkm the same way"; no migration; not pushed). `src/lib/auditPrint.js` `byCard`: the condition first, then
+  collector number, name and finish; before, the non-NM cards were sorted together by number, conditions mixed.
+  The PKM stickers (`pokemonOrder`) follow the same order. Where to look: a Pokémon day or collection with NM, LP
+  and HP cards in one set → Print PKM?: the NM cards by number, the line, then LP by number, then HP. Untested on
+  paper.
+
 - 2026-11-18 (Export session): **The Magic printouts: NM first again** (decision 596; the owner: "return to "NM NM
   NM | LP LP LP MP MP MP HP HP DMG" order"; no migration; not pushed). The cause: decision 443 (2026-10-22) sorted a
   category by colour pile, name, number and the condition last, while the line between NM and the rest

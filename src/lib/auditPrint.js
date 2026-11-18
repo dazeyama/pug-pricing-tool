@@ -158,16 +158,14 @@ const rank = (list, v) => {
   return i === -1 ? list.length : i;
 };
 /**
- * Inside a Print PKM? set (owner, 2026-10-14; Magic's were too until decision 443): the NM cards by collector number,
- * then every other condition together by collector number, the same card's
- * conditions in order down (LP, MP, HP, DMG); then name, non-foil → foil →
- * etched (team plan 3.4).
+ * Inside a Print PKM? set (owner, 2026-10-14; Magic's were too until decision 443): the condition first, NM, then
+ * LP, MP, HP, DMG, so the printout's line falls between the NM cards and the rest and each condition sits together
+ * below it (decision 597, as decision 596 for Magic); within each, by collector number, then name, non-foil → foil
+ * → etched (team plan 3.4). The Pokémon stickers follow the same order (pokemonOrder).
  */
 function byCard(a, b) {
-  const nm = (x) => ((x.line.condition || 'NM') === 'NM' ? 0 : 1);
-  return nm(a) - nm(b)
+  return rank(CONDITIONS, a.line.condition || 'NM') - rank(CONDITIONS, b.line.condition || 'NM')
     || byNumber(a.line.collector_number, b.line.collector_number)
-    || rank(CONDITIONS, a.line.condition) - rank(CONDITIONS, b.line.condition)
     || collator.compare(a.line.name, b.line.name)
     || rank(FINISHES, a.line.finish) - rank(FINISHES, b.line.finish);
 }

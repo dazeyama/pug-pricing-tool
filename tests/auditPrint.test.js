@@ -195,6 +195,21 @@ test('Pokémon sections: one a set, A to Z by name with the code on the band; in
   assert.equal(sv.rows[1].extras[0], 'Reverse');
 });
 
+test('Print PKM? inside a set (decision 597): NM by number, then LP, MP, HP, DMG, each by number', () => {
+  const s = pokemonSections([
+    pkm({ name: 'A', collector_number: '45' }),
+    pkm({ name: 'B', collector_number: '5', condition: 'LP' }),
+    pkm({ name: 'C', collector_number: '7', condition: 'HP' }),
+    pkm({ name: 'D', collector_number: '12' }),
+    pkm({ name: 'E', collector_number: '9', condition: 'LP' }),
+    pkm({ name: 'F', collector_number: '31', condition: 'DMG' }),
+    pkm({ name: 'G', collector_number: '22', condition: 'MP' }),
+    pkm({ name: 'H', collector_number: '30' }),
+  ]);
+  assert.deepEqual(s[0].rows.map((r) => `${r.condition} ${r.number}`),
+    ['NM 12', 'NM 30', 'NM 45', 'LP 5', 'LP 9', 'MP 22', 'HP 7', 'DMG 31']);
+});
+
 test("a Pokémon row's words: the finish and the bracket's tags but the condition, as chips; no colour", () => {
   const r = pokemonRow(pkm({ name: 'Pikachu', collector_number: '25', finish: 'holo', condition: 'MP', lang: 'ja', first_edition: true }));
   assert.deepEqual([r.name, r.set, r.number, r.condition, r.extras, r.bucket], ['Pikachu', 'SV1', '25', 'MP', ['Holo', '1st Ed', 'JP'], 'unknown']);
