@@ -71,7 +71,7 @@ test('different condition, finish or treatments stay separate rows, NM before LP
   assert.deepEqual(s[0].rows.map((r) => [r.condition, ...r.extras].join(' ')), ['NM', 'NM Borderless', 'NM Foil', 'LP']);
 });
 
-test("inside a category (decision 443): by colour pile, A to Z, then number; a card's conditions in order down", () => {
+test("inside a category (decisions 443, 596): NM, then LP, MP, HP, DMG; in each by colour pile, A to Z, then number", () => {
   const s = auditSections([
     { line: line({ name: 'Zap', collector_number: '5', condition: 'MP' }), category: 'Alpha', bucket: 'red' },
     { line: line({ name: 'Bolt', collector_number: '200' }), category: 'Alpha', bucket: 'red' },
@@ -87,9 +87,23 @@ test("inside a category (decision 443): by colour pile, A to Z, then number; a c
     { line: line({ name: 'Golos', collector_number: '9' }), category: 'Alpha', bucket: 'multicolor' },
   ]);
   assert.deepEqual(s[0].rows.map((r) => `${r.condition} ${r.name} ${r.number}`), [
-    'NM Plea 7', 'LP Orb 1', 'NM Bolt 161', 'NM Bolt 200', 'LP Zap 5', 'MP Zap 5', 'DMG Zap 5',
-    'NM Golos 9', 'NM Mox 12', 'HP Ruby 3', 'NM Island 290', 'NM Unknown 1',
+    'NM Plea 7', 'NM Bolt 161', 'NM Bolt 200', 'NM Golos 9', 'NM Mox 12', 'NM Island 290', 'NM Unknown 1',
+    'LP Orb 1', 'LP Zap 5', 'MP Zap 5', 'HP Ruby 3', 'DMG Zap 5',
   ]);
+});
+
+test('the owner\'s Kaldheim printout (decision 596): NM cards above the line, LP and HP below, never mixed', () => {
+  const s = auditSections([
+    { line: line({ name: 'Reflections of Littjara', collector_number: '400', finish: 'foil', condition: 'LP' }), category: 'Kaldheim', bucket: 'blue' },
+    { line: line({ name: 'Vorinclex, Monstrous Raider', collector_number: '199', condition: 'HP' }), category: 'Kaldheim', bucket: 'green' },
+    { line: line({ name: 'Cosmos Elixir', collector_number: '368' }), category: 'Kaldheim', bucket: 'artifact' },
+    { line: line({ name: 'Maskwood Nexus', collector_number: '240', condition: 'LP' }), category: 'Kaldheim', bucket: 'artifact' },
+    { line: line({ name: 'Pyre of Heroes', collector_number: '241' }), category: 'Kaldheim', bucket: 'artifact' },
+    { line: line({ name: 'Barkchannel Pathway // Tidechannel Pathway', collector_number: '290' }), category: 'Kaldheim', bucket: 'land' },
+  ]);
+  const conds = s[0].rows.map((r) => r.condition);
+  assert.deepEqual(conds, ['NM', 'NM', 'NM', 'LP', 'LP', 'HP']);
+  assert.deepEqual(s[0].rows.slice(0, 3).map((r) => r.name), ['Cosmos Elixir', 'Pyre of Heroes', 'Barkchannel Pathway // Tidechannel Pathway']);
 });
 
 test('in buy order (decision 444): one bare section, a row per line as it came, nothing merged', () => {

@@ -763,9 +763,11 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       so a flyout can't fit to the left of the day page's ⋯, it opens to the right and the arrow reads "Print ▸".
 - [ ] **The printout's foot** (decision 419): on Print MTG (all), "Page 1 of N" sits at the right margin and the key
       ("Today's market price: amber = …, red = …") runs from the left without touching it.
-- [ ] **The Magic printouts' order** (decision 443): Print MTG (all) on a day with several cards in one category:
-      inside it, white, blue, black, red, green, multicolor, colourless, lands, then a card with no Scryfall card; in
-      each pile by name A–Z, then collector number, then NM, LP, MP, HP, DMG, then non-foil, foil, etched.
+- [ ] **The Magic printouts' order** (decisions 443, 596; Export session): Print MTG (all) on a day with several
+      cards in one category, NM and worse: inside it every NM card first, then the line, then the LP cards, the MP,
+      the HP and the DMG, no condition on both sides of the line; within each condition white, blue, black, red,
+      green, multicolor, colourless, lands, then a card with no Scryfall card; in each pile by name A–Z, then
+      collector number, then non-foil, foil, etched. A category with only NM cards, or none, has no line.
 - [ ] **Print MTG in buy order** (decision 444): a past Magic day with two buys: EXPORT ▾ → ◂ Print → Print MTG in
       buy order: one row per card line, the first buy's cards as added, then the second's; no category bands and no
       NM line; the file is `audit-magic-<day>-buy-order.pdf`. A collection has it too, its cards as added.

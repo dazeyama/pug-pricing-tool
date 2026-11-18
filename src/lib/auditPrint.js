@@ -176,15 +176,16 @@ function byCard(a, b) {
 // colourless, lands; a card with no Scryfall card last.
 const PILES = ['white', 'blue', 'black', 'red', 'green', 'multicolor', 'artifact', 'land', 'unknown'];
 /**
- * Inside a Magic section (decision 443): by colour pile, then name A to Z, so a card's printings sit
- * together, then collector number; the same printing's conditions in order down (NM, LP, MP, HP,
- * DMG), then non-foil → foil → etched. Print PKM? keeps byCard.
+ * Inside a Magic section: the condition first, NM, then LP, MP, HP, DMG, so the printout's line falls
+ * between the NM cards and the rest (owner, 2026-10-14; decision 596: decision 443 had put it last, and the line
+ * landed among mixed conditions); within each, decision 443's order: by colour pile, then name A to Z, so a
+ * card's printings sit together, then collector number, then non-foil → foil → etched. Print PKM? keeps byCard.
  */
 function byPile(a, b) {
-  return rank(PILES, a.bucket) - rank(PILES, b.bucket)
+  return rank(CONDITIONS, a.line.condition || 'NM') - rank(CONDITIONS, b.line.condition || 'NM')
+    || rank(PILES, a.bucket) - rank(PILES, b.bucket)
     || collator.compare(a.line.name_en || a.line.name, b.line.name_en || b.line.name)
     || byNumber(a.line.collector_number, b.line.collector_number)
-    || rank(CONDITIONS, a.line.condition || 'NM') - rank(CONDITIONS, b.line.condition || 'NM')
     || rank(FINISHES, a.line.finish) - rank(FINISHES, b.line.finish);
 }
 

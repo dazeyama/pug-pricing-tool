@@ -60,6 +60,17 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-11-18 (Export session): **The Magic printouts: NM first again** (decision 596; the owner: "return to "NM NM
+  NM | LP LP LP MP MP MP HP HP DMG" order"; no migration; not pushed). The cause: decision 443 (2026-10-22) sorted a
+  category by colour pile, name, number and the condition last, while the line between NM and the rest
+  (`src/lib/auditPdf.js`, the owner's of 2026-10-14) is drawn before the first non-NM row after an NM one, so it
+  fell among mixed conditions. Now `src/lib/auditPrint.js` `byPile` sorts by condition first (NM, LP, MP, HP, DMG),
+  then decision 443's order within each. `tests/auditPrint.test.js` has the owner's Kaldheim category. Where to
+  look: a day or collection with NM and LP/HP cards in one category → EXPORT ▾ → ◂ Print → Print MTG (all): in
+  Kaldheim, Cosmos Elixir, Pyre of Heroes and the Barkchannel Pathway (NM) above the line, then Reflections of
+  Littjara and Maskwood Nexus (LP), then Vorinclex (HP). Print PKM? and the buy-order prints unchanged. Untested
+  on paper.
+
 - 2026-11-18 (Export session): **The TCGplayer route first** (decision 594; no migration; not pushed; on top of
   phases 3 and 4, which still wait for the owner's QA on dev).
   - **What:** `src/lib/ccExport.js` `matchLines`: remembered staff picks, then the route, then today's matcher where
