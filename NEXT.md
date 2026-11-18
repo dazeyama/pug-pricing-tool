@@ -61,6 +61,29 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-11-18 (Export session): **The v1.0.7 release review's follow-ups** (the owner: "Yes, fix them"; no
+  migration; not pushed). **The `tcgcatalog` function's paging is on dev only: its prod deploy waits for the owner**
+  (`npx supabase functions deploy tcgcatalog --project-ref zvxquzcfffmxwizonxuo --use-api --no-verify-jwt`; the
+  live function works as it is, its unpaged read only matters past 1,000 sets).
+  1. Stale text: `docs/TEST.md`'s TCGplayer catalog case and `src/lib/tcgCatalog.js`'s header.
+  2. Copies we own's extra round trip: `src/lib/ccExport.js` `routeSide` reads the TCGplayer products, then the
+     route's candidates, beside the matcher's reads (they used to wait on the catalog); `TCG_SEEN` keeps the
+     products read on the page. No round trip of its own with the catalog empty or a card looked at before; a
+     card's first look with a catalog product and no remembered pick can still wait one more (zero would need the
+     lookup inside `cc_candidates`, a migration). Decision 594's row says so now.
+  3. Change's list: the route's product is first and scored whatever the name made of it (`matchOne`).
+  4. "Secret Lair Series" (group 2632: Secret Lair: Ultimate Edition's fetch lands, borderless Pathways, Blast
+     Zone) → Secret Lair Drop Series, by `C:/ClaudeProjects/temp/cc-tcgcsv/route-table.mjs`'s `AFTER_CHECK`
+     (regenerated `src/lib/tcgSetTable.js`: that one row changed); and a TCGplayer set named Secret Lair never
+     takes the route (`matchOne`), whatever the table says.
+  5. `matchOne` (the per-line decision, pulled out of `matchLines`, pure) with `tests/matchOne.test.js`: the route
+     first, 486, 487, 574 four ways, the empty catalog, a 4c match first in Change. `tcgCatalogStatus` and the
+     function's stored-sets read page by page.
+  Checked: `check-routefirst.mjs` 1,488 of 1,495 exported lines right after 3 and 4, coverage 93.7%. Items 2–4 went
+  in one commit (all in `ccExport.js`). Where to look (dev): EXPORT a foil Pillage (Arena 2000): Change lists
+  "Pillage - Arena 2000" first, marked detected; a Secret Lair: Ultimate Edition Pathway goes to Needs a choice;
+  the Price screen's copies we own as quick as before on a card seen twice. Untested in the app.
+
 - 2026-11-18: **Pushed as v1.0.7-matching** (main session; the owner: "push to live as v1.0.7-matching", after the
   QA table): Crystal Commerce matching through TCGplayer ids (decisions 588–595: the TCGplayer catalog with
   migration 0017 and the `tcgcatalog` function, both already on prod; the route, its name rules, the route first,
