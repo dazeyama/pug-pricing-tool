@@ -26,9 +26,9 @@ const route = (line, tcg, candidates) => routeProduct({
 
 test('TCGplayer\'s name read: base, number, its own foil word, tags', () => {
   assert.deepEqual(parseTp('Avatar of Burgeoning Echoes (Showcase)'),
-    { full: 'avatar of burgeoning echoes', base: 'avatar of burgeoning echoes', number: null, foil: null, tags: ['showcase'] });
+    { full: 'avatar of burgeoning echoes', base: 'avatar of burgeoning echoes', number: null, foil: null, tags: ['showcase'], codes: [] });
   assert.deepEqual(parseTp('Sol Ring (0348) (Surge Foil) (JP Alternate Art)'),
-    { full: 'sol ring', base: 'sol ring', number: '348', foil: 'surgefoil', tags: ['japanesealternateart'] });
+    { full: 'sol ring', base: 'sol ring', number: '348', foil: 'surgefoil', tags: ['japanesealternateart'], codes: [] });
   assert.deepEqual(routeBaseKeys({ name: 'Fire // Ice (Non-Foil)' }), ['fire // ice', 'fire']);
 });
 
@@ -87,6 +87,23 @@ test('The List and Mystery Booster are one shelf', () => {
   const mb = product('Eldrazi Monument - The List', 'Mystery Booster');
   const r = route({}, { group_id: 30, name: 'Eldrazi Monument' }, [mb]);
   assert.equal(r.product, mb);
+});
+
+test('4a: CC\'s bracket words are tags; set codes count only when both names carry one', () => {
+  const coaster = [product('Kiddie Coaster (3-4-6)', 'Duskmourn: House of Horror'), product('Kiddie Coaster (2-5-6)', 'Duskmourn: House of Horror')];
+  assert.equal(route({}, { name: 'Kiddie Coaster (2-5-6)' }, coaster).product, coaster[1]);
+  const maro = [product("Maro's Gone Nuts", 'Duskmourn: House of Horror'), product("Maro's Gone Nuts (No PW Symbol)", 'Duskmourn: House of Horror')];
+  assert.equal(route({}, { name: "Maro's Gone Nuts" }, maro).product, maro[0]);
+  assert.equal(route({}, { name: "Maro's Gone Nuts (No PW Symbol)" }, maro).product, maro[1]);
+  // Alliances' "(Man)" is CC's "(Male)".
+  const herbalist = [product('Royal Herbalist (Male)', 'Duskmourn: House of Horror'), product('Royal Herbalist (Female)', 'Duskmourn: House of Horror')];
+  assert.equal(route({}, { name: 'Royal Herbalist (Man)' }, herbalist).product, herbalist[0]);
+  // A set code: matched to CC's when it has one, ignored when it hasn't.
+  const coded = [product('Blooming Marsh (KLD)', 'Duskmourn: House of Horror'), product('Blooming Marsh (AER)', 'Duskmourn: House of Horror')];
+  assert.equal(route({}, { name: 'Blooming Marsh (KLD)' }, coded).product, coded[0]);
+  const plain = [product('Island (30)', 'Duskmourn: House of Horror')];
+  assert.equal(route({}, { name: 'Island (030) (JVC)' }, plain).product, plain[0]);
+  assert.deepEqual(parseTp('Sol Ring (C14)').codes, ['c14']);
 });
 
 test('the set table in the code: by group id, the owner-checked rows', () => {

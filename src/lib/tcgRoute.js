@@ -16,13 +16,22 @@ const fold = (s) => String(s ?? '').toLowerCase().normalize('NFKD').replace(/[̀
 /** A collector number without leading zeros: "0348" → "348". */
 const normNum = (s) => String(s ?? '').toLowerCase().replace(/^0+(?=\d)/, '');
 
-// TCGplayer's words → CC's, where they spell the same thing differently.
-const SYN = new Map(Object.entries({ jpalternateart: 'japanesealternateart', serialnumbered: 'serialized', nonfoil: '' }));
+// The two sides' words for one thing, made one: TCGplayer's → CC's (Alliances' "(Man)" is CC's "(Male)").
+const SYN = new Map(Object.entries({
+  jpalternateart: 'japanesealternateart', serialnumbered: 'serialized', nonfoil: '', man: 'male', woman: 'female',
+}));
+/** A word as both sides are compared: folded, then the shared spelling. */
+const word = (raw) => {
+  const f = fold(raw);
+  return SYN.has(f) ? SYN.get(f) : f;
+};
+/** A set code in brackets ("(C14)", "(FDN)", "(PLST)"), as written: 3 to 5 capitals and digits, a letter among them. */
+const isCode = (raw) => /^[A-Z0-9]{3,5}$/.test(raw) && /[A-Z]/.test(raw);
 
 /**
- * TCGplayer's product name → its base name (front face, as CC's base_key), number, its own foil word, and tags.
- * "Avatar of Burgeoning Echoes (Showcase)" → { base: 'avatar of burgeoning echoes', number: null, foil: null,
- * tags: ['showcase'] }.
+ * TCGplayer's product name → its base name (front face, as CC's base_key), number, its own foil word, tags and
+ * set codes. "Avatar of Burgeoning Echoes (Showcase)" → { base: 'avatar of burgeoning echoes', number: null,
+ * foil: null, tags: ['showcase'], codes: [] }.
  * @param {string} name
  */
 export function parseTp(name) {
@@ -31,25 +40,36 @@ export function parseTp(name) {
   let number = null;
   let foil = null;
   const tags = [];
+  const codes = [];
   for (const t of toks) {
     if (/^\d+[a-z]?$/i.test(t)) number = normNum(t);
     else if (/foil/i.test(t) && !/^non-?foil$/i.test(t)) foil = fold(t);
+    else if (isCode(t)) codes.push(fold(t));
     else {
-      const f = SYN.has(fold(t)) ? SYN.get(fold(t)) : fold(t);
+      const f = word(t);
       if (f) tags.push(f);
     }
   }
-  return { full, base: full.split(' // ')[0], number, foil, tags };
+  return { full, base: full.split(' // ')[0], number, foil, tags, codes };
 }
 
-/** A CC product as the route compares it: its foil word, number (a numeric bracket) and tags (its variants). */
+/**
+ * A CC product as the route compares it: its foil word; its number (a numeric bracket); its tags, its variants and
+ * any other word in its bracket ("Kiddie Coaster (2-5-6)", "Maro's Gone Nuts (No PW Symbol)": phase 4a); and a set
+ * code in its bracket ("Sol Ring (C14)").
+ */
 export function ccRecord(product) {
   const bracket = product.bracket ?? null;
+  const numbered = bracket != null && /^\d+[a-z]?$/i.test(bracket);
+  const code = bracket != null && !numbered && isCode(bracket);
+  const tags = (product.variants ?? []).map(word).filter(Boolean);
+  if (bracket != null && !numbered && !code && word(bracket)) tags.push(word(bracket));
   return {
     product,
     foil: product.foil_kind ? fold(product.foil_kind) : null,
-    number: bracket && /^\d+[a-z]?$/i.test(bracket) ? normNum(bracket) : null,
-    tags: (product.variants ?? []).map((v) => fold(v)).filter(Boolean),
+    number: numbered ? normNum(bracket) : null,
+    tags,
+    codes: code ? [fold(bracket)] : [],
   };
 }
 
@@ -64,6 +84,8 @@ export function finishOk(rec, finish, tpFoil) {
 }
 
 const sameTags = (a, b) => a.length === b.length && a.every((x) => b.includes(x));
+/** Set codes tell printings apart only when both names carry one: then they must be the same (phase 4a). */
+const codesOk = (a, b) => !a.length || !b.length || sameTags(a, b);
 
 // The store shelves The List and Mystery Booster together (ccMatch.js SAME_SHELF, owner 2026-10-14).
 const SHELF = { 'The List': 'Mystery Booster', 'Mystery Booster': 'The List' };
@@ -136,7 +158,8 @@ export function routeProduct({ line, tcg, candidates, table, categoryNamed }) {
     }
   }
   if (!recs.length) return { status: 'none', why: 'no product of that name and finish', category: cat };
-  const want = (r) => sameTags(r.tags, t.tags) || (place.extra && sameTags(r.tags, [...t.tags, place.extra]));
+  const want = (r) => codesOk(r.codes, t.codes)
+    && (sameTags(r.tags, t.tags) || (place.extra && sameTags(r.tags, [...t.tags, place.extra])));
   if (recs.some((r) => r.number != null)) {
     if (t.number) {
       recs = recs.filter((r) => r.number === t.number || r.number == null);
