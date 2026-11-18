@@ -896,8 +896,8 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
       recent releases and the ongoing series (about 51 sets, 2 calls). Upload the master inventory file: its own
       toast as before, then the catalog refreshes by itself (the button shows it running); with tcgcsv.com
       unreachable, a warning says the upload is done but the catalog couldn't be refreshed, and the upload stands.
-      The top loading bar stays still while a pass runs. Nothing else changes: no export, match or screen reads the
-      catalog yet.
+      The top loading bar stays still while a pass runs. The export's matching and the Price screen's copies we own
+      read the catalog (decisions 592–594: the route); with it empty they match as before the route.
 - [ ] **Backups:** Last backup updates after the download; **Restore from backup…** shows the file beside what's here;
       typing RESTORE and pressing Restore downloads `…-before-restore.json` and says to check it, without restoring
       (decision 348); then Cancel.

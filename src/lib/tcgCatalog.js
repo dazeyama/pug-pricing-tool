@@ -1,11 +1,11 @@
 import { supabase } from './supabase.js';
 import { callFunction } from './functions.js';
 
-// TCGplayer's Magic catalog in the app (decision 588, phase 1; decision 589):the `tcgcatalog` Edge Function fetches it from
+// TCGplayer's Magic catalog in the app (decision 588, phase 1; decision 589): the `tcgcatalog` Edge Function fetches it from
 // tcgcsv.com into `tcg_groups` and `tcg_products` (migration 0017), a batch of sets a call, and this calls it until
 // the pass is done. Run after each master-file upload (MasterInventoryPanel) and by Settings → Crystal Commerce
 // matching's Refresh TCGplayer catalog. One pass at a time on this page: a second ask joins the one running.
-// Nothing reads the catalog yet: the matcher does from phase 3.
+// The matcher reads it: ccExport.js `matchLines`, through the TCGplayer route (tcgRoute.js; decisions 592–594).
 
 /** The most calls one pass makes: the first run's 459 sets take about 12. */
 const MAX_CALLS = 60;
