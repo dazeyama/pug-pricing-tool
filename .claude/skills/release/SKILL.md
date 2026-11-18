@@ -30,7 +30,7 @@ git diff --stat origin/main..main -- supabase/functions   # Edge Functions chang
 - **A migration that isn't on the live site's project yet:** stop and ask. Code that needs an unapplied migration
   breaks the site.
 - **Edge Functions changed** (anything under `supabase/functions/`): note which, for step 9. A change under
-  `_shared/` counts for both `prices` and `secrets`.
+  `_shared/` counts for each function that imports the changed file (`prices`, `secrets`, `tcgcatalog`).
 - Lint, `npm test` (`fail 0`) and the build ran before each commit; if the last commit's run isn't known, run them.
 
 ## 2. The version (bump only)
@@ -119,7 +119,7 @@ If step 1 found changes under `supabase/functions/`, ask, then deploy each chang
 project (`$live` from step 1):
 
 ```bash
-npx supabase functions deploy <prices|secrets> --project-ref <live ref> --use-api --no-verify-jwt
+npx supabase functions deploy <prices|secrets|tcgcatalog> --project-ref <live ref> --use-api --no-verify-jwt
 ```
 
 ## 10. Confirm it's live

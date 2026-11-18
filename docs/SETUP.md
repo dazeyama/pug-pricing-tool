@@ -103,7 +103,7 @@ CSVs and the API keys stay as they are. Try it on **dev** first.
 2. `npx supabase db push --linked --project-ref <new ref>`: the baseline and every migration after it. The CLI stays
    linked to dev (decision 377); if the CLI asks for the new project's database password, the owner types it.
 3. Deploy the Edge Functions: `npx supabase functions deploy prices --project-ref <new ref> --use-api --no-verify-jwt`,
-   and the same for `secrets`.
+   and the same for `secrets` and `tcgcatalog`.
 4. Point the site at it: the GitHub Actions variables `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`, then
    re-run the deploy (or push). Settings → Data API → Max rows as before: 1,000, the default (the app pages
    through any limit, so a lower one is slower, not wrong; decisions 346, 365, 373).
