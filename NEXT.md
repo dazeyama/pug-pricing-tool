@@ -6,6 +6,16 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
+- **The Custom SKU in the export file's name** (the owner, 2026-11-18: "Make an Open to put the Custom SKU in the
+  file name for exports"; main session; Export and printouts' area; not started). Today the Mass Create file is
+  named by game and day or by customer and time, never by its Custom SKU: `DayPage.jsx` `fileName`
+  (`cc-mass-create-magic-<day>.csv`, a single buy's `…-buy-<n>.csv`), `CollectionPage.jsx`
+  (`cc-mass-create-<customer>-<time>.csv`, `…-pulled-bulk-…`, `…-cant-upload-…`); they reach
+  `ccExport.js` `downloadMassCreate` and `ExportDialog.jsx`'s `fileName` prop. A collection's SKU number
+  ("102426-3") is given only when the export saves (decision 511), so its name has to come after that, and the
+  Download the same file again calls need the stamped `cc_custom_sku`. To settle with the owner when it's picked
+  up: the SKU in place of the date, or beside it.
+
 - **Crystal Commerce matching through TCGplayer ids, phases 0 to 5 (decision 588; main session, 2026-11-18).**
   The owner: "Yes, as written". Phase 0 (measure on dev's buy lines) and phase 2's draft set table: the main
   session, in `C:/ClaudeProjects/temp/cc-tcgcsv/`. Phase 1 (migration 0017's TCGplayer catalog table, the Edge
