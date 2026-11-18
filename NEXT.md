@@ -15,8 +15,11 @@ marks each task done here when it's finished, with the exact file and function o
   98.6% with the route first. Scripts: `phase0.mjs` (the buy lines, `buy-lines.json` pulled from dev) and
   `measure.mjs` (all printings, now with the List / Mystery Booster shelf rule) in `C:/ClaudeProjects/temp/cc-tcgcsv/`.
   **Phase 2 done** (main session, 2026-11-18; decision 591): the owner checked the table;
-  `C:/ClaudeProjects/temp/cc-tcgcsv/prod/set-table.json` is the result. Next: phase 3 (the Export session), once
-  the owner says to start it. The draft was (main session, 2026-11-18): `C:/ClaudeProjects/temp/cc-tcgcsv/prod/set-table-draft.md`
+  `C:/ClaudeProjects/temp/cc-tcgcsv/prod/set-table.json` is the result. **Phase 3 built** (decision 592, Export
+  session) **and checked** (main session, 2026-11-18, `check-phase3.mjs`, the app's own route code over prod's
+  copies): on the 1,495 exported lines it changes nothing; every printing 89.3% → 92.4% matched by itself; prod's
+  buy lines 96.6% → 97.3%. Waits for the owner's QA on dev (Settings → CC matching → refresh the TCGplayer catalog
+  first: it has never run on dev). Next: phase 4's rules, one at a time. The draft was (main session, 2026-11-18): `C:/ClaudeProjects/temp/cc-tcgcsv/prod/set-table-draft.md`
   (18 to confirm, 58 not carried, 69 sure; made by `draft-sets.mjs` then `draft-final.mjs`, its picks in `MINE`).
   When the owner's answers are in, it becomes the table in the code (decision 588) for the Export session to wire
   in with phase 3. **Phase 3's order settled** (decision 590): today's matcher first, the
