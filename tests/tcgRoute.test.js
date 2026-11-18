@@ -26,9 +26,11 @@ const route = (line, tcg, candidates) => routeProduct({
 
 test('TCGplayer\'s name read: base, number, its own foil word, tags', () => {
   assert.deepEqual(parseTp('Avatar of Burgeoning Echoes (Showcase)'),
-    { full: 'avatar of burgeoning echoes', base: 'avatar of burgeoning echoes', number: null, foil: null, tags: ['showcase'], codes: [] });
+    { full: 'avatar of burgeoning echoes', base: 'avatar of burgeoning echoes', number: null, foil: null, tags: ['showcase'], codes: [], flavor: null });
   assert.deepEqual(parseTp('Sol Ring (0348) (Surge Foil) (JP Alternate Art)'),
-    { full: 'sol ring', base: 'sol ring', number: '348', foil: 'surgefoil', tags: ['japanesealternateart'], codes: [] });
+    { full: 'sol ring', base: 'sol ring', number: '348', foil: 'surgefoil', tags: ['japanesealternateart'], codes: [], flavor: null });
+  assert.deepEqual(parseTp('Godzilla, Doom Inevitable - Yidaro, Wandering Monster').flavor,
+    { base: 'godzilla, doom inevitable', card: 'yidarowanderingmonster' });
   assert.deepEqual(routeBaseKeys({ name: 'Fire // Ice (Non-Foil)' }), ['fire // ice', 'fire']);
 });
 
@@ -139,6 +141,15 @@ test('a promo naming another program isn\'t the card\'s (4b, 4c)', () => {
   const r = (group, name) => routeProduct({ line: { finish: 'foil', finishes: ['foil'] }, tcg: { group_id: group, group_name: name, name: 'Mutavault' }, candidates: gp, table: t, categoryNamed });
   assert.equal(r(60, 'Champs Promos').status, 'none');
   assert.equal(r(61, 'Grand Prix Promos').product, gp[0]);
+});
+
+test('4d: "Flavor Name - Card Name" finds CC\'s product of the same two names, never the plain card', () => {
+  const godzilla = product('Spacegodzilla, Death Corona - Void Beckoner - Foil', 'Duskmourn: House of Horror');
+  const plain = product('Void Beckoner - Foil', 'Duskmourn: House of Horror');
+  const name = 'Spacegodzilla, Death Corona - Void Beckoner';
+  assert.ok(routeBaseKeys({ name }).includes('spacegodzilla, death corona'));
+  assert.equal(route({ finish: 'foil' }, { name }, [godzilla, plain]).product, godzilla);
+  assert.equal(route({ finish: 'foil' }, { name }, [plain]).status, 'none');
 });
 
 test('the set table in the code: by group id, the owner-checked rows', () => {

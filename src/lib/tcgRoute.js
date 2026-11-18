@@ -50,7 +50,11 @@ export function parseTp(name) {
       if (f) tags.push(f);
     }
   }
-  return { full, base: full.split(' // ')[0], number, foil, tags, codes };
+  // Phase 4d: "Spacegodzilla, Death Corona - Void Beckoner" is a flavor name, then the card's own name: CC files it
+  // as "Spacegodzilla, Death Corona - Void Beckoner" too, under the flavor name with the card's first among its words.
+  const dash = full.indexOf(' - ');
+  const flavor = dash > 0 ? { base: full.slice(0, dash).trim(), card: word(full.slice(dash + 3)) } : null;
+  return { full, base: full.split(' // ')[0], number, foil, tags, codes, flavor };
 }
 
 /**
@@ -139,7 +143,7 @@ const SHELF = { 'The List': 'Mystery Booster', 'Mystery Booster': 'The List' };
  */
 export function routeBaseKeys(tcg) {
   const t = parseTp(tcg.name);
-  return [...new Set([t.full, t.base].filter(Boolean))];
+  return [...new Set([t.full, t.base, t.flavor?.base].filter(Boolean))];
 }
 
 /**
@@ -176,7 +180,14 @@ export function routeProduct({ line, tcg, candidates, table, categoryNamed }) {
   const finish = line.finish;
   const t = parseTp(tcg.name);
   const front = (r) => String(r.product.base_key ?? '').split(' // ')[0];
-  const all = (candidates ?? []).map(ccRecord).filter((r) => front(r) === t.base);
+  let all = (candidates ?? []).map(ccRecord).filter((r) => front(r) === t.base);
+  // Phase 4d: nothing of TCGplayer's whole name, which is "Flavor Name - Card Name": CC's products of the flavor name
+  // whose first word is the card's, compared on the rest. Never CC's plain product of the card's name: another printing.
+  if (!all.length && t.flavor) {
+    all = (candidates ?? []).map(ccRecord)
+      .filter((r) => front(r) === t.flavor.base && r.tags[0] === t.flavor.card)
+      .map((r) => ({ ...r, tags: r.tags.slice(1), words: [] }));
+  }
   const inCat = (c) => all.filter((r) => r.product.category === c && finishOk(r, finish, t.foil));
   let cat = place.category;
   let recs = inCat(cat);
