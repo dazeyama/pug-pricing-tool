@@ -70,6 +70,10 @@ export function ccRecord(product) {
     number: numbered ? normNum(bracket) : null,
     tags,
     codes: code ? [fold(bracket)] : [],
+    // Its extra words one by one, for phase 4b's promo check: "Store Championship Promo" → store, championship, promo.
+    words: [...(product.variants ?? []), ...(bracket != null && !numbered && !code ? [bracket] : [])]
+      .flatMap((v) => String(v).toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '').split(/[^a-z0-9]+/))
+      .filter(Boolean),
   };
 }
 
@@ -84,6 +88,16 @@ export function finishOk(rec, finish, tpFoil) {
 }
 
 const sameTags = (a, b) => a.length === b.length && a.every((x) => b.includes(x));
+// Phase 4b: the words a promo's name adds that say where it was given out, not how it looks. A year counts too.
+// Treatments (borderless, showcase, extended art, retro frame, etched, serialized, manga…) are deliberately absent.
+const PROMO_WORDS = new Set(`promo promos promotional exclusive deck decks theme planeswalker welcome brawl intro
+  starter fnm friday night magic arena judge academy dci game day launch release prerelease event party store
+  championship championships champs anniversary bundle costco walmart target gamestop pride month buy a box
+  bring friend league open house player rewards wpn gateway play standard showdown hero heros path media insert
+  sdcc convention edition holiday gift kit pack card season worlds world grand prix pro tour qualifier`
+  .split(/\s+/).filter(Boolean));
+const isPromoWord = (w) => PROMO_WORDS.has(w) || /^(19|20)\d\d$/.test(w);
+
 /** Set codes tell printings apart only when both names carry one: then they must be the same (phase 4a). */
 const codesOk = (a, b) => !a.length || !b.length || sameTags(a, b);
 
@@ -177,6 +191,13 @@ export function routeProduct({ line, tcg, candidates, table, categoryNamed }) {
     if (plain.length) exact = plain;
   }
   if (exact.length === 1) return { status: 'auto', product: exact[0].product, category: cat };
+  // Phase 4b: TCGplayer's name has no tags, and CC's one product here adds only promo words ("Wall of Roots - Foil
+  // FNM 2008", "- Theme Deck Exclusive", "- Store Championship Promo"). A treatment word is never one (the lone-pick
+  // mistake of decision 590).
+  if (!exact.length && !t.tags.length) {
+    const promo = recs.filter((r) => r.words.length && r.words.every(isPromoWord) && codesOk(r.codes, t.codes));
+    if (promo.length === 1) return { status: 'auto', product: promo[0].product, category: cat, rule: '4b' };
+  }
   // Several alike, or none whose tags agree (a "lone" product left is often another printing: decision 590's
   // second fix): no answer, and the line stays as today's matcher left it.
   return { status: 'none', why: exact.length > 1 ? 'several alike' : 'tags differ', category: cat };
