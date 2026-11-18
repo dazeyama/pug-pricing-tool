@@ -11,6 +11,10 @@ marks each task done here when it's finished, with the exact file and function o
   session, in `C:/ClaudeProjects/temp/cc-tcgcsv/`. Phase 1 (migration 0017's TCGplayer catalog table, the Edge
   Function that fills it from tcgcsv at each master-file upload, the Settings → CC matching button): the Export and
   printouts session. Phases 3 to 5 follow, one at a time, each measured with the same sweep before the next.
+  **Phase 0 done** (main session, 2026-11-18; results in decision 588): on dev's real buy lines, 96.2% today →
+  98.6% with the route first. Scripts: `phase0.mjs` (the buy lines, `buy-lines.json` pulled from dev) and
+  `measure.mjs` (all printings, now with the List / Mystery Booster shelf rule) in `C:/ClaudeProjects/temp/cc-tcgcsv/`.
+  Next here: phase 2's draft set table.
 
 - **Dev holds 55 simulated walk-in buys, and the owner is keeping them** ("I'm going to keep them.", 2026-11-11;
   main session; made for testing the Buys report on the owner's ask: "Can
