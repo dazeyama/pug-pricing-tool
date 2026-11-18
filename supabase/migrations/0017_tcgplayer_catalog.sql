@@ -1,23 +1,26 @@
--- 0017: TCGplayer's Magic catalog, kept in the app (decision 588, phase 1).
+-- 0017: TCGplayer's Magic catalog, kept in the app (decision 588, phase 1; decision 589).
 --
 -- Crystal Commerce matching through TCGplayer ids needs TCGplayer's own name and set for a line's TCGplayer id
 -- (`buy_lines.tcgplayer_id`, Scryfall's). tcgcsv.com mirrors TCGplayer's catalog daily but sends no CORS header,
 -- so the `tcgcatalog` Edge Function fetches it server-side and writes it here: the groups (sets) and their
 -- products, only a group's id, name, set and number, all matching needs. Nothing reads them yet: phase 3 does.
--- Written only by the function (service role), through tcg_group_load and tcg_catalog_finish; the signed-in role
+-- Written only by the function (service role), through tcg_group_load and tcg_catalog_finish, which run with the
+-- caller's rights (only the service role may run them, and it may already write both tables); the signed-in role
 -- reads both tables. Not backed up: tcgcsv is the source, as the inventory file is CC's.
 
--- The groups, as tcgcsv lists them. modified_on is the source's, compared to fetch only the groups changed since.
+-- The groups, as tcgcsv lists them. modified_on is the source's own text ("2026-11-17T15:30:32.543"), kept exactly
+-- and compared exactly; fetched_at decides the rest (the function's rules: a recent release again after half a day,
+-- every group after a month).
 create table public.tcg_groups (
   group_id        integer primary key,
   name            text not null,
   abbreviation    text,
   is_supplemental boolean,
   published_on    timestamp,
-  modified_on     timestamp,
+  modified_on     text,
   products        integer not null default 0,
   fetched_at      timestamptz not null default now(),   -- when its products were last fetched
-  checked_at      timestamptz not null default now()    -- when a full pass last found it in tcgcsv's list
+  checked_at      timestamptz                           -- when a full pass last finished with it in tcgcsv's list
 );
 
 -- Their products: the TCGplayer product id (a line's tcgplayer_id), its group, its name and its collector number
@@ -47,7 +50,7 @@ grant all on table public.tcg_products to service_role;
 create function public.tcg_group_load(p_group jsonb, p_products jsonb)
 returns integer
 language plpgsql
-security definer
+security invoker
 set search_path = public, pg_temp
 as $$
 declare
@@ -58,13 +61,13 @@ begin
   if jsonb_typeof(p_products) is distinct from 'array' or jsonb_array_length(p_products) > 20000 then
     raise exception 'bad_batch';
   end if;
-  insert into tcg_groups (group_id, name, abbreviation, is_supplemental, published_on, modified_on, fetched_at, checked_at)
+  -- checked_at is left alone: only a finished pass sets it (tcg_catalog_finish).
+  insert into tcg_groups (group_id, name, abbreviation, is_supplemental, published_on, modified_on, fetched_at)
   values (g, p_group ->> 'name', nullif(p_group ->> 'abbreviation', ''), (p_group ->> 'isSupplemental')::boolean,
-          (p_group ->> 'publishedOn')::timestamp, (p_group ->> 'modifiedOn')::timestamp, now(), now())
+          (p_group ->> 'publishedOn')::timestamp, p_group ->> 'modifiedOn', now())
   on conflict (group_id) do update set
     name = excluded.name, abbreviation = excluded.abbreviation, is_supplemental = excluded.is_supplemental,
-    published_on = excluded.published_on, modified_on = excluded.modified_on,
-    fetched_at = excluded.fetched_at, checked_at = excluded.checked_at;
+    published_on = excluded.published_on, modified_on = excluded.modified_on, fetched_at = excluded.fetched_at;
   delete from tcg_products where group_id = g;
   -- A product TCGplayer moved here from another group is taken over (its id is its key).
   insert into tcg_products (product_id, group_id, name, number)
@@ -86,7 +89,7 @@ grant execute on function public.tcg_group_load(jsonb, jsonb) to service_role;
 create function public.tcg_catalog_finish(p_group_ids integer[])
 returns jsonb
 language plpgsql
-security definer
+security invoker
 set search_path = public, pg_temp
 as $$
 begin

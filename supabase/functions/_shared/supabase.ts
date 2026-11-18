@@ -1,5 +1,6 @@
-// Shared by the `prices` and `secrets` Edge Functions: CORS, the caller check,
-// and a service-role client (the only thing that may touch `secrets`).
+// Shared by the `prices`, `secrets` and `tcgcatalog` Edge Functions: CORS, the
+// caller check, and a service-role client (the only thing that may touch
+// `secrets`, or write TCGplayer's catalog).
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
 export const corsHeaders = {

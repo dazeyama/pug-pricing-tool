@@ -6,6 +6,15 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
+- **Dev is ahead of prod: migration 0017 and the `tcgcatalog` Edge Function are on dev only** (Export session,
+  2026-11-18; decision 589). Both wait for the owner's word, asked through the main session, in one sitting
+  (decision 381): `npx supabase db push --linked --project-ref zvxquzcfffmxwizonxuo`, the structure-only compare
+  against `C:/Users/Daisy/AppData/Local/Temp/claude/8622948e51b61e0c/357e79bb-00c9-4c02-b4b4-ca9194ddb740/scratchpad/dev-run-0017.json`
+  (or a fresh dev run), then `npx supabase functions deploy tcgcatalog --project-ref zvxquzcfffmxwizonxuo --use-api
+  --no-verify-jwt`. The function must be on prod before the site goes out with this code, or each master-file
+  upload on the live site ends with the "catalog couldn't be refreshed" warning (the release skill deploys only
+  `prices` and `secrets`). `_shared/supabase.ts` changed (its header comment only): no redeploy of those two needed.
+
 - **Crystal Commerce matching through TCGplayer ids, phases 0 to 5 (decision 588; main session, 2026-11-18).**
   The owner: "Yes, as written". Phase 0 (measure on dev's buy lines) and phase 2's draft set table: the main
   session, in `C:/ClaudeProjects/temp/cc-tcgcsv/`. Phase 1 (migration 0017's TCGplayer catalog table, the Edge
@@ -38,6 +47,23 @@ marks each task done here when it's finished, with the exact file and function o
   `SHEET`, `tests/stickerPdf.test.js` with it, and a decision row.
 
 ## Done
+
+- 2026-11-18 (Export session): **Decision 588's phase 1: TCGplayer's Magic catalog in the app** (decision 589;
+  migration 0017 on dev only, see Open; the `tcgcatalog` Edge Function deployed to dev only).
+  - **What:** `supabase/migrations/0017_tcgplayer_catalog.sql` (`tcg_groups`, `tcg_products`, `tcg_group_load`,
+    `tcg_catalog_finish`); `supabase/functions/tcgcatalog/index.ts` (+ `config.toml`); `src/lib/tcgCatalog.js`
+    (`refreshTcgCatalog`, `tcgCatalogStatus`, `catalogSummary`); `src/pages/settings/TcgCatalogRow.jsx`.
+    Outside my area, small: the row in Records' `src/pages/settings/CcMatchingPanel.jsx` (an import and one
+    element, under Products), `callFunction`'s `{ loading }` option in `src/lib/functions.js`, the test run's
+    0017 section and its Security list in `scripts/db-test-run.sql`. The refresh after an upload is started in
+    `MasterInventoryPanel.jsx` `onPicked` (after the upload's own toast), not in `masterInventory.js` `uploadCsv`.
+  - **Checked:** pug-reviewer twice (all findings acted on; the release skill's function list goes to the main
+    session); rehearsed, applied to dev, snapshot, the test run "All passed: 677 checks". Untested in the app:
+    the function has never run (its first run is a real fetch of tcgcsv, a few minutes).
+  - **Where to look (dev):** Settings → Crystal Commerce matching, under Products: "TCGplayer catalog: not fetched
+    yet" → Refresh TCGplayer catalog → "Refreshing… N sets, M to go", then a toast with about 121,600 products in
+    459 sets; pressed again: "nothing changed". Upload the master inventory file: the catalog refreshes by itself
+    after the upload's toast. Nothing else in the app changes.
 
 - 2026-11-11: **Pushed without a bump, no review** (main session; the owner: "quick push no review"): a failed
   load of the Buys report keeps Home up and says why (decision 587, fd538a3, Records session) and the records

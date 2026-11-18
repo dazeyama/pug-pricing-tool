@@ -422,3 +422,7 @@ verify_jwt = false
 
 [functions.secrets]
 verify_jwt = false
+
+# TCGplayer's Magic catalog from tcgcsv.com (decision 588, phase 1).
+[functions.tcgcatalog]
+verify_jwt = false

@@ -245,7 +245,9 @@ begin
   select string_agg(p.proname, ', ' order by p.proname) into v
     from pg_proc p where p.pronamespace = 'public'::regnamespace
      and not has_function_privilege('authenticated', p.oid, 'EXECUTE');
-  perform pg_temp.ok(s, 'The app can run every public function but restore_rows', v = 'restore_rows', v);
+  -- tcg_catalog_finish and tcg_group_load (0017): the tcgcatalog Edge Function's alone, as the service role.
+  perform pg_temp.ok(s, 'The app can run every public function but restore_rows and the TCGplayer catalog''s',
+    v = 'restore_rows, tcg_catalog_finish, tcg_group_load', v);
 
   select string_agg(ns.nspname || '.' || p.proname, ', ' order by ns.nspname || '.' || p.proname) into v
     from pg_proc p join pg_namespace ns on ns.oid = p.pronamespace
@@ -3857,6 +3859,77 @@ exception when others then
   declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;
   perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
 end $$;
+
+-- ============================================= TCGplayer's catalog (0017)
+-- Decisions 588 and 589. Written only by the tcgcatalog Edge Function (the service role), read by the app. The
+-- writes below run as the owner, as the function's service role would. Group ids below zero are the run's own; dev's
+-- real catalog is left as it is (the finished pass lists its groups), its checked times rolled back with the rest.
+do $$
+declare
+  s text := 'TCGplayer''s catalog (0017)';
+begin
+  perform pg_temp.ok(s, 'The app can read the catalog, never write it or run its loaders',
+    has_table_privilege('authenticated', 'public.tcg_groups', 'SELECT')
+    and has_table_privilege('authenticated', 'public.tcg_products', 'SELECT')
+    and not has_table_privilege('authenticated', 'public.tcg_products', 'INSERT')
+    and not has_table_privilege('authenticated', 'public.tcg_groups', 'DELETE')
+    and not has_function_privilege('authenticated', 'public.tcg_group_load(jsonb, jsonb)', 'EXECUTE')
+    and not has_function_privilege('authenticated', 'public.tcg_catalog_finish(integer[])', 'EXECUTE')
+    and has_function_privilege('service_role', 'public.tcg_group_load(jsonb, jsonb)', 'EXECUTE')
+    and has_function_privilege('service_role', 'public.tcg_catalog_finish(integer[])', 'EXECUTE')
+    and not has_table_privilege('anon', 'public.tcg_products', 'SELECT'));
+exception when others then
+  declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;
+  perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
+end $$;
+reset role;
+do $$
+declare
+  s text := 'TCGplayer''s catalog (0017)';
+  g jsonb := '{"groupId": -1, "name": "DBTEST Alpha", "abbreviation": "DBA", "isSupplemental": false,
+               "publishedOn": "1993-08-05T00:00:00", "modifiedOn": "2026-11-17T20:01:02.41"}';
+  n integer;
+  v jsonb;
+begin
+  begin
+    perform tcg_group_load('{"groupId": -1}', '[]');
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'A group needs its id and name', sqlerrm, 'bad_group');
+  end;
+  begin
+    perform tcg_group_load(g, '{}');
+    raise exception 'dbt_no_error';
+  exception when others then perform pg_temp.err(s, 'The products are a list', sqlerrm, 'bad_batch');
+  end;
+  n := tcg_group_load(g, '[{"product_id": -11, "name": "Dbtest Lotus", "number": " 233 "},
+                           {"product_id": -12, "name": "Dbtest Mox", "number": null},
+                           {"product_id": -12, "name": "Dbtest Mox", "number": null},
+                           {"product_id": -13, "name": "Dbtest Ring", "number": ""}]');
+  perform pg_temp.ok(s, 'A group loads with its products, once each, their numbers trimmed; not yet checked',
+    n = 3 and (select products = 3 and name = 'DBTEST Alpha' and modified_on = '2026-11-17T20:01:02.41'
+                      and checked_at is null from tcg_groups where group_id = -1)
+    and (select number = '233' from tcg_products where product_id = -11)
+    and (select number is null from tcg_products where product_id = -13), n::text);
+  n := tcg_group_load(g || '{"modifiedOn": "2026-11-18T20:00:00"}', '[{"product_id": -11, "name": "Dbtest Lotus", "number": "233"}]');
+  perform pg_temp.ok(s, 'Loaded again, the group''s products are replaced whole',
+    n = 1 and not exists (select 1 from tcg_products where product_id in (-12, -13))
+    and (select modified_on = '2026-11-18T20:00:00' from tcg_groups where group_id = -1), n::text);
+  perform tcg_group_load('{"groupId": -2, "name": "DBTEST Beta"}', '[{"product_id": -11, "name": "Dbtest Lotus", "number": "233"}]');
+  perform tcg_group_load('{"groupId": -3, "name": "DBTEST Gone"}', '[{"product_id": -31, "name": "Dbtest Gone", "number": "1"}]');
+  -- The pass's list: dev's real groups (left as they are) and -1 and -2; -3 has left it.
+  v := tcg_catalog_finish(array(select group_id from tcg_groups where group_id <> -3));
+  perform pg_temp.ok(s, 'A finished pass: a moved product counts in its new group only, the groups gone go, all checked',
+    (select group_id = -2 from tcg_products where product_id = -11)
+    and (select products = 0 and checked_at is not null from tcg_groups where group_id = -1)
+    and (select products = 1 and checked_at is not null from tcg_groups where group_id = -2)
+    and not exists (select 1 from tcg_groups where group_id = -3)
+    and not exists (select 1 from tcg_products where product_id = -31)
+    and (v ->> 'groups')::int = (select count(*) from tcg_groups), v::text);
+exception when others then
+  declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;
+  perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
+end $$;
+set local role authenticated;
 
 -- ============================================= Backup pass (its own run)
 -- db-test-run.mjs runs everything above in one transaction and the Backup checks below in a second (decision 448):

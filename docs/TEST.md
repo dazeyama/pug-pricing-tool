@@ -867,6 +867,16 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
       products… and Saving… to **Clearing the old file…** (about half a minute for the full export), then shows the new
       file, with no "statement timeout". The Changelog has "Master Crystal Inventory uploaded" under Actions.
 - [ ] **Crystal Commerce matching** lists remembered sets and products; Browse remembered products… searches them.
+- [ ] **TCGplayer catalog** (decisions 588, 589; Export session; needs migration 0017 and the `tcgcatalog` function on
+      dev): under Products, "TCGplayer catalog: not fetched yet" the first time. **Refresh TCGplayer catalog**: the
+      button reads "Refreshing… N sets, M to go" (the first pass fetches all 459 sets, a few minutes), then a toast
+      "TCGplayer catalog up to date: about 121,600 products in 459 sets (459 fetched)", and the line shows the
+      products and the time. Pressed again at once: "nothing changed", in seconds; half a day later it fetches the
+      recent releases and the ongoing series (about 51 sets, 2 calls). Upload the master inventory file: its own
+      toast as before, then the catalog refreshes by itself (the button shows it running); with tcgcsv.com
+      unreachable, a warning says the upload is done but the catalog couldn't be refreshed, and the upload stands.
+      The top loading bar stays still while a pass runs. Nothing else changes: no export, match or screen reads the
+      catalog yet.
 - [ ] **Backups:** Last backup updates after the download; **Restore from backup…** shows the file beside what's here;
       typing RESTORE and pressing Restore downloads `…-before-restore.json` and says to check it, without restoring
       (decision 348); then Cancel.

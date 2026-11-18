@@ -199,6 +199,9 @@
 .ccm > .backups-col { min-height: 0; overflow-y: auto; }
 .ccm .settings-sub { margin-top: 0; }
 .ccm-counts { margin-top: 2px; }
+/* The TCGplayer catalog's line and button (decision 588), under Products. */
+.ccm-tcg { margin-top: 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.ccm-tcg .hint { margin: 0; }
 .ccm-modal .modal-box.wide { width: min(980px, calc(94vw / var(--ui-zoom))); height: min(720px, calc(86vh / var(--ui-zoom))); }
 .ccm-modal .ccm-search { display: block; }
 .ccm-caption { margin: 0 0 4px; }

@@ -7,6 +7,7 @@ import GuardButton from '../../components/GuardButton.jsx';
 import UserTag from '../../components/UserTag.jsx';
 import { checkCsv, downloadCsv, underTenList, uploadCsv } from '../../lib/masterInventory.js';
 import { withLoading } from '../../lib/loading.js';
+import { refreshTcgCatalog } from '../../lib/tcgCatalog.js';
 import { formatDateTime } from '../../lib/time.js';
 
 // Settings → Master Crystal Inventory (spec 11.1). Red with a "Required"
@@ -42,6 +43,16 @@ export default function MasterInventoryPanel() {
         (step, f) => setStage({ step, pct: f == null ? null : Math.round(f * 100) })));
       await reload();
       toast(`Uploaded ${file.name}: ${summary.rowCount.toLocaleString()} rows.`, 'ok');
+      // TCGplayer's catalog brought up to date with it (decision 588), not waited for: a failure says why and the
+      // upload stands. Crystal Commerce matching shows how far it is, and has the button to try again.
+      refreshTcgCatalog().then((r) => {
+        if (r.skipped.length) {
+          toast(`The TCGplayer catalog is refreshed, but ${r.skipped.length} set${r.skipped.length === 1 ? '' : 's'} `
+            + `couldn't be fetched: ${r.skipped.map((g) => g.name).join(', ')}. Refresh again from Settings → Crystal `
+            + 'Commerce matching later.', 'warn');
+        }
+      }, (err) => toast(`The upload is done, but the TCGplayer catalog couldn't be refreshed: `
+        + `${err.message}. Try again from Settings → Crystal Commerce matching.`, 'warn'));
     } catch (err) {
       setError(err.message);
     } finally {

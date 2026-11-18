@@ -10,6 +10,7 @@ import { logSetting } from '../../lib/settingsLog.js';
 import { matchesChanged } from '../../lib/matchCache.js';
 import { useConnection } from '../../state/connection.jsx';
 import { useToast } from '../../components/Toast.jsx';
+import TcgCatalogRow from './TcgCatalogRow.jsx';
 
 // Settings → Crystal Commerce matching (docs/EXPORT_FUNCTION.md 11.2), a row
 // of its own like Backups: on the left, staff's set → category choices; on
@@ -124,6 +125,8 @@ export default function CcMatchingPanel() {
           <button type="button" className="btn" disabled={!total} onClick={() => setBrowsing(true)}>
             Browse remembered products…
           </button>
+          {/* TCGplayer's catalog, kept for matching (decision 588, phase 1; Export and printouts). */}
+          <TcgCatalogRow />
         </div>
       </div>
       {browsing && (
