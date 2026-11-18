@@ -17,7 +17,8 @@ export const usableLink = (link) => link?.source === 'staff';
 /**
  * What an exported match remembers (export_learn): 'staff' for a person's pick, nothing for one the app made by
  * itself, which it makes again next time (decision 486).
- * @param {'staff'|'link'|'match'|string|null} by  how the export dialog's line was matched
+ * @param {'staff'|'link'|'match'|'route'|string|null} by  how the export dialog's line was matched ('route': through
+ *   TCGplayer's catalog, decision 590, made again each export like 'match')
  */
 export const linkToSave = (by) => (by === 'staff' ? 'staff' : null);
 

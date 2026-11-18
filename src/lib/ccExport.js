@@ -15,6 +15,8 @@ import { massCreateCsv, massCreateRows } from './massCreate.js';
 import { allPages, inChunks } from './inChunks.js';
 import { DB_MESSAGES, knownCode } from './dbErrors.js';
 import { matchesChanged } from './matchCache.js';
+import { routeBaseKeys, routeProduct } from './tcgRoute.js';
+import { TCG_SET_TABLE } from './tcgSetTable.js';
 
 // Full Scryfall cards by id now live with today's prices (todaysPrices.js).
 export { scryfallCards };
@@ -164,7 +166,69 @@ export async function matchLines(lines, onStep, given = {}) {
       wasLinked: link && !linkedProduct ? link : null,
     };
   });
-  return { results, cards };
+  return { results: await routeGaps(results, categories, onStep), cards };
+}
+
+/**
+ * The TCGplayer route (tcgRoute.js; decision 590's order): for each line today's matcher left as Needs a choice,
+ * with no category or with no candidates, its TCGplayer product's CC product, when the route has exactly one.
+ * Never for a line staff must pick themselves: a remembered pick whose product left the inventory (decision 487) or a
+ * Secret Lair card (decision 574), whichever category the route lands in. A route match is via 'route', made again
+ * at each export and never remembered (decision 486: only staff's picks are). A failure to read the catalog or the
+ * candidates leaves every line as today's matcher left it.
+ * @param {object[]} results  matchLines' results
+ * @param {Map<string, string>} categories  folded category → the category exactly
+ * @param {(text: string) => void} [onStep]
+ */
+async function routeGaps(results, categories, onStep) {
+  const gaps = results.filter((r) => r.status !== 'auto' && !r.wasLinked && !alwaysChoose(r.set, r.category)
+    && /^\d+$/.test(String(r.line.tcgplayer_id ?? '')));
+  if (!gaps.length) return results;
+  try {
+    onStep?.("Checking the rest against TCGplayer's catalog…");
+    const ids = [...new Set(gaps.map((r) => Number(r.line.tcgplayer_id)))];
+    const { data: tcgRows, error: tcgError } = await inChunks((part) => supabase.from('tcg_products')
+      .select('product_id, group_id, name, number, tcg_groups(name)').in('product_id', part), ids);
+    fail(tcgError, "Couldn't read TCGplayer's catalog");
+    const tcgById = new Map((tcgRows ?? []).map((t) => [t.product_id, { ...t, group_name: t.tcg_groups?.name ?? null }]));
+    const routed = gaps.filter((r) => tcgById.has(Number(r.line.tcgplayer_id)));
+    if (!routed.length) return results;
+    // Their candidates by TCGplayer's own name, in every category: the set table says which one is theirs.
+    const wants = routed.map((r) => ({
+      key: r.line.id, category: null, base_keys: routeBaseKeys(tcgById.get(Number(r.line.tcgplayer_id))),
+    }));
+    const { data: candRows, error: candError } = await allPages((from, to) => supabase
+      .rpc('cc_candidates', { p_wants: wants })
+      .order('key').order('category').order('product_id')
+      .range(from, to));
+    fail(candError, "Couldn't read the inventory's products");
+    const byKey = new Map();
+    for (const row of candRows ?? []) {
+      if (!byKey.has(row.key)) byKey.set(row.key, []);
+      byKey.get(row.key).push(row);
+    }
+    const categoryNamed = (name) => categories.get(fold(name)) ?? null;
+    const answers = new Map();
+    for (const r of routed) {
+      const answer = routeProduct({
+        line: r.line, tcg: tcgById.get(Number(r.line.tcgplayer_id)), candidates: byKey.get(r.line.id) ?? [],
+        table: TCG_SET_TABLE, categoryNamed,
+      });
+      if (answer.status === 'auto' && !alwaysChoose(null, answer.product.category)) answers.set(r.line.id, answer);
+    }
+    if (!answers.size) return results;
+    return results.map((r) => {
+      const a = answers.get(r.line.id);
+      if (!a) return r;
+      // Listed first among its candidates, so Change offers it as the app's own match.
+      const ranked = r.ranked.some((x) => x.product.product_id === a.product.product_id)
+        ? r.ranked : [{ product: a.product, score: 1000, reasons: ['tcgplayer'] }, ...r.ranked];
+      return { ...r, status: 'auto', product: a.product, ranked, via: 'route' };
+    });
+  } catch (e) {
+    console.warn("The TCGplayer route didn't run: the lines stay as today's matcher left them", e);
+    return results;
+  }
 }
 
 /** Remember a product for a printing and finish (export spec 7.5). */

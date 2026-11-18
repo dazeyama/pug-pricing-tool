@@ -649,7 +649,7 @@ export default function ExportDialog({
                         key={r.line.id}
                         {...rowProps(r)}
                         current={s.product}
-                        detected={r.status === 'auto' && r.via === 'match' ? r.product : null}
+                        detected={r.status === 'auto' && (r.via === 'match' || r.via === 'route') ? r.product : null}
                         onDone={() => edit(r, false)}
                         onCancel={() => edit(r, false)}
                       />
@@ -663,6 +663,12 @@ export default function ExportDialog({
                         {s.product.product_name}
                         <span className="xd-cat">{s.product.category}</span>
                         {s.by === 'link' && <span className="xd-tag" title="Remembered from before">remembered</span>}
+                        {/* Found through TCGplayer's catalog (decision 590), not remembered: matched again each export. */}
+                        {s.by === 'route' && (
+                          <span className="xd-tag" title="Found through TCGplayer's catalog, by the card's TCGplayer product">
+                            via TCGplayer
+                          </span>
+                        )}
                         {s.by === 'staff' && <span className="xd-tag">picked</span>}
                       </span>
                       {sellNote(r)}
