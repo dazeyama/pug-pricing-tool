@@ -74,8 +74,8 @@ marks each task done here when it's finished, with the exact file and function o
 - 2026-11-18 (main session): **Third push of the day, no bump, no review** (the owner: "Push to live. No
   review."). What went out: decision 598 (e792791, its Done entry 7fcf67a, below) and the tcgcatalog note
   (0b922bc). No migrations (prod and dev both 0001–0017), no Edge Function changes. Lint, 607 tests and the build
-  clean before the push. Left open from 598: whether NM cards with a manual or Change price should also go in at
-  today's NM (asked, not answered).
+  clean before the push. Settled after it: NM cards with a manual or Change price keep their own price (the owner:
+  "Keep their own price", 2026-11-18; decision 598, no code change).
 
 - 2026-11-18 (Export session): **Decision 598: the Mass Create file sets NM at today's Near Mint price, no reverse
   math** (the owner: "always fetch and use accurate current NM prices for all conditions in place of doing the
