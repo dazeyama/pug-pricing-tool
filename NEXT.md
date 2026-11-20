@@ -78,6 +78,28 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-11-19 (Export session): **Decision 599: a The List card with more than one The List printing, in CC or on
+  TCGplayer, goes to Needs a choice** until a staff pick is remembered (the owner: "always send that card to
+  manual matching (until it's been chosen and remembered by a human)"; no migration; not pushed).
+  - Files: `src/lib/ccMatch.js` `isListCard`, `ccListPrintings`; `src/lib/ccExport.js` `matchOne` (the rule, and
+    no TCGplayer route for such a card), `routeSide` and the new `readListProducts` (TCGplayer's The List
+    products by name, one batched read beside the candidates', kept per page); `tests/matchOne.test.js` (4
+    tests); TEST.md's case under Export.
+  - My choices (work mode, reversible, in my area): **Mystery Booster's products aren't counted** as The List
+    printings, although the two share a shelf (the owner's words name The List). **One printing in two finishes
+    is one** ("Fabricate - The List" and its Foil). A The List card is found by Scryfall's PLST or ULST, a CC
+    category of The List, or its TCGplayer product in "The List Reprints". If TCGplayer's read fails, only CC's
+    printings count (a console warning).
+  - Measured on prod's copies of 2026-11-17 (read-only, the app's own code;
+    `C:\Users\Daisy\AppData\Local\Temp\claude\8622948e51b61e0c\357e79bb-00c9-4c02-b4b4-ca9194ddb740\scratchpad\list599.mjs`):
+    **8 of 3,730 Magic buy lines** move to Needs a choice (81 are The List cards), all on TCGplayer's count
+    (Demonic Tutor, Command Beacon, Reliquary Tower, Mother of Runes…); **3 of the 1,495 exported lines**, each
+    matched right before. Over every printing and finish, 444 of The List's 5,750.
+  - Where to look (dev, with the TCGplayer catalog fetched): export a day with a The List Demonic Tutor no one has
+    picked: it's in **Needs a choice**. Pick it and export; the next export of it matches by itself. A The List
+    Abrade (one printing in both) still matches by itself.
+  - Untested in the app: all of it. The TCGplayer read's filter (`name.ilike."<name>*"` inside `or`, names quoted)
+    has never been sent to the database. If PostgREST refuses it, the console says so and only CC's count applies.
 - 2026-11-18 (main session): **Third push of the day, no bump, no review** (the owner: "Push to live. No
   review."). What went out: decision 598 (e792791, its Done entry 7fcf67a, below) and the tcgcatalog note
   (0b922bc). No migrations (prod and dev both 0001–0017), no Edge Function changes. Lint, 607 tests and the build
