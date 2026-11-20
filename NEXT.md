@@ -6,6 +6,13 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
+- **Reformat the printouts to be in Crystal Commerce format** (the owner, 2026-11-19: "reformat the printouts to be
+  in Crystal Commerce format."; main session; Export and printouts' area; not started). Waits until the current
+  task (a card with several The List printings always a staff pick) is done, and then only on the owner's command:
+  "We'll work on this after the current task is done on my command." The printouts: `src/lib/auditPrint.js`
+  (and `quotePrint.js`). What "Crystal Commerce format" means (CC's product names, categories and condition words as
+  the export stamps them, or the layout of a CC page or report) is to settle with the owner when it starts.
+
 - **The Custom SKU in the export file's name** (the owner, 2026-11-18: "Make an Open to put the Custom SKU in the
   file name for exports"; main session; Export and printouts' area; not started). Today the Mass Create file is
   named by game and day or by customer and time, never by its Custom SKU: `DayPage.jsx` `fileName`
