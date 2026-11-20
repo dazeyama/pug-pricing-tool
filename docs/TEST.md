@@ -843,8 +843,8 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
 - [ ] **A The List card with more than one The List printing is a choice** (decision 599; Export session; needs the
       TCGplayer catalog fetched): export a The List (PLST) `Demonic Tutor` no one has picked before (TCGplayer has
       two The List printings of it): it's in **Needs a choice**, not matched by itself. Pick it and export; the next
-      export of that printing and finish matches by itself. A The List card with one printing in both (`Abrade`,
-      for example) still matches by itself.
+      export of that printing and finish matches by itself. A The List card with one printing in both (`Doom Blade`,
+      for example; not Abrade, which has two in both) still matches by itself.
 
 ## 16. Settings tab
 

@@ -85,8 +85,9 @@ marks each task done here when it's finished, with the exact file and function o
     no TCGplayer route for such a card), `routeSide` and the new `readListProducts` (TCGplayer's The List
     products by name, one batched read beside the candidates', kept per page); `tests/matchOne.test.js` (4
     tests); TEST.md's case under Export.
-  - My choices (work mode, reversible, in my area): **Mystery Booster's products aren't counted** as The List
-    printings, although the two share a shelf (the owner's words name The List). **One printing in two finishes
+  - **Mystery Booster's products aren't counted** as The List printings, although the two share a shelf (the
+    owner: "Mystery booster cards can stay separate for now that's fine"). My choices (work mode, reversible, in
+    my area): **One printing in two finishes
     is one** ("Fabricate - The List" and its Foil). A The List card is found by Scryfall's PLST or ULST, a CC
     category of The List, or its TCGplayer product in "The List Reprints". If TCGplayer's read fails, only CC's
     printings count (a console warning).
@@ -97,7 +98,7 @@ marks each task done here when it's finished, with the exact file and function o
     matched right before. Over every printing and finish, 444 of The List's 5,750.
   - Where to look (dev, with the TCGplayer catalog fetched): export a day with a The List Demonic Tutor no one has
     picked: it's in **Needs a choice**. Pick it and export; the next export of it matches by itself. A The List
-    Abrade (one printing in both) still matches by itself.
+    Doom Blade (one printing in both) still matches by itself; not Abrade, which has two in both (HOU and 2XM).
   - Untested in the app: all of it. The TCGplayer read's filter (`name.ilike."<name>*"` inside `or`, names quoted)
     has never been sent to the database. If PostgREST refuses it, the console says so and only CC's count applies.
 - 2026-11-18 (main session): **Third push of the day, no bump, no review** (the owner: "Push to live. No
