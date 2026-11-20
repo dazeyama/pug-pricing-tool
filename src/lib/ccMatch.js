@@ -124,6 +124,35 @@ export function categoryFor({ set, parent = null, promo = '', categories, setMap
 export const alwaysChoose = (set, category) => String(set?.code ?? '').toLowerCase() === 'sld'
   || fold(category).includes('secretlair');
 
+/** Scryfall's sets of The List's cards (decision 599). */
+const LIST_SETS = new Set(['plst', 'ulst']);
+
+/**
+ * Is a line a The List card (decision 599)? By its Scryfall set, its CC category, or its TCGplayer product's set.
+ * @param {{ code?: string }|null} set  the line's set
+ * @param {string|null} category  categoryFor's answer
+ * @param {boolean} [tcgList]  its TCGplayer product is in one of TCGplayer's The List sets
+ */
+export const isListCard = (set, category, tcgList = false) => LIST_SETS.has(String(set?.code ?? '').toLowerCase())
+  || fold(category) === 'thelist' || tcgList;
+
+/**
+ * How many The List printings CC has among these products (decision 599): The List's category only, not Mystery
+ * Booster's on the same shelf; one printing in two finishes ("Fabricate - The List" and "Fabricate - Foil - The
+ * List") is one, by its bracket and its other words.
+ * @param {{ product_id: string, category: string, bracket: string|null, variants: string[]|null }[]} products
+ */
+export function ccListPrintings(products) {
+  const seen = new Set();
+  const printings = new Set();
+  for (const p of products) {
+    if (seen.has(p.product_id) || fold(p.category) !== 'thelist') continue;
+    seen.add(p.product_id);
+    printings.add(JSON.stringify([fold(p.bracket), [...(p.variants ?? [])].map(fold).sort()]));
+  }
+  return printings.size;
+}
+
 // Categories the store keeps as one (owner, 2026-10-14): The List's cards
 // and Mystery Booster's are shelved together, so a card in either is filed
 // under either ("Eldrazi Monument (PLST) CMA-216" is in Mystery Booster).

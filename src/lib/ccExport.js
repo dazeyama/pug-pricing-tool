@@ -6,8 +6,8 @@ import { supabase } from './supabase.js';
 import { loadSets } from './scryfall.js';
 import { nameKey } from './normalize.js';
 import {
-  alwaysChoose, categoryFor, chooseProduct, evidenceTreatments, fold, frontFace, promoKind, searchCategories,
-  usableLink,
+  alwaysChoose, categoryFor, ccListPrintings, chooseProduct, evidenceTreatments, fold, frontFace, isListCard, promoKind,
+  searchCategories, usableLink,
 } from './ccMatch.js';
 import { scryfallCards, todaysPrices } from './todaysPrices.js';
 import { sellPriceFor } from './sellPrice.js';
@@ -142,6 +142,7 @@ export async function matchLines(lines, onStep, given = {}) {
       candidates: byKey.get(line.id) ?? [],
       tcg: route.tcgById.get(Number(line.tcgplayer_id)) ?? null,
       routeCandidates: route.byKey.get(line.id) ?? [],
+      tcgListPrintings: route.listTcg.get(line.id) ?? 0,
       categoryNamed,
     });
   });
@@ -149,9 +150,10 @@ export async function matchLines(lines, onStep, given = {}) {
 }
 
 /**
- * One line's match, in the order decisions 486, 487, 574 and 594 set: a remembered staff pick; else, unless the
- * pick is staff's to make (a remembered pick whose product left the inventory; a Secret Lair card by its set, its
- * category, the route's category or its TCGplayer set), the TCGplayer route's one product; else today's matcher.
+ * One line's match, in the order decisions 486, 487, 574, 594 and 599 set: a remembered staff pick; else, unless
+ * the pick is staff's to make (a remembered pick whose product left the inventory; a Secret Lair card by its set, its
+ * category, the route's category or its TCGplayer set; a The List card with more than one The List printing in CC
+ * or on TCGplayer), the TCGplayer route's one product; else today's matcher.
  * Pure: matchLines reads everything first.
  * @param {object} p
  * @param {object} p.line  a buy line
@@ -166,12 +168,13 @@ export async function matchLines(lines, onStep, given = {}) {
  * @param {object[]} p.candidates  cc_candidates rows for today's matcher
  * @param {object|null} p.tcg  its TCGplayer product (with group_name), or null
  * @param {object[]} p.routeCandidates  cc_candidates rows by TCGplayer's name, any category
+ * @param {number} [p.tcgListPrintings]  TCGplayer's The List products of its name (readListProducts)
  * @param {(name: string) => string|null} p.categoryNamed
  * @param {Record<number, Array>} [p.table]  the set table (tcgSetTable.js)
  */
 export function matchOne({
   line, set, promo, card, flavor, where, also, link, linkedProduct, candidates, tcg, routeCandidates, categoryNamed,
-  table = TCG_SET_TABLE,
+  tcgListPrintings = 0, table = TCG_SET_TABLE,
 }) {
   const base = {
     line, set, promo, card, flavor, category: where?.category ?? null, also, how: where?.how ?? null, candidates,
@@ -188,13 +191,18 @@ export function matchOne({
   }
   // With no category, the candidates come from every category: staff decide (spec 7.3 step 5). A person's pick
   // whose product left the inventory is theirs to make again, never the app's guess (decision 487). A Secret Lair
-  // card is always staff's to pick, until a pick is remembered (decision 574).
-  const status = pick.status === 'auto' && (!where || link || alwaysChoose(set, where.category)) ? 'choose' : pick.status;
-  // The TCGplayer route first (decision 594; tcgRoute.js), never for a pick that's staff's to make (487, 574):
+  // card is always staff's to pick, until a pick is remembered (decision 574); so is a The List card with more than
+  // one The List printing in CC or on TCGplayer (decision 599).
+  const tcgList = tcg != null && fold(table[tcg.group_id]?.[1]) === 'thelist';
+  const listChoice = isListCard(set, where?.category ?? null, tcgList)
+    && (ccListPrintings([...candidates, ...routeCandidates]) > 1 || tcgListPrintings > 1);
+  const staffs = alwaysChoose(set, where?.category ?? null) || listChoice;
+  const status = pick.status === 'auto' && (!where || link || staffs) ? 'choose' : pick.status;
+  // The TCGplayer route first (decision 594; tcgRoute.js), never for a pick that's staff's to make (487, 574, 599):
   // its one product wins; with no single answer, today's matcher's stands. A route match is made again at each
   // export, never remembered (decision 486).
   // A TCGplayer set named Secret Lair is a staff pick too, whatever category the set table gives it (574).
-  if (tcg && !link && !alwaysChoose(set, where?.category ?? null) && !alwaysChoose(null, tcg.group_name)) {
+  if (tcg && !link && !staffs && !alwaysChoose(null, tcg.group_name)) {
     const a = routeProduct({
       // Its Scryfall card's finishes: a foil-only printing may take a promo's product named without "Foil" (4c).
       line: { ...line, finishes: card?.finishes ?? null },
@@ -272,13 +280,56 @@ async function routeSide(lines) {
     const tcgById = await readTcgProducts(lines);
     const wants = lines.filter((l) => tcgById.has(Number(l.tcgplayer_id)))
       .map((l) => ({ key: l.id, category: null, base_keys: routeBaseKeys(tcgById.get(Number(l.tcgplayer_id))) }));
-    const { data, error } = await readCandidates(wants);
+    // The List's cards (decision 599), by their Scryfall set or their TCGplayer product's set: how many The List
+    // products TCGplayer has of their name, read beside the candidates.
+    const listLines = lines.filter((l) => isListCard({ code: l.source_set_id ?? l.set_code }, null,
+      LIST_GROUPS.includes(tcgById.get(Number(l.tcgplayer_id))?.group_id)));
+    const listName = (l) => nameKey(frontFace(l.name));
+    const [{ data, error }, listed] = await Promise.all([
+      readCandidates(wants),
+      readListProducts(listLines.map(listName)).catch((e) => {
+        console.warn("TCGplayer's The List printings couldn't be read: only CC's are counted", e);
+        return new Map();
+      }),
+    ]);
     fail(error, "Couldn't read the inventory's products");
-    return { tcgById, byKey: groupByKey(data) };
+    const listTcg = new Map(listLines.map((l) => [l.id, listed.get(listName(l))?.length ?? 0]));
+    return { tcgById, byKey: groupByKey(data), listTcg };
   } catch (e) {
     console.warn("The TCGplayer route didn't run: the cards are matched as before it", e);
-    return { tcgById: new Map(), byKey: new Map() };
+    return { tcgById: new Map(), byKey: new Map(), listTcg: new Map() };
   }
+}
+
+/** TCGplayer's The List sets, by the set table (decision 599): "The List Reprints" today. */
+const LIST_GROUPS = Object.entries(TCG_SET_TABLE).filter(([, row]) => fold(row[1]) === 'thelist').map(([id]) => Number(id));
+
+// TCGplayer's The List products already read on this page, by the name looked up (decision 599), as TCG_SEEN.
+const LIST_SEEN = new Map();
+
+/** A value for a PostgREST filter, quoted: names have commas, brackets and apostrophes. */
+const quoted = (s) => `"${String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+
+/**
+ * TCGplayer's The List products of these names (decision 599; name keys, a card's front face), by name: one read,
+ * 40 names a request, for those not read before on this page. TCGplayer names a The List printing with its set's
+ * code ("Lightning Bolt (E01)"): the read takes every name that starts with the card's and keeps those whose
+ * name, read as the route reads it (routeBaseKeys), is the card's.
+ * @param {string[]} names
+ * @returns {Promise<Map<string, number[]>>}  product ids by name
+ */
+async function readListProducts(names) {
+  const want = [...new Set(names.filter(Boolean))];
+  const unseen = want.filter((n) => !LIST_SEEN.has(n));
+  if (unseen.length && LIST_GROUPS.length) {
+    const { data, error } = await inChunks((part) => supabase.from('tcg_products').select('product_id, name')
+      .in('group_id', LIST_GROUPS).or(part.map((n) => `name.ilike.${quoted(`${n}*`)}`).join(',')), unseen, 40);
+    fail(error, "Couldn't read TCGplayer's The List");
+    const found = new Map(unseen.map((n) => [n, new Set()]));
+    for (const t of data ?? []) for (const k of routeBaseKeys(t)) found.get(k)?.add(t.product_id);
+    for (const [n, ids] of found) LIST_SEEN.set(n, [...ids]);
+  }
+  return new Map(want.map((n) => [n, LIST_SEEN.get(n) ?? []]));
 }
 
 /** Remember a product for a printing and finish (export spec 7.5). */

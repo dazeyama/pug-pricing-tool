@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { matchOne } from '../src/lib/ccExport.js';
 import { parseProductName } from '../src/lib/ccNames.js';
-import { fold } from '../src/lib/ccMatch.js';
+import { ccListPrintings, fold } from '../src/lib/ccMatch.js';
 
 // The safety order of one line's match (decisions 486, 487, 574, 594): a remembered pick, then the TCGplayer route,
 // then today's matcher; never the route for a pick that's staff's. Hand-made products; nothing reaches a database.
@@ -95,4 +95,68 @@ test('a 4c match the name ranks as another finish is still first and scored in C
   assert.equal(r.product, pillage);
   assert.equal(r.ranked[0].product, pillage);
   assert.notEqual(r.ranked[0].score, null);
+});
+
+// Decision 599: a The List card with more than one The List printing, in CC or on TCGplayer, is staff's to pick.
+const LIST = 'The List';
+const listCats = new Map([LIST, 'Mystery Booster'].map((c) => [fold(c), c]));
+const LIST_TABLE = { ...TABLE, 2715: ['The List Reprints', LIST, 'thelist', null] };
+const listOne = (name, products, over = {}) => matchOne({
+  line: { id: 'l9', name, set_code: 'PLST', collector_number: '2XM-1', finish: 'nonfoil', treatments: [], tcgplayer_id: null },
+  set: { code: 'plst', name: LIST },
+  promo: '',
+  card: null,
+  flavor: null,
+  where: { category: LIST, how: 'rule' },
+  also: ['Mystery Booster'],
+  link: null,
+  linkedProduct: null,
+  candidates: products,
+  tcg: null,
+  routeCandidates: [],
+  categoryNamed: (n) => listCats.get(fold(n)) ?? null,
+  table: LIST_TABLE,
+  ...over,
+});
+
+test('The List (599): one printing in CC and on TCGplayer matches as before; a foil of it is the same printing', () => {
+  const abrade = product('Abrade - The List', LIST, 'abrade');
+  assert.equal(listOne('Abrade', [abrade]).status, 'auto');
+  assert.equal(listOne('Abrade', [abrade, product('Abrade - Foil - The List', LIST, 'abrade-foil')]).status, 'auto');
+  assert.equal(listOne('Abrade', [abrade], { tcgListPrintings: 1 }).status, 'auto');
+});
+
+test('The List (599): two printings in CC, or two on TCGplayer, go to Needs a choice', () => {
+  const bolts = [product('Lightning Bolt (001) - The List', LIST, 'b1'), product('Lightning Bolt (141) - The List', LIST, 'b2')];
+  const two = listOne('Lightning Bolt', bolts);
+  assert.equal(two.status, 'choose');
+  assert.equal(two.product, null);
+  assert.equal(two.ranked.length, 2, 'Change still offers them');
+  const abrade = product('Abrade - The List', LIST, 'abrade');
+  assert.equal(listOne('Abrade', [abrade], { tcgListPrintings: 2 }).status, 'choose');
+});
+
+test('The List (599): a remembered pick wins; Mystery Booster\'s products aren\'t The List printings', () => {
+  const bolts = [product('Lightning Bolt (001) - The List', LIST, 'b1'), product('Lightning Bolt (141) - The List', LIST, 'b2')];
+  const r = listOne('Lightning Bolt', bolts, { link: { product_id: 'b2', source: 'staff' }, linkedProduct: bolts[1] });
+  assert.equal(r.status, 'auto');
+  assert.equal(r.via, 'link');
+  const abrade = product('Abrade - The List', LIST, 'abrade');
+  assert.equal(ccListPrintings([abrade, product('Abrade', 'Mystery Booster', 'abrade-mb')]), 1);
+  assert.equal(ccListPrintings([abrade, abrade]), 1, 'a product met twice (both reads) is one');
+});
+
+test('The List (599): by its TCGplayer set too, and the route doesn\'t answer for it; other cards are left alone', () => {
+  const bolts = [product('Lightning Bolt (001) - The List', LIST, 'b1'), product('Lightning Bolt (141) - The List', LIST, 'b2')];
+  const tcg = { product_id: 9, group_id: 2715, group_name: 'The List Reprints', name: 'Lightning Bolt (E01)' };
+  // Its Scryfall set isn't The List, but its TCGplayer product is.
+  const arch = product('Lightning Bolt', 'Archenemy: Nicol Bolas', 'arch');
+  const viaTcg = listOne('Lightning Bolt', [arch], {
+    set: { code: 'e01', name: 'Archenemy: Nicol Bolas' }, where: { category: 'Archenemy: Nicol Bolas', how: 'name' },
+    also: [], tcg, routeCandidates: bolts,
+  });
+  assert.equal(viaTcg.status, 'choose');
+  assert.notEqual(viaTcg.via, 'route');
+  // A Duskmourn card whose name CC also has twice on The List: not a The List card, matched as before.
+  assert.equal(one({ routeCandidates: [plain, borderless, ...bolts], tcgListPrintings: 3 }).status, 'auto');
 });
