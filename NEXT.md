@@ -99,8 +99,14 @@ marks each task done here when it's finished, with the exact file and function o
   - Where to look (dev, with the TCGplayer catalog fetched): export a day with a The List Demonic Tutor no one has
     picked: it's in **Needs a choice**. Pick it and export; the next export of it matches by itself. A The List
     Doom Blade (one printing in both) still matches by itself; not Abrade, which has two in both (HOU and 2XM).
-  - Untested in the app: all of it. The TCGplayer read's filter (`name.ilike."<name>*"` inside `or`, names quoted)
-    has never been sent to the database. If PostgREST refuses it, the console says so and only CC's count applies.
+  - The owner asked for the TCGplayer read to be tested ("Test this in a simulation somehow please"); signed out
+    on dev (localhost:5190, the app's own client, read-only), 2026-11-19: **the filter parses**. The exact
+    `or` of quoted `name.ilike."<name>*"` with commas, quotes, apostrophes, a backslash and `//` gets past PostgREST
+    to the database's permission check (42501: `tcg_products` is for signed-in staff only), while an unquoted
+    comma fails at parsing (PGRST100). **Still untested: the signed-in read on real rows** (that it returns the
+    right products, and Demonic Tutor then going to Needs a choice): it waits for the owner's sign-in on
+    localhost:5190 (the owner: "I can't sign in I'm at work … cancel the test for now").
+  - Untested in the app otherwise: all of it. If the read fails, the console says so and only CC's count applies.
 - 2026-11-18 (main session): **Third push of the day, no bump, no review** (the owner: "Push to live. No
   review."). What went out: decision 598 (e792791, its Done entry 7fcf67a, below) and the tcgcatalog note
   (0b922bc). No migrations (prod and dev both 0001–0017), no Edge Function changes. Lint, 607 tests and the build
