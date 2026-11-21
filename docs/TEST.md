@@ -788,9 +788,9 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
 - [ ] **Unmatched rows as CC names** (decision 604; Export session): the same day's Print MTG (all), with Unmatched
       cards like a borderless Fblthp, the Lost, a foil showcase Jor Kadeen, First Goldwarden and a retro-frame
       Journeyer's Kite: the rows read "Fblthp, the Lost - Borderless", "Jor Kadeen, First Goldwarden - Foil -
-      Showcase", "Journeyer's Kite - Retro Frame", with no chips and no set or collector number, the condition chip
-      and the price as on the matched rows. Two printings of one card under Unmatched are one row. Print MTG in buy
-      order still shows the chips.
+      Showcase", "Journeyer's Kite - Retro Frame", with no Foil or Borderless chips but their set chip ("RVR 420"),
+      the condition chip and the price as on the matched rows. Two printings of one card under Unmatched are two
+      rows, each with its set chip. Print MTG in buy order still shows every chip.
 - [ ] **Unmatched's "u" Custom SKU** (decision 602; Export session): the same day's Print MTG (all): the Unmatched
       band reads "Custom SKU 112126u" (that day's SKU and u); a buy's ⋯ → Print buy the same, and after Export
       single buy on another buy, its Print buy reads "112126-42u". A Paid/Ours collection not yet exported prints

@@ -45,12 +45,13 @@ marks each task done here when it's finished, with the exact file and function o
 
 - 2026-11-21 (Export session): **Decision 604: Unmatched rows written as CC would name the card** (the owner:
   "Fblthp, the Lost - Borderless NOT Fblthp, the Lost [Borderless]"). `src/lib/auditPrint.js` `unmatchedName`
-  (the matcher's `expectedName`, then any treatment CC has no word for), `unmatchedRow`, and `auditSections`
-  (rows without a product use it, merged by the written name and condition); `src/lib/ccMatch.js`
-  `expectedTreatments`. Where to look: a past Magic day with Unmatched cards, EXPORT ▾ → ◂ Print → Print MTG (all):
-  each Unmatched row reads like a CC product name ("Fblthp, the Lost - Borderless", "… - Foil - Showcase", "… -
-  Retro Frame") with no chips and no set or number, the condition chip and price as on the matched rows; two
-  printings of one card are one row; Print MTG in buy order keeps its chips. Unit-tested
+  (the matcher's `expectedName`, then any treatment CC has no word for), `unmatchedRow` (with its set chip), and
+  `auditSections` (rows without a product use it, one per printing); `src/lib/ccMatch.js` `expectedTreatments`.
+  Amended the same day: the set code chip stays (the owner: "WAIT we need the set code chip for unmatched cards"),
+  so two printings are two rows again. Where to look: a past Magic day with Unmatched cards, EXPORT ▾ → ◂ Print →
+  Print MTG (all): each Unmatched row reads like a CC product name ("Fblthp, the Lost - Borderless", "… - Foil -
+  Showcase", "… - Retro Frame") with no Foil or Borderless chips but its set chip ("RVR 420"), the condition chip
+  and price as on the matched rows; two printings of one card are two rows; Print MTG in buy order keeps its chips. Unit-tested
   (`tests/auditPrint.test.js`); not tried in the app. TEST.md section 14. No migration.
 
 - 2026-11-21 (Export session): **Decision 603: cards chosen at the export carry the "u" SKU in the file** (the

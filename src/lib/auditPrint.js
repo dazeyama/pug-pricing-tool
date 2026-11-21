@@ -203,11 +203,16 @@ export function unmatchedName(line) {
 }
 
 /**
- * A row for a card with no CC product (decision 604): its name as CC would write it (unmatchedName), with no set,
- * number, finish or treatment chips, as a product's row.
+ * A row for a card with no CC product (decision 604): its name as CC would write it (unmatchedName), no finish or
+ * treatment chips, but its set code and collector number chip ("RVR 420"; the owner: "WAIT we need the set code
+ * chip for unmatched cards"), as before decision 604.
  */
 export function unmatchedRow(line, qty, bucket = 'unknown', price = null) {
-  return productRow(unmatchedName(line), line, qty, bucket, price);
+  return {
+    ...productRow(unmatchedName(line), line, qty, bucket, price),
+    set: String(line.set_code ?? '').toUpperCase(),
+    number: String(line.collector_number ?? ''),
+  };
 }
 
 /**
@@ -289,8 +294,9 @@ function byProduct(a, b) {
  * The printout's sections (decision 601), by CC category A to Z with Unmatched last. In a category, one
  * row per CC product and condition, its quantities added (two printings on one product as one row, at the
  * higher of their prices), named as the file names it (productRow), sorted by byProduct. Under Unmatched
- * (no product, or staff's to choose), the card as CC would name it with no chips (unmatchedRow, decision 604), the
- * cards that read the same in one condition as one row (team plan 3.2–3.5), sorted by byPile.
+ * (no product, or staff's to choose), the card as CC would name it with its set chip (unmatchedRow, decision 604),
+ * the same printing from different buys (printing, finish, condition, treatments) as one row (team plan 3.2–3.5),
+ * sorted by byPile.
  * @param {{ line: object, category: string|null, product?: string|null, bucket?: string, price?: number|null }[]} placed
  * @param {(category: string) => string|null} [setOf]  a category's set code, for its band's symbol (categorySets)
  * @returns {{ name: string, cards: number, set: string|null, star: boolean, rows: object[] }[]}
@@ -304,10 +310,11 @@ export function auditSections(placed, setOf = () => null) {
     if (!names.has(folded)) names.set(folded, category || UNMATCHED);
     const section = names.get(folded);
     const asProduct = section !== UNMATCHED && product ? product : null;
-    // A card with no product by the name it's written under (decision 604): two that read the same are one row.
+    // A card with no product by its printing (team plan 3.2): two printings are two rows, each with its set chip.
     const key = asProduct
       ? [section, 'product', fold(asProduct), line.condition || 'NM'].join('|')
-      : [section, 'card', fold(unmatchedName(line)), line.condition || 'NM'].join('|');
+      : [section, line.scryfall_id ?? '', line.name, line.set_code, line.collector_number, line.finish,
+        line.condition, [...(line.treatments ?? [])].sort().join(',')].join('|');
     const had = merged.get(key);
     if (had) {
       had.qty += line.quantity;

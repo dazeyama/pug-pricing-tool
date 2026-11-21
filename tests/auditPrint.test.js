@@ -57,9 +57,9 @@ test('CC rows (decision 601): the product name, one row per product and conditio
   // The band's symbol is the category's set, not its cards' (PLST).
   assert.equal(s[0].set, 'mb1');
   assert.equal(s[0].star, false);
-  // Unmatched: the card as CC would name it, no chips (decision 604).
-  assert.deepEqual([s[1].rows[0].name, s[1].rows[0].set, s[1].rows[0].number, s[1].set, s[1].star],
-    ['Doom Blade - The List', '', '', null, false]);
+  // Unmatched: the card as CC would name it, with its set chip (decision 604).
+  assert.deepEqual([s[1].rows[0].name, s[1].rows[0].set, s[1].rows[0].number, s[1].rows[0].extras, s[1].set, s[1].star],
+    ['Doom Blade - The List', 'PLST', '1', [], null, false]);
   // A category with no set of its own: the star.
   assert.equal(auditSections([{ line: line({}), category: 'Pre-Release Promos', product: 'X - Prerelease' }])[0].star, true);
 });
@@ -98,8 +98,9 @@ test('sections A to Z with Unmatched last; inside, by name then collector number
   const c21 = s[2];
   assert.equal(c21.cards, 6);
   assert.deepEqual(c21.rows.map((r) => [r.name, r.qty]), [['Arcane Signet', 2], ['Sol Ring', 4]]);
-  // "alpha" joins "Alpha"; by name (decision 443); two printings that read the same as one row (decision 604).
-  assert.deepEqual(s[0].rows.map((r) => [r.name, r.qty, r.set, r.number]), [['Abrade - The List', 1, '', ''], ['Bolt', 2, '', '']]);
+  // "alpha" joins "Alpha"; by name (decision 443), then 12 before 120a: two printings, two rows with their set chips.
+  assert.deepEqual(s[0].rows.map((r) => `${r.name} ${r.set} ${r.number}`),
+    ['Abrade - The List PLST 2XM-120', 'Bolt LEA 12', 'Bolt LEA 120a']);
   assert.equal(s[3].rows[0].name, 'Mystery Card');
   // No set given for a category: no set, so the star (decision 601); none for Unmatched.
   assert.deepEqual([s[0].set, s[0].star], [null, true]);
@@ -132,10 +133,9 @@ test("inside a category (decisions 443, 596): NM, then LP, MP, HP, DMG; in each 
     { line: line({ name: 'Unknown', collector_number: '1' }), category: 'Alpha' },
     { line: line({ name: 'Golos', collector_number: '9' }), category: 'Alpha', bucket: 'multicolor' },
   ]);
-  // Bolt 161 and 200 read the same, so one row of 2 (decision 604).
-  assert.deepEqual(s[0].rows.map((r) => `${r.condition} ${r.name} ${r.qty}`), [
-    'NM Plea 1', 'NM Bolt 2', 'NM Golos 1', 'NM Mox 1', 'NM Island 1', 'NM Unknown 1',
-    'LP Orb 1', 'LP Zap 1', 'MP Zap 1', 'HP Ruby 1', 'DMG Zap 1',
+  assert.deepEqual(s[0].rows.map((r) => `${r.condition} ${r.name} ${r.number}`), [
+    'NM Plea 7', 'NM Bolt 161', 'NM Bolt 200', 'NM Golos 9', 'NM Mox 12', 'NM Island 290', 'NM Unknown 1',
+    'LP Orb 1', 'LP Zap 5', 'MP Zap 5', 'HP Ruby 3', 'DMG Zap 5',
   ]);
 });
 
