@@ -99,8 +99,17 @@ export function massCreateFileName(prefix, skus) {
 }
 
 /**
+ * A line's Custom SKU in the file (decision 603): its stamp, with a "u" when staff gave it its product at the
+ * export, a card the printout put under Unmatched (Needs a choice, or no product): "112126u", "112126-42u",
+ * "112126-3u", so it can be searched for by the printout's SKU (decision 602). The mark is in its Sell Price
+ * basis (`cc_sell_basis.chosen`, saved with the export), so the same file again carries it; the stamped
+ * `cc_custom_sku` itself stays the export's own.
+ */
+export const fileSku = (l) => (l.cc_custom_sku ? `${l.cc_custom_sku}${l.cc_sell_basis?.chosen ? 'u' : ''}` : '');
+
+/**
  * The file's rows from exported lines (each with its cc_* stamps and
- * quantity): lines with the same product, condition and Sell Price merge,
+ * quantity): lines with the same product, condition, Sell Price and Custom SKU (fileSku) merge,
  * their quantities added; sorted by Category, Product Name, then condition.
  * Only Near Mint rows carry a price (owner, 2026-10-11): CC works out every
  * other condition from NM, so worse-condition rows leave Sell Price blank
@@ -126,11 +135,11 @@ export function massCreateRows(lines, nearMint = nearMintPrices(lines)) {
         Condition: NEAR_MINT,
         Language: 'English',
         'Sell Price': Number(nm).toFixed(2),
-        'Custom SKU': l.cc_custom_sku ?? '',
+        'Custom SKU': fileSku(l),
       });
     }
     const price = l.cc_condition === NEAR_MINT ? Number(l.cc_sell_price).toFixed(2) : '';
-    const key = [l.cc_product_name, l.cc_category, l.cc_condition, price].join('\u0000');
+    const key = [l.cc_product_name, l.cc_category, l.cc_condition, price, fileSku(l)].join('\u0000');
     const row = rows.get(key);
     if (row) row['Add Qty'] += l.quantity;
     else {
@@ -141,7 +150,7 @@ export function massCreateRows(lines, nearMint = nearMintPrices(lines)) {
         Condition: l.cc_condition,
         Language: 'English',
         'Sell Price': price,
-        'Custom SKU': l.cc_custom_sku ?? '',
+        'Custom SKU': fileSku(l),
       });
     }
   }

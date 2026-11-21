@@ -344,6 +344,14 @@ export default function ExportDialog({
     setReopened((s) => new Set(s).add(r.line.id));
   }
 
+  /**
+   * A card staff gave its product here that the printout put under Unmatched (decision 603: it was in Needs a
+   * choice, or had no product): its row in the file gets the "u" SKU (massCreate.js fileSku). Not an automatic
+   * match, a remembered pick or Change on one; only a day's, a buy's or a collection's export, whose printouts
+   * carry the u (decision 602), not Can't upload cards' or Bulk pulled's.
+   */
+  const chosenHere = (r) => r.status !== 'auto' && stateOf(r).by === 'staff'
+    && ['day', 'buy', 'collection'].includes(target?.kind);
   // The Custom SKU the server will stamp (0071; a collection's number of the day, decision 511).
   const skuText = confirmSku(target, Boolean(fileOnly));
   const skuNumbered = skuText.endsWith('-#');
@@ -355,7 +363,7 @@ export default function ExportDialog({
     cc_category: stateOf(r).product.category,
     cc_condition: CONDITION_WORDS[r.line.condition],
     cc_sell_price: sellOf(r.line.id)?.price,
-    cc_sell_basis: sellOf(r.line.id)?.basis,
+    cc_sell_basis: chosenHere(r) ? { ...sellOf(r.line.id)?.basis, chosen: true } : sellOf(r.line.id)?.basis,
   }));
   // Worse-condition cards' products the file prices at today's Near Mint (owner, 2026-10-11; decision
   // 598). Given to every download here: the lines export_lines returns carry no Sell Price basis.
@@ -386,7 +394,8 @@ export default function ExportDialog({
         product_id: s.product.product_id,
         sell_price: sell.price,
         // Its basis carries today's NM price (nearMint), so the same file comes out again later (massCreate.js).
-        sell_basis: { ...sell.basis, exportId },
+        // Its "u" mark too, for the same file again (decision 603).
+        sell_basis: { ...sell.basis, exportId, ...(chosenHere(r) ? { chosen: true } : {}) },
         link: linkToSave(s.by),
       };
     });
@@ -403,7 +412,10 @@ export default function ExportDialog({
         userId: staff.current.id,
         deviceId,
       });
-      const rows = result.cards > 0 ? downloadMassCreate(result.lines, massCreateFileName(filePrefix, result.sku), nearMint) : 0;
+      // export_lines' rows carry no basis: the "u" marks from the matches sent (decision 603).
+      const chosen = new Set(matches.filter((m) => m.sell_basis.chosen).map((m) => m.line_id));
+      const fileRows = result.lines.map((l) => (chosen.has(l.id) ? { ...l, cc_sell_basis: { chosen: true } } : l));
+      const rows = result.cards > 0 ? downloadMassCreate(fileRows, massCreateFileName(filePrefix, result.sku), nearMint) : 0;
       onExported?.({ ...result, rows });
     } catch (e) {
       if (e.code === 'stale_inventory') {

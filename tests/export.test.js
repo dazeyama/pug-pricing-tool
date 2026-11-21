@@ -5,7 +5,7 @@ import { sellPriceFor } from '../src/lib/sellPrice.js';
 import { settingSummary } from '../src/lib/settingText.js';
 import { targetOf } from '../src/lib/changelog.js';
 import {
-  confirmSku, customSkuFor, customSkuForDay, fileSafe, massCreateCsv, massCreateFileName, massCreateRows, nearMintPrices,
+  confirmSku, customSkuFor, customSkuForDay, fileSafe, fileSku, massCreateCsv, massCreateFileName, massCreateRows, nearMintPrices,
   withoutRestamps,
 } from '../src/lib/massCreate.js';
 
@@ -241,4 +241,18 @@ test('the Custom SKU the Confirm step shows', () => {
   assert.equal(confirmSku({ kind: 'collection' }, true, when), '102426');
   assert.equal(confirmSku({ kind: 'cant_upload' }, false, when), '102426');
   assert.equal(confirmSku({ kind: 'pulled' }, false, when), '102426');
+});
+
+// Decision 603: a card staff gave its product at the export, one the printout put under Unmatched, gets the u.
+test('a card chosen at the export: its row with the u SKU, apart from the same product matched by itself', () => {
+  const chosen = { chosen: true, used: 'market' };
+  assert.equal(fileSku(stamped({ cc_custom_sku: '112126-42', cc_sell_basis: chosen })), '112126-42u');
+  assert.equal(fileSku(stamped({ cc_custom_sku: '112126', cc_sell_basis: { used: 'market' } })), '112126');
+  assert.equal(fileSku(stamped({ cc_custom_sku: null })), '');
+  const rows = massCreateRows([
+    stamped({ cc_custom_sku: '112126', quantity: 2 }),
+    stamped({ cc_custom_sku: '112126', cc_sell_basis: chosen }),
+    stamped({ cc_custom_sku: '112126', cc_sell_basis: chosen }),
+  ], new Map());
+  assert.deepEqual(rows.map((r) => [r['Add Qty'], r['Custom SKU']]), [[2, '112126'], [2, '112126u']]);
 });

@@ -6,12 +6,6 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
-- **The "u" SKU on cards staff choose at export** (the owner, 2026-11-21: "Yes, put the u SKU on chosen cards";
-  main session; given to the Export and printouts session). A card the printout puts under Unmatched that staff
-  give a product to in the export screen goes in that export's file with its SKU plus u (decision 602 put the u on
-  the printout only). No migration (the owner: "If this requires a migration, let's skip it."): if it needs one,
-  the fork stops and says what it would take.
-
 - **On ice: the printout and the export kept in step** (main session, 2026-11-21; the owner: "I don't want to go
   this far, I don't think this is needed, none of those things should happen often, let's shelve this migration
   unless I want to tighten down again"). The idea: printing saves each card's printed CC product (migration 0018),
@@ -40,6 +34,20 @@ marks each task done here when it's finished, with the exact file and function o
   `SHEET`, `tests/stickerPdf.test.js` with it, and a decision row.
 
 ## Done
+
+- 2026-11-21 (Export session): **Decision 603: cards chosen at the export carry the "u" SKU in the file** (the
+  owner: "Yes, put the u SKU on chosen cards"). Built without a migration, which way it went: the u isn't stamped
+  in `cc_custom_sku` (that would need `export_lines` changed); the export dialog marks the card's Sell Price
+  basis `cc_sell_basis.chosen`, which the export already saves as sent, and the file writes the SKU plus u from
+  it, so Download the same file again carries it too. `src/lib/massCreate.js` `fileSku` (and `massCreateRows`:
+  a u row kept apart); `src/pages/export/ExportDialog.jsx` `chosenHere` (a card that wasn't an automatic match,
+  given its product by staff here, on a day, buy or collection export), the matches' `sell_basis`, `fileLines`
+  and the saved file's rows. Where to look: a past Magic day with a Needs a choice card, EXPORT, pick its product,
+  export: its row in the file reads `<SKU>u`, apart from the same product's plain rows; Download the same file
+  again the same; Export single buy and a collection the same; an automatic match, a remembered pick or Change on
+  one keeps the plain SKU; the Custom SKU chips and the Changelog still say the plain SKU. Unit-tested
+  (`tests/export.test.js`); not tried in the app. TEST.md section 14. No migration. Help's Export section
+  (README.md) doesn't mention the u.
 
 - 2026-11-21 (Export session): **Decision 602: the "u" Custom SKU on the printout's Unmatched band** (the owner's
   ask; "If this requires a migration, let's skip it."), which closes **Reformat the printouts to be in Crystal

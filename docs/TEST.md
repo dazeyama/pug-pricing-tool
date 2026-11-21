@@ -786,6 +786,12 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       single buy on another buy, its Print buy reads "112126-42u". A Paid/Ours collection not yet exported prints
       "112126-#u" (today's); after its export, "112126-3u" (its number). Can't upload cards' printout has none. The
       file and the database are unchanged: the Can't upload cards' rows still get their export's own SKU.
+- [ ] **A card chosen at the export gets the u** (decision 603; Export session): a past Magic day with a card in
+      Needs a choice and another card of the same product matched by itself. EXPORT: pick the first one's product,
+      export: in the file the picked card's row reads Custom SKU `112126u` (its own row), the other `112126`. The
+      day's Download the same file again gives the same rows. Export single buy and a collection the same
+      (`112126-42u`, `112126-3u`); Change on a card that matched by itself, or a remembered pick, keeps the plain
+      SKU. The day's Custom SKU chip still reads `112126`.
 - [ ] **Print MTG in buy order** (decision 444): a past Magic day with two buys: EXPORT ▾ → ◂ Print → Print MTG in
       buy order: one row per card line, the first buy's cards as added, then the second's; no category bands and no
       NM line; the file is `audit-magic-<day>-buy-order.pdf`. A collection has it too, its cards as added.
