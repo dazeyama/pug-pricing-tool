@@ -23,9 +23,8 @@ import { errorMessage } from './collections/useCollection.js';
 import { useDevice } from '../state/device.jsx';
 import { useStaff } from '../state/staff.jsx';
 import { useToast } from '../components/Toast.jsx';
-import { useAuditPrint } from './export/useAuditPrint.js';
-import { customSkuFor, fileSafe } from '../lib/massCreate.js';
-import { collectionUnmatchedSku } from '../lib/auditPrint.js';
+import { collectionPrintSku, useAuditPrint } from './export/useAuditPrint.js';
+import { fileSafe } from '../lib/massCreate.js';
 import { COPY_TITLE, copyBuyRow } from '../lib/buyCopy.js';
 
 const NOTE_CHIP_HEIGHT = 160;   // a note's chip, a few lines tall: fits above the * when it has this much room
@@ -219,7 +218,7 @@ export default function CollectionsPage() {
           },
           title: `Audit — ${c.customer_name}`,
           fileName: `audit-${fileSafe(c.customer_name)}.pdf`,
-          unmatchedSku: (lines) => collectionUnmatchedSku(lines, customSkuFor(new Date())),   // decision 602
+          unmatchedSku: collectionPrintSku,   // decision 602
         }),
       },
       ...(c.project ? [{

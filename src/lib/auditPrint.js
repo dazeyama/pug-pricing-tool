@@ -135,18 +135,25 @@ export function categorySets(sets, categories, setMap = new Map()) {
  */
 export const unmatchedSku = (sku) => (sku ? `${sku}u` : null);
 
+/** Does a collection's printout still have cards to export (so its SKU's number isn't given yet)? */
+export const hasCardsToExport = (lines) => printLines(lines).some((l) => !l.cc_status);
+
 /**
  * A collection's or project's Unmatched SKU (decision 602): "112126-#u" while it has cards to export, its
- * number given only when the export saves (decision 511); once they're all exported, the SKUs its export
- * stamped, each with its u. None for one whose export stamped nothing (every card Can't upload or pulled).
+ * number given only when the export saves (decision 511); once they're all exported, the SKUs its own export
+ * stamped, each with its u: not a Can't upload cards or Bulk pulled export's restamp of a card it sent there
+ * (`restamped`, decision 372, as Download the same file again leaves them out). None for one whose own export
+ * stamped nothing (every card Can't upload or pulled), or when the restamps couldn't be read (`restamped` null).
  * @param {object[]} lines  its buy_lines rows
  * @param {string} todaySku  today's Custom SKU (massCreate.js customSkuFor)
+ * @param {Set<string>|null} [restamped]  stamp times of Can't upload cards exports (ccExport.js restampTimes)
  */
-export function collectionUnmatchedSku(lines, todaySku) {
-  const printed = printLines(lines);
-  if (printed.some((l) => !l.cc_status)) return unmatchedSku(`${todaySku}-#`);
-  const stamped = [...new Set(printed.filter((l) => l.cc_status === 'exported').map((l) => l.cc_custom_sku)
-    .filter(Boolean))].sort();
+export function collectionUnmatchedSku(lines, todaySku, restamped = new Set()) {
+  if (hasCardsToExport(lines)) return unmatchedSku(`${todaySku}-#`);
+  if (!restamped) return null;
+  const stamped = [...new Set(printLines(lines)
+    .filter((l) => l.cc_status === 'exported' && !restamped.has(l.cc_exported_at))
+    .map((l) => l.cc_custom_sku).filter(Boolean))].sort();
   return stamped.length ? stamped.map(unmatchedSku).join(', ') : null;
 }
 

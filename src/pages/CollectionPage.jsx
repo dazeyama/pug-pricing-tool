@@ -3,12 +3,11 @@ import { createPortal } from 'react-dom';
 import Modal from '../components/Modal.jsx';
 import ImportDialog from './collections/ImportDialog.jsx';
 import ExportDialog from './export/ExportDialog.jsx';
-import { useAuditPrint } from './export/useAuditPrint.js';
+import { collectionPrintSku, useAuditPrint } from './export/useAuditPrint.js';
 import { useStickerPrint } from './export/useStickerPrint.js';
 import RepriceModal from './collections/RepriceModal.jsx';
 import { formatMoney } from '../lib/money.js';
-import { customSkuFor, fileSafe, massCreateFileName, withoutRestamps } from '../lib/massCreate.js';
-import { collectionUnmatchedSku } from '../lib/auditPrint.js';
+import { fileSafe, massCreateFileName, withoutRestamps } from '../lib/massCreate.js';
 import { downloadMassCreate, restampTimes } from '../lib/ccExport.js';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import PricingScreen from './price/PricingScreen.jsx';
@@ -339,7 +338,7 @@ function CollectionScreen({ id }) {
       buyOrder,
       // Its export's Custom SKU with a u (decision 602); none on Can't upload cards' or Bulk pulled's, whose cards
       // came from many exports.
-      unmatchedSku: system ? null : (lines) => collectionUnmatchedSku(lines, customSkuFor(new Date())),
+      unmatchedSku: system ? null : collectionPrintSku,
     });
   }
 

@@ -278,6 +278,15 @@ test("Unmatched's Custom SKU (decision 602): the export's own with a u", () => {
   assert.equal(collectionUnmatchedSku(done, '112226'), '112126-3u');
   // Every card Can't upload: no SKU was stamped, so none.
   assert.equal(collectionUnmatchedSku([line({ name: 'C', completed_at: '2026-11-21', cc_status: 'cant_upload' })], '112226'), null);
+  // A card a Can't upload cards export restamped (decision 372) isn't the collection's own SKU (release review).
+  const restamp = '2026-11-24T19:00:00Z';
+  const later = [...done, line({ name: 'D', completed_at: '2026-11-21', cc_status: 'exported', cc_custom_sku: '112426', cc_exported_at: restamp })];
+  assert.equal(collectionUnmatchedSku(later, '112626', new Set([restamp])), '112126-3u');
+  // Its own export stamped nothing: none, not the restamp's.
+  const cantOnly = [line({ name: 'D', completed_at: '2026-11-21', cc_status: 'exported', cc_custom_sku: '112426', cc_exported_at: restamp })];
+  assert.equal(collectionUnmatchedSku(cantOnly, '112626', new Set([restamp])), null);
+  // The restamps couldn't be read: none.
+  assert.equal(collectionUnmatchedSku(done, '112626', null), null);
 });
 
 // Decision 604, the owner's screenshot: "Fblthp, the Lost - Borderless NOT Fblthp, the Lost [Borderless]".

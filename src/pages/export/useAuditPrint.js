@@ -1,9 +1,10 @@
 import { useCallback, useState } from 'react';
 import { useToast } from '../../components/Toast.jsx';
-import { matchContext, matchLines, scryfallCards } from '../../lib/ccExport.js';
+import { matchContext, matchLines, restampTimes, scryfallCards } from '../../lib/ccExport.js';
+import { customSkuFor } from '../../lib/massCreate.js';
 import { loadSets } from '../../lib/scryfall.js';
 import {
-  STAR_SYMBOL, UNMATCHED, auditSections, buyOrderSections, cardBucket, categorySets, flagBanner, flaggedBuys, matchPlace,
+  STAR_SYMBOL, UNMATCHED, auditSections, collectionUnmatchedSku, hasCardsToExport, buyOrderSections, cardBucket, categorySets, flagBanner, flaggedBuys, matchPlace,
   pokemonPrintLines, pokemonRow, pokemonSections, printLines, savedPlace,
 } from '../../lib/auditPrint.js';
 import { sellPriceFor } from '../../lib/sellPrice.js';
@@ -107,6 +108,20 @@ async function symbolsFor(sections) {
 }
 
 /**
+ * A collection's or project's Unmatched SKU for its printout (decision 602; collectionUnmatchedSku): once its
+ * cards are all exported, its own export's, the Can't upload cards exports' restamps read and left out (decision
+ * 372). The restamps unreadable: none, rather than another export's.
+ * @param {object[]} lines  its buy_lines rows
+ * @returns {Promise<string|null>}
+ */
+export async function collectionPrintSku(lines) {
+  const today = customSkuFor(new Date());
+  if (hasCardsToExport(lines)) return collectionUnmatchedSku(lines, today);
+  const restamped = await restampTimes(lines).catch(() => null);
+  return collectionUnmatchedSku(lines, today, restamped);
+}
+
+/**
  * Flagged buys on a printout (decision 301), from each card's flagged buy:
  * a red banner naming them on every page (owner, 2026-10-18: "Just the
  * header is fine, the outlines and the chips are overkill").
@@ -134,10 +149,10 @@ const flaggedNote = (flags) => (flags.length ? ` 🚩 ${flags.join(', ')} flagge
  * `flagOf`: a card's flagged buy ("Buy 42", decision 301: its buy flagged
  * for a condition check), or null; the printout says so in red, Magic or Pokémon.
  * `unmatchedSku`: the Custom SKU printed on the Unmatched band (decision 602: "112126u"), or a function of the
- * cards (the ones given, or loaded) that works it out; none, nothing printed.
+ * cards (the ones given, or loaded) that works it out, or a promise of it (collectionPrintSku); none, nothing printed.
  * @returns {{ print: (p: { lines?: object[], load?: () => Promise<object[]>, title: string, fileName: string,
  *   game?: 'mtg'|'pokemon', flagOf?: (line: object) => string|null, over1?: boolean, buyOrder?: boolean,
- *   unmatchedSku?: string|null|((lines: object[]) => string|null) })
+ *   unmatchedSku?: string|null|((lines: object[]) => string|null|Promise<string|null>) })
  *   => Promise<void>, printing: boolean }}
  */
 export function useAuditPrint() {
@@ -269,7 +284,7 @@ export function useAuditPrint() {
       });
       const sections = auditSections(placed, setOf);
       // The Unmatched band's Custom SKU (decision 602): the export's own, with its u.
-      const sku = typeof unmatchedSku === 'function' ? unmatchedSku(given) : unmatchedSku;
+      const sku = typeof unmatchedSku === 'function' ? await unmatchedSku(given) : unmatchedSku;
       const unmatchedSection = sections.find((s) => s.name === UNMATCHED);
       if (unmatchedSection && sku) unmatchedSection.sku = sku;
       const { flagText, flags } = flagging(chosen.map((l) => flagOf?.(l) ?? null));
