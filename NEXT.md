@@ -20,7 +20,8 @@ marks each task done here when it's finished, with the exact file and function o
   Everything under Unmatched (no product, Needs a choice, pulled as bulk) carries a "u" Custom SKU: that export's
   own SKU plus u (112126u, 112126-42u, 112126-3u; "112126-#u" on a collection printed before its export saves),
   printed on the Unmatched band and saved with the card, so a later Can't upload cards export keeps it rather than
-  restamping that export's date (decision 372). (d) Print? / Print buy and Print MTG (>$…); not Print MTG in buy
+  restamping that export's date (decision 372); not if that needs a migration (the owner: "If this requires a
+  migration, let's skip it."), then the u is on the printout only. (d) Print? / Print buy and Print MTG (>$…); not Print MTG in buy
   order. Not done: keeping the printout and the export in step (the next item, on ice).
 
 - **On ice: the printout and the export kept in step** (main session, 2026-11-21; the owner: "I don't want to go
