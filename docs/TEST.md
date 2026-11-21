@@ -809,6 +809,11 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
       decision 598); a card with Near Mint copies gets no extra row. (Export session)
 - [ ] The review screen shows **sets NM $X** on such a card; hovering says it's today's Near Mint price.
 - [ ] EXPORT on a day or collection already exported downloads the same file again; nothing changes.
+- [ ] **The file is named by its Custom SKU** (decision 600; Export session): a day's export downloads
+      `cc-mass-create-magic-<SKU>.csv` (`…-112126.csv`), Export single buy `…-112126-42.csv`, a collection's
+      `cc-mass-create-<customer>-112126-3.csv` (the number the export saved), Can't upload cards'
+      `cc-mass-create-cant-upload-<SKU>.csv` and Bulk pulled's `cc-mass-create-pulled-bulk-<SKU>.csv`; each name matches
+      the file's Custom SKU column. Download the same file again (day, buy ⋯, collection) gives the same name.
 - [ ] A card that can't match goes to **Can't upload cards** and isn't in the file.
 - [ ] **Matched via TCGplayer** (decisions 590, 592; Export session; needs the TCGplayer catalog fetched, Settings →
       Crystal Commerce matching): an export with a card today's matcher leaves in Needs a choice but whose TCGplayer

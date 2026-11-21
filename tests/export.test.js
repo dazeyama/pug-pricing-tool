@@ -5,7 +5,8 @@ import { sellPriceFor } from '../src/lib/sellPrice.js';
 import { settingSummary } from '../src/lib/settingText.js';
 import { targetOf } from '../src/lib/changelog.js';
 import {
-  confirmSku, customSkuFor, customSkuForDay, fileSafe, massCreateCsv, massCreateRows, nearMintPrices, withoutRestamps,
+  confirmSku, customSkuFor, customSkuForDay, fileSafe, massCreateCsv, massCreateFileName, massCreateRows, nearMintPrices,
+  withoutRestamps,
 } from '../src/lib/massCreate.js';
 
 // docs/EXPORT_FUNCTION.md 5.3: the buy steps, upward.
@@ -99,6 +100,17 @@ test('the Custom SKU from the export\'s date (store time)', () => {
   assert.equal(at('2026-11-01T20:00:00Z'), '110126');
   assert.equal(at('2026-12-31T20:00:00Z'), '123126');
   assert.equal(at('2026-10-02T03:00:00Z'), '100126');   // 8 PM on October 1st in the store
+});
+
+// Decision 600: the file is named by its Custom SKU, not its date.
+test('the Mass Create file is named by its Custom SKU', () => {
+  assert.equal(massCreateFileName('cc-mass-create-magic', '112126'), 'cc-mass-create-magic-112126.csv');
+  assert.equal(massCreateFileName('cc-mass-create-magic', ['112126-42', '112126-42']), 'cc-mass-create-magic-112126-42.csv');
+  assert.equal(massCreateFileName('cc-mass-create-jordan-reyes', '112126-3'), 'cc-mass-create-jordan-reyes-112126-3.csv');
+  assert.equal(massCreateFileName('cc-mass-create-cant-upload', '112126'), 'cc-mass-create-cant-upload-112126.csv');
+  // Cards from more than one export (a day exported before migration 0071): every SKU, in order.
+  assert.equal(massCreateFileName('cc-mass-create-magic', ['110226', '110126', null]), 'cc-mass-create-magic-110126_110226.csv');
+  assert.equal(massCreateFileName('cc-mass-create-magic', []), 'cc-mass-create-magic.csv');
 });
 
 const stamped = (over) => ({

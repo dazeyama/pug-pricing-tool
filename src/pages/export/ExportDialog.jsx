@@ -7,7 +7,9 @@ import { useDevice } from '../../state/device.jsx';
 import { useToast } from '../../components/Toast.jsx';
 import { lineTextWithCondition } from '../../lib/lineFormat.js';
 import { formatMoney } from '../../lib/money.js';
-import { CONDITION_WORDS, confirmSku, customSkuFor, massCreateRows, nearMintPrices, productKey } from '../../lib/massCreate.js';
+import {
+  CONDITION_WORDS, confirmSku, customSkuFor, massCreateFileName, massCreateRows, nearMintPrices, productKey,
+} from '../../lib/massCreate.js';
 import {
   downloadMassCreate, exportLanded, forgetLink, linkKey, matchLines, saveExport, saveLink, saveSetMap, sellPrices,
 } from '../../lib/ccExport.js';
@@ -34,7 +36,8 @@ const FOLD_MS = 300;   // export.css .xd-fold's transition
  * @param {'check'|'export'} [p.mode]
  * @param {string} p.title
  * @param {object} [p.target]  export_lines' target (export mode)
- * @param {string} [p.fileName]  the Mass Create file's name (export mode)
+ * @param {string} [p.filePrefix]  the Mass Create file's name before its Custom SKU, "cc-mass-create-magic" (export
+ *   mode; decision 600: the SKU is known once the export saves, a collection's number of the day with it)
  * @param {(result: object) => void} [p.onExported]  after the export is saved and the file handed over
  * @param {string|null} [p.fileOnly]  the file only, nothing saved (a collection not Paid/Ours, team
  *   feedback 2026-10-16: export "should always" be allowed; the owner: "File only, change nothing"):
@@ -47,7 +50,7 @@ const FOLD_MS = 300;   // export.css .xd-fold's transition
  * @param {() => void} p.onClose
  */
 export default function ExportDialog({
-  items: itemsNow, mode = 'check', title, target: targetNow, fileName, onExported, onClose, pullOut = true, fileOnly = null,
+  items: itemsNow, mode = 'check', title, target: targetNow, filePrefix, onExported, onClose, pullOut = true, fileOnly = null,
   over1 = false,
 }) {
   // The cards and the buys' versions as they were when it opened, kept for
@@ -365,7 +368,7 @@ export default function ExportDialog({
     // The file only: downloaded as it would be, its Custom SKU today's; nothing saved, so no user needed.
     if (fileOnly) {
       const sku = customSkuFor(new Date());
-      const rows = toExport > 0 ? downloadMassCreate(fileLines.map((l) => ({ ...l, cc_custom_sku: sku })), fileName) : 0;
+      const rows = toExport > 0 ? downloadMassCreate(fileLines.map((l) => ({ ...l, cc_custom_sku: sku })), massCreateFileName(filePrefix, sku)) : 0;
       onExported?.({ fileOnly: true, rows, cards: toExport, sku });
       return;
     }
@@ -400,7 +403,7 @@ export default function ExportDialog({
         userId: staff.current.id,
         deviceId,
       });
-      const rows = result.cards > 0 ? downloadMassCreate(result.lines, fileName, nearMint) : 0;
+      const rows = result.cards > 0 ? downloadMassCreate(result.lines, massCreateFileName(filePrefix, result.sku), nearMint) : 0;
       onExported?.({ ...result, rows });
     } catch (e) {
       if (e.code === 'stale_inventory') {
@@ -429,7 +432,7 @@ export default function ExportDialog({
           }
           if (landed) {
             const cards = landed.reduce((n, l) => n + l.quantity, 0);
-            const rows = cards > 0 ? downloadMassCreate(landed, fileName) : 0;
+            const rows = cards > 0 ? downloadMassCreate(landed, massCreateFileName(filePrefix, landed.map((l) => l.cc_custom_sku))) : 0;
             onExported?.({
               cards, cant: cardsIn(groups.cant), pulled: cardsIn(groups.under1), sku: landed[0].cc_custom_sku, lines: landed, rows,
             });

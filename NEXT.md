@@ -30,17 +30,6 @@ marks each task done here when it's finished, with the exact file and function o
   the export uses it, and the export screen marks a card whose product differs from the printout (a staff pick, a
   Change, or the inventory or TCGplayer catalog refreshed between print and export). Only on the owner's word.
 
-- **The Custom SKU in the export file's name** (the owner, 2026-11-18: "Make an Open to put the Custom SKU in the
-  file name for exports"; main session; Export and printouts' area; not started). Today the Mass Create file is
-  named by game and day or by customer and time, never by its Custom SKU: `DayPage.jsx` `fileName`
-  (`cc-mass-create-magic-<day>.csv`, a single buy's `…-buy-<n>.csv`), `CollectionPage.jsx`
-  (`cc-mass-create-<customer>-<time>.csv`, `…-pulled-bulk-…`, `…-cant-upload-…`); they reach
-  `ccExport.js` `downloadMassCreate` and `ExportDialog.jsx`'s `fileName` prop. A collection's SKU number
-  ("102426-3") is given only when the export saves (decision 511), so its name has to come after that, and the
-  Download the same file again calls need the stamped `cc_custom_sku`. **Settled, 2026-11-21:** the SKU in place
-  of the date, `cc-mass-create-magic-112126.csv` (a buy's `…-112126-42.csv`, a collection's `…-112126-3.csv`),
-  and Can't upload cards' and Bulk pulled's files the same pattern. Given to the Export and printouts session.
-
 - **Dev holds 55 simulated walk-in buys, and the owner is keeping them** ("I'm going to keep them.", 2026-11-11;
   main session; made for testing the Buys report on the owner's ask: "Can
   you create simulated data for the last 14 days based on the read only probe of prod for the mockup and create
@@ -63,6 +52,17 @@ marks each task done here when it's finished, with the exact file and function o
   `SHEET`, `tests/stickerPdf.test.js` with it, and a decision row.
 
 ## Done
+
+- 2026-11-21 (Export session): **Decision 600: the Mass Create file named by its Custom SKU** (the owner, 2026-11-18;
+  settled 2026-11-21). `massCreate.js` `massCreateFileName(prefix, skus)`; `ExportDialog.jsx` takes `filePrefix` (was
+  `fileName`) and names the file from the SKU the save returns (or the read-back after a lost answer);
+  `DayPage.jsx` (`filePrefix`, `downloadAgain`, `downloadBuyAgain`) and `CollectionPage.jsx` (its three dialogs, the
+  same file again) pass the prefix. Where to look: a Magic day page's EXPORT → the file is
+  `cc-mass-create-magic-112126.csv` (that day's SKU); a buy's ⋯ → Export single buy → `…-112126-42.csv`; a Paid/Ours
+  collection's EXPORT → `cc-mass-create-<customer>-112126-3.csv`; Can't upload cards' and Bulk pulled's EXPORT →
+  `cc-mass-create-cant-upload-<SKU>.csv`, `…-pulled-bulk-<SKU>.csv`; each Download the same file again gives the same
+  name. Unit-tested (`tests/export.test.js`); not tried in the app. TEST.md section 15. No migration. Help's
+  "Export" table (README.md, the **Name** row: `cc-mass-create-magic-2026-10-06.csv`) is now out of date.
 
 - 2026-11-21 (main session): **Crystal Commerce matching through TCGplayer ids (decisions 588–595), closed**: the
   owner's QA on dev passed ("QA passed, closed"). Live since v1.0.7-matching. The scripts and prod's read-only

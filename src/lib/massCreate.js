@@ -86,6 +86,19 @@ export function confirmSku(target, fileOnly = false, when = new Date()) {
 }
 
 /**
+ * The Mass Create file's name (decision 600): its prefix and the Custom SKU on its rows in place of the
+ * date, "cc-mass-create-magic-112126.csv", a single buy's "cc-mass-create-magic-112126-42.csv", a
+ * collection's "cc-mass-create-jordan-reyes-112126-3.csv". The same file again from cards stamped by more
+ * than one export (a day exported before migration 0071) names them all, "-110126_110226".
+ * @param {string} prefix  "cc-mass-create-magic", "cc-mass-create-<customer>", "cc-mass-create-cant-upload"
+ * @param {string|string[]} skus
+ */
+export function massCreateFileName(prefix, skus) {
+  const list = [...new Set([skus].flat().filter(Boolean))].sort();
+  return `${prefix}${list.length ? `-${list.join('_')}` : ''}.csv`;
+}
+
+/**
  * The file's rows from exported lines (each with its cc_* stamps and
  * quantity): lines with the same product, condition and Sell Price merge,
  * their quantities added; sorted by Category, Product Name, then condition.

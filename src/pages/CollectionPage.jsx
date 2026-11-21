@@ -7,8 +7,7 @@ import { useAuditPrint } from './export/useAuditPrint.js';
 import { useStickerPrint } from './export/useStickerPrint.js';
 import RepriceModal from './collections/RepriceModal.jsx';
 import { formatMoney } from '../lib/money.js';
-import { fileStamp } from '../lib/time.js';
-import { fileSafe, withoutRestamps } from '../lib/massCreate.js';
+import { fileSafe, massCreateFileName, withoutRestamps } from '../lib/massCreate.js';
 import { downloadMassCreate, restampTimes } from '../lib/ccExport.js';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import PricingScreen from './price/PricingScreen.jsx';
@@ -208,7 +207,6 @@ function CollectionScreen({ id }) {
   // The cards an export stamped, exported or copied to Can't upload cards (Undo export…, decision 298).
   const exportedLines = col.lines.filter((l) => l.cc_status);
   const exportedCards = exportedLines.reduce((n, l) => n + l.quantity, 0);
-  const exportedAt = col.lines.find((l) => l.cc_exported_at)?.cc_exported_at ?? null;
 
   /**
    * EXPORT (export spec 8.2). Paid/Ours: the export dialog for its Magic
@@ -249,7 +247,7 @@ function CollectionScreen({ id }) {
         toast("Its exported cards went out from Can't upload cards or Bulk pulled from exports, so it has no file of its own to download again.", 'err');
         return;
       }
-      const rows = downloadMassCreate(own, `cc-mass-create-${fileSafe(buy.customer_name)}-${fileStamp(new Date(exportedAt))}.csv`);
+      const rows = downloadMassCreate(own, massCreateFileName(`cc-mass-create-${fileSafe(buy.customer_name)}`, own.map((l) => l.cc_custom_sku)));
       const ownSkus = [...new Set(own.map((l) => l.cc_custom_sku).filter(Boolean))];
       toast(`Downloaded the same file again: ${rows} row${rows === 1 ? '' : 's'}, Custom SKU ${ownSkus.join(', ')}.`, 'ok');
       askComplete();   // a Paid/Ours one's file again asks too (decision 407)
@@ -905,7 +903,7 @@ function CollectionScreen({ id }) {
               title={`Export ${buy.customer_name}${exportOver1 ? ` (${keptWords(cut)})` : ''} to Crystal Commerce`}
               items={col.lines.filter((l) => l.game === 'mtg' && movesOn(l) && !l.cc_status).map((line) => ({ line, where: '' }))}
               target={{ kind: 'collection', buy_id: buy.id, version: buy.version }}
-              fileName={`cc-mass-create-${fileSafe(buy.customer_name)}-${fileStamp(new Date())}.csv`}
+              filePrefix={`cc-mass-create-${fileSafe(buy.customer_name)}`}
               onExported={exported}
               onClose={() => {
                 setExportStep(null);
@@ -949,7 +947,7 @@ function CollectionScreen({ id }) {
               // Not the cards already exported: they went in their own file (decision 345).
               items={col.lines.filter((l) => l.game === 'mtg' && movesOn(l) && !l.cc_status).map((line) => ({ line, where: '' }))}
               target={{ kind: 'collection', buy_id: buy.id, version: buy.version }}
-              fileName={`cc-mass-create-${fileSafe(buy.customer_name)}-${fileStamp(new Date())}.csv`}
+              filePrefix={`cc-mass-create-${fileSafe(buy.customer_name)}`}
               onExported={exported}
               onClose={() => {
                 setExportStep(null);
@@ -964,7 +962,7 @@ function CollectionScreen({ id }) {
               title={`Export ${systemName} to Crystal Commerce`}
               items={col.lines.filter((l) => l.game === 'mtg' && movesOn(l)).map((line) => ({ line, where: line.source_note ?? '' }))}
               target={{ kind: pulledSystem ? 'pulled' : 'cant_upload', version: buy.version }}
-              fileName={`cc-mass-create-${pulledSystem ? 'pulled-bulk' : 'cant-upload'}-${fileStamp(new Date())}.csv`}
+              filePrefix={`cc-mass-create-${pulledSystem ? 'pulled-bulk' : 'cant-upload'}`}
               onExported={exported}
               onClose={() => {
                 setExportStep(null);

@@ -15,7 +15,7 @@ import ExportDialog from './export/ExportDialog.jsx';
 import { useAuditPrint } from './export/useAuditPrint.js';
 import { useStickerPrint } from './export/useStickerPrint.js';
 import { downloadMassCreate, restampTimes } from '../lib/ccExport.js';
-import { withoutRestamps } from '../lib/massCreate.js';
+import { massCreateFileName, withoutRestamps } from '../lib/massCreate.js';
 import { todaysPrices } from '../lib/todaysPrices.js';
 import { sellPriceFor } from '../lib/sellPrice.js';
 import { useBulkCut, useSellFloor, useSettings, useSettingsReady } from '../state/settings.jsx';
@@ -199,7 +199,8 @@ function DayScreen({ game, day }) {
   const exportedCards = doneLines.filter((l) => l.cc_status === 'exported').reduce((n, l) => n + l.quantity, 0);
   const cantCards = doneLines.filter((l) => l.cc_status === 'cant_upload').reduce((n, l) => n + l.quantity, 0);
   const pulledCards = doneLines.filter((l) => l.cc_status === 'pulled').reduce((n, l) => n + l.quantity, 0);   // decision 406
-  const fileName = `cc-mass-create-${game === 'mtg' ? 'magic' : game}-${day}.csv`;
+  // The Mass Create file's name before its Custom SKU (decision 600): a day's and a single buy's alike.
+  const filePrefix = `cc-mass-create-${game === 'mtg' ? 'magic' : game}`;
   // Export single buy's buy as the page has it now, so its dialog sees a newer version (decision 362).
   const exportBuyNow = exportingBuy && (mine.find((b) => b.id === exportingBuy.buy.id) ?? exportingBuy.buy);
   // EXPORT (n) on Magic days (owner, 2026-10-02): the cards to count in the
@@ -498,7 +499,7 @@ function DayScreen({ game, day }) {
         : "These buys were marked Completed without being exported, so there's no file: mark them Paid/Ours again (⋯), then EXPORT.", 'err');
       return;
     }
-    const rows = downloadMassCreate(stamped.lines, fileName);
+    const rows = downloadMassCreate(stamped.lines, massCreateFileName(filePrefix, stamped.skus));
     toast(`Downloaded the same file again: ${rows} row${rows === 1 ? '' : 's'}, Custom SKU ${stamped.skus.join(', ')}.`, 'ok');
   }
 
@@ -522,7 +523,7 @@ function DayScreen({ game, day }) {
       toast(`Buy ${number}'s exported cards went out from Can't upload cards or Bulk pulled from exports, so it has no file of its own to download again.`, 'err');
       return;
     }
-    const rows = downloadMassCreate(mineOnly, `cc-mass-create-${game === 'mtg' ? 'magic' : game}-${day}-buy-${number}.csv`);
+    const rows = downloadMassCreate(mineOnly, massCreateFileName(filePrefix, mineOnly.map((l) => l.cc_custom_sku)));
     toast(`Downloaded Buy ${number}'s file again: ${rows} row${rows === 1 ? '' : 's'}, Custom SKU ${own.join(', ')}.`, 'ok');
   }
 
@@ -827,7 +828,7 @@ function DayScreen({ game, day }) {
               .filter((b) => b.buy_lines.some((l) => l.game === game && !l.completed_at && movesOn(l)))
               .map((b) => [b.id, b.version])),
           }}
-          fileName={fileName}
+          filePrefix={filePrefix}
           onExported={exported}
           onClose={() => {
             setExporting(false);
@@ -931,7 +932,7 @@ function DayScreen({ game, day }) {
             .filter((l) => l.game === game && !l.completed_at && movesOn(l))
             .map((line) => ({ line, where: `Buy ${exportingBuy.number}` }))}
           target={{ kind: 'buy', buy_id: exportBuyNow.id, game, version: exportBuyNow.version, day, number: exportingBuy.number }}
-          fileName={`cc-mass-create-${game === 'mtg' ? 'magic' : game}-${day}-buy-${exportingBuy.number}.csv`}
+          filePrefix={filePrefix}
           onExported={exported}
           onClose={() => {
             setExportingBuy(null);
