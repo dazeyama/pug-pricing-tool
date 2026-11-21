@@ -781,6 +781,10 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       product and category is as printed. Print buy and Print MTG (>$1.49) the same; Print MTG in buy order is as
       before. After the export, Print MTG (all) prints the same from the stamps. It takes no longer than before and
       asks nothing.
+- [ ] **Long names wrap** (decision 605; Export session): a printout with a long product name (a foil Unctus, Grand
+      Metatect, "… - Step-and-Compleat Foil - Showcase"): the whole name is printed, carried onto a second line,
+      the row taller, its condition and price on its first line, nothing ending "…". At a column's or page's foot
+      such a row moves whole to the next column, never split.
 - [ ] **Unmatched rows as CC names** (decision 604; Export session): the same day's Print MTG (all), with Unmatched
       cards like a borderless Fblthp, the Lost, a foil showcase Jor Kadeen, First Goldwarden and a retro-frame
       Journeyer's Kite: the rows read "Fblthp, the Lost - Borderless", "Jor Kadeen, First Goldwarden - Foil -

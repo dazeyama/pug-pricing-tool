@@ -37,6 +37,7 @@ const BAND = 24;                             // big enough to see the set's symb
 const SYMBOL_H = 17;
 const ROW = 13;                              // a one-line row
 const ROW_WRAPPED = 22;                      // its chips on a second line
+const NAME_LEAD = 9.4;                       // each more line of a long name (decision 605: wrapped, never cut)
 const ROW_GAP = 1;
 const SECTION_GAP = 7;
 const DIVIDER = 7;                           // the line between a category's NM cards and the rest
@@ -260,9 +261,13 @@ export function auditPdf({ title, sections, symbols = {}, printedAt = new Date()
     const extrasW = extras.reduce((w, e) => w + chipWidth(e) + 2, 0);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(NAME_PT);
-    const nameW = doc.getTextWidth(pdfSafe(r.name));
-    const oneLine = !extras.length || NAME_X + nameW + 4 + extrasW <= right;
-    return { set, setW, right, extras, oneLine, h: oneLine ? ROW : ROW_WRAPPED };
+    // The whole name, on as many lines as it needs (decision 605; the owner: "never truncate these names, let them
+    // wrap to the next line"); the row grows to fit, so a page or column still breaks between rows.
+    const names = doc.splitTextToSize(pdfSafe(r.name), right - NAME_X);
+    const lastW = doc.getTextWidth(names.at(-1) ?? '');
+    const more = (names.length - 1) * NAME_LEAD;
+    const oneLine = !extras.length || NAME_X + lastW + 4 + extrasW <= right;
+    return { set, setW, right, extras, names, lastW, more, oneLine, h: (oneLine ? ROW : ROW_WRAPPED) + more };
   };
 
   const row = (r, l) => {
@@ -300,10 +305,10 @@ export function auditPdf({ title, sections, symbols = {}, printedAt = new Date()
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(NAME_PT);
     doc.setTextColor(0, 0, 0);
-    const name = fit(doc, pdfSafe(r.name), l.right - NAME_X);
-    doc.text(name, left + NAME_X, y + 9.2);
-    let ex = l.oneLine ? left + NAME_X + doc.getTextWidth(name) + 4 : left + NAME_X;
-    const exTop = l.oneLine ? top : y + ROW - 1;
+    l.names.forEach((line, i) => doc.text(line, left + NAME_X, y + 9.2 + i * NAME_LEAD));
+    // The chips after its last line, or under it when they don't fit.
+    let ex = l.oneLine ? left + NAME_X + l.lastW + 4 : left + NAME_X;
+    const exTop = (l.oneLine ? top : y + ROW - 1) + l.more;
     for (const e of l.extras) {
       const w = chipWidth(e);
       if (ex + w > left + COL_W - 4) break;   // never past the row

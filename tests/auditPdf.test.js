@@ -68,3 +68,17 @@ test("a row's number chip: the number alone under its own set's band, the set to
   assert.equal(numberChip({ set: 'ZEN', number: '9' }, null), 'ZEN 9');   // Unmatched
   assert.equal(numberChip({ set: '', number: '' }, 'mb1'), '');   // a CC product's row (decision 601)
 });
+
+// Decision 605: "never truncate these names, let them wrap to the next line".
+test('a long name wraps whole onto more lines, the row growing, never cut', () => {
+  const long = 'Unctus, Grand Metatect - Step-and-Compleat Foil - Showcase - Borderless Poster - Extended Art';
+  const doc = auditPdf({ title: 'Audit', sections: [{ name: 'Alpha', cards: 1, set: null, rows: [
+    { name: long, qty: 1, set: '', number: '', condition: 'NM', extras: [], bucket: 'blue', price: 2 },
+  ] }] });
+  assert.ok(doc.output().includes('Extended Art'));   // its end printed, not cut off
+  // Rows that wrap take more room: more pages for the same count, every row still whole.
+  const rows = (name) => Array.from({ length: 200 }, () => ({ name, qty: 1, set: '', number: '', condition: 'NM', extras: [], bucket: 'red' }));
+  const short = auditPdf({ title: 'Audit', sections: [{ name: 'Alpha', cards: 200, set: null, rows: rows('Bolt') }] });
+  const wrapped = auditPdf({ title: 'Audit', sections: [{ name: 'Alpha', cards: 200, set: null, rows: rows(long) }] });
+  assert.ok(wrapped.getNumberOfPages() > short.getNumberOfPages());
+});

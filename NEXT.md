@@ -35,6 +35,14 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-11-21 (Export session): **Decision 605: a printout row's name wraps, never cut** (the owner: "never
+  truncate these names, let them wrap to the next line"). `src/lib/auditPdf.js`: `layout` splits the name to the
+  row's room (`splitTextToSize`) and the row grows by `NAME_LEAD` a line; `row` prints every line; the page and
+  column breaks already go by each row's height, so a row never splits. Where to look: a printout with a long CC
+  product name (Print MTG (all) on a day with a foil showcase Unctus, Grand Metatect): its whole name on two
+  lines, the row taller, condition and price on its first line. Unit-tested (`tests/auditPdf.test.js`); not seen
+  on paper. TEST.md section 14. No migration.
+
 - 2026-11-21 (Export session): **Decision 604: Unmatched rows written as CC would name the card** (the owner:
   "Fblthp, the Lost - Borderless NOT Fblthp, the Lost [Borderless]"). `src/lib/auditPrint.js` `unmatchedName`
   (the matcher's `expectedName`, then any treatment CC has no word for), `unmatchedRow`, and `auditSections`
