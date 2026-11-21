@@ -798,8 +798,10 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       file and the database are unchanged: the Can't upload cards' rows still get their export's own SKU.
 - [ ] **A card chosen at the export gets the u** (decision 603; Export session): a past Magic day with a card in
       Needs a choice and another card of the same product matched by itself. EXPORT: pick the first one's product,
-      export: in the file the picked card's row reads Custom SKU `112126u` (its own row), the other `112126`. The
-      day's Download the same file again gives the same rows. Export single buy and a collection the same
+      export: the Confirm step reads "Custom SKU 112126u" (with "112126" too when other products have no picked
+      card); in the file that product's one row holds both cards and reads `112126u` (the owner's answer after the
+      release review), and the product's 0-quantity NM row, if it has one, `112126u` too. The day's Download the same
+      file again gives the same rows. Export single buy and a collection the same
       (`112126-42u`, `112126-3u`); Change on a card that matched by itself, or a remembered pick, keeps the plain
       SKU. The day's Custom SKU chip still reads `112126`.
 - [ ] **Print MTG in buy order** (decision 444): a past Magic day with two buys: EXPORT ▾ → ◂ Print → Print MTG in
@@ -881,7 +883,15 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
       TCGplayer catalog fetched): export a The List (PLST) `Demonic Tutor` no one has picked before (TCGplayer has
       two The List printings of it): it's in **Needs a choice**, not matched by itself. Pick it and export; the next
       export of that printing and finish matches by itself. A The List card with one printing in both (`Doom Blade`,
-      for example; not Abrade, which has two in both) still matches by itself.
+      for example; not Abrade, which has two in both) still matches by itself. A The List card CC has no product
+      under its own name for, but TCGplayer has two The List printings of, is in **Needs a choice** (its TCGplayer
+      name's products offered, the search below), not Can't upload. The first The List card on a fresh page takes a
+      moment longer (TCGplayer's whole The List read once); the browser console shows no "has no printing named"
+      warning for Demonic Tutor.
+- [ ] **A collection's printout SKU after a Can't upload export** (decision 602; Export session): a collection
+      exported (`112126-3`) with a card sent to Can't upload, then that card exported from Can't upload cards on
+      another day: the collection's Print MTG (all) reads "Custom SKU 112126-3u" on Unmatched, never the Can't upload
+      export's date too.
 
 ## 16. Settings tab
 

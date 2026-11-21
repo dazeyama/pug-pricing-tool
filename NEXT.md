@@ -35,6 +35,29 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-11-21 (Export session): **The release review's six smaller findings, fixed** (the owner: "fix all"; the
+  main session's list below). No migration. Each its own commit:
+  1. `d0647c8`: the Confirm step counts the file's rows and names its SKUs as the file has them ("Custom SKU
+     112126, 112126u"): `ExportDialog.jsx` `fileLines` carry the Confirm SKU, `previewSkus`. Decision 603's row.
+  2. `19e7fda`: one Mass Create row per product and condition; with any card chosen at the export it carries the u
+     SKU, and so does the product's 0-quantity NM row, whatever the cards' order (the owner, asked here: "One row, u
+     SKU"). `massCreate.js` `massCreateRows`. Decision 603's row.
+  3. `214b7f7`: TCGplayer's The List is read whole once a page (about 5,800 products, 6 requests) and indexed by
+     the route's names (`tcgRoute.js` `listIndex`, `ccExport.js` `readListIndex`), no longer searched by a
+     quoted `ilike` name; a card whose own TCGplayer product is a The List printing but finds none is warned in the
+     console. Checked against the 2026-11-17 tcgcsv dump (Demonic Tutor 2, Lightning Bolt 4, Æther Vial 1, Fire //
+     Ice 1). Decision 599's row. The signed-in read on dev still waits for the owner.
+  4. `f7eeaed`: a The List card with no product under its own name but several TCGplayer printings goes to Needs a
+     choice, its TCGplayer name's products offered unscored (`ccExport.js` `matchOne`). Decision 599's row.
+  5. `3448a24`: a collection's printout SKU is its own export's, the Can't upload restamps read and left out
+     (`auditPrint.js` `collectionUnmatchedSku`, `useAuditPrint.js` `collectionPrintSku`); none if they can't be
+     read. Decision 602's row.
+  6. `1b23b0e`: `auditPrint.js` `categorySets`' regex, `:\s*`.
+  Where to look: TEST.md section 14 (the u row and Confirm step, the collection's SKU after a Can't upload export)
+  and 15 (The List). Unit-tested (622 tests); none of it tried in the app: the Confirm step's words, the file's
+  one u row, the The List read signed in (its time and its count), Needs a choice for a The List card with no
+  product, a collection's printout SKU.
+
 - 2026-11-21 (Export session): **Decision 605: a printout row's name wraps, never cut** (the owner: "never
   truncate these names, let them wrap to the next line"). `src/lib/auditPdf.js`: `layout` splits the name to the
   row's room (`splitTextToSize`) and the row grows by `NAME_LEAD` a line; `row` prints every line; the page and
@@ -64,7 +87,7 @@ marks each task done here when it's finished, with the exact file and function o
   the build clean before the push. Release review (through 604's first version): nothing that stops a push; its
   smaller findings are in the next entry. Untested in the app: all of 599 to 605; 599's TCGplayer read with a
   signed-in session has never run. Help's printout and export sections are out of date until the owner asks.
-- 2026-11-21 (main session): **The release review's smaller findings, not fixed** (none asked for yet):
+- 2026-11-21 (main session): **The release review's smaller findings** (all six fixed the same day: the Export session's entry above):
   1. The Confirm step's row count and SKU ignore the u split (`ExportDialog.jsx` `previewRows`, `fileLines` carry
      no `cc_custom_sku`): it can say "1 row, Custom SKU 112126" where the file has a 112126 row and a 112126u row.
   2. Two rows for one product and condition with different Custom SKUs (603) have never gone into CC: if CC keeps
