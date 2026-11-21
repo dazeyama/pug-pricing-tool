@@ -254,5 +254,28 @@ test('a card chosen at the export: its row with the u SKU, apart from the same p
     stamped({ cc_custom_sku: '112126', cc_sell_basis: chosen }),
     stamped({ cc_custom_sku: '112126', cc_sell_basis: chosen }),
   ], new Map());
-  assert.deepEqual(rows.map((r) => [r['Add Qty'], r['Custom SKU']]), [[2, '112126'], [2, '112126u']]);
+  // One row for the product and condition, with the u SKU (the owner, 2026-11-21), in either order.
+  assert.deepEqual(rows.map((r) => [r['Add Qty'], r['Custom SKU']]), [[4, '112126u']]);
+  const reversed = massCreateRows([
+    stamped({ cc_custom_sku: '112126', cc_sell_basis: chosen }),
+    stamped({ cc_custom_sku: '112126', quantity: 2 }),
+  ], new Map());
+  assert.deepEqual(reversed.map((r) => [r['Add Qty'], r['Custom SKU']]), [[3, '112126u']]);
+  // Another condition of the product with no chosen card keeps the plain SKU.
+  const lp = massCreateRows([
+    stamped({ cc_custom_sku: '112126', cc_sell_basis: chosen }),
+    stamped({ cc_custom_sku: '112126', cc_condition: 'Lightly Played' }),
+  ], new Map());
+  assert.deepEqual(lp.map((r) => [r.Condition, r['Custom SKU']]), [['Near Mint', '112126u'], ['Lightly Played', '112126']]);
+});
+
+test("the NM row's SKU (decision 603): the u when any of the product's cards has it, whatever their order", () => {
+  const chosen = { chosen: true };
+  const lp = (over) => stamped({ cc_condition: 'Lightly Played', cc_custom_sku: '112126', ...over });
+  const nm = new Map([['Snuff Out\u0000Mercadian Masques', 14]]);
+  for (const order of [[lp({}), lp({ cc_sell_basis: chosen })], [lp({ cc_sell_basis: chosen }), lp({})]]) {
+    const rows = massCreateRows(order, nm);
+    assert.deepEqual(rows.map((r) => [r.Condition, r['Add Qty'], r['Custom SKU']]),
+      [['Near Mint', 0, '112126u'], ['Lightly Played', 2, '112126u']]);
+  }
 });

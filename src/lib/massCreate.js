@@ -109,8 +109,11 @@ export const fileSku = (l) => (l.cc_custom_sku ? `${l.cc_custom_sku}${l.cc_sell_
 
 /**
  * The file's rows from exported lines (each with its cc_* stamps and
- * quantity): lines with the same product, condition, Sell Price and Custom SKU (fileSku) merge,
- * their quantities added; sorted by Category, Product Name, then condition.
+ * quantity): lines with the same product, condition, Sell Price and Custom SKU merge, their quantities
+ * added; sorted by Category, Product Name, then condition. A product and condition with a card staff gave
+ * its product at the export (fileSku's u) is one row with the u SKU, its other cards' quantities in it (the
+ * owner, 2026-11-21: one row, the u SKU, rather than two rows CC may keep either SKU of); its 0-quantity NM row
+ * carries the u when any of the product's cards does, whatever their order.
  * Only Near Mint rows carry a price (owner, 2026-10-11): CC works out every
  * other condition from NM, so worse-condition rows leave Sell Price blank
  * (adding cards without touching the price), and a product with no Near
@@ -122,9 +125,17 @@ export const fileSku = (l) => (l.cc_custom_sku ? `${l.cc_custom_sku}${l.cc_sell_
  */
 export function massCreateRows(lines, nearMint = nearMintPrices(lines)) {
   const rows = new Map();
-  for (const l of lines) {
-    if (l.cc_status !== 'exported' || !l.cc_product_name) continue;
-    // A product the file sets NM for: its 0-quantity row, once, with the first such card's Custom SKU.
+  const exported = lines.filter((l) => l.cc_status === 'exported' && l.cc_product_name);
+  // Which products, and products in a condition, have a card chosen at the export (decision 603): their rows'
+  // SKU takes the u (the owner, 2026-11-21), so the file says the same whatever order the cards come in.
+  const productOf = (l) => [l.cc_product_name, l.cc_category, l.cc_custom_sku ?? ''].join('\u0000');
+  const inCondition = (l) => [productOf(l), l.cc_condition].join('\u0000');
+  const chosen = exported.filter((l) => l.cc_sell_basis?.chosen);
+  const chosenProducts = new Set(chosen.map(productOf));
+  const chosenConditions = new Set(chosen.map(inCondition));
+  const sku = (l, u) => (l.cc_custom_sku ? `${l.cc_custom_sku}${u ? 'u' : ''}` : '');
+  for (const l of exported) {
+    // A product the file sets NM for: its 0-quantity row, once, with its cards' Custom SKU.
     const nmKey = productKey(l.cc_product_name, l.cc_category);
     const nm = l.cc_condition !== NEAR_MINT ? nearMint.get(nmKey) : null;
     if (nm != null && !rows.has(`nm\u0000${nmKey}`)) {
@@ -135,11 +146,11 @@ export function massCreateRows(lines, nearMint = nearMintPrices(lines)) {
         Condition: NEAR_MINT,
         Language: 'English',
         'Sell Price': Number(nm).toFixed(2),
-        'Custom SKU': fileSku(l),
+        'Custom SKU': sku(l, chosenProducts.has(productOf(l))),
       });
     }
     const price = l.cc_condition === NEAR_MINT ? Number(l.cc_sell_price).toFixed(2) : '';
-    const key = [l.cc_product_name, l.cc_category, l.cc_condition, price, fileSku(l)].join('\u0000');
+    const key = [l.cc_product_name, l.cc_category, l.cc_condition, price, l.cc_custom_sku ?? ''].join('\u0000');
     const row = rows.get(key);
     if (row) row['Add Qty'] += l.quantity;
     else {
@@ -150,7 +161,7 @@ export function massCreateRows(lines, nearMint = nearMintPrices(lines)) {
         Condition: l.cc_condition,
         Language: 'English',
         'Sell Price': price,
-        'Custom SKU': fileSku(l),
+        'Custom SKU': sku(l, chosenConditions.has(inCondition(l))),
       });
     }
   }
