@@ -56,4 +56,5 @@ test("a row's number chip: the number alone under its own set's band, the set to
   assert.equal(numberChip({ set: 'LEA', number: '161' }, 'lea'), '161');
   assert.equal(numberChip({ set: 'PLST', number: 'CMA-216' }, 'mb1'), 'PLST CMA-216');
   assert.equal(numberChip({ set: 'ZEN', number: '9' }, null), 'ZEN 9');   // Unmatched
+  assert.equal(numberChip({ set: '', number: '' }, 'mb1'), '');   // a CC product's row (decision 601)
 });

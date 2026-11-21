@@ -1,9 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  UNMATCHED, auditRow, auditSections, buyOrderSections, cardBucket, matchCategory, pokemonPrintLines, pokemonRow, pokemonSections,
-  priceTone, printLines, savedCategory,
+  UNMATCHED, auditRow, auditSections, buyOrderSections, cardBucket, categorySets, matchPlace, pokemonPrintLines, pokemonRow,
+  pokemonSections, priceTone, printLines, savedPlace,
 } from '../src/lib/auditPrint.js';
+import { fold } from '../src/lib/ccMatch.js';
 import { magicTreatmentLabel } from '../src/lib/printings.js';
 
 const line = (over) => ({
@@ -14,7 +15,7 @@ const line = (over) => ({
 
 test('which cards print: not yet exported first; once all Completed, what the export took', () => {
   const paid = line({ name: 'A' });
-  const exported = line({ name: 'B', completed_at: '2026-10-14', cc_status: 'exported', cc_category: 'Zendikar' });
+  const exported = line({ name: 'B', completed_at: '2026-10-14', cc_status: 'exported', cc_category: 'Zendikar', cc_product_name: 'B - Foil' });
   const cant = line({ name: 'C', completed_at: '2026-10-14', cc_status: 'cant_upload' });
   const byHand = line({ name: 'D', completed_at: '2026-10-14' });
   const pkm = line({ name: 'E', game: 'pokemon' });
@@ -23,17 +24,61 @@ test('which cards print: not yet exported first; once all Completed, what the ex
   assert.deepEqual(printLines([paid, exported, cant, byHand, pkm, bulk, struck]).map((l) => l.name), ['A']);
   assert.deepEqual(printLines([exported, cant, byHand, pkm]).map((l) => l.name), ['B', 'C']);
   assert.deepEqual(printLines([byHand]), []);
-  assert.equal(savedCategory(exported), 'Zendikar');
-  assert.equal(savedCategory(cant), null);
-  assert.equal(savedCategory(paid), undefined);
+  assert.deepEqual(savedPlace(exported), { category: 'Zendikar', product: 'B - Foil' });
+  assert.equal(savedPlace(cant), null);
+  assert.equal(savedPlace(line({ cc_status: 'pulled' })), null);
+  assert.equal(savedPlace(paid), undefined);
 });
 
-test('where a matched card goes, asking nothing', () => {
-  assert.equal(matchCategory({ status: 'auto', product: { category: 'Mystery Booster' }, category: 'The List' }), 'Mystery Booster');
-  assert.equal(matchCategory({ status: 'choose', category: 'Commander 2015', product: null }), 'Commander 2015');
-  assert.equal(matchCategory({ status: 'choose', category: null }), null);   // no category for the set
-  assert.equal(matchCategory({ status: 'none', category: 'Zendikar' }), null);
-  assert.equal(matchCategory(undefined), null);
+test('where a matched card goes, asking nothing (decision 601): its product, or Unmatched', () => {
+  assert.deepEqual(matchPlace({ status: 'auto', product: { category: 'Mystery Booster', product_name: 'Abrade (List)' }, category: 'The List' }),
+    { category: 'Mystery Booster', product: 'Abrade (List)' });
+  // Needs a choice: Unmatched until chosen, not its set's guessed category.
+  assert.equal(matchPlace({ status: 'choose', category: 'Commander 2015', product: null }), null);
+  assert.equal(matchPlace({ status: 'choose', category: null }), null);
+  assert.equal(matchPlace({ status: 'none', category: 'Zendikar' }), null);
+  assert.equal(matchPlace(undefined), null);
+});
+
+test('CC rows (decision 601): the product name, one row per product and condition, printings merged', () => {
+  const s = auditSections([
+    { line: line({ name: 'Abrade', set_code: 'plst', collector_number: '2XM-120' }), category: 'Mystery Booster', product: 'Abrade (List)', bucket: 'red', price: 0.4 },
+    { line: line({ name: 'Abrade', set_code: 'plst', collector_number: 'MH2-115', quantity: 2 }), category: 'Mystery Booster', product: 'abrade (list)', bucket: 'red', price: 0.6 },
+    { line: line({ name: 'Abrade', set_code: 'plst', collector_number: 'MH2-115', condition: 'LP' }), category: 'Mystery Booster', product: 'Abrade (List)', bucket: 'red' },
+    { line: line({ name: 'Sol Ring', set_code: 'plst', finish: 'foil' }), category: 'Mystery Booster', product: 'Sol Ring - Foil (List)', bucket: 'artifact' },
+    { line: line({ name: 'Doom Blade', set_code: 'plst' }), category: null, product: null, bucket: 'black' },
+  ], (c) => (c === 'Mystery Booster' ? 'MB1' : null));
+  assert.deepEqual(s.map((x) => x.name), ['Mystery Booster', UNMATCHED]);
+  assert.deepEqual(s[0].rows.map((r) => [r.condition, r.name, r.qty, r.price]), [
+    ['NM', 'Abrade (List)', 3, 0.6], ['NM', 'Sol Ring - Foil (List)', 1, null], ['LP', 'Abrade (List)', 1, null],
+  ]);
+  // No Scryfall chips on a product's row: no set, number, finish or treatments.
+  assert.deepEqual([s[0].rows[1].set, s[0].rows[1].number, s[0].rows[1].extras], ['', '', []]);
+  // The band's symbol is the category's set, not its cards' (PLST).
+  assert.equal(s[0].set, 'mb1');
+  assert.equal(s[0].star, false);
+  // Unmatched: the card as Scryfall has it.
+  assert.deepEqual([s[1].rows[0].name, s[1].rows[0].set, s[1].set, s[1].star], ['Doom Blade', 'PLST', null, false]);
+  // A category with no set of its own: the star.
+  assert.equal(auditSections([{ line: line({}), category: 'Pre-Release Promos', product: 'X - Prerelease' }])[0].star, true);
+});
+
+test("a category's set (decision 601): the set of its name, staff's choice, then the rules; Promo Pack: X by X", () => {
+  const sets = new Map([
+    ['mh3', { code: 'mh3', name: 'Modern Horizons 3' }],
+    ['pmh3', { code: 'pmh3', name: 'Modern Horizons 3 Promos', parent_set_code: 'mh3' }],
+    ['m3c', { code: 'm3c', name: 'Modern Horizons 3 Commander', set_type: 'commander', parent_set_code: 'mh3' }],
+    ['mb1', { code: 'mb1', name: 'Mystery Booster' }],
+    ['plst', { code: 'plst', name: 'The List' }],
+  ]);
+  const categories = new Map(['Modern Horizons 3', 'Commander: Modern Horizons 3', 'Mystery Booster', 'The List',
+    'Promo Pack: Modern Horizons 3', 'Secret Lair'].map((c) => [fold(c), c]));
+  const setOf = categorySets(sets, categories, new Map([['plst|', 'Mystery Booster']]));
+  assert.equal(setOf('Modern Horizons 3'), 'mh3');            // its own name, not the promos (a parent's set)
+  assert.equal(setOf('Commander: Modern Horizons 3'), 'm3c');
+  assert.equal(setOf('Mystery Booster'), 'mb1');              // named so, before staff's choice for PLST
+  assert.equal(setOf('Promo Pack: Modern Horizons 3'), 'mh3');
+  assert.equal(setOf('Secret Lair'), null);
 });
 
 test('sections A to Z with Unmatched last; inside, by name then collector number; the same card merged', () => {
@@ -55,10 +100,9 @@ test('sections A to Z with Unmatched last; inside, by name then collector number
   // "alpha" joins "Alpha"; by name (decision 443), then 12 before 120a.
   assert.deepEqual(s[0].rows.map((r) => `${r.name} ${r.set} ${r.number}`), ['Abrade PLST 2XM-120', 'Bolt LEA 12', 'Bolt LEA 120a']);
   assert.equal(s[3].rows[0].name, 'Mystery Card');
-  // The band's symbol: the set most of its cards are from; none for Unmatched.
-  assert.equal(s[0].set, 'lea');
-  assert.equal(s[2].set, 'c21');
-  assert.equal(s[3].set, null);
+  // No set given for a category: no set, so the star (decision 601); none for Unmatched.
+  assert.deepEqual([s[0].set, s[0].star], [null, true]);
+  assert.deepEqual([s[3].set, s[3].star], [null, false]);
 });
 
 test('different condition, finish or treatments stay separate rows, NM before LP, non-foil before foil', () => {

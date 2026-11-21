@@ -737,7 +737,7 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       Export single buy: EXPORT again downloads the day's file without that buy's cards (Custom SKU "<day>-<number>");
       a day exported only one buy at a time says there's no day file.
 - [ ] **A single buy's file again** (decision 386): on a buy exported with Export single buy, ⋯ → **Download its file
-      again**: the same `…-buy-N.csv`, nothing changes; Export single buy is greyed, pointing to it.
+      again**: the same `…-<day's SKU>-N.csv` (decision 600), nothing changes; Export single buy is greyed, pointing to it.
 - [ ] **Mark Paid/Ours again, partly by hand** (decision 396): a Magic buy with some cards exported and some Mark as
       completed; the day's ⋯ → Mark Paid/Ours again…; the buy's ⋯ now has both Mark as completed and **Mark Paid/Ours
       again**, which brings the hand-completed cards back.
@@ -765,17 +765,28 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       so a flyout can't fit to the left of the day page's ⋯, it opens to the right and the arrow reads "Print ▸".
 - [ ] **The printout's foot** (decision 419): on Print MTG (all), "Page 1 of N" sits at the right margin and the key
       ("Today's market price: amber = …, red = …") runs from the left without touching it.
-- [ ] **The Magic printouts' order** (decisions 443, 596; Export session): Print MTG (all) on a day with several
+- [ ] **The Magic printouts' order** (decisions 443, 596, 601; Export session): Print MTG (all) on a day with several
       cards in one category, NM and worse: inside it every NM card first, then the line, then the LP cards, the MP,
       the HP and the DMG, no condition on both sides of the line; within each condition white, blue, black, red,
-      green, multicolor, colourless, lands, then a card with no Scryfall card; in each pile by name A–Z, then
-      collector number, then non-foil, foil, etched. A category with only NM cards, or none, has no line.
+      green, multicolor, colourless, lands, then a card with no Scryfall card; in each pile by product name A–Z.
+      Under Unmatched, by name A–Z, then collector number, then non-foil, foil, etched. A category with only NM
+      cards, or none, has no line.
+- [ ] **The printout as the export will take it** (decision 601; Export session): a past Magic day not yet exported,
+      with a The List card CC files under Mystery Booster, two printings of one card that CC sells as one product,
+      a card that's in Needs a choice on EXPORT, and a card with no product. EXPORT ▾ → Print MTG (all): each row
+      reads the CC product name exactly as the Mass Create file will (no set/number chip, no Foil or Borderless
+      chips); the The List card is under **Mystery Booster**, its band's symbol Mystery Booster's, not The List's;
+      the two printings are one row with both counted; the Needs a choice card and the no-product card are under
+      **Unmatched**, as Scryfall names them, with their set chips. Press EXPORT and compare: every Matched card's
+      product and category is as printed. Print buy and Print MTG (>$1.49) the same; Print MTG in buy order is as
+      before. After the export, Print MTG (all) prints the same from the stamps. It takes no longer than before and
+      asks nothing.
 - [ ] **Print MTG in buy order** (decision 444): a past Magic day with two buys: EXPORT ▾ → ◂ Print → Print MTG in
       buy order: one row per card line, the first buy's cards as added, then the second's; no category bands and no
       NM line; the file is `audit-magic-<day>-buy-order.pdf`. A collection has it too, its cards as added.
 - [ ] **Showcase, never Borderless too** (decision 508): a buy with a Phyrexia: All Will Be One showcase card (e.g.
-      Elesh Norn, Mother of Machines, borderless showcase) and a borderless non-showcase card: Print MTG (all) and
-      Print MTG in buy order show the first as **Showcase** only and the second as **Borderless**; the Buy tab's
+      Elesh Norn, Mother of Machines, borderless showcase) and a borderless non-showcase card: Print MTG in buy order
+      (and Print MTG (all) for one under Unmatched; decision 601) shows the first as **Showcase** only and the second as **Borderless**; the Buy tab's
       details panel still lists both for the first.
 - [ ] **Print PKM in buy order** (decision 445): the same on a Pokémon day and a collection, after Print PKM?,
       greyed with no Pokémon cards or no connection; the file is `audit-pokemon-<day>-buy-order.pdf`.

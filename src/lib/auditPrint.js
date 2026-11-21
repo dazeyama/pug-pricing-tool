@@ -2,12 +2,16 @@
 // Crystal Commerce's own order, to tick off by hand before it goes up. Which
 // cards, where each goes, merged and sorted. Pure: the matching comes in.
 
+import { categoryFor, fold } from './ccMatch.js';
 import { CONDITIONS } from './ladder.js';
 import { magicTreatmentLabel } from './printings.js';
 import { lineTags } from './lineFormat.js';
 
-/** The last section: cards with no Crystal Commerce product (team plan 3.3). */
+/** The last section: cards with no Crystal Commerce product, or staff's to choose (team plan 3.3; decision 601). */
 export const UNMATCHED = 'Unmatched';
+
+/** The symbols' key for the star: a category with no Scryfall set of its own (decision 601; useAuditPrint.js). */
+export const STAR_SYMBOL = '*';
 
 // A printout row's price band, red or amber (decision 404), at the Settings' Export rates for bulk
 // (decision 416).
@@ -65,29 +69,62 @@ export function pokemonPrintLines(lines) {
 }
 
 /**
- * Where an exported line goes, from what the export saved: its category, or
- * Unmatched (null) for one sent to Can't upload. Undefined: not exported, so
- * matched now.
- * @returns {string|null|undefined}
+ * Where an exported line goes, from what the export saved (decision 601): its category and the product
+ * name the file wrote, or Unmatched (null) for one sent to Can't upload or pulled as bulk. Undefined:
+ * not exported, so matched now.
+ * @returns {{ category: string, product: string|null }|null|undefined}
  */
-export function savedCategory(line) {
-  if (line.cc_status === 'exported') return line.cc_category || null;
+export function savedPlace(line) {
+  if (line.cc_status === 'exported') {
+    return line.cc_category ? { category: line.cc_category, product: line.cc_product_name || null } : null;
+  }
   if (line.cc_status === 'cant_upload' || line.cc_status === 'pulled') return null;
   return undefined;
 }
 
 /**
- * Where a matched card goes, asking nothing (team plan 3.3): its product's
- * category (a remembered match, or one clear product); with several products
- * to choose from, its set's category; else Unmatched (null).
+ * Where a matched card goes, asking nothing (team plan 3.3; decision 601): the product the export would
+ * take by itself (a remembered pick, the TCGplayer route, or one clear product), in its category; a card
+ * staff must choose for, or with no product, Unmatched (null): never its set's guessed category.
  * @param {object|undefined} result  one of matchLines' results (ccExport.js)
- * @returns {string|null}
+ * @returns {{ category: string, product: string }|null}
  */
-export function matchCategory(result) {
-  if (!result) return null;
-  if (result.status === 'auto' && result.product?.category) return result.product.category;
-  if (result.status === 'choose' && result.category) return result.category;
+export function matchPlace(result) {
+  if (result?.status === 'auto' && result.product?.category) {
+    return { category: result.product.category, product: result.product.product_name };
+  }
   return null;
+}
+
+/**
+ * Each CC category's Scryfall set, for its band's symbol (decision 601: the category's set, not its cards'
+ * own; the owner: "We want to keep set symbols"): every Scryfall set's category as the export finds it
+ * (categoryFor, no promo), a set named as the category first, then staff's set choices, then the rules; a
+ * main set before a set with a parent; then by code.
+ * @param {Map<string, object>} sets  Scryfall's sets by code (loadSets)
+ * @param {Map<string, string>} categories  folded category → the category (matchContext)
+ * @param {Map<string, string>} [setMap]  staff's set choices (matchContext)
+ * @returns {(category: string) => string|null}  a category's set code; "Promo Pack: X" falls back to X's
+ */
+export function categorySets(sets, categories, setMap = new Map()) {
+  const HOW = { name: 0, staff: 1, promo: 2, rule: 3 };
+  const best = new Map();
+  for (const set of sets.values()) {
+    const parent = set.parent_set_code ? sets.get(set.parent_set_code) ?? null : null;
+    const where = categoryFor({ set, parent, promo: '', categories, setMap });
+    if (!where) continue;
+    const key = fold(where.category);
+    const rankOf = [HOW[where.how] ?? 4, parent ? 1 : 0];
+    const had = best.get(key);
+    const order = had ? rankOf[0] - had.rank[0] || rankOf[1] - had.rank[1] || collator.compare(set.code, had.code) : -1;
+    if (order < 0) best.set(key, { code: set.code, rank: rankOf });
+  }
+  return (category) => {
+    const own = best.get(fold(category));
+    if (own) return own.code;
+    const after = /^[^:]+:s*(.+)$/.exec(String(category ?? ''));
+    return (after && best.get(fold(after[1]))?.code) || null;
+  };
 }
 
 /**
@@ -117,6 +154,15 @@ export function auditRow(line, qty = line.quantity, bucket = 'unknown', price = 
     bucket,
     price,
   };
+}
+
+/**
+ * A CC product's row (decision 601): the product's name as the Mass Create file writes it, the count,
+ * the condition, the card's colour and today's price; no set, number, finish or treatment chips (the
+ * product's name says them).
+ */
+export function productRow(product, line, qty, bucket = 'unknown', price = null) {
+  return { name: product, qty, set: '', number: '', condition: line.condition || 'NM', extras: [], bucket, price };
 }
 
 /**
@@ -187,36 +233,43 @@ function byPile(a, b) {
     || rank(FINISHES, a.line.finish) - rank(FINISHES, b.line.finish);
 }
 
-/** The set most of a section's cards are from, for the symbol on its band; none for Unmatched. */
-function mainSet(list) {
-  const counts = new Map();
-  for (const m of list) {
-    const code = String(m.line.set_code ?? '').toLowerCase();
-    if (code) counts.set(code, (counts.get(code) ?? 0) + m.qty);
-  }
-  return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0]?.[0] ?? null;
+/** Inside a CC category (decision 601): NM, then LP, MP, HP, DMG; in each by colour pile, then product name. */
+function byProduct(a, b) {
+  return rank(CONDITIONS, a.line.condition || 'NM') - rank(CONDITIONS, b.line.condition || 'NM')
+    || rank(PILES, a.bucket) - rank(PILES, b.bucket)
+    || collator.compare(a.product, b.product);
 }
 
 /**
- * The printout's sections, by category A to Z with Unmatched last; the same
- * card from different buys (printing, finish, condition, treatments) as one
- * row with the quantities added (team plan 3.2–3.5); inside, by colour (byPile).
- * @param {{ line: object, category: string|null, bucket?: string, price?: number|null }[]} placed
- * @returns {{ name: string, cards: number, set: string|null, rows: ReturnType<typeof auditRow>[] }[]}
+ * The printout's sections (decision 601), by CC category A to Z with Unmatched last. In a category, one
+ * row per CC product and condition, its quantities added (two printings on one product as one row, at the
+ * higher of their prices), named as the file names it (productRow), sorted by byProduct. Under Unmatched
+ * (no product, or staff's to choose), the card as Scryfall has it, the same card from different buys
+ * (printing, finish, condition, treatments) as one row (team plan 3.2–3.5), sorted by byPile.
+ * @param {{ line: object, category: string|null, product?: string|null, bucket?: string, price?: number|null }[]} placed
+ * @param {(category: string) => string|null} [setOf]  a category's set code, for its band's symbol (categorySets)
+ * @returns {{ name: string, cards: number, set: string|null, star: boolean, rows: object[] }[]}
  */
-export function auditSections(placed) {
+export function auditSections(placed, setOf = () => null) {
   // One section per category whatever its case (an older export's saved name), named as first met.
   const names = new Map();
   const merged = new Map();
-  for (const { line, category, bucket, price } of placed) {
+  for (const { line, category, product, bucket, price } of placed) {
     const folded = (category || UNMATCHED).toLowerCase();
     if (!names.has(folded)) names.set(folded, category || UNMATCHED);
     const section = names.get(folded);
-    const key = [section, line.scryfall_id ?? '', line.name, line.set_code, line.collector_number, line.finish,
-      line.condition, [...(line.treatments ?? [])].sort().join(',')].join('|');
+    const asProduct = section !== UNMATCHED && product ? product : null;
+    const key = asProduct
+      ? [section, 'product', fold(asProduct), line.condition || 'NM'].join('|')
+      : [section, line.scryfall_id ?? '', line.name, line.set_code, line.collector_number, line.finish,
+        line.condition, [...(line.treatments ?? [])].sort().join(',')].join('|');
     const had = merged.get(key);
-    if (had) had.qty += line.quantity;
-    else merged.set(key, { section, line, qty: line.quantity, bucket: bucket ?? 'unknown', price: price ?? null });
+    if (had) {
+      had.qty += line.quantity;
+      if (price != null && (had.price == null || price > had.price)) had.price = price;
+    } else {
+      merged.set(key, { section, line, product: asProduct, qty: line.quantity, bucket: bucket ?? 'unknown', price: price ?? null });
+    }
   }
   const bySection = new Map();
   for (const m of merged.values()) {
@@ -224,12 +277,20 @@ export function auditSections(placed) {
     bySection.get(m.section).push(m);
   }
   return [...bySection.entries()]
-    .map(([name, list]) => ({
-      name,
-      cards: list.reduce((n, m) => n + m.qty, 0),
-      set: name === UNMATCHED ? null : mainSet(list),
-      rows: list.sort(byPile).map((m) => auditRow(m.line, m.qty, m.bucket, m.price)),
-    }))
+    .map(([name, list]) => {
+      const set = name === UNMATCHED ? null : String(setOf(name) ?? '').toLowerCase() || null;
+      const products = list.filter((m) => m.product).sort(byProduct);
+      const cards = list.filter((m) => !m.product).sort(byPile);
+      return {
+        name,
+        cards: list.reduce((n, m) => n + m.qty, 0),
+        set,
+        // A category with no Scryfall set of its own: the star, as a set with no symbol (useAuditPrint.js).
+        star: name !== UNMATCHED && !set,
+        rows: [...products.map((m) => productRow(m.product, m.line, m.qty, m.bucket, m.price)),
+          ...cards.map((m) => auditRow(m.line, m.qty, m.bucket, m.price))],
+      };
+    })
     .sort((a, b) => (a.name === UNMATCHED) - (b.name === UNMATCHED) || collator.compare(a.name, b.name));
 }
 

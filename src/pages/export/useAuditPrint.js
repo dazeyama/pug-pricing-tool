@@ -1,10 +1,10 @@
 import { useCallback, useState } from 'react';
 import { useToast } from '../../components/Toast.jsx';
-import { matchLines, scryfallCards } from '../../lib/ccExport.js';
+import { matchContext, matchLines, scryfallCards } from '../../lib/ccExport.js';
 import { loadSets } from '../../lib/scryfall.js';
 import {
-  UNMATCHED, auditSections, buyOrderSections, cardBucket, flagBanner, flaggedBuys, matchCategory, pokemonPrintLines,
-  pokemonRow, pokemonSections, printLines, savedCategory,
+  STAR_SYMBOL, UNMATCHED, auditSections, buyOrderSections, cardBucket, categorySets, flagBanner, flaggedBuys, matchPlace,
+  pokemonPrintLines, pokemonRow, pokemonSections, printLines, savedPlace,
 } from '../../lib/auditPrint.js';
 import { sellPriceFor } from '../../lib/sellPrice.js';
 import { todaysPrices } from '../../lib/todaysPrices.js';
@@ -69,17 +69,27 @@ async function drawSymbol(uri) {
   }
 }
 
-/** The sections' set symbols, by set code; one that won't load is left off, nothing more. */
+/**
+ * The sections' set symbols, by set code, and the star (STAR_SYMBOL) for a category with no set of its own
+ * (decision 601); one that won't load is left off, nothing more.
+ */
 async function symbolsFor(sections) {
   const codes = [...new Set(sections.map((s) => s.set).filter(Boolean))];
-  if (!codes.length) return {};
+  const out = {};
+  if (sections.some((s) => s.star)) {
+    try {
+      out[STAR_SYMBOL] = await setSymbol(STAR);
+    } catch {
+      // No symbol on those bands: their names still say them.
+    }
+  }
+  if (!codes.length) return out;
   let sets;
   try {
     sets = await loadSets();
   } catch {
-    return {};
+    return out;
   }
-  const out = {};
   await Promise.all(codes.map(async (code) => {
     const uri = sets.get(code)?.icon_svg_uri;
     const own = uri && !/\/sets\/default\.svg/.test(uri) ? uri : null;
@@ -110,10 +120,12 @@ function flagging(cardFlags) {
 const flaggedNote = (flags) => (flags.length ? ` 🚩 ${flags.join(', ')} flagged: check condition.` : '');
 
 /**
- * Print? and Print buy (docs/TEAM_FEEDBACK.md 3): the cards' Crystal
- * Commerce categories found without asking anything (the export's matching,
- * nothing remembered; exported cards from what their export saved), each
- * card's colour from Scryfall (pull-pdf's colour groups), the sets' symbols,
+ * Print? and Print buy (docs/TEAM_FEEDBACK.md 3): each card's Crystal Commerce
+ * product and category as the export would take it, found without asking
+ * anything (decision 601: the export's matching, staff's remembered picks and
+ * the TCGplayer route included; a card staff must choose for under Unmatched;
+ * exported cards from what their export saved), each card's colour from
+ * Scryfall (pull-pdf's colour groups), the categories' set symbols,
  * then the PDF, downloaded and opened in a new tab. Writes nothing anywhere.
  * `load` instead of `lines`: the cards fetched once the tab is open (a
  * collection's ⋯ on the Collections tab, whose cards aren't loaded yet).
@@ -159,7 +171,7 @@ export function useAuditPrint() {
     // A tab opened now, while this is still the click: one opened after the
     // matching would be blocked as a pop-up (printTab.js).
     const tab = openPrintTab(title, `${buyOrder ? "Fetching today's prices" : pokemon ? 'Sorting the cards by set'
-      : "Finding each card's Crystal Commerce category"}. It opens here when it's ready.`);
+      : "Finding each card's Crystal Commerce product"}. It opens here when it's ready.`);
     setPrinting(true);
     try {
       if (load) {
@@ -212,7 +224,7 @@ export function useAuditPrint() {
         toast(`Printout ready: ${count} card${count === 1 ? '' : 's'} in buy order.` + flaggedNote(flags), 'ok');
         return;
       }
-      setStep(tab, pokemon ? 'Sorting the cards by set…' : "Finding each card's Crystal Commerce category…");
+      setStep(tab, pokemon ? 'Sorting the cards by set…' : "Finding each card's Crystal Commerce product…");
       if (pokemon) {
         const sections = pokemonSections(chosen, priceOf);
         const { flagText, flags } = flagging(chosen.map((l) => flagOf?.(l) ?? null));
@@ -223,22 +235,34 @@ export function useAuditPrint() {
           + flaggedNote(flags), 'ok');
         return;
       }
-      const toMatch = chosen.filter((l) => savedCategory(l) === undefined);
-      const { results, cards } = toMatch.length ? await matchLines(toMatch) : { results: [], cards: new Map() };
+      // Each card as the export would take it, asking nothing (decision 601): exported cards from their stamps,
+      // the rest matched now. The inventory's categories, read once: the matching's, and each band's set.
+      const toMatch = chosen.filter((l) => savedPlace(l) === undefined);
+      const context = await matchContext().catch((e) => {
+        if (toMatch.length) throw e;
+        return null;   // only exported cards: their bands go without symbols rather than without a printout
+      });
+      const [{ results, cards }, sets] = await Promise.all([
+        toMatch.length ? matchLines(toMatch, undefined, { context }) : { results: [], cards: new Map() },
+        loadSets().catch(() => null),
+      ]);
+      const setOf = context && sets ? categorySets(sets, context.categories, context.setMap) : () => null;
       // Exported cards weren't matched: their Scryfall cards (for their colour) on their own.
       const missing = chosen.map((l) => l.scryfall_id).filter((id) => id && !cards.has(id));
       const more = missing.length ? await scryfallCards(missing) : new Map();
       const byId = new Map(results.map((r) => [r.line.id, r]));
       const placed = chosen.map((line) => {
-        const saved = savedCategory(line);
+        const saved = savedPlace(line);
+        const place = saved !== undefined ? saved : matchPlace(byId.get(line.id));
         return {
           line,
-          category: saved !== undefined ? saved : matchCategory(byId.get(line.id)),
+          category: place?.category ?? null,
+          product: place?.product ?? null,
           bucket: cardBucket(cards.get(line.scryfall_id) ?? more.get(line.scryfall_id)),
           price: priceOf(line),
         };
       });
-      const sections = auditSections(placed);
+      const sections = auditSections(placed, setOf);
       const { flagText, flags } = flagging(chosen.map((l) => flagOf?.(l) ?? null));
       // The PDF library loads only when something is printed: the app starts as light as before.
       const [{ auditPdf }, symbols] = await Promise.all([import('../../lib/auditPdf.js'), symbolsFor(sections)]);

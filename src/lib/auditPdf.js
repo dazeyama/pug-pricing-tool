@@ -13,7 +13,7 @@
 
 import { jsPDF } from 'jspdf';
 import { formatMoney } from './money.js';
-import { priceTone } from './auditPrint.js';
+import { STAR_SYMBOL, priceTone } from './auditPrint.js';
 import { DEFAULT_BULK_CUT, bandWords } from './bulkCut.js';
 
 /**
@@ -23,6 +23,7 @@ import { DEFAULT_BULK_CUT, bandWords } from './bulkCut.js';
  * Unmatched, whose cards come from any set.
  */
 export function numberChip(row, sectionSet) {
+  if (!row.set && !row.number) return '';   // a CC product's row (decision 601)
   return sectionSet && row.set.toLowerCase() === sectionSet ? row.number : `${row.set} ${row.number}`.trim();
 }
 
@@ -212,7 +213,8 @@ export function auditPdf({ title, sections, symbols = {}, printedAt = new Date()
     doc.setFillColor(...INK);
     doc.roundedRect(x(), y, COL_W, BAND, 2.5, 2.5, 'F');
     let textX = x() + 7;
-    const symbol = s.set ? symbols[s.set] : null;
+    // A category with no Scryfall set of its own: the star (decision 601).
+    const symbol = s.set ? symbols[s.set] : s.star ? symbols[STAR_SYMBOL] : null;
     if (symbol) {
       // As tall as SYMBOL_H, a wide symbol no wider than 1.6 times that.
       const w = Math.min(SYMBOL_H * 1.6, SYMBOL_H * symbol.ratio);
@@ -250,8 +252,9 @@ export function auditPdf({ title, sections, symbols = {}, printedAt = new Date()
   /** How a row lays out: the name's room, its extras, one line or two. */
   const layout = (r, s) => {
     const set = pdfSafe(numberChip(r, s.set));
-    const setW = chipWidth(set);
-    const right = COL_W - 4 - priceW - COND_W - 3 - setW - 4;   // the name's room ends at the set chip
+    // A CC product's row has none (decision 601): the name's room runs to the condition.
+    const setW = set ? chipWidth(set) : 0;
+    const right = COL_W - 4 - priceW - COND_W - (set ? 3 + setW : 0) - 4;   // the name's room ends at the set chip
     const extras = r.extras.map((e) => pdfSafe(e));
     const extrasW = extras.reduce((w, e) => w + chipWidth(e) + 2, 0);
     doc.setFont('helvetica', 'normal');
@@ -291,7 +294,7 @@ export function auditPdf({ title, sections, symbols = {}, printedAt = new Date()
     }
     const condLeft = left + COL_W - 4 - priceW - COND_W;
     chip(r.condition, condLeft, top, COND_W, CONDITION_RGB[r.condition] ?? CONDITION_RGB.NM, 1);
-    chip(l.set, condLeft - 3 - l.setW, top, l.setW);
+    if (l.set) chip(l.set, condLeft - 3 - l.setW, top, l.setW);
     // The name, then its finish and treatments (or under it, when they don't fit).
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(NAME_PT);

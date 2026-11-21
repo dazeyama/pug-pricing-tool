@@ -13,7 +13,7 @@ marks each task done here when it's finished, with the exact file and function o
   (and `quotePrint.js`). **Settled with the owner, 2026-11-21 (main session), given to the Export and printouts
   session:** the owner's ask, "make it so that the printouts are exactly the line item that's going to be exported
   and added to Crystal NOT just based on our current scryfall data", with no slower printout and nothing asked while
-  printing. (a) Each row is the CC product name only, the export's own (no Scryfall chip); one row per CC product
+  printing. **(a), (b) and (d) done (decision 601, Export session); (c) in progress.** (a) Each row is the CC product name only, the export's own (no Scryfall chip); one row per CC product
   and condition (two printings on one product merge, no chip); each section is the product's CC category, its
   symbol the CC category's set (the owner: "We want to keep set symbols"). (b) Needs a choice cards go under
   Unmatched, not a guessed set category (the owner: "all those cards belong in Unmatched until chosen"). (c)
@@ -52,6 +52,20 @@ marks each task done here when it's finished, with the exact file and function o
   `SHEET`, `tests/stickerPdf.test.js` with it, and a decision row.
 
 ## Done
+
+- 2026-11-21 (Export session): **Decision 601: the Magic printouts show what the export will take** (the owner's
+  ask, settled 2026-11-21). `src/lib/auditPrint.js`: `savedPlace` and `matchPlace` (were `savedCategory`,
+  `matchCategory`; a Needs a choice card is now Unmatched), `categorySets` (a category's Scryfall set for its
+  band), `productRow`, `auditSections(placed, setOf)` (one row per CC product and condition);
+  `src/lib/auditPdf.js` (no set chip on a product's row; the star for a category with no set);
+  `src/pages/export/useAuditPrint.js` (reads the categories once, passes them to `matchLines`). Where to look: a
+  past Magic day not yet exported, EXPORT ▾ → ◂ Print → Print MTG (all): each row is the CC product name the file
+  will write, under the category it exports into, the band's symbol that category's set; two printings on one
+  product are one row; Needs a choice and no-product cards are under Unmatched with their Scryfall set chips;
+  compare with EXPORT's Matched list. Print buy and Print MTG (>$…) the same; Print MTG in buy order unchanged.
+  Unit-tested (`tests/auditPrint.test.js`, `tests/auditPdf.test.js`); not tried in the app, so the symbols on real
+  categories and the time it takes are unchecked. TEST.md section 14. No migration. Help's "Print MTG? (the audit
+  printout)" section (README.md) is now out of date. Next: the "u" Custom SKU (piece 3).
 
 - 2026-11-21 (Export session): **Decision 600: the Mass Create file named by its Custom SKU** (the owner, 2026-11-18;
   settled 2026-11-21). `massCreate.js` `massCreateFileName(prefix, skus)`; `ExportDialog.jsx` takes `filePrefix` (was
