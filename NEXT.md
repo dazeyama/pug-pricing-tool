@@ -54,6 +54,30 @@ marks each task done here when it's finished, with the exact file and function o
   and price as on the matched rows; two printings of one card are two rows; Print MTG in buy order keeps its chips. Unit-tested
   (`tests/auditPrint.test.js`); not tried in the app. TEST.md section 14. No migration.
 
+- 2026-11-21 (main session): **Pushed without a bump** (the owner: "Push to the live site now."). What went out:
+  decisions 598's answer (NM cards keep their own price), 599 (a The List card with several The List printings is
+  staff's pick; Mystery Booster kept separate), 600 (the Mass Create file named by its Custom SKU), 601 (the Magic
+  printouts show the CC product and category the export takes; Needs a choice under Unmatched), 602 (the "u" SKU
+  on the printout's Unmatched band), 603 (cards chosen at the export carry the u in the file), 604 (Unmatched rows
+  named as CC would, keeping their set chip, one row per printing) and 605 (a row's name wraps, never cut), with
+  their NEXT.md entries. No migrations (prod and dev both 0001–0017), no Edge Function changes. Lint, 619 tests and
+  the build clean before the push. Release review (through 604's first version): nothing that stops a push; its
+  smaller findings are in the next entry. Untested in the app: all of 599 to 605; 599's TCGplayer read with a
+  signed-in session has never run. Help's printout and export sections are out of date until the owner asks.
+- 2026-11-21 (main session): **The release review's smaller findings, not fixed** (none asked for yet):
+  1. The Confirm step's row count and SKU ignore the u split (`ExportDialog.jsx` `previewRows`, `fileLines` carry
+     no `cc_custom_sku`): it can say "1 row, Custom SKU 112126" where the file has a 112126 row and a 112126u row.
+  2. Two rows for one product and condition with different Custom SKUs (603) have never gone into CC: if CC keeps
+     one SKU per product and condition, the later row's wins. The 0-quantity NM row takes the first card's SKU.
+  3. 599's TCGplayer read could return nothing without an error (a quoted `ilike` value, or `nameKey`'s folded
+     characters), quietly counting only CC's printings: the signed-in Demonic Tutor check is the test.
+  4. A The List card with no candidates of its own but several by TCGplayer's count stays "none" (Can't upload)
+     rather than Needs a choice (`ccExport.js` matchOne).
+  5. A collection's Unmatched SKU on the printout can name a Can't upload export's restamp SKU too
+     (`auditPrint.js` `collectionUnmatchedSku` reads every stamped SKU; Download the same file again uses
+     `withoutRestamps`).
+  6. A harmless regex typo, `auditPrint.js` near line 125: `:s*` for `:\s*`.
+
 - 2026-11-21 (Export session): **Decision 603: cards chosen at the export carry the "u" SKU in the file** (the
   owner: "Yes, put the u SKU on chosen cards"). Built without a migration, which way it went: the u isn't stamped
   in `cc_custom_sku` (that would need `export_lines` changed); the export dialog marks the card's Sell Price

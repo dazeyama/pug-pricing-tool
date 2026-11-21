@@ -167,12 +167,13 @@ gotchas and the squash.
   d158ee3:<path>` for the first five, `git show 681c5c6:<path>` for the next three, `git show
   a8fb952:scripts/db-baseline.mjs` for the generator.
 
-## Where it stands (2026-11-18)
+## Where it stands (2026-11-21)
 
 - Live: **v1.0.7-matching** (2026-11-18, decisions through 597: Crystal Commerce matching through TCGplayer ids,
-  decisions 588–595; the printouts' NM-first order, 596–597), then pushes without a bump, the last on 2026-11-18
-  (the release review's follow-ups, `tcgcatalog` version 2 on prod; decision 598, the Mass Create file's NM at
-  today's NM price), on prod: the GitHub Actions variables point there.
+  decisions 588–595; the printouts' NM-first order, 596–597), then pushes without a bump, the last on 2026-11-21
+  (decisions through 605: the Mass Create file's NM at today's NM price, 598; The List's staff picks, 599; the
+  file named by its Custom SKU, 600; the printouts in CC format and the "u" SKU, 601–605), on prod: the GitHub
+  Actions variables point there.
 - Prod and dev both have migrations 0001–0017 and stay equal (decision 381; the last on prod 2026-11-18, the
   structure-only compare the same). What each did: the spec's decisions and the files' names. The next is 0018.
   Edge Functions on both: `prices`, `secrets` and `tcgcatalog` (decision 589).
