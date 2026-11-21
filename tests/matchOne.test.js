@@ -136,6 +136,19 @@ test('The List (599): two printings in CC, or two on TCGplayer, go to Needs a ch
   assert.equal(listOne('Abrade', [abrade], { tcgListPrintings: 2 }).status, 'choose');
 });
 
+test('The List (599): no product under its own name but several TCGplayer printings is a choice, not Can\'t upload', () => {
+  const none = listOne('Demonic Tutor', [], { tcgListPrintings: 2 });
+  assert.equal(none.status, 'choose');
+  assert.equal(none.product, null);
+  assert.equal(none.ranked.length, 0);   // the search is there
+  // Products found by TCGplayer's name are offered, unscored.
+  const tutor = product('Demonic Tutor - The List', LIST, 'dt');
+  const offered = listOne('Demonic Tutor', [], { tcgListPrintings: 2, routeCandidates: [tutor, tutor] });
+  assert.deepEqual(offered.ranked.map((x) => [x.product.product_id, x.score]), [['dt', null]]);
+  // One printing on TCGplayer and none in CC: Can't upload, as before.
+  assert.equal(listOne('Demonic Tutor', [], { tcgListPrintings: 1 }).status, 'none');
+});
+
 test('The List (599): a remembered pick wins; Mystery Booster\'s products aren\'t The List printings', () => {
   const bolts = [product('Lightning Bolt (001) - The List', LIST, 'b1'), product('Lightning Bolt (141) - The List', LIST, 'b2')];
   const r = listOne('Lightning Bolt', bolts, { link: { product_id: 'b2', source: 'staff' }, linkedProduct: bolts[1] });

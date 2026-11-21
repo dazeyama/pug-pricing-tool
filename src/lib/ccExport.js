@@ -197,7 +197,14 @@ export function matchOne({
   const listChoice = isListCard(set, where?.category ?? null, tcgList)
     && (ccListPrintings([...candidates, ...routeCandidates]) > 1 || tcgListPrintings > 1);
   const staffs = alwaysChoose(set, where?.category ?? null) || listChoice;
-  const status = pick.status === 'auto' && (!where || link || staffs) ? 'choose' : pick.status;
+  // A The List card staff must pick goes to Needs a choice even with no product under its own name (decision 599,
+  // after the release review): TCGplayer's count says it has printings, so it isn't Can't upload; what was found by
+  // TCGplayer's name is offered there, unscored, beside the search.
+  const listNone = listChoice && pick.status === 'none';
+  const status = listNone || (pick.status === 'auto' && (!where || link || staffs)) ? 'choose' : pick.status;
+  const ranked = listNone && !pick.ranked.length
+    ? [...new Map(routeCandidates.map((p) => [p.product_id, { product: p, score: null, reasons: [] }])).values()]
+    : pick.ranked;
   // The TCGplayer route first (decision 594; tcgRoute.js), never for a pick that's staff's to make (487, 574, 599):
   // its one product wins; with no single answer, today's matcher's stands. A route match is made again at each
   // export, never remembered (decision 486).
@@ -222,7 +229,7 @@ export function matchOne({
     ...base,
     status,
     product: status === 'auto' ? pick.product : null,
-    ranked: pick.ranked,
+    ranked,
     expected: pick.expected,
     via: status === 'auto' ? 'match' : null,
     wasLinked: link && !linkedProduct ? link : null,
