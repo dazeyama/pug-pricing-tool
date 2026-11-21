@@ -2,7 +2,7 @@
 // Crystal Commerce's own order, to tick off by hand before it goes up. Which
 // cards, where each goes, merged and sorted. Pure: the matching comes in.
 
-import { categoryFor, fold } from './ccMatch.js';
+import { categoryFor, expectedName, expectedTreatments, fold } from './ccMatch.js';
 import { CONDITIONS } from './ladder.js';
 import { magicTreatmentLabel } from './printings.js';
 import { lineTags } from './lineFormat.js';
@@ -189,6 +189,28 @@ export function productRow(product, line, qty, bucket = 'unknown', price = null)
 }
 
 /**
+ * A card with no CC product written as CC would name it (decision 604; the owner: "Fblthp, the Lost - Borderless
+ * NOT Fblthp, the Lost [Borderless]"): the matcher's expected name, its foil kind then its variants in CC's words
+ * and order ("Jor Kadeen, First Goldwarden - Foil - Showcase", "Journeyer's Kite - Retro Frame"), a showcase card
+ * never Borderless too (decision 508); a treatment CC's names have no word for after them, as the app labels it.
+ */
+export function unmatchedName(line) {
+  const card = { ...line, name: line.name_en || line.name, treatments: printedTreatments(line.treatments) };
+  const written = expectedTreatments(card);
+  const rest = card.treatments.filter((t) => !written.has(t)
+    && !(card.finish !== 'foil' && /foil$/.test(t))).map(magicTreatmentLabel);
+  return [expectedName(card), ...rest].join(' - ');
+}
+
+/**
+ * A row for a card with no CC product (decision 604): its name as CC would write it (unmatchedName), with no set,
+ * number, finish or treatment chips, as a product's row.
+ */
+export function unmatchedRow(line, qty, bucket = 'unknown', price = null) {
+  return productRow(unmatchedName(line), line, qty, bucket, price);
+}
+
+/**
  * A Pokémon row's parts, as auditRow gives a Magic card's: its finish
  * ("Holo", "Reverse") and the bracket's tags but the condition ("1st Ed",
  * "JP", a reverse pattern, a TCGplayer-only version) as its chips. No colour
@@ -267,8 +289,8 @@ function byProduct(a, b) {
  * The printout's sections (decision 601), by CC category A to Z with Unmatched last. In a category, one
  * row per CC product and condition, its quantities added (two printings on one product as one row, at the
  * higher of their prices), named as the file names it (productRow), sorted by byProduct. Under Unmatched
- * (no product, or staff's to choose), the card as Scryfall has it, the same card from different buys
- * (printing, finish, condition, treatments) as one row (team plan 3.2–3.5), sorted by byPile.
+ * (no product, or staff's to choose), the card as CC would name it with no chips (unmatchedRow, decision 604), the
+ * cards that read the same in one condition as one row (team plan 3.2–3.5), sorted by byPile.
  * @param {{ line: object, category: string|null, product?: string|null, bucket?: string, price?: number|null }[]} placed
  * @param {(category: string) => string|null} [setOf]  a category's set code, for its band's symbol (categorySets)
  * @returns {{ name: string, cards: number, set: string|null, star: boolean, rows: object[] }[]}
@@ -282,10 +304,10 @@ export function auditSections(placed, setOf = () => null) {
     if (!names.has(folded)) names.set(folded, category || UNMATCHED);
     const section = names.get(folded);
     const asProduct = section !== UNMATCHED && product ? product : null;
+    // A card with no product by the name it's written under (decision 604): two that read the same are one row.
     const key = asProduct
       ? [section, 'product', fold(asProduct), line.condition || 'NM'].join('|')
-      : [section, line.scryfall_id ?? '', line.name, line.set_code, line.collector_number, line.finish,
-        line.condition, [...(line.treatments ?? [])].sort().join(',')].join('|');
+      : [section, 'card', fold(unmatchedName(line)), line.condition || 'NM'].join('|');
     const had = merged.get(key);
     if (had) {
       had.qty += line.quantity;
@@ -311,7 +333,7 @@ export function auditSections(placed, setOf = () => null) {
         // A category with no Scryfall set of its own: the star, as a set with no symbol (useAuditPrint.js).
         star: name !== UNMATCHED && !set,
         rows: [...products.map((m) => productRow(m.product, m.line, m.qty, m.bucket, m.price)),
-          ...cards.map((m) => auditRow(m.line, m.qty, m.bucket, m.price))],
+          ...cards.map((m) => unmatchedRow(m.line, m.qty, m.bucket, m.price))],
       };
     })
     .sort((a, b) => (a.name === UNMATCHED) - (b.name === UNMATCHED) || collator.compare(a.name, b.name));

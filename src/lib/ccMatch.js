@@ -192,6 +192,18 @@ export function expectedFoilKind(finish, treatments = []) {
   return special ? SPECIAL_FOILS[special] : 'Foil';
 }
 
+/**
+ * The treatments expectedName writes for a line (decision 604): its variant families and, on a foil, its special
+ * foil; a caller writing the card's name in CC's style adds the rest itself.
+ * @returns {Set<string>}
+ */
+export function expectedTreatments(line) {
+  const keys = new Set(lineFamilies(line));
+  const special = line.finish === 'foil' ? (line.treatments ?? []).find((t) => SPECIAL_FOILS[t]) : null;
+  if (special) keys.add(special);
+  return keys;
+}
+
 // The variant families, in the order CC writes them (export spec 7.4; decisions 484–485). Each has `name`, how CC
 // writes it; `re`, the test that a CC variant word shows it; and `words`, its own spellings in CC's names. What a
 // variant word says beyond its families' spellings is an extra word ("Anime Borderless": Anime; "Showcase

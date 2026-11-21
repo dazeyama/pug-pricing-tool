@@ -35,6 +35,16 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-11-21 (Export session): **Decision 604: Unmatched rows written as CC would name the card** (the owner:
+  "Fblthp, the Lost - Borderless NOT Fblthp, the Lost [Borderless]"). `src/lib/auditPrint.js` `unmatchedName`
+  (the matcher's `expectedName`, then any treatment CC has no word for), `unmatchedRow`, and `auditSections`
+  (rows without a product use it, merged by the written name and condition); `src/lib/ccMatch.js`
+  `expectedTreatments`. Where to look: a past Magic day with Unmatched cards, EXPORT ▾ → ◂ Print → Print MTG (all):
+  each Unmatched row reads like a CC product name ("Fblthp, the Lost - Borderless", "… - Foil - Showcase", "… -
+  Retro Frame") with no chips and no set or number, the condition chip and price as on the matched rows; two
+  printings of one card are one row; Print MTG in buy order keeps its chips. Unit-tested
+  (`tests/auditPrint.test.js`); not tried in the app. TEST.md section 14. No migration.
+
 - 2026-11-21 (Export session): **Decision 603: cards chosen at the export carry the "u" SKU in the file** (the
   owner: "Yes, put the u SKU on chosen cards"). Built without a migration, which way it went: the u isn't stamped
   in `cc_custom_sku` (that would need `export_lines` changed); the export dialog marks the card's Sell Price

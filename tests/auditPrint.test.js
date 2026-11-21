@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   UNMATCHED, auditRow, auditSections, buyOrderSections, cardBucket, categorySets, collectionUnmatchedSku, matchPlace, pokemonPrintLines, pokemonRow,
-  pokemonSections, priceTone, printLines, savedPlace, unmatchedSku,
+  pokemonSections, priceTone, printLines, savedPlace, unmatchedName, unmatchedSku,
 } from '../src/lib/auditPrint.js';
 import { fold } from '../src/lib/ccMatch.js';
 import { magicTreatmentLabel } from '../src/lib/printings.js';
@@ -57,8 +57,9 @@ test('CC rows (decision 601): the product name, one row per product and conditio
   // The band's symbol is the category's set, not its cards' (PLST).
   assert.equal(s[0].set, 'mb1');
   assert.equal(s[0].star, false);
-  // Unmatched: the card as Scryfall has it.
-  assert.deepEqual([s[1].rows[0].name, s[1].rows[0].set, s[1].set, s[1].star], ['Doom Blade', 'PLST', null, false]);
+  // Unmatched: the card as CC would name it, no chips (decision 604).
+  assert.deepEqual([s[1].rows[0].name, s[1].rows[0].set, s[1].rows[0].number, s[1].set, s[1].star],
+    ['Doom Blade - The List', '', '', null, false]);
   // A category with no set of its own: the star.
   assert.equal(auditSections([{ line: line({}), category: 'Pre-Release Promos', product: 'X - Prerelease' }])[0].star, true);
 });
@@ -97,8 +98,8 @@ test('sections A to Z with Unmatched last; inside, by name then collector number
   const c21 = s[2];
   assert.equal(c21.cards, 6);
   assert.deepEqual(c21.rows.map((r) => [r.name, r.qty]), [['Arcane Signet', 2], ['Sol Ring', 4]]);
-  // "alpha" joins "Alpha"; by name (decision 443), then 12 before 120a.
-  assert.deepEqual(s[0].rows.map((r) => `${r.name} ${r.set} ${r.number}`), ['Abrade PLST 2XM-120', 'Bolt LEA 12', 'Bolt LEA 120a']);
+  // "alpha" joins "Alpha"; by name (decision 443); two printings that read the same as one row (decision 604).
+  assert.deepEqual(s[0].rows.map((r) => [r.name, r.qty, r.set, r.number]), [['Abrade - The List', 1, '', ''], ['Bolt', 2, '', '']]);
   assert.equal(s[3].rows[0].name, 'Mystery Card');
   // No set given for a category: no set, so the star (decision 601); none for Unmatched.
   assert.deepEqual([s[0].set, s[0].star], [null, true]);
@@ -112,7 +113,8 @@ test('different condition, finish or treatments stay separate rows, NM before LP
     { line: line({ name: 'Bolt' }), category: 'Alpha' },
     { line: line({ name: 'Bolt', treatments: ['borderless'] }), category: 'Alpha' },
   ]);
-  assert.deepEqual(s[0].rows.map((r) => [r.condition, ...r.extras].join(' ')), ['NM', 'NM Borderless', 'NM Foil', 'LP']);
+  assert.deepEqual(s[0].rows.map((r) => `${r.condition} ${r.name}`), ['NM Bolt', 'NM Bolt - Borderless', 'NM Bolt - Foil', 'LP Bolt']);
+  assert.ok(s[0].rows.every((r) => !r.extras.length));
 });
 
 test("inside a category (decisions 443, 596): NM, then LP, MP, HP, DMG; in each by colour pile, A to Z, then number", () => {
@@ -130,9 +132,10 @@ test("inside a category (decisions 443, 596): NM, then LP, MP, HP, DMG; in each 
     { line: line({ name: 'Unknown', collector_number: '1' }), category: 'Alpha' },
     { line: line({ name: 'Golos', collector_number: '9' }), category: 'Alpha', bucket: 'multicolor' },
   ]);
-  assert.deepEqual(s[0].rows.map((r) => `${r.condition} ${r.name} ${r.number}`), [
-    'NM Plea 7', 'NM Bolt 161', 'NM Bolt 200', 'NM Golos 9', 'NM Mox 12', 'NM Island 290', 'NM Unknown 1',
-    'LP Orb 1', 'LP Zap 5', 'MP Zap 5', 'HP Ruby 3', 'DMG Zap 5',
+  // Bolt 161 and 200 read the same, so one row of 2 (decision 604).
+  assert.deepEqual(s[0].rows.map((r) => `${r.condition} ${r.name} ${r.qty}`), [
+    'NM Plea 1', 'NM Bolt 2', 'NM Golos 1', 'NM Mox 1', 'NM Island 1', 'NM Unknown 1',
+    'LP Orb 1', 'LP Zap 1', 'MP Zap 1', 'HP Ruby 1', 'DMG Zap 1',
   ]);
 });
 
@@ -272,4 +275,20 @@ test("Unmatched's Custom SKU (decision 602): the export's own with a u", () => {
   assert.equal(collectionUnmatchedSku(done, '112226'), '112126-3u');
   // Every card Can't upload: no SKU was stamped, so none.
   assert.equal(collectionUnmatchedSku([line({ name: 'C', completed_at: '2026-11-21', cc_status: 'cant_upload' })], '112226'), null);
+});
+
+// Decision 604, the owner's screenshot: "Fblthp, the Lost - Borderless NOT Fblthp, the Lost [Borderless]".
+test('a card with no product, written as CC would name it', () => {
+  const name = (over) => unmatchedName(line(over));
+  assert.equal(name({ name: 'Fblthp, the Lost', set_code: 'rvr', treatments: ['borderless'] }), 'Fblthp, the Lost - Borderless');
+  assert.equal(name({ name: 'Jor Kadeen, First Goldwarden', set_code: 'one', finish: 'foil', treatments: ['showcase'] }),
+    'Jor Kadeen, First Goldwarden - Foil - Showcase');
+  assert.equal(name({ name: "Journeyer's Kite", set_code: 'brr', treatments: ['retro'] }), "Journeyer's Kite - Retro Frame");
+  // A showcase card never Borderless too (decision 508); a special foil as CC's foil kind; etched.
+  assert.equal(name({ name: 'Elesh Norn', finish: 'foil', treatments: ['borderless', 'showcase', 'stepandcompleat'] }),
+    'Elesh Norn - Step-and-Compleat Foil - Showcase');
+  assert.equal(name({ name: 'Sol Ring', finish: 'etched' }), 'Sol Ring - Foil Etched');
+  // A treatment CC's names have no word for, after them as the app labels it; its English name.
+  assert.equal(name({ name: 'Bolt', treatments: ['datestamped'] }), 'Bolt - Date stamped');
+  assert.equal(name({ name: 'ライトニング', name_en: 'Lightning Bolt' }), 'Lightning Bolt');
 });
