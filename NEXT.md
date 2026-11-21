@@ -23,38 +23,6 @@ marks each task done here when it's finished, with the exact file and function o
   Download the same file again calls need the stamped `cc_custom_sku`. To settle with the owner when it's picked
   up: the SKU in place of the date, or beside it.
 
-- **Crystal Commerce matching through TCGplayer ids, phases 0 to 5 (decision 588; main session, 2026-11-18).**
-  The owner: "Yes, as written". Phase 0 (measure on dev's buy lines) and phase 2's draft set table: the main
-  session, in `C:/ClaudeProjects/temp/cc-tcgcsv/`. Phase 1 (migration 0017's TCGplayer catalog table, the Edge
-  Function that fills it from tcgcsv at each master-file upload, the Settings → CC matching button): the Export and
-  printouts session. Phases 3 to 5 follow, one at a time, each measured with the same sweep before the next.
-  **Phase 0 done** (main session, 2026-11-18; results in decision 588): on dev's real buy lines, 96.2% today →
-  98.6% with the route first. Scripts: `phase0.mjs` (the buy lines, `buy-lines.json` pulled from dev) and
-  `measure.mjs` (all printings, now with the List / Mystery Booster shelf rule) in `C:/ClaudeProjects/temp/cc-tcgcsv/`.
-  **Phase 2 done** (main session, 2026-11-18; decision 591): the owner checked the table;
-  `C:/ClaudeProjects/temp/cc-tcgcsv/prod/set-table.json` is the result. **Phase 3 built** (decision 592, Export
-  session) **and checked** (main session, 2026-11-18, `check-phase3.mjs`, the app's own route code over prod's
-  copies): on the 1,495 exported lines it changes nothing; every printing 89.3% → 92.4% matched by itself; prod's
-  buy lines 96.6% → 97.3%. Waits for the owner's QA on dev (Settings → CC matching → refresh the TCGplayer catalog
-  first: it has never run on dev). **Phase 4 given to the Export session** (owner: "Start phase 4 too",
-  2026-11-18), sized on today's gaps (`gaps4.mjs`, `prod/gaps4.json`): 4a CC's bracket words as tags (~1,000),
-  4b promo words (~950), 4c promo finish (~370), 4d "Flavor Name - Card Name" (~70+); each committed alone and
-  checked with `check-phase3.mjs`. **Phase 4 done** (decision 593) **and checked** by the main session
-  (2026-11-18): every printing 92.4% → 93.7% matched by itself, prod's buy lines 97.3% → 98.0%, the exported lines
-  unchanged. **Route-first re-run** (`check-routefirst.mjs`, decision 590's revisit): on the 1,495 exported lines it
-  gets 1,487 right against today's order's 1,480 (fixes 10, breaks 3: Fated Firepower's Showcase for CC's
-  Borderless, and Twitching Doll and Qarsi Revenant, whose Scryfall TCGplayer id is TCGplayer's Buy-a-Box product),
-  so by decision 590's rule the order stays matcher-first until those 3 are fixed. The owner switched anyway
-  (decision 594: the two Buy-a-Box answers are right, Fated Firepower a special case), given to the Export session.
-  **Phase 5 closed** (decision 595): today's matcher guesses nothing for the not-carried sets. Decision 594 built and
-  checked. **Pushed as v1.0.7-matching (2026-11-18).** Left: the owner's QA on dev (refresh dev's catalog first), and
-  the release review's follow-ups in the push's Done entry. The draft was (main session, 2026-11-18): `C:/ClaudeProjects/temp/cc-tcgcsv/prod/set-table-draft.md`
-  (18 to confirm, 58 not carried, 69 sure; made by `draft-sets.mjs` then `draft-final.mjs`, its picks in `MINE`).
-  When the owner's answers are in, it becomes the table in the code (decision 588) for the Export session to wire
-  in with phase 3. **Phase 3's order settled** (decision 590): today's matcher first, the
-  route only where it leaves Needs a choice, no category or none; measured on prod's data, read-only (`*-prod.mjs`,
-  `prod/`), 96.6% → 98.0% on prod's real buy lines, and prod's 1,499 exported lines are the check each phase runs.
-
 - **Dev holds 55 simulated walk-in buys, and the owner is keeping them** ("I'm going to keep them.", 2026-11-11;
   main session; made for testing the Buys report on the owner's ask: "Can
   you create simulated data for the last 14 days based on the read only probe of prod for the mockup and create
@@ -77,6 +45,10 @@ marks each task done here when it's finished, with the exact file and function o
   `SHEET`, `tests/stickerPdf.test.js` with it, and a decision row.
 
 ## Done
+
+- 2026-11-21 (main session): **Crystal Commerce matching through TCGplayer ids (decisions 588–595), closed**: the
+  owner's QA on dev passed ("QA passed, closed"). Live since v1.0.7-matching. The scripts and prod's read-only
+  copies stay in `C:/ClaudeProjects/temp/cc-tcgcsv/` (`check-phase3.mjs`, `check-routefirst.mjs`, `prod/`).
 
 - 2026-11-19 (Export session): **Decision 599: a The List card with more than one The List printing, in CC or on
   TCGplayer, goes to Needs a choice** until a staff pick is remembered (the owner: "always send that card to
