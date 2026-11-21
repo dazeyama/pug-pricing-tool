@@ -122,7 +122,7 @@ export function categorySets(sets, categories, setMap = new Map()) {
   return (category) => {
     const own = best.get(fold(category));
     if (own) return own.code;
-    const after = /^[^:]+:s*(.+)$/.exec(String(category ?? ''));
+    const after = /^[^:]+:\s*(.+)$/.exec(String(category ?? ''));
     return (after && best.get(fold(after[1]))?.code) || null;
   };
 }

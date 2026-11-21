@@ -71,14 +71,17 @@ test("a category's set (decision 601): the set of its name, staff's choice, then
     ['m3c', { code: 'm3c', name: 'Modern Horizons 3 Commander', set_type: 'commander', parent_set_code: 'mh3' }],
     ['mb1', { code: 'mb1', name: 'Mystery Booster' }],
     ['plst', { code: 'plst', name: 'The List' }],
+    ['stx', { code: 'stx', name: 'Strixhaven' }],
   ]);
   const categories = new Map(['Modern Horizons 3', 'Commander: Modern Horizons 3', 'Mystery Booster', 'The List',
-    'Promo Pack: Modern Horizons 3', 'Secret Lair'].map((c) => [fold(c), c]));
+    'Promo Pack: Modern Horizons 3', 'Secret Lair', 'Strixhaven'].map((c) => [fold(c), c]));
   const setOf = categorySets(sets, categories, new Map([['plst|', 'Mystery Booster']]));
   assert.equal(setOf('Modern Horizons 3'), 'mh3');            // its own name, not the promos (a parent's set)
   assert.equal(setOf('Commander: Modern Horizons 3'), 'm3c');
   assert.equal(setOf('Mystery Booster'), 'mb1');              // named so, before staff's choice for PLST
   assert.equal(setOf('Promo Pack: Modern Horizons 3'), 'mh3');
+  // The part after the colon whatever follows it (no space, or one starting with an s).
+  assert.equal(setOf('Promo Pack:strixhaven'), 'stx');
   assert.equal(setOf('Secret Lair'), null);
 });
 
