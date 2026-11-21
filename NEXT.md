@@ -35,6 +35,13 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-11-21 (main session): **Second push of the day, no bump, no review** (the owner: "Push to the live site
+  now, no bump, no review"). What went out: the release review's six findings, fixed (1b23b0e, 3448a24, f7eeaed,
+  19e7fda, d0647c8, 214b7f7; their entry below), the Help up to date with decisions 588–605 (45ccba0) and their
+  NEXT.md and TEST.md entries. No migrations (prod and dev both 0001–0017), no Edge Function changes. Lint, 622
+  tests and the build clean before the push. Untested in the app: all of it; 599's TCGplayer The List read signed
+  in has never run.
+
 - 2026-11-21 (Export session): **Help brought up to date with decisions 588–605** (the owner: "update after").
   README.md, changed sections: **Print MTG? (the audit printout)** (the CC-format printout: matched as the export
   takes it, CC categories with their set's symbol or the star, CC product names merged per product and condition,
