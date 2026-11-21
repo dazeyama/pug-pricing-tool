@@ -1457,15 +1457,33 @@ A project can become a buy again. See [Convert to buy…](#convert-to-buy).
 Print MTG? makes a PDF to check a batch by hand before it goes up to Crystal Commerce. It changes
 nothing.
 
-- It lists the Magic cards still to export, or once exported, the ones the export took. They're
-  sorted by **Crystal Commerce category**, each with its set symbol. Anything with no product goes
-  under **Unmatched**.
-- In each category the cards go by colour, as the buy list's WUBRG does: white, blue, black, red,
-  green, multicolour, colourless, then lands. Within a colour they go by name A to Z, then collector
-  number, so the printings of a card sit together. Then the same printing's conditions, NM to DMG,
-  then non-foil, foil and etched. Each row's colour chip shows the colour, so the chips run in blocks.
-- Each row has the quantity, a tick box, the name, its colour, the collector number, condition and
-  finish, and last **today's market price** for its condition. The printout fetches those prices
+- It lists the Magic cards still to export, or once exported, the ones the export took, **as the export
+  will send them to Crystal Commerce**. Each card is matched the way EXPORT matches it, without asking
+  anything: a remembered staff pick, the TCGplayer route, or one clear product. An exported card prints
+  from what its export saved.
+- The sections are the **Crystal Commerce categories** the cards export into, A to Z. Each band has its
+  category's set symbol, the set the category is named for, not the cards' own sets: a The List card
+  filed under Mystery Booster shows Mystery Booster's. A category with no set of its own shows a star.
+- Each row is the **Crystal Commerce product name**, exactly as the file writes it, such as
+  `Unctus, Grand Metatect - Step-and-Compleat Foil - Showcase`. There's one row per product and
+  condition, so two printings Crystal Commerce sells as one product are one row, their quantities added.
+  A long name carries on to the next line rather than being cut short.
+- **Unmatched** comes last. It holds the cards with no product, the cards that would be in **Needs a
+  choice**, and those sent to Can't upload or pulled as bulk. Their rows are written the way Crystal
+  Commerce names a product, such as `Fblthp, the Lost - Borderless`, with the set code and collector
+  number chip (`RVR 420`) to find them by. Two printings of a card are two rows.
+- **The Unmatched band's Custom SKU** is the export's own with a **u**, such as *Custom SKU 112126u*: a
+  day's is the day's, a buy's Print buy the day's too, or `112126-42u` once it went out with Export
+  single buy. A collection or project reads `112126-#u` until it's exported (the number is given then),
+  and its own number after, such as `112126-3u`. Can't upload cards and Bulk pulled from exports have
+  none. A card from Unmatched that the worker picks a product for at the export goes in the file with
+  that SKU. See [The file](#the-file).
+- In each category the rows go NM first, then a line, then LP, MP, HP and DMG. Within a condition they
+  go by colour, as the buy list's WUBRG does: white, blue, black, red, green, multicolour, colourless,
+  then lands, then by product name A to Z. Under Unmatched, by name, then collector number, then
+  non-foil, foil and etched. Each row's colour chip shows the colour, so the chips run in blocks.
+- Each row has the quantity, a tick box, the name, its colour, its condition, and last **today's market
+  price** for its condition. The printout fetches those prices
   first, at about one JustTCG lookup per 100 different cards. A price is **red** and bold at the red
   dot or under (50¢ by default), **amber** and bold up to the amber dot ($1.49), and plain above. The
   dots are set in **Settings → Export rates for bulk**. A card bought at a manual price shows the
@@ -1476,8 +1494,9 @@ nothing.
   price recorded goes by today's. With none over it, it says so and prints nothing. A buy's
   **Print buy (all)** and **(>$1.49)** are the same for one buy.
 - **Print MTG in buy order** prints the same cards as Print MTG (all), with the same rows, but in the
-  order they went on the buy list: nothing merged or sorted, and no category bands. On a day the buys
-  come in the order they were confirmed. The title and file name say *in buy order*. A buy's Print buy
+  order they went on the buy list: nothing merged or sorted, and no category bands. Its rows keep the
+  card's own name with its set, number, finish and treatment chips. On a day the buys come in the order
+  they were confirmed. The title and file name say *in buy order*. A buy's Print buy
   and the printout after CONFIRM BUY stay sorted.
 - **A buy flagged 🚩 for a condition check**, and not yet ✅ checked, puts a red banner across the top
   of every page, naming it: *"CHECK CONDITION: Buy 42 is flagged. Check its cards before export."* A
@@ -1550,14 +1569,27 @@ product: a **Product Name** and a **Category**, both copied exactly from the Mas
 Inventory. Mass Create only updates a product when both match to the letter, so nothing the app
 builds itself is ever written to the file.
 
-Every card goes through four steps:
+Every card goes through these steps, in order:
 
 1. **A staff pick.** A product staff picked for this printing and finish is used straight away, if
    it's still in the inventory. If it's gone, the card goes to **Needs a choice** with a *Used to be …*
    note.
-2. **The category.** The card's set becomes a Crystal Commerce category.
-3. **The candidates.** Every product in that category with the card's name.
-4. **The pick.** The app checks each candidate against the card. It takes one by itself only when
+2. **Staff's to pick.** Some cards are never matched by the app, only by a worker, until a pick is
+   remembered. These go to **Needs a choice**, the likeliest product first:
+   - every **Secret Lair** card;
+   - a **The List** card with more than one The List printing, in Crystal Commerce or on TCGplayer
+     (Lightning Bolt has several; Doom Blade has one, so it still matches by itself). A The List card
+     with no product under its own name but several TCGplayer printings goes here too, not to Can't
+     upload. Mystery Booster's products don't count as The List printings.
+3. **The TCGplayer route.** The card's TCGplayer product, from TCGplayer's catalog in the app, names
+   its set and its name there. The app looks for that name in the Crystal Commerce category TCGplayer's
+   set belongs to. When that gives exactly one product, it's **Matched**. This settles promo pack and
+   prerelease cards, Buy-a-Box promos, sets Crystal Commerce names differently, and printings the
+   card's name alone can't tell apart. It needs the catalog (**Settings → Crystal Commerce matching**).
+   With no single answer, the next steps decide.
+4. **The category.** The card's set becomes a Crystal Commerce category.
+5. **The candidates.** Every product in that category with the card's name.
+6. **The pick.** The app checks each candidate against the card. It takes one by itself only when
    it's certain: that's **Matched**. Anything else goes to **Needs a choice**. The app never guesses.
 
 At the same time it fetches today's prices for the Sell Prices. A line in the window shows what
@@ -1614,8 +1646,8 @@ Showcase, and on reprints Future Frame and White Border. They only confirm a pro
 doesn't have rules nothing out.
 
 A staff pick skips all of this. It's kept by printing and finish and points at a Product ID, so a
-product renamed in a newer inventory is still found. A product the app finds by itself isn't
-remembered: it's found again at each export.
+product renamed in a newer inventory is still found. A product the app finds by itself, by the
+TCGplayer route or by name, isn't remembered: it's found again at each export.
 
 ### 2. Review
 
@@ -1649,7 +1681,9 @@ Undo says so. A pick changed with **Change** in Matched isn't in it: Change has 
 
 **Matched.** This group is folded away when there are more than 8. Each card shows its product, its
 category, and *"Bought $X → Sell $Y"*. A **remembered** tag means a pick from before. **picked** means
-the worker just picked it. **Change** opens the card. The worker can pick another product or type a
+the worker just picked it. **via TCGplayer** means the TCGplayer route found it where the card's name
+alone didn't settle it. A card with no Near Mint copy shows **sets NM $X**: the file sets that
+product's Near Mint price (see [The file](#the-file)). **Change** opens the card. The worker can pick another product or type a
 Sell price, then press **Done** or **Cancel**.
 
 **Can't upload.** No product fits. Each says why. **Find a product…** moves it back to Needs a
@@ -1660,7 +1694,8 @@ choice.
 ### 3. Confirm
 
 Confirm shows a summary: how many cards, how many rows, and the **Custom SKU**. For a collection or
-project it reads `102426-#`, because the number is given when the export is saved.
+project it reads `102426-#`, because the number is given when the export is saved. When some rows
+carry the **u** (a card picked here from Needs a choice), it names both: *Custom SKU 102426, 102426u*.
 
 If any cards can't upload, a red list names them. On a (>…) export, the pulled cards are listed in
 amber under them. The worker pulls those cards out of the physical batch and ticks **I've pulled these
@@ -1704,10 +1739,12 @@ After the export, Sell Prices show in green wherever the card appears.
 
 | | |
 |---|---|
-| **Name** | `cc-mass-create-magic-2026-10-06.csv` for a day. Collections and single buys get their own names. |
+| **Name** | The file is named by its Custom SKU: a day's `cc-mass-create-magic-100626.csv`, a single buy's `cc-mass-create-magic-100626-42.csv`, a collection's `cc-mass-create-<customer>-102426-3.csv`. Can't upload cards' is `cc-mass-create-cant-upload-<SKU>.csv` and Bulk pulled from exports' `cc-mass-create-pulled-bulk-<SKU>.csv`. Downloading the same file again gives the same name. |
 | **Custom SKU** | A date, month-day-year, with no leading zero on the month: 10/09/26 is `100926`, 6/17/26 is `61726`. A day's export uses **the day's** date, whenever it's run. A single buy's adds the buy's number: `101626-42`. A collection's or project's adds its number of the day: the first one exported on 10/24/26 is `102426-1`, the next `102426-2`. Collections and projects count together, and the count starts again at 1 each day. Each export takes the next number, so a collection undone and exported again gets a new one. Can't upload cards, Bulk pulled from exports and a file-only download use today's date alone. It's on every row. |
+| **The u** | A card the printout put under Unmatched (it was in Needs a choice) that the worker picks a product for in the export goes in the file with the SKU and a **u**: `100626u`, `100626-42u`, `102426-3u`. It matches the printout's Unmatched band, so those cards can be searched for in Crystal Commerce. A product and condition with such a card is one row with the u SKU, its other cards in it too. The card's Custom SKU chip and the Changelog still show the plain SKU. |
 | **Conditions** | Near Mint, Lightly Played, Moderately Played, Heavily Played, Damaged. |
-| **Rows** | One per product and condition. Quantities are added together. |
+| **Rows** | One per product and condition. Quantities are added together. Only Near Mint rows carry a Sell Price: Crystal Commerce prices every other condition from Near Mint, so the other rows leave it blank. |
+| **The NM row** | A product with only worse-condition cards gets a first row of **0** Near Mint copies, priced at that printing's **Near Mint price today**, rounded up. It sets the price and adds no stock. A product with Near Mint cards gets no extra row. |
 | **Quantity** | Added to the stock already in Crystal Commerce. |
 
 **EXPORT** on an exported day, or on a collection whose Magic cards are all exported, downloads the
@@ -1725,8 +1762,8 @@ same file again. Nothing changes. It needs the connection.
 ### Remembered matches
 
 The app remembers every product picked by staff. The next export of that printing takes it straight
-away. A card the app matched by itself is worked out again each time. **Settings → Crystal Commerce
-matching** lists the picks.
+away, a Secret Lair or The List card too. A card the app matched by itself is worked out again each
+time. **Settings → Crystal Commerce matching** lists the picks.
 
 <br>
 
@@ -1992,7 +2029,7 @@ red with a **Required** badge until one is uploaded.
 
 | | |
 |---|---|
-| **Upload Crystal Commerce Database** | Picks the CSV. The app checks, compresses and loads it, showing progress. A new file replaces the old one. |
+| **Upload Crystal Commerce Database** | Picks the CSV. The app checks, compresses and loads it, showing progress. A new file replaces the old one. It then refreshes the TCGplayer catalog (see [Crystal Commerce matching](#crystal-commerce-matching)). |
 | **Current file** | Its name, with **Download** to get it back. |
 | **Uploaded / By** | When, and who. |
 | **Rows** | How many rows, and how many products are loaded for export. |
@@ -2149,6 +2186,8 @@ yet. Uploading a new Stale cards file changes the list at once.
 | **Sets** | Sets whose Crystal Commerce category staff picked during an export. **Forget** removes one. |
 | **Products** | How many products staff picked. Only these are remembered: a product the app finds by itself is found again at each export. |
 | **Browse remembered products…** | Opens the list. Search by name. **Show 50 more** loads more. **Forget** removes one. |
+| **TCGplayer catalog** | TCGplayer's Magic catalog in the app, for the TCGplayer route: how many products it holds and when it was last refreshed, or *not fetched yet*. Each **Upload Crystal Commerce Database** refreshes it too. |
+| **Refresh TCGplayer catalog** | Fetches the TCGplayer sets changed since last time. While it runs it says how far it's got. |
 
 The app works a forgotten product out again on the next export, or asks again if it isn't certain.
 
