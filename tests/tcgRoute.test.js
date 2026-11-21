@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseTp, routeBaseKeys, routeProduct, setPlace } from '../src/lib/tcgRoute.js';
+import { listIndex, parseTp, routeBaseKeys, routeProduct, setPlace } from '../src/lib/tcgRoute.js';
+import { nameKey } from '../src/lib/normalize.js';
 import { parseProductName } from '../src/lib/ccNames.js';
 import { fold } from '../src/lib/ccMatch.js';
 import { TCG_SET_TABLE } from '../src/lib/tcgSetTable.js';
@@ -169,4 +170,21 @@ test('the set table in the code: by group id, the owner-checked rows', () => {
   assert.equal(byName.get("Collector's Edition")[1], null);
   assert.equal(byName.has('Oversize Cards'), false);
   assert.equal(byName.get('Prerelease Cards')[2], 'prereleasepromo');
+});
+
+// Decision 599, after the release review: TCGplayer's whole The List, indexed by the route's names, so a card's
+// name key finds its printings however the card's name is spelled on Scryfall.
+test("The List's index: a card's printings by its name key, accents, curly quotes and split cards too", () => {
+  const idx = listIndex([
+    { product_id: 1, name: 'Demonic Tutor (UMA)' }, { product_id: 2, name: 'Demonic Tutor (DMR)' },
+    { product_id: 3, name: 'Aether Vial' }, { product_id: 4, name: "Jace's Erasure" },
+    { product_id: 5, name: 'Fire // Ice' }, { product_id: 6, name: 'Demonic Tutor (UMA)' },
+  ]);
+  const count = (name) => idx.get(nameKey(name.split(' // ')[0]))?.size ?? 0;
+  assert.equal(count('Demonic Tutor'), 3);   // three products, one name twice
+  assert.equal(count('Æther Vial'), 1);
+  assert.equal(count('Jace’s Erasure'), 1);
+  assert.equal(count('Fire // Ice'), 1);
+  assert.equal(count('Doom Blade'), 0);
+  assert.equal(listIndex([]).size, 0);
 });

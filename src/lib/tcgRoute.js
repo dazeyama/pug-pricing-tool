@@ -149,6 +149,24 @@ export function routeBaseKeys(tcg) {
 }
 
 /**
+ * TCGplayer's The List products by the names the route reads them under (decision 599; routeBaseKeys): a card's
+ * name key (nameKey of its front face) finds its printings, "Lightning Bolt (E01)" and "Lightning Bolt (M10)" both
+ * under "lightning bolt". Built from the whole set, so no name is missed for how a search would have spelled it.
+ * @param {{ product_id: number, name: string }[]} products
+ * @returns {Map<string, Set<number>>}
+ */
+export function listIndex(products) {
+  const byName = new Map();
+  for (const t of products ?? []) {
+    for (const k of routeBaseKeys(t)) {
+      if (!byName.has(k)) byName.set(k, new Set());
+      byName.get(k).add(t.product_id);
+    }
+  }
+  return byName;
+}
+
+/**
  * A set's place in CC: the set table's row by group id ([name, category|null, extra word|null, more categories|null]),
  * else, for a set the table hasn't met, a CC category of the set's own name; else none.
  * @param {number} groupId

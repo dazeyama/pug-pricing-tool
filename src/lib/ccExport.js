@@ -15,7 +15,7 @@ import { massCreateCsv, massCreateRows } from './massCreate.js';
 import { allPages, inChunks } from './inChunks.js';
 import { DB_MESSAGES, knownCode } from './dbErrors.js';
 import { matchesChanged } from './matchCache.js';
-import { routeBaseKeys, routeProduct } from './tcgRoute.js';
+import { listIndex, routeBaseKeys, routeProduct } from './tcgRoute.js';
 import { TCG_SET_TABLE } from './tcgSetTable.js';
 
 // Full Scryfall cards by id now live with today's prices (todaysPrices.js).
@@ -294,13 +294,20 @@ async function routeSide(lines) {
     const listName = (l) => nameKey(frontFace(l.name));
     const [{ data, error }, listed] = await Promise.all([
       readCandidates(wants),
-      readListProducts(listLines.map(listName)).catch((e) => {
+      (listLines.length ? readListIndex() : Promise.resolve(new Map())).catch((e) => {
         console.warn("TCGplayer's The List printings couldn't be read: only CC's are counted", e);
         return new Map();
       }),
     ]);
     fail(error, "Couldn't read the inventory's products");
-    const listTcg = new Map(listLines.map((l) => [l.id, listed.get(listName(l))?.length ?? 0]));
+    const listTcg = new Map(listLines.map((l) => [l.id, listed.get(listName(l))?.size ?? 0]));
+    // Said, never quiet (the release review): a card whose own TCGplayer product is a The List printing, found under
+    // no name, means the names didn't line up; it's counted by CC's printings alone.
+    for (const l of listLines) {
+      if (listed.size && !listTcg.get(l.id) && LIST_GROUPS.includes(tcgById.get(Number(l.tcgplayer_id))?.group_id)) {
+        console.warn(`TCGplayer's The List has no printing named "${listName(l)}", though its own product is one: only CC's are counted`, l);
+      }
+    }
     return { tcgById, byKey: groupByKey(data), listTcg };
   } catch (e) {
     console.warn("The TCGplayer route didn't run: the cards are matched as before it", e);
@@ -311,32 +318,30 @@ async function routeSide(lines) {
 /** TCGplayer's The List sets, by the set table (decision 599): "The List Reprints" today. */
 const LIST_GROUPS = Object.entries(TCG_SET_TABLE).filter(([, row]) => fold(row[1]) === 'thelist').map(([id]) => Number(id));
 
-// TCGplayer's The List products already read on this page, by the name looked up (decision 599), as TCG_SEEN.
-const LIST_SEEN = new Map();
-
-/** A value for a PostgREST filter, quoted: names have commas, brackets and apostrophes. */
-const quoted = (s) => `"${String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+// TCGplayer's The List, read once on this page (decision 599): a promise of its index, kept as TCG_SEEN keeps products.
+let LIST_READ = null;
 
 /**
- * TCGplayer's The List products of these names (decision 599; name keys, a card's front face), by name: one read,
- * 40 names a request, for those not read before on this page. TCGplayer names a The List printing with its set's
- * code ("Lightning Bolt (E01)"): the read takes every name that starts with the card's and keeps those whose
- * name, read as the route reads it (routeBaseKeys), is the card's.
- * @param {string[]} names
- * @returns {Promise<Map<string, number[]>>}  product ids by name
+ * TCGplayer's whole The List (decision 599; about 5,800 products, 1,000 a request), indexed by the route's names
+ * (tcgRoute.js listIndex), read once on a page the first time a The List card is matched. Not a search by name
+ * (the release review, 2026-11-21): a quoted `ilike` pattern or a folded name could have found nothing without an
+ * error, and every card would have been counted by CC's printings alone. A read that fails is read again next time.
+ * @returns {Promise<Map<string, Set<number>>>}
  */
-async function readListProducts(names) {
-  const want = [...new Set(names.filter(Boolean))];
-  const unseen = want.filter((n) => !LIST_SEEN.has(n));
-  if (unseen.length && LIST_GROUPS.length) {
-    const { data, error } = await inChunks((part) => supabase.from('tcg_products').select('product_id, name')
-      .in('group_id', LIST_GROUPS).or(part.map((n) => `name.ilike.${quoted(`${n}*`)}`).join(',')), unseen, 40);
-    fail(error, "Couldn't read TCGplayer's The List");
-    const found = new Map(unseen.map((n) => [n, new Set()]));
-    for (const t of data ?? []) for (const k of routeBaseKeys(t)) found.get(k)?.add(t.product_id);
-    for (const [n, ids] of found) LIST_SEEN.set(n, [...ids]);
+function readListIndex() {
+  if (!LIST_GROUPS.length) return Promise.resolve(new Map());
+  if (!LIST_READ) {
+    LIST_READ = (async () => {
+      const { data, error } = await allPages((from, to) => supabase.from('tcg_products')
+        .select('product_id, name', { count: 'exact' }).in('group_id', LIST_GROUPS).order('product_id').range(from, to));
+      fail(error, "Couldn't read TCGplayer's The List");
+      return listIndex(data);
+    })();
+    LIST_READ.catch(() => {
+      LIST_READ = null;
+    });
   }
-  return new Map(want.map((n) => [n, LIST_SEEN.get(n) ?? []]));
+  return LIST_READ;
 }
 
 /** Remember a product for a printing and finish (export spec 7.5). */
