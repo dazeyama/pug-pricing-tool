@@ -1,5 +1,7 @@
 import Modal from '../../components/Modal.jsx';
 import { useAuditPrint } from '../export/useAuditPrint.js';
+import { unmatchedSku } from '../../lib/auditPrint.js';
+import { customSkuForDay } from '../../lib/massCreate.js';
 import { useConnection } from '../../state/connection.jsx';
 import { useToast } from '../../components/Toast.jsx';
 import { GAME_NAMES } from '../../lib/games.js';
@@ -48,6 +50,7 @@ export default function BuyDoneModal({
       fileName: `audit-${game === 'pokemon' ? 'pokemon' : 'magic'}-${day}-buy-${number}.pdf`,
       // Flagged at CONFIRM BUY: the printout says so, either game (decision 301).
       flagOf: flagged ? () => `Buy ${number}` : null,
+      unmatchedSku: unmatchedSku(customSkuForDay(day)),   // its day's EXPORT's (decision 602)
     });
     onClose();
   }

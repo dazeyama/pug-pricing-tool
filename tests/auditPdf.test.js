@@ -23,6 +23,16 @@ test('the pages: one for nothing, more as the rows run on, every section kept', 
   assert.ok(many.getNumberOfPages() >= 3);
 });
 
+test("product rows with no set chip, the star band and Unmatched's Custom SKU (decisions 601, 602)", () => {
+  const product = { name: 'Abrade (List)', qty: 2, set: '', number: '', condition: 'NM', extras: [], bucket: 'red', price: 0.4 };
+  const card = { name: 'Doom Blade', qty: 1, set: 'PLST', number: 'M10-90', condition: 'LP', extras: ['Foil'], bucket: 'black' };
+  const doc = auditPdf({ title: 'Audit', sections: [
+    { name: 'Pre-Release Promos', cards: 2, set: null, star: true, rows: [product] },
+    { name: 'Unmatched', cards: 1, set: null, sku: '112126-42u', rows: [card] },
+  ] });
+  assert.equal(doc.getNumberOfPages(), 1);
+});
+
 test('a bare section (buy order, decision 444) draws its rows with no band, on every page', () => {
   const rows = (n) => Array.from({ length: n }, (_, i) => ({
     name: `Card ${i}`, qty: 1, set: 'LEA', number: String(i), condition: i % 2 ? 'LP' : 'NM', extras: [], bucket: 'red',

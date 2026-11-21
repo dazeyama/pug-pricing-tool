@@ -133,8 +133,11 @@ const flaggedNote = (flags) => (flags.length ? ` 🚩 ${flags.join(', ')} flagge
  * by set instead of by category, nothing matched or fetched.
  * `flagOf`: a card's flagged buy ("Buy 42", decision 301: its buy flagged
  * for a condition check), or null; the printout says so in red, Magic or Pokémon.
+ * `unmatchedSku`: the Custom SKU printed on the Unmatched band (decision 602: "112126u"), or a function of the
+ * cards (the ones given, or loaded) that works it out; none, nothing printed.
  * @returns {{ print: (p: { lines?: object[], load?: () => Promise<object[]>, title: string, fileName: string,
- *   game?: 'mtg'|'pokemon', flagOf?: (line: object) => string|null, over1?: boolean, buyOrder?: boolean })
+ *   game?: 'mtg'|'pokemon', flagOf?: (line: object) => string|null, over1?: boolean, buyOrder?: boolean,
+ *   unmatchedSku?: string|null|((lines: object[]) => string|null) })
  *   => Promise<void>, printing: boolean }}
  */
 export function useAuditPrint() {
@@ -148,7 +151,7 @@ export function useAuditPrint() {
   // export rates' amber (decision 416; bought, not today's, decision 575). `buyOrder`: Print MTG in buy order (decision 444): a row for
   // every card as it was added, no sections, so no categories to find.
   const print = useCallback(async ({
-    lines, load, title, fileName, game = 'mtg', flagOf = null, over1 = false, buyOrder = false,
+    lines, load, title, fileName, game = 'mtg', flagOf = null, over1 = false, buyOrder = false, unmatchedSku = null,
   }) => {
     if (printing || !ready()) return;
     const pokemon = game === 'pokemon';
@@ -164,6 +167,7 @@ export function useAuditPrint() {
         : 'No Magic cards to print.', 'err');
     };
     let chosen = load ? null : choose(lines);
+    let given = lines ?? [];   // every card handed over or loaded, for unmatchedSku
     if (chosen && !chosen.length) {
       nothing(lines);
       return;
@@ -176,6 +180,7 @@ export function useAuditPrint() {
     try {
       if (load) {
         const all = await load();
+        given = all;
         chosen = choose(all);
         if (!chosen.length) {
           tab?.close();
@@ -263,6 +268,10 @@ export function useAuditPrint() {
         };
       });
       const sections = auditSections(placed, setOf);
+      // The Unmatched band's Custom SKU (decision 602): the export's own, with its u.
+      const sku = typeof unmatchedSku === 'function' ? unmatchedSku(given) : unmatchedSku;
+      const unmatchedSection = sections.find((s) => s.name === UNMATCHED);
+      if (unmatchedSection && sku) unmatchedSection.sku = sku;
       const { flagText, flags } = flagging(chosen.map((l) => flagOf?.(l) ?? null));
       // The PDF library loads only when something is printed: the app starts as light as before.
       const [{ auditPdf }, symbols] = await Promise.all([import('../../lib/auditPdf.js'), symbolsFor(sections)]);

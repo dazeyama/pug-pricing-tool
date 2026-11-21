@@ -128,6 +128,29 @@ export function categorySets(sets, categories, setMap = new Map()) {
 }
 
 /**
+ * The Custom SKU on a printout's Unmatched band (decision 602): that export's own SKU with a "u", so the cards
+ * can be searched for by it ("112126u", a single buy's "112126-42u", a collection's "112126-3u"). On the printout
+ * only: nothing saves it with the cards (the owner: "If this requires a migration, let's skip it.").
+ * @param {string|null|undefined} sku  the export's Custom SKU
+ */
+export const unmatchedSku = (sku) => (sku ? `${sku}u` : null);
+
+/**
+ * A collection's or project's Unmatched SKU (decision 602): "112126-#u" while it has cards to export, its
+ * number given only when the export saves (decision 511); once they're all exported, the SKUs its export
+ * stamped, each with its u. None for one whose export stamped nothing (every card Can't upload or pulled).
+ * @param {object[]} lines  its buy_lines rows
+ * @param {string} todaySku  today's Custom SKU (massCreate.js customSkuFor)
+ */
+export function collectionUnmatchedSku(lines, todaySku) {
+  const printed = printLines(lines);
+  if (printed.some((l) => !l.cc_status)) return unmatchedSku(`${todaySku}-#`);
+  const stamped = [...new Set(printed.filter((l) => l.cc_status === 'exported').map((l) => l.cc_custom_sku)
+    .filter(Boolean))].sort();
+  return stamped.length ? stamped.map(unmatchedSku).join(', ') : null;
+}
+
+/**
  * A line's treatments as a printout shows them: a showcase card is Showcase,
  * never Borderless as well (decision 508; Phyrexia: All Will Be One's showcase
  * cards are borderless on Scryfall). The Price screen keeps both.

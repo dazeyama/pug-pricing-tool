@@ -781,6 +781,11 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       product and category is as printed. Print buy and Print MTG (>$1.49) the same; Print MTG in buy order is as
       before. After the export, Print MTG (all) prints the same from the stamps. It takes no longer than before and
       asks nothing.
+- [ ] **Unmatched's "u" Custom SKU** (decision 602; Export session): the same day's Print MTG (all): the Unmatched
+      band reads "Custom SKU 112126u" (that day's SKU and u); a buy's ⋯ → Print buy the same, and after Export
+      single buy on another buy, its Print buy reads "112126-42u". A Paid/Ours collection not yet exported prints
+      "112126-#u" (today's); after its export, "112126-3u" (its number). Can't upload cards' printout has none. The
+      file and the database are unchanged: the Can't upload cards' rows still get their export's own SKU.
 - [ ] **Print MTG in buy order** (decision 444): a past Magic day with two buys: EXPORT ▾ → ◂ Print → Print MTG in
       buy order: one row per card line, the first buy's cards as added, then the second's; no category bands and no
       NM line; the file is `audit-magic-<day>-buy-order.pdf`. A collection has it too, its cards as added.

@@ -6,24 +6,6 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
-- **Reformat the printouts to be in Crystal Commerce format** (the owner, 2026-11-19: "reformat the printouts to be
-  in Crystal Commerce format."; main session; Export and printouts' area; not started). Waits until the current
-  task (a card with several The List printings always a staff pick) is done, and then only on the owner's command:
-  "We'll work on this after the current task is done on my command." The printouts: `src/lib/auditPrint.js`
-  (and `quotePrint.js`). **Settled with the owner, 2026-11-21 (main session), given to the Export and printouts
-  session:** the owner's ask, "make it so that the printouts are exactly the line item that's going to be exported
-  and added to Crystal NOT just based on our current scryfall data", with no slower printout and nothing asked while
-  printing. **(a), (b) and (d) done (decision 601, Export session); (c) in progress.** (a) Each row is the CC product name only, the export's own (no Scryfall chip); one row per CC product
-  and condition (two printings on one product merge, no chip); each section is the product's CC category, its
-  symbol the CC category's set (the owner: "We want to keep set symbols"). (b) Needs a choice cards go under
-  Unmatched, not a guessed set category (the owner: "all those cards belong in Unmatched until chosen"). (c)
-  Everything under Unmatched (no product, Needs a choice, pulled as bulk) carries a "u" Custom SKU: that export's
-  own SKU plus u (112126u, 112126-42u, 112126-3u; "112126-#u" on a collection printed before its export saves),
-  printed on the Unmatched band and saved with the card, so a later Can't upload cards export keeps it rather than
-  restamping that export's date (decision 372); not if that needs a migration (the owner: "If this requires a
-  migration, let's skip it."), then the u is on the printout only. (d) Print? / Print buy and Print MTG (>$…); not Print MTG in buy
-  order. Not done: keeping the printout and the export in step (the next item, on ice).
-
 - **On ice: the printout and the export kept in step** (main session, 2026-11-21; the owner: "I don't want to go
   this far, I don't think this is needed, none of those things should happen often, let's shelve this migration
   unless I want to tighten down again"). The idea: printing saves each card's printed CC product (migration 0018),
@@ -52,6 +34,21 @@ marks each task done here when it's finished, with the exact file and function o
   `SHEET`, `tests/stickerPdf.test.js` with it, and a decision row.
 
 ## Done
+
+- 2026-11-21 (Export session): **Decision 602: the "u" Custom SKU on the printout's Unmatched band** (the owner's
+  ask; "If this requires a migration, let's skip it."), which closes **Reformat the printouts to be in Crystal
+  Commerce format** with decisions 600 and 601. On the printout only: saving it with the cards would need
+  `export_lines` changed (a migration), so nothing in the file or the database changes, and a Can't upload cards
+  export still stamps its own date. `src/lib/auditPrint.js` `unmatchedSku`, `collectionUnmatchedSku`;
+  `src/pages/export/useAuditPrint.js` (the `unmatchedSku` option, set on the Unmatched section); `src/lib/auditPdf.js`
+  (the band's "Custom SKU …"); the callers in `DayPage.jsx` (`printDay`, `printBuy`), `BuyDoneModal.jsx`,
+  `CollectionPage.jsx` (`printCollection`) and `CollectionsPage.jsx` (Print overnight buy / Print project). The
+  owner's answer, asked here: Print buy takes the day's `112126u` unless Export single buy took the buy
+  (`112126-42u`). Where to look: a past Magic day with an Unmatched card, EXPORT ▾ → ◂ Print → Print MTG (all): the
+  Unmatched band reads "Custom SKU 112126u"; a buy's Print buy the same; a Paid/Ours collection's Print MTG
+  "112126-#u", after its export its number's; Can't upload cards' none. Unit-tested (`tests/auditPrint.test.js`,
+  `tests/auditPdf.test.js`); not tried in the app. TEST.md section 14. No migration. Help's "Print MTG? (the audit
+  printout)" section (README.md) is now out of date.
 
 - 2026-11-21 (Export session): **Decision 601: the Magic printouts show what the export will take** (the owner's
   ask, settled 2026-11-21). `src/lib/auditPrint.js`: `savedPlace` and `matchPlace` (were `savedCategory`,

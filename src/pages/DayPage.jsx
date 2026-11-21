@@ -15,7 +15,8 @@ import ExportDialog from './export/ExportDialog.jsx';
 import { useAuditPrint } from './export/useAuditPrint.js';
 import { useStickerPrint } from './export/useStickerPrint.js';
 import { downloadMassCreate, restampTimes } from '../lib/ccExport.js';
-import { massCreateFileName, withoutRestamps } from '../lib/massCreate.js';
+import { customSkuForDay, massCreateFileName, withoutRestamps } from '../lib/massCreate.js';
+import { unmatchedSku } from '../lib/auditPrint.js';
 import { todaysPrices } from '../lib/todaysPrices.js';
 import { sellPriceFor } from '../lib/sellPrice.js';
 import { useBulkCut, useSellFloor, useSettings, useSettingsReady } from '../state/settings.jsx';
@@ -555,6 +556,7 @@ function DayScreen({ game, day }) {
       flagOf: (l) => flagged.get(l.buy_id) ?? null,
       over1,
       buyOrder,
+      unmatchedSku: unmatchedSku(customSkuForDay(day)),   // the day's EXPORT's (decision 602)
     });
   }
 
@@ -612,6 +614,8 @@ function DayScreen({ game, day }) {
       fileName: `audit-magic-${day}-buy-${n}${over1 ? `-${keptFileTag(cut)}` : ''}.pdf`,
       flagOf: b.condition_check ? () => `Buy ${n}` : null,
       over1,
+      // The day's EXPORT's, unless Export single buy took it (the owner, 2026-11-21; decision 602).
+      unmatchedSku: unmatchedSku(buySkus(b)[0] ?? customSkuForDay(day)),
     });
   }
 

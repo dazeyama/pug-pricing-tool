@@ -7,7 +7,8 @@ import { useAuditPrint } from './export/useAuditPrint.js';
 import { useStickerPrint } from './export/useStickerPrint.js';
 import RepriceModal from './collections/RepriceModal.jsx';
 import { formatMoney } from '../lib/money.js';
-import { fileSafe, massCreateFileName, withoutRestamps } from '../lib/massCreate.js';
+import { customSkuFor, fileSafe, massCreateFileName, withoutRestamps } from '../lib/massCreate.js';
+import { collectionUnmatchedSku } from '../lib/auditPrint.js';
 import { downloadMassCreate, restampTimes } from '../lib/ccExport.js';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import PricingScreen from './price/PricingScreen.jsx';
@@ -336,6 +337,9 @@ function CollectionScreen({ id }) {
       fileName: `audit-${fileSafe(name)}${over1 ? `-${keptFileTag(cut)}` : ''}${buyOrder ? '-buy-order' : ''}.pdf`,
       over1,
       buyOrder,
+      // Its export's Custom SKU with a u (decision 602); none on Can't upload cards' or Bulk pulled's, whose cards
+      // came from many exports.
+      unmatchedSku: system ? null : (lines) => collectionUnmatchedSku(lines, customSkuFor(new Date())),
     });
   }
 

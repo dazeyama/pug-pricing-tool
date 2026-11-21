@@ -228,9 +228,10 @@ export function auditPdf({ title, sections, symbols = {}, printedAt = new Date()
     const countW = doc.getTextWidth(countText);
     doc.setTextColor(205, 208, 222);
     doc.text(countText, x() + COL_W - 7, y + 15.6, { align: 'right' });
-    // The name, then its set's code in brackets and "(cont.)", lighter:
-    // "Alpha [LEA]" (owner, 2026-10-14). A long name gives way, never the code.
-    const tail = [s.set ? `[${s.set.toUpperCase()}]` : '', cont ? '(cont.)' : ''].filter(Boolean).join(' ');
+    // The name, then its set's code in brackets, Unmatched's Custom SKU (decision 602) and "(cont.)", lighter:
+    // "Alpha [LEA]" (owner, 2026-10-14), "Unmatched Custom SKU 112126u". A long name gives way, never the code.
+    const tail = [s.set ? `[${s.set.toUpperCase()}]` : '', s.sku ? `Custom SKU ${s.sku}` : '', cont ? '(cont.)' : '']
+      .filter(Boolean).join(' ');
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
     const tailW = tail ? doc.getTextWidth(` ${tail}`) : 0;

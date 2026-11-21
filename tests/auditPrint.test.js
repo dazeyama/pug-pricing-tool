@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  UNMATCHED, auditRow, auditSections, buyOrderSections, cardBucket, categorySets, matchPlace, pokemonPrintLines, pokemonRow,
-  pokemonSections, priceTone, printLines, savedPlace,
+  UNMATCHED, auditRow, auditSections, buyOrderSections, cardBucket, categorySets, collectionUnmatchedSku, matchPlace, pokemonPrintLines, pokemonRow,
+  pokemonSections, priceTone, printLines, savedPlace, unmatchedSku,
 } from '../src/lib/auditPrint.js';
 import { fold } from '../src/lib/ccMatch.js';
 import { magicTreatmentLabel } from '../src/lib/printings.js';
@@ -257,4 +257,19 @@ test('Print PKM? inside a set (decision 597): NM by number, then LP, MP, HP, DMG
 test("a Pokémon row's words: the finish and the bracket's tags but the condition, as chips; no colour", () => {
   const r = pokemonRow(pkm({ name: 'Pikachu', collector_number: '25', finish: 'holo', condition: 'MP', lang: 'ja', first_edition: true }));
   assert.deepEqual([r.name, r.set, r.number, r.condition, r.extras, r.bucket], ['Pikachu', 'SV1', '25', 'MP', ['Holo', '1st Ed', 'JP'], 'unknown']);
+});
+
+test("Unmatched's Custom SKU (decision 602): the export's own with a u", () => {
+  assert.equal(unmatchedSku('112126'), '112126u');
+  assert.equal(unmatchedSku('112126-42'), '112126-42u');
+  assert.equal(unmatchedSku(null), null);
+  // A collection with cards to export: its number isn't given until the export saves.
+  const open = [line({ name: 'A' }), line({ name: 'B', completed_at: '2026-11-21', cc_status: 'exported', cc_custom_sku: '112026-1' })];
+  assert.equal(collectionUnmatchedSku(open, '112126'), '112126-#u');
+  // All exported: the SKU its export stamped.
+  const done = [line({ name: 'B', completed_at: '2026-11-21', cc_status: 'exported', cc_custom_sku: '112126-3' }),
+    line({ name: 'C', completed_at: '2026-11-21', cc_status: 'cant_upload' })];
+  assert.equal(collectionUnmatchedSku(done, '112226'), '112126-3u');
+  // Every card Can't upload: no SKU was stamped, so none.
+  assert.equal(collectionUnmatchedSku([line({ name: 'C', completed_at: '2026-11-21', cc_status: 'cant_upload' })], '112226'), null);
 });
