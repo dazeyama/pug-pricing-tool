@@ -10,8 +10,24 @@ marks each task done here when it's finished, with the exact file and function o
   in Crystal Commerce format."; main session; Export and printouts' area; not started). Waits until the current
   task (a card with several The List printings always a staff pick) is done, and then only on the owner's command:
   "We'll work on this after the current task is done on my command." The printouts: `src/lib/auditPrint.js`
-  (and `quotePrint.js`). What "Crystal Commerce format" means (CC's product names, categories and condition words as
-  the export stamps them, or the layout of a CC page or report) is to settle with the owner when it starts.
+  (and `quotePrint.js`). **Settled with the owner, 2026-11-21 (main session), given to the Export and printouts
+  session:** the owner's ask, "make it so that the printouts are exactly the line item that's going to be exported
+  and added to Crystal NOT just based on our current scryfall data", with no slower printout and nothing asked while
+  printing. (a) Each row is the CC product name only, the export's own (no Scryfall chip); one row per CC product
+  and condition (two printings on one product merge, no chip); each section is the product's CC category, its
+  symbol the CC category's set (the owner: "We want to keep set symbols"). (b) Needs a choice cards go under
+  Unmatched, not a guessed set category (the owner: "all those cards belong in Unmatched until chosen"). (c)
+  Everything under Unmatched (no product, Needs a choice, pulled as bulk) carries a "u" Custom SKU: that export's
+  own SKU plus u (112126u, 112126-42u, 112126-3u; "112126-#u" on a collection printed before its export saves),
+  printed on the Unmatched band and saved with the card, so a later Can't upload cards export keeps it rather than
+  restamping that export's date (decision 372). (d) Print? / Print buy and Print MTG (>$…); not Print MTG in buy
+  order. Not done: keeping the printout and the export in step (the next item, on ice).
+
+- **On ice: the printout and the export kept in step** (main session, 2026-11-21; the owner: "I don't want to go
+  this far, I don't think this is needed, none of those things should happen often, let's shelve this migration
+  unless I want to tighten down again"). The idea: printing saves each card's printed CC product (migration 0018),
+  the export uses it, and the export screen marks a card whose product differs from the printout (a staff pick, a
+  Change, or the inventory or TCGplayer catalog refreshed between print and export). Only on the owner's word.
 
 - **The Custom SKU in the export file's name** (the owner, 2026-11-18: "Make an Open to put the Custom SKU in the
   file name for exports"; main session; Export and printouts' area; not started). Today the Mass Create file is
@@ -20,8 +36,9 @@ marks each task done here when it's finished, with the exact file and function o
   (`cc-mass-create-<customer>-<time>.csv`, `…-pulled-bulk-…`, `…-cant-upload-…`); they reach
   `ccExport.js` `downloadMassCreate` and `ExportDialog.jsx`'s `fileName` prop. A collection's SKU number
   ("102426-3") is given only when the export saves (decision 511), so its name has to come after that, and the
-  Download the same file again calls need the stamped `cc_custom_sku`. To settle with the owner when it's picked
-  up: the SKU in place of the date, or beside it.
+  Download the same file again calls need the stamped `cc_custom_sku`. **Settled, 2026-11-21:** the SKU in place
+  of the date, `cc-mass-create-magic-112126.csv` (a buy's `…-112126-42.csv`, a collection's `…-112126-3.csv`),
+  and Can't upload cards' and Bulk pulled's files the same pattern. Given to the Export and printouts session.
 
 - **Dev holds 55 simulated walk-in buys, and the owner is keeping them** ("I'm going to keep them.", 2026-11-11;
   main session; made for testing the Buys report on the owner's ask: "Can
