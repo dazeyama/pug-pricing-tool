@@ -41,7 +41,7 @@ marks each task done here when it's finished, with the exact file and function o
   wrapped not cut, Unmatched with Needs a choice cards, CC-style names and set chips, its u SKU; the order; buy order
   keeps the chips); **1. Matching** (staff's picks for Secret Lair and The List, the TCGplayer route, the steps
   renumbered) and **Picking the product** (route matches aren't remembered); **2. Review** (via TCGplayer, sets NM
-  ); **3. Confirm** (both SKUs); **The file** (the name by SKU, the u, Near Mint rows alone priced, the NM row at
+  $X); **3. Confirm** (both SKUs); **The file** (the name by SKU, the u, Near Mint rows alone priced, the NM row at
   today's NM); **Remembered matches**; Settings → **Master Crystal Inventory** (the upload refreshes the catalog) and
   **Crystal Commerce matching** (TCGplayer catalog, Refresh TCGplayer catalog). Not read through by the owner.
 
