@@ -355,9 +355,13 @@ export default function ExportDialog({
   // The Custom SKU the server will stamp (0071; a collection's number of the day, decision 511).
   const skuText = confirmSku(target, Boolean(fileOnly));
   const skuNumbered = skuText.endsWith('-#');
-  /** The matched lines as the file will have them: its rows (the Confirm step's count) and NM prices. */
+  /**
+   * The matched lines as the file will have them: its rows and their Custom SKUs (the Confirm step's count and
+   * SKUs, the u ones apart, decision 603) and NM prices.
+   */
   const fileLines = groups.matched.map((r) => ({
     cc_status: 'exported',
+    cc_custom_sku: skuText,
     quantity: r.line.quantity,
     cc_product_name: stateOf(r).product.product_name,
     cc_category: stateOf(r).product.category,
@@ -369,6 +373,9 @@ export default function ExportDialog({
   // 598). Given to every download here: the lines export_lines returns carry no Sell Price basis.
   const nearMint = exporting ? nearMintPrices(fileLines) : new Map();
   const previewRows = () => massCreateRows(fileLines, nearMint);
+  // The SKUs the file will carry (after the release review, 2026-11-21): "112126, 112126u" when some rows have the u.
+  const previewSkus = () => [...new Set(previewRows().map((row) => row['Custom SKU']).filter(Boolean))].sort().join(', ')
+    || skuText;
 
   async function save() {
     // Sell Prices from the store's Fallback Percentages, not the built-in ones (decision 389).
@@ -745,14 +752,14 @@ export default function ExportDialog({
                 <>
                   Download a Crystal Commerce Mass Create file of <strong>{toExport} card{toExport === 1 ? '' : 's'}</strong>{' '}
                   ({previewRows().length} row{previewRows().length === 1 ? '' : 's'}), Custom SKU{' '}
-                  <strong>{skuText}</strong>. <strong>Nothing is saved:</strong> it stays {fileOnly}, and its
+                  <strong>{previewSkus()}</strong>. <strong>Nothing is saved:</strong> it stays {fileOnly}, and its
                   cards aren't marked exported, so they can be exported again.
                 </>
               ) : toExport > 0 ? (
                 <>
                   Export <strong>{toExport} card{toExport === 1 ? '' : 's'}</strong> ({previewRows().length} row
                   {previewRows().length === 1 ? '' : 's'}) to a Crystal Commerce Mass Create file, Custom SKU{' '}
-                  <strong>{skuText}</strong>{skuNumbered && ", # the day's next collection number, given when it's saved"}.{' '}
+                  <strong>{previewSkus()}</strong>{skuNumbered && ", # the day's next collection number, given when it's saved"}.{' '}
                   {pullOut ? <>The cards here become <strong>Completed</strong>.</> : <>They leave Can't upload cards.</>}
                 </>
               ) : pullOut ? (
