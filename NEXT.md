@@ -11,7 +11,9 @@ marks each task done here when it's finished, with the exact file and function o
   Eg: 112526-126b, 112526-1p"; main session; given to the Export and printouts session). Settled: a single buy's
   b (`112526-126b`), an overnight buy's c (`112526-3c`), a project's p (`112526-1p`); a day's export and Can't
   upload's and Bulk pulled's stay plain; the u stays last (`112526-126bu`); stamped in the database, so migration
-  0018. Review and rehearsal now; **dev and prod are pushed in one sitting, when the owner says** (decision 381).
+  0018. Review and rehearsal now; **dev and prod are pushed in one sitting, when the owner says** (decision 381):
+  after close, 9:30pm on 2026-11-25, on the owner's go then. A file-only export (a collection not Paid/Ours) gets
+  its letter too, with no number (`112526c`, `112526p`; the owner: "Add the letter"; app only).
   **Built, reviewed and rehearsed 2026-11-25 (Export session; decision 606, its Done entry below): on neither
   database, nothing pushed.** Left, in one sitting: `npx supabase db push --linked` (dev), `node
   scripts/db-snapshot.mjs` and commit `supabase/current/`, `node scripts/db-test-run.mjs --save <outside the repo>`
