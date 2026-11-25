@@ -6,6 +6,13 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
+- **A letter on every export's Custom SKU, migration 0018** (the owner, 2026-11-25: "Projects all need a "p" after
+  the sku because they're overlapping with buys. And buys should have a "b" after their Custom SKU on the export.
+  Eg: 112526-126b, 112526-1p"; main session; given to the Export and printouts session). Settled: a single buy's
+  b (`112526-126b`), an overnight buy's c (`112526-3c`), a project's p (`112526-1p`); a day's export and Can't
+  upload's and Bulk pulled's stay plain; the u stays last (`112526-126bu`); stamped in the database, so migration
+  0018. Review and rehearsal now; **dev and prod are pushed in one sitting, when the owner says** (decision 381).
+
 - **On ice: the printout and the export kept in step** (main session, 2026-11-21; the owner: "I don't want to go
   this far, I don't think this is needed, none of those things should happen often, let's shelve this migration
   unless I want to tighten down again"). The idea: printing saves each card's printed CC product (migration 0018),
