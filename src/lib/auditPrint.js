@@ -143,7 +143,8 @@ export const hasCardsToExport = (lines) => printLines(lines).some((l) => !l.cc_s
 /**
  * A collection's or project's Unmatched SKU (decision 602): "112526-#cu" (a project's "112526-#pu", decision 606)
  * while it has cards to export, its number given only when the export saves (decision 511), or a file-only one's
- * (not Paid/Ours), "112526cu" or "112526pu"; once they're all exported, the SKUs its own export stamped, each with its u: not a Can't upload cards or Bulk pulled export's restamp of a card it sent there
+ * (not Paid/Ours), "112526cu" or "112526pu"; once they're all exported, the SKUs its own export stamped, each
+ * with its u: not a Can't upload cards or Bulk pulled export's restamp of a card it sent there
  * (`restamped`, decision 372, as Download the same file again leaves them out). None for one whose own export
  * stamped nothing (every card Can't upload or pulled), or when the restamps couldn't be read (`restamped` null).
  * @param {object[]} lines  its buy_lines rows
