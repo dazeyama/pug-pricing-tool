@@ -698,7 +698,7 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       says so.
 - [ ] **Today** (decision 427): today's EXPORT and COMPLETE are blocked ("until it's over"), but EXPORT ▾ opens on
       today's Magic day: Print MTG (all) and (>$1.49) print, and only the Export items are greyed, with the reason.
-- [ ] **Export single buy…** works on any day, today included, with the SKU `101626-42`; only that buy becomes Completed,
+- [ ] **Export single buy…** works on any day, today included, with the SKU `101626-42b` (decision 606); only that buy becomes Completed,
       and the day's EXPORT skips it.
 - [ ] **Mark Paid/Ours again…** undoes that buy's export alone, after asking. On a buy whose (>$1.49) export pulled a
       card, the question says its cards come back out of Bulk pulled from exports too (decision 426).
@@ -734,10 +734,10 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
 - [ ] **Sticker prices** (decision 384): every sticker is a whole dollar ("$3", never "$3.25"); a card worth $0.50
       or less reads "50¢", one between $0.51 and $0.99 reads "$1"; the name, number and chip are on those too.
 - [ ] **A day's file again** (decisions 361, 372): a day exported with EXPORT, one of its buys exported earlier with
-      Export single buy: EXPORT again downloads the day's file without that buy's cards (Custom SKU "<day>-<number>");
+      Export single buy: EXPORT again downloads the day's file without that buy's cards (Custom SKU "<day>-<number>b");
       a day exported only one buy at a time says there's no day file.
 - [ ] **A single buy's file again** (decision 386): on a buy exported with Export single buy, ⋯ → **Download its file
-      again**: the same `…-<day's SKU>-N.csv` (decision 600), nothing changes; Export single buy is greyed, pointing to it.
+      again**: the same `…-<day's SKU>-Nb.csv` (decisions 600, 606), nothing changes; Export single buy is greyed, pointing to it.
 - [ ] **Mark Paid/Ours again, partly by hand** (decision 396): a Magic buy with some cards exported and some Mark as
       completed; the day's ⋯ → Mark Paid/Ours again…; the buy's ⋯ now has both Mark as completed and **Mark Paid/Ours
       again**, which brings the hand-completed cards back.
@@ -793,8 +793,8 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       rows, each with its set chip. Print MTG in buy order still shows every chip.
 - [ ] **Unmatched's "u" Custom SKU** (decision 602; Export session): the same day's Print MTG (all): the Unmatched
       band reads "Custom SKU 112126u" (that day's SKU and u); a buy's ⋯ → Print buy the same, and after Export
-      single buy on another buy, its Print buy reads "112126-42u". A Paid/Ours collection not yet exported prints
-      "112126-#u" (today's); after its export, "112126-3u" (its number). Can't upload cards' printout has none. The
+      single buy on another buy, its Print buy reads "112126-42bu". A Paid/Ours overnight buy not yet exported prints
+      "112126-#cu" (today's), a project "112126-#pu"; after its export, "112126-3cu" (its number; decision 606). Can't upload cards' printout has none. The
       file and the database are unchanged: the Can't upload cards' rows still get their export's own SKU.
 - [ ] **A card chosen at the export gets the u** (decision 603; Export session): a past Magic day with a card in
       Needs a choice and another card of the same product matched by itself. EXPORT: pick the first one's product,
@@ -802,7 +802,7 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
       card); in the file that product's one row holds both cards and reads `112126u` (the owner's answer after the
       release review), and the product's 0-quantity NM row, if it has one, `112126u` too. The day's Download the same
       file again gives the same rows. Export single buy and a collection the same
-      (`112126-42u`, `112126-3u`); Change on a card that matched by itself, or a remembered pick, keeps the plain
+      (`112126-42bu`, `112126-3cu`); Change on a card that matched by itself, or a remembered pick, keeps the plain
       SKU. The day's Custom SKU chip still reads `112126`.
 - [ ] **Print MTG in buy order** (decision 444): a past Magic day with two buys: EXPORT ▾ → ◂ Print → Print MTG in
       buy order: one row per card line, the first buy's cards as added, then the second's; no category bands and no
@@ -844,8 +844,8 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
 - [ ] The review screen shows **sets NM $X** on such a card; hovering says it's today's Near Mint price.
 - [ ] EXPORT on a day or collection already exported downloads the same file again; nothing changes.
 - [ ] **The file is named by its Custom SKU** (decision 600; Export session): a day's export downloads
-      `cc-mass-create-magic-<SKU>.csv` (`…-112126.csv`), Export single buy `…-112126-42.csv`, a collection's
-      `cc-mass-create-<customer>-112126-3.csv` (the number the export saved), Can't upload cards'
+      `cc-mass-create-magic-<SKU>.csv` (`…-112126.csv`), Export single buy `…-112126-42b.csv`, a collection's
+      `cc-mass-create-<customer>-112126-3c.csv` (a project's `…-3p.csv`) (the number the export saved), Can't upload cards'
       `cc-mass-create-cant-upload-<SKU>.csv` and Bulk pulled's `cc-mass-create-pulled-bulk-<SKU>.csv`; each name matches
       the file's Custom SKU column. Download the same file again (day, buy ⋯, collection) gives the same name.
 - [ ] A card that can't match goes to **Can't upload cards** and isn't in the file.
@@ -866,12 +866,15 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
       each is Matched, tagged via TCGplayer, to "Kiddie Coaster (2-5-6)", "- Theme Deck Exclusive", "- Foil FNM
       2008", "Pillage - Arena 2000" and "Spacegodzilla, Death Corona - Void Beckoner"; the plain Ikoria Void
       Beckoner still matches the plain product.
-- [ ] **A collection's number of the day** (decision 511): export two Paid/Ours collections (or a collection and a
-      project) the same day: the Confirm step reads Custom SKU **102426-#** (today's date as every SKU writes it, no
-      leading zero on the month), "# the day's next collection number"; the files' Custom SKU column reads `102426-1`
-      then `102426-2` (or the day's next ones), each in its own Changelog entry. EXPORT on the first again downloads
+- [ ] **A collection's number of the day** (decisions 511, 606; Export session): export a Paid/Ours overnight buy and
+      a project the same day: the Confirm step reads Custom SKU **102426-#c** and **102426-#p** (today's date as every
+      SKU writes it, no leading zero on the month), "# the day's next collection number"; the files' Custom SKU
+      column, the file's name, the list heading's chip and the Changelog all read `102426-1c` then `102426-2p` (or
+      the day's next numbers: one count for both). EXPORT on the first again downloads
       its file with its own number; Undo export… then EXPORT gives it the next number, not its old one. A day page's
-      EXPORT and Export single buy keep the day's date and the day's date with the buy's number.
+      EXPORT keeps the day's date alone; Export single buy's is the day's date, the buy's number and a b
+      (`102426-42b`), on its file, its chip and the Changelog. Download the same file again on an export made before
+      decision 606 still reads its old SKU, with no letter.
 - [ ] **An export with the connection gone** (decisions 362, 371): wifi off, press Export: it says it may have
       exported and to look at the page; wifi on, press Export again: it exports once, or, if the first went through,
       downloads that file. A retry never exports the same cards twice.
@@ -889,8 +892,8 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
       moment longer (TCGplayer's whole The List read once); the browser console shows no "has no printing named"
       warning for Demonic Tutor.
 - [ ] **A collection's printout SKU after a Can't upload export** (decision 602; Export session): a collection
-      exported (`112126-3`) with a card sent to Can't upload, then that card exported from Can't upload cards on
-      another day: the collection's Print MTG (all) reads "Custom SKU 112126-3u" on Unmatched, never the Can't upload
+      exported (`112126-3c`) with a card sent to Can't upload, then that card exported from Can't upload cards on
+      another day: the collection's Print MTG (all) reads "Custom SKU 112126-3cu" on Unmatched, never the Can't upload
       export's date too.
 
 ## 16. Settings tab

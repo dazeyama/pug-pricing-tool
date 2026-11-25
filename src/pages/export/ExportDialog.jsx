@@ -354,7 +354,7 @@ export default function ExportDialog({
     && ['day', 'buy', 'collection'].includes(target?.kind);
   // The Custom SKU the server will stamp (0071; a collection's number of the day, decision 511).
   const skuText = confirmSku(target, Boolean(fileOnly));
-  const skuNumbered = skuText.endsWith('-#');
+  const skuNumbered = skuText.includes('-#');   // "112526-#c", "112526-#p" (decision 606)
   /**
    * The matched lines as the file will have them: its rows and their Custom SKUs (the Confirm step's count and
    * SKUs, the u ones apart, decision 603) and NM prices.

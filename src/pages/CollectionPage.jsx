@@ -338,7 +338,7 @@ function CollectionScreen({ id }) {
       buyOrder,
       // Its export's Custom SKU with a u (decision 602); none on Can't upload cards' or Bulk pulled's, whose cards
       // came from many exports.
-      unmatchedSku: system ? null : collectionPrintSku,
+      unmatchedSku: system ? null : (lines) => collectionPrintSku(lines, buy.project),
     });
   }
 
@@ -905,7 +905,7 @@ function CollectionScreen({ id }) {
               over1={exportOver1}
               title={`Export ${buy.customer_name}${exportOver1 ? ` (${keptWords(cut)})` : ''} to Crystal Commerce`}
               items={col.lines.filter((l) => l.game === 'mtg' && movesOn(l) && !l.cc_status).map((line) => ({ line, where: '' }))}
-              target={{ kind: 'collection', buy_id: buy.id, version: buy.version }}
+              target={{ kind: 'collection', buy_id: buy.id, version: buy.version, project: buy.project }}
               filePrefix={`cc-mass-create-${fileSafe(buy.customer_name)}`}
               onExported={exported}
               onClose={() => {
@@ -949,7 +949,7 @@ function CollectionScreen({ id }) {
               title={`Export ${buy.customer_name}${exportOver1 ? ` (${keptWords(cut)})` : ''} to Crystal Commerce (file only)`}
               // Not the cards already exported: they went in their own file (decision 345).
               items={col.lines.filter((l) => l.game === 'mtg' && movesOn(l) && !l.cc_status).map((line) => ({ line, where: '' }))}
-              target={{ kind: 'collection', buy_id: buy.id, version: buy.version }}
+              target={{ kind: 'collection', buy_id: buy.id, version: buy.version, project: buy.project }}
               filePrefix={`cc-mass-create-${fileSafe(buy.customer_name)}`}
               onExported={exported}
               onClose={() => {

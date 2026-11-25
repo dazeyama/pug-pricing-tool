@@ -80,6 +80,9 @@ test("the day's file again: not the cards a Can't upload cards export stamped", 
 });
 
 test("the day's file again: single buys only is no day file", () => {
-  const got = dayExportLines([{ id: 1, cc_status: 'exported', cc_custom_sku: '101626-42' }], '2026-10-16');
+  const got = dayExportLines([
+    { id: 1, cc_status: 'exported', cc_custom_sku: '101626-42' },
+    { id: 2, cc_status: 'exported', cc_custom_sku: '101626-43b' },   // with its letter (decision 606)
+  ], '2026-10-16');
   assert.deepEqual(got.lines, []);
 });

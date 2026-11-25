@@ -63,8 +63,8 @@ export function customSkuFor(when = new Date()) {
 /**
  * The same code for a calendar day ("2026-10-16" → "101626"): a day page's
  * export is stamped with the day exported, not the day it's run (owner,
- * 2026-10-17; migration 0071). "Export single buy" adds the buy's number:
- * "101626-42".
+ * 2026-10-17; migration 0071). "Export single buy" adds the buy's number and
+ * a b: "112526-126b" (decision 606; "101626-42" before it).
  */
 export function customSkuForDay(day) {
   const [y, m, d] = String(day).split('-').map(Number);
@@ -72,23 +72,33 @@ export function customSkuForDay(day) {
 }
 
 /**
+ * The letter after a collection's number of the day (decision 606; export_lines, migration 0018): a project's p,
+ * an overnight buy's c. A single buy's is b, so none of them is another's SKU.
+ * @param {boolean} project  buys.project
+ */
+export const collectionLetter = (project) => (project ? 'p' : 'c');
+
+/** A collection's or project's SKU before its export saves, its number not given yet (decision 511): "112526-#c". */
+export const unsavedCollectionSku = (todaySku, project) => `${todaySku}-#${collectionLetter(project)}`;
+
+/**
  * The Custom SKU the export dialog's Confirm step shows, as the server will stamp it: a day page's is
- * its day; a single buy's that day and the buy's number; a collection's or project's today and its
- * number of the day, given only when it saves (decision 511), so "102426-#"; Can't upload cards',
- * Bulk pulled from exports' and a file-only download's, today.
- * @param {{ kind: string, day?: string, number?: number }|null} target
+ * its day; a single buy's that day, the buy's number and a b; a collection's or project's today and its
+ * number of the day, given only when it saves (decision 511), then its letter, so "112526-#c" or
+ * "112526-#p" (decision 606); Can't upload cards', Bulk pulled from exports' and a file-only download's, today.
+ * @param {{ kind: string, day?: string, number?: number, project?: boolean }|null} target
  */
 export function confirmSku(target, fileOnly = false, when = new Date()) {
   if (target?.kind === 'day') return customSkuForDay(target.day);
-  if (target?.kind === 'buy' && target.day) return `${customSkuForDay(target.day)}-${target.number}`;
-  if (target?.kind === 'collection' && !fileOnly) return `${customSkuFor(when)}-#`;
+  if (target?.kind === 'buy' && target.day) return `${customSkuForDay(target.day)}-${target.number}b`;
+  if (target?.kind === 'collection' && !fileOnly) return unsavedCollectionSku(customSkuFor(when), target.project);
   return customSkuFor(when);
 }
 
 /**
  * The Mass Create file's name (decision 600): its prefix and the Custom SKU on its rows in place of the
- * date, "cc-mass-create-magic-112126.csv", a single buy's "cc-mass-create-magic-112126-42.csv", a
- * collection's "cc-mass-create-jordan-reyes-112126-3.csv". The same file again from cards stamped by more
+ * date, "cc-mass-create-magic-112526.csv", a single buy's "cc-mass-create-magic-112526-126b.csv", an overnight
+ * buy's "cc-mass-create-jordan-reyes-112526-3c.csv" (the letters, decision 606). The same file again from cards stamped by more
  * than one export (a day exported before migration 0071) names them all, "-110126_110226".
  * @param {string} prefix  "cc-mass-create-magic", "cc-mass-create-<customer>", "cc-mass-create-cant-upload"
  * @param {string|string[]} skus
@@ -100,8 +110,8 @@ export function massCreateFileName(prefix, skus) {
 
 /**
  * A line's Custom SKU in the file (decision 603): its stamp, with a "u" when staff gave it its product at the
- * export, a card the printout put under Unmatched (Needs a choice, or no product): "112126u", "112126-42u",
- * "112126-3u", so it can be searched for by the printout's SKU (decision 602). The mark is in its Sell Price
+ * export, a card the printout put under Unmatched (Needs a choice, or no product): "112526u", "112526-126bu",
+ * "112526-3cu" (the u last, decision 606), so it can be searched for by the printout's SKU (decision 602). The mark is in its Sell Price
  * basis (`cc_sell_basis.chosen`, saved with the export), so the same file again carries it; the stamped
  * `cc_custom_sku` itself stays the export's own.
  */

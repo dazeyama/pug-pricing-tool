@@ -163,7 +163,7 @@ export default function BuyPanel({
         <span className={`status-chip ${statusTone({ kind: 'walk_in', status, paid_method: buy.paid_method })}`}>
           {statusLabel(status)}
         </span>
-        {/* Export single buy's Custom SKU, "<day>-<number>" (0071), on the buy it belongs to. */}
+        {/* Export single buy's Custom SKU, "<day>-<number>b" (0071; decision 606), on the buy it belongs to. */}
         {skus.map((s) => (
           <span key={s} className="sku-chip compact" title="The Custom SKU on this buy's own export">
             Custom SKU <strong>{s}</strong>

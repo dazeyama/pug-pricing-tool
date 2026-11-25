@@ -12,6 +12,10 @@ marks each task done here when it's finished, with the exact file and function o
   b (`112526-126b`), an overnight buy's c (`112526-3c`), a project's p (`112526-1p`); a day's export and Can't
   upload's and Bulk pulled's stay plain; the u stays last (`112526-126bu`); stamped in the database, so migration
   0018. Review and rehearsal now; **dev and prod are pushed in one sitting, when the owner says** (decision 381).
+  **Built, reviewed and rehearsed 2026-11-25 (Export session; decision 606, its Done entry below): on neither
+  database, nothing pushed.** Left, in one sitting: `npx supabase db push --linked` (dev), `node
+  scripts/db-snapshot.mjs` and commit `supabase/current/`, `node scripts/db-test-run.mjs --save <outside the repo>`
+  (682 checks), prod's `db push` and `--structure-only` compare (docs/DATABASE.md step 6), then the app push.
 
 - **On ice: the printout and the export kept in step** (main session, 2026-11-21; the owner: "I don't want to go
   this far, I don't think this is needed, none of those things should happen often, let's shelve this migration
@@ -41,6 +45,27 @@ marks each task done here when it's finished, with the exact file and function o
   `SHEET`, `tests/stickerPdf.test.js` with it, and a decision row.
 
 ## Done
+
+- 2026-11-25 (Export session): **Decision 606: a letter on a numbered Custom SKU, migration 0018** (the owner:
+  "Projects all need a "p" after the sku … And buys should have a "b" after their Custom SKU on the export"). **0018
+  is on neither dev nor prod; the app code must not be pushed before prod has it.** `0018_sku_letters.sql`:
+  `export_lines` alone, two lines (a single buy's `|| 'b'`; a collection's `p` or `c` after
+  `internal.collection_sku`); no table, grant or stored row changes. App: `massCreate.js` `confirmSku`,
+  `unsavedCollectionSku`, `collectionLetter`; `auditPrint.js` `collectionUnmatchedSku` and `useAuditPrint.js`
+  `collectionPrintSku` (both take whether it's a project); `ExportDialog.jsx` `skuNumbered` (looked for an ending
+  "-#"); `CollectionPage.jsx` and `CollectionsPage.jsx` pass `buy.project`. Everything else reads the stamp as
+  text. Where to look, once 0018 is on dev: a buy's ⋯ → Export single buy: Confirm, file name, SKU column, chip and
+  Changelog all `112526-126b`; a Paid/Ours overnight buy's EXPORT: Confirm `112526-#c`, then `112526-3c`; a
+  project's `112526-#p`, then `112526-1p`; a picked Needs a choice card's row ends u (`112526-126bu`); a day's
+  and Can't upload cards' have no letter; an older export's Download the same file again reads its old SKU. Reviewed
+  (pug-reviewer: nothing that breaks the site; its findings on docs, tests and comments fixed) and rehearsed on dev
+  inside `begin … rollback` with the whole test run after it (682 checks passed, nothing kept, the buy counter put
+  back; dev read afterwards: 0018 not applied). Unit-tested; not tried in the app. TEST.md sections 14 and 15. At the
+  push, tell the team: reload open tabs, and reprint an overnight buy's or project's printout made before it and not
+  exported yet (its band says `-#u`; the file will say `-#cu` or `-#pu`). The printout and file of a collection
+  that isn't Paid/Ours differ as before (file-only is today's date alone): asked the main session. The On ice item
+  below still calls its shelved idea "migration 0018", and CLAUDE.md "The next is 0018": the main session's to move
+  on. Help's out-of-date sections (README.md): EXPORT, Undo export…, a buy's ⋯ menu, Print MTG?, Confirm, The file.
 
 - 2026-11-21 (main session): **Second push of the day, no bump, no review** (the owner: "Push to the live site
   now, no bump, no review"). What went out: the release review's six findings, fixed (1b23b0e, 3448a24, f7eeaed,

@@ -25,7 +25,7 @@ export function convertLines(buy) {
 
 /**
  * The day's own export, for "Download the same file again" (decision 361): the exported cards
- * stamped with the day's Custom SKU, not a single buy's ("101626-42") nor a later Can't upload
+ * stamped with the day's Custom SKU, not a single buy's ("101626-42b") nor a later Can't upload
  * export's (stamped the day it ran). A day exported before migration 0071 was stamped the day its
  * export ran: then its exported cards with no buy number. Either way, not the cards a Can't upload
  * cards export stamped, by their stamp's time (`restamped`, decision 372): one that ran on the

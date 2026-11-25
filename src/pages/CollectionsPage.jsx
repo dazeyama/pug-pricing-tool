@@ -218,7 +218,7 @@ export default function CollectionsPage() {
           },
           title: `Audit — ${c.customer_name}`,
           fileName: `audit-${fileSafe(c.customer_name)}.pdf`,
-          unmatchedSku: collectionPrintSku,   // decision 602
+          unmatchedSku: (lines) => collectionPrintSku(lines, c.project),   // decision 602
         }),
       },
       ...(c.project ? [{

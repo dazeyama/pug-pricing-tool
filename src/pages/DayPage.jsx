@@ -191,7 +191,7 @@ function DayScreen({ game, day }) {
   const lastExport = doneLines.filter((l) => !markedByHand(l))
     .reduce((a, l) => (!a || l.completed_at > a.completed_at ? l : a), null);
   // What the export wrote (export spec 4.4, 10): its Custom SKU, and the counts.
-  // A single buy's export carries "<day>-<number>" (0071): its chip goes on the
+  // A single buy's export carries "<day>-<number>b" (0071; the b, decision 606): its chip goes on the
   // buy, the day's own export's on the page (owner, 2026-10-17).
   const skus = [...new Set(doneLines.map((l) => l.cc_custom_sku).filter((s) => s && !s.includes('-')))];
   const buySkus = (b) => [...new Set(b.buy_lines
@@ -506,7 +506,7 @@ function DayScreen({ game, day }) {
 
   /**
    * A buy's ⋯ → Download its file again (decision 386): Export single buy's file, from its cards'
-   * stamps ("<day>-<number>"), as the day's EXPORT does for the day. Nothing changes; not the cards
+   * stamps ("<day>-<number>b"), as the day's EXPORT does for the day. Nothing changes; not the cards
    * a later Can't upload cards export stamped, which went in that export's file (decision 372).
    */
   async function downloadBuyAgain(buy, number) {

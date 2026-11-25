@@ -5,7 +5,7 @@ import { sellPriceFor } from '../src/lib/sellPrice.js';
 import { settingSummary } from '../src/lib/settingText.js';
 import { targetOf } from '../src/lib/changelog.js';
 import {
-  confirmSku, customSkuFor, customSkuForDay, fileSafe, fileSku, massCreateCsv, massCreateFileName, massCreateRows, nearMintPrices,
+  collectionLetter, confirmSku, customSkuFor, customSkuForDay, fileSafe, fileSku, massCreateCsv, massCreateFileName, massCreateRows, nearMintPrices,
   withoutRestamps,
 } from '../src/lib/massCreate.js';
 
@@ -107,6 +107,7 @@ test('the Mass Create file is named by its Custom SKU', () => {
   assert.equal(massCreateFileName('cc-mass-create-magic', '112126'), 'cc-mass-create-magic-112126.csv');
   assert.equal(massCreateFileName('cc-mass-create-magic', ['112126-42', '112126-42']), 'cc-mass-create-magic-112126-42.csv');
   assert.equal(massCreateFileName('cc-mass-create-jordan-reyes', '112126-3'), 'cc-mass-create-jordan-reyes-112126-3.csv');
+  assert.equal(massCreateFileName('cc-mass-create-jordan-reyes', '112526-1p'), 'cc-mass-create-jordan-reyes-112526-1p.csv');
   assert.equal(massCreateFileName('cc-mass-create-cant-upload', '112126'), 'cc-mass-create-cant-upload-112126.csv');
   // Cards from more than one export (a day exported before migration 0071): every SKU, in order.
   assert.equal(massCreateFileName('cc-mass-create-magic', ['110226', '110126', null]), 'cc-mass-create-magic-110126_110226.csv');
@@ -232,13 +233,16 @@ test('the Custom SKU of a calendar day', () => {
   assert.equal(customSkuForDay('2026-11-01'), '110126');
 });
 
-// A collection's or project's number of the day is given when it saves (decision 511).
+// A collection's or project's number of the day is given when it saves (decision 511). A single buy's SKU ends in b,
+// a project's in p, an overnight buy's in c (decision 606); a day's and the plain ones have no letter.
 test('the Custom SKU the Confirm step shows', () => {
   const when = new Date('2026-10-24T20:00:00Z');
   assert.equal(confirmSku({ kind: 'day', day: '2026-10-16' }, false, when), '101626');
-  assert.equal(confirmSku({ kind: 'buy', day: '2026-10-16', number: 42 }, false, when), '101626-42');
-  assert.equal(confirmSku({ kind: 'collection' }, false, when), '102426-#');
-  assert.equal(confirmSku({ kind: 'collection' }, true, when), '102426');
+  assert.equal(confirmSku({ kind: 'buy', day: '2026-10-16', number: 42 }, false, when), '101626-42b');
+  assert.equal(confirmSku({ kind: 'collection', project: false }, false, when), '102426-#c');
+  assert.equal(confirmSku({ kind: 'collection', project: true }, false, when), '102426-#p');
+  assert.equal(confirmSku({ kind: 'collection', project: true }, true, when), '102426');
+  assert.deepEqual([collectionLetter(true), collectionLetter(false)], ['p', 'c']);
   assert.equal(confirmSku({ kind: 'cant_upload' }, false, when), '102426');
   assert.equal(confirmSku({ kind: 'pulled' }, false, when), '102426');
 });
@@ -247,6 +251,8 @@ test('the Custom SKU the Confirm step shows', () => {
 test('a card chosen at the export: its row with the u SKU, apart from the same product matched by itself', () => {
   const chosen = { chosen: true, used: 'market' };
   assert.equal(fileSku(stamped({ cc_custom_sku: '112126-42', cc_sell_basis: chosen })), '112126-42u');
+  // The u stays last, after the letter (decision 606).
+  assert.equal(fileSku(stamped({ cc_custom_sku: '112526-126b', cc_sell_basis: chosen })), '112526-126bu');
   assert.equal(fileSku(stamped({ cc_custom_sku: '112126', cc_sell_basis: { used: 'market' } })), '112126');
   assert.equal(fileSku(stamped({ cc_custom_sku: null })), '');
   const rows = massCreateRows([

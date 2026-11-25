@@ -112,13 +112,14 @@ async function symbolsFor(sections) {
  * cards are all exported, its own export's, the Can't upload cards exports' restamps read and left out (decision
  * 372). The restamps unreadable: none, rather than another export's.
  * @param {object[]} lines  its buy_lines rows
+ * @param {boolean} project  a project, not an overnight buy (its SKU's letter, decision 606)
  * @returns {Promise<string|null>}
  */
-export async function collectionPrintSku(lines) {
+export async function collectionPrintSku(lines, project) {
   const today = customSkuFor(new Date());
-  if (hasCardsToExport(lines)) return collectionUnmatchedSku(lines, today);
+  if (hasCardsToExport(lines)) return collectionUnmatchedSku(lines, today, project);
   const restamped = await restampTimes(lines).catch(() => null);
-  return collectionUnmatchedSku(lines, today, restamped);
+  return collectionUnmatchedSku(lines, today, project, restamped);
 }
 
 /**

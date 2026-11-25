@@ -2367,7 +2367,10 @@ begin
     (select source_note from buy_lines where source_line_id = mys));
   perform pg_temp.ok(s, '… and the Changelog says so',
     exists (select 1 from events where action = 'buy_exported' and target_id = b2
-              and summary = format('1 Magic card exported on its own (Custom SKU %s-%s); 1 can''t upload, copied to Can''t upload cards; the buy is Completed.', v_sku, v_num2)));
+              and summary = format('1 Magic card exported on its own (Custom SKU %s-%sb); 1 can''t upload, copied to Can''t upload cards; the buy is Completed.', v_sku, v_num2)));
+  perform pg_temp.ok(s, '… its Custom SKU the day, the buy''s number and a b (0018)',
+    v ->> 'sku' = v_sku || '-' || v_num2 || 'b'
+    and (select cc_custom_sku = v ->> 'sku' from buy_lines where id = cs), v::text);
   begin
     perform export_lines(jsonb_build_object('kind', 'buy', 'game', 'mtg', 'buy_id', b2, 'version', pg_temp.version(b2)), '[]', '{}', '[]', u, a);
     raise exception 'dbt_no_error';
@@ -2433,6 +2436,8 @@ declare
   v_x uuid;
   v_c3 uuid;
   v_pp uuid;
+  v_pm uuid;
+  v_pl uuid;
   v_id uuid;
   v jsonb;
 begin
@@ -2461,12 +2466,12 @@ begin
     and (select status = 'paid' and completed_at is null from buys where id = v_c)
     and (select cc_status = 'exported' from buy_lines where id = c1)
     and (select cc_status is null from buy_lines where id = cp), v::text);
-  -- Its Custom SKU is today and its number of the day (decision 511): "102426-3".
+  -- Its Custom SKU is today, its number of the day (decision 511) and a c, not a project (0018): "112526-3c".
   v_sku := v ->> 'sku';
-  perform pg_temp.ok(s, '… its Custom SKU today''s date and its number of the day (0011)',
-    v_sku ~ ('^' || v_today || '-[1-9][0-9]*$')
+  perform pg_temp.ok(s, '… its Custom SKU today''s date, its number of the day and a c (0011, 0018)',
+    v_sku ~ ('^' || v_today || '-[1-9][0-9]*c$')
     and (select cc_custom_sku = v_sku from buy_lines where id = c1), v::text);
-  v_n := split_part(v_sku, '-', 2)::integer;
+  v_n := rtrim(split_part(v_sku, '-', 2), 'c')::integer;
   perform pg_temp.ok(s, '… and the Changelog says so',
     exists (select 1 from events where target_id = v_c and action = 'collection_exported'
               and summary = format('Exported 3 cards (Custom SKU %s).', v_sku)));
@@ -2525,8 +2530,8 @@ begin
   v := export_lines(jsonb_build_object('kind', 'collection', 'buy_id', v_c, 'version', pg_temp.version(v_c)),
                     jsonb_build_array(pg_temp.match(c1, 'DBTEST-P1', 1.25)), '{}', '[]', u, a);
   perform pg_temp.ok(s, '… and EXPORT offers the cards again, with the next number: an undone one isn''t given again (0011)',
-    (v ->> 'cards')::integer = 3 and v ->> 'sku' = v_today || '-' || (v_n + 1)
-    and (select cc_status = 'exported' and cc_custom_sku = v_today || '-' || (v_n + 1) from buy_lines where id = c1), v::text);
+    (v ->> 'cards')::integer = 3 and v ->> 'sku' = v_today || '-' || (v_n + 1) || 'c'
+    and (select cc_status = 'exported' and cc_custom_sku = v_today || '-' || (v_n + 1) || 'c' from buy_lines where id = c1), v::text);
   -- An exported card is frozen (0081): in a Paid/Ours customer collection, × can't remove or strike it.
   begin
     perform collection_remove_line(c1, 1, u, a, null, null);
@@ -2563,8 +2568,27 @@ begin
   v := export_lines(jsonb_build_object('kind', 'collection', 'buy_id', v_x, 'version', pg_temp.version(v_x)),
                     jsonb_build_array(pg_temp.match(v_c3, 'DBTEST-P4', 1.25)), '{}', '[]', u, a);
   perform pg_temp.ok(s, 'A second collection the same day takes the next number; one with nothing exported took none (0011)',
-    v ->> 'sku' = v_today || '-' || (v_n + 2)
-    and (select cc_custom_sku = v_today || '-' || (v_n + 2) from buy_lines where id = v_c3), v::text);
+    v ->> 'sku' = v_today || '-' || (v_n + 2) || 'c'
+    and (select cc_custom_sku = v_today || '-' || (v_n + 2) || 'c' from buy_lines where id = v_c3), v::text);
+
+  -- A project's number comes from the same count, with a p (0018). Taken back out, so the rest of the run is as it was.
+  v_pm := project_create('DBTEST Magic Project', '', u, a);
+  perform lock_acquire(v_pm, a, u);
+  perform collection_add_line(v_pm, pg_temp.line('Dbtest Mystery', 'DBT', '003', 1, 1.00), true, u, a, null, null);
+  select id into v_pl from buy_lines where buy_id = v_pm;
+  v := export_lines(jsonb_build_object('kind', 'collection', 'buy_id', v_pm, 'version', pg_temp.version(v_pm)),
+                    jsonb_build_array(pg_temp.match(v_pl, 'DBTEST-P4', 1.25)), '{}', '[]', u, a);
+  perform pg_temp.ok(s, 'A project''s Custom SKU is the next number of the same count, with a p (0018)',
+    v ->> 'sku' = v_today || '-' || (v_n + 3) || 'p'
+    and (select cc_custom_sku = v ->> 'sku' from buy_lines where id = v_pl)
+    and exists (select 1 from events where target_id = v_pm and action = 'collection_exported'
+                  and summary = format('Exported 1 card (Custom SKU %s).', v ->> 'sku')), v::text);
+  v := collection_unexport(v_pm, u, a, pg_temp.version(v_pm));
+  perform pg_temp.ok(s, '… and Undo export names it and takes it off',
+    exists (select 1 from events where target_id = v_pm and action = 'collection_unexported'
+              and summary = format('Export undone (Custom SKU %s): 1 card no longer marked exported.', v_today || '-' || (v_n + 3) || 'p'))
+    and (select cc_custom_sku is null from buy_lines where id = v_pl), v::text);
+  perform collection_remove_line(v_pl, 1, u, a, null, null);
 
   v_pp := project_create('DBTEST Pokémon Project', '', u, a);
   perform lock_acquire(v_pp, a, u);
@@ -2684,6 +2708,9 @@ begin
   perform pg_temp.ok(s, 'The Changelog says so',
     exists (select 1 from events where target_id = v_s and action = 'cant_upload_exported'
               and summary like 'Exported 1 card (Custom SKU %)%.'));
+  perform pg_temp.ok(s, '… and its Custom SKU is today''s date alone, no letter (0018)',
+    v ->> 'sku' = internal.cc_custom_sku(now())
+    and (select cc_custom_sku = internal.cc_custom_sku(now()) from buy_lines where id = mys), v::text);
 exception when others then
   declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;
   perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
@@ -3358,6 +3385,9 @@ begin
     and (select cc_status = 'exported' and cc_product_id = 'DBTEST-P3' from buy_lines where id = v_small)
     and not exists (select 1 from buy_lines where buy_id = v_sys and source_line_id = v_small)
     and exists (select 1 from events where action = 'pulled_exported' and target_id = v_sys), v::text);
+  perform pg_temp.ok(s, '… with today''s date alone as its Custom SKU, no letter (0018)',
+    v ->> 'sku' = internal.cc_custom_sku(now())
+    and (select cc_custom_sku = internal.cc_custom_sku(now()) from buy_lines where id = v_small), v::text);
 exception when others then
   declare v_ctx text; begin get stacked diagnostics v_ctx = pg_exception_context;
   perform pg_temp.crashed(s, sqlerrm, v_ctx); end;
