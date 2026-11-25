@@ -78,20 +78,33 @@ export function customSkuForDay(day) {
  */
 export const collectionLetter = (project) => (project ? 'p' : 'c');
 
-/** A collection's or project's SKU before its export saves, its number not given yet (decision 511): "112526-#c". */
-export const unsavedCollectionSku = (todaySku, project) => `${todaySku}-#${collectionLetter(project)}`;
+/**
+ * Does a collection's or project's EXPORT download the file only, saving nothing (team feedback, 2026-10-16)? One
+ * that's neither Paid/Ours nor Completed (a Completed one's is the same file again).
+ * @param {string} status  buys.status
+ */
+export const exportsFileOnly = (status) => status !== 'paid' && status !== 'completed';
+
+/**
+ * A collection's or project's SKU before its export saves, its number not given yet (decision 511): "112526-#c". A
+ * file-only one's, which gives no number: "112526c", "112526p" (decision 606).
+ */
+export const unsavedCollectionSku = (todaySku, project, fileOnly = false) => (
+  `${todaySku}${fileOnly ? '' : '-#'}${collectionLetter(project)}`
+);
 
 /**
  * The Custom SKU the export dialog's Confirm step shows, as the server will stamp it: a day page's is
  * its day; a single buy's that day, the buy's number and a b; a collection's or project's today and its
  * number of the day, given only when it saves (decision 511), then its letter, so "112526-#c" or
- * "112526-#p" (decision 606); Can't upload cards', Bulk pulled from exports' and a file-only download's, today.
+ * "112526-#p", a file-only download's today and its letter, "112526c" or "112526p" (decision 606); Can't upload
+ * cards' and Bulk pulled from exports', today.
  * @param {{ kind: string, day?: string, number?: number, project?: boolean }|null} target
  */
 export function confirmSku(target, fileOnly = false, when = new Date()) {
   if (target?.kind === 'day') return customSkuForDay(target.day);
   if (target?.kind === 'buy' && target.day) return `${customSkuForDay(target.day)}-${target.number}b`;
-  if (target?.kind === 'collection' && !fileOnly) return unsavedCollectionSku(customSkuFor(when), target.project);
+  if (target?.kind === 'collection') return unsavedCollectionSku(customSkuFor(when), target.project, fileOnly);
   return customSkuFor(when);
 }
 

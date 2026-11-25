@@ -338,7 +338,7 @@ function CollectionScreen({ id }) {
       buyOrder,
       // Its export's Custom SKU with a u (decision 602); none on Can't upload cards' or Bulk pulled's, whose cards
       // came from many exports.
-      unmatchedSku: system ? null : (lines) => collectionPrintSku(lines, buy.project),
+      unmatchedSku: system ? null : (lines) => collectionPrintSku(lines, buy),
     });
   }
 

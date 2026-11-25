@@ -5,7 +5,7 @@ import { sellPriceFor } from '../src/lib/sellPrice.js';
 import { settingSummary } from '../src/lib/settingText.js';
 import { targetOf } from '../src/lib/changelog.js';
 import {
-  collectionLetter, confirmSku, customSkuFor, customSkuForDay, fileSafe, fileSku, massCreateCsv, massCreateFileName, massCreateRows, nearMintPrices,
+  collectionLetter, confirmSku, customSkuFor, customSkuForDay, exportsFileOnly, fileSafe, fileSku, massCreateCsv, massCreateFileName, massCreateRows, nearMintPrices,
   withoutRestamps,
 } from '../src/lib/massCreate.js';
 
@@ -241,7 +241,11 @@ test('the Custom SKU the Confirm step shows', () => {
   assert.equal(confirmSku({ kind: 'buy', day: '2026-10-16', number: 42 }, false, when), '101626-42b');
   assert.equal(confirmSku({ kind: 'collection', project: false }, false, when), '102426-#c');
   assert.equal(confirmSku({ kind: 'collection', project: true }, false, when), '102426-#p');
-  assert.equal(confirmSku({ kind: 'collection', project: true }, true, when), '102426');
+  // A file-only download gives no number, only the letter (the owner, 2026-11-25: "Add the letter").
+  assert.equal(confirmSku({ kind: 'collection', project: false }, true, when), '102426c');
+  assert.equal(confirmSku({ kind: 'collection', project: true }, true, when), '102426p');
+  assert.equal(fileSku(stamped({ cc_custom_sku: '102426p', cc_sell_basis: { chosen: true } })), '102426pu');
+  assert.deepEqual(['processing', 'priced', 'rejected', 'paid', 'completed'].map(exportsFileOnly), [true, true, true, false, false]);
   assert.deepEqual([collectionLetter(true), collectionLetter(false)], ['p', 'c']);
   assert.equal(confirmSku({ kind: 'cant_upload' }, false, when), '102426');
   assert.equal(confirmSku({ kind: 'pulled' }, false, when), '102426');

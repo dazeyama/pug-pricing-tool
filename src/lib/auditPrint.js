@@ -3,7 +3,7 @@
 // cards, where each goes, merged and sorted. Pure: the matching comes in.
 
 import { categoryFor, expectedName, expectedTreatments, fold } from './ccMatch.js';
-import { unsavedCollectionSku } from './massCreate.js';
+import { exportsFileOnly, unsavedCollectionSku } from './massCreate.js';
 import { CONDITIONS } from './ladder.js';
 import { magicTreatmentLabel } from './printings.js';
 import { lineTags } from './lineFormat.js';
@@ -142,18 +142,17 @@ export const hasCardsToExport = (lines) => printLines(lines).some((l) => !l.cc_s
 
 /**
  * A collection's or project's Unmatched SKU (decision 602): "112526-#cu" (a project's "112526-#pu", decision 606)
- * while it has cards to export, its number given only when the export saves (decision 511); once they're all
- * exported, the SKUs its own export
- * stamped, each with its u: not a Can't upload cards or Bulk pulled export's restamp of a card it sent there
+ * while it has cards to export, its number given only when the export saves (decision 511), or a file-only one's
+ * (not Paid/Ours), "112526cu" or "112526pu"; once they're all exported, the SKUs its own export stamped, each with its u: not a Can't upload cards or Bulk pulled export's restamp of a card it sent there
  * (`restamped`, decision 372, as Download the same file again leaves them out). None for one whose own export
  * stamped nothing (every card Can't upload or pulled), or when the restamps couldn't be read (`restamped` null).
  * @param {object[]} lines  its buy_lines rows
  * @param {string} todaySku  today's Custom SKU (massCreate.js customSkuFor)
- * @param {boolean} project  a project, not an overnight buy (buys.project)
+ * @param {{ project: boolean, status: string }} buy  its buys row: a project or an overnight buy, and its status
  * @param {Set<string>|null} [restamped]  stamp times of Can't upload cards exports (ccExport.js restampTimes)
  */
-export function collectionUnmatchedSku(lines, todaySku, project, restamped = new Set()) {
-  if (hasCardsToExport(lines)) return unmatchedSku(unsavedCollectionSku(todaySku, project));
+export function collectionUnmatchedSku(lines, todaySku, buy, restamped = new Set()) {
+  if (hasCardsToExport(lines)) return unmatchedSku(unsavedCollectionSku(todaySku, buy.project, exportsFileOnly(buy.status)));
   if (!restamped) return null;
   const stamped = [...new Set(printLines(lines)
     .filter((l) => l.cc_status === 'exported' && !restamped.has(l.cc_exported_at))

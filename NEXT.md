@@ -64,10 +64,15 @@ marks each task done here when it's finished, with the exact file and function o
   inside `begin … rollback` with the whole test run after it (682 checks passed, nothing kept, the buy counter put
   back; dev read afterwards: 0018 not applied). Unit-tested; not tried in the app. TEST.md sections 14 and 15. At the
   push, tell the team: reload open tabs, and reprint an overnight buy's or project's printout made before it and not
-  exported yet (its band says `-#u`; the file will say `-#cu` or `-#pu`). The printout and file of a collection
-  that isn't Paid/Ours differ as before (file-only is today's date alone): asked the main session. The On ice item
-  below still calls its shelved idea "migration 0018", and CLAUDE.md "The next is 0018": the main session's to move
-  on. Help's out-of-date sections (README.md): EXPORT, Undo export…, a buy's ⋯ menu, Print MTG?, Confirm, The file.
+  exported yet (its band says `-#u`; the file will say `-#cu` or `-#pu`). **The file-only letter, the same day** (the
+  owner: "Add the letter"; app only): a collection or project neither Paid/Ours nor Completed downloads with today's
+  date and c or p (`112526c`, `112526p`) on its rows, its file name, the Confirm step and the toast, and prints
+  `112526cu` or `112526pu` on its Unmatched band; a card chosen there has the u last. `massCreate.js`
+  `exportsFileOnly` and `unsavedCollectionSku`; `ExportDialog.jsx` `save`; `collectionPrintSku` and
+  `collectionUnmatchedSku` take the buys row now. Where to look: a Processing overnight buy's ⋯ → Print overnight
+  buy, then its EXPORT. Unit-tested; not tried in the app. A printout made before the buy is marked Paid/Ours says
+  `112526cu`, and its export after that `112526-3cu`: print it again. CLAUDE.md still says "The next is 0018": the
+  main session's to move on. Help's out-of-date sections (README.md): EXPORT, Undo export…, a buy's ⋯ menu, Print MTG?, Confirm, The file.
 
 - 2026-11-21 (main session): **Second push of the day, no bump, no review** (the owner: "Push to the live site
   now, no bump, no review"). What went out: the release review's six findings, fixed (1b23b0e, 3448a24, f7eeaed,

@@ -794,7 +794,8 @@ On a phone, the laptop runs `npm run dev:lan` and the phone opens `https://<lapt
 - [ ] **Unmatched's "u" Custom SKU** (decision 602; Export session): the same day's Print MTG (all): the Unmatched
       band reads "Custom SKU 112126u" (that day's SKU and u); a buy's ⋯ → Print buy the same, and after Export
       single buy on another buy, its Print buy reads "112126-42bu". A Paid/Ours overnight buy not yet exported prints
-      "112126-#cu" (today's), a project "112126-#pu"; after its export, "112126-3cu" (its number; decision 606). Can't upload cards' printout has none. The
+      "112126-#cu" (today's), a project "112126-#pu"; after its export, "112126-3cu" (its number; decision 606). One not Paid/Ours
+      prints "112126cu", a project "112126pu". Can't upload cards' printout has none. The
       file and the database are unchanged: the Can't upload cards' rows still get their export's own SKU.
 - [ ] **A card chosen at the export gets the u** (decision 603; Export session): a past Magic day with a card in
       Needs a choice and another card of the same product matched by itself. EXPORT: pick the first one's product,
@@ -874,7 +875,9 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
       its file with its own number; Undo export… then EXPORT gives it the next number, not its old one. A day page's
       EXPORT keeps the day's date alone; Export single buy's is the day's date, the buy's number and a b
       (`102426-42b`), on its file, its chip and the Changelog. Download the same file again on an export made before
-      decision 606 still reads its old SKU, with no letter.
+      decision 606 still reads its old SKU, with no letter. A Processing or Priced overnight buy's EXPORT (file only):
+      the Confirm step, the file's rows and its name read `102426c`, a project's `102426p`, a card chosen there the u
+      last (`102426cu`, `102426pu`); nothing is saved.
 - [ ] **An export with the connection gone** (decisions 362, 371): wifi off, press Export: it says it may have
       exported and to look at the page; wifi on, press Export again: it exports once, or, if the first went through,
       downloads that file. A retry never exports the same cards twice.

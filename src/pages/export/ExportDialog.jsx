@@ -8,7 +8,7 @@ import { useToast } from '../../components/Toast.jsx';
 import { lineTextWithCondition } from '../../lib/lineFormat.js';
 import { formatMoney } from '../../lib/money.js';
 import {
-  CONDITION_WORDS, confirmSku, customSkuFor, massCreateFileName, massCreateRows, nearMintPrices, productKey,
+  CONDITION_WORDS, confirmSku, massCreateFileName, massCreateRows, nearMintPrices, productKey,
 } from '../../lib/massCreate.js';
 import {
   downloadMassCreate, exportLanded, forgetLink, linkKey, matchLines, saveExport, saveLink, saveSetMap, sellPrices,
@@ -380,9 +380,10 @@ export default function ExportDialog({
   async function save() {
     // Sell Prices from the store's Fallback Percentages, not the built-in ones (decision 389).
     if (!ready()) return;
-    // The file only: downloaded as it would be, its Custom SKU today's; nothing saved, so no user needed.
+    // The file only: downloaded as it would be, its Custom SKU today's and its letter (decision 606); nothing saved,
+    // so no user needed.
     if (fileOnly) {
-      const sku = customSkuFor(new Date());
+      const sku = confirmSku(target, true);
       const rows = toExport > 0 ? downloadMassCreate(fileLines.map((l) => ({ ...l, cc_custom_sku: sku })), massCreateFileName(filePrefix, sku)) : 0;
       onExported?.({ fileOnly: true, rows, cards: toExport, sku });
       return;
