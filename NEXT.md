@@ -19,7 +19,7 @@ marks each task done here when it's finished, with the exact file and function o
 
 - **On ice: the printout and the export kept in step** (main session, 2026-11-21; the owner: "I don't want to go
   this far, I don't think this is needed, none of those things should happen often, let's shelve this migration
-  unless I want to tighten down again"). The idea: printing saves each card's printed CC product (migration 0018),
+  unless I want to tighten down again"). The idea: printing saves each card's printed CC product (a migration),
   the export uses it, and the export screen marks a card whose product differs from the printout (a staff pick, a
   Change, or the inventory or TCGplayer catalog refreshed between print and export). Only on the owner's word.
 
