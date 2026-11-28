@@ -35,6 +35,14 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-11-28 (Export session): **Help brought up to date with decisions 606 and 607** (the owner: "fix").
+  README.md: the SKU letters in the collection list heading, Undo export…'s Changelog line, a buy's panel and its
+  ⋯ → Export, the printout's Unmatched band (`-42bu`, `-#cu`, `-#pu`, a file-only `112126cu`), Confirm
+  (`102426-#c`, `-#p`, file-only `102426c`), and The file's Name, Custom SKU (b, c, p; exports before 11/28/26
+  keep theirs) and The u rows; the Surge Foil rule added to CC matching's step 2 and Remembered matches. Where to
+  look: the Help's EXPORT, Undo export…, the day page's buy panels and Print MTG?, 1. Matching, 3. Confirm, The
+  file and Remembered matches. Not read over by the owner yet.
+
 - 2026-11-28 (Export session): **Decision 607, after the release review: a Surge Foil found only by TCGplayer goes
   to Needs a choice** (the owner: "Yes, Needs a choice"). Before, one whose TCGplayer route found only a plain
   product, while the name matcher found nothing under the card's name, was Can't upload. `ccExport.js` `matchOne`

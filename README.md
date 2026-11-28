@@ -1236,7 +1236,7 @@ EXPORT sends the collection's Magic cards to Crystal Commerce. See
 
 **Print MTG?**, **Print PKM?** and **Print PKM Stickers?** work in every status.
 
-An exported collection shows its **Custom SKU**, such as `102426-2`, in the list heading, whatever its
+An exported collection shows its **Custom SKU**, such as `102426-2c` (a project `102426-2p`), in the list heading, whatever its
 status. Crystal Commerce finds the collection's cards by it, apart from any other collection exported
 that day. Its exported cards' prices show in green. Those are its Sell Prices.
 
@@ -1257,7 +1257,7 @@ Rate.
 Undo export… is in the ⋯ menu once the collection or project has been exported. It asks first, then
 takes the export back. The exported Magic cards lose their Custom SKU, product and Sell Price, so
 EXPORT offers them again, and their copies in Can't upload cards come back out. The status doesn't
-change, whatever it is. The Changelog shows *Export undone (Custom SKU 101826-1): 3 cards no longer
+change, whatever it is. The Changelog shows *Export undone (Custom SKU 101826-1c): 3 cards no longer
 marked exported*. Exported again, it takes the day's next number, not its old one.
 
 It doesn't undo the file already downloaded. If the file was uploaded to Crystal Commerce, someone
@@ -1391,7 +1391,7 @@ Commerce, someone fixes the stock there by hand.
 
 Each buy is a panel in the colour of the worker who confirmed it. Its header shows **Buy N**, the
 worker, the time and its status, and, after Export single buy, its own **Custom SKU**, such as
-*101626-42*. Buy N is its number for good. See [Buy numbers](#cancel-and-confirm-buy).
+*101626-42b*. Buy N is its number for good. See [Buy numbers](#cancel-and-confirm-buy).
 
 - The customer's name, phone number and notes.
 - A table of its cards: **Price**, **Qty**, **Card** and **×**. Hovering a row shows the card.
@@ -1434,7 +1434,7 @@ on the list, crossed out, as a record that it went elsewhere, straight into the 
 | **Mark Paid/Ours again** | Undoes Mark as completed, and restores the cards it struck. On an exported buy it reads **Mark Paid/Ours again…** and undoes this buy's export only. Magic cards struck by Mark as completed stay Completed. Some of this game's cards may still be Completed by hand while the buy isn't, after its export is undone, say. Then the menu has both Mark as completed and Mark Paid/Ours again, which brings those cards back. |
 | **Copy Details** | Copies the buy as one row for the store's buys sheet. It works with no worker picked, and it changes nothing. See [Copy Details](#copy-details). |
 | **◂ Print** | A group. Pointing at it, or clicking it, opens its items to the left of the menu. They open to the right only when there's no room on the left, and the arrow moves there too. **Print buy (all)** and **Print buy (>$1.49)** make the audit printout of this buy's Magic cards by Crystal Commerce category, every card or only the ones over the amount in Settings → Export rates for bulk. On a Pokémon buy the group holds **Print buy**, its cards by set, and **Print stickers**, price-tag stickers. See [Print PKM Stickers?](#print-pkm-stickers). |
-| **◂ Export** | Magic only. **Export single buy (all)** and **Export single buy (>$1.49)** export just this buy, on any day, today included. (>$1.49) pulls the bulk to Bulk pulled from exports. The rest of the day stays as it is. Its Custom SKU is the day's with the buy's number after a dash, *101626-42*, shown on the buy. Once the buy has its own file, **Download its file again** is here too. It downloads the same file, and nothing changes. |
+| **◂ Export** | Magic only. **Export single buy (all)** and **Export single buy (>$1.49)** export just this buy, on any day, today included. (>$1.49) pulls the bulk to Bulk pulled from exports. The rest of the day stays as it is. Its Custom SKU is the day's with the buy's number after a dash and a **b**, *101626-42b*, shown on the buy. Once the buy has its own file, **Download its file again** is here too. It downloads the same file, and nothing changes. |
 | **◂ Convert** | **Convert to project** and **Convert to overnight buy**, below. |
 | **Edit in project view** | Opens the buy's cards on the pricing screen, in the game's colour, to fix a card before an export, mostly its condition or treatment. Click a card, change it, then **SAVE EDIT**. **×** takes cards out. Nothing is saved until **SAVE BUY**, which goes back to the day page. The buy stays on its day. Cards can't be added, and the rates don't change. |
 | **Delete buy…** | Deletes the buy and every card in it, both games. Asks first. |
@@ -1473,10 +1473,11 @@ nothing.
   Commerce names a product, such as `Fblthp, the Lost - Borderless`, with the set code and collector
   number chip (`RVR 420`) to find them by. Two printings of a card are two rows.
 - **The Unmatched band's Custom SKU** is the export's own with a **u**, such as *Custom SKU 112126u*: a
-  day's is the day's, a buy's Print buy the day's too, or `112126-42u` once it went out with Export
-  single buy. A collection or project reads `112126-#u` until it's exported (the number is given then),
-  and its own number after, such as `112126-3u`. Can't upload cards and Bulk pulled from exports have
-  none. A card from Unmatched that the worker picks a product for at the export goes in the file with
+  day's is the day's, a buy's Print buy the day's too, or `112126-42bu` once it went out with Export
+  single buy. A Paid/Ours overnight buy reads `112126-#cu` until it's exported (the number is given then),
+  a project `112126-#pu`, and its own number after, such as `112126-3cu`. One that isn't Paid/Ours, whose
+  EXPORT is the file only, reads `112126cu` or `112126pu`. Can't upload cards and Bulk pulled from exports
+  have none. A card from Unmatched that the worker picks a product for at the export goes in the file with
   that SKU. See [The file](#the-file).
 - In each category the rows go NM first, then a line, then LP, MP, HP and DMG. Within a condition they
   go by colour, as the buy list's WUBRG does: white, blue, black, red, green, multicolour, colourless,
@@ -1580,7 +1581,10 @@ Every card goes through these steps, in order:
    - a **The List** card with more than one The List printing, in Crystal Commerce or on TCGplayer
      (Lightning Bolt has several; Doom Blade has one, so it still matches by itself). A The List card
      with no product under its own name but several TCGplayer printings goes here too, not to Can't
-     upload. Mystery Booster's products don't count as The List printings.
+     upload. Mystery Booster's products don't count as The List printings;
+   - a **Surge Foil** with no Crystal Commerce product that has "Surge" in its name. A Surge Foil is only
+     ever matched to a Surge product, by the TCGplayer route or by its name, never to the plain foil.
+     When there's none, it's here with the plain foil offered, even when only TCGplayer's name found it.
 3. **The TCGplayer route.** The card's TCGplayer product, from TCGplayer's catalog in the app, names
    its set and its name there. The app looks for that name in the Crystal Commerce category TCGplayer's
    set belongs to. When that gives exactly one product, it's **Matched**. This settles promo pack and
@@ -1693,8 +1697,9 @@ choice.
 
 ### 3. Confirm
 
-Confirm shows a summary: how many cards, how many rows, and the **Custom SKU**. For a collection or
-project it reads `102426-#`, because the number is given when the export is saved. When some rows
+Confirm shows a summary: how many cards, how many rows, and the **Custom SKU**. For an overnight buy
+it reads `102426-#c`, for a project `102426-#p`, because the number is given when the export is saved.
+A file-only download reads `102426c` or `102426p`. When some rows
 carry the **u** (a card picked here from Needs a choice), it names both: *Custom SKU 102426, 102426u*.
 
 If any cards can't upload, a red list names them. On a (>…) export, the pulled cards are listed in
@@ -1739,9 +1744,9 @@ After the export, Sell Prices show in green wherever the card appears.
 
 | | |
 |---|---|
-| **Name** | The file is named by its Custom SKU: a day's `cc-mass-create-magic-100626.csv`, a single buy's `cc-mass-create-magic-100626-42.csv`, a collection's `cc-mass-create-<customer>-102426-3.csv`. Can't upload cards' is `cc-mass-create-cant-upload-<SKU>.csv` and Bulk pulled from exports' `cc-mass-create-pulled-bulk-<SKU>.csv`. Downloading the same file again gives the same name. |
-| **Custom SKU** | A date, month-day-year, with no leading zero on the month: 10/09/26 is `100926`, 6/17/26 is `61726`. A day's export uses **the day's** date, whenever it's run. A single buy's adds the buy's number: `101626-42`. A collection's or project's adds its number of the day: the first one exported on 10/24/26 is `102426-1`, the next `102426-2`. Collections and projects count together, and the count starts again at 1 each day. Each export takes the next number, so a collection undone and exported again gets a new one. Can't upload cards, Bulk pulled from exports and a file-only download use today's date alone. It's on every row. |
-| **The u** | A card the printout put under Unmatched (it was in Needs a choice) that the worker picks a product for in the export goes in the file with the SKU and a **u**: `100626u`, `100626-42u`, `102426-3u`. It matches the printout's Unmatched band, so those cards can be searched for in Crystal Commerce. A product and condition with such a card is one row with the u SKU, its other cards in it too. The card's Custom SKU chip and the Changelog still show the plain SKU. |
+| **Name** | The file is named by its Custom SKU: a day's `cc-mass-create-magic-100626.csv`, a single buy's `cc-mass-create-magic-100626-42b.csv`, an overnight buy's `cc-mass-create-<customer>-102426-3c.csv` (a project's `…-102426-3p.csv`). Can't upload cards' is `cc-mass-create-cant-upload-<SKU>.csv` and Bulk pulled from exports' `cc-mass-create-pulled-bulk-<SKU>.csv`. Downloading the same file again gives the same name. |
+| **Custom SKU** | A date, month-day-year, with no leading zero on the month: 10/09/26 is `100926`, 6/17/26 is `61726`. A day's export uses **the day's** date, whenever it's run. A single buy's adds the buy's number and a **b**: `101626-42b`. A collection's or project's adds its number of the day and a letter, **c** for an overnight buy, **p** for a project: the first one exported on 10/24/26 is `102426-1c`, the next `102426-2p`. Overnight buys and projects count together, and the count starts again at 1 each day. Each export takes the next number, so a collection undone and exported again gets a new one. A file-only download (a collection or project that isn't Paid/Ours) uses today's date and its letter, `102426c` or `102426p`. Can't upload cards and Bulk pulled from exports use today's date alone. Exports from before 11/28/26 keep the SKU they had, without a letter. It's on every row. |
+| **The u** | A card the printout put under Unmatched (it was in Needs a choice) that the worker picks a product for in the export goes in the file with the SKU and a **u**, always last: `100626u`, `100626-42bu`, `102426-3cu`. It matches the printout's Unmatched band, so those cards can be searched for in Crystal Commerce. A product and condition with such a card is one row with the u SKU, its other cards in it too. The card's Custom SKU chip and the Changelog still show the plain SKU. |
 | **Conditions** | Near Mint, Lightly Played, Moderately Played, Heavily Played, Damaged. |
 | **Rows** | One per product and condition. Quantities are added together. Only Near Mint rows carry a Sell Price: Crystal Commerce prices every other condition from Near Mint, so the other rows leave it blank. |
 | **The NM row** | A product with only worse-condition cards gets a first row of **0** Near Mint copies, priced at that printing's **Near Mint price today**, rounded up. It sets the price and adds no stock. A product with Near Mint cards gets no extra row. |
@@ -1762,7 +1767,7 @@ same file again. Nothing changes. It needs the connection.
 ### Remembered matches
 
 The app remembers every product picked by staff. The next export of that printing takes it straight
-away, a Secret Lair or The List card too. A card the app matched by itself is worked out again each
+away, a Secret Lair, The List or Surge Foil card too. A card the app matched by itself is worked out again each
 time. **Settings → Crystal Commerce matching** lists the picks.
 
 <br>
