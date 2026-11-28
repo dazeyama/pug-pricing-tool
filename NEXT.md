@@ -49,6 +49,18 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-11-27 (Export session): **Decision 607: a Surge Foil matches only a CC product with "Surge" in its name**
+  (the owner: "Surge Foils MUST match to CC products with Surge in the name ELSE they must be hand matched by a
+  human"). Both ways matched it wrong, checked with the Cecil products in the tests: the TCGplayer route (its
+  product is often the plain card's, decision 316) and the name matcher (the one foil under its name) both gave
+  "Cecil - Foil - Borderless". Now `ccMatch.js` `isSurgeFoil` and `surgeAllows`, read in `ccExport.js`
+  `matchOne`: the route's product without Surge is passed over and the matcher answers; the matcher's without
+  Surge goes to Needs a choice. A remembered pick still wins, as for Secret Lair (574); nothing under its name stays
+  Can't upload. No migration. Where to look: EXPORT on a day or collection with a Surge Foil: matched to the "…
+  Surge Foil …" product when CC has one, else Needs a choice with the plain foil offered; pick it, and the next
+  export matches it by itself. Unit-tested (tests/matchOne.test.js); not tried in the app. TEST.md: next to the
+  Secret Lair case.
+
 - 2026-11-25 (Export session): **Decision 606: a letter on a numbered Custom SKU, migration 0018** (the owner:
   "Projects all need a "p" after the sku … And buys should have a "b" after their Custom SKU on the export"). **0018
   is on neither dev nor prod; the app code must not be pushed before prod has it.** `0018_sku_letters.sql`:

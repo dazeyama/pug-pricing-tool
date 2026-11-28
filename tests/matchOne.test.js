@@ -97,6 +97,65 @@ test('a 4c match the name ranks as another finish is still first and scored in C
   assert.notEqual(r.ranked[0].score, null);
 });
 
+// Decision 607 (the owner, 2026-11-27): a Surge Foil matched to the plain foil when CC had its Surge Foil product.
+// TCGplayer's product for a surge foil is often the plain card's (decision 316), so the route named the plain foil.
+const SURGE_CAT = 'Final Fantasy';
+const surgeCats = new Map([SURGE_CAT].map((c) => [fold(c), c]));
+const cecilFoil = product('Cecil - Foil - Borderless', SURGE_CAT, 'foil');
+const cecilSurge = product('Cecil - Surge Foil - Borderless', SURGE_CAT, 'surge');
+const surgeOne = (candidates, over = {}) => matchOne({
+  line: { id: 's1', name: 'Cecil', set_code: 'FIN', collector_number: '300', finish: 'foil', treatments: ['borderless', 'surgefoil'], tcgplayer_id: '5' },
+  set: { code: 'fin', name: SURGE_CAT },
+  promo: '',
+  card: null,
+  flavor: null,
+  where: { category: SURGE_CAT, how: 'name' },
+  also: [],
+  link: null,
+  linkedProduct: null,
+  candidates,
+  // TCGplayer's product is the plain card's, so the route names the plain foil.
+  tcg: { product_id: 5, group_id: 50, group_name: SURGE_CAT, name: 'Cecil (Borderless)' },
+  routeCandidates: candidates,
+  categoryNamed: (n) => surgeCats.get(fold(n)) ?? null,
+  table: { 50: [SURGE_CAT, SURGE_CAT, null, null] },
+  ...over,
+});
+
+test('a Surge Foil (607): never the plain foil by the route; its Surge product when CC has one', () => {
+  const r = surgeOne([cecilFoil, cecilSurge]);
+  assert.equal(r.status, 'auto');
+  assert.equal(r.product, cecilSurge);
+  assert.equal(r.via, 'match');
+});
+
+test('a Surge Foil (607): no product with Surge in its name is Needs a choice, never the plain foil', () => {
+  const r = surgeOne([cecilFoil]);
+  assert.equal(r.status, 'choose');
+  assert.equal(r.product, null);
+  assert.ok(r.ranked.some((x) => x.product === cecilFoil));   // offered to pick by hand
+  // The name matcher alone (no TCGplayer product) the same.
+  assert.equal(surgeOne([cecilFoil], { tcg: null, routeCandidates: [] }).status, 'choose');
+  // Nothing under its name at all stays Can't upload, as before.
+  assert.equal(surgeOne([], { tcg: null, routeCandidates: [] }).status, 'none');
+});
+
+test('a Surge Foil (607): a remembered pick wins, plain foil or not; other foils and the non-foil copy as before', () => {
+  const r = surgeOne([cecilFoil], { link: { product_id: 'foil', source: 'staff' }, linkedProduct: cecilFoil });
+  assert.equal(r.status, 'auto');
+  assert.equal(r.product, cecilFoil);
+  assert.equal(r.via, 'link');
+  // A plain foil: the route's plain foil product, as before.
+  const foil = surgeOne([cecilFoil], { line: { id: 's2', name: 'Cecil', set_code: 'FIN', collector_number: '300', finish: 'foil', treatments: ['borderless'], tcgplayer_id: '5' } });
+  assert.equal(foil.status, 'auto');
+  assert.equal(foil.product, cecilFoil);
+  // The non-foil copy of a printing whose foil is surge (decision 326) isn't a Surge Foil.
+  const cecil = product('Cecil - Borderless', SURGE_CAT, 'nonfoil');
+  const nonfoil = surgeOne([cecil], { line: { id: 's3', name: 'Cecil', set_code: 'FIN', collector_number: '300', finish: 'nonfoil', treatments: ['borderless', 'surgefoil'], tcgplayer_id: '5' } });
+  assert.equal(nonfoil.status, 'auto');
+  assert.equal(nonfoil.product, cecil);
+});
+
 // Decision 599: a The List card with more than one The List printing, in CC or on TCGplayer, is staff's to pick.
 const LIST = 'The List';
 const listCats = new Map([LIST, 'Mystery Booster'].map((c) => [fold(c), c]));

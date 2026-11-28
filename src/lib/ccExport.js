@@ -7,6 +7,7 @@ import { loadSets } from './scryfall.js';
 import { nameKey } from './normalize.js';
 import {
   alwaysChoose, categoryFor, ccListPrintings, chooseProduct, evidenceTreatments, fold, frontFace, isListCard, promoKind,
+  surgeAllows,
   searchCategories, usableLink,
 } from './ccMatch.js';
 import { scryfallCards, todaysPrices } from './todaysPrices.js';
@@ -150,10 +151,11 @@ export async function matchLines(lines, onStep, given = {}) {
 }
 
 /**
- * One line's match, in the order decisions 486, 487, 574, 594 and 599 set: a remembered staff pick; else, unless
+ * One line's match, in the order decisions 486, 487, 574, 594, 599 and 607 set: a remembered staff pick; else, unless
  * the pick is staff's to make (a remembered pick whose product left the inventory; a Secret Lair card by its set, its
  * category, the route's category or its TCGplayer set; a The List card with more than one The List printing in CC
- * or on TCGplayer), the TCGplayer route's one product; else today's matcher.
+ * or on TCGplayer), the TCGplayer route's one product; else today's matcher. A Surge Foil is matched by either only
+ * to a product with "Surge" in its name, else it's staff's to pick (607).
  * Pure: matchLines reads everything first.
  * @param {object} p
  * @param {object} p.line  a buy line
@@ -201,7 +203,9 @@ export function matchOne({
   // after the release review): TCGplayer's count says it has printings, so it isn't Can't upload; what was found by
   // TCGplayer's name is offered there, unscored, beside the search.
   const listNone = listChoice && pick.status === 'none';
-  const status = listNone || (pick.status === 'auto' && (!where || link || staffs)) ? 'choose' : pick.status;
+  // A Surge Foil the matcher found only a product without "Surge" in its name for is a choice too (decision 607).
+  const status = listNone || (pick.status === 'auto' && (!where || link || staffs || !surgeAllows(line, pick.product)))
+    ? 'choose' : pick.status;
   const ranked = listNone && !pick.ranked.length
     ? [...new Map(routeCandidates.map((p) => [p.product_id, { product: p, score: null, reasons: [] }])).values()]
     : pick.ranked;
@@ -215,7 +219,9 @@ export function matchOne({
       line: { ...line, finishes: card?.finishes ?? null },
       tcg, candidates: routeCandidates, table, categoryNamed,
     });
-    if (a.status === 'auto' && !alwaysChoose(null, a.product.category)) {
+    // A Surge Foil's product must say Surge (decision 607): TCGplayer's product for one is often the plain card's
+    // (decision 316), so the route would name the plain foil. Otherwise today's matcher answers, by the same rule.
+    if (a.status === 'auto' && !alwaysChoose(null, a.product.category) && surgeAllows(line, a.product)) {
       // First among its candidates, scored, so Change offers it as the app's own match, whatever the card's name
       // alone made of it (a 4c match the matcher ranks as "a different finish or number").
       const ranked = [{ product: a.product, score: 1000, reasons: ['tcgplayer'] },

@@ -124,6 +124,22 @@ export function categoryFor({ set, parent = null, promo = '', categories, setMap
 export const alwaysChoose = (set, category) => String(set?.code ?? '').toLowerCase() === 'sld'
   || fold(category).includes('secretlair');
 
+/**
+ * Is a line a Surge Foil (decision 607)? Its foil copy with the surge foil treatment (a printing that also comes
+ * non-foil has it on its foil copy only, decision 326).
+ * @param {object} line  a buy line
+ */
+export const isSurgeFoil = (line) => line?.finish === 'foil' && (line.treatments ?? []).includes('surgefoil');
+
+/**
+ * May the app match a line to this product by itself (decision 607)? A Surge Foil only to a product with "Surge" in
+ * its name (the owner, 2026-11-27: "Surge Foils MUST match to CC products with Surge in the name ELSE they must be
+ * hand matched by a human"); any other line to any product.
+ * @param {object} line  a buy line
+ * @param {{ product_name?: string }|null} product
+ */
+export const surgeAllows = (line, product) => !isSurgeFoil(line) || /surge/i.test(product?.product_name ?? '');
+
 /** Scryfall's sets of The List's cards (decision 599). */
 const LIST_SETS = new Set(['plst', 'ulst']);
 
