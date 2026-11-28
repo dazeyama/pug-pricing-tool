@@ -1582,8 +1582,9 @@ Every card goes through these steps, in order:
      (Lightning Bolt has several; Doom Blade has one, so it still matches by itself). A The List card
      with no product under its own name but several TCGplayer printings goes here too, not to Can't
      upload. Mystery Booster's products don't count as The List printings;
-   - a **Surge Foil** with no Crystal Commerce product that has "Surge" in its name. A Surge Foil is only
-     ever matched to a Surge product, by the TCGplayer route or by its name, never to the plain foil.
+   - a **Surge Foil** with no Crystal Commerce product that has "Surge Foil" in its name. A Surge Foil is
+     only ever matched to a Surge Foil product, by the TCGplayer route or by its name, never to the plain
+     foil, even for a card with Surge in its own name, such as Canopy Surge.
      When there's none, it's here with the plain foil offered, even when only TCGplayer's name found it.
 3. **The TCGplayer route.** The card's TCGplayer product, from TCGplayer's catalog in the app, names
    its set and its name there. The app looks for that name in the Crystal Commerce category TCGplayer's
