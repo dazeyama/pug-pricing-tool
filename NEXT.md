@@ -35,6 +35,14 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-11-28 (Export session): **Decision 607, after the release review: "Surge Foil", not "Surge", in the product's
+  name** (the owner: "fix"). `ccMatch.js` `surgeAllows` now tests `/\bsurge foil\b/i`, so a Surge Foil of a card
+  with Surge in its own name (Canopy Surge, Surgehacker Mech) no longer matches its plain foil by itself. Read from
+  dev's copy of the inventory first (read-only): 2,470 products say "Surge Foil", 2,469 as their foil kind and one
+  token in brackets, "… (Surge Foil)"; the other 217 with "surge" are cards' own names. Row 607 amended; test in
+  `tests/matchOne.test.js`. No migration. Where to look: EXPORT with a Surge Foil Canopy Surge whose CC has only
+  "Canopy Surge - Foil": Needs a choice, not matched. Unit-tested; not tried in the app.
+
 - 2026-11-28 (Export session): **Help brought up to date with decisions 606 and 607** (the owner: "fix").
   README.md: the SKU letters in the collection list heading, Undo export…'s Changelog line, a buy's panel and its
   ⋯ → Export, the printout's Unmatched band (`-42bu`, `-#cu`, `-#pu`, a file-only `112126cu`), Confirm

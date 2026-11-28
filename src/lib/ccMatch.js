@@ -134,11 +134,13 @@ export const isSurgeFoil = (line) => line?.finish === 'foil' && (line.treatments
 /**
  * May the app match a line to this product by itself (decision 607)? A Surge Foil only to a product with "Surge" in
  * its name (the owner, 2026-11-27: "Surge Foils MUST match to CC products with Surge in the name ELSE they must be
- * hand matched by a human"); any other line to any product.
+ * hand matched by a human"); any other line to any product. "Surge Foil", not "Surge" alone (the owner, after the
+ * release review: "fix"), so a card with Surge in its own name ("Canopy Surge") doesn't pass on its plain foil:
+ * every Surge product in CC's inventory says "Surge Foil", as its foil kind or in brackets ("… (Surge Foil)").
  * @param {object} line  a buy line
  * @param {{ product_name?: string }|null} product
  */
-export const surgeAllows = (line, product) => !isSurgeFoil(line) || /surge/i.test(product?.product_name ?? '');
+export const surgeAllows = (line, product) => !isSurgeFoil(line) || /\bsurge foil\b/i.test(product?.product_name ?? '');
 
 /** Scryfall's sets of The List's cards (decision 599). */
 const LIST_SETS = new Set(['plst', 'ulst']);

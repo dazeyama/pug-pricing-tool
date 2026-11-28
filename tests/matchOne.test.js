@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { matchOne } from '../src/lib/ccExport.js';
 import { parseProductName } from '../src/lib/ccNames.js';
-import { ccListPrintings, fold } from '../src/lib/ccMatch.js';
+import { ccListPrintings, fold, surgeAllows } from '../src/lib/ccMatch.js';
 
 // The safety order of one line's match (decisions 486, 487, 574, 594): a remembered pick, then the TCGplayer route,
 // then today's matcher; never the route for a pick that's staff's. Hand-made products; nothing reaches a database.
@@ -153,6 +153,27 @@ test('a Surge Foil (607): found only by TCGplayer, its plain foil, is Needs a ch
   const foil = surgeOne([], { routeCandidates: [cecilFoil], line: { id: 's4', name: 'Cecil', set_code: 'FIN', collector_number: '300', finish: 'foil', treatments: ['borderless'], tcgplayer_id: '5' } });
   assert.equal(foil.status, 'auto');
   assert.equal(foil.via, 'route');
+});
+
+test('a Surge Foil (607): "Surge Foil" in the product\'s name, not "Surge" alone (a card named Canopy Surge)', () => {
+  // The owner, after the release review: "fix". Its plain foil's name has Surge in it, as the card's own.
+  const canopy = (candidates) => surgeOne(candidates, {
+    line: { id: 's5', name: 'Canopy Surge', set_code: 'FIN', collector_number: '301', finish: 'foil', treatments: ['surgefoil'], tcgplayer_id: '6' },
+    tcg: { product_id: 6, group_id: 50, group_name: SURGE_CAT, name: 'Canopy Surge' },
+  });
+  const plainFoil = product('Canopy Surge - Foil', SURGE_CAT, 'cs-foil');
+  const surge = product('Canopy Surge - Surge Foil', SURGE_CAT, 'cs-surge');
+  const r = canopy([plainFoil]);
+  assert.equal(r.status, 'choose');
+  assert.equal(r.product, null);
+  const s = canopy([plainFoil, surge]);
+  assert.equal(s.status, 'auto');
+  assert.equal(s.product, surge);
+  // CC's other way of writing it, in brackets (a token's "… (Surge Foil)").
+  const line = { finish: 'foil', treatments: ['surgefoil'] };
+  assert.equal(surgeAllows(line, { product_name: 'Copy (0025) // Moogle (0034) Double-Sided Token (Surge Foil)' }), true);
+  assert.equal(surgeAllows(line, { product_name: 'Canopy Surge - Foil' }), false);
+  assert.equal(surgeAllows({ finish: 'foil', treatments: [] }, { product_name: 'Canopy Surge - Foil' }), true);
 });
 
 test('a Surge Foil (607): a remembered pick wins, plain foil or not; other foils and the non-foil copy as before', () => {
