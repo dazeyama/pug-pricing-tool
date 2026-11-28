@@ -6,20 +6,6 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Open
 
-- **A letter on every export's Custom SKU, migration 0018** (the owner, 2026-11-25: "Projects all need a "p" after
-  the sku because they're overlapping with buys. And buys should have a "b" after their Custom SKU on the export.
-  Eg: 112526-126b, 112526-1p"; main session; given to the Export and printouts session). Settled: a single buy's
-  b (`112526-126b`), an overnight buy's c (`112526-3c`), a project's p (`112526-1p`); a day's export and Can't
-  upload's and Bulk pulled's stay plain; the u stays last (`112526-126bu`); stamped in the database, so migration
-  0018. Review and rehearsal now; **dev and prod are pushed in one sitting, when the owner says** (decision 381):
-  after close, 9:30pm on 2026-11-25, on the owner's go then; that go didn't come, so it moved to after close on
-  2026-11-27 (the owner: "We'll push after close again"; main session). A file-only export (a collection not Paid/Ours) gets
-  its letter too, with no number (`112526c`, `112526p`; the owner: "Add the letter"; app only).
-  **Built, reviewed and rehearsed 2026-11-25 (Export session; decision 606, its Done entry below): on neither
-  database, nothing pushed.** Left, in one sitting: `npx supabase db push --linked` (dev), `node
-  scripts/db-snapshot.mjs` and commit `supabase/current/`, `node scripts/db-test-run.mjs --save <outside the repo>`
-  (682 checks), prod's `db push` and `--structure-only` compare (docs/DATABASE.md step 6), then the app push.
-
 - **On ice: the printout and the export kept in step** (main session, 2026-11-21; the owner: "I don't want to go
   this far, I don't think this is needed, none of those things should happen often, let's shelve this migration
   unless I want to tighten down again"). The idea: printing saves each card's printed CC product (a migration),
@@ -49,6 +35,16 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-11-28 (main session): **Pushed without a bump, with migration 0018 on dev and prod** (the owner: "push
+  everything including the migration to live as per our full usual process"). 0018 went to dev (snapshot
+  committed, the full test run on dev: all 682 checks passed), then to prod, and the structure-only compare
+  matched dev on all nine fingerprints. Prod and dev are both on 0001–0018. What went out: decision 606 (a letter
+  on a numbered Custom SKU: b, c, p, and c/p on a file-only export; 22fc254 through 5fd7132), decision 607 (a
+  Surge Foil matches only a CC product named Surge, aff678a), and their NEXT.md, TEST.md and spec entries. No Edge
+  Function changes. Lint, 625 tests and the build clean before the push. Untested in the app: all of it. Help out
+  of date for 606 (EXPORT, Undo export…, a buy's ⋯ menu, Print MTG?, Confirm, The file). The team should reload
+  open tabs, and reprint any overnight buy or project printout made before the push that hasn't been exported.
+
 - 2026-11-27 (Export session): **Decision 607: a Surge Foil matches only a CC product with "Surge" in its name**
   (the owner: "Surge Foils MUST match to CC products with Surge in the name ELSE they must be hand matched by a
   human"). Both ways matched it wrong, checked with the Cecil products in the tests: the TCGplayer route (its
@@ -63,7 +59,7 @@ marks each task done here when it's finished, with the exact file and function o
 
 - 2026-11-25 (Export session): **Decision 606: a letter on a numbered Custom SKU, migration 0018** (the owner:
   "Projects all need a "p" after the sku … And buys should have a "b" after their Custom SKU on the export"). **0018
-  is on neither dev nor prod; the app code must not be pushed before prod has it.** `0018_sku_letters.sql`:
+  is on dev and prod since 2026-11-28, pushed with the app that night (main session).** `0018_sku_letters.sql`:
   `export_lines` alone, two lines (a single buy's `|| 'b'`; a collection's `p` or `c` after
   `internal.collection_sku`); no table, grant or stored row changes. App: `massCreate.js` `confirmSku`,
   `unsavedCollectionSku`, `collectionLetter`; `auditPrint.js` `collectionUnmatchedSku` and `useAuditPrint.js`
@@ -84,8 +80,7 @@ marks each task done here when it's finished, with the exact file and function o
   `exportsFileOnly` and `unsavedCollectionSku`; `ExportDialog.jsx` `save`; `collectionPrintSku` and
   `collectionUnmatchedSku` take the buys row now. Where to look: a Processing overnight buy's ⋯ → Print overnight
   buy, then its EXPORT. Unit-tested; not tried in the app. A printout made before the buy is marked Paid/Ours says
-  `112526cu`, and its export after that `112526-3cu`: print it again. CLAUDE.md still says "The next is 0018": the
-  main session's to move on. Help's out-of-date sections (README.md): EXPORT, Undo export…, a buy's ⋯ menu, Print MTG?, Confirm, The file.
+  `112526cu`, and its export after that `112526-3cu`: print it again. Help's out-of-date sections (README.md): EXPORT, Undo export…, a buy's ⋯ menu, Print MTG?, Confirm, The file.
 
 - 2026-11-21 (main session): **Second push of the day, no bump, no review** (the owner: "Push to the live site
   now, no bump, no review"). What went out: the release review's six findings, fixed (1b23b0e, 3448a24, f7eeaed,
