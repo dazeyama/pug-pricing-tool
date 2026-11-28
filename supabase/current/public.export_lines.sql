@@ -140,8 +140,9 @@ begin
        and l.bulk_kind is null and l.struck_at is null;
     if v_lines is null then raise exception 'nothing_to_export'; end if;
     v_target := buy_target_name(b.id);
-    -- Its day's Custom SKU with its number: "101626-42" (owner, 2026-10-17; 0071).
-    v_sku := cc_custom_sku_day((b.confirmed_at at time zone 'America/Los_Angeles')::date) || '-' || buy_number(b);
+    -- Its day's Custom SKU with its number and a b, for a buy: "112526-126b" (owner, 2026-10-17; 0071; the
+    -- letter, owner 2026-11-25, 0018).
+    v_sku := cc_custom_sku_day((b.confirmed_at at time zone 'America/Los_Angeles')::date) || '-' || buy_number(b) || 'b';
     perform export_check(v_lines, p_matches, p_cant || p_pulled, v_file);
 
     perform export_stamp(p_matches, v_file, v_sku);
@@ -199,8 +200,11 @@ begin
     if v_lines is null then raise exception 'nothing_to_export'; end if;
     perform export_check(v_lines, p_matches, p_cant || p_pulled, v_file);
     -- Its own number of the day, collections and projects counted together: "102426-1", "102426-2"
-    -- (decision 511). Taken only when a card is exported, and never given twice.
-    if jsonb_array_length(p_matches) > 0 then v_sku := internal.collection_sku(now()); end if;
+    -- (decision 511). Taken only when a card is exported, and never given twice. Then a letter: a project's p,
+    -- an overnight buy's c ("112526-1p", "112526-3c"; owner, 2026-11-25; 0018).
+    if jsonb_array_length(p_matches) > 0 then
+      v_sku := internal.collection_sku(now()) || case when b.project then 'p' else 'c' end;
+    end if;
 
     perform export_stamp(p_matches, v_file, v_sku);
     update buy_lines set cc_status = 'cant_upload', cc_exported_at = now() where id = any(p_cant);
