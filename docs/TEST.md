@@ -889,7 +889,8 @@ On each export in sections 11 and 14, the downloaded CSV is opened:
       with a Surge Foil no one has picked before whose CC product has "Surge Foil" in its name: it's matched to
       that one, never the plain foil. Another whose CC has only the plain foil: it's in **Needs a choice**, the
       plain foil offered. Pick it and export; on the next export of that printing it matches by itself. A plain foil
-      and a non-foil copy of the same printings match by themselves as before.
+      and a non-foil copy of the same printings match by themselves as before. One whose CC product is listed under
+      TCGplayer's name only (found via TCGplayer, not by the card's own name): Needs a choice, not Can't upload.
 - [ ] **A The List card with more than one The List printing is a choice** (decision 599; Export session; needs the
       TCGplayer catalog fetched): export a The List (PLST) `Demonic Tutor` no one has picked before (TCGplayer has
       two The List printings of it): it's in **Needs a choice**, not matched by itself. Pick it and export; the next

@@ -35,6 +35,15 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-11-28 (Export session): **Decision 607, after the release review: a Surge Foil found only by TCGplayer goes
+  to Needs a choice** (the owner: "Yes, Needs a choice"). Before, one whose TCGplayer route found only a plain
+  product, while the name matcher found nothing under the card's name, was Can't upload. `ccExport.js` `matchOne`
+  (`surgeOnlyRoute`): Needs a choice, the route's product first and its other candidates after, unscored, as The
+  List's `listNone` does. Row 607 amended; test in `tests/matchOne.test.js`; TEST.md's Surge Foil case. No
+  migration. Where to look: EXPORT with a Surge Foil whose CC product is named only as TCGplayer names it: Needs a
+  choice with that product offered. Unit-tested; not tried in the app. Left as it is, the owner's call: `surgeAllows`
+  tests "Surge" on the whole product name, so a card with Surge in its own name passes on its plain foil.
+
 - 2026-11-28 (main session): **Pushed without a bump, with migration 0018 on dev and prod** (the owner: "push
   everything including the migration to live as per our full usual process"). 0018 went to dev (snapshot
   committed, the full test run on dev: all 682 checks passed), then to prod, and the structure-only compare

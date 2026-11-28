@@ -220,8 +220,16 @@ export function matchOne({
       tcg, candidates: routeCandidates, table, categoryNamed,
     });
     // A Surge Foil's product must say Surge (decision 607): TCGplayer's product for one is often the plain card's
-    // (decision 316), so the route would name the plain foil. Otherwise today's matcher answers, by the same rule.
-    if (a.status === 'auto' && !alwaysChoose(null, a.product.category) && surgeAllows(line, a.product)) {
+    // (decision 316), so the route would name the plain foil. Otherwise today's matcher answers, by the same rule;
+    // when it found nothing under the card's name, Needs a choice rather than Can't upload (the owner, after the
+    // release review: "Yes, Needs a choice"), the route's product and its other candidates offered unscored, as
+    // The List's are.
+    const surgeOnlyRoute = a.status === 'auto' && !surgeAllows(line, a.product);
+    if (surgeOnlyRoute && pick.status === 'none' && !alwaysChoose(null, a.product.category)) {
+      const offered = [...new Map([a.product, ...routeCandidates].map((p) => [p.product_id, { product: p, score: null, reasons: [] }])).values()];
+      return { ...base, status: 'choose', product: null, ranked: offered, expected: pick.expected, via: null, wasLinked: null };
+    }
+    if (a.status === 'auto' && !alwaysChoose(null, a.product.category) && !surgeOnlyRoute) {
       // First among its candidates, scored, so Change offers it as the app's own match, whatever the card's name
       // alone made of it (a 4c match the matcher ranks as "a different finish or number").
       const ranked = [{ product: a.product, score: 1000, reasons: ['tcgplayer'] },

@@ -140,6 +140,21 @@ test('a Surge Foil (607): no product with Surge in its name is Needs a choice, n
   assert.equal(surgeOne([], { tcg: null, routeCandidates: [] }).status, 'none');
 });
 
+test('a Surge Foil (607): found only by TCGplayer, its plain foil, is Needs a choice, not Can\'t upload', () => {
+  // The owner, after the release review: "Yes, Needs a choice". The matcher found nothing under the card's name.
+  const cecilPlain = product('Cecil - Borderless', SURGE_CAT, 'plain');
+  const r = surgeOne([], { routeCandidates: [cecilFoil, cecilPlain] });
+  assert.equal(r.status, 'choose');
+  assert.equal(r.product, null);
+  assert.equal(r.via, null);
+  // The route's product first, then its other candidates, unscored: offered, never the app's own match.
+  assert.deepEqual(r.ranked.map((x) => [x.product, x.score]), [[cecilFoil, null], [cecilPlain, null]]);
+  // A plain foil found the same way is still the route's match.
+  const foil = surgeOne([], { routeCandidates: [cecilFoil], line: { id: 's4', name: 'Cecil', set_code: 'FIN', collector_number: '300', finish: 'foil', treatments: ['borderless'], tcgplayer_id: '5' } });
+  assert.equal(foil.status, 'auto');
+  assert.equal(foil.via, 'route');
+});
+
 test('a Surge Foil (607): a remembered pick wins, plain foil or not; other foils and the non-foil copy as before', () => {
   const r = surgeOne([cecilFoil], { link: { product_id: 'foil', source: 'staff' }, linkedProduct: cecilFoil });
   assert.equal(r.status, 'auto');
