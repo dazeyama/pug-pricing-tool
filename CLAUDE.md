@@ -173,7 +173,7 @@ gotchas and the squash.
   decisions 588–595; the printouts' NM-first order, 596–597), then pushes without a bump, the last on 2026-11-28
   (decisions through 607: the Mass Create file's NM at today's NM price, 598; The List's staff picks, 599; the
   file named by its Custom SKU, 600; the printouts in CC format and the "u" SKU, 601–605; the Custom SKU's
-  letter b, c or p, 606; a Surge Foil matched only to a Surge product, 607), on prod: the GitHub Actions
+  letter b, c or p, 606; a Surge Foil matched only to a Surge Foil product, 607; the Help up to date), on prod: the GitHub Actions
   variables point there.
 - Prod and dev both have migrations 0001–0018 and stay equal (decision 381; the last on prod 2026-11-28, the
   structure-only compare the same). What each did: the spec's decisions and the files' names. The next is 0019.

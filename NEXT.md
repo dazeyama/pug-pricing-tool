@@ -35,6 +35,13 @@ marks each task done here when it's finished, with the exact file and function o
 
 ## Done
 
+- 2026-11-28 (main session): **Second push of the day, no bump, no review** (the owner: "Push to the live site
+  now, no review, no bump"). What went out: decision 607's follow-ups from the release review, a Surge Foil found
+  only by TCGplayer as a plain product goes to Needs a choice (85d8116) and a Surge Foil's product must say "Surge
+  Foil" (5e6ffaf), and the Help up to date with decisions 606 and 607 (d15550f, f3d6b9a), with their NEXT.md,
+  TEST.md and spec entries. No migrations (prod and dev both 0001–0018), no Edge Function changes. Lint, 627 tests
+  and the build clean before the push. Untested in the app: all of it.
+
 - 2026-11-28 (Export session): **Decision 607, after the release review: "Surge Foil", not "Surge", in the product's
   name** (the owner: "fix"). `ccMatch.js` `surgeAllows` now tests `/\bsurge foil\b/i`, so a Surge Foil of a card
   with Surge in its own name (Canopy Surge, Surgehacker Mech) no longer matches its plain foil by itself. Read from
